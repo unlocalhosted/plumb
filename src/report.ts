@@ -217,7 +217,7 @@ export function formatText(report: Report, verbose = false): string {
     ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} use your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} don't`),
     `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
     ...(unused.length && !verbose ? [`unused      ${unused.map(f => `${f.sites.length.toLocaleString('en-US')} ${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family}`).join(', ')} tokens are never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
-    ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} are recorded in the ledger (--verbose lists them)`] : []),
+    ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} ${recorded.length === 1 ? 'is' : 'are'} recorded in the ledger (--verbose lists them)`] : []),
     ...(runtime.length && !verbose ? [`runtime     ${count(runtime.reduce((n, f) => n + f.sites.length, 0), 'style')} in ${count(runtime.length, 'file')} are computed at runtime and can't be checked (--verbose lists them)`] : []),
   ];
   const kinds: [string, (rule: string) => boolean][] = [
