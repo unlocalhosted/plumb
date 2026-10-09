@@ -3,7 +3,7 @@
   "title": "Plumb report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing", "classes", "notes", "declarations", "stylesheets", "moduleGraph"],
+  "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing", "classes", "notes", "declarations", "stylesheets", "moduleGraph", "decisions"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "tool": {
@@ -31,6 +31,7 @@
       }
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "notes": { "$ref": "#/$defs/strings" },
     "declarations": { "type": "array", "items": { "$ref": "#/$defs/declaration" } },
     "moduleGraph": {
@@ -57,8 +58,12 @@
       "properties": { "unique": { "$ref": "#/$defs/count" }, "opaque": { "$ref": "#/$defs/count" } }
     },
     "coverage": {
-      "type": "object", "additionalProperties": false, "required": ["existence", "declarations", "stylesheets", "inline"],
+      "type": "object", "additionalProperties": false, "required": ["existence", "declarations", "stylesheets", "inline", "spacing"],
       "properties": {
+        "spacing": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
         "existence": {
           "type": "object", "additionalProperties": false, "required": ["total", "dead"],
           "properties": { "total": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" } }
@@ -72,8 +77,8 @@
           "properties": { "entry": { "$ref": "#/$defs/count" }, "import": { "$ref": "#/$defs/count" }, "reference": { "$ref": "#/$defs/count" }, "side-effect": { "$ref": "#/$defs/count" }, "module": { "$ref": "#/$defs/count" }, "source": { "$ref": "#/$defs/count" }, "jsx-style": { "$ref": "#/$defs/count" } }
         },
         "inline": {
-          "type": "object", "additionalProperties": false, "required": ["sites","literalSites","opaque","spreads"],
-          "properties": { "sites": { "$ref": "#/$defs/count" }, "literalSites": { "$ref": "#/$defs/count" }, "opaque": { "$ref": "#/$defs/count" }, "spreads": { "$ref": "#/$defs/count" } }
+          "type": "object", "additionalProperties": false, "required": ["sites","literalSites","opaque","fullyOpaque","spreads"],
+          "properties": { "sites": { "$ref": "#/$defs/count" }, "literalSites": { "$ref": "#/$defs/count" }, "opaque": { "$ref": "#/$defs/count" }, "fullyOpaque": { "$ref": "#/$defs/count" }, "spreads": { "$ref": "#/$defs/count" } }
         }
       }
     },
@@ -85,12 +90,13 @@
         "cacheHits": { "$ref": "#/$defs/count" }, "cacheMisses": { "$ref": "#/$defs/count" },
         "phases": {
           "type": "object", "additionalProperties": false,
-          "required": ["discover", "parse", "collect", "load", "compile", "stylesheets", "inline"],
+          "required": ["discover", "parse", "collect", "load", "compile", "stylesheets", "inline", "decisions", "provenance"],
           "properties": {
             "discover": { "type": "number", "minimum": 0 }, "parse": { "type": "number", "minimum": 0 },
             "collect": { "type": "number", "minimum": 0 }, "load": { "type": "number", "minimum": 0 },
             "compile": { "type": "number", "minimum": 0 },
-            "stylesheets": { "type": "number", "minimum": 0 }, "inline": { "type": "number", "minimum": 0 }
+            "stylesheets": { "type": "number", "minimum": 0 }, "inline": { "type": "number", "minimum": 0 },
+            "decisions": { "type": "number", "minimum": 0 }, "provenance": { "type": "number", "minimum": 0 }
           }
         }
       }
@@ -138,6 +144,7 @@
         },
         "origin": { "enum": ["class", "arbitrary", "stylesheet", "apply", "inline", "custom-property", "keyframes"] },
         "sourceOrigin": { "enum": ["project", "framework"] }, "package": { "type": "string" },
+        "authoredValue": { "type": "boolean" },
         "opaque": { "enum": ["dynamic-value", "dynamic-class", "spread"] }
       }
     },
@@ -145,9 +152,9 @@
       "type": "object", "additionalProperties": false,
       "required": ["family", "name", "value", "refs", "origin", "tier", "why", "source"],
       "properties": {
-        "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" },
+        "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" }, "resolved": { "type": "string" },
         "refs": { "$ref": "#/$defs/strings" }, "origin": { "enum": ["project", "framework", "inferred"] },
-        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "source": { "type": "string" }
+        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }
       }
     },
     "finding": {

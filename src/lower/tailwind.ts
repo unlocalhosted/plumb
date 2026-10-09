@@ -11,12 +11,15 @@ import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
 import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
 
+type ParsedCandidate = { kind: string; root?: string; value?: unknown };
 type DesignSystem = {
   candidatesToCss(candidates: string[]): (string | null)[];
-  parseCandidate?(name: string): Iterable<{ kind: string; root?: string; value?: unknown }>;
+  parseCandidate(name: string): Iterable<ParsedCandidate>;
+  compileAstNodes(candidate: ParsedCandidate): unknown[];
   utilities?: { keys(kind: 'static' | 'functional'): string[]; getCompletions(name: string): { values: (string | null)[] }[] };
-  theme?: { entries(): Iterable<[string, { options: number }]>; prefix?: string | null };
+  theme?: { entries(): Iterable<[string, { options: number; value: string }]>; prefix?: string | null };
 };
+export interface ThemeValue { name: string; value: string }
 interface LoaderOptions {
   base: string;
   loadStylesheet?: (id: string, base: string) => Promise<{ path: string; base: string; content: string }>;
@@ -57,17 +60,17 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
 }
 
 export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[]): Promise<{
-  candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
+  theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
-  if (entry === null || !candidates.length) return { candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
+  if (entry === null) return { theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
   const start = performance.now();
   try {
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     const cssGraph = await tailwindGraph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer1-cache-v6`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer3-cache-v2`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -75,13 +78,15 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
     const misses = candidates.filter(candidate => !Object.hasOwn(cached, candidate));
     let system: DesignSystem | undefined;
+    let theme: ThemeValue[] | null = null;
+    try { theme = JSON.parse(await readFile(join(directory, 'theme.json'), 'utf8')); } catch { /* Optional theme cache. */ }
     // Hints depend on the roots present in this candidate set, whereas compiled
     // CSS remains reusable when a source slice adds/removes candidates.
     const suggestionPath = join(directory, `suggestions-${hash(JSON.stringify(candidates))}.json`);
     let suggestions: { token: string; prefix: string }[] | null = null;
     try { suggestions = JSON.parse(await readFile(suggestionPath, 'utf8')); } catch { /* Optional hint index. */ }
     // A fully warm run doesn't even load the design system.
-    if (misses.length || suggestions === null) {
+    if (misses.length || suggestions === null || theme === null) {
       let compilerPath = tailwindPath;
       let nodeWrapper = false;
       try {
@@ -104,12 +109,20 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       }
       system = await compiler.__unstable__loadDesignSystem(await readFile(entry, 'utf8'), options);
     }
+    if (system) theme = [...(system.theme?.entries() ?? [])].map(([name, metadata]) => ({ name, value: metadata.value }));
     const loadMs = performance.now() - start;
     const compileStart = performance.now();
     if (system && misses.length) {
       const css = system.candidatesToCss(misses);
       for (const [index, candidate] of misses.entries()) {
-        try { cached[candidate] = lowerCss(css[index] ?? null); }
+        try {
+          // Parsing can return several interpretations (e.g. mt-auto is both
+          // static and functional). Only a compiling value-bearing parse is
+          // evidence that the author supplied a value, rather than a utility.
+          const authoredValue = [...system.parseCandidate(candidate)].some(parsed =>
+            (parsed.kind === 'arbitrary' || parsed.kind === 'functional' && parsed.value != null) && system.compileAstNodes(parsed).length > 0);
+          cached[candidate] = { ...lowerCss(css[index] ?? null), authoredValue };
+        }
         catch (error) { throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`); }
       }
     }
@@ -150,9 +163,10 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       await writeFile(temporary, JSON.stringify(cached));
       await rename(temporary, join(directory, 'candidates.json'));
       await writeFile(suggestionPath, JSON.stringify(suggestions));
+      await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
     }
     for (const candidate of candidates) results.set(candidate, cached[candidate]!);
-    return { candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
+    return { theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
     throw new UsageError(`Load project Tailwind from ${dirname(entry)}: ${errorMessage(error)}`);
   }

@@ -1,0 +1,60 @@
+{
+  "cold": {
+    "wallMs": 3247.270875,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 3142.1819579999997,
+      "phases": {
+        "discover": 6.907167000000001,
+        "parse": 82.56646699999989,
+        "collect": 56.27632199999998,
+        "load": 138.77575000000002,
+        "compile": 104.23745900000006,
+        "stylesheets": 2008.1817910000002,
+        "inline": 59.71971100000013,
+        "decisions": 61.644832999999835,
+        "provenance": 25.168666999999914
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1302
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 0,
+      "cacheMisses": 1303,
+      "parseMs": 103.63163499999746,
+      "totalMs": 413.14758399999994
+    }
+  },
+  "warm": {
+    "wallMs": 1069.2090830000002,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 966.858166,
+      "phases": {
+        "discover": 6.040999999999997,
+        "parse": 71.98403800000001,
+        "collect": 53.92962100000004,
+        "load": 32.84104199999996,
+        "compile": 0,
+        "stylesheets": 150.166333,
+        "inline": 56.59275699999995,
+        "decisions": 58.79383399999995,
+        "provenance": 23.988624999999956
+      },
+      "cacheHits": 1302,
+      "cacheMisses": 0
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 1303,
+      "cacheMisses": 0,
+      "parseMs": 0,
+      "totalMs": 51.01370799999995
+    }
+  }
+}

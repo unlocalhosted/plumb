@@ -474,3 +474,118 @@ Every grep hit and every additional literal site is classified below. Locations 
 
 - apps/docs/src/pages/foundations/Elevation.tsx: 86:71
 - apps/docs/src/ui/xray/PaletteSpecimens.tsx: 162:76
+
+# Layer 3: decisions and spacing
+
+Measured 2026-10-09 against current MetalUI HEAD **`9cb04dc818ac84d981f8215352237d5c5ab2f85b`**, Tailwind **4.3.3**. The scanned docs source, theme and tokens are unchanged relative to the earlier pinned `ca465732…` commit (`git diff ca465732… HEAD -- apps/docs/src packages/metalui/src/components/theme.css tokens/tokens.json` is empty). Existing dirty captures/AGENTS/.claude files were preserved. MetalUI remains read-only; all caches and artifacts are under Plumb.
+
+```sh
+npm run build
+node bench/metalui/measure.mjs layer3
+node bench/metalui/reconcile-layer3.mjs
+node dist/cli.js decisions --root /Users/vijaysingh/unlocalhosted/metalui \
+  --config "$PWD/bench/metalui/plumb.config.ts" --family spacing --json
+```
+
+Reports: [cold](bench/metalui/layer3.cold.json), [warm](bench/metalui/layer3.warm.json), [timings](bench/metalui/layer3.run.json). Every current textual grep hit, its lowered declarations/finding keys or explicit pass reason, and every additional failing declaration: [reconciliation JSON](bench/metalui/layer3.reconciliation.json). All non-emitted source-text passes are also [listed by location](bench/metalui/layer3.reconciliation.md). Reconciliation asserts that every emitted off-ladder length hit has a finding, emitted percentage positioning passes, and every emitted ladder hit passes; an uncollected hit must be one of the reviewed grid-placement matches or the one documentation string. It also asserts that judged declaration counts match spacing coverage and all failing contexts reconcile with numeric plus additional contexts.
+
+## Decision boundary and whys
+
+The benchmark preset reads **`foundations.space`** and **`foundations.layout.gap`** from MetalUI's actual `tokens/tokens.json`, exposing exactly **17 spacing records**: the 14-step `0,2,4,6,8,12,16,20,24,32,40,48,64,80` ladder as `--spacing-mu-space-N`, and `--spacing-mu-related/group/section`. Each record includes both theme and underlying root-var references. Origin is project; primitive/semantic tiers are explicit; identity is value and callers may use both tiers.
+
+MetalUI's source contains **no per-step `$use` sentences** on `foundations.space`: it is an array of numbers. The preset leaves those whys empty. Semantic gap records inherit the actual `foundations.layout.$use`:
+
+> Rules for arranging content, never control geometry or materials. Gap roles reference entries in foundations.space. Related content uses 12, distinct groups 24, sections 48. Auto-grid tracks aim for 240 points, clamped to their container when narrower. Layout has no motion and preserves DOM order.
+
+Recommendations prefer an equivalent named gap carrying this reason where one exists. A 10px finding therefore names 8px `--spacing-mu-space-8` and 12px `--spacing-mu-related`, including the source sentence for related. For steps with no recorded reason the report retains an empty why; Plumb does not invent one.
+
+**Recipe spacing keys are not global layout decisions.** `--spacing-field-*`, toast, folder and other component geometry do not enlarge the shared ladder. CSS_SYSTEM explicitly distinguishes control recipes from layout relationships. A ref to a recipe key resolves to its amount and passes only if that amount is already a shared step; `gap-toast-undo-gap` resolves to **7px** and fails, while a recipe resolving to **8px** passes by value. Component ownership/approved recipe decisions belong to later layers; this layer cannot automatically excuse them. Including every recipe's pad/height/radius in a global spacing family would silently approve values such as 7px/11px everywhere and make the layout ladder meaningless.
+
+## Counts and timing
+
+Spacing coverage: **1,608 accepted of 2,183 judged declarations**, **575 failing/warning declarations**. These form **124 grouped spacing findings** at **568 physical sites**: 111 `provenance/spacing`, 12 `provenance/arbitrary`, one `provenance/opaque-inline`. Selector contexts can repeat a physical declaration, hence coverage and site counts differ. Keyframes, custom-property definitions and package-origin paint are excluded. Shorthands count once while every value component is checked; neutral authored values count as accepted coverage.
+
+Class uses count only when Tailwind parses a compiling candidate with an authored value: a theme key, numeric/fractional segment or arbitrary value. Static utilities and functional candidates with no value are excluded; parsing alone can also yield invalid alternate interpretations, so Plumb checks `compileAstNodes` before recording `authoredValue`. The cached signal survives warm runs. This excludes **335 static class spacing declarations**, including `sr-only`, `mu-stack`, and `folder-card`. Project `@utility` definitions are materialized with source maps and judged at their stylesheet definitions, including unused utilities, when those sites are inside the configured source globs. The shared declaration-gathering boundary now excludes all sites outside those globs before provenance or later judging rules run. Imported stylesheets and modules outside source remain existence proof and decision-resolution inputs. This removes **206 out-of-scope spacing contexts** (143 accepted, 63 failing) from the previous run: `2,389 - 206 = 2,183`; `638 - 63 = 575`. In particular, `packages/metalui/src/components/theme.css` remains in the import graph but has no provenance findings.
+
+Inline reporting retains **1,361 opaque declarations**, including **177 fully opaque objects/spreads/computed properties** (`coverage.inline.fullyOpaque` and `spreads`); these 177 contribute no spacing coverage or findings. Only the **170 known spacing properties with dynamic values** warn under `provenance/opaque-inline`.
+
+| Measurement | Cold | Warm |
+| --- | ---: | ---: |
+| Process wall, startup and JSON included | 3247.3 ms | 1069.2 ms |
+| Report total | 3142.2 ms | 966.9 ms |
+| discover | 6.9 ms | 6.0 ms |
+| parse | 82.6 ms | 72.0 ms |
+| collect | 56.3 ms | 53.9 ms |
+| load | 138.8 ms | 32.8 ms |
+| compile | 104.2 ms | 0.0 ms |
+| stylesheets, including module graph | 2008.2 ms | 150.2 ms |
+| inline | 59.7 ms | 56.6 ms |
+| decisions | 61.6 ms | 58.8 ms |
+| provenance | 25.2 ms | 24.0 ms |
+| Candidate cache hits / misses | 0 / 1,302 | 1,302 / 0 |
+| Module graph | 413.1 ms | 51.0 ms |
+| External module cache hits / misses | 0 / 1,303 | 1,303 / 0 |
+
+**Warm report 966.9 ms and process wall 1069.2 ms both meet 1.2 s.** Parse + collect is 125.9 ms warm. Cold and warm findings, decisions, declarations and coverage are asserted equal. Initial decision metadata recovery repeatedly counted lines from the beginning of each stylesheet, taking 274 ms; indexed source locations reduce this to 60 ms. Warm effective theme values reuse the compiler graph cache without loading the compiler. Config/token/source judgement is recomputed. Cold means a fresh Plumb cache, not OS cache eviction; timings are individual measured processes.
+
+## Numeric grep: historical 585/84 versus reproducible current evidence
+
+The old **585 on-ladder / 84 off-ladder in 39 files** expression and location list were not preserved in the design/research files. DESIGN 9 explicitly calls those greps heuristic rather than hand-verified. Re-running current source cannot honestly establish which historical individual hit disappeared or whether its regex excluded side properties/variants. No source delta explains it relative to Layer 2, since the scanned files are unchanged. We therefore retain the old claim as historical, and provide a larger fully reconciled current set rather than manufacture an exact 669-hit list.
+
+Reproducible TSX text pattern for padding/margin/gap/inset (both definitions and usages; physical, logical and axis suffixes):
+
+```regex
+\b(?:p[trblxyse]?|m[trblxyse]?|gap(?:-[xy])?|inset(?:-[xy])?)-(\d+)(?![\w.-])
+```
+
+This yields **751 hits: 652 ladder, 99 off-ladder in 40 files**. **All 99 off-ladder hits are Plumb findings.** Of 652 ladder hits, **651 are emitted passes**, and the `gap-12` at `pages/components/Skeleton.tsx:76` is a usage-documentation string, so it is a recorded source-text pass. Every hit has a row in reconciliation JSON. A narrower axis-only pattern excluding per-side padding/margin gives 593/86, illustrating why exact regex matters.
+
+Extending the pattern with `top|right|bottom|left|start|end` covers every amount in the owner's historical off-ladder value list. It produces **816 hits: 689 ladder, 127 nominally off-ladder**, with **109 findings, 678 emitted passes and 29 source-text passes**. Of the 29, **28 are substring matches inside grid `row-start`/`col-start` utilities**, which do not set spacing, and one is the Skeleton documentation string. The remaining nominal off-ladder pass is `top-1/2` at `pages/foundations/Sound.tsx:66`: it resolves to 50%, which is explicitly allowed, while the grep matches its numerator `1`.
+
+All historical values are represented below; four additional current values are marked. Counts are textual matches in the broader pattern, not grouped findings or longhands.
+
+| Value | Hits | Finding hits | Reasoned passes |
+| --- | ---: | ---: | ---: |
+| 1 | 18 | 3 | 15 (14 grid placement, one 50% positioning) |
+| 3 | 4 | 1 | 3 (grid placement) |
+| 5 | 2 | 2 | 0 |
+| 7 | 2 | 2 | 0 |
+| 9 (additional) | 1 | 1 | 0 |
+| 10 | 40 | 40 | 0 |
+| 13 | 6 | 6 | 0 |
+| 14 | 27 | 27 | 0 |
+| 15 | 7 | 7 | 0 |
+| 17 | 1 | 1 | 0 |
+| 18 (additional) | 2 | 2 | 0 |
+| 21 (additional) | 1 | 1 | 0 |
+| 22 (additional) | 1 | 1 | 0 |
+| 25 | 2 | 2 | 0 |
+| 27 | 1 | 1 | 0 |
+| 28 | 5 | 5 | 0 |
+| 35 | 1 | 1 | 0 |
+| 44 | 1 | 1 | 0 |
+| 56 | 2 | 2 | 0 |
+| 60 | 1 | 1 | 0 |
+| 72 | 2 | 2 | 0 |
+
+The spacing reader gaps found during reconciliation were fixed, not treated as passes: JSX nested in props/object slots, arrays joined with a literal space, and standalone bounded template/one-hop const branches. These changes increase candidates from 1,244 to **1,302** and static class sites to **7,258**; opaque class expressions fall from 144 to **126**. Source-only snippet text is still not treated as an emitted class.
+
+## Additional spacing findings missed by numeric grep
+
+Counts below are additional failing declaration contexts, physical sites and distinct grouped keys touching each category. Group keys overlap across categories: one 10px fix can have a CSS site and inline/class sites. Every additional context is listed with rule, key, property, value and source in reconciliation JSON.
+
+| Category | Declarations | Sites | Grouped keys | Examples / judgement |
+| --- | ---: | ---: | ---: | --- |
+| Stylesheet | 237 | 230 | 99 | `kds.css:73` scroll-padding-top 88px; `kds.css:104` top -60px and padding `8px 15px`: scalar/shorthand off-ladder spacing. |
+| Static inline | 31 | 31 | 12 | `pages/Home.tsx:46` margin `6px 0 10px`; `pages/components/Folder.tsx:124` top 110; `ui/xray/SliderSpecimens.tsx:107` bottom -3: values not in the shared ladder. |
+| Opaque inline | 170 | 170 | 1 | Known dynamic spacing only, e.g. `blocks/studio-week/studio-week.tsx:267` computed left. Fully opaque objects/spreads remain inline report counts, without spacing findings or coverage. |
+| Arbitrary class | 12 | 12 | 12 | `blocks/settings/settings.tsx:341` `pb-[5.5rem]` = 88px; `pages/components/CueFamily.tsx:67` `top-[2.5px]`: `provenance/arbitrary` with the same spacing judgement. |
+| Other named class | 8 | 8 | 5 | Value-bearing theme candidates: `gap-toast-undo-gap` 7px and `pl-toast-undo-pad-left` 11px. Static `sr-only` is excluded; static recipe definitions outside source globs are existence proof only. |
+| Numeric const/branch usage beyond text hit | 8 | 8 | 2 | Referencing a complete numeric class through a const creates a usage site as well as its definition; e.g. `blocks/task-inbox/task-inbox.tsx:587` gap-x-10 and `pages/components/Slider.tsx:60` px-28. |
+| @apply | 0 | 0 | 0 | The benchmark has 54 source-site apply declarations, all nonspacing, including apply declarations exposed while materializing project utilities. Apply spacing is proved in the fixture e2e. |
+
+Total additional declaration contexts: **466**; the broader numeric grep accounts for the other **109**, matching **575** failing/warning spacing declarations. Stylesheet review divides into **158 scalar**, **68 shorthand/composite**, and **11 unresolved expression** contexts. Static `10px` amounts from all syntaxes share a fix; mixed shorthands retain their authored tuple. Unresolved CSS/recipe geometry is explicit debt to review, not a guessed length. `sr-only` has no authored value segment, so its compiler-defined -1px margin is excluded by the candidate boundary, without a spacing-ladder exception. Static utility geometry remains reviewable at its definition only when that stylesheet is inside source globs; the imported `folder-card` definition in the package theme is outside benchmark judgement.
+
+Collection fixes additionally expose **`ed-dlg-pull`** at `ui/xray/DialogSpecimens.tsx:153` (dead class) and **`on-${surface}`** at `ui/doc.tsx:109` (un-generatable dynamic fragment). Final existence is **40 dead names / 66 sites**, plus three dynamic-class groups. The previous 39 dead names/65 sites remain, and both icon CSS false positives remain absent. These are collector completeness changes, not new provenance families.
+
+Final checks: **58 CLI integration/e2e tests passed**, zero failures/skips; `npm run typecheck` and `git diff --check` passed. No unit tests, installations or commits. Color/radius provenance, dead variables, ownership, habits and ledger remain later layers.

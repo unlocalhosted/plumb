@@ -12,9 +12,13 @@ import { collectModules } from './collect/modules.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
 import { references } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
+import { readDecisions } from './decisions/index.js';
+import { spacingProvenance } from './rules/provenance.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 
+export { defineDecisions } from './decisions/index.js';
+export type { DecisionInput } from './decisions/index.js';
 export { defineConfig } from './config.js';
 export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
 export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage } from './report.js';
@@ -70,9 +74,21 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     return { ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
       ...declaration, when: [...site.conditions, ...declaration.when], refs: references(declaration.value),
       site: location(site), owner: site.owner, origin: /(?:^|:)(?:-?[\w-]+-)?\[.+\](?:\/.+)?!?$/.test(site.token) ? 'arbitrary' as const : 'class' as const, sourceOrigin: 'project' as const,
+      authoredValue: candidate?.authoredValue ?? false,
     })), notes: candidate?.notes ?? [] };
   });
-  const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations];
+  // Import-graph files outside source globs prove existence; only source sites
+  // enter the shared declaration set for provenance and later judging rules.
+  const sourceFiles = new Set(files);
+  const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
+    .filter(declaration => sourceFiles.has(declaration.site.file));
+  const decisionsStart = performance.now();
+  const record = await readDecisions(root, config.value, graph, lowered.theme);
+  const decisionsMs = performance.now() - decisionsStart;
+  const provenanceStart = performance.now();
+  const spacing = spacingProvenance(declarations, record, config.value);
+  findings.push(...spacing.findings);
+  const provenanceMs = performance.now() - provenanceStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -86,16 +102,19 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     config: { path: config.path, inferred: config.path === null },
     ...project,
     findings,
+    decisions: record.decisions,
     declarations,
     stylesheets,
     moduleGraph: modules.counts,
     notes: [...modules.notes, ...css.notes, ...[...lowered.candidates].flatMap(([token, result]) => result.notes.map(note => `${token}: ${note}`))],
-    coverage: { existence: { total: collected.sites.filter(site => !site.opaque).length,
+    coverage: { spacing: spacing.coverage, existence: { total: collected.sites.filter(site => !site.opaque).length,
       dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) }, declarations: origins, stylesheets: stylesheetCounts,
       inline: { sites: collected.styles.sites.length, literalSites: collected.styles.sites.filter(site => site.literal).length,
-        opaque: collected.styles.declarations.filter(declaration => declaration.opaque).length, spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
+        opaque: collected.styles.declarations.filter(declaration => declaration.opaque).length,
+        fullyOpaque: collected.styles.declarations.filter(declaration => declaration.prop === '*' && declaration.opaque).length,
+        spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
     classes: { unique: unique.length, opaque: collected.opaque },
-    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
+    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
   return { report, sites };
 }

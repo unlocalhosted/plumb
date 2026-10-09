@@ -13,7 +13,8 @@ const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const schema = JSON.parse(await readFile(join(root, 'schema/report.schema.json'), 'utf8'));
 const fixture = name => join(root, 'fixtures', name);
 const stylesheetPackage = {
-  'node_modules/tailwindcss/package.json': '{"name":"tailwindcss","version":"4.1.99","style":"index.css","exports":{".":{"style":"./index.css"},"./theme":"./theme.css","./package.json":"./package.json"}}',
+  'node_modules/tailwindcss/package.json': '{"name":"tailwindcss","type":"module","version":"4.1.99","style":"index.css","exports":{".":{"style":"./index.css","default":"./index.js"},"./theme":"./theme.css","./package.json":"./package.json"}}',
+  'node_modules/tailwindcss/index.js': 'export async function __unstable__loadDesignSystem() { return { candidatesToCss: values => values.map(() => null), theme: { entries: () => [] } }; }',
   'node_modules/tailwindcss/index.css': ':root { --test: 1px; }',
   'node_modules/tailwindcss/theme.css': ':root { --test: 1px; }',
 };

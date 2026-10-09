@@ -84,7 +84,7 @@ test('class lowering and existence: real CLI over literals, helpers, maps, branc
   assert.match(run(directory, cache, ['--verbose']).stdout, /note: .*Kept --tw-/);
   assert.match(text, /src\/sizes.ts:1:/);
   assert.ok(!text.includes(`${directory}/src/`), 'text site paths relative to root');
-  assert.match(text, /cache \d+ hits, 0 misses/);
+  assert.match(run(directory, cache, ['--verbose']).stdout, /cache \d+ hits, 0 misses/);
 
   await writeFile(join(directory, 'src/theme.css'), '@theme { --color-brand: #2563eb; --color-brnad: red; }');
   const changed = JSON.parse(run(directory, cache, ['--json']).stdout);
@@ -121,6 +121,7 @@ test('resolves project Tailwind, fallback file loaders, Node wrapper and one bat
       const config = await options.loadModule('./config.mjs', options.base);
       if (!sheet.content.includes('--color-brand') || !config.module.project) throw new Error('file loaders missing');
       return {
+        parseCandidate(name) { return [{ kind: 'static', root: name }]; },
         candidatesToCss(candidates) {
           appendFileSync(join(options.base, 'compiles.jsonl'), JSON.stringify(candidates) + '\\n');
           return candidates.map(c => '.' + c + ' { color: project-fallback; }');
@@ -142,7 +143,7 @@ test('resolves project Tailwind, fallback file loaders, Node wrapper and one bat
   await writeFile(join(directory, 'node_modules/@tailwindcss/node/index.mjs'), `
     export async function compile() { return { build() { return ''; }, buildSourceMap() { return { mappings: [], sources: [] }; } }; }
     export async function __unstable__loadDesignSystem(css, { base }) {
-      return { candidatesToCss(candidates) { return candidates.map(c => '.' + c + ' { color: project-node-wrapper; }'); } };
+      return { parseCandidate(name) { return [{ kind: 'static', root: name }]; }, candidatesToCss(candidates) { return candidates.map(c => '.' + c + ' { color: project-node-wrapper; }'); } };
     }
   `);
   await writeFile(join(directory, 'src/styles.css'), '@import "./theme.css"; @config "./config.mjs";\n');

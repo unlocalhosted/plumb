@@ -5,7 +5,7 @@ import { errorMessage, UsageError } from './errors.js';
 import type { Decision, Family } from './report.js';
 
 export interface DecisionSource {
-  from: string | string[] | (() => Decision[] | Promise<Decision[]>);
+  from?: string | string[] | (() => Decision[] | Promise<Decision[]>);
   identity?: 'reference' | 'value';
   callers?: ('primitive' | 'semantic')[];
   origins?: ('project' | 'framework' | 'inferred')[];
@@ -115,7 +115,7 @@ function validate(value: unknown): PlumbConfig {
       const path = `decisions.${family}`;
       const source = object(entry, path);
       keys(source, ['from', 'identity', 'callers', 'origins', 'exported'], path);
-      if (typeof source.from !== 'function') from(source.from, `${path}.from`);
+      if ('from' in source && typeof source.from !== 'function') from(source.from, `${path}.from`);
       if ('identity' in source && source.identity !== 'reference' && source.identity !== 'value') {
         invalid(`${path}.identity`, '"reference" or "value"');
       }

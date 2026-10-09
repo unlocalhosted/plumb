@@ -176,7 +176,7 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[]): Promise<LoweredStylesheets> {
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer2-v4', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer3-utility-definitions-v1', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');
@@ -187,6 +187,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   const classes = new Set<string>();
   const covered = new Set<string>();
   const processed = new Set<string>();
+  const utilityDefinitions = new Set<string>();
   const independent = (file: string) => graph.files.get(file)!.reached.some(reach => reach.kind === 'entry' || reach.kind === 'side-effect' || reach.kind === 'module');
   const descendants = (file: string, seen = new Set<string>()): Set<string> => {
     if (seen.has(file)) return seen;
@@ -210,7 +211,23 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     // use these callbacks instead. Both receive the authored source path.
     const output = await api.compile(input, options);
     const lowered = output.build([]);
-    result.declarations.push(...lowerStylesheet(lowered, file, mapLocations(lowered, file, output.buildSourceMap(), jsx)));
+    const baseDeclarations = lowerStylesheet(lowered, file, mapLocations(lowered, file, output.buildSourceMap(), jsx));
+    result.declarations.push(...baseDeclarations);
+    // Tailwind drops @utility definitions until requested. Materialize their
+    // static names once at their source-mapped stylesheet definitions, including
+    // unused utilities. Class uses must not re-judge compiler-owned values.
+    const utilities = (await tailwindGraph(file, css)).utilities;
+    if (utilities.length) {
+      const compiled = output.build(utilities);
+      const identity = (declaration: Declaration) => JSON.stringify([declaration.site, declaration.prop, declaration.value, declaration.when]);
+      const base = new Set(baseDeclarations.map(identity));
+      for (const declaration of lowerStylesheet(compiled, file, mapLocations(compiled, file, output.buildSourceMap(), jsx))) {
+        const key = identity(declaration);
+        if (base.has(key) || utilityDefinitions.has(key)) continue;
+        utilityDefinitions.add(key);
+        result.declarations.push(declaration);
+      }
+    }
   }
   for (const sheet of graph.files.values()) {
     try {

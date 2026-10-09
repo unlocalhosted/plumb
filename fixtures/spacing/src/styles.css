@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@theme {
+  --spacing: 1px;
+  /* why: compact related items */
+  --spacing-s2: 8px;
+  /* why: between label and control */
+  --spacing-s3: 12px;
+  /* why: breathing room for a group */
+  --spacing-s4: 16px;
+}
+:root {
+  --raw-step: 12px;
+  --middle-step: var(--raw-step);
+  /* why: shared rhythm reached through two aliases */
+  --spacing-chain: var(--middle-step);
+  --cycle-a: var(--cycle-b);
+  --cycle-b: var(--cycle-a);
+  --media-step: 12px;
+  --dark-step: light-dark(12px, 16px);
+}
+@media (min-width: 600px) { :root { --media-step: 16px; } }
+.row { margin: 10px; padding: calc(var(--middle-step) + 4px); }
+@keyframes travel { from { margin: 13px; } to { margin: 17px; } }

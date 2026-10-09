@@ -1,0 +1,10 @@
+{
+  "space": {
+    "$type": "dimension",
+    "small": { "$value": { "value": 12, "unit": "px" }, "$description": "between related parts" },
+    "large": { "$value": "16px", "$description": "separate groups" },
+    "related": { "$value": "{space.small}", "$description": "related intent" },
+    "alias": { "$value": "{space.related}", "$description": "two-hop intent" },
+    "intent": { "$value": "20px", "$description": "explicit semantic", "$extensions": { "plumb": { "tier": "semantic" } } }
+  }
+}

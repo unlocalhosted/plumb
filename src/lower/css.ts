@@ -4,7 +4,7 @@ import type { Condition } from '../report.js';
 import { cssCode, maskImports } from '../collect/stylesheets.js';
 
 export interface LoweredDeclaration { prop: string; value: string; when: Condition[] }
-export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[] }
+export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[]; authoredValue?: boolean }
 
 export function parseCss(css: string, filename: string): StyleSheet {
   let ast: StyleSheet | undefined;

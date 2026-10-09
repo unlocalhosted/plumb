@@ -5,6 +5,8 @@
   --color-text-muted: var(--color-brand);
   --spacing-s1: 4px;
   --spacing-s2: 8px;
+  /* why: between label and control */
   --spacing-s3: 12px;
+  /* why: breathing room for a group */
   --spacing-s4: 16px;
 }

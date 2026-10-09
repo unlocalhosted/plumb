@@ -57,6 +57,7 @@ function literalMap(node: Node): boolean {
   node = unwrap(node);
   if (node.type === 'Literal') return typeof node.value === 'string';
   if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
+  if (node.type === 'ConditionalExpression') return literalMap(node.consequent) && literalMap(node.alternate);
   if (node.type === 'ArrayExpression') return node.elements.every(item => item === null || literalMap(item));
   if (node.type === 'ObjectExpression') return node.properties.every(item => item.type === 'Property' && !item.computed && literalMap(item.value));
   return false;
@@ -180,9 +181,19 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
           end: node.quasis[index + 1]!.start - node.start,
           expression,
         }));
+        function complete(value: Node): boolean {
+          if (literalMap(value)) return true;
+          if (value.type !== 'Identifier') return false;
+          for (const scope of scopes.toReversed()) {
+            if (!scope.has(value.name)) continue;
+            const binding = scope.get(value.name);
+            return !!binding && typeof binding !== 'function' && literalMap(binding.node);
+          }
+          return false;
+        }
         let masked = raw;
         for (const hole of holes.toReversed()) {
-          const boundary = startsBoundary(hole.expression) && (hole.end === raw.length || /^\s/.test(raw.slice(hole.end)));
+          const boundary = (startsBoundary(hole.expression) || complete(hole.expression) && (hole.start === 0 || /\s$/.test(raw.slice(0, hole.start)))) && (hole.end === raw.length || /^\s/.test(raw.slice(hole.end)));
           masked = masked.slice(0, hole.start) + (boundary ? ' ' : '\u0000').repeat(hole.end - hole.start) + masked.slice(hole.end);
           if (boundary) recur(hole.expression);
         }
@@ -234,6 +245,9 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
         }
         return;
       case 'CallExpression': {
+        if (node.callee.type === 'MemberExpression' && !node.callee.computed && name(node.callee.property) === 'join' && node.arguments.length === 1 && node.arguments[0]?.type === 'Literal' && node.arguments[0].value === ' ' && unwrap(node.callee.object).type === 'ArrayExpression') {
+          recur(node.callee.object); return;
+        }
         const helper = name(node.callee);
         if (!helpers.has(helper)) {
           opaque++;
@@ -345,7 +359,10 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
       if (node.type === 'JSXOpeningElement') {
         const element = name(node.name);
         owner = { kind: /^[A-Z]/.test(element) ? 'component' : 'element', name: element };
-        for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && ['className', 'class'].includes(name(attr.name)) && attr.value) evaluate(attr.value, src, next, owner);
+        for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && attr.value) {
+          if (['className', 'class'].includes(name(attr.name))) evaluate(attr.value, src, next, owner);
+          else if (attr.value.type === 'JSXExpressionContainer') walk(attr.value.expression, next, owner);
+        }
         return;
       }
       if (node.type === 'CallExpression' && helpers.has(name(node.callee))) { evaluate(node, src, next, owner); return; }
