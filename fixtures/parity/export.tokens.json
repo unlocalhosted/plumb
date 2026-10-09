@@ -1,0 +1,13 @@
+{
+  "spacing": {
+    "$type": "dimension",
+    "small": { "$value": { "value": 8, "unit": "px" } },
+    "missing": { "$value": "12px" }
+  },
+  "color": {
+    "$type": "color",
+    "brand": { "$value": { "colorSpace": "srgb", "components": [0, 0, 1], "alpha": 1 } },
+    "text": { "$value": "#ff0000" },
+    "muted": { "$value": { "colorSpace": "oklab", "components": [0.505, 0, 0] } }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "sourceHead": "e0a0b31349a371e48ad38f0cc8099be5fc1b2be5",
+  "sourceReadOnly": true,
+  "immutableArchive": true,
+  "cache": "/Users/vijaysingh/unlocalhosted/plumb-r8-review/bench/metalui/.cache/8-review",
+  "runs": {
+    "baseline": {
+      "wallMs": 12406.172042,
+      "exitCode": 0
+    },
+    "reportAfterBaseline": {
+      "wallMs": 2530.771584,
+      "exitCode": 0
+    },
+    "reportWarm": {
+      "wallMs": 2428.1232089999994,
+      "exitCode": 0
+    },
+    "reportFixed": {
+      "wallMs": 2766.854333000003,
+      "exitCode": 0
+    },
+    "trendSince": {
+      "wallMs": 126.31279200000063,
+      "exitCode": 0
+    },
+    "parity": {
+      "wallMs": 1264.858500000002,
+      "exitCode": 1
+    }
+  },
+  "acceptance": {
+    "warmSnapshotEqual": true,
+    "fixed": 1,
+    "spacingBefore": {
+      "fromDecisions": 1601,
+      "total": 2169,
+      "findings": 568,
+      "debt": 1401,
+      "exceptions": 0,
+      "governed": true,
+      "percent": 73.8
+    },
+    "spacingAfter": {
+      "fromDecisions": 1602,
+      "total": 2169,
+      "findings": 567,
+      "debt": 1400,
+      "exceptions": 0,
+      "governed": true,
+      "percent": 73.9
+    },
+    "parityExtras": 1946
+  }
+}

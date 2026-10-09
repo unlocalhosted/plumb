@@ -61,14 +61,15 @@ test('SARIF 2.1.0 has required fields, rule help and per-site baseline/fingerpri
   assert.equal(results[0].partialFingerprints['plumb/ledgerKey/v1'], results[1].partialFingerprints['plumb/ledgerKey/v1']);
 });
 
-test('GitHub annotates only new scoped sites, writes summary sections and compares base coverage', async t => {
+test('GitHub annotates new drift and touched debt, writes summary sections and compares base coverage', async t => {
   const directory = await fixture(t);
   run(directory, ['baseline']); await history(directory);
   await writeFile(join(directory, 'src/App.tsx'), 'export function App() { return <><div className="gap-10" /><div className="gap-10" /></>; }\n');
   const summary = join(directory, 'summary.md'); await writeFile(summary, 'Existing step summary.\n');
   const result = run(directory, ['--base', 'HEAD', '--format', 'github'], 1, { GITHUB_STEP_SUMMARY: summary });
   const commands = result.stdout.split('\n').filter(line => line.startsWith('::'));
-  assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=gap 10px isn't on your spacing scale::/);
+  assert.equal(commands.length, 2); assert.ok(commands.some(line => /^::error file=src\/App.tsx,line=1,col=\d+,title=gap 10px isn't on your spacing scale::/.test(line)));
+  assert.ok(commands.some(line => /^::notice .*title=gap 10px isn't on your spacing scale::.*Debt touched:/.test(line)));
   const markdown = await readFile(summary, 'utf8');
   assert.match(markdown, /^Existing step summary\./); assert.match(markdown, /1 new, 0 fixed, 2 debt/); assert.match(markdown, /spacing: 0\/2 \(0%\); \+0 pp vs base/);
   assert.match(markdown, /color: no decisions/); assert.match(markdown, /0 growth lines/);

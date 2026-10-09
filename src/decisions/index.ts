@@ -118,7 +118,11 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const meta = metadata.get(item.name), family = familyFor(item.name);
     if (!meta || meta.origin !== 'project' || !family || item.name === '--spacing') return [];
     const selected = decisions.get(`${family}:${item.name}`);
-    return selected ? [selected] : defineDecisions([{ family, name: item.name, value: item.value, why: meta.why, source: meta.source }]);
+    if (selected) return [selected];
+    const record = defineDecisions([{ family, name: item.name, value: item.value, why: meta.why, source: meta.source }])[0]!;
+    const resolved = resolveValue(cssValue(record.value), variables, new Set([record.name]));
+    if (resolved !== undefined && !variables.get(record.name)?.dynamic) record.resolved = resolved;
+    return [record];
   });
   tokenReasons([...decisions.values(), ...inventory]);
   return { inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };

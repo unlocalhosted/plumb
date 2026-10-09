@@ -228,5 +228,7 @@ export async function explain(file: string, options: CheckOptions = {}): Promise
 export { sarif } from './surfaces/sarif.js';
 export { githubSummary, renderSummary, githubCommands } from './surfaces/github.js';
 export type { SummarySection } from './surfaces/github.js';
+export { changedLines } from './surfaces/changed-lines.js';
+export type { LineScope } from './surfaces/changed-lines.js';
 export { formatAgent } from './surfaces/agent.js';
 export { agentDocs } from './surfaces/docs.js';
