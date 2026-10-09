@@ -81,7 +81,7 @@ function site(source: Source, offset: number, text: string): Site {
   return sourceSite(source, offset, text);
 }
 
-export async function collectClasses(files: string[], classHelpers: string[] = []): Promise<{
+export async function collectClasses(files: string[], classHelpers: string[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string): Promise<{
   sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
 }> {
   const start = performance.now();
@@ -91,7 +91,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
   const sources = new Map<string, Source>();
   const modules = new Map<string, ModuleImport[]>();
-  const texts = new Map(await Promise.all(files.map(async file => [file, await readFile(file, 'utf8')] as const)));
+  const texts = new Map(await Promise.all(files.map(async file => [file, overrides.get(file) ?? await readFile(file, 'utf8')] as const)));
   const helpers = new Set([...builtins, ...classHelpers]);
   const helperNames = [...helpers];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
@@ -373,7 +373,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
         } else if (value) walk(value as Node, next, owner);
       }
     }
-    walk(ast, [imports], { kind: 'component', name: '<module>' });
+    if (!onlyFile || file === onlyFile) walk(ast, [imports], { kind: 'component', name: '<module>' });
     // Keep exported literal nodes for later imports; release unrelated ASTs
     // after this file's walk to avoid collecting garbage during later parses.
     exports(src);

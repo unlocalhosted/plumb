@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { relative } from 'node:path';
-import { check, explain } from './index.js';
+import { check, explain, trySnippet } from './index.js';
 import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
+import { formatTryAgent } from './try.js';
+import { formatDeadSummary } from './rules/dead.js';
 
 const help = `Plumb ${tool.version}: design decisions and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumb try [--lang tsx|css] [--as <path>] [--json|--agent] < snippet
 
        plumb init | baseline [--force]
        plumb accept <key> --why "…"
@@ -37,6 +40,7 @@ async function main(): Promise<void> {
           json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           family: { type: 'string' }, version: { type: 'boolean' }, help: { type: 'boolean' },
+          lang: { type: 'string' }, as: { type: 'string' }, agent: { type: 'boolean' },
         },
         allowPositionals: true,
         strict: true,
@@ -54,13 +58,14 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'decisions', 'explain', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why'].includes(command) ||
+  if (!['check', 'decisions', 'explain', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why'].includes(command) ||
       ((explaining || inspecting) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
     base: ['check'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
+    lang: ['try'], as: ['try'], agent: ['try'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
@@ -71,6 +76,19 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  if (command === 'try') {
+    if (args.values.lang !== undefined && !['tsx', 'css'].includes(args.values.lang)) throw new UsageError('--lang must be tsx or css.');
+    if (args.values.as?.trim() === '') throw new UsageError('Provide a non-empty path for --as.');
+    if (args.values.json && args.values.agent) throw new UsageError('Choose --json or --agent.');
+    let text = '';
+    for await (const chunk of process.stdin) text += chunk.toString();
+    const report = await trySnippet(text, { ...options,
+      ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
+      ...(args.values.as === undefined ? {} : { as: args.values.as }) });
+    process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : args.values.agent ? formatTryAgent(report) : formatText(report, args.values.verbose));
+    process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
+    return;
+  }
   if (explaining) {
     const result = await explain(args.positionals[1]!, options);
     const text = result.sites.map(site => `${relative(result.root, site.file)}:${site.line}:${site.column}  ${site.token}  <${site.owner.name}>\n` +
@@ -112,7 +130,7 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record => `${record.family}  ${record.name}: ${record.value}\n  resolved: ${record.resolved ?? 'unresolved'}  origin: ${record.origin}  tier: ${record.tier}\n  why: ${record.why || '(none)'}\n  ${relative(report.root, record.source.file)}:${record.source.line}\n`).join(''));
     return;
   }
-  process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+  process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + formatDeadSummary(report.deadDecisions) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
   process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
 }
 

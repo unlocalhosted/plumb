@@ -64,7 +64,9 @@ function matchesSchema(value, node = schema, path = '$') {
     for (const key of node.required ?? []) assert.ok(Object.hasOwn(value, key), `${path}.${key} required`);
     for (const [key, item] of Object.entries(value)) {
       if (node.properties?.[key]) matchesSchema(item, node.properties[key], `${path}.${key}`);
-      else if (node.additionalProperties === false) assert.fail(`${path}.${key}: unexpected property`);
+      else if (Object.keys(node.patternProperties ?? {}).some(pattern => new RegExp(pattern).test(key))) {
+        for (const [pattern, child] of Object.entries(node.patternProperties)) if (new RegExp(pattern).test(key)) matchesSchema(item, child, `${path}.${key}`);
+      } else if (node.additionalProperties === false) assert.fail(`${path}.${key}: unexpected property`);
       else if (typeof node.additionalProperties === 'object') matchesSchema(item, node.additionalProperties, `${path}.${key}`);
     }
   }
@@ -81,7 +83,7 @@ async function project(t, files) {
   return directory;
 }
 
-test('tailwind-min emits the schema and zero findings', () => {
+test('tailwind-min emits the schema with no failing findings', () => {
   const report = json(run(['--root', fixture('tailwind-min'), '--json']));
   matchesSchema(report);
   assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
@@ -91,7 +93,7 @@ test('tailwind-min emits the schema and zero findings', () => {
   assert.deepEqual(report.config, { path: join(fixture('tailwind-min'), 'plumb.config.ts'), inferred: false });
   assert.ok(report.tailwind.entry.endsWith('src/styles.css'));
   assert.deepEqual(report.files, { tsx: 3, jsx: 0, css: 1, other: 0 });
-  assert.deepEqual(report.findings, []);
+  assert.deepEqual(report.findings.filter(f => !f.rule.startsWith('dead/')), []);
   assert.deepEqual(report.coverage.existence, { total: 10, dead: 0, deadVars: 0 });
   assert.ok(report.coverage.declarations.class > 0);
   assert.ok(report.coverage.stylesheets.entry === 1);
@@ -116,7 +118,7 @@ test('plain-css is valid without a Tailwind entry', () => {
   matchesSchema(report);
   assert.deepEqual(report.tailwind, { entry: null, version: null });
   assert.deepEqual(report.files, { tsx: 2, jsx: 0, css: 1, other: 0 });
-  assert.deepEqual(report.findings, []);
+  assert.deepEqual(report.findings.filter(f => !f.rule.startsWith('dead/')), []);
 });
 
 test('ambiguous entries name both files and the config fix', () => {

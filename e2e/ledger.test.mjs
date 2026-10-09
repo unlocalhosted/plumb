@@ -48,7 +48,8 @@ test('spacing fix groups stay identical through baseline; one new gap-10 joins t
     fix: finding.fix, decisions: finding.decisions, occurrences: finding.occurrences,
   }));
   // Layer 4 accepts the on-ladder media-variable definitions at their authored sites.
-  assert.equal(before.findings.length, 5);
+  assert.equal(before.findings.filter(f => !f.rule.startsWith('dead/')).length, 5);
+  assert.ok(before.findings.filter(f => f.rule.startsWith('dead/')).every(f => f.severity === 'info'));
   assert.deepEqual(grouping(before), grouping(unledgered));
   const ten = before.findings.find(f => f.rule === 'provenance/spacing' && f.declaration.resolved === '10px');
   assert.deepEqual(ten.sites.map(s => s.text).sort(), ['margin: 10px', 'padding: 10']);

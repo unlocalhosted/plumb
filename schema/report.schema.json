@@ -33,6 +33,15 @@
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "deadDecisions": {
+      "type": "object", "additionalProperties": false,
+      "patternProperties": {
+        "^(spacing|color|radius|type|motion|elevation|size|z|opacity)$": {
+          "type": "object", "additionalProperties": false, "required": ["total", "used", "exported", "dead"],
+          "properties": { "total": { "$ref": "#/$defs/count" }, "used": { "$ref": "#/$defs/count" }, "exported": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" } }
+        }
+      }
+    },
     "ledger": {
       "type": "object", "additionalProperties": false,
       "required": ["exists", "path", "entries", "new", "debt", "exceptions", "outOfScope", "stale", "growth", "message"],

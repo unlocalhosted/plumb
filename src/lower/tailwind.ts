@@ -59,7 +59,7 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
   return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities };
 }
 
-export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[]): Promise<{
+export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], readOnly = false): Promise<{
   theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
@@ -70,7 +70,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     const cssGraph = await tailwindGraph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer4-cache-v3`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer10-decision-refs-v1`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -125,7 +125,13 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           for (const parsed of system.parseCandidate(candidate)) {
             if (parsed.kind !== 'functional' || parsed.value?.kind !== 'named' || !system.compileAstNodes(parsed).length) continue;
             for (const declaration of result.declarations) {
-              const namespace = declaration.prop === 'box-shadow' ? '--shadow-' : declaration.prop === 'font-weight' ? '--font-weight-' : undefined;
+              const prop = declaration.prop;
+              const namespace = prop === 'box-shadow' ? '--shadow-' : prop === 'font-weight' ? '--font-weight-' :
+                /^(?:color|background-color|(?:border|outline|text-decoration)-color|fill|stroke|caret-color|accent-color)$/.test(prop) ? '--color-' :
+                /radius$/.test(prop) ? '--radius-' : prop === 'font-size' ? '--text-' : prop === 'font-family' ? '--font-' :
+                prop === 'line-height' ? '--leading-' : prop === 'letter-spacing' ? '--tracking-' :
+                /timing-function$/.test(prop) ? '--ease-' : /duration$/.test(prop) ? '--duration-' : prop === 'z-index' ? '--z-' :
+                /^(?:gap|row-gap|column-gap|padding(?:-.+)?|margin(?:-.+)?|inset(?:-.+)?|top|right|bottom|left)$/.test(prop) ? '--spacing-' : undefined;
               const name = namespace && `${namespace}${parsed.value.value}`;
               if (name && theme!.some(item => item.name === name)) declaration.decisionRefs = [name];
             }
@@ -166,7 +172,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       }
       suggestions = [...own].map(([token, prefix]) => ({ token: system.theme?.prefix ? `${system.theme.prefix}:${token}` : token, prefix }));
     }
-    if (misses.length || system) {
+    if (!readOnly && (misses.length || system)) {
       await mkdir(directory, { recursive: true });
       const temporary = join(directory, `candidates-${process.pid}.json`);
       await writeFile(temporary, JSON.stringify(cached));

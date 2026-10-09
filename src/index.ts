@@ -18,6 +18,10 @@ import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 import { applyLedger } from './ledger/check.js';
 import type { LedgerOptions } from './ledger/types.js';
+import { deadDecisions } from './rules/dead.js';
+import { prepareSnippet } from './try.js';
+import type { TryOptions, Snippet } from './try.js';
+export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
 export { defineDecisions } from './decisions/index.js';
@@ -33,7 +37,7 @@ export interface CheckOptions extends LedgerOptions {
   ledger?: boolean;
 }
 
-async function analyze(options: CheckOptions): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
+async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
   const start = performance.now();
   const root = resolve(options.root ?? process.cwd());
   try {
@@ -42,6 +46,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     throw new UsageError(`Set --root to an existing project directory: ${root}: ${errorMessage(error)}`);
   }
   const config = await loadConfig(root, options.config);
+  const input = snippet ? prepareSnippet(root, config.value, snippet) : undefined;
   const discoverStart = performance.now();
   let project: Awaited<ReturnType<typeof discoverProject>>;
   try {
@@ -51,13 +56,22 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     throw new UsageError(`Fix project files under ${root}: ${errorMessage(error)}`);
   }
   const discover = performance.now() - discoverStart;
+  if (input?.file === project.tailwind.entry) throw new UsageError('--as must name a source file other than the Tailwind entry.');
+  if (input) project.files = { tsx: input.lang === 'tsx' ? 1 : 0, jsx: 0, css: input.lang === 'css' ? 1 : 0, other: 0 };
   const files = await projectSourceFiles(root, config.value);
-  const collected = await collectClasses(files.filter(file => /\.[jt]sx?$/.test(file)), config.value.classHelpers);
+  if (input && !files.includes(input.file)) files.push(input.file);
+  const collected = await collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
+    input ? new Map([[input.file, input.text]]) : undefined, input?.file);
+  if (input) {
+    collected.sites = collected.sites.filter(site => site.file === input.file);
+    collected.styles.sites = collected.styles.sites.filter(site => site.site.file === input.file);
+  }
   const unique = [...new Set(collected.sites.filter(site => !site.opaque).map(site => site.token))].sort();
-  const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique);
+  const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, !!input);
   const stylesheetStart = performance.now();
-  const modules = await collectModules(root, collected.modules);
-  const graph = await collectStylesheets(project.tailwind.entry, files, modules.imports);
+  const modules = await collectModules(root, collected.modules, !!input);
+  const graph = await collectStylesheets(project.tailwind.entry, files, modules.imports,
+    input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined);
   const moduleCss = new Set<string>();
   function reachedCss(file: string): void {
     if (moduleCss.has(file)) return;
@@ -66,7 +80,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   }
   for (const sheet of graph.files.values()) if (sheet.reached.some(reach => reach.kind === 'module')) reachedCss(sheet.file);
   modules.counts.cssFiles = moduleCss.size;
-  const css = await lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets);
+  const css = await lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input);
   const stylesheetsMs = performance.now() - stylesheetStart;
   const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions);
   const unreachable = await unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value));
@@ -84,7 +98,8 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   });
   // Import-graph files outside source globs prove existence; only source sites
   // enter the shared declaration set for provenance and later judging rules.
-  const sourceFiles = new Set(files);
+  const sourceFiles = new Set(input ? [input.file] : files);
+  const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file));
   const decisionsStart = performance.now();
@@ -98,6 +113,8 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   findings.push(...deadVariables(declarations, defined, record.theme));
   const judged = provenance(declarations, record, config.value, sourceFiles);
   findings.push(...judged.findings);
+  const dead = input ? undefined : deadDecisions(root, declarations, record, config.value);
+  if (dead) findings.push(...dead.findings);
   const provenanceMs = performance.now() - provenanceStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
@@ -114,6 +131,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     findings,
     decisions: record.decisions,
     decisionInventory: record.inventory ?? [],
+    ...(dead ? { deadDecisions: dead.counts } : {}),
     declarations,
     stylesheets,
     moduleGraph: modules.counts,
@@ -122,9 +140,9 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
       deadVars: findings.filter(f => f.rule === 'existence/dead-var').reduce((n,f) => n + f.sites.length, 0),
       dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) }, declarations: origins, stylesheets: stylesheetCounts,
       inline: { sites: collected.styles.sites.length, literalSites: collected.styles.sites.filter(site => site.literal).length,
-        opaque: collected.styles.declarations.filter(declaration => declaration.opaque).length,
-        fullyOpaque: collected.styles.declarations.filter(declaration => declaration.prop === '*' && declaration.opaque).length,
-        spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
+        opaque: inlineDeclarations.filter(declaration => declaration.opaque).length,
+        fullyOpaque: inlineDeclarations.filter(declaration => declaration.prop === '*' && declaration.opaque).length,
+        spreads: inlineDeclarations.filter(declaration => declaration.opaque === 'spread').length } },
     classes: { unique: unique.length, opaque: collected.opaque },
     timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
@@ -135,6 +153,12 @@ export interface ExplainedClassSite extends ClassSite { declarations: import('./
 export async function check(options: CheckOptions = {}): Promise<Report> {
   const { report } = await analyze(options);
   return options.ledger === false ? report : applyLedger(report, options);
+}
+/** Judge stdin as an in-memory source; bypass ledger allowances and whole-project dead checks. */
+export async function trySnippet(text: string, options: TryOptions = {}): Promise<Report> {
+  const { report } = await analyze({ ...options, ledger: false }, { text, ...options });
+  report.notes.push('Dead decisions skipped: try judges a snippet, not whole-project usage. Ledger allowances are not applied.');
+  return report;
 }
 export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; declarations: Declaration[]; opaque: number }> {
   const { report, sites } = await analyze(options);

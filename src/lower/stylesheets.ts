@@ -13,7 +13,7 @@ import type { EmbeddedStylesheet } from '../collect/inline.js';
 import { lineStarts, references, sourceSite } from '../collect/source.js';
 import { errorMessage, UsageError } from '../errors.js';
 import { atRuleText, declaredClasses, parseCss, pseudos, selectorText } from './css.js';
-import { tailwindGraph } from './tailwind.js';
+import { lowerTailwind, tailwindGraph } from './tailwind.js';
 
 interface RawDeclaration { prop: string; value: string; offset: number; text: string }
 interface LoweredStylesheets { declarations: Declaration[]; classes: string[]; notes: string[] }
@@ -176,10 +176,10 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
   };
 }
 
-export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[]): Promise<LoweredStylesheets> {
-  const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file)).hash));
+export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[], readOnly = false): Promise<LoweredStylesheets> {
+  const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file, graph.files.get(file)?.css)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer6-anchors-v1', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer10-apply-refs-v1', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');
@@ -291,9 +291,24 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     if (sheet.package) declaration.package = sheet.package;
     else delete declaration.package;
   }
-  await mkdir(directory, { recursive: true });
-  const temporary = join(directory, `${hash}-${process.pid}.json`);
-  await writeFile(temporary, JSON.stringify(result));
-  await rename(temporary, path);
+  // @theme inline can erase a named @apply token's refs just as it does for
+  // JSX utilities. Ask the same project oracle which decisions it selected.
+  const applications = result.declarations.filter(d => d.origin === 'apply');
+  const tokens = (d: Declaration) => /^@apply\s+([\s\S]*?);?$/.exec(d.site.text)?.[1]?.replace(/;$/, '').split(/\s+/).filter(Boolean) ?? [];
+  const applied = [...new Set(applications.flatMap(tokens))];
+  if (entry && applied.length) {
+    const oracle = await lowerTailwind(root, entry, version, applied, readOnly);
+    for (const declaration of applications) {
+      const refs = tokens(declaration).flatMap(token => oracle.candidates.get(token)?.declarations
+        .filter(d => d.prop === declaration.prop).flatMap(d => d.decisionRefs ?? references(d.value)) ?? []);
+      if (refs.length) declaration.decisionRefs = [...new Set(refs)];
+    }
+  }
+  if (!readOnly) {
+    await mkdir(directory, { recursive: true });
+    const temporary = join(directory, `${hash}-${process.pid}.json`);
+    await writeFile(temporary, JSON.stringify(result));
+    await rename(temporary, path);
+  }
   return result;
 }

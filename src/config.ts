@@ -29,6 +29,8 @@ export interface PlumbConfig {
   source?: string[];
   markers?: string[];
   classHelpers?: string[];
+  /** Published decision names or source-file globs; consumers may live outside source. */
+  exported?: string[];
   decisions?: Partial<Record<Family, DecisionSource>>;
   components?: {
     from: string | string[];
@@ -48,7 +50,7 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
   return config;
 }
 
-const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers'];
+const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
 const filenames = ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'];
 
@@ -109,6 +111,7 @@ function validate(value: unknown): PlumbConfig {
   if ('source' in config) strings(config.source, 'source');
   if ('markers' in config) strings(config.markers, 'markers');
   if ('classHelpers' in config) strings(config.classHelpers, 'classHelpers');
+  if ('exported' in config) strings(config.exported, 'exported');
   if ('decisions' in config) {
     const decisions = object(config.decisions, 'decisions');
     keys(decisions, families, 'decisions');

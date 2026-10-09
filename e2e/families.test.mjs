@@ -47,7 +47,7 @@ test('all families share provenance across compiled utilities, CSS and inline st
  assert.ok(!report.findings.some(f => f.sites.some(s => /color-mix|light-dark|rgb\(from/.test(s.text))));
  for (const family of ['spacing','color','radius','type','motion','elevation','z']) { const c=report.coverage[family]; assert.equal(c.total,c.fromDecisions+c.findings); }
  assert.ok(report.decisions.some(d=>d.family==='size')); assert.ok(report.decisions.some(d=>d.family==='opacity'));
- assert.ok(report.findings.filter(f=>f.family==='color').flatMap(f=>f.decisions).every(d=>d.use?.css));
+ assert.ok(report.findings.filter(f=>f.family==='color' && !f.rule.startsWith('dead/')).flatMap(f=>f.decisions).every(d=>d.use?.css));
  assert.deepEqual(run(dir).findings,report.findings);
 });
 
@@ -58,7 +58,7 @@ test('tier defaults flip per family, framework origin wins, value and reference 
  assert.ok(!finding(r,'text-text-muted')); assert.ok(finding(r,"color: '#2563eb'",'provenance/color/tier'));
  await writeFile(join(dir,'plumb.config.ts'), `export default { decisions: { color: { callers: ['primitive','semantic'], identity: 'value' }, motion: { identity: 'value' } } }`);
  await writeFile(join(dir,'src/styles.css'),theme+' .value { color: rgb(37 99 235); transition-duration: .16s; transition-timing-function: cubic-bezier(.2,0,.2,1); }');
- assert.ok(!run(dir).findings.some(f=>f.sites.some(s=>/rgb\(37|\.16s|cubic-bezier/.test(s.text))));
+ assert.ok(!run(dir).findings.filter(f=>!f.rule.startsWith('dead/')).some(f=>f.sites.some(s=>/rgb\(37|\.16s|cubic-bezier/.test(s.text))));
 });
 
 test('dead vars group names, rank close names, warn on fallback and accept every registry source', async t => {
