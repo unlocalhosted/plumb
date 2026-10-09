@@ -69,7 +69,7 @@ A token's reason is shown only when it is about that token. A reason string atta
 Scale names: spacing scale, radius scale, type scale, motion tokens, shadow tokens, z-index layers, colour tokens.
 
 **provenance/{family}** (value on no token)
-- Title: `` {amount} isn't on your {scale} `` (colour: `` `{value}` is a raw colour, not one of your colour tokens ``)
+- Title: `` {property} {amount} isn't on your {scale} `` for the scale families (spacing, radius, type), `` {property} {amount} isn't one of your {tokens} `` for the rest (motion tokens, shadow tokens, z-index layers), and `` `{value}` is a raw colour, not one of your colour tokens `` for colour. The property is the CSS property in plain form (`font-weight 500`, `z-index 2`, `transition .15s`); spacing amounts with units may drop it when the finding spans several properties (`10px isn't on your spacing scale`).
 - Because, by family:
   - spacing: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
   - radius: Off-scale corners make surfaces look unrelated and can't be changed from the theme.
@@ -79,7 +79,8 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
   - elevation: A hand-written shadow won't match the other surfaces or follow theme changes.
   - z: A raw z-index competes with every other layer; named layers keep stacking predictable.
 - Do: choices (nearest tokens below and above, with amount and reason), per-site edit.
-- Example: `10px isn't on your spacing scale` · choices `8px mu-space-8`, `12px mu-related "Related content uses 12"`.
+- Examples: `10px isn't on your spacing scale`, `font-weight 500 isn't on your type scale`, `z-index 2 isn't one of your z-index layers`.
+- Choices: at most one token per amount (prefer the one with a utility), nearest below and above.
 
 **provenance/{family}/by-value**
 - Title: `` {value} matches `{token}` but doesn't use it ``
@@ -131,7 +132,7 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 ### Components
 
 **ownership/{Component}**
-- Title: `` `{class or property}` changes {Component}'s {property} ``
+- Title: `` `{class}` changes {Component}'s {property} `` for class and inline sites, `` `{selector}` sets {Component}'s {property} `` for stylesheet sites
 - Because: {Component} controls its {family name: colour, type, corners, shadow, padding}; outside overrides break when its design changes.
 - Do: `` Use a variant: {axis} = {values}; {axis} = {values}. `` or, with no variants, `` {Component} has no variant for this. Ask for one, or wrap it in an element you style. `` Then `` Defined in {relative path}:{line}. ``
 - Heuristic descendant selectors: Title ends with "(may apply)", severity warn.
@@ -144,7 +145,7 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 ### Dead tokens (info)
 
 **dead/{family}**
-- Title: `` {n} {family} tokens are never used in {scope} ``
+- Title: `` {n} {family} tokens are never used in your source `` (name the source globs only in `--verbose`)
 - Because: Unused tokens make the theme harder to choose from.
 - Action: `` If other apps use them, mark them published: decisions.{family}.exported: true. Otherwise remove them. ``
 
