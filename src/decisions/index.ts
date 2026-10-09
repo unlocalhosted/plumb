@@ -31,7 +31,7 @@ export function matches(value: string, pattern: string): boolean {
   return new RegExp(`^${pattern.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
 }
 
-export interface DecisionRecord { decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
+export interface DecisionRecord { inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
 export async function readDecisions(root: string, config: PlumbConfig, graph: StylesheetGraph, theme: ThemeValue[]): Promise<DecisionRecord> {
   const raw = readCssVariables(graph), variables = new Map<string, Variable>();
   const metadata = new Map<string, typeof raw[number]>();
@@ -107,5 +107,11 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   const frameworkVariables = new Map<string, CssVariable>();
   const projectNames = new Set(raw.filter(item => item.origin === 'project').map(item => item.name));
   for (const item of raw) if (item.origin === 'framework' && (!item.theme || themeNames.has(item.name)) && !projectNames.has(item.name) && !item.name.startsWith('--tw-') && item.name !== '--spacing') frameworkVariables.set(item.name, item);
-  return { defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
+  const inventory = theme.flatMap(item => {
+    const meta = metadata.get(item.name), family = familyFor(item.name);
+    if (!meta || meta.origin !== 'project' || !family || item.name === '--spacing') return [];
+    const selected = decisions.get(`${family}:${item.name}`);
+    return selected ? [selected] : defineDecisions([{ family, name: item.name, value: item.value, why: meta.why, source: meta.source }]);
+  });
+  return { inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }

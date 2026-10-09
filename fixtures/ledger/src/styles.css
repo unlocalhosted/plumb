@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@theme {
+  --spacing: 1px;
+  /* why: related parts */
+  --spacing-step-small: 8px;
+  /* why: a group */
+  --spacing-step-large: 12px;
+}
+.row { margin: 10px; & .child { padding: 10px; } }

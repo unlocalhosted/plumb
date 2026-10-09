@@ -1,0 +1,139 @@
+{
+  "sourceHead": "9cb04dc818ac84d981f8215352237d5c5ab2f85b",
+  "copiedDocs": true,
+  "sourceReadOnly": true,
+  "cache": "/Users/vijaysingh/unlocalhosted/plumb-l6-ledger/bench/metalui/.cache/layer6",
+  "counts": {
+    "total": 3214,
+    "byKind": {
+      "debt": 1268,
+      "exception": 0,
+      "decision": 1946
+    },
+    "byRule": {
+      "existence/dead-class": 64,
+      "existence/dynamic-class": 3,
+      "provenance/spacing": 245,
+      "provenance/arbitrary": 23,
+      "provenance/opaque-inline": 327,
+      "provenance/color/by-value": 5,
+      "provenance/color": 90,
+      "provenance/color/framework": 2,
+      "provenance/radius": 8,
+      "provenance/radius/framework": 1,
+      "provenance/type/framework": 4,
+      "provenance/type": 178,
+      "provenance/type/by-value": 43,
+      "provenance/motion/framework": 41,
+      "provenance/motion/by-value": 23,
+      "provenance/motion": 5,
+      "provenance/elevation": 114,
+      "provenance/elevation/by-value": 48,
+      "provenance/z": 16,
+      "provenance/z/by-value": 28
+    },
+    "byDecisionFamily": {
+      "type": 90,
+      "radius": 98,
+      "spacing": 866,
+      "color": 656,
+      "elevation": 100,
+      "size": 2,
+      "motion": 123,
+      "z": 11
+    },
+    "debtSites": 1355
+  },
+  "checks": {
+    "baseline": {
+      "wallMs": 3593.4200419999997,
+      "exitCode": 0
+    },
+    "first": {
+      "wallMs": 1348.0955830000003,
+      "exitCode": 0,
+      "timing": {
+        "totalMs": 1203.271751,
+        "phases": {
+          "discover": 6.3702089999999885,
+          "parse": 78.20578999999962,
+          "collect": 102.36796200000043,
+          "load": 32.222208999999964,
+          "compile": 0,
+          "stylesheets": 163.62900000000002,
+          "inline": 66.88495599999993,
+          "decisions": 118.59220799999991,
+          "provenance": 137.05758300000002
+        },
+        "cacheHits": 1302,
+        "cacheMisses": 0
+      },
+      "ledger": {
+        "exists": true,
+        "path": "/var/folders/t_/j83k01rs3l1fhn2rkj64lzd80000gn/T/plumb-layer6-metalui-g4b6eb/.plumb/ledger.jsonl",
+        "entries": 3214,
+        "new": 0,
+        "debt": 1355,
+        "exceptions": 0,
+        "outOfScope": 0,
+        "stale": 0,
+        "growth": 0,
+        "message": "0 new, 1355 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
+      }
+    },
+    "warm": {
+      "wallMs": 1349.2354999999998,
+      "exitCode": 0,
+      "timing": {
+        "totalMs": 1202.3819159999998,
+        "phases": {
+          "discover": 6.171209000000005,
+          "parse": 77.71224499999977,
+          "collect": 102.28438200000024,
+          "load": 34.77750000000003,
+          "compile": 0,
+          "stylesheets": 161.09216700000002,
+          "inline": 70.99603999999998,
+          "decisions": 117.64912499999991,
+          "provenance": 138.127833
+        },
+        "cacheHits": 1302,
+        "cacheMisses": 0
+      },
+      "ledger": {
+        "exists": true,
+        "path": "/var/folders/t_/j83k01rs3l1fhn2rkj64lzd80000gn/T/plumb-layer6-metalui-g4b6eb/.plumb/ledger.jsonl",
+        "entries": 3214,
+        "new": 0,
+        "debt": 1355,
+        "exceptions": 0,
+        "outOfScope": 0,
+        "stale": 0,
+        "growth": 0,
+        "message": "0 new, 1355 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
+      }
+    }
+  },
+  "acceptance": {
+    "oneGap10": {
+      "exitCode": 1,
+      "newFindings": 1,
+      "newSites": 1
+    },
+    "missingWhy": {
+      "exitCode": 1,
+      "rule": "ledger/no-why"
+    },
+    "newDecision": {
+      "exitCode": 1,
+      "rule": "decisions/unaccepted",
+      "decision": "--spacing-13"
+    },
+    "rename": {
+      "exitCode": 0,
+      "file": "apps/docs/src/pages/components/ButtonSmartControls.tsx",
+      "moves": 12,
+      "printed": true
+    }
+  }
+}

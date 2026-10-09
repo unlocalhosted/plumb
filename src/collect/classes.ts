@@ -8,7 +8,8 @@ import type { Condition, Declaration, Site } from '../report.js';
 import { UsageError } from '../errors.js';
 import { collectInline } from './inline.js';
 import type { SourceStyles } from './inline.js';
-import { constExport } from './source.js';
+import { constExport, namedAnchors, sourceSite } from './source.js';
+import type { NamedAnchor } from './source.js';
 import { moduleImports } from './modules.js';
 import type { ModuleImport } from './modules.js';
 
@@ -25,6 +26,7 @@ interface Source {
   ast: Program | null;
   lineStarts: number[];
   exports: Map<string, Binding> | null;
+  anchors: NamedAnchor[];
 }
 interface Binding { source: Source; node: Node; name: string }
 type LazyBinding = () => Binding | null;
@@ -76,13 +78,7 @@ function name(node: Node): string {
   return '';
 }
 function site(source: Source, offset: number, text: string): Site {
-  let low = 0, high = source.lineStarts.length;
-  while (low + 1 < high) {
-    const middle = (low + high) >>> 1;
-    if (source.lineStarts[middle]! <= offset) low = middle;
-    else high = middle;
-  }
-  return { file: source.file, line: low + 1, column: offset - source.lineStarts[low]! + 1, text };
+  return sourceSite(source, offset, text);
 }
 
 export async function collectClasses(files: string[], classHelpers: string[] = []): Promise<{
@@ -114,7 +110,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     if (result.errors.length) throw new UsageError(`Fix source ${file}: ${result.errors[0]?.message}`);
     const lineStarts = [0];
     for (let index = text.indexOf('\n'); index !== -1; index = text.indexOf('\n', index + 1)) lineStarts.push(index + 1);
-    const value: Source = { file, text, ast, lineStarts, exports: null };
+    const value: Source = { file, text, ast, lineStarts, exports: null, anchors: namedAnchors(ast) };
     sources.set(file, value);
     return value;
   }

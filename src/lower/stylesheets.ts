@@ -90,7 +90,7 @@ export function lowerStylesheet(css: string, filename: string, locate?: (offset:
       const site = mapped?.site ?? sourceSite(source, raw.offset, raw.text);
       const owner = when.find(condition => condition.kind === 'selector')?.text ?? filename;
       const pkg = packageName(site.file);
-      declarations.push({ prop: raw.prop, value: raw.value, refs: references(raw.value), when, site,
+      declarations.push({ prop: raw.prop, value: raw.value, refs: references(raw.value), when, site: { ...site, anchor: owner === filename ? site.anchor ?? '<module>' : owner },
         ...(mapped?.authoredCss ? { authoredCss: mapped.authoredCss } : {}),
         owner: { kind: 'element', name: owner },
         origin: origin === 'keyframes' ? origin : raw.prop.startsWith('--') ? 'custom-property' : mapped?.origin ?? origin,
@@ -167,10 +167,11 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
     const applies = [...source.text.matchAll(/@apply\s+[^;]+;/g)];
     const apply = applies.find(match => position >= match.index && position < match.index + match[0].length);
     if (apply) position = apply.index;
-    const site = embedded && source.file === filename
-      ? sourceSite(embedded.source, embedded.offsets[position] ?? embedded.site.column - 1, apply?.[0] ?? raw.text)
-      : sourceSite(source, position, apply?.[0] ?? raw.text);
     const authored = apply ? undefined : declarationsAt(source.text, position, true, 1)[0];
+    const authoredText = authored?.prop === raw.prop ? authored.text : raw.text;
+    const site = embedded && source.file === filename
+      ? sourceSite(embedded.source, embedded.offsets[position] ?? embedded.site.column - 1, apply?.[0] ?? authoredText)
+      : sourceSite(source, position, apply?.[0] ?? authoredText);
     return { site, ...(apply ? { origin: 'apply' } : {}), ...(authored?.prop === raw.prop ? { authoredCss: authored.value } : {}) };
   };
 }
@@ -178,7 +179,7 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[]): Promise<LoweredStylesheets> {
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer4-authored-css-v1', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer6-anchors-v1', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');

@@ -173,12 +173,13 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     const alternatives = nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier));
     let finding = grouped.get(key);
     if (!finding) {
-      finding = { key, rule, family, severity, sites: [], declaration: definition ? { ...definition, ...(resolved === undefined ? {} : { resolved }) } : declaration,
+      finding = { key, rule, family, severity, sites: [], occurrences: [], declaration: definition ? { ...definition, ...(resolved === undefined ? {} : { resolved }) } : declaration,
         decisions: nearest.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })), why: definition ? `${definition.prop}: ${why}` : why,
         ...(definition ? { variable: { name: definition.prop, useCount: uses.size } } : {}),
         fix: rule === 'provenance/opaque-inline' ? 'Pass the measured number through a custom property and style from CSS.' : alternatives.length ? alternatives.map(decision => suggestion(decision, fixProp, record.theme)).join('; ') : `NEEDS-DECISION: no comparable ${family} decisions; choose or request a named decision.` };
       grouped.set(key, finding); locations.set(key, new Set()); fixProperties.set(key, new Set());
     }
+    finding.occurrences!.push(definition ? finding.declaration : declaration);
     const properties = fixProperties.get(key)!;
     if (!properties.has(fixProp)) {
       if (properties.size && alternatives.length && rule !== 'provenance/opaque-inline') finding.fix += '; ' + alternatives.map(decision => suggestion(decision, fixProp, record.theme)).join('; ');

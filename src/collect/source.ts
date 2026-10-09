@@ -1,7 +1,35 @@
+import { visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
 import type { Site } from '../report.js';
 
-export interface SourceText { file: string; text: string; lineStarts: number[] }
+export interface NamedAnchor { start: number; end: number; name: string }
+export interface SourceText { file: string; text: string; lineStarts: number[]; anchors?: NamedAnchor[] }
+
+export function namedAnchors(ast: Program): NamedAnchor[] {
+  const anchors: NamedAnchor[] = [];
+  function walk(node: Node): void {
+    if ((node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression') && node.id) {
+      anchors.push({ start: node.start, end: node.end, name: node.id.name });
+    } else if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' && node.init) {
+      const init = unwrap(node.init);
+      if (['ArrowFunctionExpression', 'FunctionExpression'].includes(init.type) || init.type === 'CallExpression' && init.arguments.some(arg => ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(arg).type))) {
+        anchors.push({ start: node.start, end: node.end, name: node.id.name });
+      }
+    } else if (node.type === 'MethodDefinition' || node.type === 'Property' && node.method) {
+      const name = nodeName(node.key);
+      if (name) anchors.push({ start: node.start, end: node.end, name });
+    }
+    const record = node as unknown as Record<string, unknown>;
+    for (const key of visitorKeys[node.type] ?? []) {
+      if (['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType'].includes(key)) continue;
+      const value = record[key];
+      if (Array.isArray(value)) { for (const child of value) if (child) walk(child as Node); }
+      else if (value) walk(value as Node);
+    }
+  }
+  walk(ast);
+  return anchors;
+}
 
 export function lineStarts(text: string): number[] {
   const starts = [0];
@@ -16,7 +44,10 @@ export function sourceSite(source: SourceText, offset: number, text: string): Si
     if (source.lineStarts[middle]! <= offset) low = middle;
     else high = middle;
   }
-  return { file: source.file, line: low + 1, column: offset - source.lineStarts[low]! + 1, text };
+  const enclosing = source.anchors?.filter(anchor => anchor.start <= offset && offset < anchor.end)
+    .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+  return { file: source.file, line: low + 1, column: offset - source.lineStarts[low]! + 1, text,
+    ...(source.anchors ? { anchor: enclosing?.name ?? '<module>' } : {}) };
 }
 
 export function unwrap(node: Node): Node {

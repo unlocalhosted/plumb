@@ -24,7 +24,11 @@ test('nondecision literals belong to one source definition per family with disti
   assert.deepEqual(well.map(f => f.family).sort(), ['color', 'elevation']);
   for (const f of well) {
     assert.deepEqual(f.variable, { name: '--well', useCount: 3 });
-    assert.deepEqual(f.sites, [{ file: join(dir, 'src/styles.css'), line: 5, column: 3, text: '--well: 0 2px 4px rgba(60,55,40,.11)' }]);
+    assert.deepEqual(f.sites.map(({ ledger, ...site }) => site), [{ file: join(dir, 'src/styles.css'), line: 5, column: 3, text: '--well: 0 2px 4px rgba(60,55,40,.11)' }]);
+    assert.equal(f.sites[0].ledger.status, 'new');
+    assert.ok(f.ledgerKeys.includes(f.sites[0].ledger.key));
+    assert.ok(f.sites[0].ledger.key.includes(':--well:--well:'));
+    assert.ok(f.occurrences.every(d => d.prop === '--well' && d.origin === 'custom-property'));
     assert.equal(f.declaration.origin, 'custom-property'); assert.equal(f.declaration.prop, '--well');
     assert.equal(f.declaration.value, '0 2px 4px rgba(60,55,40,.11)'); assert.match(f.why, /--well/);
     assert.ok(f.decisions.every(d => d.use.css.startsWith('--well:')));

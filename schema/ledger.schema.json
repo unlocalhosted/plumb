@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "One Plumb ledger JSONL entry",
+  "type": "object",
+  "required": ["key", "kind"],
+  "properties": {
+    "key": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["debt", "exception", "decision"] },
+    "count": { "type": "integer", "minimum": 1 },
+    "resolved": { "type": "string" }, "why": { "type": "string" },
+    "on": { "type": "string" }, "by": { "type": "string" }, "inferred": { "type": "boolean" },
+    "rule": { "type": "string" }, "family": { "type": "string" }, "owner": { "type": "string" },
+    "prop": { "type": "string" }, "authored": { "type": "string" }, "path": { "type": "string" }, "anchor": { "type": "string" },
+    "value": { "type": "string" }, "refs": { "type": "array", "items": { "type": "string" } },
+    "origin": { "type": "string" }, "tier": { "type": "string" }
+  }
+}
