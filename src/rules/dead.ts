@@ -63,7 +63,7 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
     const occurrences: Declaration[] = group.map(d => ({ prop: d.name, value: d.value, refs: valueRefs(d.value), when: [],
       site: { ...d.source, column: 1, text: `${d.name}: ${d.value}` }, owner: { kind: 'element', name: 'decisions' }, origin: 'custom-property', sourceOrigin: 'project' }));
     return makeFinding({ key: `dead/${family}`, rule: `dead/${family}`, family, severity: 'info', sites: occurrences.map(d => d.site),
-      declaration: occurrences[0]!, occurrences, decisions: group, title: `${group.length} ${familyNames[family] ?? family} tokens are never used in ${(config.source ?? ['src/**', 'app/**']).join(', ')}`,
+      declaration: occurrences[0]!, occurrences, decisions: group, title: `${group.length} ${familyNames[family] ?? family} tokens are never used in your source`,
       because: 'Unused tokens make the theme harder to choose from.',
       action: `If other apps use them, mark them published: decisions.${family}.exported: true. Otherwise remove them.` });
   });

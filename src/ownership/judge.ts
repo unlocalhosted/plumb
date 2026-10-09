@@ -112,9 +112,11 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
     }
     const variants = Object.entries(component.variants).map(([axis, values]) => `${axis} = ${values.join(' | ')}`).join('; ');
     const source = `${relative(graph.root, component.source.file)}:${component.source.line}`;
+    const stylesheet = ['stylesheet', 'apply'].includes(declaration.origin);
+    const subject = stylesheet ? declaration.owner.name : ['class', 'arbitrary'].includes(declaration.origin) ? declaration.site.text : declaration.prop;
     groups.set(key, makeFinding({ key, rule: `ownership/${component.name}`, family, severity: heuristic ? 'warn' : 'error', sites: [declaration.site],
       declaration, decisions: [], component,
-      title: `\`${['class', 'arbitrary', 'apply'].includes(declaration.origin) ? declaration.site.text : declaration.prop}\` changes ${component.name}'s ${declaration.prop}${heuristic ? ' (may apply)' : ''}`,
+      title: `\`${subject}\` ${stylesheet ? 'sets' : 'changes'} ${component.name}'s ${declaration.prop}${heuristic ? ' (may apply)' : ''}`,
       because: `${component.name} controls its ${{ paint: 'colour', type: 'type', radius: 'corners', elevation: 'shadow', padding: 'padding' }[family] ?? family}; outside overrides break when its design changes.`,
       action: `${variants ? `Use a variant: ${variants}.` : `${component.name} has no variant for this. Ask for one, or wrap it in an element you style.`} Defined in ${source}.` }));
   }

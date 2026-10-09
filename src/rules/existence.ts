@@ -110,7 +110,7 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
     const uniqueSites = [...uniqueClasses.values()].map(location);
     if (!site.opaque && !rankings.has(site.token)) rankings.set(site.token, nearest.map(item => item.token));
     const alternatives = input.base.replace(/^--/, '').length < 4 ? [] : rankings.get(site.token) ?? [];
-    const prefixText = site.token.replace(/\$\{[^}]*$/, '').replace(/\{[^}]*$/, '');
+    const prefixText = site.token.split(/\$?\{/, 1)[0]!;
     return makeFinding({ key, rule: site.opaque ? 'existence/dynamic-class' : 'existence/dead-class', family: 'existence', severity: 'error',
       sites: uniqueSites, declaration: classDeclaration(site), occurrences: [...uniqueClasses.values()].map(classDeclaration), decisions: [],
       title: site.opaque ? `\`${site.token}\` is assembled at runtime, so Tailwind never generates it` : `\`${site.token}\` does nothing: no CSS is generated for it`,

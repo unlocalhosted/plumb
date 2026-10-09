@@ -78,7 +78,7 @@ Reports are retained in ignored .cache/messages/{before,report}.json. Regenerate
 | provenance/spacing/by-value | 0 | 0 | 0 |
 | provenance/spacing/framework | 0 | 0 | 0 |
 | provenance/spacing/tier | 0 | 0 | 0 |
-| provenance/type | 62 | 57 | -5 |
+| provenance/type | 62 | 59 | -3 |
 | provenance/type/by-value | 0 | 0 | 0 |
 | provenance/type/framework | 3 | 3 | 0 |
 | provenance/type/tier | 0 | 0 | 0 |
@@ -86,7 +86,7 @@ Reports are retained in ignored .cache/messages/{before,report}.json. Regenerate
 | provenance/z/by-value | 4 | 1 | -3 |
 | provenance/z/framework | 0 | 0 | 0 |
 | provenance/z/tier | 0 | 0 | 0 |
-| **Total** | **1072** | **1048** | **-24** |
+| **Total** | **1072** | **1050** | **-22** |
 
 ## Recipe exclusions
 
@@ -121,7 +121,7 @@ Up to three distinct real groups per rule follow. When fewer exist, every availa
 Example 1 — tokens/tokens.json:1820:1 (497 sites)
 
 ```text
-title: 497 colour tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 497 colour tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.color.exported: true. Otherwise remove them.
 first choice: (none)
@@ -134,7 +134,7 @@ first choice: (none)
 Example 1 — tokens/tokens.json:177:1 (70 sites)
 
 ```text
-title: 70 shadow tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 70 shadow tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.elevation.exported: true. Otherwise remove them.
 first choice: (none)
@@ -147,7 +147,7 @@ first choice: (none)
 Example 1 — tokens/tokens.json:113:1 (36 sites)
 
 ```text
-title: 36 motion tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 36 motion tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.motion.exported: true. Otherwise remove them.
 first choice: (none)
@@ -160,7 +160,7 @@ first choice: (none)
 Example 1 — tokens/tokens.json:8222:1 (75 sites)
 
 ```text
-title: 75 radius tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 75 radius tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.radius.exported: true. Otherwise remove them.
 first choice: (none)
@@ -173,7 +173,7 @@ first choice: (none)
 Example 1 — packages/metalui/src/components/theme.css:75:1 (2 sites)
 
 ```text
-title: 2 size tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 2 size tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.size.exported: true. Otherwise remove them.
 first choice: (none)
@@ -186,7 +186,7 @@ first choice: (none)
 Example 1 — packages/metalui/src/components/theme.css:496:1 (840 sites)
 
 ```text
-title: 840 spacing tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 840 spacing tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.spacing.exported: true. Otherwise remove them.
 first choice: (none)
@@ -199,7 +199,7 @@ first choice: (none)
 Example 1 — packages/metalui/src/components/theme.css:6:1 (82 sites)
 
 ```text
-title: 82 type tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 82 type tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.type.exported: true. Otherwise remove them.
 first choice: (none)
@@ -212,7 +212,7 @@ first choice: (none)
 Example 1 — tokens/tokens.json:947:1 (10 sites)
 
 ```text
-title: 10 z-index tokens are never used in apps/docs/src/**/*.{tsx,jsx,ts,js,css}
+title: 10 z-index tokens are never used in your source
 because: Unused tokens make the theme harder to choose from.
 action: If other apps use them, mark them published: decisions.z.exported: true. Otherwise remove them.
 first choice: (none)
@@ -288,7 +288,7 @@ Example 1 — apps/docs/src/pages/foundations/Materials.tsx:66:33 (1 sites)
 ```text
 title: `mu-frost-${f}` is assembled at runtime, so Tailwind never generates it
 because: Tailwind only generates classes it can read as complete strings in your source.
-action: Map each value to a complete class, e.g. { a: 'mu-frost-${f}a', b: 'mu-frost-${f}b' }.
+action: Map each value to a complete class, e.g. { a: 'mu-frost-a', b: 'mu-frost-b' }.
 first choice: (none)
 ```
 
@@ -297,7 +297,7 @@ Example 2 — apps/docs/src/demos/FeelingsComposer.tsx:72:37 (1 sites)
 ```text
 title: `mu-tint-${tint}` is assembled at runtime, so Tailwind never generates it
 because: Tailwind only generates classes it can read as complete strings in your source.
-action: Map each value to a complete class, e.g. { a: 'mu-tint-${tint}a', b: 'mu-tint-${tint}b' }.
+action: Map each value to a complete class, e.g. { a: 'mu-tint-a', b: 'mu-tint-b' }.
 first choice: (none)
 ```
 
@@ -306,7 +306,7 @@ Example 3 — apps/docs/src/ui/doc.tsx:109:58 (1 sites)
 ```text
 title: `on-${surface}` is assembled at runtime, so Tailwind never generates it
 because: Tailwind only generates classes it can read as complete strings in your source.
-action: Map each value to a complete class, e.g. { a: 'on-${surface}a', b: 'on-${surface}b' }.
+action: Map each value to a complete class, e.g. { a: 'on-a', b: 'on-b' }.
 first choice: (none)
 ```
 
@@ -575,7 +575,7 @@ first choice: (none)
 Example 1 — apps/docs/src/kds.css:666:3 (1 sites)
 
 ```text
-title: `letter-spacing` changes Button's letter-spacing
+title: `.landing-cta` sets Button's letter-spacing
 because: Button controls its type; outside overrides break when its design changes.
 action: Use a variant: cap = standard | primary | destructive | link | graphite | strip | strip-danger; size = default | compact; state = idle | waiting | done | error. Defined in packages/metalui/src/components/button/button.tsx:85.
 first choice: (none)
@@ -593,7 +593,7 @@ first choice: (none)
 Example 3 — apps/docs/src/kds.css:667:3 (1 sites)
 
 ```text
-title: `text-shadow` changes Button's text-shadow
+title: `.landing-cta` sets Button's text-shadow
 because: Button controls its colour; outside overrides break when its design changes.
 action: Use a variant: cap = standard | primary | destructive | link | graphite | strip | strip-danger; size = default | compact; state = idle | waiting | done | error. Defined in packages/metalui/src/components/button/button.tsx:85.
 first choice: (none)
@@ -650,7 +650,7 @@ first choice: (none)
 Example 1 — apps/docs/src/pages/library.css:16:34 (2 sites)
 
 ```text
-title: `color` changes Icon's color (may apply)
+title: `.section-entry svg` sets Icon's color (may apply)
 because: Icon controls its colour; outside overrides break when its design changes.
 action: Icon has no variant for this. Ask for one, or wrap it in an element you style. Defined in packages/metalui/src/icons/Icon.tsx:176.
 first choice: (none)
@@ -685,7 +685,7 @@ first choice: (none)
 Example 1 — apps/docs/src/ui/edit/edit.css:68:48 (1 sites)
 
 ```text
-title: `box-shadow` changes Kbd's box-shadow (may apply)
+title: `.ed-tag-key[data-held] kbd` sets Kbd's box-shadow (may apply)
 because: Kbd controls its shadow; outside overrides break when its design changes.
 action: Use a variant: size = default | small; surface = default | strip | sunk | plain. Defined in packages/metalui/src/components/kbd/kbd.tsx:34.
 first choice: (none)
@@ -764,7 +764,7 @@ first choice: (none)
 Example 1 — apps/docs/src/ui/edit/edit.css:148:36 (1 sites)
 
 ```text
-title: `color` changes Row.Text's color (may apply)
+title: `.ed-layer[data-off] .mu-row-text` sets Row.Text's color (may apply)
 because: Row.Text controls its colour; outside overrides break when its design changes.
 action: Row.Text has no variant for this. Ask for one, or wrap it in an element you style. Defined in packages/metalui/src/components/row/row.tsx:57.
 first choice: (none)
@@ -826,7 +826,7 @@ first choice: (none)
 Example 1 — apps/docs/src/pages/library.css:37:40 (1 sites)
 
 ```text
-title: `color` changes Skeleton.Text's color (may apply)
+title: `.place-note > span` sets Skeleton.Text's color (may apply)
 because: Skeleton.Text controls its colour; outside overrides break when its design changes.
 action: Skeleton.Text has no variant for this. Ask for one, or wrap it in an element you style. Defined in packages/metalui/src/components/skeleton/skeleton.tsx:34.
 first choice: (none)
@@ -865,6 +865,7 @@ title: `top-[2.5px]` hardcodes 2.5px
 because: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 action: (choice list)
 first choice: 2px --spacing-mu-space-2 top-mu-space-2 top: var(--spacing-mu-space-2)
+other choices: 4px --spacing-mu-space-4 top-mu-space-4
 ```
 
 Example 3 — apps/docs/src/pages/components/CueFamily.tsx:86:73 (1 sites)
@@ -874,6 +875,7 @@ title: `top-[3.5px]` hardcodes 3.5px
 because: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 action: (choice list)
 first choice: 2px --spacing-mu-space-2 top-mu-space-2 top: var(--spacing-mu-space-2)
+other choices: 4px --spacing-mu-space-4 top-mu-space-4
 ```
 
 ### provenance/color
@@ -887,6 +889,7 @@ title: `rgba(120,214,165,.32)` is a raw colour, not one of your colour tokens
 because: A raw colour won't follow theme or colour-scheme changes.
 action: (choice list)
 first choice: #78D6A5 --color-green bg-green background: var(--color-green)
+other choices: rgba(120,214,165,.16) --color-presence-collar bg-presence-collar
 ```
 
 Example 2 — apps/docs/src/kds.css:129:118 (5 sites)
@@ -896,6 +899,7 @@ title: `rgba(0,0,0,.25)` is a raw colour, not one of your colour tokens
 because: A raw colour won't follow theme or colour-scheme changes.
 action: (choice list)
 first choice: rgba(0,0,0,.05) --color-menu-row-hover  box-shadow: var(--color-menu-row-hover)
+other choices: rgba(0,0,0,.6) --color-pastbanner-engrave-lip
 ```
 
 Example 3 — apps/docs/src/kds.css:132:42 (2 sites)
@@ -905,6 +909,7 @@ title: `rgba(0,0,0,.3)` is a raw colour, not one of your colour tokens
 because: A raw colour won't follow theme or colour-scheme changes.
 action: (choice list)
 first choice: rgba(0,0,0,.05) --color-menu-row-hover  box-shadow: var(--color-menu-row-hover)
+other choices: rgba(0,0,0,.6) --color-pastbanner-engrave-lip
 ```
 
 ### provenance/color/by-value
@@ -949,6 +954,7 @@ title: `text-black` uses Tailwind's default palette (`--color-black`), not your 
 because: Your theme defines its own colour tokens; Tailwind's defaults sit outside it.
 action: (choice list)
 first choice: rgba(0,0,0,.05) --color-menu-row-hover text-menu-row-hover color: var(--color-menu-row-hover)
+other choices: rgba(0,0,0,.6) --color-pastbanner-engrave-lip text-pastbanner-engrave-lip
 ```
 
 Example 2 — apps/docs/src/pages/foundations/Spacing.tsx:99:91 (1 sites)
@@ -958,6 +964,7 @@ title: `text-white` uses Tailwind's default palette (`--color-white`), not your 
 because: Your theme defines its own colour tokens; Tailwind's defaults sit outside it.
 action: (choice list)
 first choice: #FFFFFF --color-cue-tick text-cue-tick color: var(--color-cue-tick)
+other choices: rgba(255,255,255,.09) --color-pastbanner-button-bg text-pastbanner-button-bg
 ```
 
 ### provenance/color/tier
@@ -971,7 +978,7 @@ first choice: #FFFFFF --color-cue-tick text-cue-tick color: var(--color-cue-tick
 Example 1 — apps/docs/src/pages/components/IconButton.tsx:21:79 (5 sites)
 
 ```text
-title: var(--tw-ring-inset,) 0 0 0 calc(1px + 0) var(--tw-ring-color, currentcolor) isn't on your shadow tokens
+title: box-shadow var(--tw-ring-inset,) 0 0 0 calc(1px + 0) var(--tw-ring-color, currentcolor) isn't one of your shadow tokens
 because: A hand-written shadow won't match the other surfaces or follow theme changes.
 action: No token is close to var(--tw-ring-inset,) 0 0 0 calc(1px + 0) var(--tw-ring-color, currentcolor). Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -980,7 +987,7 @@ first choice: (none)
 Example 2 — apps/docs/src/kds.css:102:104 (1 sites)
 
 ```text
-title: 0 0 0 9.5px rgba(120,214,165,.16) isn't on your shadow tokens
+title: box-shadow 0 0 0 9.5px rgba(120,214,165,.16) isn't one of your shadow tokens
 because: A hand-written shadow won't match the other surfaces or follow theme changes.
 action: No token is close to 0 0 0 9.5px rgba(120,214,165,.16). Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -989,7 +996,7 @@ first choice: (none)
 Example 3 — apps/docs/src/kds.css:128:47 (3 sites)
 
 ```text
-title: 0 1px 0 rgba(255,255,255,.5) isn't on your shadow tokens
+title: box-shadow 0 1px 0 rgba(255,255,255,.5) isn't one of your shadow tokens
 because: A hand-written shadow won't match the other surfaces or follow theme changes.
 action: No token is close to 0 1px 0 rgba(255,255,255,.5). Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1041,7 +1048,7 @@ first choice: 0 0 0 .5px rgba(0,0,0,.25) --mu-led-ring  box-shadow: var(--mu-led
 Example 1 — apps/docs/src/kds.css:142:150 (1 sites)
 
 ```text
-title: linear isn't on your motion tokens
+title: transition-timing-function linear isn't one of your motion tokens
 because: A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.
 action: No token is close to linear. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1050,19 +1057,21 @@ first choice: (none)
 Example 2 — apps/docs/src/kds.css:216:106 (3 sites)
 
 ```text
-title: .15s isn't on your motion tokens
+title: transition .15s isn't one of your motion tokens
 because: A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.
 action: (choice list)
 first choice: 160ms --mu-engraving-fade-ms  transition: var(--mu-engraving-fade-ms) — The hover engraving: a block's identity, shown on a dwell, never on a pass.
+other choices: 126ms --mu-spring-hinge-half
 ```
 
 Example 3 — apps/docs/src/kds.css:611:101 (1 sites)
 
 ```text
-title: 1.6s isn't on your motion tokens
+title: animation 1.6s isn't one of your motion tokens
 because: A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.
 action: (choice list)
 first choice: 1200ms --mu-led-rise-d  animation: var(--mu-led-rise-d)
+other choices: 900ms --mu-presence-copied-ms
 ```
 
 ### provenance/motion/by-value
@@ -1116,6 +1125,7 @@ title: `transition-[opacity,translate]` uses Tailwind's default timing (`--defau
 because: Your theme defines its own motion tokens; Tailwind's defaults sit outside it.
 action: (choice list)
 first choice: 160ms --mu-engraving-fade-ms  transition-duration: var(--mu-engraving-fade-ms) — The hover engraving: a block's identity, shown on a dwell, never on a pass.
+other choices: 126ms --mu-spring-hinge-half
 ```
 
 ### provenance/motion/tier
@@ -1160,7 +1170,7 @@ first choice: (none)
 Example 1 — apps/docs/src/kds.css:172:42 (7 sites)
 
 ```text
-title: 99px isn't on your radius scale
+title: border-radius 99px isn't on your radius scale
 because: Off-scale corners make surfaces look unrelated and can't be changed from the theme.
 action: No token is close to 99px. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1169,19 +1179,21 @@ first choice: (none)
 Example 2 — apps/docs/src/kds.css:279:54 (1 sites)
 
 ```text
-title: 26px isn't on your radius scale
+title: border-radius 26px isn't on your radius scale
 because: Off-scale corners make surfaces look unrelated and can't be changed from the theme.
 action: (choice list)
-first choice: 24px --mu-radius-card  border-radius: var(--mu-radius-card)
+first choice: 24px --radius-card rounded-card border-radius: var(--radius-card)
+other choices: 30px --radius-hero rounded-hero
 ```
 
 Example 3 — apps/docs/src/kds.css:281:76 (2 sites)
 
 ```text
-title: 19px isn't on your radius scale
+title: border-radius 19px isn't on your radius scale
 because: Off-scale corners make surfaces look unrelated and can't be changed from the theme.
 action: (choice list)
-first choice: 18px --mu-radius-plate  border-radius: var(--mu-radius-plate)
+first choice: 18px --radius-plate rounded-plate border-radius: var(--radius-plate)
+other choices: 17px --radius-palette-field-radius rounded-palette-field-radius
 ```
 
 ### provenance/radius/by-value
@@ -1198,7 +1210,8 @@ Example 1 — apps/docs/src/pages/components/Status.tsx:50:56 (2 sites)
 title: `rounded-xl` uses Tailwind's default radius (`--radius-xl`), not your theme
 because: Your theme defines its own radius scale; Tailwind's defaults sit outside it.
 action: (choice list)
-first choice: 12px --mu-radius-row  border-radius: var(--mu-radius-row)
+first choice: 12px --radius-row rounded-row border-radius: var(--radius-row)
+other choices: 11px --radius-provenance-radius rounded-provenance-radius
 ```
 
 ### provenance/radius/tier
@@ -1215,7 +1228,8 @@ Example 1 — apps/docs/src/blocks/ai-composer/ai-composer.tsx:119:70 (49 sites)
 title: 14px isn't on your spacing scale
 because: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 action: (choice list)
-first choice: 12px --spacing-mu-related px-mu-related padding-inline: var(--spacing-mu-related) — Related content uses 12, distinct groups 24, sections 48.
+first choice: 12px --spacing-mu-space-12 px-mu-space-12 padding-inline: var(--spacing-mu-space-12)
+other choices: 16px --spacing-mu-space-16 px-mu-space-16
 ```
 
 Example 2 — apps/docs/src/blocks/ai-composer/ai-composer.tsx:119:76 (81 sites)
@@ -1225,6 +1239,7 @@ title: 10px isn't on your spacing scale
 because: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 action: (choice list)
 first choice: 8px --spacing-mu-space-8 py-mu-space-8 padding-block: var(--spacing-mu-space-8)
+other choices: 12px --spacing-mu-space-12 py-mu-space-12
 ```
 
 Example 3 — apps/docs/src/blocks/settings/settings.tsx:72:85 (2 sites)
@@ -1234,6 +1249,7 @@ title: -1px isn't on your spacing scale
 because: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 action: (choice list)
 first choice: 0px --spacing-mu-space-0 top-mu-space-0 top: var(--spacing-mu-space-0)
+other choices: 2px --spacing-mu-space-2 top-mu-space-2
 ```
 
 ### provenance/spacing/by-value
@@ -1250,21 +1266,22 @@ first choice: 0px --spacing-mu-space-0 top-mu-space-0 top: var(--spacing-mu-spac
 
 ### provenance/type
 
-57 real groups.
+59 real groups.
 
-Example 1 — apps/docs/src/kds.css:76:3 (11 sites)
+Example 1 — apps/docs/src/kds.css:76:3 (9 sites)
 
 ```text
-title: 15px isn't on your type scale
+title: font-size 15px isn't on your type scale
 because: Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.
 action: (choice list)
 first choice: 14px --mu-type-figure-line  font-size: var(--mu-type-figure-line)
+other choices: 16px --mu-type-ui-line
 ```
 
 Example 2 — apps/docs/src/kds.css:76:3 (26 sites)
 
 ```text
-title: 400 isn't on your type scale
+title: font-weight 400 isn't on your type scale
 because: Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.
 action: No token is close to 400. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1273,7 +1290,7 @@ first choice: (none)
 Example 3 — apps/docs/src/kds.css:76:36 (1 sites)
 
 ```text
-title: -.011em isn't on your type scale
+title: letter-spacing -.011em isn't on your type scale
 because: Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.
 action: No token is close to -.011em. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1325,7 +1342,7 @@ first choice: (none)
 Example 1 — apps/docs/src/blocks/settings/settings.tsx:451:59 (4 sites)
 
 ```text
-title: 10 isn't on your z-index layers
+title: z-index 10 isn't one of your z-index layers
 because: A raw z-index competes with every other layer; named layers keep stacking predictable.
 action: No token is close to 10. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1334,7 +1351,7 @@ first choice: (none)
 Example 2 — apps/docs/src/pages/components/SelectionFrame.tsx:85:59 (2 sites)
 
 ```text
-title: -10 isn't on your z-index layers
+title: z-index -10 isn't one of your z-index layers
 because: A raw z-index competes with every other layer; named layers keep stacking predictable.
 action: No token is close to -10. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1343,7 +1360,7 @@ first choice: (none)
 Example 3 — apps/docs/src/kds.css:104:53 (2 sites)
 
 ```text
-title: 100 isn't on your z-index layers
+title: z-index 100 isn't one of your z-index layers
 because: A raw z-index competes with every other layer; named layers keep stacking predictable.
 action: No token is close to 100. Pick one with the design owner, or add one to the theme.
 first choice: (none)
@@ -1369,6 +1386,19 @@ first choice: 40 --mu-palette-z  z-index: var(--mu-palette-z)
 ### provenance/z/tier
 
 0 real groups; fewer than three are available.
+
+## Round 2 checks
+
+Property-specific findings now keep distinct CSS properties separate, while spacing still combines matching amounts across properties. Choice lists select one token per amount before limiting suggestions, preferring a token with a usable utility. Five fixture e2e checks cover the updated titles, static dynamic-class examples, stylesheet ownership (including @apply and heuristic selectors), choices across all seven judged families, and dead-token titles across all nine families.
+
+| Check | Violations |
+|---|---:|
+| Off-token titles missing their property | 0 |
+| Token sets described as scales | 0 |
+| Dynamic examples containing interpolation | 0 |
+| Stylesheet ownership titles missing their selector | 0 |
+| Choice lists with repeated resolved amounts | 0 |
+| Dead-token titles exposing source globs | 0 |
 
 ## JSON grep proof
 
@@ -1396,7 +1426,7 @@ Absolute paths across title/because/action/fix: **0**.
 
 ## Template length conflict
 
-The contract requests titles under 80 characters and also exact templates with actual values. **64** real titles exceed 79 characters with those exact templates; shortening their fixed wording or token names would violate the exact-template instruction. The exact wording and actual values are retained. For example:
+The contract requests titles under 80 characters and also exact templates with actual values. **78** real titles exceed 79 characters with those exact templates; shortening their fixed wording or token names would violate the exact-template instruction. The exact wording and actual values are retained. For example:
 
 ```text
 `font-semibold` uses Tailwind's default weight (`--font-weight-semibold`), not your theme
@@ -1404,4 +1434,4 @@ The contract requests titles under 80 characters and also exact templates with a
 
 ## Verification
 
-`npm test`: 146 tests passed. `npm run typecheck`: passed. Eight new fixture e2e checks cover all nine requested correctness cases; the keyword and empty-ring cases share one check. Protected report/agent formatter functions are untouched.
+`npm test`: 151 tests passed. `npm run typecheck`: passed. Five additional fixture e2e checks cover this round; the eight first-round checks remain green. `formatText`, `formatFinding`, `brief`, and `formatAgent` are untouched. No commit or install was made.

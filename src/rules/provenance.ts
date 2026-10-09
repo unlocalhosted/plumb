@@ -103,28 +103,34 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
   const suggestible = (d: Decision) => source?.suggest === undefined || source.suggest.some(pattern => matchesGlob(d.name, pattern));
   const project = decisions.filter(decision => origins.includes(decision.origin) && decision.resolved !== undefined && suggestible(decision))
     .sort((a,b) => Number(a.tier === 'semantic') - Number(b.tier === 'semantic') || Number(a.origin !== 'project') - Number(b.origin !== 'project') || a.name.localeCompare(b.name));
-  const ladder = project.filter(decision => pixels(decision.resolved!) !== undefined)
-    .sort((a, b) => pixels(a.resolved!)! - pixels(b.resolved!)! || Number(a.tier === 'semantic') - Number(b.tier === 'semantic') || a.name.localeCompare(b.name));
+  function distinctAmounts(pool: Decision[], prop: string): Decision[] {
+    const result: Decision[] = [];
+    for (const decision of pool) {
+      const index = result.findIndex(other => equal(decision.resolved!, other.resolved!, prop));
+      if (index < 0) result.push(decision);
+      else if (!useFor(result[index]!, prop, record.theme).class && useFor(decision, prop, record.theme).class) result[index] = decision;
+    }
+    return result;
+  }
   const matches = new Map<string, Decision | undefined>();
   function matching(value: string, prop: string): Decision | undefined {
     const key = JSON.stringify([value, prop]);
-    if (!matches.has(key)) matches.set(key, project.find(decision => equal(value, decision.resolved!, prop)));
+    if (!matches.has(key)) matches.set(key, distinctAmounts(project.filter(decision => equal(value, decision.resolved!, prop)), prop)[0]);
     return matches.get(key);
   }
   const nearestColors = new Map<string, Decision[]>();
   const colorLabs = new Map(family === 'color' ? project.map(d => [d, oklab(d.resolved!)] as const) : []);
   const fixProperties = new Map<string, Set<string>>();
-  const nearestLadder = ladder.filter(decision => callers.includes(decision.tier));
-  function representative(decision: Decision): Decision {
-    return nearestLadder.filter(other => pixels(other.resolved!) === pixels(decision.resolved!))
-      .sort((a, b) => Number(record.theme.has(b.name)) - Number(record.theme.has(a.name)) || Number(!!b.why) - Number(!!a.why) || a.name.localeCompare(b.name))[0] ?? decision;
-  }
+  const choicePools = new Map<string, Decision[]>();
+  const choiceLadders = new Map<string, Decision[]>();
   function closest(value: string, prop: string): Decision[] {
-    const pool = project.filter(d => callers.includes(d.tier));
+    if (!choicePools.has(prop)) choicePools.set(prop, distinctAmounts(project.filter(d => callers.includes(d.tier)), prop));
+    const pool = choicePools.get(prop)!;
     if (family === 'color') {
       const lab = oklab(value);
-      if (!nearestColors.has(value)) nearestColors.set(value, lab ? pool.filter(d => colorLabs.get(d) && colorDistance(lab, colorLabs.get(d)!) <= .15).sort((a, b) => colorDistance(lab, colorLabs.get(a)!) - colorDistance(lab, colorLabs.get(b)!) || a.name.localeCompare(b.name)).slice(0, 2) : []);
-      return nearestColors.get(value)!;
+      const key = JSON.stringify([value, prop]);
+      if (!nearestColors.has(key)) nearestColors.set(key, lab ? pool.filter(d => colorLabs.get(d) && colorDistance(lab, colorLabs.get(d)!) <= .15).sort((a, b) => colorDistance(lab, colorLabs.get(a)!) - colorDistance(lab, colorLabs.get(b)!) || a.name.localeCompare(b.name)).slice(0, 2) : []);
+      return nearestColors.get(key)!;
     }
     const n = comparable(value, prop);
     if (typeof n !== 'number') return [];
@@ -133,9 +139,11 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
       return typeof amount === 'number' && Math.abs(amount - (family === 'spacing' ? Math.abs(n) : n)) <= Math.max(family === 'motion' ? 10 : family === 'z' ? 1 : 4, Math.abs(n) * .5);
     };
     if (family === 'spacing') {
+      if (!choiceLadders.has(prop)) choiceLadders.set(prop, pool.filter(d => pixels(d.resolved!) !== undefined).sort((a, b) => pixels(a.resolved!)! - pixels(b.resolved!)!));
+      const nearestLadder = choiceLadders.get(prop)!;
       const below = nearestLadder.findLast(d => pixels(d.resolved!)! < Math.abs(n));
       const above = nearestLadder.find(d => pixels(d.resolved!)! > Math.abs(n));
-      return [below, above].filter((d): d is Decision => !!d && close(d)).map(representative);
+      return [below, above].filter((d): d is Decision => !!d && close(d));
     }
     return pool.filter(close).sort((a, b) => Math.abs(Number(comparable(a.resolved!, prop)) - n) - Math.abs(Number(comparable(b.resolved!, prop)) - n)).slice(0, 2);
   }
@@ -194,7 +202,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
           continue;
         }
-        rule = `provenance/${family}`; judgedValue = value ?? part; title = family === 'color' ? `\`${judgedValue}\` is a raw colour, not one of your colour tokens` : `${judgedValue} isn't on your ${scales[family]}`;
+        rule = `provenance/${family}`; judgedValue = value ?? part; title = family === 'color' ? `\`${judgedValue}\` is a raw colour, not one of your colour tokens` : `${declaration.prop} ${judgedValue} ${['spacing', 'radius', 'type'].includes(family) ? "isn't on your" : "isn't one of your"} ${scales[family]}`;
         nearest = closest(judgedValue, declaration.prop);
         break;
       }
@@ -207,9 +215,9 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     // Group syntaxes by their static authored amount, while retaining all sites
     // and the original compiler value. Decision/variable changes still rerun judgement.
     const amount = judgedValue || resolved || declaration.value.replace(/\s+/g, ' ').trim();
-    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
+    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
     const fixProp = definition?.prop ?? declaration.prop;
-    const alternatives = nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier) && suggestible(d));
+    const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier) && suggestible(d)), fixProp);
     let finding = grouped.get(key);
     if (!finding) {
       finding = makeFinding({ key, rule, family, severity, sites: [], occurrences: [], declaration: definition ? { ...definition, ...(resolved === undefined ? {} : { resolved }) } : declaration,
@@ -234,6 +242,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
       if (properties.size && alternatives.length && rule !== 'provenance/opaque-inline') finding.fix += '; ' + choiceText(alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })));
       properties.add(fixProp);
     }
+    if (rule === 'provenance/spacing' && properties.size > 1 && pixels(amount) !== undefined) finding.title = `${amount} isn't on your spacing scale`;
     const location = JSON.stringify([declaration.site.file, declaration.site.line, declaration.site.column, declaration.site.text]);
     if (!locations.get(key)!.has(location)) { finding.sites.push(declaration.site); locations.get(key)!.add(location); }
   }

@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { relative } from 'node:path';
 import config from './all.config.ts';
+import { pixels } from '../../dist/decisions/resolve.js';
 const before = JSON.parse(readFileSync(new URL('.cache/messages/before.json', import.meta.url)));
 const after = JSON.parse(readFileSync(new URL('.cache/messages/report.json', import.meta.url)));
 const count = report => {
@@ -34,8 +35,24 @@ for (const rule of rules) {
   for (const [index, f] of findings.slice(0, 3).entries()) {
     const site = f.sites[0], choice = f.choices?.[0];
     lines.push('', `Example ${index + 1} — ${relative(after.root, site.file)}:${site.line}:${site.column} (${f.sites.length} sites)`, '', '```text', `title: ${f.title}`, `because: ${f.because}`, `action: ${f.action ?? '(choice list)'}`, `first choice: ${choice ? `${choice.resolved ?? choice.value} ${choice.name} ${choice.use?.class ?? ''} ${choice.use?.css ?? ''}${choice.why ? ` — ${choice.why}` : ''}` : '(none)'}`, '```');
+    if (f.choices?.length > 1) lines.splice(lines.length - 1, 0, `other choices: ${f.choices.slice(1).map(d => `${d.resolved ?? d.value} ${d.name} ${d.use?.class ?? ''}`.trimEnd()).join('; ')}`);
   }
 }
+const amountKey = d => {
+  const value = d.resolved ?? d.value;
+  if (['spacing', 'radius', 'type'].includes(d.family)) return pixels(value) ?? value;
+  const time = d.family === 'motion' && /^([-+]?(?:\d*\.)?\d+)(ms|s)$/.exec(value);
+  return time ? Number(time[1]) * (time[2] === 's' ? 1000 : 1) : value;
+};
+const checks = [
+  ['Off-token titles missing their property', after.findings.filter(f => /^provenance\/(radius|type|motion|elevation|z)$/.test(f.rule) && !f.title.startsWith(`${f.declaration.prop} `)).length],
+  ['Token sets described as scales', after.findings.filter(f => /^provenance\/(motion|elevation|z)$/.test(f.rule) && !f.title.includes("isn't one of your")).length],
+  ['Dynamic examples containing interpolation', after.findings.filter(f => f.rule === 'existence/dynamic-class' && f.action.includes('${')).length],
+  ['Stylesheet ownership titles missing their selector', after.findings.filter(f => f.rule.startsWith('ownership/') && ['stylesheet', 'apply'].includes(f.declaration.origin) && !f.title.startsWith(`\`${f.declaration.owner.name}\` sets `)).length],
+  ['Choice lists with repeated resolved amounts', after.findings.filter(f => f.choices && new Set(f.choices.map(amountKey)).size !== f.choices.length).length],
+  ['Dead-token titles exposing source globs', after.findings.filter(f => f.rule.startsWith('dead/') && !f.title.endsWith('never used in your source')).length],
+];
+lines.push('', '## Round 2 checks', '', 'Property-specific findings now keep distinct CSS properties separate, while spacing still combines matching amounts across properties. Choice lists select one token per amount before limiting suggestions, preferring a token with a usable utility. Five fixture e2e checks cover the updated titles, static dynamic-class examples, stylesheet ownership (including @apply and heuristic selectors), choices across all seven judged families, and dead-token titles across all nine families.', '', '| Check | Violations |', '|---|---:|', ...checks.map(([label, count]) => `| ${label} | ${count} |`));
 writeFileSync(new URL('.cache/messages/titles.txt', import.meta.url), after.findings.map(f => f.title).join('\n') + '\n');
 writeFileSync(new URL('.cache/messages/message-fields.txt', import.meta.url), after.findings.flatMap(f => [f.title, f.because, f.action ?? '', f.fix]).join('\n') + '\n');
 const patterns = ['``', 'a elevation', '/Users/', 'origin', 'provenance', 'requires a reference', 'callers may'];
@@ -47,6 +64,7 @@ for (const pattern of patterns) {
   lines.push(`| ${pattern.replaceAll('|', '\\|')} | ${matches} |`);
 }
 const long = after.findings.filter(f => f.title.length >= 80);
-lines.push('', `Absolute paths across title/because/action/fix: **${after.findings.filter(f => [f.title, f.because, f.action, f.fix].some(text => text?.includes('/Users/'))).length}**.`, '', '## Template length conflict', '', `The contract requests titles under 80 characters and also exact templates with actual values. **${long.length}** real titles exceed 79 characters with those exact templates; shortening their fixed wording or token names would violate the exact-template instruction. The exact wording and actual values are retained. For example:`, '', '```text', long.find(f => f.rule === 'provenance/type/framework')?.title ?? long[0]?.title ?? '(none)', '```', '', '## Verification', '', '`npm test`: 146 tests passed. `npm run typecheck`: passed. Eight new fixture e2e checks cover all nine requested correctness cases; the keyword and empty-ring cases share one check. Protected report/agent formatter functions are untouched.', '');
+lines.push('', `Absolute paths across title/because/action/fix: **${after.findings.filter(f => [f.title, f.because, f.action, f.fix].some(text => text?.includes('/Users/'))).length}**.`, '', '## Template length conflict', '', `The contract requests titles under 80 characters and also exact templates with actual values. **${long.length}** real titles exceed 79 characters with those exact templates; shortening their fixed wording or token names would violate the exact-template instruction. The exact wording and actual values are retained. For example:`, '', '```text', long.find(f => f.rule === 'provenance/type/framework')?.title ?? long[0]?.title ?? '(none)', '```', '', '## Verification', '', '`npm test`: 151 tests passed. `npm run typecheck`: passed. Five additional fixture e2e checks cover this round; the eight first-round checks remain green. `formatText`, `formatFinding`, `brief`, and `formatAgent` are untouched. No commit or install was made.', '');
 writeFileSync(new URL('messages.md', import.meta.url), lines.join('\n'));
 console.log(`MetalUI groups: ${before.findings.length} -> ${after.findings.length}; ${rules.length} rules; ${long.length} exact-template titles >=80 characters.`);
+if (checks.some(([, count]) => count)) throw new Error(`Message contract violations: ${JSON.stringify(checks.filter(([, count]) => count))}`);

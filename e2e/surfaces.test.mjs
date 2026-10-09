@@ -68,7 +68,7 @@ test('GitHub annotates only new scoped sites, writes summary sections and compar
   const summary = join(directory, 'summary.md'); await writeFile(summary, 'Existing step summary.\n');
   const result = run(directory, ['--base', 'HEAD', '--format', 'github'], 1, { GITHUB_STEP_SUMMARY: summary });
   const commands = result.stdout.split('\n').filter(line => line.startsWith('::'));
-  assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=10px isn't on your spacing scale::/);
+  assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=gap 10px isn't on your spacing scale::/);
   const markdown = await readFile(summary, 'utf8');
   assert.match(markdown, /^Existing step summary\./); assert.match(markdown, /1 new, 0 fixed, 2 debt/); assert.match(markdown, /spacing: 0\/2 \(0%\); \+0 pp vs base/);
   assert.match(markdown, /color: no decisions/); assert.match(markdown, /0 growth lines/);

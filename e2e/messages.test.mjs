@@ -125,3 +125,104 @@ test('opaque inline values group once per file, across properties and families, 
   assert.ok(opaque.every(f=>f.title==="This padding is computed at runtime, so it can't be checked"));
   assert.ok(opaque.every(f=>f.because==='Plumb reads source, not running values.'));
 });
+
+test('off-token titles name the CSS property and distinguish scales from token sets', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/App.tsx'), "import './styles.css'; <div style={{ fontWeight: 500, zIndex: 2 }} />;");
+  await writeFile(join(dir, 'src/values.css'), `.values {
+    padding: 14px; gap: 10px; margin: 10px; border-radius: 13px;
+    font-size: 15px; line-height: 15px; font-weight: 500; letter-spacing: .01em;
+    transition: opacity .15s linear; transition-duration: .15s;
+    box-shadow: 0 1px 3px #000; z-index: 2; color: #abcdef;
+  }`);
+  const r = cli(dir);
+  const titles = new Set(r.findings.map(f => f.title));
+  for (const title of [
+    "padding 14px isn't on your spacing scale", "10px isn't on your spacing scale",
+    "border-radius 13px isn't on your radius scale", "font-size 15px isn't on your type scale",
+    "line-height 15px isn't on your type scale", "font-weight 500 isn't on your type scale",
+    "letter-spacing .01em isn't on your type scale", "transition .15s isn't one of your motion tokens",
+    "transition-duration .15s isn't one of your motion tokens",
+    "box-shadow 0 1px 3px #000 isn't one of your shadow tokens",
+    "z-index 2 isn't one of your z-index layers", "`#abcdef` is a raw colour, not one of your colour tokens",
+  ]) assert.ok(titles.has(title), title);
+  assert.equal(r.findings.find(f => f.title === "font-weight 500 isn't on your type scale").sites.length, 2);
+  assert.equal(r.findings.find(f => f.title === "10px isn't on your spacing scale").sites.length, 2);
+});
+
+test('dynamic-class examples keep only the static prefix and provide complete literal classes', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/App.tsx'), "import './styles.css'; export const App = ({ f, tint }) => <div className={`mu-frost-${f} hover:mu-tint-${tint}-end mu-${f}-${tint} ${f}`} />;");
+  const dynamic = cli(dir).findings.filter(f => f.rule === 'existence/dynamic-class');
+  assert.ok(dynamic.length >= 3);
+  for (const f of dynamic) {
+    assert.equal(f.title, `\`${f.declaration.value}\` is assembled at runtime, so Tailwind never generates it`);
+    assert.ok(!f.action.includes('${'), f.action);
+    assert.ok(!f.fix.includes('${'), f.fix);
+  }
+  const frost = dynamic.find(f => f.declaration.value === 'mu-frost-${f}');
+  assert.equal(frost.action, "Map each value to a complete class, e.g. { a: 'mu-frost-a', b: 'mu-frost-b' }.");
+  assert.equal(dynamic.find(f => f.declaration.value === 'hover:mu-tint-${tint}-end').action,
+    "Map each value to a complete class, e.g. { a: 'hover:mu-tint-a', b: 'hover:mu-tint-b' }.");
+  assert.equal(dynamic.find(f => f.declaration.value === 'mu-${f}-${tint}').action,
+    "Map each value to a complete class, e.g. { a: 'mu-a', b: 'mu-b' }.");
+});
+
+test('ownership titles use stylesheet selectors, including @apply and heuristic descendants', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/Button.tsx'), 'export const Button = ({className}) => <button className={className} />;');
+  await writeFile(join(dir, 'plumb.config.ts'), "export default { components: { from: 'src/Button.tsx' } };");
+  await writeFile(join(dir, 'src/App.tsx'), "import './styles.css'; import { Button } from './Button'; <div className='container'><Button className='landing-cta applied bg-brand' style={{letterSpacing: '.04em'}} /></div>;");
+  await writeFile(join(dir, 'src/overrides.css'), '@reference "./styles.css"; .landing-cta { letter-spacing: .03em; } .applied { @apply tracking-wide; } .container button { font-weight: 550; }');
+  const titles = cli(dir).findings.filter(f => f.rule === 'ownership/Button').map(f => f.title);
+  for (const title of [
+    "`.landing-cta` sets Button's letter-spacing", "`.applied` sets Button's letter-spacing",
+    "`.container button` sets Button's font-weight (may apply)",
+    "`bg-brand` changes Button's background-color", "`letter-spacing` changes Button's letter-spacing",
+  ]) assert.ok(titles.includes(title), title);
+});
+
+test('choices deduplicate resolved amounts before limiting suggestions and prefer usable utilities', async t => {
+  const dir = await fixture(t);
+  const tokens = [
+    ['spacing', 'spacing', 'padding', '8px', '12px', '10px', 'small', 'large'],
+    ['radius', 'radius', 'border-radius', '12px', '16px', '14px', 'control', 'panel'],
+    ['type', 'text', 'font-size', '16px', '20px', '18px', 'body', 'title'],
+    ['motion', 'duration', 'transition-duration', '120ms', '160ms', '140ms', 'quick', 'slow'],
+    ['color', 'color', 'color', '#123456', '#123466', '#123460', 'brand', 'accent'],
+    ['elevation', 'shadow', 'box-shadow', '0 2px 4px #123456', '0 4px 8px #123456', '0 2px 4px #123456', 'float', 'high'],
+    ['z', 'z', 'z-index', '50', '60', '50', 'dialog', 'toast'],
+  ];
+  await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify({ decisions: Object.fromEntries(tokens.map(([family]) => [family, { from: 'css:src/styles.css', callers: ['primitive', 'semantic'], identity: 'reference' }])) })};`);
+  await writeFile(join(dir, 'src/App.tsx'), "import './styles.css';");
+  await writeFile(join(dir, 'src/styles.css'), `@import "tailwindcss"; @theme { --*: initial;
+    ${tokens.map(([, ns,, lower, upper,, low, high]) => `--${ns}-${low}: ${lower}; --${ns}-${high}: ${upper};`).join('\n')}
+  } :root {
+    ${tokens.map(([, ns,, lower, upper]) => `--${ns}-a-bare: ${lower}; --${ns}-b-alias: var(--${ns}-a-bare); --${ns}-c-bare: ${upper};`).join('\n')}
+  } .off { ${tokens.map(([,, prop,,, amount]) => `${prop}: ${amount};`).join(' ')} }
+  .copy { ${tokens.map(([,, prop, lower]) => `${prop}: ${lower};`).join(' ')} }`);
+  const r = cli(dir);
+  for (const [family, ns, prop, lower, upper,, low, high] of tokens) {
+    const copy = at(r, `${prop}: ${lower}`).find(f => f.rule === `provenance/${family}/by-value`);
+    assert.ok(copy, family);
+    assert.equal(copy.choices.length, 1, family);
+    assert.equal(copy.choices[0].name, `--${ns}-${low}`, family);
+    assert.ok(copy.choices[0].use.class, family);
+    if (['elevation', 'z'].includes(family)) continue;
+    const off = r.findings.find(f => f.rule === `provenance/${family}`);
+    assert.ok(off, family);
+    assert.deepEqual(new Set(off.choices.map(d => d.name)), new Set([`--${ns}-${low}`, `--${ns}-${high}`]), family);
+    assert.deepEqual(new Set(off.choices.map(d => d.resolved)), new Set([lower, upper]), family);
+    assert.ok(off.choices.every(d => d.use.class), family);
+    assert.ok(off.edits.every(edit => off.choices.some(d => d.name === edit.token)), family);
+  }
+});
+
+test('dead-token titles say in your source across every family without exposing source globs', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/styles.css'), (await readFile(join(dir, 'src/styles.css'), 'utf8')) + '\n@theme { --size-unused: 44px; --opacity-unused: .5; }');
+  const dead = cli(dir).findings.filter(f => f.rule.startsWith('dead/'));
+  assert.deepEqual(dead.map(f => f.family).sort(), ['color', 'elevation', 'motion', 'opacity', 'radius', 'size', 'spacing', 'type', 'z']);
+  const names = { color: 'colour', elevation: 'shadow', z: 'z-index' };
+  for (const f of dead) assert.equal(f.title, `${f.decisions.length} ${names[f.family] ?? f.family} tokens are never used in your source`);
+});
