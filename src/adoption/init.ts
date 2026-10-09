@@ -15,7 +15,7 @@ import { judgedFamilies, isJudged, partsFor } from '../rules/families.js';
 import type { Decision, Family, Report } from '../report.js';
 import { familyFor } from '../decisions/index.js';
 
-const defaults = ['hover-gate', 'focus-outline', 'viewport-dynamic', 'overscroll-contain'];
+const defaults = ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'];
 const pathFrom = (root: string, file: string) => relative(root, file).replaceAll('\\', '/');
 
 // Repeated literal values are proposals, never new theme tokens. Keep their

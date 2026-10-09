@@ -116,6 +116,8 @@ export interface Report {
   tool: { name: 'plumb'; version: string };
   root: string;
   config: { path: string | null; inferred: boolean };
+  /** Configuration context, without suppressing the family's real findings. */
+  configHints?: Partial<Record<Family, string>>;
   tailwind: { entry: string | null; version: string | null };
   files: FileCounts;
   findings: Finding[];

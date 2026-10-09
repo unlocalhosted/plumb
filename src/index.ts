@@ -43,6 +43,8 @@ export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from
 export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage, JudgedFamily, ProvenanceCoverage } from './report.js';
 
 export interface CheckOptions extends LedgerOptions {
+  /** Expand equal-value token warnings to individual findings. */
+  verbose?: boolean;
   root?: string;
   config?: string;
   /** Inspection/mutation commands need the full, unclassified rule output. */
@@ -145,7 +147,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const variablesStart = performance.now();
   findings.push(...deadVariables(declarations, defined, record.theme));
   profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
-  const judged = provenance(declarations, record, config.value, sourceFiles);
+  const judged = provenance(declarations, record, config.value, sourceFiles, options.verbose);
   findings.push(...judged.findings);
   const deadStart = performance.now();
   const dead = input ? undefined : deadDecisions(root, declarations, record, config.value);
@@ -180,6 +182,10 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   for (const sheet of collected.styles.stylesheets) stylesheets.push({ file: sheet.source.file, sourceOrigin: 'project', reached: [{ kind: 'jsx-style' }] });
   for (const sheet of stylesheets) for (const kind of new Set(sheet.reached.map(reach => reach.kind))) stylesheetCounts[kind]++;
   const report: Report = {
+    ...(judged.coverage.type.total && record.decisions.some(d => d.family === 'type' && d.origin !== 'framework') &&
+      !record.decisions.some(d => d.family === 'type' && d.refs.some(ref => ref.startsWith('utility:type-'))) ? {
+        configHints: { type: "Type roles aren't configured; type values are checked individually. Review decisions.type.from for your type tokens (for example, 'theme:--text-*')." },
+      } : {}),
     schemaVersion: 1,
     tool,
     root,

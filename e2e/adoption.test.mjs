@@ -8,7 +8,7 @@ import { test } from 'node:test';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
-const defaults = ['hover-gate', 'focus-outline', 'viewport-dynamic', 'overscroll-contain'];
+const defaults = ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'];
 function run(directory, args = [], status = 0, executable = cli) {
   const result = spawnSync(process.execPath, [executable, ...args], { cwd: directory, encoding: 'utf8', timeout: 20_000,
     env: { ...process.env, PLUMB_CACHE_DIR: join(directory, '.cache') } });
@@ -56,7 +56,7 @@ test('three-command transcript: first look, init baseline, detected agents and C
   const configured = await import(`file://${join(directory, 'plumb.config.ts')}`);
   assert.deepEqual(configured.default.habits, defaults);
   assert.ok(Object.values(configured.default.decisions).every(source => source.inferred === true));
-  for (const id of ['transition-named', 'no-ease-in', 'logical-inline', 'safe-area-fallback', 'overflow-clip']) {
+  for (const id of ['viewport-dynamic', 'overscroll-contain', 'logical-inline', 'safe-area-fallback', 'overflow-clip']) {
     assert.match(text, new RegExp(`// "${id}", // \\d+ breaks`));
   }
   for (const id of defaults) assert.match(text, new RegExp(`"${id}", // [1-9]\\d* breaks`));

@@ -83,7 +83,9 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 - Choices: at most one token per amount (prefer the one with a utility), nearest below and above.
 
 **provenance/{family}/by-value**
-- Title: `` {value} matches `{token}` but doesn't use it ``
+- Default severity: warn. Group once per family; title: `` {n} values in your {family} match tokens but don't use them `` (`n` is the physical-site count).
+- List every site with its matching token and edit. Keep occurrences and authored ledger identities intact. Family token metadata is an inventory, not a choice list that can be applied to any site.
+- `--verbose` or `decisions.<family>.byValue: 'each'` restores per-value findings, with title: `` {value} matches `{token}` but doesn't use it ``. `--agent` also expands them so each edit has its own matching token. Equal arbitrary literals use this rule too.
 - Because: If the token changes, this copy stays behind.
 - Do: `` Use `{utility}` or `var({token})`. ``
 
@@ -115,6 +117,8 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 
 **No token fits** (a family has tokens, none near)
 - Do line: `` No token is close to {amount}. Pick one with the design owner, or add one to the theme. ``
+- Elevation with no semantic shadow tier: `` No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme. `` Show once per finding; no repeated NEEDS-DECISION wording.
+- Type context: explain that individual type values are checked and give a supported `decisions.type.from` selector. The planned `utility:type-*` reader is not implemented; do not suggest it as a working fix.
 
 ### Habits
 
@@ -128,6 +132,12 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 - overscroll-contain: `` {owner} scrolls, and its scroll leaks to the page `` · Reaching its edge scrolls the page behind it. · Add overscroll-contain.
 - transition-named, no-ease-in, safe-area-fallback: same shape from the habit's reason.
 - Custom habits: Title = `` `{site}` breaks {habit id} ``, Because = the habit's message.
+
+Focus-outline judges actual outline suppression. A visible focus-visible/focus-within ring, or a ring utility on the same element, is a valid companion. Zero/transparent rings, pseudo-elements, other elements, conditional branches and narrower media do not certify the base. Setting box-shadow alone does not remove an outline.
+
+Logical-inline judges physical sides that would change under RTL. Equal left/right companions under the same element/state/media are symmetric and pass, including px/mx/inset-x. Positive direction-specific selectors pass; negated, descendant or unrestricted alternative direction selectors do not prove direction. Asymmetric sides, left/right text-align, float and clear remain checked.
+
+`init` proposes only hover-gate, focus-outline, transition-named and no-ease-in. Other habits remain explicit opt-ins.
 
 ### Components
 

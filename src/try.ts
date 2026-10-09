@@ -4,7 +4,7 @@ import type { PlumbConfig } from './config.js';
 import { UsageError } from './errors.js';
 import { defaultSource, ignore } from './project.js';
 
-export interface TryOptions { root?: string; config?: string; as?: string; lang?: 'tsx' | 'css' }
+export interface TryOptions { root?: string; config?: string; as?: string; lang?: 'tsx' | 'css'; verbose?: boolean }
 export interface Snippet { text: string; as?: string; lang?: 'tsx' | 'css' }
 
 export function prepareSnippet(root: string, config: PlumbConfig, snippet: Snippet): { file: string; text: string; lang: 'tsx' | 'css' } {
