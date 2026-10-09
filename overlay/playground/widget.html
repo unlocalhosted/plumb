@@ -50,13 +50,20 @@ const tokensCss = await (await fetch('../src/tokens.css')).text();
 const reading = {
   element: 'div', file: 'src/settings/SyncRow.tsx', line: 18,
   findings: [
-    { where: 'pad-top', title: 'padding-top 10px isn\'t on your spacing scale', scale: [4, 6, 8, 12, 16], value: 10, edit: ['py-[10px]', 'py-mu-space-8'], ledger: 'new' },
-    { where: 'pad-left', title: 'padding-inline 14px isn\'t on your spacing scale', scale: [8, 12, 16, 20], value: 14, edit: ['px-14', 'px-mu-space-12'], ledger: 'debt' },
-    { where: 'gap', title: 'gap 10px isn\'t on your spacing scale', scale: [4, 6, 8, 12, 16], value: 10, edit: ['gap-10', 'gap-mu-related'], ledger: 'new' },
-    { where: 'corner', title: 'border-radius 14px isn\'t on your radius scale', scale: [6, 12, 18, 24], value: 14, edit: ['rounded-[14px]', 'rounded-row'], ledger: 'new' },
-    { where: 'text', title: 'font-size 13.5px isn\'t on your type scale', scale: [12, 12.5, 13, 15, 18], value: 13.5, edit: ['text-[13.5px]', 'type-ui'], ledger: 'new' },
-    { where: 'shadow', title: 'This shadow is hand-written, not one of your shadow tokens', edit: ['shadow-[0_2px_7px…]', 'shadow-raise-sm'], ledger: 'new' },
-    { where: 'fill', soft: true, title: 'bg-white matches --color-s-hi but doesn\'t use it', edit: ['bg-white', 'bg-s-hi'], ledger: 'new' },
+    { where: 'pad-top', kind: 'spacing', title: 'padding-top 10px isn\'t on your spacing scale', value: 10, authored: 'py-[10px]', ledger: 'new',
+      choices: [{ v: 8, name: 'mu-space-8', use: 'py-mu-space-8' }, { v: 12, name: 'mu-related', use: 'py-mu-related', why: 'related content' }], pick: 0 },
+    { where: 'pad-left', kind: 'spacing', title: 'padding-inline 14px isn\'t on your spacing scale', value: 14, authored: 'px-14', ledger: 'debt',
+      choices: [{ v: 12, name: 'mu-related', use: 'px-mu-related', why: 'related content' }, { v: 16, name: 'mu-space-16', use: 'px-mu-space-16' }], pick: 0 },
+    { where: 'gap', kind: 'spacing', title: 'gap 10px isn\'t on your spacing scale', value: 10, authored: 'gap-10', ledger: 'new',
+      choices: [{ v: 8, name: 'mu-space-8', use: 'gap-mu-space-8' }, { v: 12, name: 'mu-related', use: 'gap-mu-related', why: 'related content' }], pick: 1 },
+    { where: 'corner', kind: 'radius', title: 'border-radius 14px isn\'t on your radius scale', value: 14, authored: 'rounded-[14px]', ledger: 'new',
+      choices: [{ v: 12, name: 'row', use: 'rounded-row', why: 'rows and fields' }, { v: 18, name: 'plate', use: 'rounded-plate', why: 'floating plates' }], pick: 0 },
+    { where: 'text', kind: 'type', title: 'font-size 13.5px isn\'t on your type scale', value: 13.5, authored: 'text-[13.5px]', ledger: 'new',
+      choices: [{ v: 13, name: 'ui', use: 'type-ui', why: 'controls and rows' }, { v: 15, name: 'content', use: 'type-content', why: 'reading text' }], pick: 0 },
+    { where: 'shadow', kind: 'shadow', title: 'This shadow is hand-written, not one of your shadow tokens', value: '0 2px 7px rgba(0,0,0,.13)', authored: 'shadow-[0_2px_7px…]', ledger: 'new',
+      choices: [{ v: '0 1px 2px rgba(0,0,0,.12), 0 4px 10px -4px rgba(0,0,0,.18)', name: 'raise-sm', use: 'shadow-raise-sm', why: 'small raised objects' }], pick: 0 },
+    { where: 'fill', kind: 'fill', soft: true, title: 'bg-white matches --color-s-hi but doesn\'t use it', value: '#ffffff', authored: 'bg-white', ledger: 'new',
+      choices: [{ v: '#ffffff', name: 's-hi', use: 'bg-s-hi', why: 'the raised surface' }], pick: 0 },
   ],
 };
 
@@ -101,14 +108,51 @@ const css = `
   @media (hover: hover) and (pointer: fine) { .pin:hover { transform: scale(1.15); } }
 
   /* the one reading line */
-  .read { margin: 6px 12px 0; padding-block: 10px 12px; display: grid; gap: 7px; min-height: 92px; }
+  .read { margin: 6px 12px 0; padding-block: 10px 12px; display: grid; gap: 10px; min-height: 132px; align-content: start; }
   .read .t { font: var(--pl-text-title); font-weight: 500; text-wrap: balance; }
-  .read .scale { position: relative; height: 20px; }
-  .read .scale::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1px; background: var(--pl-rule); }
-  .read .scale i { position: absolute; top: 1px; width: 1px; height: 9px; background: var(--pl-ink-2); }
-  .read .scale span { position: absolute; top: 9px; transform: translateX(-50%); font: 400 9.5px/12px var(--pl-mono); color: var(--pl-ink-2); }
-  .read .scale span.near { color: var(--pl-ink); font-weight: 600; }
-  .read .scale .you { position: absolute; top: 1px; width: 8px; height: 8px; margin-left: -4px; background: var(--pl-off); transform: rotate(45deg); box-shadow: 0 0 0 1.5px var(--pl-paper); }
+  /* comparisons: tokens and yours side by side, in each family's own material */
+  .cmp { display: grid; gap: 2px; }
+  .opt { all: unset; box-sizing: border-box; display: grid; align-items: center; gap: 10px; min-height: 22px; padding: 2px 6px; margin-inline: -6px; border-radius: var(--pl-radius-tag); cursor: pointer; }
+  .opt.you { cursor: default; }
+  .opt[aria-pressed="true"] { background: var(--pl-paper-2); }
+  @media (hover: hover) and (pointer: fine) { .opt:not(.you):hover { background: var(--pl-paper-2); } }
+  .opt:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 1px; }
+  .v { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); text-align: end; }
+  .opt.you .v { color: var(--pl-off); font-weight: 600; }
+  .who { display: flex; align-items: baseline; gap: 6px; font: var(--pl-text-reading); white-space: nowrap; min-width: 0; }
+  .who b { font-weight: 500; color: var(--pl-ink); }
+  .who small { font: var(--pl-text-label); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
+  .who.you { color: var(--pl-off); font-weight: 600; font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); }
+  .opt[aria-pressed="true"] .who b::after { content: "use"; margin-inline-start: 6px; font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-paper); background: var(--pl-ink); padding: 0 4px; border-radius: var(--pl-radius-mark); }
+
+  .spacing .opt { grid-template-columns: 26px 168px 1fr; }
+  .spacing .bar { display: flex; align-items: center; height: 10px; }
+  .spacing .bar i { height: 8px; border-radius: 1px; background: color-mix(in oklab, var(--pl-ink-3) 55%, transparent); box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .spacing .opt[aria-pressed="true"] .bar i { background: var(--pl-ink); box-shadow: none; }
+  .spacing .opt.you .bar i { background: repeating-linear-gradient(-45deg, var(--pl-off) 0 1.5px, transparent 1.5px 4px); box-shadow: inset 0 0 0 1px var(--pl-off); }
+
+  .radius { grid-template-columns: max-content 1fr; align-items: center; gap: 14px; }
+  .radius svg path { fill: none; stroke: var(--pl-ink-3); stroke-width: 1; }
+  .radius svg path.pick { stroke: var(--pl-ink); stroke-width: 1.5; }
+  .radius svg path.you { stroke: var(--pl-off); stroke-width: 1.5; stroke-dasharray: 3 2; }
+  .radius .list { display: grid; gap: 2px; }
+  .radius .opt { grid-template-columns: 26px 1fr; }
+
+  .type .opt { grid-template-columns: 1fr 34px minmax(150px, auto); align-items: baseline; }
+  .type .spec { font-family: system-ui, sans-serif; font-weight: 500; color: var(--pl-ink); line-height: 1.25; white-space: nowrap; }
+  .type .opt.you .spec { color: var(--pl-off); }
+
+  .plates { grid-auto-flow: column; justify-content: start; gap: 8px; padding: 10px; border-radius: 4px; background: var(--ground); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .plates .opt { grid-template-columns: auto; justify-items: center; gap: 8px; margin: 0; padding: 6px 8px; }
+  .plates .plate { width: 56px; height: 32px; border-radius: 7px; }
+  .plates .who small { display: none; }
+  .plates .who { color: var(--pl-ink); }
+  .plates .opt[aria-pressed="true"] { background: color-mix(in oklab, var(--pl-paper) 70%, transparent); }
+
+  .chips { grid-auto-flow: column; justify-content: start; align-items: center; gap: 8px; }
+  .chips .opt { grid-template-columns: auto auto; gap: 6px; margin: 0; }
+  .chips .chip { width: 22px; height: 22px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .chips .same { font: var(--pl-text-label); color: var(--pl-ink-2); }
   .read .edit { display: flex; align-items: center; gap: 8px; font: var(--pl-text-reading); }
   .read .edit s { color: var(--pl-ink-2); text-decoration-color: var(--pl-off); }
   .read .edit b { font-weight: 600; }
@@ -126,6 +170,10 @@ const css = `
   .nav:focus-visible, .copy:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 2px; }
 `;
 
+function hostGround(node) {
+  for (let n = node.parentElement; n; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor, a = c.match(/[\d.]+/g)?.map(Number); if (a && (a[3] ?? 1) > 0.5) return c; }
+  return '#ffffff';
+}
 function hostIsDark(node) {
   for (let n = node; n; n = n.parentElement) {
     const c = getComputedStyle(n).backgroundColor.match(/[\d.]+/g)?.map(Number);
@@ -196,12 +244,34 @@ function mount(target) {
     return `<button class="pin ${it.soft ? 'soft' : ''}" style="left:${px_}px;top:${py_}px" aria-label="Finding ${i + 1}: ${it.title}" data-i="${i}">${i + 1}</button>`; }).join('');
   w.style.setProperty('--tag-w', root.querySelector('.top .n').getBoundingClientRect().right - w.getBoundingClientRect().left + 8 + 'px');
   let active = 0;
+  // Each family is compared in its own material: spacing as bars, corners as arcs, type as type, shadows on the
+  // element's own fill, colours as chips. Token rows are buttons: picking one changes the edit Copy for agent hands over.
+  const ground = getComputedStyle(target).backgroundColor;
+  const compare = it => {
+    const rows = [...it.choices.map((c, j) => ({ ...c, j })), { v: it.value, you: true }].sort((a, b) => (typeof a.v === 'number' ? a.v - b.v : a.you ? 1 : -1));
+    const opt = r => r.you ? `<span class="who you">yours</span>` : `<span class="who"><b>${r.name}</b>${r.why ? `<small>${r.why}</small>` : ''}</span>`;
+    const attrs = r => r.you ? 'class="opt you" disabled' : `class="opt" data-pick="${r.j}" aria-pressed="${r.j === it.pick}"`;
+    if (it.kind === 'spacing') {
+      const max = Math.max(...rows.map(r => r.v)), k = Math.min(8, 168 / max);
+      return `<div class="cmp spacing">${rows.map(r => `<button ${attrs(r)}><span class="v">${r.v}</span><span class="bar"><i style="width:${r.v * k}px"></i></span>${opt(r)}</button>`).join('')}</div>`;
+    }
+    if (it.kind === 'radius') {
+      const k = 3, size = Math.max(...rows.map(r => r.v)) * k + 8;
+      return `<div class="cmp radius"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${rows.map(r => { const rr = r.v * k; return `<path class="${r.you ? 'you' : r.j === it.pick ? 'pick' : ''}" d="M 0.5 ${size - 0.5} V ${rr + 0.5} A ${rr} ${rr} 0 0 1 ${rr + 0.5} 0.5 H ${size - 0.5}"/>`; }).join('')}</svg>
+        <div class="list">${rows.map(r => `<button ${attrs(r)}><span class="v">${r.v}</span>${opt(r)}</button>`).join('')}</div></div>`;
+    }
+    if (it.kind === 'type') {
+      return `<div class="cmp type">${rows.map(r => `<button ${attrs(r)}><span class="spec" style="font-size:${r.v}px">Sync calendar</span><span class="v">${r.v}</span>${opt(r)}</button>`).join('')}</div>`;
+    }
+    if (it.kind === 'shadow') {
+      return `<div class="cmp plates" style="--ground:${hostGround(target)}">${rows.map(r => `<button ${attrs(r)} title="${r.why ?? ''}"><span class="plate" style="background:${ground};box-shadow:${r.v}"></span>${opt(r)}</button>`).join('')}</div>`;
+    }
+    return `<div class="cmp chips">${rows.map(r => `<button ${attrs(r)}><span class="chip" style="background:${r.v}"></span>${opt(r)}</button>`).join('')}<span class="same">same colour</span></div>`;
+  };
   const render = i => {
     const it = f[i];
-    const scale = it.scale ? (() => { const [lo, hi] = [it.scale[0], it.scale.at(-1)]; const p = v => ((v - lo) / (hi - lo)) * 100;
-      const near = [it.scale.filter(s => s < it.value).at(-1), it.scale.find(s => s > it.value)];
-      return `<div class="scale">${it.scale.map(s => `<i style="left:${p(s)}%"></i><span class="${near.includes(s) ? 'near' : ''}" style="left:${p(s)}%">${s}</span>`).join('')}<b class="you" style="left:${p(it.value)}%"></b></div>`; })() : '';
-    read.innerHTML = `<div class="t">${it.title}</div>${scale}<div class="edit"><s>${it.edit[0]}</s>→<b>${it.edit[1]}</b><span class="ledger ${it.ledger}">${it.ledger}</span></div>`;
+    read.innerHTML = `<div class="t">${it.title}</div>${compare(it)}<div class="edit"><s>${it.authored}</s>→<b>${it.choices[it.pick].use}</b><span class="ledger ${it.ledger}">${it.ledger}</span></div>`;
+    read.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); it.pick = Number(b.dataset.pick); render(i); }));
     count.textContent = `${i + 1} of ${f.length}`;
     root.querySelectorAll('.pin').forEach(p => p.setAttribute('aria-current', String(Number(p.dataset.i) === i)));
     const at = placeOnElement(it.where, target);
