@@ -6,10 +6,14 @@ import { errorMessage, UsageError } from './errors.js';
 import { collectClasses } from './collect/classes.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
-import { cssClasses, existence, location } from './rules/existence.js';
-import { discoverProject, sourceFiles } from './project.js';
+import { existence, location, unreachableClasses } from './rules/existence.js';
+import { collectStylesheets } from './collect/stylesheets.js';
+import { collectModules } from './collect/modules.js';
+import { lowerStylesheets } from './lower/stylesheets.js';
+import { references } from './collect/source.js';
+import { discoverProject, projectSourceFiles } from './project.js';
 import { tool } from './report.js';
-import type { Report } from './report.js';
+import type { Declaration, Report } from './report.js';
 
 export { defineConfig } from './config.js';
 export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
@@ -38,18 +42,43 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     throw new UsageError(`Fix project files under ${root}: ${errorMessage(error)}`);
   }
   const discover = performance.now() - discoverStart;
-  const collected = await collectClasses(await sourceFiles(root, config.value), config.value.classHelpers);
+  const files = await projectSourceFiles(root, config.value);
+  const collected = await collectClasses(files.filter(file => /\.[jt]sx?$/.test(file)), config.value.classHelpers);
   const unique = [...new Set(collected.sites.filter(site => !site.opaque).map(site => site.token))].sort();
   const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique);
-  const css = await cssClasses(root);
-  const findings = existence(collected.sites, lowered.candidates, css.classes, config.value.markers ?? [], lowered.suggestions);
+  const stylesheetStart = performance.now();
+  const modules = await collectModules(root, collected.modules);
+  const graph = await collectStylesheets(project.tailwind.entry, files, modules.imports);
+  const moduleCss = new Set<string>();
+  function reachedCss(file: string): void {
+    if (moduleCss.has(file)) return;
+    moduleCss.add(file);
+    for (const item of graph.files.get(file)?.imports ?? []) reachedCss(item.file);
+  }
+  for (const sheet of graph.files.values()) if (sheet.reached.some(reach => reach.kind === 'module')) reachedCss(sheet.file);
+  modules.counts.cssFiles = moduleCss.size;
+  const css = await lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets);
+  const stylesheetsMs = performance.now() - stylesheetStart;
+  const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions);
+  const unreachable = await unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value));
+  for (const finding of findings) {
+    const file = unreachable.get(finding.declaration.value);
+    if (file) finding.fix = `${finding.declaration.value} is declared in ${file}, which nothing imports. Import that stylesheet or include it in source globs.`;
+  }
   const sites = collected.sites.map(site => {
     const candidate = lowered.candidates.get(site.token);
     return { ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
-      ...declaration, when: [...site.conditions, ...declaration.when], refs: [...new Set([...declaration.value.matchAll(/var\((--[\w-]+)/g)].map(match => match[1]!))],
-      site: location(site), owner: site.owner, origin: 'class' as const,
+      ...declaration, when: [...site.conditions, ...declaration.when], refs: references(declaration.value),
+      site: location(site), owner: site.owner, origin: /(?:^|:)(?:-?[\w-]+-)?\[.+\](?:\/.+)?!?$/.test(site.token) ? 'arbitrary' as const : 'class' as const, sourceOrigin: 'project' as const,
     })), notes: candidate?.notes ?? [] };
   });
+  const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations];
+  const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
+  for (const declaration of declarations) origins[declaration.origin]++;
+  const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
+  const stylesheets: Report['stylesheets'] = [...graph.files.values()].map(sheet => ({ file: sheet.file, sourceOrigin: sheet.sourceOrigin, ...(sheet.package ? { package: sheet.package } : {}), reached: sheet.reached }));
+  for (const sheet of collected.styles.stylesheets) stylesheets.push({ file: sheet.source.file, sourceOrigin: 'project', reached: [{ kind: 'jsx-style' }] });
+  for (const sheet of stylesheets) for (const kind of new Set(sheet.reached.map(reach => reach.kind))) stylesheetCounts[kind]++;
   const report: Report = {
     schemaVersion: 1,
     tool,
@@ -57,11 +86,16 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     config: { path: config.path, inferred: config.path === null },
     ...project,
     findings,
-    notes: [...css.notes, ...[...lowered.candidates].flatMap(([token, result]) => result.notes.map(note => `${token}: ${note}`))],
+    declarations,
+    stylesheets,
+    moduleGraph: modules.counts,
+    notes: [...modules.notes, ...css.notes, ...[...lowered.candidates].flatMap(([token, result]) => result.notes.map(note => `${token}: ${note}`))],
     coverage: { existence: { total: collected.sites.filter(site => !site.opaque).length,
-      dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) } },
+      dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) }, declarations: origins, stylesheets: stylesheetCounts,
+      inline: { sites: collected.styles.sites.length, literalSites: collected.styles.sites.filter(site => site.literal).length,
+        opaque: collected.styles.declarations.filter(declaration => declaration.opaque).length, spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
     classes: { unique: unique.length, opaque: collected.opaque },
-    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
+    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
   return { report, sites };
 }
@@ -70,8 +104,8 @@ export interface ExplainedClassSite extends ClassSite { declarations: import('./
 export async function check(options: CheckOptions = {}): Promise<Report> {
   return (await analyze(options)).report;
 }
-export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; opaque: number }> {
+export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; declarations: Declaration[]; opaque: number }> {
   const { report, sites } = await analyze(options);
   const absolute = resolve(report.root, file);
-  return { root: report.root, file: absolute, sites: sites.filter(site => site.file === absolute), opaque: report.classes.opaque };
+  return { root: report.root, file: absolute, sites: sites.filter(site => site.file === absolute), declarations: report.declarations.filter(declaration => declaration.site.file === absolute), opaque: report.classes.opaque };
 }

@@ -5,22 +5,24 @@ import type { ClassSite } from '../collect/classes.js';
 import type { CandidateCss } from '../lower/css.js';
 import { declaredClasses } from '../lower/css.js';
 import type { Declaration, Finding, Site } from '../report.js';
-import { errorMessage, UsageError } from '../errors.js';
 import { ignore } from '../project.js';
 
-export async function cssClasses(root: string): Promise<{ classes: Set<string>; notes: string[] }> {
-  const classes = new Set<string>();
-  const notes: string[] = [];
+export async function unreachableClasses(root: string, reachable: Set<string>, dead: string[]): Promise<Map<string, string>> {
+  const classes = new Map<string, string>();
+  if (!dead.length) return classes;
   const files = await glob('**/*.css', { cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false });
   for (const file of files.sort()) {
+    if (reachable.has(file)) continue;
     try {
-      const result = declaredClasses(await readFile(file, 'utf8'), file);
-      for (const name of result.classes) classes.add(name);
-      for (const warning of result.warnings) notes.push(`CSS scan ${relative(root, file)}: ${warning}`);
+      const css = await readFile(file, 'utf8');
+      // This scan supplies fix text only. It never contributes existence proof.
+      if (!dead.some(token => css.includes(token) || css.includes(token.replace(/[^\w-]/g, char => `\\${char}`)))) continue;
+      const result = declaredClasses(css, file);
+      for (const name of dead) if (result.classes.has(name) && !classes.has(name)) classes.set(name, relative(root, file));
     }
-    catch (error) { throw new UsageError(`Parse stylesheet ${file}: ${errorMessage(error)}`); }
+    catch { /* An unreachable malformed stylesheet cannot affect the project. */ }
   }
-  return { classes, notes };
+  return classes;
 }
 function marker(token: string, markers: string[]): boolean {
   if (/^(group|peer)(\/[^\s]+)?$/.test(token)) return true;

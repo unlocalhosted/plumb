@@ -1,0 +1,16 @@
+@import '../styles/imported.css' layer(components) supports(display: grid) (width > 600px);
+.page { gap: 10px; }
+@layer components {
+  .outer {
+    @media (hover: hover) {
+      &:hover { color: red; gap: 3px }
+    }
+  }
+}
+@supports (display: grid) {
+  @container card (width > 20px) { .responsive { display: grid; } }
+}
+.mixed:hover, .plain { opacity: .5; }
+@keyframes pulse { from { opacity: 0; --x: 0 } to { opacity: 1 } }
+:root { --literal: 13px; }
+.last { color: red }

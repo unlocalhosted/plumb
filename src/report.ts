@@ -18,7 +18,7 @@ export interface Site {
 }
 
 export interface Condition {
-  kind: 'media' | 'pseudo' | 'selector' | 'container' | 'supports' | 'branch';
+  kind: 'media' | 'pseudo' | 'selector' | 'container' | 'supports' | 'branch' | 'layer';
   text: string;
 }
 
@@ -30,7 +30,9 @@ export interface Declaration {
   when: Condition[];
   site: Site;
   owner: { kind: 'element' | 'component'; name: string };
-  origin: 'class' | 'arbitrary' | 'stylesheet' | 'apply' | 'inline' | 'custom-property';
+  origin: 'class' | 'arbitrary' | 'stylesheet' | 'apply' | 'inline' | 'custom-property' | 'keyframes';
+  sourceOrigin?: 'project' | 'framework';
+  package?: string;
   opaque?: 'dynamic-value' | 'dynamic-class' | 'spread';
 }
 
@@ -81,9 +83,12 @@ export interface Report {
   files: FileCounts;
   findings: Finding[];
   notes: string[];
-  coverage: { existence: { total: number; dead: number } };
+  declarations: Declaration[];
+  stylesheets: { file: string; sourceOrigin: 'project' | 'framework'; package?: string; reached: { kind: 'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style'; from?: string; specifier?: string }[] }[];
+  moduleGraph: { modules: number; followed: number; cssFiles: number; cacheHits: number; cacheMisses: number; parseMs: number; totalMs: number };
+  coverage: { existence: { total: number; dead: number }; declarations: Record<Declaration['origin'], number>; stylesheets: Record<'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style', number>; inline: { sites: number; literalSites: number; opaque: number; spreads: number } };
   classes: { unique: number; opaque: number };
-  timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number }; cacheHits: number; cacheMisses: number };
+  timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number; stylesheets: number; inline: number }; cacheHits: number; cacheMisses: number };
 }
 
 export function formatText(report: Report, verbose = false): string {
@@ -99,5 +104,8 @@ export function formatText(report: Report, verbose = false): string {
     `${findings || 'no findings'}\n\n` +
     (verbose ? report.notes.map(note => `note: ${note}\n`).join('') : '') +
     `existence ${report.coverage.existence.total} class tokens, ${report.coverage.existence.dead} dead  ${report.findings.length} findings  ${report.classes.opaque} opaque\n` +
+    `declarations ${Object.entries(report.coverage.declarations).map(([origin, count]) => `${count} ${origin}`).join(', ')}\n` +
+    `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, count]) => `${count} ${reach}`).join(', ')}  inline ${report.coverage.inline.literalSites}/${report.coverage.inline.sites} literal sites, ${report.coverage.inline.opaque} opaque declarations\n` +
+    `modules ${report.moduleGraph.followed} followed outside source globs, ${report.moduleGraph.cssFiles} CSS files reached  ${report.moduleGraph.totalMs.toFixed(1)}ms, parse ${report.moduleGraph.parseMs.toFixed(1)}ms  cache ${report.moduleGraph.cacheHits} hits, ${report.moduleGraph.cacheMisses} misses\n` +
     `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${report.timing.cacheHits} hits, ${report.timing.cacheMisses} misses\n`;
 }

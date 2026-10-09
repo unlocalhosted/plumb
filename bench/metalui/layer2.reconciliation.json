@@ -1,0 +1,6175 @@
+{
+  "root": "/Users/vijaysingh/unlocalhosted/metalui",
+  "inline": {
+    "sites": 746,
+    "literalSites": 238,
+    "opaque": 1361,
+    "spreads": 177
+  },
+  "grepHits": 247,
+  "grepLines": 236,
+  "literalLines": 231,
+  "categories": {
+    "grep hit: runtime expression/call/index, opaque value": [
+      {
+        "location": "apps/docs/src/blocks/availability-picker/availability-picker.tsx:371:9",
+        "text": "style={{ gridTemplateRows: open ? '1fr' : '0fr', opacity: open ? 1 : 0 }}",
+        "declarations": [
+          {
+            "prop": "grid-template-rows",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ButtonSmartControls.tsx:79:47",
+        "text": "style={{ width: shapeWidth + 28, height: m.h * 2 + 28 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ButtonSmartControls.tsx:80:46",
+        "text": "style={{ width: shapeWidth, height: m.h * 2, borderRadius: radius * 2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ButtonSmartControls.tsx:81:50",
+        "text": "style={{ width: padding * 2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ButtonSmartControls.tsx:81:184",
+        "text": "style={{ width: padding * 2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ButtonSmartControls.tsx:118:297",
+        "text": "style={{ background: index === 0 ? recipe.fill : 'var(--btn-bg)', boxShadow: index === 0 ? 'var(--btn-sh)' : recipe.shadows[index - 1] }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Motion.tsx:269:77",
+        "text": "style={{ opacity: open ? 0 : 1, transition: ride(d.surface, ['opacity']) }}",
+        "declarations": [
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Motion.tsx:270:79",
+        "text": "style={{ opacity: open ? 1 : 0, transition: ride(d.surface, ['opacity']) }}",
+        "declarations": [
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Radius.tsx:71:9",
+        "text": "style={{ borderRadius: Math.max(r, 0), padding: last ? 0 : d.nest.inset, minHeight: last ? 72 : undefined }}",
+        "declarations": [
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "min-height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Radius.tsx:150:96",
+        "text": "style={{ left: p.h / 2 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Radius.tsx:151:96",
+        "text": "style={{ right: p.h / 2 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:184:13",
+        "text": "style={{ opacity: pick === null ? 0 : 1 }}",
+        "declarations": [
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:154:108",
+        "text": "style={{ width: i === lines - 1 ? '64%' : '100%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:269:118",
+        "text": "style={{ color: t.id === tab ? '#fff' : 'rgba(255,255,255,.55)' }}",
+        "declarations": [
+          {
+            "prop": "color",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonSpecimens.tsx:120:90",
+        "text": "style={{ width: Math.max(radius, 6) + 3, height: Math.max(radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonSpecimens.tsx:316:52",
+        "text": "style={{ top: n * 6 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonSpecimens.tsx:317:16",
+        "text": "style={{ top: travel * 6 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/CheckboxSpecimens.tsx:84:84",
+        "text": "style={{ width: Math.max(radius, 6) + 3, height: Math.max(radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipXray.tsx:157:38",
+        "text": "style={{ top: H + 26, fontSize: 15 * S, opacity: flat ? 0 : 1 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "font-size",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/DialogSpecimens.tsx:273:117",
+        "text": "style={{ left: DX - 5 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/DialogXray.tsx:257:53",
+        "text": "style={{ width: W, height: H, borderRadius: 18 * S }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/DialogXray.tsx:258:48",
+        "text": "style={{ padding: 24 * S, gap: 10 * S }}",
+        "declarations": [
+          {
+            "prop": "padding",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "gap",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldSpecimens.tsx:125:45",
+        "text": "style={{ width: Math.max(m.radius, 6) + 3, height: Math.max(m.radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldSpecimens.tsx:129:85",
+        "text": "style={{ top: m.h / 2, width: m.padL }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldSpecimens.tsx:130:90",
+        "text": "style={{ left: m.padL - 3, top: glyphTop - 3, width: F.glyph + 6, height: F.glyph + 6 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:143:13",
+        "text": "style={{ top: BACK_TOP - 4, width: FR.back['tab-width'] + 8, height: FR.back['tab-rise'] + 12 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:236:13",
+        "text": "style={{ top: FLAP_TOP + tipped - 5 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:282:13",
+        "text": "style={{ top: FLAP_TOP + 14, height: FR.flap.height - 28 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonSpecimens.tsx:115:42",
+        "text": "style={{ top: n * 6 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonSpecimens.tsx:116:27",
+        "text": "style={{ top: m.press * 6 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonSpecimens.tsx:204:86",
+        "text": "style={{ width: Math.max(m.radius, 6) + 3, height: Math.max(m.radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdSpecimens.tsx:50:355",
+        "text": "style={{ ['--lean' as string]: lean ? 1 : 0 }}",
+        "declarations": [
+          {
+            "prop": "--lean",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdSpecimens.tsx:50:1353",
+        "text": "style={{ width: Math.max(m.radius, 6) + 3, height: Math.max(m.radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LassoSpecimens.tsx:64:13",
+        "text": "style={{ left: n.x, top: n.y, width: n.w, height: n.h, background: card.fill, boxShadow: scalePx(card.shadows.slice(0, 4).join(', '), 0.6) }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LassoXray.tsx:50:37",
+        "text": "style={{ fontSize: 12 * S, color: hit(n) ? 'var(--ink)' : 'var(--ink3)' }}",
+        "declarations": [
+          {
+            "prop": "font-size",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "color",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:142:52",
+        "text": "style={{ left: W - m.pad - (reach - m.pad) / 2, top: m.pad, width: reach, height: SCREEN_H }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:143:18",
+        "text": "style={{ left: (reach - m.pad) / 2, width: m.pad }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:188:51",
+        "text": "style={{ left: x - 5, top: m.pad - 5, ['--lean' as string]: lean?.k ?? 0, ['--lean-tint' as string]: lean ? tintFor(lean.host, colorway) : 'transparent' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--lean",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--lean-tint",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:344:46",
+        "text": "style={{ left: m.pad, top: m.pad, width: W - m.pad * 2, height: SCREEN_H }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:345:52",
+        "text": "style={{ width: Math.max(m.screenR, 6) + 3, height: Math.max(m.screenR, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuSpecimens.tsx:218:89",
+        "text": "style={{ width: Math.max(m.rowR, 6) + 3, height: Math.max(m.rowR, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteSpecimens.tsx:414:99",
+        "text": "style={{ left: cap.x, top: cap.y + 4, width: cap.w, height: Math.max(0, cap.h - 10), borderRadius: m.rowR }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteXray.tsx:137:52",
+        "text": "style={{ left: -30 * S, top: -20 * S, width: W + 60 * S, height: H + 40 * S, borderRadius: 18 * S, background: look.colorway === 'graphite' ? 'rgba(14,14,15,.25)' : 'rgba(243,243,241,.25)' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderSpecimens.tsx:105:45",
+        "text": "style={{ top: (K - TH) / 2, width: WIDTH, height: TH }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesSpecimens.tsx:115:58",
+        "text": "style={{ left: x - th, width: th * 2, top: A.y - 10, height: B0.y + B0.h - A.y + 20 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:147:83",
+        "text": "style={{ zoom, paddingTop: Math.ceil(big - m.h / 2 + 5) }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding-top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:150:146",
+        "text": "style={{ left: -big - 1, top: -big - 1 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:304:17",
+        "text": "style={{ left: m.pad + P.lamp.bezel + m.lampSize / 2 - ring / 2, top: m.h / 2 - ring / 2, width: ring, height: ring }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchSpecimens.tsx:47:651",
+        "text": "style={{ width: Math.max(m.radius, 6) + 3, height: Math.max(m.radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchSpecimens.tsx:97:355",
+        "text": "style={{ width: Math.max(size, P.led.size), height: Math.max(size, P.led.size), right: P.led.inset - (Math.max(size, P.led.size) - size) / 2, top: P.led.inset - (Math.max(size, P.led.size) - size) / 2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "right",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchSpecimens.tsx:150:84",
+        "text": "style={{ left: m.gap + (m.on ? 0 : travel), top: m.gap, width: thumb, height: thumb, opacity: lean }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchSpecimens.tsx:151:77",
+        "text": "style={{ width: SIZES[sizeLean].width, height: SIZES[sizeLean].height, left: (width - SIZES[sizeLean].width) / 2, top: (height - SIZES[sizeLean].height) / 2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherSpecimens.tsx:112:50",
+        "text": "style={{ left: thumb.x + 8, top: thumb.y + 6, width: Math.max(12, thumb.w - 16), height: thumb.h - 12 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherSpecimens.tsx:118:51",
+        "text": "style={{ left: thumb.x, top: thumb.y + 6, width: thumb.w, height: thumb.h - 12 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherSpecimens.tsx:120:66",
+        "text": "style={{ left: thumb.x, top: thumb.y + thumb.h - 5, width: thumb.w }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarSpecimens.tsx:303:141",
+        "text": "style={{ left: a.x + a.w, top: a.y + a.h * 0.2, width: Math.max(0, b.x - a.x - a.w), height: a.h * 0.6 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarSpecimens.tsx:377:48",
+        "text": "style={{ width: Math.max(r, 6) + 3, height: Math.max(r, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/TooltipSpecimens.tsx:278:84",
+        "text": "style={{ width: Math.max(m.radius, 6) + 3, height: Math.max(m.radius, 6) + 3 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      }
+    ],
+    "grep hit: literal declaration lowered": [
+      {
+        "location": "apps/docs/src/pages/Home.tsx:46:17",
+        "text": "style={{ margin: '6px 0 10px' }}",
+        "declarations": [
+          {
+            "prop": "margin",
+            "value": "6px 0 10px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/Home.tsx:52:16",
+        "text": "style={{ marginTop: 12 }}",
+        "declarations": [
+          {
+            "prop": "margin-top",
+            "value": "12px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/Home.tsx:56:17",
+        "text": "style={{ margin: '6px 0 10px' }}",
+        "declarations": [
+          {
+            "prop": "margin",
+            "value": "6px 0 10px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/Home.tsx:62:16",
+        "text": "style={{ marginTop: 12 }}",
+        "declarations": [
+          {
+            "prop": "margin-top",
+            "value": "12px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Button.tsx:254:102",
+        "text": "style={{ ...p.style, zoom: 2, opacity: hot === null || hot === i ? 1 : 0.3, transition: 'opacity var(--mu-r-button-self-fade)' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "2"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity var(--mu-r-button-self-fade)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Button.tsx:261:44",
+        "text": "style={{ zoom: 2 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Checkbox.tsx:58:90",
+        "text": "style={{ ...vars, zoom: 2.5, font: '500 13px/20px var(--sans)' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "2.5"
+          },
+          {
+            "prop": "font",
+            "value": "500 13px/20px var(--sans)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Checkbox.tsx:77:49",
+        "text": "style={{ font: '500 15px/22px var(--sans)', zoom: 1.2 }}",
+        "declarations": [
+          {
+            "prop": "font",
+            "value": "500 15px/22px var(--sans)"
+          },
+          {
+            "prop": "zoom",
+            "value": "1.2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/CheckboxGroup.tsx:43:84",
+        "text": "style={{ ...vars, zoom: 1.4 }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "1.4"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/CheckboxGroup.tsx:52:46",
+        "text": "style={{ zoom: 1.3 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.3"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Fan.tsx:47:80",
+        "text": "style={{ minHeight: 'calc(var(--mu-space-64) * 4)' }}",
+        "declarations": [
+          {
+            "prop": "min-height",
+            "value": "calc(var(--mu-space-64) * 4)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Field.tsx:19:62",
+        "text": "style={{ width: 320 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "320px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Field.tsx:20:20",
+        "text": "style={{ width: '100%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:39:34",
+        "text": "style={{ position: 'relative', left: 0, bottom: 'auto', transform: 'none', transition: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "relative"
+          },
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "bottom",
+            "value": "auto"
+          },
+          {
+            "prop": "transform",
+            "value": "none"
+          },
+          {
+            "prop": "transition",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:41:49",
+        "text": "style={{ width: '70%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "70%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:43:34",
+        "text": "style={{ width: '60%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "60%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:110:9",
+        "text": "style={{ height: 380, touchAction: 'none' }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "380px"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:124:14",
+        "text": "style={{ position: 'absolute', left: '66%', top: 110, transform: 'translateX(-50%)' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "66%"
+          },
+          {
+            "prop": "top",
+            "value": "110px"
+          },
+          {
+            "prop": "transform",
+            "value": "translateX(-50%)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:154:65",
+        "text": "style={{ position: 'absolute', left: 36, bottom: 24, background: 'none', border: 0, cursor: 'pointer' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "36px"
+          },
+          {
+            "prop": "bottom",
+            "value": "24px"
+          },
+          {
+            "prop": "background",
+            "value": "none"
+          },
+          {
+            "prop": "border",
+            "value": "0"
+          },
+          {
+            "prop": "cursor",
+            "value": "pointer"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/IconButton.tsx:18:53",
+        "text": "style={{ zoom: 1.3 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.3"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Kbd.tsx:53:55",
+        "text": "style={{ zoom: 1.5 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.5"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/LineHandles.tsx:22:7",
+        "text": "style={{ height: 320, touchAction: 'none' }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "320px"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/LineHandles.tsx:27:33",
+        "text": "style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "top",
+            "value": "0"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/NumberField.tsx:41:74",
+        "text": "style={{ ...vars, zoom: 1.6 }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/NumberField.tsx:54:73",
+        "text": "style={{ zoom: 1.3 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.3"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/PerfectPreview.tsx:213:7",
+        "text": "style={{ height: 360, touchAction: 'none', cursor: 'crosshair' }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "360px"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          },
+          {
+            "prop": "cursor",
+            "value": "crosshair"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/PerfectPreview.tsx:224:33",
+        "text": "style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "top",
+            "value": "0"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Radio.tsx:46:42",
+        "text": "style={{ ...vars, zoom: 2 }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Radio.tsx:61:60",
+        "text": "style={{ zoom: 1.4 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.4"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Region.tsx:152:9",
+        "text": "style={{ left: 0, top: 0, transform: 'translate3d(24px, 300px, 0)', zIndex: 2 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "top",
+            "value": "0"
+          },
+          {
+            "prop": "transform",
+            "value": "translate3d(24px, 300px, 0)"
+          },
+          {
+            "prop": "z-index",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Select.tsx:16:34",
+        "text": "style={{ display: 'block', width: 10, height: 10, borderRadius: 99, background: c, boxShadow: 'inset 0 0 0 .5px rgba(0,0,0,.15)' }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "block"
+          },
+          {
+            "prop": "width",
+            "value": "10px"
+          },
+          {
+            "prop": "height",
+            "value": "10px"
+          },
+          {
+            "prop": "border-radius",
+            "value": "99px"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "inset 0 0 0 .5px rgba(0,0,0,.15)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Select.tsx:43:78",
+        "text": "style={{ background: 'none', border: 0, cursor: 'pointer' }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "none"
+          },
+          {
+            "prop": "border",
+            "value": "0"
+          },
+          {
+            "prop": "cursor",
+            "value": "pointer"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/SelectionFrame.tsx:81:9",
+        "text": "style={{ width: width ?? 'max-content', maxWidth: 480, borderRadius: radius }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "max-width",
+            "value": "480px"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Settings.tsx:13:10",
+        "text": "style={{ width: 'min(560px, 100%)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "min(560px, 100%)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Spinner.tsx:110:38",
+        "text": "style={{ minHeight: '2lh' }}",
+        "declarations": [
+          {
+            "prop": "min-height",
+            "value": "2lh"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Spinner.tsx:111:50",
+        "text": "style={{ minHeight: '2lh' }}",
+        "declarations": [
+          {
+            "prop": "min-height",
+            "value": "2lh"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Spinner.tsx:133:48",
+        "text": "style={{ minHeight: '2lh' }}",
+        "declarations": [
+          {
+            "prop": "min-height",
+            "value": "2lh"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Swatch.tsx:17:18",
+        "text": "style={{ zoom: 1.6 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Swatch.tsx:18:146",
+        "text": "style={{ zoom: 0.55 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "0.55"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Switch.tsx:16:51",
+        "text": "style={{ zoom: 1.6 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Toggle.tsx:36:75",
+        "text": "style={{ ...vars, zoom: 1.6 }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Toggle.tsx:70:59",
+        "text": "style={{ zoom: 1.2 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Materials.tsx:15:41",
+        "text": "style={{ background: 'repeating-linear-gradient(90deg, #1f1f1f 0 14px, #ebebeb 14px 28px)' }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "repeating-linear-gradient(90deg, #1f1f1f 0 14px, #ebebeb 14px 28px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/AssistLab.tsx:344:46",
+        "text": "style={{ height: 300, touchAction: 'none', cursor: 'crosshair' }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "300px"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          },
+          {
+            "prop": "cursor",
+            "value": "crosshair"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ConnectorLab.tsx:53:46",
+        "text": "style={{ height: 340, touchAction: 'none' }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "340px"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FarCanvas.tsx:32:66",
+        "text": "style={{ background: 'linear-gradient(160deg, #9DB0C2, #4E5E70)' }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "linear-gradient(160deg, #9DB0C2, #4E5E70)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FarCanvas.tsx:55:12",
+        "text": "style={{ width: 300, height: 36 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "300px"
+          },
+          {
+            "prop": "height",
+            "value": "36px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FarCanvas.tsx:85:42",
+        "text": "style={{ zoom: 0.45, width: it.w, height: it.kind === 'region' || it.kind === 'image' || it.kind === 'file' ? it.h : undefined }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "0.45"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FarCanvas.tsx:86:42",
+        "text": "style={{ zoom: 0.45 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "0.45"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:87:34",
+        "text": "style={{ position: 'relative', left: 0, bottom: 'auto', transform: 'none', transition: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "relative"
+          },
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "bottom",
+            "value": "auto"
+          },
+          {
+            "prop": "transform",
+            "value": "none"
+          },
+          {
+            "prop": "transition",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:89:49",
+        "text": "style={{ width: '70%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "70%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:91:34",
+        "text": "style={{ width: '60%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "60%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:247:56",
+        "text": "style={{ height: 360 }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "360px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:251:53",
+        "text": "style={{ position: 'absolute', left: R.x, top: R.y, width: R.w, height: R.h, zIndex: 1, opacity: unfolding ? 1 : sheetOn || atEnd ? 0 : 1, pointerEvents: atStart ? 'auto' : 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "z-index",
+            "value": "1"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:254:75",
+        "text": "style={{ position: 'absolute', right: 18, top: 14, background: 'none', border: 0, cursor: 'pointer' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "right",
+            "value": "18px"
+          },
+          {
+            "prop": "top",
+            "value": "14px"
+          },
+          {
+            "prop": "background",
+            "value": "none"
+          },
+          {
+            "prop": "border",
+            "value": "0"
+          },
+          {
+            "prop": "cursor",
+            "value": "pointer"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:258:16",
+        "text": "style={{ position: 'absolute', zIndex: 3, pointerEvents: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "z-index",
+            "value": "3"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:264:26",
+        "text": "style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 1, pointerEvents: 'none', opacity: sheetOn ? m : 0 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          },
+          {
+            "prop": "z-index",
+            "value": "1"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:272:16",
+        "text": "style={{ position: 'absolute', left: backX, top: backY + rise, width: backW, height: backH * (R.h / FOLD), opacity: 1 - m }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:273:65",
+        "text": "style={{ position: 'absolute', inset: 0 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:275:16",
+        "text": "style={{ position: 'absolute', left: backX, top: backY, width: backW, height: backH + rise, opacity: m, background: 'linear-gradient(180deg, color-mix(in srgb, var(--mu-folder-top) var(--mu-r-folder-shape-translucency), transparent), color-mix(in srgb, var(--mu-folder-bottom) var(--mu-r-folder-shape-translucency), transparent))' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "linear-gradient(180deg, color-mix(in srgb, var(--mu-folder-top) var(--mu-r-folder-shape-translucency), transparent), color-mix(in srgb, var(--mu-folder-bottom) var(--mu-r-folder-shape-translucency), transparent))"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:276:16",
+        "text": "style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', opacity: m }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:277:41",
+        "text": "style={{ stroke: 'var(--mu-r-folder-shape-edge)', strokeWidth: 1 }}",
+        "declarations": [
+          {
+            "prop": "stroke",
+            "value": "var(--mu-r-folder-shape-edge)"
+          },
+          {
+            "prop": "stroke-width",
+            "value": "1"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:283:28",
+        "text": "style={{ position: 'absolute', zIndex: 3, pointerEvents: 'none', transformOrigin: '50% 50%', ...cardStyle(i) }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "z-index",
+            "value": "3"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          },
+          {
+            "prop": "transform-origin",
+            "value": "50% 50%"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:291:14",
+        "text": "style={{ position: 'absolute', left: backX, top: foldY, width: backW, height: flapH, zIndex: 4, pointerEvents: 'none', opacity: sheetOn ? 1 : 0, perspective: 6000 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "z-index",
+            "value": "4"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "perspective",
+            "value": "6000px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:294:20",
+        "text": "style={{ position: 'absolute', left: 0, top: -FOLD * (flapH / STRIP), width: '100%', height: R.h * (flapH / STRIP) }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "0"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:295:69",
+        "text": "style={{ position: 'absolute', inset: 0 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:298:18",
+        "text": "style={{ position: 'absolute', inset: 0, transform: 'rotateX(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "transform",
+            "value": "rotateX(180deg)"
+          },
+          {
+            "prop": "backface-visibility",
+            "value": "hidden"
+          },
+          {
+            "prop": "-webkit-backface-visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:300:44",
+        "text": "style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:310:31",
+        "text": "style={{ position: 'absolute', left: '50%', top: FOLDER.top, translate: '-50% 0', zIndex: 5, opacity: atEnd ? 1 : 0, pointerEvents: atEnd && !unfolding ? 'auto' : 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "50%"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "translate",
+            "value": "-50% 0"
+          },
+          {
+            "prop": "z-index",
+            "value": "5"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InstrumentSpecimen.tsx:23:90",
+        "text": "style={{ width: 320 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "320px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InstrumentSpecimen.tsx:24:39",
+        "text": "style={{ width: 360, height: 200 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "360px"
+          },
+          {
+            "prop": "height",
+            "value": "200px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InstrumentSpecimen.tsx:26:82",
+        "text": "style={{ position: 'absolute', left: 48, top: 40 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "48px"
+          },
+          {
+            "prop": "top",
+            "value": "40px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InstrumentSpecimen.tsx:26:178",
+        "text": "style={{ position: 'absolute', left: 48, top: 106 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "48px"
+          },
+          {
+            "prop": "top",
+            "value": "106px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InstrumentSpecimen.tsx:27:72",
+        "text": "style={{ position: 'absolute', left: 64, top: 48, width: 230, height: 80 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "64px"
+          },
+          {
+            "prop": "top",
+            "value": "48px"
+          },
+          {
+            "prop": "width",
+            "value": "230px"
+          },
+          {
+            "prop": "height",
+            "value": "80px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:45:64",
+        "text": "style={{ left: x, top: y, width: w, height: h, borderRadius: 7 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "7px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:50:63",
+        "text": "style={{ filter: 'drop-shadow(0 2px 3px rgba(24,22,16,.18))' }}",
+        "declarations": [
+          {
+            "prop": "filter",
+            "value": "drop-shadow(0 2px 3px rgba(24,22,16,.18))"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:71:52",
+        "text": "style={{ width: 110, height: 30 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "110px"
+          },
+          {
+            "prop": "height",
+            "value": "30px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:76:31",
+        "text": "style={{ width: 130, height: 70 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "130px"
+          },
+          {
+            "prop": "height",
+            "value": "70px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:82:31",
+        "text": "style={{ width: 130, height: 76 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "130px"
+          },
+          {
+            "prop": "height",
+            "value": "76px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LayerSorter.tsx:88:31",
+        "text": "style={{ width: 130, height: 76 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "130px"
+          },
+          {
+            "prop": "height",
+            "value": "76px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LetterPad.tsx:79:9",
+        "text": "style={{ height, touchAction: 'none', cursor: 'crosshair', maxWidth: 360 }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          },
+          {
+            "prop": "cursor",
+            "value": "crosshair"
+          },
+          {
+            "prop": "max-width",
+            "value": "360px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/LetterPad.tsx:88:31",
+        "text": "style={{ position: 'absolute', left: 12, top: baseline - xh * 1.6, fontSize: xh * 1.4, lineHeight: 1, opacity: 0.18, pointerEvents: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "12px"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "font-size",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "line-height",
+            "value": "1"
+          },
+          {
+            "prop": "opacity",
+            "value": "0.18"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:20:72",
+        "text": "style={{ width: 320 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "320px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:22:117",
+        "text": "style={{ width: 100, height: 64 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100px"
+          },
+          {
+            "prop": "height",
+            "value": "64px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:22:193",
+        "text": "style={{ width: 100, height: 80 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100px"
+          },
+          {
+            "prop": "height",
+            "value": "80px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:22:276",
+        "text": "style={{ width: 100, height: 110 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100px"
+          },
+          {
+            "prop": "height",
+            "value": "110px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:23:31",
+        "text": "style={{ width: 280 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "280px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:25:59",
+        "text": "style={{ width: 360, height: 180 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "360px"
+          },
+          {
+            "prop": "height",
+            "value": "180px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:25:124",
+        "text": "style={{ position: 'absolute', left: 12, top: 60 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "12px"
+          },
+          {
+            "prop": "top",
+            "value": "60px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:25:216",
+        "text": "style={{ position: 'absolute', right: 12, top: 60 }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "right",
+            "value": "12px"
+          },
+          {
+            "prop": "top",
+            "value": "60px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ObjectSpecimen.tsx:29:31",
+        "text": "style={{ width: 360 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "360px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/PartSpecimen.tsx:24:65",
+        "text": "style={{ width: 320 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "320px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/PartSpecimen.tsx:25:81",
+        "text": "style={{ width: 280 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "280px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/SurfaceFieldDemo.tsx:162:11",
+        "text": "style={{ position: 'absolute', inset: 0, color: 'var(--mu-ink2)' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "color",
+            "value": "var(--mu-ink2)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/Wordmark.tsx:72:46",
+        "text": "style={{ position: 'absolute', left: '0.5em', right: '0.5em', top: '0.07em', height: '40%', borderRadius: '999px', background: 'linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0))', pointerEvents: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "0.5em"
+          },
+          {
+            "prop": "right",
+            "value": "0.5em"
+          },
+          {
+            "prop": "top",
+            "value": "0.07em"
+          },
+          {
+            "prop": "height",
+            "value": "40%"
+          },
+          {
+            "prop": "border-radius",
+            "value": "999px"
+          },
+          {
+            "prop": "background",
+            "value": "linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0))"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:44:25",
+        "text": "style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18 }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "flex"
+          },
+          {
+            "prop": "flex-direction",
+            "value": "column"
+          },
+          {
+            "prop": "gap",
+            "value": "8px"
+          },
+          {
+            "prop": "margin-top",
+            "value": "18px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:104:13",
+        "text": "style={{ margin: 0 }}",
+        "declarations": [
+          {
+            "prop": "margin",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:115:43",
+        "text": "style={{ justifyContent: 'center', margin: '-8px 0 24px' }}",
+        "declarations": [
+          {
+            "prop": "justify-content",
+            "value": "center"
+          },
+          {
+            "prop": "margin",
+            "value": "-8px 0 24px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:132:10",
+        "text": "style={{ flexBasis: '100%', textAlign: 'center', marginTop: 4 }}",
+        "declarations": [
+          {
+            "prop": "flex-basis",
+            "value": "100%"
+          },
+          {
+            "prop": "text-align",
+            "value": "center"
+          },
+          {
+            "prop": "margin-top",
+            "value": "4px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:133:57",
+        "text": "style={{ display: 'block', maxWidth: 620, margin: '0 auto' }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "block"
+          },
+          {
+            "prop": "max-width",
+            "value": "620px"
+          },
+          {
+            "prop": "margin",
+            "value": "0 auto"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:134:46",
+        "text": "style={{ display: 'block', marginTop: 6 }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "block"
+          },
+          {
+            "prop": "margin-top",
+            "value": "6px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:134:92",
+        "text": "style={{ fontWeight: 500 }}",
+        "declarations": [
+          {
+            "prop": "font-weight",
+            "value": "500"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:150:51",
+        "text": "style={{ width: '42%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "42%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:267:75",
+        "text": "style={{ background: 'rgba(255,255,255,.06)', boxShadow: 'none' }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "rgba(255,255,255,.06)"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/doc.tsx:276:95",
+        "text": "style={{ paddingTop: 44 }}",
+        "declarations": [
+          {
+            "prop": "padding-top",
+            "value": "44px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/floating.tsx:41:10",
+        "text": "style={{ display: 'flex', alignItems: 'flex-start', gap: 10, font: '500 15px/22px var(--sans)', letterSpacing: '-.015em' }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "flex"
+          },
+          {
+            "prop": "align-items",
+            "value": "flex-start"
+          },
+          {
+            "prop": "gap",
+            "value": "10px"
+          },
+          {
+            "prop": "font",
+            "value": "500 15px/22px var(--sans)"
+          },
+          {
+            "prop": "letter-spacing",
+            "value": "-.015em"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/floating.tsx:72:33",
+        "text": "style={{ gap: 12, maxWidth: 270 }}",
+        "declarations": [
+          {
+            "prop": "gap",
+            "value": "12px"
+          },
+          {
+            "prop": "max-width",
+            "value": "270px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/floating.tsx:125:14",
+        "text": "style={{ width: '100%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonSpecimens.tsx:118:101",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonSpecimens.tsx:119:90",
+        "text": "style={{ right: -3 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonXray.tsx:231:86",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/CheckboxSpecimens.tsx:83:95",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/CheckboxXray.tsx:212:48",
+        "text": "style={{ font: '500 15px/22px var(--sans)', letterSpacing: '-.015em' }}",
+        "declarations": [
+          {
+            "prop": "font",
+            "value": "500 15px/22px var(--sans)"
+          },
+          {
+            "prop": "letter-spacing",
+            "value": "-.015em"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/CheckboxXray.tsx:222:110",
+        "text": "style={{ zoom: 2.4, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2.4"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipSpecimens.tsx:267:86",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipSpecimens.tsx:268:100",
+        "text": "style={{ left: -3 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipXray.tsx:158:46",
+        "text": "style={{ width: W, height: H, borderRadius: R, filter: 'blur(6px)', opacity: flat || gone ? 0 : 0.14, transform: 'translate(4px, 8px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(6px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(4px, 8px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipXray.tsx:166:108",
+        "text": "style={{ display: 'flex', ...face(flat ? 1 : top) }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "flex"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipXray.tsx:196:110",
+        "text": "style={{ zoom: 2.4, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2.4"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/DialogXray.tsx:250:110",
+        "text": "style={{ zoom: 1.2, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.2"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldXray.tsx:144:57",
+        "text": "style={{ width: '100%', ...none }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldXray.tsx:222:45",
+        "text": "style={{ zoom: 1.5 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.5"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldXray.tsx:274:85",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:91:57",
+        "text": "style={{ width: '70%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "70%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:93:42",
+        "text": "style={{ width: '60%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "60%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderXray.tsx:211:110",
+        "text": "style={{ zoom: 1.4, cursor: 'zoom-in', paddingTop: 40 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.4"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          },
+          {
+            "prop": "padding-top",
+            "value": "40px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonSpecimens.tsx:203:86",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:108:60",
+        "text": "style={{ width: W, height: H, borderRadius: (m.radius + 6) * S, transform: 'translateZ(0.5px)', background: 'linear-gradient(#2b2b2e, #1f1f21)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(0.5px)"
+          },
+          {
+            "prop": "background",
+            "value": "linear-gradient(#2b2b2e, #1f1f21)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:113:60",
+        "text": "style={{ width: W, height: H, borderRadius: (m.radius + 6) * S, transform: 'translateZ(0.5px)', background: 'linear-gradient(#2b2b2e, #1f1f21)', boxShadow: '0 0 0 1px rgba(0,0,0,.4)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(0.5px)"
+          },
+          {
+            "prop": "background",
+            "value": "linear-gradient(#2b2b2e, #1f1f21)"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "0 0 0 1px rgba(0,0,0,.4)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:159:21",
+        "text": "style={{ zoom: 2.4 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2.4"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdSpecimens.tsx:50:834",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdSpecimens.tsx:50:1096",
+        "text": "style={{ right: -3 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdXray.tsx:241:82",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LassoXray.tsx:54:35",
+        "text": "style={{ transform: 'translateZ(18px)' }}",
+        "declarations": [
+          {
+            "prop": "transform",
+            "value": "translateZ(18px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LassoXray.tsx:75:56",
+        "text": "style={{ width: '100%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardXray.tsx:169:110",
+        "text": "style={{ zoom: 1.6, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardXray.tsx:184:61",
+        "text": "style={{ width: W, height: H, borderRadius: bezelR, transition: 'opacity .3s', filter: 'blur(18px)', opacity: flat ? 0 : 0.28, transform: 'translate(10px, 22px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(18px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(10px, 22px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardXray.tsx:185:61",
+        "text": "style={{ width: W, height: H, borderRadius: bezelR, transition: 'opacity .3s', filter: 'blur(8px)', opacity: flat ? 0 : 0.18, transform: 'translate(3px, 8px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(8px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(3px, 8px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardXray.tsx:186:61",
+        "text": "style={{ width: W, height: H, borderRadius: bezelR, transition: 'opacity .3s', filter: 'blur(2px)', opacity: flat ? 0 : 0.25 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(2px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuXray.tsx:196:35",
+        "text": "style={{ opacity: flat ? 0 : 1, transition: 'opacity .3s' }}",
+        "declarations": [
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuXray.tsx:200:32",
+        "text": "style={{ left: 20 * S, top: btnH * S, height: z, transform: 'translateZ(4px) rotateX(90deg)' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(4px) rotateX(90deg)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuXray.tsx:202:46",
+        "text": "style={{ top: y0, width: W, height: H, borderRadius: plateR, filter: 'blur(24px)', opacity: flat ? 0 : 0.18, transform: 'translate(10px, 24px)' }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(24px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(10px, 24px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuXray.tsx:229:110",
+        "text": "style={{ zoom: 1.4, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.4"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteXray.tsx:129:105",
+        "text": "style={{ zoom: 0.9 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "0.9"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteXray.tsx:143:85",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteXray.tsx:147:58",
+        "text": "style={{ width: W, height: H, borderRadius: R, filter: 'blur(22px)', opacity: flat ? 0 : 0.2, transform: 'translate(12px, 26px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(22px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(12px, 26px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderSpecimens.tsx:107:54",
+        "text": "style={{ bottom: -3 }}",
+        "declarations": [
+          {
+            "prop": "bottom",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderXray.tsx:220:45",
+        "text": "style={{ zoom: 1.6 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderXray.tsx:242:68",
+        "text": "style={{ width: K, height: K, borderRadius: '50%', filter: 'blur(5px)', opacity: flat ? 0 : 0.22, transition: 'opacity .3s', transform: 'translate(6px, 10px) translateZ(1px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "50%"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(5px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(6px, 10px) translateZ(1px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderXray.tsx:259:82",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesSpecimens.tsx:233:123",
+        "text": "style={{ left: x - 5, top: top + 4, width: 10, height: gap - 8 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "10px"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesSpecimens.tsx:268:130",
+        "text": "style={{ left: s.box.x - 6, top: tip - 5, width: s.box.w + 12, height: 10 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "10px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesXray.tsx:60:58",
+        "text": "style={{ fontSize: 13 * S, color: 'var(--ink2)' }}",
+        "declarations": [
+          {
+            "prop": "font-size",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "color",
+            "value": "var(--ink2)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesXray.tsx:64:59",
+        "text": "style={{ left: (x - th) * S, top: -12 * S, width: th * 2 * S, height: (Hp + 10) * S, transform: 'translateZ(0.4px)' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(0.4px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesXray.tsx:68:45",
+        "text": "style={{ left: b.x * S, top: b.y * S, width: b.w * S, height: b.h * S, borderRadius: 24 * S * 0.6, filter: 'blur(10px)', opacity: 0.2, transform: 'translate(6px, 12px)' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(10px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "0.2"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(6px, 12px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SnapGuidesXray.tsx:86:56",
+        "text": "style={{ width: '100%' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "100%"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:180:34",
+        "text": "style={{ marginTop: 8 }}",
+        "declarations": [
+          {
+            "prop": "margin-top",
+            "value": "8px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:301:93",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:302:91",
+        "text": "style={{ right: -3 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusXray.tsx:203:34",
+        "text": "style={{ width: W, height: H, borderRadius: R, filter: 'blur(6px)', opacity: flat ? 0 : 0.12, transform: 'translate(4px, 8px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(6px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(4px, 8px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusXray.tsx:211:42",
+        "text": "style={{ display: 'flex', ...face(flat ? 1 : top) }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "flex"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusXray.tsx:237:110",
+        "text": "style={{ zoom: 3, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "3"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchSpecimens.tsx:47:412",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchXray.tsx:181:110",
+        "text": "style={{ zoom: 2.2, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2.2"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchXray.tsx:190:67",
+        "text": "style={{ width: W, height: H, borderRadius: Rr, transition: 'opacity .3s', filter: 'blur(2px)', opacity: flat ? 0 : 0.18 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(2px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchSpecimens.tsx:153:78",
+        "text": "style={{ top: -3 }}",
+        "declarations": [
+          {
+            "prop": "top",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchSpecimens.tsx:154:76",
+        "text": "style={{ right: -3 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchXray.tsx:87:132",
+        "text": "style={{ width: w + 80, height: h + 80, left: -40, top: -40, transform: 'translateZ(35px)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(35px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitchXray.tsx:101:17",
+        "text": "style={{ zoom: 3 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "3"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherXray.tsx:252:82",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastSpecimens.tsx:154:45",
+        "text": "style={{ width: m.textGap + 8, marginRight: -4 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "margin-right",
+            "value": "-4px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastSpecimens.tsx:260:88",
+        "text": "style={{ left: -3 }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastSpecimens.tsx:261:100",
+        "text": "style={{ right: -3 }}",
+        "declarations": [
+          {
+            "prop": "right",
+            "value": "-3px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastXray.tsx:238:110",
+        "text": "style={{ zoom: 1.6, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.6"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastXray.tsx:277:82",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:128:45",
+        "text": "style={{ zoom: 1.8 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "1.8"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:140:58",
+        "text": "style={{ width: W, height: H, borderRadius: R, filter: 'blur(2px)', opacity: flat ? 0 : 0.2 }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(2px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:195:82",
+        "text": "style={{ ...face(0), visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/TooltipXray.tsx:214:18",
+        "text": "style={{ zoom: 2 }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/WordmarkXray.tsx:56:95",
+        "text": "style={{ borderRadius: '999px', cursor: 'zoom-in', ...style }}",
+        "declarations": [
+          {
+            "prop": "border-radius",
+            "value": "999px"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/WordmarkXray.tsx:111:62",
+        "text": "style={{ left: px, top: py, width: pw, height: ph, borderRadius: ph / 2, filter: 'blur(8px)', opacity: flat ? 0 : 0.2, transform: 'translate(4px, 9px)' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "blur(8px)"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translate(4px, 9px)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/WordmarkXray.tsx:119:68",
+        "text": "style={{ display: 'flex', ...face(flat ? 1 : top) }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "flex"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/kit.tsx:274:40",
+        "text": "style={{ width: w, height: h, borderRadius: r, transform: 'translateZ(0.5px)', background: fill, boxShadow: shadow }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "translateZ(0.5px)"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      }
+    ],
+    "grep hit: opaque object/spread/computed key": [
+      {
+        "location": "apps/docs/src/ui/xray/SliderXray.tsx:232:73",
+        "text": "style={{ ...face(0.5), visibility: flat ? 'hidden' : undefined }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherSpecimens.tsx:105:229",
+        "text": "style={{ ...face, ['--lean' as string]: lean && active === 'size' ? 1 : 0, ['--ed-step-transition' as string]: active && active !== 'size' ? 'none' : stepMotion.transition }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "--lean",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--ed-step-transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastXray.tsx:257:75",
+        "text": "style={{ ...face(flat ? 0.5 : pillTop), visibility: flat ? 'hidden' : undefined }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToastXray.tsx:268:105",
+        "text": "style={{ ...face(flat ? 1 : capTop), transition: pressed ? sink : undefined }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:152:76",
+        "text": "style={{ ...face(flat ? 0.5 : stripTop), visibility: flat ? 'hidden' : undefined }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:173:73",
+        "text": "style={{ ...face(flat ? 1 : downTop), visibility: flat ? 'hidden' : undefined }}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "visibility",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      }
+    ],
+    "literal missed by grep: multiline object": [
+      {
+        "location": "apps/docs/src/pages/components/Folder.tsx:141:15",
+        "text": "style={{\n                position: 'absolute', left: at.x, top: at.y, zIndex: held ? 30 : 20, cursor: held ? 'grabbing' : 'grab',\n                touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',\n                scale: held ? '1.04' : '1', rotate: held ? '-2deg' : '0deg',\n                filter: held ? 'drop-shadow(0 18px 24px rgba(0,0,0,.18))' : 'none',\n                transition: held ? 'scale .2s var(--mu-spring-part), rotate .2s var(--mu-spring-part), filter .2s ease' : 'left .5s var(--mu-spring-object), top .5s var(--mu-spring-object), scale .3s var(--mu-spring-part), rotate .3s var(--mu-spring-part), filter .3s ease',\n              }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "z-index",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "cursor",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          },
+          {
+            "prop": "user-select",
+            "value": "none"
+          },
+          {
+            "prop": "-webkit-user-select",
+            "value": "none"
+          },
+          {
+            "prop": "scale",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "rotate",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "filter",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/SelectionFrame.tsx:86:11",
+        "text": "style={{\n            opacity: hover || editing ? 1 : 0,\n            transform: hover || editing ? 'translateY(-1px)' : 'translateY(2px) scale(.985)',\n            background: 'linear-gradient(180deg, var(--mu-s-hi), var(--mu-s) 55%, var(--mu-s-lo))',\n            boxShadow: 'var(--mu-raise-sm)',\n          }}",
+        "declarations": [
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "linear-gradient(180deg, var(--mu-s-hi), var(--mu-s) 55%, var(--mu-s-lo))"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "var(--mu-raise-sm)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Radius.tsx:123:15",
+        "text": "style={{\n                width: 260,\n                height: d.classifier.height,\n                borderRadius: d.classifier.radius,\n                border: cls.ok ? undefined : '1px dashed var(--mu-ink3)',\n              }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "260px"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Sizing.tsx:54:21",
+        "text": "style={{\n                      height: h,\n                      borderRadius: keycap ? 'var(--mu-radius-key)' : undefined,\n                      paddingInline: keycap ? 5 : undefined,\n                      paddingLeft: keycap ? undefined : padFor(h, !!icon),\n                      paddingRight: keycap ? undefined : h / 2 - 1,\n                      gap: 6,\n                    }}",
+        "declarations": [
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding-inline",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding-left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding-right",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "gap",
+            "value": "6px"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/Wordmark.tsx:55:7",
+        "text": "style={{\n        position: 'relative',\n        display: 'inline-flex',\n        alignItems: 'stretch',\n        height: '1.62em',\n        borderRadius: '999px',\n        overflow: 'hidden',\n        fontFamily: '\"Geist Variable\", \"Geist\", system-ui, sans-serif',\n        fontSize: size,\n        textTransform: 'uppercase',\n        boxShadow: layers.shadow ? '0 0 0 0.045em rgba(255,255,255,.16), inset 0 0.02em 0 rgba(255,255,255,.35), inset 0 -0.09em 0.2em rgba(0,0,0,.3), 0 0.16em 0.34em rgba(90,20,14,.26), 0 0.03em 0.07em rgba(0,0,0,.2)' : 'none',\n        ...style,\n      }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "relative"
+          },
+          {
+            "prop": "display",
+            "value": "inline-flex"
+          },
+          {
+            "prop": "align-items",
+            "value": "stretch"
+          },
+          {
+            "prop": "height",
+            "value": "1.62em"
+          },
+          {
+            "prop": "border-radius",
+            "value": "999px"
+          },
+          {
+            "prop": "overflow",
+            "value": "hidden"
+          },
+          {
+            "prop": "font-family",
+            "value": "\"Geist Variable\", \"Geist\", system-ui, sans-serif"
+          },
+          {
+            "prop": "font-size",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "text-transform",
+            "value": "uppercase"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      }
+    ],
+    "literal missed by grep: strings without numbers/hex": [
+      {
+        "location": "apps/docs/src/pages/components/LineHandles.tsx:29:96",
+        "text": "style={{ cursor: 'pointer' }}",
+        "declarations": [
+          {
+            "prop": "cursor",
+            "value": "pointer"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Spinner.tsx:130:175",
+        "text": "style={{ '--mu-r-progress-self-height': 'var(--mu-r-rule-self-thickness)' } as React.CSSProperties}",
+        "declarations": [
+          {
+            "prop": "--mu-r-progress-self-height",
+            "value": "var(--mu-r-rule-self-thickness)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Spacing.tsx:99:103",
+        "text": "style={{ background: 'var(--mu-primary-bg)', boxShadow: 'var(--mu-primary-sh)' }}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "var(--mu-primary-bg)"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "var(--mu-primary-sh)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/AssistLab.tsx:345:37",
+        "text": "style={{ overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/ConnectorLab.tsx:55:87",
+        "text": "style={{ position: 'absolute', left: blocks[k].x, top: blocks[k].y, width: blocks[k].w, height: blocks[k].h, cursor: 'grab', display: 'grid', placeItems: 'center', touchAction: 'none' }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "cursor",
+            "value": "grab"
+          },
+          {
+            "prop": "display",
+            "value": "grid"
+          },
+          {
+            "prop": "place-items",
+            "value": "center"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:259:127",
+        "text": "style={{ position: 'absolute', left: p.x, top: p.y }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:266:81",
+        "text": "style={{ fill: 'var(--mu-r-folder-shade-ink)' }}",
+        "declarations": [
+          {
+            "prop": "fill",
+            "value": "var(--mu-r-folder-shade-ink)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/InkCanvas.tsx:79:37",
+        "text": "style={{ transform: `scale(${scale})`, overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/SnapCanvas.tsx:98:7",
+        "text": "style={{ left: b.x, top: b.y, width: b.w, height: b.h, touchAction: 'none' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "touch-action",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/floating.tsx:207:30",
+        "text": "style={{ cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/floating.tsx:309:59",
+        "text": "style={{ display: 'block' }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "block"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:103:17",
+        "text": "style={{ color: P.ghost.ink[colorway], display: 'grid', placeItems: 'center' }}",
+        "declarations": [
+          {
+            "prop": "color",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "display",
+            "value": "grid"
+          },
+          {
+            "prop": "place-items",
+            "value": "center"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:115:39",
+        "text": "style={{ color: P.tool.ink, display: 'grid', placeItems: 'center' }}",
+        "declarations": [
+          {
+            "prop": "color",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "display",
+            "value": "grid"
+          },
+          {
+            "prop": "place-items",
+            "value": "center"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdXray.tsx:201:110",
+        "text": "style={{ zoom: S, cursor: 'zoom-in' }}",
+        "declarations": [
+          {
+            "prop": "zoom",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "cursor",
+            "value": "zoom-in"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:77:54",
+        "text": "style={{ ...look.style, transition: 'none' } as React.CSSProperties}",
+        "declarations": [
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          },
+          {
+            "prop": "transition",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LinkCardSpecimens.tsx:378:28",
+        "text": "style={{ display: 'contents' }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "contents"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteSpecimens.tsx:171:31",
+        "text": "style={{ maxHeight: 'none', overflow: 'visible' }}",
+        "declarations": [
+          {
+            "prop": "max-height",
+            "value": "none"
+          },
+          {
+            "prop": "overflow",
+            "value": "visible"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusSpecimens.tsx:52:57",
+        "text": "style={{ transition: 'none' }}",
+        "declarations": [
+          {
+            "prop": "transition",
+            "value": "none"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarSpecimens.tsx:244:37",
+        "text": "style={{ left: g.strip.x, top: g.strip.y, width: g.strip.w, height: g.strip.h, right: 'auto', bottom: 'auto' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "right",
+            "value": "auto"
+          },
+          {
+            "prop": "bottom",
+            "value": "auto"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarSpecimens.tsx:376:37",
+        "text": "style={{ left: g.strip.x, top: g.strip.y, width: g.strip.w, height: g.strip.h, right: 'auto', bottom: 'auto' }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "right",
+            "value": "auto"
+          },
+          {
+            "prop": "bottom",
+            "value": "auto"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/TooltipXray.tsx:234:27",
+        "text": "style={{ color: TOOL.ink, display: 'grid' }}",
+        "declarations": [
+          {
+            "prop": "color",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "display",
+            "value": "grid"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/TooltipXray.tsx:243:45",
+        "text": "style={{ transform: `translate(${tipX}px, ${tipY}px)`, visibility: 'hidden' }}",
+        "declarations": [
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "visibility",
+            "value": "hidden"
+          }
+        ]
+      }
+    ],
+    "literal missed by grep: nested braces, casts or alternate spacing": [
+      {
+        "location": "apps/docs/src/pages/components/Spinner.tsx:62:5",
+        "text": "style={{ '--mu-waiting-play-state': work.awake ? 'running' : 'paused', '--mu-r-skeleton-self-delay': '0ms' } as React.CSSProperties}",
+        "declarations": [
+          {
+            "prop": "--mu-waiting-play-state",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--mu-r-skeleton-self-delay",
+            "value": "0ms"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Textarea.tsx:65:10",
+        "text": "style={{ '--mu-r-textarea-count-show': 0.25 } as React.CSSProperties}",
+        "declarations": [
+          {
+            "prop": "--mu-r-textarea-count-show",
+            "value": "0.25"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/ToolStrip.tsx:49:66",
+        "text": "style={{ transform: `translateX(${pan === 'left' ? '-24px' : pan === 'right' ? '24px' : '0px'}) scale(${zoom})`, transformOrigin: 'center' }}",
+        "declarations": [
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform-origin",
+            "value": "center"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/components/Weather.tsx:136:5",
+        "text": "style={{ '--mu-layout-column-min': 'calc(var(--mu-r-weather-self-width) + var(--mu-space-24) * 2)' } as React.CSSProperties}",
+        "declarations": [
+          {
+            "prop": "--mu-layout-column-min",
+            "value": "calc(var(--mu-r-weather-self-width) + var(--mu-space-24) * 2)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/pages/foundations/Elevation.tsx:109:13",
+        "text": "style={{ width: 280, height: d.ruleE1.height, borderRadius: Math.min(24, d.ruleE1.height / 2), ...(d.ruleE1.material === 'raised' ? raisedStyle : {}) }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "280px"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:270:48",
+        "text": "style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', perspective: 'none', cursor: 'default', zIndex: 2, pointerEvents: 'none', opacity: sheetOn ? 1 : 0, clipPath: `path('${backD}')` }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "perspective",
+            "value": "none"
+          },
+          {
+            "prop": "cursor",
+            "value": "default"
+          },
+          {
+            "prop": "z-index",
+            "value": "2"
+          },
+          {
+            "prop": "pointer-events",
+            "value": "none"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "clip-path",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:292:50",
+        "text": "style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', perspective: 'none', cursor: 'default', transformOrigin: '50% 0', transformStyle: 'preserve-3d', transform: `rotateX(${angle}deg)` }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "100%"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "perspective",
+            "value": "none"
+          },
+          {
+            "prop": "cursor",
+            "value": "default"
+          },
+          {
+            "prop": "transform-origin",
+            "value": "50% 0"
+          },
+          {
+            "prop": "transform-style",
+            "value": "preserve-3d"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/FolderUnfold.tsx:293:18",
+        "text": "style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', overflow: 'hidden', borderRadius: `${crease}px ${crease}px ${R.radius}px ${R.radius}px`, opacity: 1 - m }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "inset",
+            "value": "0"
+          },
+          {
+            "prop": "backface-visibility",
+            "value": "hidden"
+          },
+          {
+            "prop": "-webkit-backface-visibility",
+            "value": "hidden"
+          },
+          {
+            "prop": "overflow",
+            "value": "hidden"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/Wordmark.tsx:42:11",
+        "text": "style={{ display: 'inline-flex', alignItems: 'center', height: '100%', background: layers.fill ? fill : 'transparent', padding: `0 ${right - track}em 0 ${left}em` }}",
+        "declarations": [
+          {
+            "prop": "display",
+            "value": "inline-flex"
+          },
+          {
+            "prop": "align-items",
+            "value": "center"
+          },
+          {
+            "prop": "height",
+            "value": "100%"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "padding",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ButtonXray.tsx:239:91",
+        "text": "style={{ width: W + 80, height: HH + 80, left: -40, top: -40, transform: `translateZ(${WALL * 1.6 + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/CheckboxXray.tsx:247:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${faceZ + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ChipXray.tsx:168:74",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${top + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FieldXray.tsx:259:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${rimZ + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/FolderSpecimens.tsx:188:13",
+        "text": "style={{ left: (FW - FR.card.width) / 2, top: CARD_TOP + m.lift - 4, width: FR.card.width, height: 34, rotate: `${m.lean}deg` }}",
+        "declarations": [
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "34px"
+          },
+          {
+            "prop": "rotate",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:101:60",
+        "text": "style={{ width: fw, height: fh, borderRadius: fh / 2, transform: `translate(${fx}px, ${fy}px) translateZ(0.5px)`, background: hoverFill.fill, boxShadow: '0 0 0 1px color-mix(in srgb, var(--green-deep) 45%, transparent)' }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "0 0 0 1px color-mix(in srgb, var(--green-deep) 45%, transparent)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/IconButtonXray.tsx:119:74",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${top + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/KbdXray.tsx:227:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${topZ + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/LassoXray.tsx:55:52",
+        "text": "style={{ position: 'absolute', left: box.x * S, top: box.y * S, width: box.w * S, height: box.h * S, ['--mu-canvas-scale' as string]: 1 / S, ['--mu-presence-lasso-width' as string]: `${m.line}px`, ['--mu-presence-readout-gap' as string]: `${m.gap * 2}px` }}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "absolute"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--mu-canvas-scale",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--mu-presence-lasso-width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "--mu-presence-readout-gap",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/MenuXray.tsx:198:17",
+        "text": "style={{ font: `500 ${13 * S}px/1 var(--sans)`, color: 'var(--ink)' }}",
+        "declarations": [
+          {
+            "prop": "font",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "color",
+            "value": "var(--ink)"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderSpecimens.tsx:45:43",
+        "text": "style={{ ['--mu-slider-at' as string]: fraction(m.value), left: `calc(var(--mu-slider-at) * (100% - ${K}px))`, top: 0, width: K, height: K }}",
+        "declarations": [
+          {
+            "prop": "--mu-slider-at",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "top",
+            "value": "0"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SliderXray.tsx:244:55",
+        "text": "style={{ width: K, height: K, borderRadius: '50%', opacity: flat ? 0 : 1, transition: `${rise}, opacity .25s`, transform: `translateZ(${flat ? 0 : knobZ + i * 1.4}px)`, background: i === 0 || !m.knob[0] ? 'transparent' : knobWall }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "50%"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/StatusXray.tsx:213:74",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${top + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchXray.tsx:189:67",
+        "text": "style={{ width: W, height: H, borderRadius: Rr, background: m.hex, transition: 'opacity .3s', filter: `blur(${10 + m.lift * 8}px)`, opacity: flat ? 0 : 0.55, transform: `translate(${m.lift * 6}px, ${m.lift * 12}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "border-radius",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "background",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transition",
+            "value": "opacity .3s"
+          },
+          {
+            "prop": "filter",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "opacity",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwatchXray.tsx:207:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${top + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/SwitcherXray.tsx:229:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${rimZ + 1}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/ToolbarXray.tsx:183:82",
+        "text": "style={{ width: W + 80, height: H + 80, left: -40, top: -40, transform: `translateZ(${stripTop + 8}px)` }}",
+        "declarations": [
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "height",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "left",
+            "value": "-40px"
+          },
+          {
+            "prop": "top",
+            "value": "-40px"
+          },
+          {
+            "prop": "transform",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      }
+    ],
+    "literal missed by grep: one-hop const": [
+      {
+        "location": "apps/docs/src/pages/foundations/Elevation.tsx:86:71",
+        "text": "style={raisedStyle}",
+        "declarations": [
+          {
+            "prop": "background",
+            "value": "linear-gradient(180deg, var(--mu-s-hi), var(--mu-s) 55%, var(--mu-s-lo))"
+          },
+          {
+            "prop": "box-shadow",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          }
+        ]
+      },
+      {
+        "location": "apps/docs/src/ui/xray/PaletteSpecimens.tsx:162:76",
+        "text": "style={style}",
+        "declarations": [
+          {
+            "prop": "position",
+            "value": "static"
+          },
+          {
+            "prop": "transform",
+            "value": "none"
+          },
+          {
+            "prop": "translate",
+            "value": "none"
+          },
+          {
+            "prop": "margin",
+            "value": "0"
+          },
+          {
+            "prop": "opacity",
+            "value": "1"
+          },
+          {
+            "prop": "transition",
+            "value": "none"
+          },
+          {
+            "prop": "width",
+            "value": "dynamic-value",
+            "opaque": "dynamic-value"
+          },
+          {
+            "prop": "*",
+            "value": "dynamic-value",
+            "opaque": "spread"
+          }
+        ]
+      }
+    ]
+  },
+  "hover": [
+    {
+      "file": "apps/docs/src/kds.css",
+      "rawHover": true,
+      "crudeUngated": false,
+      "declarations": 37,
+      "hover": 5,
+      "pointer": 5,
+      "both": 5,
+      "neither": 32,
+      "locations": [
+        "94:11",
+        "141:14",
+        "162:21",
+        "200:22",
+        "206:50",
+        "218:17",
+        "232:16",
+        "246:79",
+        "276:21",
+        "290:19",
+        "290:32",
+        "347:19",
+        "357:18",
+        "357:37",
+        "418:43",
+        "456:24",
+        "484:208",
+        "500:70",
+        "507:29",
+        "512:25",
+        "517:25",
+        "550:15",
+        "636:47",
+        "640:36",
+        "689:37",
+        "689:66",
+        "690:33",
+        "690:45",
+        "691:38",
+        "695:37",
+        "708:65",
+        "766:37"
+      ]
+    },
+    {
+      "file": "apps/docs/src/pages/icon-detail.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "39:44",
+        "58:31"
+      ]
+    },
+    {
+      "file": "apps/docs/src/pages/icon-library.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 1,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 1,
+      "locations": [
+        "28:28"
+      ]
+    },
+    {
+      "file": "apps/docs/src/pages/library.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 11,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 11,
+      "locations": [
+        "13:27",
+        "30:29",
+        "56:53",
+        "60:32",
+        "65:33",
+        "88:57",
+        "88:84",
+        "88:111",
+        "93:28"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/edit/edit.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 4,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 4,
+      "locations": [
+        "12:64",
+        "19:127",
+        "42:130",
+        "111:72"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/icon-cell.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 3,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 3,
+      "locations": [
+        "18:42",
+        "19:50",
+        "23:52"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/checkbox-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "17:78",
+        "17:93"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/chip-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "10:36",
+        "11:78"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/dialog-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 1,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 1,
+      "locations": [
+        "17:76"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/folder-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 4,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 4,
+      "locations": [
+        "18:143",
+        "19:118",
+        "19:130",
+        "24:61"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/icon-button-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 1,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 1,
+      "locations": [
+        "5:50"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/kbd-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "10:105",
+        "10:154"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/lasso-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 5,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 5,
+      "locations": [
+        "16:133",
+        "16:152",
+        "26:132",
+        "26:156",
+        "26:173"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/link-card-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 7,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 7,
+      "locations": [
+        "12:78",
+        "12:90",
+        "12:114",
+        "13:3",
+        "19:72",
+        "19:84",
+        "30:72"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/menu-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "10:130",
+        "15:165"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/palette-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 2,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 2,
+      "locations": [
+        "25:64",
+        "25:83"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/snap-guides-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 6,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 6,
+      "locations": [
+        "13:106",
+        "17:94",
+        "21:96",
+        "27:82",
+        "27:99",
+        "29:170"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/status-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 3,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 3,
+      "locations": [
+        "6:84",
+        "27:82",
+        "28:136"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/swatch-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 3,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 3,
+      "locations": [
+        "6:146",
+        "6:158",
+        "8:129"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/switcher-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 10,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 10,
+      "locations": [
+        "13:74",
+        "13:95",
+        "13:121",
+        "15:234",
+        "15:259",
+        "16:62"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/toast-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 4,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 4,
+      "locations": [
+        "18:65",
+        "40:77",
+        "40:103",
+        "40:130"
+      ]
+    },
+    {
+      "file": "apps/docs/src/ui/xray/tooltip-specimens.css",
+      "rawHover": true,
+      "crudeUngated": true,
+      "declarations": 4,
+      "hover": 0,
+      "pointer": 0,
+      "both": 0,
+      "neither": 4,
+      "locations": [
+        "31:80",
+        "33:105",
+        "41:152",
+        "51:143"
+      ]
+    }
+  ]
+}

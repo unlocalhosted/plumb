@@ -11,6 +11,5 @@ export default {
     'part-dot-display', // catalog-transition.ts specimen lookup.
     'xr-ib-glyph', // xray-icon-button-editing.spec.ts SVG lookup.
     'xr-slider-vars', // xray-slider-handoff.spec.ts inline-variable host.
-    'naive-cap', // Button.tsx:351 intentionally declares this in a JSX <style>.
   ],
 };

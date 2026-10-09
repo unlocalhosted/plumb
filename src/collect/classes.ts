@@ -6,6 +6,11 @@ import type { Node, Program } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
 import type { Condition, Declaration, Site } from '../report.js';
 import { UsageError } from '../errors.js';
+import { collectInline } from './inline.js';
+import type { SourceStyles } from './inline.js';
+import { constExport } from './source.js';
+import { moduleImports } from './modules.js';
+import type { ModuleImport } from './modules.js';
 
 export interface ClassSite extends Site {
   token: string;
@@ -80,12 +85,15 @@ function site(source: Source, offset: number, text: string): Site {
 }
 
 export async function collectClasses(files: string[], classHelpers: string[] = []): Promise<{
-  sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number;
+  sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
 }> {
   const start = performance.now();
   let parseMs = 0;
   let opaque = 0;
+  let inlineMs = 0;
+  const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [] };
   const sources = new Map<string, Source>();
+  const modules = new Map<string, ModuleImport[]>();
   const texts = new Map(await Promise.all(files.map(async file => [file, await readFile(file, 'utf8')] as const)));
   const helpers = new Set([...builtins, ...classHelpers]);
   const helperNames = [...helpers];
@@ -100,6 +108,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     const parseStart = performance.now();
     const result = parseSync(file, text, parserOptions);
     const ast = result.program;
+    if (texts.has(file)) modules.set(file, moduleImports(result.module, text));
     parseMs += performance.now() - parseStart;
     if (result.errors.length) throw new UsageError(`Fix source ${file}: ${result.errors[0]?.message}`);
     const lineStarts = [0];
@@ -277,6 +286,19 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   for (const file of files) {
     const src = source(file, true);
     const ast = src.ast!;
+    const inlineStart = performance.now();
+    const inlineParseStart = parseMs;
+    const inline = collectInline(ast, src, (id, name) => {
+      const path = resolver.resolveFileSync(file, id).path;
+      if (!path || !/\.[jt]sx?$/.test(path)) return null;
+      const imported = source(path, true);
+      const node = constExport(imported.ast!, name);
+      exports(imported);
+      if (imported !== src) imported.ast = null;
+      return node ? { source: imported, node } : null;
+    });
+    for (const key of ['declarations', 'sites', 'stylesheets', 'imports'] as const) (styles[key] as unknown[]).push(...inline[key]);
+    inlineMs += performance.now() - inlineStart - (parseMs - inlineParseStart);
     const imports: Scope = new Map();
     for (const statement of ast.body) {
       if (statement.type !== 'ImportDeclaration') continue;
@@ -344,5 +366,5 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     exports(src);
     src.ast = null;
   }
-  return { sites: [...sites.values()], opaque, parseMs, collectMs: performance.now() - start - parseMs };
+  return { sites: [...sites.values()], opaque, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs, styles, modules };
 }

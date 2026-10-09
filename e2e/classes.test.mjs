@@ -115,6 +115,7 @@ test('resolves project Tailwind, fallback file loaders, Node wrapper and one bat
     export const STYLES = 'own-class';
     import { appendFileSync } from 'node:fs';
     import { join } from 'node:path';
+    export async function compile() { return { build() { return ''; }, buildSourceMap() { return { mappings: [], sources: [] }; } }; }
     export async function __unstable__loadDesignSystem(css, options) {
       const sheet = await options.loadStylesheet('./theme.css', options.base);
       const config = await options.loadModule('./config.mjs', options.base);
@@ -139,6 +140,7 @@ test('resolves project Tailwind, fallback file loaders, Node wrapper and one bat
   await mkdir(join(directory, 'node_modules/@tailwindcss/node'), { recursive: true });
   await writeFile(join(directory, 'node_modules/@tailwindcss/node/package.json'), JSON.stringify({ name: '@tailwindcss/node', type: 'module', exports: './index.mjs' }));
   await writeFile(join(directory, 'node_modules/@tailwindcss/node/index.mjs'), `
+    export async function compile() { return { build() { return ''; }, buildSourceMap() { return { mappings: [], sources: [] }; } }; }
     export async function __unstable__loadDesignSystem(css, { base }) {
       return { candidatesToCss(candidates) { return candidates.map(c => '.' + c + ' { color: project-node-wrapper; }'); } };
     }

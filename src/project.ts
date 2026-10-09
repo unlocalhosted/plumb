@@ -68,8 +68,12 @@ export async function discoverProject(root: string, config: PlumbConfig): Promis
   return { tailwind: { entry, version: await tailwindVersion(entry) }, files: counts };
 }
 
-export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {
+export async function projectSourceFiles(root: string, config: PlumbConfig): Promise<string[]> {
   return (await glob(config.source ?? defaultSource, {
     cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false,
-  })).filter(file => /\.[jt]sx?$/.test(file)).sort();
+  })).sort();
+}
+
+export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {
+  return (await projectSourceFiles(root, config)).filter(file => /\.[jt]sx?$/.test(file));
 }

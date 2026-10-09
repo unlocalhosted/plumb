@@ -1,6 +1,7 @@
 import { transform } from 'lightningcss';
 import type { Rule, Selector, StyleSheet, DeclarationBlock } from 'lightningcss';
 import type { Condition } from '../report.js';
+import { cssCode, maskImports } from '../collect/stylesheets.js';
 
 export interface LoweredDeclaration { prop: string; value: string; when: Condition[] }
 export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[] }
@@ -24,9 +25,19 @@ function print(rules: Rule[]): string {
   } }).code.toString();
 }
 const sentinel = parseCss('.plumb { --plumb: 0; }', 'plumb.css').rules[0]!;
-function selectorText(selector: Selector): string {
+export function selectorText(selector: Selector): string {
   if (sentinel.type !== 'style') throw new Error('Expected style rule');
-  return print([{ ...sentinel, value: { ...sentinel.value, selectors: [selector] } }]).split('{')[0]!.trim();
+  // Lightning CSS 1.33 serializes this pseudo's `type: string[]` payload
+  // over the selector-component discriminator. It cannot round-trip its own
+  // AST. Print that component directly, using Lightning for all other parts.
+  const collision = selector.findIndex(component => (component as unknown as { kind?: string }).kind === 'active-view-transition-type');
+  if (collision !== -1) {
+    const component = selector[collision] as unknown as { type: string[] };
+    const part = (items: Selector) => items.length ? selectorText(items) : '';
+    return `${part(selector.slice(0, collision))}:active-view-transition-type(${component.type.join(', ')})${part(selector.slice(collision + 1))}`;
+  }
+  const css = print([{ ...sentinel, value: { ...sentinel.value, selectors: [selector] } }]);
+  return css.slice(0, cssCode(css).indexOf('{')).trim();
 }
 // Keep declaration values as authored by Tailwind. Returning lightningcss's
 // parsed declaration AST through a JS visitor cannot round-trip infinity
@@ -68,13 +79,14 @@ function declarationText(block: DeclarationBlock, css: string, loc: { line: numb
   if (declarations.length !== count) throw new Error('Could not recover validated declarations from compiler CSS');
   return declarations;
 }
-function atRuleText(rule: Rule): string {
+export function atRuleText(rule: Rule): string {
   if (rule.type === 'media' || rule.type === 'supports' || rule.type === 'container') {
-    return print([{ ...rule, value: { ...rule.value, rules: [sentinel] } } as Rule]).split('{')[0]!.trim().replace(/^@\w+\s*/, '');
+    const css = print([{ ...rule, value: { ...rule.value, rules: [sentinel] } } as Rule]);
+    return css.slice(0, cssCode(css).indexOf('{')).trim().replace(/^@\w+\s*/, '');
   }
   return '';
 }
-function pseudos(selector: Selector): string[] {
+export function pseudos(selector: Selector): string[] {
   return selector.flatMap(component => {
     if (component.type === 'pseudo-class' || component.type === 'pseudo-element') return [selectorText([component])];
     return [];
@@ -119,7 +131,7 @@ export function lowerCss(css: string | null): CandidateCss {
       } else if (rule.type === 'nested-declarations') block(rule.value.declarations, when, rule.value.loc, true);
       else if (rule.type === 'media' || rule.type === 'supports' || rule.type === 'container') {
         walk(rule.value.rules, [...when, { kind: rule.type, text: atRuleText(rule) }], parents);
-      } else if (rule.type === 'layer-block') walk(rule.value.rules, when, parents);
+      } else if (rule.type === 'layer-block') walk(rule.value.rules, [...when, { kind: 'layer', text: rule.value.name?.join('.') ?? '(anonymous)' }], parents);
       // @property and keyframes are compiler infrastructure, not declarations
       // applied to the class's element.
     }
@@ -132,7 +144,7 @@ export function declaredClasses(css: string, filename: string): { classes: Set<s
   const classes = new Set<string>();
   // Imports declare no selectors. Removing them permits Tailwind's valid
   // preprocessor ordering (e.g. imports following @theme).
-  const selectorsOnly = css.replace(/@import\s+(?:[^;"']|"[^"]*"|'[^']*')*;/g, '');
+  const selectorsOnly = maskImports(css);
   const result = transform({ filename, code: Buffer.from(selectorsOnly), errorRecovery: true, visitor: {
     Rule: { style(rule) {
       function visit(value: unknown): void {
@@ -146,5 +158,5 @@ export function declaredClasses(css: string, filename: string): { classes: Set<s
       visit(rule.value.selectors);
     } },
   } });
-  return { classes, warnings: [...new Set(result.warnings.map(warning => warning.message).filter(message => !/^Unknown at rule: @(theme|utility|apply|reference|source|custom-variant|variant|config|plugin)$/.test(message)))] };
+  return { classes, warnings: [...new Set(result.warnings.map(warning => warning.message).filter(message => !/^Unknown at rule: @(theme|utility|apply|reference|source|custom-variant|variant|config|plugin|tailwind)$/.test(message)))] };
 }

@@ -9,6 +9,7 @@ import { errorMessage, UsageError } from '../errors.js';
 import { tool } from '../report.js';
 import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
+import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
 
 type DesignSystem = {
   candidatesToCss(candidates: string[]): (string | null)[];
@@ -22,7 +23,6 @@ interface LoaderOptions {
   loadModule?: (id: string, base: string) => Promise<{ path: string; base: string; module: unknown }>;
 }
 type Compiler = { __unstable__loadDesignSystem(css: string, options: LoaderOptions): Promise<DesignSystem> };
-const cssResolver = new ResolverFactory({ extensions: ['.css'], mainFields: ['style'], conditionNames: ['style', 'default'] });
 const jsResolver = new ResolverFactory({ extensions: ['.js', '.mjs', '.cjs', '.ts'], conditionNames: ['node', 'import', 'default'] });
 function resolved(resolver: ResolverFactory, id: string, base: string): string {
   const result = resolver.sync(base, id);
@@ -33,25 +33,26 @@ function hash(value: string): string { return createHash('sha256').update(value)
 
 // Hash the complete stylesheet graph independently of the Node wrapper, whose
 // exported design-system loader doesn't expose its dependency callback.
-async function graph(entry: string): Promise<{ hash: string; utilities: string[] }> {
+export async function tailwindGraph(entry: string, cssOverride?: string): Promise<{ hash: string; utilities: string[] }> {
   const contents = new Map<string, string>();
   async function visit(file: string): Promise<void> {
     if (contents.has(file)) return;
-    const css = await readFile(file, 'utf8');
+    const css = file === entry && cssOverride !== undefined ? cssOverride : await readFile(file, 'utf8');
     contents.set(file, css);
-    if (!file.endsWith('.css')) return;
+    if (!file.endsWith('.css') && !(file === entry && cssOverride !== undefined)) return;
     // Tailwind accepts imports after @theme; lightningcss correctly rejects
     // that ordering as browser CSS. Read import specifiers before lowering.
-    const imports = css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/@(?:import|reference)\s+(?:url\(\s*(?:"([^"]+)"|'([^']+)'|([^\s)]+))\s*\)|"([^"]+)"|'([^']+)')/g);
-    for (const match of imports) {
-      const id = match.slice(1).find(value => value !== undefined)!;
-      if (!/^(?:https?:|data:|\/\/)/.test(id)) await visit(resolved(cssResolver, id, dirname(file)));
+    for (const { id } of cssImports(css)) {
+      if (!/^(?:[a-z]+:|\/\/|#)/i.test(id)) await visit(resolveStylesheet(id, dirname(file)));
     }
-    for (const match of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/@(?:config|plugin)\s+["']([^"']+)["']/g)) await visit(resolved(jsResolver, match[1]!, dirname(file)));
+    for (const match of cssCode(css).matchAll(/@(?:config|plugin)\b/g)) {
+      const path = /^@(?:config|plugin)\s+["']([^"']+)["']/.exec(css.slice(match.index))?.[1];
+      if (path) await visit(resolved(jsResolver, path, dirname(file)));
+    }
   }
   await visit(entry);
   const utilities = [...new Set([...contents].filter(([file]) => file.endsWith('.css')).flatMap(([, css]) =>
-    [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/@utility\s+([\w-]+)\s*\{/g)].map(match => match[1]!)))];
+    [...cssCode(css).matchAll(/@utility\s+([\w-]+)\s*\{/g)].map(match => match[1]!)))];
   return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities };
 }
 
@@ -65,8 +66,8 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
-    const cssGraph = await graph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer1-cache-v5`);
+    const cssGraph = await tailwindGraph(entry);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer1-cache-v6`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -92,7 +93,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       const options: LoaderOptions = { base: dirname(entry) };
       if (!nodeWrapper) {
         options.loadStylesheet = async (id, base) => {
-          const path = resolved(cssResolver, id, base);
+          const path = resolveStylesheet(id, base);
           return { path, base: dirname(path), content: await readFile(path, 'utf8') };
         };
         options.loadModule = async (id, base) => {

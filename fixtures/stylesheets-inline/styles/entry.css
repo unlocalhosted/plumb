@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@theme { --spacing: 1px; --color-brand: #123456; }
+@utility room-gap { gap: 13px; }
+@custom-variant pointer (&:hover);
+.applied {
+  @apply gap-4 room-gap;
+}
+.themed { color: theme(colors.brand); padding: --theme(--spacing); }
+.variant { @variant pointer { color: red; } }

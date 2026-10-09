@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
 const label = process.argv[2] ?? 'review';
@@ -7,12 +8,21 @@ const cache = resolve(`bench/metalui/.cache/${label}-${Date.now()}`);
 const runs = {};
 for (const temperature of ['cold', 'warm']) {
   const start = performance.now();
-  const result = spawnSync(process.execPath, ['dist/cli.js', '--root', '/Users/vijaysingh/unlocalhosted/metalui', '--config', resolve('bench/metalui/plumb.config.ts'), '--json'], { encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache } });
+  const result = spawnSync(process.execPath, ['dist/cli.js', '--root', '/Users/vijaysingh/unlocalhosted/metalui', '--config', resolve('bench/metalui/plumb.config.ts'), '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLUMB_CACHE_DIR: cache } });
   if (result.error || result.stderr || result.status !== 1) throw new Error(result.stderr || String(result.error ?? result.status));
   const wallMs = performance.now() - start;
   const report = JSON.parse(result.stdout);
+  if (label === 'layer2') {
+    const baseline = JSON.parse(readFileSync('bench/metalui/layer1.json', 'utf8'));
+    const findings = value => value.findings.map(finding => [finding.key, finding.sites]).sort((a, b) => a[0].localeCompare(b[0]));
+    assert.deepEqual(findings(report), findings(baseline), 'Layer 2 must retain exactly Layer 1 finding keys and sites');
+    assert.equal(report.coverage.existence.dead, 65);
+    assert.equal(report.findings.filter(finding => finding.rule === 'existence/dead-class').length, 39);
+    assert.ok(!report.findings.some(finding => ['mu-icon-trigger', 'mu-life'].includes(finding.declaration.value)));
+    if (temperature === 'warm') assert.ok(report.timing.totalMs < 1200, 'warm report total must remain under 1.2 s');
+  }
   writeFileSync(`bench/metalui/${label}.${temperature}.json`, result.stdout);
-  runs[temperature] = { wallMs, exitCode: result.status, timing: report.timing };
+  runs[temperature] = { wallMs, exitCode: result.status, timing: report.timing, moduleGraph: report.moduleGraph };
 }
 writeFileSync(`bench/metalui/${label}.run.json`, JSON.stringify(runs, null, 2) + '\n');
 console.log(JSON.stringify(runs));

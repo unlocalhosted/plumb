@@ -1,0 +1,4 @@
+@reference '../styles/entry.css';
+.referenced {
+  @apply gap-4;
+}

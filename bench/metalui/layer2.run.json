@@ -1,0 +1,56 @@
+{
+  "cold": {
+    "wallMs": 2462.34825,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 2326.345334,
+      "phases": {
+        "discover": 5.904292000000005,
+        "parse": 76.54499499999979,
+        "collect": 48.879173000000435,
+        "load": 128.029,
+        "compile": 129.11570800000004,
+        "stylesheets": 1302.382875,
+        "inline": 59.330331999999785
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1244
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 0,
+      "cacheMisses": 1303,
+      "parseMs": 105.30408299999976,
+      "totalMs": 359.818125
+    }
+  },
+  "warm": {
+    "wallMs": 964.0250420000002,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 849.173084,
+      "phases": {
+        "discover": 6.047874999999998,
+        "parse": 72.27049499999994,
+        "collect": 46.87464500000017,
+        "load": 31.41300000000004,
+        "compile": 0,
+        "stylesheets": 140.302958,
+        "inline": 60.661859999999905
+      },
+      "cacheHits": 1244,
+      "cacheMisses": 0
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 1303,
+      "cacheMisses": 0,
+      "parseMs": 0,
+      "totalMs": 46.92854199999999
+    }
+  }
+}

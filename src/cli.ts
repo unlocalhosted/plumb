@@ -5,7 +5,7 @@ import { check, explain } from './index.js';
 import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 
-const help = `Plumb ${tool.version}: layer 1, class lowering
+const help = `Plumb ${tool.version}: layer 2, stylesheet and inline lowering
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
 
@@ -51,9 +51,10 @@ async function main(): Promise<void> {
     const result = await explain(args.positionals[1]!, options);
     const text = result.sites.map(site => `${relative(result.root, site.file)}:${site.line}:${site.column}  ${site.token}  <${site.owner.name}>\n` +
       site.conditions.map(condition => `  ${condition.kind}: ${condition.text}\n`).join('') +
-      (site.declarations.length ? site.declarations.map(declaration => `  ${declaration.prop}: ${declaration.value}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('') : '  no lowered declarations\n') +
+      (site.declarations.length ? site.declarations.map(declaration => `  ${declaration.origin}  ${declaration.prop}: ${declaration.value}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('') : '  no lowered declarations\n') +
       (args.values.verbose ? site.notes.map(note => `  note: ${note}\n`).join('') : '')).join('\n');
-    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text);
+    const other = result.declarations.filter(declaration => !['class', 'arbitrary'].includes(declaration.origin)).map(declaration => `${relative(result.root, declaration.site.file)}:${declaration.site.line}:${declaration.site.column}  ${declaration.origin}  <${declaration.owner.name}>\n  ${declaration.prop}: ${declaration.value}${declaration.opaque ? ` (${declaration.opaque})` : ''}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('\n');
+    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
     return;
   }
   const report = await check(options);

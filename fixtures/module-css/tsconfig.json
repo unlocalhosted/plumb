@@ -1,0 +1,3 @@
+{
+  "compilerOptions": { "paths": { "ui-kit": ["./packages/ui-kit/index.js"] } }
+}

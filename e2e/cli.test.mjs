@@ -12,6 +12,11 @@ const cli = join(root, 'dist/cli.js');
 const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const schema = JSON.parse(await readFile(join(root, 'schema/report.schema.json'), 'utf8'));
 const fixture = name => join(root, 'fixtures', name);
+const stylesheetPackage = {
+  'node_modules/tailwindcss/package.json': '{"name":"tailwindcss","version":"4.1.99","style":"index.css","exports":{".":{"style":"./index.css"},"./theme":"./theme.css","./package.json":"./package.json"}}',
+  'node_modules/tailwindcss/index.css': ':root { --test: 1px; }',
+  'node_modules/tailwindcss/theme.css': ':root { --test: 1px; }',
+};
 
 function run(args = [], cwd = root) {
   const result = spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', timeout: 10_000 });
@@ -86,7 +91,9 @@ test('tailwind-min emits the schema and zero findings', () => {
   assert.ok(report.tailwind.entry.endsWith('src/styles.css'));
   assert.deepEqual(report.files, { tsx: 3, jsx: 0, css: 1, other: 0 });
   assert.deepEqual(report.findings, []);
-  assert.deepEqual(report.coverage, { existence: { total: 10, dead: 0 } });
+  assert.deepEqual(report.coverage.existence, { total: 10, dead: 0 });
+  assert.ok(report.coverage.declarations.class > 0);
+  assert.ok(report.coverage.stylesheets.entry === 1);
   assert.ok(report.timing.totalMs >= report.timing.phases.discover);
 });
 
@@ -144,9 +151,10 @@ test('text mode prints header, counts, timing and layer status', () => {
 test('default cwd, relative root and both commands use the same harness', () => {
   const direct = json(run(['--json'], fixture('plain-css')));
   const explicit = json(run(['check', '--json', '--root', 'fixtures/plain-css']));
-  const { timing: ignoredA, ...a } = direct;
-  const { timing: ignoredB, ...b } = explicit;
+  const { timing: ignoredA, moduleGraph: graphA, ...a } = direct;
+  const { timing: ignoredB, moduleGraph: graphB, ...b } = explicit;
   assert.deepEqual(a, b);
+  assert.deepEqual([graphA.modules, graphA.followed, graphA.cssFiles], [graphB.modules, graphB.followed, graphB.cssFiles]);
 });
 
 test('--help describes supported commands, flags and exits', () => {
@@ -189,6 +197,7 @@ test('all supported config extensions load, with deterministic precedence', asyn
 test('explicit config resolves ambiguity, overrides source and loads defineConfig', async t => {
   const index = pathToFileURL(join(root, 'dist/index.js')).href;
   const directory = await project(t, {
+    ...stylesheetPackage,
     'src/first.css': '@import "tailwindcss";',
     'src/second.css': '@import "tailwindcss/theme";',
     'src/ignored.tsx': 'export const Ignored = () => null;',
@@ -250,6 +259,7 @@ test('malformed config shapes, import errors and invalid CSS paths fail clearly'
 
 test('discovery accepts single quotes and subpaths, ignores comments and build directories, counts app sources', async t => {
   const files = {
+    ...stylesheetPackage,
     'src/theme.css': '/* @import "tailwindcss"; */\n:root { --color: blue; }',
     'app/page.tsx': 'export const Page = () => null;',
     'app/widget.jsx': 'export const Widget = () => null;',
@@ -270,8 +280,8 @@ test('discovery accepts single quotes and subpaths, ignores comments and build d
 
 test('version resolution uses the installation nearest the CSS entry', async t => {
   const directory = await project(t, {
+    ...stylesheetPackage,
     'src/styles.css': '@import "tailwindcss";',
-    'node_modules/tailwindcss/package.json': '{"name":"tailwindcss","version":"4.1.99","exports":{"./package.json":"./package.json"}}',
   });
   assert.equal(json(run(['--root', directory, '--json'])).tailwind.version, '4.1.99');
 });
