@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb overlay primitives</title>
+<style>
+  /* The review page itself stays plain so the primitives are what you look at. */
+  html { background: #c9c7c0; }
+  body { margin: 0; padding: 24px; font: 13px/1.4 system-ui, sans-serif; color: #1c1f1d; }
+  h1 { font-size: 15px; margin: 0 0 16px; font-weight: 600; }
+  .panes { display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 24px; }
+</style>
+</head>
+<body>
+<h1>Plumb overlay primitives · review sheet</h1>
+<div class="panes">
+  <plumb-sheet data-scheme="light"></plumb-sheet>
+  <plumb-sheet data-scheme="dark"></plumb-sheet>
+</div>
+<script type="module">
+const css = await (await fetch('../src/tokens.css')).text();
+
+const sheetCss = `
+  :host { display: block; background: var(--pl-paper); color: var(--pl-ink); border-radius: 10px; padding: 20px; font: var(--pl-text-row); }
+  section { margin-block-end: var(--pl-space-7); }
+  h2 { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); text-transform: uppercase; color: var(--pl-ink-2); margin: 0 0 var(--pl-space-4); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--pl-space-5); align-items: flex-end; }
+  .swatch { width: 112px; }
+  .chip { height: 36px; border-radius: var(--pl-radius-tag); box-shadow: 0 0 0 1px var(--pl-rule) inset; }
+  .swatch b { display: block; font: var(--pl-text-label); margin-block-start: var(--pl-space-2); }
+  .swatch span { font: var(--pl-text-reading); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  .type div { margin-block-end: var(--pl-space-3); }
+  .type small { font: var(--pl-text-label); color: var(--pl-ink-2); margin-inline-start: var(--pl-space-4); }
+  .ladder { display: flex; gap: var(--pl-space-5); align-items: flex-end; }
+  .ladder i { display: block; background: var(--pl-brass); height: 8px; }
+  .ladder figure { margin: 0; font: var(--pl-text-reading); color: var(--pl-ink-2); }
+  .corners figure { margin: 0; width: 56px; height: 40px; background: var(--pl-paper-2); box-shadow: 0 0 0 1px var(--pl-rule) inset; display: grid; place-items: center; font: var(--pl-text-reading); color: var(--pl-ink-2); }
+
+  /* verdict marks: shape and size carry severity, colour confirms it */
+  .mark { display: inline-block; flex: none; vertical-align: middle; }
+  .mark.on { width: 6px; height: 6px; border-radius: 50%; background: var(--pl-on); }
+  .mark.off { width: 8px; height: 8px; border-radius: var(--pl-radius-mark); background: var(--pl-off); }
+  .mark.soft { width: 6px; height: 6px; border: 1.5px solid var(--pl-soft); transform: rotate(45deg); }
+  .mark.unknown { width: 5px; height: 5px; border-radius: 50%; border: 1.5px solid var(--pl-unknown); }
+  .legend { display: grid; grid-template-columns: max-content 1fr; gap: var(--pl-space-3) var(--pl-space-4); align-items: center; }
+  .ledger { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); }
+  .ledger.new { color: var(--pl-ink); }
+  .ledger.debt { color: var(--pl-ink-2); }
+  .ledger.kept { color: var(--pl-ink-2); text-decoration: underline dotted; text-underline-offset: 2px; }
+
+  /* the instrument over host pages */
+  .hosts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--pl-space-5); }
+  .host { position: relative; height: 128px; border-radius: 4px; overflow: clip; }
+  .host.light { background: #ffffff; } .host.dark { background: #101214; } .host.loud { background: linear-gradient(135deg, #3b5bdb, #e8590c); }
+  .target { position: absolute; inset: 24px 28px auto 28px; height: 40px; border-radius: 6px; }
+  .light .target { background: #eef1f4; } .dark .target { background: #24282c; } .loud .target { background: rgb(255 255 255 / 0.18); }
+  .reticle { position: absolute; inset: 24px 28px auto 28px; height: 40px; }
+  .tick { position: absolute; width: var(--pl-tick); height: var(--pl-tick); }
+  .tick::before, .tick::after { content: ""; position: absolute; background: var(--pl-brass); box-shadow: 0 0 0 1px var(--pl-halo); }
+  .tick::before { width: var(--pl-tick); height: var(--pl-line); } .tick::after { width: var(--pl-line); height: var(--pl-tick); }
+  .tl { left: 0; top: 0; } .tr { right: 0; top: 0; transform: scaleX(-1); } .bl { left: 0; bottom: 0; transform: scaleY(-1); } .br { right: 0; bottom: 0; transform: scale(-1, -1); }
+  .plumb { position: absolute; left: 50%; top: 100%; width: var(--pl-line); height: var(--pl-drop); background: var(--pl-brass); box-shadow: 0 0 0 1px var(--pl-halo); transform-origin: top; }
+  .bob { position: absolute; left: calc(50% - 2px); top: calc(100% + var(--pl-drop) - 2px); width: 5px; height: 5px; background: var(--pl-brass); transform: rotate(45deg); box-shadow: 0 0 0 1px var(--pl-halo); }
+  .tag { position: absolute; left: 50%; top: calc(100% + var(--pl-drop) + 4px); transform: translateX(-50%); height: var(--pl-tag-h); padding-inline: var(--pl-space-4); display: flex; align-items: center; gap: var(--pl-space-3); background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label); white-space: nowrap; }
+  .tag .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; }
+
+  /* the card */
+  .card { width: var(--pl-card-w); background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); overflow: clip; }
+  .card header { padding: var(--pl-space-4) var(--pl-space-5); background: var(--pl-paper-2); box-shadow: 0 1px 0 var(--pl-rule); }
+  .card header b { font: var(--pl-text-title); display: block; }
+  .card header span { font: var(--pl-text-reading); color: var(--pl-ink-2); }
+  .card .r { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto 40px; grid-template-areas: "mark prop amount ledger" ". read read read"; align-items: center; column-gap: var(--pl-space-3); row-gap: var(--pl-space-1); min-height: var(--pl-row-h); padding: var(--pl-space-3) var(--pl-space-5); box-shadow: 0 1px 0 var(--pl-rule); box-sizing: border-box; }
+  .card .mark { grid-area: mark; }
+  .card .prop { grid-area: prop; color: var(--pl-ink); }
+  .card .amount { grid-area: amount; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); }
+  .card .ledger { grid-area: ledger; justify-self: end; }
+  .card .read { grid-area: read; font: var(--pl-text-reading); color: var(--pl-ink-2); overflow-wrap: anywhere; }
+  .card .read b { font-weight: 600; color: var(--pl-ink); }
+  .card footer { display: flex; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-space-5); }
+  .btn { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); height: 26px; padding-inline: var(--pl-space-5); border-radius: var(--pl-radius-tag); border: 0; cursor: pointer; }
+  .btn.primary { background: var(--pl-ink); color: var(--pl-paper); }
+  .btn.quiet { background: transparent; color: var(--pl-ink-2); box-shadow: 0 0 0 1px var(--pl-rule) inset; }
+  .btn:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .btn.primary:hover { background: color-mix(in oklab, var(--pl-ink) 88%, var(--pl-paper)); } }
+
+  /* motion demo */
+  .stage { position: relative; height: 132px; background: #ffffff; border-radius: 4px; }
+  :host([data-scheme="dark"]) .stage { background: #101214; }
+  .stage .a, .stage .b { position: absolute; height: 32px; border-radius: 6px; background: #eef1f4; }
+  :host([data-scheme="dark"]) .stage .a, :host([data-scheme="dark"]) .stage .b { background: #24282c; }
+  .stage .a { left: 20px; top: 20px; width: 120px; } .stage .b { left: 220px; top: 44px; width: 180px; }
+  .stage .reticle { inset: auto; left: 0; top: 0; width: 120px; height: 32px; transform: translate(20px, 20px); transition: transform var(--pl-dur-travel) var(--pl-spring), width var(--pl-dur-travel) var(--pl-spring); }
+  .stage .plumb { transition: transform var(--pl-dur-drop) var(--pl-ease-out); }
+  .stage.moving .plumb { transform: scaleY(0); }
+  .note { font: var(--pl-text-label); color: var(--pl-ink-2); margin-block-start: var(--pl-space-3); }
+  ::selection { background: color-mix(in oklab, var(--pl-brass) 30%, transparent); }
+`;
+
+const instrument = (label, count) => `
+  <div class="reticle"><i class="tick tl"></i><i class="tick tr"></i><i class="tick bl"></i><i class="tick br"></i>
+  <i class="plumb"></i><i class="bob"></i><div class="tag">${label}<span class="n">${count}</span></div></div>`;
+
+customElements.define('plumb-sheet', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${css}${sheetCss}</style>
+      <section><h2>Ground, ink and instrument</h2><div class="row" id="ground"></div></section>
+      <section><h2>Verdicts</h2><div class="row" id="verdicts"></div></section>
+      <section><h2>Type</h2><div class="type">
+        <div style="font: var(--pl-text-title)">FanPage · Fan.tsx:41<small>title 12.5/18 600</small></div>
+        <div>padding-inline uses mu-space-12<small>row 12/16</small></div>
+        <div style="font: var(--pl-text-reading)">gap-10 → gap-mu-space-12  10px · 12px<small>reading 11.5/16 mono, tabular</small></div>
+        <div style="font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2)">PROPERTY · READING · TOKEN<small>label 10.5/14 500</small></div>
+      </div></section>
+      <section><h2>Space</h2><div class="ladder">${[1,2,3,4,5,6,7].map(n => `<figure><i style="width: var(--pl-space-${n})"></i>${[2,4,6,8,12,16,20][n-1]}</figure>`).join('')}</div></section>
+      <section><h2>Corners</h2><div class="row corners"><figure style="border-radius: var(--pl-radius-mark)">2 mark</figure><figure style="border-radius: var(--pl-radius-tag)">3 tag</figure><figure style="border-radius: var(--pl-radius-card)">6 card</figure><figure style="border-radius: 0">0 lines</figure></div></section>
+      <section><h2>Instrument over any host page</h2><div class="hosts">
+        <div class="host light"><div class="target"></div>${instrument('div · Row ·', '2 off')}</div>
+        <div class="host dark"><div class="target"></div>${instrument('button · Button ·', '1 off')}</div>
+        <div class="host loud"><div class="target"></div>${instrument('section ·', '0 off')}</div>
+      </div></section>
+      <section><h2>Field-book card</h2><div class="card" role="region" aria-label="Plumb reading for div in FanPage">
+        <header><b>div in FanPage</b><span>apps/docs/src/pages/components/Fan.tsx:41</span></header>
+        <div class="r"><i class="mark off"></i><span class="prop">gap</span><span class="amount">10px</span><span class="ledger new">new</span><span class="read">gap-10 → <b>gap-mu-space-12</b></span></div>
+        <div class="r"><i class="mark on"></i><span class="prop">padding-inline</span><span class="amount">12px</span><span></span><span class="read">mu-space-12</span></div>
+        <div class="r"><i class="mark off"></i><span class="prop">border-radius</span><span class="amount">14px</span><span class="ledger debt">debt</span><span class="read">14px → <b>rounded-row</b> 12px</span></div>
+        <div class="r"><i class="mark soft"></i><span class="prop">color</span><span class="amount">#fff</span><span class="ledger kept" title="the x-ray contrasts a flat fill on purpose">kept</span><span class="read">matches button-ink but doesn't use it</span></div>
+        <div class="r"><i class="mark unknown"></i><span class="prop">left</span><span class="amount">?</span><span></span><span class="read">computed at runtime</span></div>
+        <footer><button class="btn primary">Copy for agent</button><button class="btn quiet">Open Fan.tsx:41</button></footer>
+      </div></section>
+      <section><h2>Motion: the reticle travels, the plumb line drops</h2>
+        <div class="stage"><div class="a"></div><div class="b"></div>${instrument('div ·', '2 off')}</div>
+        <div class="row" style="margin-block-start: var(--pl-space-4)"><button class="btn quiet" id="replay">Move to the next element</button></div>
+        <p class="note">travel 220ms on a settling spring (under 2% overshoot), drop 140ms exponential ease-out; reduced motion: both 0ms.</p>
+      </section>`;
+
+    const tokens = [['paper', '--pl-paper'], ['paper-2', '--pl-paper-2'], ['rule', '--pl-rule'], ['ink', '--pl-ink'], ['ink-2', '--pl-ink-2'], ['ink-3', '--pl-ink-3'], ['brass', '--pl-brass']];
+    const verdicts = [['on a token', '--pl-on', 'on'], ['off the scale', '--pl-off', 'off'], ['default / tier / match', '--pl-soft', 'soft'], ['unknown', '--pl-unknown', 'unknown']];
+    const style = getComputedStyle(this);
+    const lum = c => { const m = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+    const probe = root.appendChild(document.createElement('i'));
+    const rgb = name => { probe.style.color = `var(${name})`; return getComputedStyle(probe).color; };
+    const paper = rgb('--pl-paper');
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return ((x + 0.05) / (y + 0.05)).toFixed(1); };
+    root.getElementById('ground').innerHTML = tokens.map(([label, name]) => `<div class="swatch"><div class="chip" style="background: var(${name})"></div><b>${label}</b><span>${style.getPropertyValue(name).trim() || rgb(name)} · ${ratio(rgb(name), paper)}:1</span></div>`).join('');
+    root.getElementById('verdicts').innerHTML = `<div class="legend">${verdicts.map(([label, name, cls]) => `<i class="mark ${cls}"></i><span>${label} <span style="font: var(--pl-text-reading); color: var(--pl-ink-2)">${ratio(rgb(name), paper)}:1</span></span>`).join('')}</div>
+      <div class="legend"><span class="ledger new">new</span><span>not in the ledger: fails the check</span><span class="ledger debt">debt</span><span>recorded at baseline</span><span class="ledger kept">kept</span><span>exception with a reason</span></div>`;
+    probe.remove();
+
+    const stage = root.querySelector('.stage'), ret = stage.querySelector('.reticle');
+    let atB = false;
+    root.getElementById('replay').addEventListener('click', () => {
+      atB = !atB; stage.classList.add('moving');
+      ret.style.transform = atB ? 'translate(220px, 44px)' : 'translate(20px, 20px)';
+      ret.style.width = atB ? '180px' : '120px';
+      setTimeout(() => stage.classList.remove('moving'), parseFloat(getComputedStyle(this).getPropertyValue('--pl-dur-travel')) || 0);
+    });
+  }
+});
+</script>
+</body>
+</html>

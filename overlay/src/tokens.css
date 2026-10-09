@@ -1,0 +1,120 @@
+/* Plumb overlay primitives. The overlay is a surveying instrument held over someone else's page: one neutral
+   field-book card, one instrument brass for the reticle and plumb line, and colour quarantined to verdict marks.
+   Every value the components use comes from here. Scoped to :host so nothing leaks into or out of the host page. */
+
+:host {
+  /* ground and ink: the field-book card */
+  --pl-paper: #f3f2ee;          /* card ground */
+  --pl-paper-2: #e9e7e1;        /* header strip, pressed row */
+  --pl-rule: #d5d2c9;           /* ruled lines between rows, card edge */
+  --pl-ink: #1c1f1d;            /* readings, titles: 15.6:1 on paper */
+  --pl-ink-2: #535955;          /* labels, secondary text: 6.6:1 on paper */
+  --pl-ink-3: #8a908c;          /* ticks and dividers only, never text */
+
+  /* the instrument: reticle, plumb line, bob */
+  --pl-brass: #9a6914;          /* lines only, never text: 4.3:1 on paper; on any host it rides on a halo */
+  --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
+
+  /* verdicts: the only other colour, always paired with a mark shape */
+  --pl-on: #1d7a4f;             /* uses a token */
+  --pl-off: #b8391f;            /* off the scale, override, imitation, broken */
+  --pl-soft: #9c5f08;           /* Tailwind default, wrong tier, matches a token but doesn't use it */
+  --pl-unknown: #6b716d;        /* computed at runtime, inherited */
+
+  /* type: system faces only, the overlay never fetches a font */
+  --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --pl-text-label: 500 10.5px/14px var(--pl-sans);   /* tag, column labels */
+  --pl-text-row: 400 12px/16px var(--pl-sans);       /* row text */
+  --pl-text-reading: 400 11.5px/16px var(--pl-mono); /* readings and code: measurement, not costume */
+  --pl-text-title: 600 12.5px/18px var(--pl-sans);   /* card title */
+  --pl-tracking-label: 0.02em;
+
+  /* space: one ladder */
+  --pl-space-1: 2px;
+  --pl-space-2: 4px;
+  --pl-space-3: 6px;
+  --pl-space-4: 8px;
+  --pl-space-5: 12px;
+  --pl-space-6: 16px;
+  --pl-space-7: 20px;
+
+  /* instrument geometry */
+  --pl-line: 1px;               /* every instrument line, snapped to device pixels in code */
+  --pl-tick: 8px;               /* reticle corner arm */
+  --pl-drop: 16px;              /* plumb line from box edge to tag */
+  --pl-tag-h: 22px;
+  --pl-row-h: 40px;           /* two lines: property and amount, then the reading */
+  --pl-card-w: 360px;
+  --pl-card-gap: 12px;          /* card to element */
+
+  /* corners: the instrument is square, the card is a held object */
+  --pl-radius-mark: 2px;
+  --pl-radius-tag: 3px;
+  --pl-radius-card: 6px;
+
+  /* depth: the card is the only lifted thing */
+  --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(20 22 21 / 0.06), 0 10px 28px -10px rgb(20 22 21 / 0.32);
+  --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(20 22 21 / 0.28);
+
+  /* motion: one authored moment, the reticle travelling and the plumb line dropping */
+  --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
+  --pl-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1); /* settles with under 2% overshoot */
+  --pl-dur-travel: 220ms;       /* reticle moves to the next element */
+  --pl-dur-drop: 140ms;         /* plumb line extends to the tag */
+  --pl-dur-card: 180ms;         /* card pins */
+  --pl-dur-feedback: 120ms;     /* copy confirmation, row press */
+
+  /* stacking: above everything on any page */
+  --pl-z: 2147483647;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host(:not([data-scheme="light"])) {
+    --pl-paper: #1a1d1c;
+    --pl-paper-2: #232725;
+    --pl-rule: #353b38;
+    --pl-ink: #ecede8;          /* 14.9:1 on paper */
+    --pl-ink-2: #a8aeaa;        /* 7.6:1 on paper */
+    --pl-ink-3: #6f7672;
+    --pl-brass: #d7a240;        /* lines only */
+    --pl-halo: rgb(10 12 11 / 0.85);
+    --pl-on: #52bf8b;
+    --pl-off: #f07a62;
+    --pl-soft: #e0a446;
+    --pl-unknown: #8f9692;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
+    --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+/* An explicit scheme wins over the OS, both ways. */
+:host([data-scheme="dark"]) {
+    --pl-paper: #1a1d1c;
+    --pl-paper-2: #232725;
+    --pl-rule: #353b38;
+    --pl-ink: #ecede8;          /* 14.9:1 on paper */
+    --pl-ink-2: #a8aeaa;        /* 7.6:1 on paper */
+    --pl-ink-3: #6f7672;
+    --pl-brass: #d7a240;        /* lines only */
+    --pl-halo: rgb(10 12 11 / 0.85);
+    --pl-on: #52bf8b;
+    --pl-off: #f07a62;
+    --pl-soft: #e0a446;
+    --pl-unknown: #8f9692;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
+    --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    --pl-dur-travel: 0ms;
+    --pl-dur-drop: 0ms;
+    --pl-dur-card: 0ms;
+    --pl-dur-feedback: 0ms;
+  }
+}
