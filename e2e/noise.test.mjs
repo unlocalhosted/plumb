@@ -27,7 +27,7 @@ test('equal literals warn once per family; every site has its own token, verbose
   const dir = await project(t, css, '<div className="bg-[#123456]" />;');
   const r = run(dir), color = findings(r, 'provenance/color/by-value');
   assert.equal(color.length, 1); assert.equal(color[0].severity, 'warn');
-  assert.equal(color[0].title, "4 values in your color match tokens but don't use them");
+  assert.equal(color[0].title, "4 colour values match tokens but don't use them");
   assert.equal(color[0].sites.length, 4); assert.equal(color[0].edits.length, 4);
   for (const edit of color[0].edits) {
     const expected = edit.site.text.includes('#654321') ? '--color-ink' : '--color-brand';
@@ -39,7 +39,7 @@ test('equal literals warn once per family; every site has its own token, verbose
   assert.ok(each.every(f => f.severity === 'warn' && f.choices.length === 1));
   assert.deepEqual(color[0].ledgerKeys.sort(), each.flatMap(f => f.ledgerKeys).sort());
   const text = run(dir, [], false);
-  assert.ok(!color[0].action.includes(dir)); assert.match(text, /4 values in your color/);
+  assert.ok(!color[0].action.includes(dir)); assert.match(text, /4 colour values match tokens/);
   assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}:${e.site.column}`)));
   const agent = run(dir, ['--agent'], false);
   assert.ok(!agent.includes('values in your color')); assert.match(agent, /background-color: var\(--color-ink\)/);

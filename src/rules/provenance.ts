@@ -302,7 +302,7 @@ function groupByValue(family: string, findings: Finding[]): Finding[] {
   const grouped = makeFinding({ key: `by-value:${family}`, rule: copies[0]!.rule, family, declaration: copies[0]!.declaration,
     because: copies[0]!.because, severity: 'warn', sites,
     occurrences: copies.flatMap(f => f.occurrences ?? [f.declaration]), decisions, choices: [], edits,
-    title: `${sites.length} values in your ${family} match tokens but don't use them`, action });
+    title: `${sites.length} ${({ color: 'colour', elevation: 'shadow', z: 'z-index' } as Record<string, string>)[family] ?? family} ${sites.length === 1 ? 'value matches a token but doesn\'t' : 'values match tokens but don\'t'} use ${sites.length === 1 ? 'it' : 'them'}`, action });
   return [...findings.filter(f => !copies.includes(f)), grouped];
 }
 
