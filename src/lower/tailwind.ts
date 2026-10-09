@@ -11,7 +11,7 @@ import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
 import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
 
-type ParsedCandidate = { kind: string; root?: string; value?: unknown };
+type ParsedCandidate = { kind: string; root?: string; value?: { kind: string; value: string } | null };
 type DesignSystem = {
   candidatesToCss(candidates: string[]): (string | null)[];
   parseCandidate(name: string): Iterable<ParsedCandidate>;
@@ -70,7 +70,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     const cssGraph = await tailwindGraph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer3-cache-v2`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer4-cache-v3`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -121,7 +121,16 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           // evidence that the author supplied a value, rather than a utility.
           const authoredValue = [...system.parseCandidate(candidate)].some(parsed =>
             (parsed.kind === 'arbitrary' || parsed.kind === 'functional' && parsed.value != null) && system.compileAstNodes(parsed).length > 0);
-          cached[candidate] = { ...lowerCss(css[index] ?? null), authoredValue };
+          const result = lowerCss(css[index] ?? null);
+          for (const parsed of system.parseCandidate(candidate)) {
+            if (parsed.kind !== 'functional' || parsed.value?.kind !== 'named' || !system.compileAstNodes(parsed).length) continue;
+            for (const declaration of result.declarations) {
+              const namespace = declaration.prop === 'box-shadow' ? '--shadow-' : declaration.prop === 'font-weight' ? '--font-weight-' : undefined;
+              const name = namespace && `${namespace}${parsed.value.value}`;
+              if (name && theme!.some(item => item.name === name)) declaration.decisionRefs = [name];
+            }
+          }
+          cached[candidate] = { ...result, authoredValue };
         }
         catch (error) { throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`); }
       }

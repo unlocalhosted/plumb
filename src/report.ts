@@ -34,6 +34,10 @@ export interface Declaration {
   sourceOrigin?: 'project' | 'framework';
   /** Class candidate supplied a value; false for compiler-defined utilities. */
   authoredValue?: boolean;
+  /** Theme keys selected by the compiler before it inlines their values. */
+  decisionRefs?: string[];
+  /** Authored CSS before compiler-generated compatibility fallbacks. */
+  authoredCss?: string;
   package?: string;
   opaque?: 'dynamic-value' | 'dynamic-class' | 'spread';
 }
@@ -79,6 +83,9 @@ export interface FamilyCoverage {
   exceptions: number;
 }
 
+export type JudgedFamily = Exclude<Family, 'size' | 'opacity'>;
+export type ProvenanceCoverage = Record<JudgedFamily, Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>>;
+
 export interface Report {
   schemaVersion: 1;
   tool: { name: 'plumb'; version: string };
@@ -92,7 +99,7 @@ export interface Report {
   declarations: Declaration[];
   stylesheets: { file: string; sourceOrigin: 'project' | 'framework'; package?: string; reached: { kind: 'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style'; from?: string; specifier?: string }[] }[];
   moduleGraph: { modules: number; followed: number; cssFiles: number; cacheHits: number; cacheMisses: number; parseMs: number; totalMs: number };
-  coverage: { spacing: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>; existence: { total: number; dead: number }; declarations: Record<Declaration['origin'], number>; stylesheets: Record<'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style', number>; inline: { sites: number; literalSites: number; opaque: number; fullyOpaque: number; spreads: number } };
+  coverage: ProvenanceCoverage & { existence: { total: number; dead: number; deadVars: number }; declarations: Record<Declaration['origin'], number>; stylesheets: Record<'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style', number>; inline: { sites: number; literalSites: number; opaque: number; fullyOpaque: number; spreads: number } };
   classes: { unique: number; opaque: number };
   timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number; stylesheets: number; inline: number; decisions: number; provenance: number }; cacheHits: number; cacheMisses: number };
 }
@@ -151,10 +158,14 @@ export function formatText(report: Report, verbose = false): string {
   const ordered = [...report.findings].sort((a, b) => rank[a.severity] - rank[b.severity] || b.sites.length - a.sites.length || a.rule.localeCompare(b.rule));
   const byRule = new Map<string, number>();
   for (const finding of report.findings) byRule.set(finding.rule, (byRule.get(finding.rule) ?? 0) + 1);
-  const { existence, spacing, inline } = report.coverage;
+  const { existence, inline } = report.coverage;
+  const families = (['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as const)
+    .map(family => [family, (report.coverage as unknown as Record<string, FamilyCoverage | undefined>)[family]] as const)
+    .filter((entry): entry is readonly [typeof entry[0], FamilyCoverage] => entry[1] !== undefined && entry[1].total > 0);
+  const numberWidth = Math.max(0, ...families.map(([, c]) => c.total.toLocaleString('en-US').length));
   const summary = [
-    `existence   ${count(existence.total, 'class token')}, ${existence.dead} dead`,
-    `spacing     ${spacing.fromDecisions.toLocaleString('en-US')} of ${spacing.total.toLocaleString('en-US')} from decisions${share(spacing.fromDecisions, spacing.total)}, ${count(spacing.findings, 'declaration')} off them`,
+    `existence   ${count(existence.total, 'class token')}, ${existence.dead} dead classes${existence.deadVars ? `, ${existence.deadVars} dead variables` : ''}`,
+    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} from decisions${share(c.fromDecisions, c.total).padEnd(7)} ${count(c.findings, 'declaration')} off them`),
     `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
   ];
   const rules = [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ');

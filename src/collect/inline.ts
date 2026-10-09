@@ -16,6 +16,7 @@ export interface SourceStyles {
   declarations: Declaration[];
   sites: InlineSite[];
   stylesheets: EmbeddedStylesheet[];
+  definedVariables: string[];
   imports: { file: string; specifier: string }[];
 }
 
@@ -65,7 +66,7 @@ function embedded(node: Node, source: SourceText): { css: string; offsets: numbe
 }
 
 export function collectInline(ast: Program, source: SourceText, resolveImport?: (id: string, name: string) => InlineBinding | null): SourceStyles {
-  const result: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [] };
+  const result: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
   type Scope = Map<string, InlineBinding | (() => InlineBinding | null) | null>;
   const imports: Scope = new Map();
   for (const statement of ast.body) {
@@ -114,6 +115,21 @@ export function collectInline(ast: Program, source: SourceText, resolveImport?: 
     result.sites.push({ site: attribute, oneHop: resolved.oneHop, literal: declarations.some(item => !item.opaque), declarations });
   }
   function walk(node: Node, scopes: Scope[]): void {
+    // Custom-property maps can reach style through spreads, return values or
+    // memoized models. Registry existence does not require value evaluation.
+    if (node.type === 'Property') {
+      const key = node.computed ? literal(node.key) : nodeName(node.key);
+      if (typeof key === 'string' && key.startsWith('--')) result.definedVariables.push(key);
+    }
+    if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression' && node.left.computed) {
+      const key = literal(node.left.property);
+      if (typeof key === 'string' && key.startsWith('--')) result.definedVariables.push(key);
+    }
+    if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' &&
+        nodeName(node.callee.property) === 'setProperty' && node.callee.object.type === 'MemberExpression' && nodeName(node.callee.object.property) === 'style') {
+      const name = node.arguments[0] && literal(node.arguments[0]);
+      if (typeof name === 'string' && name.startsWith('--')) result.definedVariables.push(name);
+    }
     if (node.type === 'ImportDeclaration') {
       if (!node.specifiers.length && node.importKind !== 'type') result.imports.push({ file: source.file, specifier: node.source.value });
       return;

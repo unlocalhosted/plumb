@@ -58,15 +58,39 @@
       "properties": { "unique": { "$ref": "#/$defs/count" }, "opaque": { "$ref": "#/$defs/count" } }
     },
     "coverage": {
-      "type": "object", "additionalProperties": false, "required": ["existence", "declarations", "stylesheets", "inline", "spacing"],
+      "type": "object", "additionalProperties": false, "required": ["existence", "declarations", "stylesheets", "inline", "spacing", "color", "radius", "type", "motion", "elevation", "z"],
       "properties": {
         "spacing": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
           "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
         },
+        "color": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
+        "radius": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
+        "type": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
+        "motion": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
+        "elevation": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
+        "z": {
+          "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+        },
         "existence": {
-          "type": "object", "additionalProperties": false, "required": ["total", "dead"],
-          "properties": { "total": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" } }
+          "type": "object", "additionalProperties": false, "required": ["total", "dead", "deadVars"],
+          "properties": { "total": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" }, "deadVars": { "$ref": "#/$defs/count" } }
         },
         "declarations": {
           "type": "object", "additionalProperties": false, "required": ["class","arbitrary","stylesheet","apply","inline","custom-property","keyframes"],
@@ -144,7 +168,7 @@
         },
         "origin": { "enum": ["class", "arbitrary", "stylesheet", "apply", "inline", "custom-property", "keyframes"] },
         "sourceOrigin": { "enum": ["project", "framework"] }, "package": { "type": "string" },
-        "authoredValue": { "type": "boolean" },
+        "authoredValue": { "type": "boolean" }, "decisionRefs": { "$ref": "#/$defs/strings" }, "authoredCss": { "type": "string" },
         "opaque": { "enum": ["dynamic-value", "dynamic-class", "spread"] }
       }
     },

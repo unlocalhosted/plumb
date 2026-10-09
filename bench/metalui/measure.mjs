@@ -22,6 +22,16 @@ for (const temperature of ['cold', 'warm']) {
     assert.ok(!report.findings.some(finding => ['mu-icon-trigger', 'mu-life'].includes(finding.declaration.value)));
     if (temperature === 'warm') assert.ok(report.timing.totalMs < 1200, 'warm report total must remain under 1.2 s');
   }
+  if (label === 'layer4') {
+    for (const family of ['spacing','color','radius','type','motion','elevation','z']) {
+      const c = report.coverage[family]; assert.equal(c.total, c.fromDecisions + c.findings);
+    }
+    if (temperature === 'cold') coldReport = report;
+    else {
+      for (const field of ['findings','decisions','coverage','declarations']) assert.deepEqual(report[field], coldReport[field]);
+      assert.ok(report.timing.totalMs < 1300, 'warm report must remain under 1.3 s');
+    }
+  }
   if (label === 'layer3') {
     assert.equal(report.coverage.spacing.total, report.coverage.spacing.fromDecisions + report.coverage.spacing.findings);
     assert.equal(report.decisions.filter(decision => decision.family === 'spacing').length, 17);

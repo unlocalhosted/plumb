@@ -1,3 +1,4 @@
+import { isJudged, varUses } from './families.js';
 import { matchesGlob, relative } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { glob } from 'tinyglobby';
@@ -110,4 +111,30 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
       fix: site.opaque ? 'Use a map of complete class names instead of constructing a class fragment.' : nearest.length ? `Did you mean ${nearest.map(item => item.token).join(' or ')}?` : 'Remove this class or declare it in a project stylesheet.',
     };
   });
+}
+
+// The variable registry proves existence, not scope/cascade or runtime value.
+export function deadVariables(declarations: Declaration[], defined: ReadonlySet<string>, theme: ReadonlySet<string>): Finding[] {
+  const groups = new Map<string, Finding>();
+  for (const declaration of declarations) {
+    if (!isJudged(declaration) || declaration.opaque) continue;
+    for (const use of varUses(declaration.value)) {
+      if (defined.has(use.name)) continue;
+      const previous = groups.get(use.name);
+      const severity = use.fallback === undefined ? 'error' : 'warn';
+      if (previous) {
+        if (severity === 'error') previous.severity = 'error';
+        if (!previous.sites.some(s => JSON.stringify(s) === JSON.stringify(declaration.site))) previous.sites.push(declaration.site);
+        continue;
+      }
+      // Reuse dead-class ranking: namespace, theme, shared prefix, edit distance,
+      // and two alternatives. A fake class site is only a ranking adapter.
+      const site: ClassSite = { token: use.name, file: declaration.site.file, line: declaration.site.line, column: declaration.site.column, text: declaration.site.text, conditions: declaration.when, owner: declaration.owner };
+      const ranked = existence([site], new Map([...defined].map(name => [name, { css: 'defined', declarations: [], notes: [] }])), new Set(), [], [...theme].map(token => ({ token, prefix: token.lastIndexOf('-') > 1 ? token.slice(0, token.lastIndexOf('-') + 1) : token })))[0];
+      groups.set(use.name, { key: `existence/dead-var:${use.name}`, rule: 'existence/dead-var', family: 'existence', severity, sites: [declaration.site], declaration, decisions: [],
+        why: `${use.name} is defined nowhere in the stylesheet graph or scanned sources.`,
+        fix: ranked?.fix.startsWith('Did you mean') ? ranked.fix : 'Define the custom property or replace it with an existing decision.' });
+    }
+  }
+  return [...groups.values()].sort((a,b) => a.key.localeCompare(b.key));
 }

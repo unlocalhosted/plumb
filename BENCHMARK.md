@@ -589,3 +589,119 @@ Total additional declaration contexts: **466**; the broader numeric grep account
 Collection fixes additionally expose **`ed-dlg-pull`** at `ui/xray/DialogSpecimens.tsx:153` (dead class) and **`on-${surface}`** at `ui/doc.tsx:109` (un-generatable dynamic fragment). Final existence is **40 dead names / 66 sites**, plus three dynamic-class groups. The previous 39 dead names/65 sites remain, and both icon CSS false positives remain absent. These are collector completeness changes, not new provenance families.
 
 Final checks: **58 CLI integration/e2e tests passed**, zero failures/skips; `npm run typecheck` and `git diff --check` passed. No unit tests, installations or commits. Color/radius provenance, dead variables, ownership, habits and ledger remain later layers.
+
+# Layer 4 benchmark: all judged families and dead variables
+
+Measured read-only against the same MetalUI commit `9cb04dc818ac84d981f8215352237d5c5ab2f85b`, Tailwind 4.3.3, apps/docs source globs and source tree as Layer 3. No MetalUI source, CSS, tokens or cache was written. Plumb caches/reports stay here. Reproduce with `node bench/metalui/measure.mjs layer4`, then `node bench/metalui/reconcile-layer4.mjs` and `node bench/metalui/decision-manifest.mjs`. Reports: [cold](bench/metalui/layer4.cold.json), [warm](bench/metalui/layer4.warm.json), [timing](bench/metalui/layer4.run.json). Both CLI runs exit 1 because real debt remains. Cold/warm findings, declarations, decisions and coverage are asserted equal.
+
+## Decision choices and exclusions
+
+The mapping is in [plumb.config.ts](bench/metalui/plumb.config.ts) and [families.ts](bench/metalui/families.ts), outside core. It reads MetalUI's project-generated theme/token CSS, the docs' own font aliases, and tokens.json reasons. [CSS_SYSTEM.md](../metalui/docs/CSS_SYSTEM.md) says type roles stay whole and recipe geometry belongs to controls; [CSS_HABITS.md](../metalui/docs/CSS_HABITS.md) says durations/curves come from shared springs or authored recipe timing; [STATUS-COLORS.md](../metalui/docs/STATUS-COLORS.md) explains status inks, words and controlled ground. These guide the following choices.
+
+Every selected record and every excluded key in those project CSS inputs has an explicit classification in [layer4.decisions.json](bench/metalui/layer4.decisions.json): 1,097 chosen records (including spacing and record-only families), 2,018 excluded variable names. The manifest carries values, source locations, whys and missing-reason status. The rules below explain each classification; source reasons are retained rather than invented for keys without one.
+
+- **Color:** adopt project paint theme aliases and scalar/gradient paint outputs, including colorway ink/surfaces, syntax ink, signal/status ink, material and recipe colors. These are approved token outputs, not a new palette inferred from docs literals. Full gradients are paint decisions; compound shadows belong to elevation. Dynamic colorway values remain unresolved for nearest comparison but valid by reference. No docs illustration literal is promoted to a token.
+- **Radius:** adopt foundations.radius, corresponding project theme keys/aliases and exposed recipe radius keys. These are actual approved radii, not all dimensional props containing a convenient number. Use value identity and both tiers for the flat vocabulary. Relative units/elliptical forms must still match an actual decision.
+- **Type:** adopt complete foundations/editorial type-role outputs, their tracking and project font-family/weight theme keys. Do not synthesize independent size, weight or leading decisions from each role's JSON ingredients: CSS_SYSTEM says they are one role, not freely recombinable knobs. Exclude font-stretch and other unjudged type properties. Static project role uses are judged at their definitions; those package definitions remain outside this benchmark's source globs. Legacy kds font shorthands are judged here.
+- **Motion:** adopt project ease aliases and generated durations/curves from springs, gestures, waiting and recipe timing. Exclude stiffness, damping, zeta, travel, animation names/keyframe contents, and geometry because those are not CSS times/easings. Named whole animation tokens may carry their timing; literal keyword easings remain literals. Zero reduced-motion duration/delay is a neutral, not an added token.
+- **Elevation:** adopt project shadow aliases and whole authored offset/blur/spread/color stacks from token outputs, including material/colorway/recipe shadows. Exclude isolated offset, blur, spread, tint knobs and gradients: none defines a whole box-shadow choice. Nondecision legacy aliases can resolve to the same stack but still warn by value under reference identity.
+- **Z:** adopt named integer recipe stacking planes ending in z/z-index and any project z theme keys. No general-purpose numeric z scale is inferred. Auto/0/1/-1 pass; coincident higher integers warn by value and other integers error.
+- **Spacing stays Layer 3:** only the shared ladder and three relationship gaps. Recipe spacing, control heights and arbitrary geometry remain excluded from that ladder. **Size/opacity are record-only**; layout dimensions, fractions and opacity brackets are reasoned passes for this layer.
+
+The benchmark explicitly allows both primitive and semantic callers in each adopted family. MetalUI's output uses one intent-named vocabulary plus recipe/foundation primitives; its docs do not impose a universal two-tier caller contract. This is an explicit project policy, not a weakening of the core default. The fixture proves the core default flips to semantic in every family and that literals cannot bypass it. Framework defaults stay excluded. Some selected tokens have no recorded why: color 98/656, radius 15/98, type 51/90, motion 10/123, elevation 55/100, z 0/11. These gaps are reported honestly; a source-wide description is used only where it actually describes the colorway/material family.
+
+## Family coverage
+
+Counts are judged declaration contexts, including opaque warnings; grouped findings/sites are separate. Neutral values count as accepted. A box-shadow can contribute to color and elevation. A literal font shorthand contributes separate type property judgements.
+
+| Family | Accepted | Judged | Failing/warning contexts | Grouped findings | Physical sites in family |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| spacing | 1608 | 2183 | 575 | 124 | 568 |
+| color | 1393 | 1707 | 314 | 123 | 291 |
+| radius | 358 | 447 | 89 | 6 | 89 |
+| type | 168 | 675 | 507 | 72 | 220 |
+| motion | 242 | 413 | 171 | 48 | 132 |
+| elevation | 26 | 293 | 267 | 106 | 223 |
+| z | 26 | 87 | 61 | 17 | 61 |
+
+Spacing remains **1,608 / 2,183 accepted**, with **575** failing/warning contexts; its Layer 3 reconciliation remains valid. Existence remains **40 dead class names / 66 class sites**, plus the existing dynamic classes. Dead variables now add **2 names / 3 name-site pairs**, described below. Fully opaque inline entries remain **177**, without fabricated family coverage; all **1,361** opaque inline declarations remain visible.
+
+## Top findings and verdicts
+
+[Reconciliation JSON](bench/metalui/layer4.reconciliation.json) lists every grouped new-family finding, all sites, value, rule and verdict, including findings beyond the greps. These remain debt/warnings, not automatically excused artwork. Below are the three largest groups in each new family. A site may contribute multiple font-property findings or both shadow families.
+
+| Family | Rule / amount | Sites | Example | Verdict |
+| --- | --- | ---: | --- | --- |
+| color | provenance/opaque-inline: dynamic-value | 76 | apps/docs/src/pages/components/ButtonSmartControls.tsx:110 | Known runtime property; warn, value unknown. |
+| color | provenance/color: var(--well) | 32 | apps/docs/src/kds.css:125 | Unapproved literal or unresolved recipe expression; debt. |
+| color | provenance/color: var(--btn-sh) | 25 | apps/docs/src/kds.css:104 | Unapproved literal or unresolved recipe expression; debt. |
+| radius | provenance/opaque-inline: dynamic-value | 74 | apps/docs/src/pages/components/ButtonSmartControls.tsx:80 | Known runtime property; warn, value unknown. |
+| radius | provenance/radius: calc(infinity * 1px) | 9 | apps/docs/src/pages/Icons.tsx:224 | Unapproved literal or unresolved recipe expression; debt. |
+| radius | provenance/radius/framework: var(--radius-xl) | 2 | apps/docs/src/pages/components/Status.tsx:50 | Unadopted framework default; error. |
+| type | provenance/type/by-value: var(--sans) | 69 | apps/docs/src/kds.css:76 | Equal nondecision alias/literal; reference identity warning. |
+| type | provenance/type: 500 | 63 | apps/docs/src/kds.css:104 | Unapproved literal or unresolved recipe expression; debt. |
+| type | provenance/type: 400 | 41 | apps/docs/src/kds.css:76 | Unapproved literal or unresolved recipe expression; debt. |
+| motion | provenance/opaque-inline: dynamic-value | 41 | apps/docs/src/pages/components/Folder.tsx:146 | Known runtime property; warn, value unknown. |
+| motion | provenance/motion/framework: var(--tw-duration, var(--default-transition-duration)) | 24 | apps/docs/src/blocks/ai-composer/ai-composer.tsx:342 | Unadopted framework default; error. |
+| motion | provenance/motion/framework: var(--tw-ease, var(--default-transition-timing-function)) | 19 | apps/docs/src/blocks/ai-composer/ai-composer.tsx:342 | Unadopted framework default; error. |
+| elevation | provenance/elevation/by-value: var(--well) | 32 | apps/docs/src/kds.css:125 | Equal nondecision alias/literal; reference identity warning. |
+| elevation | provenance/elevation/by-value: var(--btn-sh) | 25 | apps/docs/src/kds.css:104 | Equal nondecision alias/literal; reference identity warning. |
+| elevation | provenance/opaque-inline: dynamic-value | 15 | apps/docs/src/pages/components/ButtonSmartControls.tsx:110 | Known runtime property; warn, value unknown. |
+| z | provenance/z/by-value: 2 | 26 | apps/docs/src/kds.css:171 | Equal nondecision alias/literal; reference identity warning. |
+| z | provenance/z: 3 | 8 | apps/docs/src/kds.css:763 | Unapproved literal or unresolved recipe expression; debt. |
+| z | provenance/z: 10 | 4 | apps/docs/src/blocks/settings/settings.tsx:451 | Unapproved literal or unresolved recipe expression; debt. |
+
+Radius `rounded-full` becomes `calc(infinity * 1px)`, not the finite 999px pill decision, so the nine contexts remain unresolved/off-decision debt. The two `rounded-xl` contexts name Tailwind's framework radius. Type's 500/400 weights and scalar sizes remain findings because adopting complete type roles does not approve arbitrary recombinations of their constituent values. Legacy `var(--sans)` / `var(--mono)` aliases match project font families but lose the direct decision reference. Color's legacy shadow aliases such as `--well` and `--btn-sh` have conditional/material color components the resolver cannot certify; elevation additionally names coincident whole stacks by value. Literal/dynamic paint in x-ray renderers remains reported when it reaches a known CSS property.
+
+## Every grep hit reconciled
+
+[Hit-by-hit Markdown](bench/metalui/layer4.reconciliation.md) has one row per hit with finding keys or a reasoned/manual pass; [JSON](bench/metalui/layer4.reconciliation.json) retains its complete source-line context. No unreviewed category remains.
+
+**Colors: historical 75 versus current reproducible superset.** The original 75-hit regex/location list was not preserved in DESIGN/research, so we cannot honestly label exactly 75 current locations as that historical list. The explicit conservative TSX pattern `#[\da-fA-F]{3,8}\b|rgba?\([^)]*\)` yields **206 textual hits on 107 lines**, including non-color hashtags and partial runtime function strings. Every one is recorded. This broader audit covers the claimed category without inventing a historical hit list.
+
+| Color category | Hits | Verdict |
+| --- | ---: | --- |
+| finding | 38 | Linked exact-site color provenance finding. |
+| thumbnail artwork | 47 | Manual pass: document cover/thumbnail content in Layers/Folder/FolderUnfold/FolderXray. |
+| SVG media artwork | 22 | Manual pass: encoded portrait/cover/link/status sample imagery, not status-state UI ink. |
+| authored color content | 29 | Manual pass: editable color/swatches, cue content and textual samples. |
+| unjudged property | 3 | Three filter/drop-shadow color components; filter is outside the specified color/elevation properties. |
+| runtime paint warning | 6 | Linked warning at dot(c), where folder content colors reach CSS. |
+| grep false positive | 1 | #cafe is a Unicode hashtag fixture. |
+| interactive specimen data | 11 | Manual pass: documented optical/motion/content experiments; runtime strings/whole opaque objects are reader limits, not certified token paint. |
+| SVG sticker artwork | 5 | Manual pass: smiling-star sticker face/outline in LayerSorter. |
+| wordmark artwork | 16 | Manual pass: documented chrome/enamel logo illustration; spread/parameter-driven paint stays opaque. |
+| x-ray cut-wall artwork | 28 | Manual pass: exploded physical-model cut-wall/rim art and arithmetic; known renderer paint warnings remain in report. |
+
+SVG artwork is legitimate media in these categories; it is not silently excluded from the audit. Presentation attributes and values passed through renderer props/data are not lowered as CSS declarations by the current React reader. Whole conditional/spread objects are retained as opaque counts. These are explicit manual passes/limits: Plumb has no art exemption and would judge those values if authored in a known CSS property. This distinction also prevents treating a Swatch's editable hex or a ColourCue's text as a design-token violation.
+
+**Arbitrary: exactly 218 hits**, using the requested `[a-z-]+-\[[^]]+\]` TSX pattern. **30** link findings, **25** are accepted judged values, **161** are unjudged properties (size, transforms, grid, border width, etc.), **1** is the height in Slider's NAME_TOP composition (size outside Layer 4; no emitted declaration at that const definition), and **1** is Usage's `--[a-z]` RegExp fragment, not a class. Successful values are not failed merely for brackets: decision equality, named refs and neutrals still apply. No arbitrary hit is missing a verdict.
+
+**Duration: exactly 13 non-kds docs CSS lines** have times in transition/animation lines without `var(--mu`, reconciling the owner's count. **8** link motion findings; **5** pass: one zero reduced-motion override and four shared-spring alias/fallback uses in palette/toast/tooltip specimens. The reference `kds.css` adds **38** such lines: **37** findings and **1** shared-spring pass, for a broader **51-line audit (45 findings / 6 passes)**. The calculated stagger delay at kds:733 remains a motion finding; it is not hidden by the shorthand reader. Grep can see a fallback duration even when a registered shared spring supplies the active time; those passes say so per line.
+
+## Dead variables
+
+- **`--c`**: error at kds.css:508 and :509. Confirmed stale rx-tint hook: no theme, CSS, registration, inline/map assignment or setter defines it anywhere scanned. The second location is the nested fallback of `--c-g`.
+- **`--c-g`**: warn at kds.css:509 because a fallback exists. Confirmed undefined optional graphite tint hook; fallback `--c` is itself dead and errors. Grouping gives two names and three name-site pairs.
+
+The initial run falsely marked four `--ed-status-*-bg/shadow` keys dead. Read-only source review found them in StatusXray's lampVars map returned through a memoized look and spread into style. Registry collection was fixed generically for custom-property maps/indexed assignments; all four now prove existence. This change is covered by the CLI fixture and contains no StatusXray/MetalUI names in core.
+
+## Cold/warm timing
+
+| Measurement | Cold | Warm |
+| --- | ---: | ---: |
+| Process wall, startup + JSON included | 3879.1 ms | 1428.4 ms |
+| Report total | 3719.1 ms | 1280.0 ms |
+| discover | 7.1 ms | 6.0 ms |
+| parse | 90.6 ms | 79.4 ms |
+| collect | 66.5 ms | 56.1 ms |
+| load | 150.2 ms | 31.9 ms |
+| compile | 115.4 ms | 0.0 ms |
+| stylesheets | 2136.3 ms | 155.7 ms |
+| inline | 78.9 ms | 77.1 ms |
+| decisions | 124.5 ms | 112.7 ms |
+| provenance | 238.0 ms | 215.7 ms |
+
+Warm **report total 1280.0 ms meets 1.3 s**. Full process **1428.4 ms** exceeds it by 128.4 ms: startup, serializing/writing the 11.5 MB expanded full JSON report and process overhead add 148.3 ms. We report both rather than claim the process meets the limit. The first family run was 1,447.2 ms report / 1,572.9 ms wall; indexing token source lines and caching repeated value matches/perceptual nearest lists removed repeated work. Final warm compiler cache has 1,302 hits / 0 misses; module cache 1,303 / 0. Cold means a new Plumb cache, not OS eviction. Measurements are individual processes, not latency guarantees. Earlier valid warm report/process pairs were 1,175.4/1,301.1 ms and 1,212.6/1,335.9 ms; the final retained run follows the effective-reset registry correction.
+
+Final verification: **65 CLI integration/e2e tests**, no failures/skips/unit tests; typecheck and whitespace check green. Protected text functions are unchanged. No installs, commits, MetalUI writes or project-specific core mapping. Details: [Layer 4](docs/layers/4-families.md).

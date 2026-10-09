@@ -66,7 +66,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
           }
         }
         const match = /^(--[\w*-]+)\s*:\s*([\s\S]+)$/.exec(text);
-        if (match && (theme || root)) {
+        if (match) {
           const tier = /\btier:\s*(primitive|semantic)\b/.exec(comment)?.[1] as Tier | undefined;
           result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic,
             origin: sheet.sourceOrigin, why: comment.startsWith('why:') ? comment.slice(4).replace(/\s*tier:\s*(primitive|semantic)\b/, '').trim() : '',

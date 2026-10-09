@@ -1,3 +1,4 @@
+import { familyDecisions } from './families.ts';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { defineDecisions } from '../../dist/index.js';
@@ -6,6 +7,12 @@ export default {
   css: 'apps/docs/src/styles.css',
   source: ['apps/docs/src/**/*.{tsx,jsx,ts,js,css}'],
   decisions: {
+    color: { from: familyDecisions('color'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    radius: { from: familyDecisions('radius'), callers: ['primitive', 'semantic'] },
+    type: { from: familyDecisions('type'), callers: ['primitive', 'semantic'] },
+    motion: { from: familyDecisions('motion'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    elevation: { from: familyDecisions('elevation'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    z: { from: familyDecisions('z'), identity: 'reference', callers: ['primitive', 'semantic'] },
     spacing: {
       identity: 'value', callers: ['primitive', 'semantic'],
       // Only the shared layout ladder and semantic gaps, never recipe geometry.

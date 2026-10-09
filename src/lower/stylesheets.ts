@@ -37,7 +37,7 @@ function delimiter(css: string, start: number, target: '{' | '}'): number {
 // Read only the leading declaration run identified by Lightning CSS. Its
 // declaration AST lacks property locations and normalizes values. Keep authored
 // values/positions, including the final declaration without a semicolon.
-function declarationsAt(css: string, offset: number, nested: boolean): RawDeclaration[] {
+function declarationsAt(css: string, offset: number, nested: boolean, limit = Infinity): RawDeclaration[] {
   if (!nested) offset = delimiter(css, offset, '{') + 1;
   const declarations: RawDeclaration[] = [];
   let start = offset, depth = 0, braces = 0, quote = '';
@@ -62,7 +62,7 @@ function declarationsAt(css: string, offset: number, nested: boolean): RawDeclar
     }
     if (char === '}' && braces) { braces--; depth--; continue; }
     if (depth === 0 && char === '}') { emit(offset); break; }
-    if (depth === 0 && char === ';') { emit(offset); start = offset + 1; }
+    if (depth === 0 && char === ';') { emit(offset); start = offset + 1; if (declarations.length >= limit) break; }
   }
   return declarations;
 }
@@ -80,7 +80,7 @@ function selectorConditions(selector: string): Condition[] {
   return [{ kind: 'selector', text: selector }, ...[...new Set(rule.value.selectors.flatMap(positive))].map(text => ({ kind: 'pseudo' as const, text }))];
 }
 
-export function lowerStylesheet(css: string, filename: string, locate?: (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin'] }, initial: Condition[] = []): Declaration[] {
+export function lowerStylesheet(css: string, filename: string, locate?: (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string }, initial: Condition[] = []): Declaration[] {
   const source = { file: filename, text: css, lineStarts: lineStarts(css) };
   const declarations: Declaration[] = [];
   const offset = (loc: { line: number; column: number }) => source.lineStarts[loc.line]! + loc.column - 1;
@@ -91,6 +91,7 @@ export function lowerStylesheet(css: string, filename: string, locate?: (offset:
       const owner = when.find(condition => condition.kind === 'selector')?.text ?? filename;
       const pkg = packageName(site.file);
       declarations.push({ prop: raw.prop, value: raw.value, refs: references(raw.value), when, site,
+        ...(mapped?.authoredCss ? { authoredCss: mapped.authoredCss } : {}),
         owner: { kind: 'element', name: owner },
         origin: origin === 'keyframes' ? origin : raw.prop.startsWith('--') ? 'custom-property' : mapped?.origin ?? origin,
         sourceOrigin: pkg ? 'framework' : 'project', ...(pkg ? { package: pkg } : {}) });
@@ -150,7 +151,7 @@ async function compiler(entry: string): Promise<{ compile(css: string, options: 
   return import(pathToFileURL(path).href);
 }
 
-function mapLocations(css: string, filename: string, map: DecodedSourceMap, embedded?: EmbeddedStylesheet): (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin'] } {
+function mapLocations(css: string, filename: string, map: DecodedSourceMap, embedded?: EmbeddedStylesheet): (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string } {
   const starts = lineStarts(css);
   const mappings = map.mappings.map(item => ({ ...item, offset: starts[item.generatedPosition.line - 1]! + item.generatedPosition.column }));
   const sources = new Map<string, { file: string; text: string; lineStarts: number[] }>();
@@ -169,14 +170,15 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
     const site = embedded && source.file === filename
       ? sourceSite(embedded.source, embedded.offsets[position] ?? embedded.site.column - 1, apply?.[0] ?? raw.text)
       : sourceSite(source, position, apply?.[0] ?? raw.text);
-    return { site, ...(apply ? { origin: 'apply' } : {}) };
+    const authored = apply ? undefined : declarationsAt(source.text, position, true, 1)[0];
+    return { site, ...(apply ? { origin: 'apply' } : {}), ...(authored?.prop === raw.prop ? { authoredCss: authored.value } : {}) };
   };
 }
 
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[]): Promise<LoweredStylesheets> {
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer3-utility-definitions-v1', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer4-authored-css-v1', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');

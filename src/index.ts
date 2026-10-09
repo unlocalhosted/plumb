@@ -6,14 +6,14 @@ import { errorMessage, UsageError } from './errors.js';
 import { collectClasses } from './collect/classes.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
-import { existence, location, unreachableClasses } from './rules/existence.js';
-import { collectStylesheets } from './collect/stylesheets.js';
+import { existence, location, unreachableClasses, deadVariables } from './rules/existence.js';
+import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
 import { references } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
 import { readDecisions } from './decisions/index.js';
-import { spacingProvenance } from './rules/provenance.js';
+import { provenance } from './rules/provenance.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 
@@ -21,7 +21,7 @@ export { defineDecisions } from './decisions/index.js';
 export type { DecisionInput } from './decisions/index.js';
 export { defineConfig } from './config.js';
 export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
-export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage } from './report.js';
+export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage, JudgedFamily, ProvenanceCoverage } from './report.js';
 
 export interface CheckOptions {
   root?: string;
@@ -86,8 +86,13 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   const record = await readDecisions(root, config.value, graph, lowered.theme);
   const decisionsMs = performance.now() - decisionsStart;
   const provenanceStart = performance.now();
-  const spacing = spacingProvenance(declarations, record, config.value);
-  findings.push(...spacing.findings);
+  const defined = new Set([...record.defined, ...collected.styles.definedVariables,
+    ...[...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations].filter(d => d.prop.startsWith('--')).map(d => d.prop)]);
+  for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
+  for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
+  findings.push(...deadVariables(declarations, defined, record.theme));
+  const judged = provenance(declarations, record, config.value);
+  findings.push(...judged.findings);
   const provenanceMs = performance.now() - provenanceStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
@@ -107,7 +112,8 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     stylesheets,
     moduleGraph: modules.counts,
     notes: [...modules.notes, ...css.notes, ...[...lowered.candidates].flatMap(([token, result]) => result.notes.map(note => `${token}: ${note}`))],
-    coverage: { spacing: spacing.coverage, existence: { total: collected.sites.filter(site => !site.opaque).length,
+    coverage: { ...judged.coverage, existence: { total: collected.sites.filter(site => !site.opaque).length,
+      deadVars: findings.filter(f => f.rule === 'existence/dead-var').reduce((n,f) => n + f.sites.length, 0),
       dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) }, declarations: origins, stylesheets: stylesheetCounts,
       inline: { sites: collected.styles.sites.length, literalSites: collected.styles.sites.filter(site => site.literal).length,
         opaque: collected.styles.declarations.filter(declaration => declaration.opaque).length,

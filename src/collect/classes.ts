@@ -92,7 +92,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   let parseMs = 0;
   let opaque = 0;
   let inlineMs = 0;
-  const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [] };
+  const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
   const sources = new Map<string, Source>();
   const modules = new Map<string, ModuleImport[]>();
   const texts = new Map(await Promise.all(files.map(async file => [file, await readFile(file, 'utf8')] as const)));
@@ -311,7 +311,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
       if (imported !== src) imported.ast = null;
       return node ? { source: imported, node } : null;
     });
-    for (const key of ['declarations', 'sites', 'stylesheets', 'imports'] as const) (styles[key] as unknown[]).push(...inline[key]);
+    for (const key of ['declarations', 'sites', 'stylesheets', 'imports', 'definedVariables'] as const) (styles[key] as unknown[]).push(...inline[key]);
     inlineMs += performance.now() - inlineStart - (parseMs - inlineParseStart);
     const imports: Scope = new Map();
     for (const statement of ast.body) {

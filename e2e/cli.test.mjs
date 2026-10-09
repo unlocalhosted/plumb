@@ -88,11 +88,11 @@ test('tailwind-min emits the schema and zero findings', () => {
   assert.equal(report.schemaVersion, 1);
   assert.deepEqual(report.tool, { name: 'plumb', version: metadata.version });
   assert.equal(report.root, fixture('tailwind-min'));
-  assert.deepEqual(report.config, { path: null, inferred: true });
+  assert.deepEqual(report.config, { path: join(fixture('tailwind-min'), 'plumb.config.ts'), inferred: false });
   assert.ok(report.tailwind.entry.endsWith('src/styles.css'));
   assert.deepEqual(report.files, { tsx: 3, jsx: 0, css: 1, other: 0 });
   assert.deepEqual(report.findings, []);
-  assert.deepEqual(report.coverage.existence, { total: 10, dead: 0 });
+  assert.deepEqual(report.coverage.existence, { total: 10, dead: 0, deadVars: 0 });
   assert.ok(report.coverage.declarations.class > 0);
   assert.ok(report.coverage.stylesheets.entry === 1);
   assert.ok(report.timing.totalMs >= report.timing.phases.discover);

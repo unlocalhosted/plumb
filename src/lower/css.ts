@@ -3,7 +3,7 @@ import type { Rule, Selector, StyleSheet, DeclarationBlock } from 'lightningcss'
 import type { Condition } from '../report.js';
 import { cssCode, maskImports } from '../collect/stylesheets.js';
 
-export interface LoweredDeclaration { prop: string; value: string; when: Condition[] }
+export interface LoweredDeclaration { prop: string; value: string; when: Condition[]; decisionRefs?: string[] }
 export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[]; authoredValue?: boolean }
 
 export function parseCss(css: string, filename: string): StyleSheet {
@@ -96,10 +96,17 @@ export function pseudos(selector: Selector): string[] {
 export function lowerCss(css: string | null): CandidateCss {
   if (!css) return { css, declarations: [], notes: [] };
   const declarations: LoweredDeclaration[] = [];
+  const ast = parseCss(css, 'candidate.css');
+  const defaults = new Map<string, string>();
+  for (const rule of ast.rules) if (rule.type === 'property') {
+    const printed = print([rule]);
+    const initial = /initial-value:\s*([^;]+);/.exec(printed)?.[1];
+    if (initial) defaults.set(rule.value.name, initial.replace(/#0000\b/g, 'transparent'));
+  }
   const notes = new Set<string>();
   function block(value: DeclarationBlock, when: Condition[], loc: { line: number; column: number }, nested = false): void {
     const raw = declarationText(value, css!, loc, nested);
-    const variables = new Map(raw.filter(item => item.prop.startsWith('--tw-')).map(item => [item.prop, item.value.replace(/\s*!important$/, '')]));
+    const variables = new Map([...defaults, ...raw.filter(item => item.prop.startsWith('--tw-')).map(item => [item.prop, item.value.replace(/\s*!important$/, '')] as const)]);
     const lowered = raw.filter(item => !item.prop.startsWith('--tw-')).map(item => {
       let value = item.value;
       for (let hop = 0; hop < variables.size + 1; hop++) {
@@ -112,7 +119,7 @@ export function lowerCss(css: string | null): CandidateCss {
     const rawNeeded = raw.some(item => item.prop.startsWith('--tw-')) && (lowered.length === 0 || lowered.some(item => /var\(--tw-/.test(item.value)));
     if (rawNeeded) {
       notes.add('Kept --tw-* assignments: not all reads can be folded within the same rule.');
-      declarations.push(...raw.map(item => ({ ...item, when })));
+      declarations.push(...raw.filter(item => item.prop.startsWith('--tw-')).map(item => ({ ...item, when })), ...lowered);
     } else declarations.push(...lowered);
   }
   function walk(rules: Rule[], when: Condition[], parents: string[]): void {
@@ -136,7 +143,7 @@ export function lowerCss(css: string | null): CandidateCss {
       // applied to the class's element.
     }
   }
-  walk(parseCss(css, 'candidate.css').rules, [], []);
+  walk(ast.rules, [], []);
   return { css, declarations, notes: [...notes] };
 }
 

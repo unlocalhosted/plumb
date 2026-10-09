@@ -3,9 +3,11 @@ import type { PlumbConfig } from '../config.js';
 import type { Decision, Family } from '../report.js';
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 import type { ThemeValue } from '../lower/tailwind.js';
+import { cssCode } from '../collect/stylesheets.js';
 import { references } from '../collect/source.js';
 import { UsageError } from '../errors.js';
 import { readDtcg } from './dtcg.js';
+import type { CssVariable } from './css.js';
 import { readCssVariables } from './css.js';
 import { resolveValue } from './resolve.js';
 import type { Variable } from './resolve.js';
@@ -19,7 +21,7 @@ export function familyFor(name: string): Family | undefined {
   if (/^--color-/.test(name)) return 'color';
   if (/^--radius-/.test(name)) return 'radius';
   if (/^--(?:text|font|leading|tracking|default-(?:mono-)?font)-/.test(name)) return 'type';
-  if (/^--(?:ease|animate|duration)-/.test(name)) return 'motion';
+  if (/^--(?:ease|animate|duration|default-transition)-/.test(name)) return 'motion';
   if (/^--(?:shadow|inset-shadow|drop-shadow)-/.test(name)) return 'elevation';
   if (/^--z-/.test(name)) return 'z';
   if (/^--opacity-/.test(name)) return 'opacity';
@@ -29,7 +31,7 @@ export function matches(value: string, pattern: string): boolean {
   return new RegExp(`^${pattern.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
 }
 
-export interface DecisionRecord { decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string> }
+export interface DecisionRecord { decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable> }
 export async function readDecisions(root: string, config: PlumbConfig, graph: StylesheetGraph, theme: ThemeValue[]): Promise<DecisionRecord> {
   const raw = readCssVariables(graph), variables = new Map<string, Variable>();
   const metadata = new Map<string, typeof raw[number]>();
@@ -60,7 +62,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   }
   for (const item of theme) {
     const meta = metadata.get(item.name), family = familyFor(item.name) ?? Object.keys(config.decisions ?? {}).find(family => selected(item.name, family as Family, meta?.source.file ?? '', true)) as Family | undefined;
-    if (!family || !meta || !selected(item.name, family, meta.source.file, true)) continue;
+    if (!family || !meta || meta.origin !== 'framework' && !selected(item.name, family, meta.source.file, true)) continue;
     const record = defineDecisions([{ family, name: item.name, value: item.value, origin: meta.origin, why: meta.why, source: meta.source, ...(meta.tier ? { tier: meta.tier } : {}) }])[0]!;
     add(record, meta.tier !== undefined);
   }
@@ -99,5 +101,11 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     if (resolved !== undefined && !variables.get(record.name)?.dynamic) record.resolved = resolved;
     else delete record.resolved;
   }
-  return { decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
+  const themeNames = new Set(theme.map(item => item.name));
+  const defined = new Set([...raw.filter(item => !item.theme).map(item => item.name), ...themeNames]);
+  for (const sheet of graph.files.values()) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
+  const frameworkVariables = new Map<string, CssVariable>();
+  const projectNames = new Set(raw.filter(item => item.origin === 'project').map(item => item.name));
+  for (const item of raw) if (item.origin === 'framework' && (!item.theme || themeNames.has(item.name)) && !projectNames.has(item.name) && !item.name.startsWith('--tw-') && item.name !== '--spacing') frameworkVariables.set(item.name, item);
+  return { defined, frameworkVariables, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }
