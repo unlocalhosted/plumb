@@ -199,7 +199,10 @@ export function formatText(report: Report, verbose = false): string {
   const rank = { error: 0, warn: 1, info: 2 } as const;
   const runtime = report.findings.filter(finding => finding.rule === 'provenance/opaque-inline');
   const unused = report.findings.filter(finding => finding.rule.startsWith('dead/'));
-  const quiet = (finding: Finding) => finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/');
+  // With a ledger, the daily view is what is new; recorded debt and exceptions are one summary line (--verbose lists them).
+  const known = (finding: Finding) => finding.sites.length > 0 && finding.sites.every(site => site.ledger !== undefined && site.ledger.status !== 'new');
+  const recorded = report.findings.filter(known);
+  const quiet = (finding: Finding) => finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/') || known(finding);
   const ordered = [...report.findings].filter(finding => verbose || !quiet(finding))
     .sort((a, b) => rank[a.severity] - rank[b.severity] || b.sites.length - a.sites.length || a.rule.localeCompare(b.rule));
   const byRule = new Map<string, number>();
@@ -214,6 +217,7 @@ export function formatText(report: Report, verbose = false): string {
     ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} use your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} don't`),
     `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
     ...(unused.length && !verbose ? [`unused      ${unused.map(f => `${f.sites.length.toLocaleString('en-US')} ${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family}`).join(', ')} tokens are never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
+    ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} are recorded in the ledger (--verbose lists them)`] : []),
     ...(runtime.length && !verbose ? [`runtime     ${count(runtime.reduce((n, f) => n + f.sites.length, 0), 'style')} in ${count(runtime.length, 'file')} are computed at runtime and can't be checked (--verbose lists them)`] : []),
   ];
   const kinds: [string, (rule: string) => boolean][] = [
@@ -226,9 +230,10 @@ export function formatText(report: Report, verbose = false): string {
     ['ledger and token changes', rule => rule.startsWith('ledger/') || rule.startsWith('decisions/')],
   ];
   const shownFindings = report.findings.filter(finding => verbose || !quiet(finding));
+  const singular: Record<string, string> = { 'values off your tokens': 'value off your tokens', 'habit breaks': 'habit break', 'broken styles': 'broken style', 'component overrides': 'component override', 'hand-built components': 'hand-built component', 'config gaps': 'config gap', 'ledger and token changes': 'ledger or token change' };
   const rules = verbose
     ? [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ')
-    : kinds.map(([name, match]) => [name, shownFindings.filter(finding => match(finding.rule)).length] as const).filter(([, n]) => n).map(([name, n]) => `${n.toLocaleString('en-US')} ${name}`).join(', ');
+    : kinds.map(([name, match]) => [name, shownFindings.filter(finding => match(finding.rule)).length] as const).filter(([, n]) => n).map(([name, n]) => `${n.toLocaleString('en-US')} ${n === 1 ? singular[name] ?? name : name}`).join(', ');
   const details = verbose ? [
     `declarations ${Object.entries(report.coverage.declarations).map(([origin, n]) => `${n} ${origin}`).join(', ')}`,
     `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, n]) => `${n} ${reach}`).join(', ')}`,
@@ -239,7 +244,7 @@ export function formatText(report: Report, verbose = false): string {
   ].join('\n') + '\n' : '';
   return `plumb ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
-    `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || 'no findings'}\n\n` +
+    `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || (recorded.length ? 'no new findings' : 'no findings')}\n\n` +
     `${summary.join('\n')}\n` +
     `${shownFindings.length ? `${count(shownFindings.length, 'finding')}: ${rules}\n` : ''}` +
     details;
