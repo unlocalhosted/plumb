@@ -31,7 +31,7 @@ npx plumb check --changed --agent
 It lists only new problems in the files you changed, one instruction per site:
 
 - **Edit:** one token fits. Make exactly that edit.
-- **Choose a decision using its reason:** several fit. Pick by the reasons shown and what the element is for, then make that edit.
+- **Choose a token using its reason:** several fit. Pick by the reasons shown and what the element is for, then make that edit.
 - **NEEDS-DECISION:** no token fits. Stop and tell the user the sites and the value you wanted. This is a valid result.
 - **Fix:** a habit, ownership, imitation or existence finding. Follow it (for a component override, use one of the variants it names).
 

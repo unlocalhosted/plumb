@@ -43,7 +43,7 @@ test('dead decisions group per family, exclude framework, and retain semantic de
   assert.ok(report.findings.every(f => f.severity === 'info'));
   assert.deepEqual(report.deadDecisions.color, { total: 4, used: 2, exported: 0, dead: 2 });
   assert.deepEqual(report.deadDecisions.spacing, { total: 4, used: 1, exported: 0, dead: 3 });
-  assert.match(run(directory).stdout, /dead\/spacing  3 unused of 4 project decisions/);
+  assert.match(run(directory).stdout, /unused .*\b3 spacing\b.*tokens are never used in your source/);
   assert.deepEqual(dead(json(run(directory, ['--json']))), dead(report));
   await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'src/styles.css', decisions: { spacing: { exported: true }, color: { exported: true } } };");
   assert.deepEqual(dead(json(run(directory, ['--json']))), []);

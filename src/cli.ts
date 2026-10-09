@@ -174,7 +174,7 @@ async function main(): Promise<void> {
     const commands = githubCommands(report);
     process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
     if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
-  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + formatDeadSummary(report.deadDecisions) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
   process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
 }
 

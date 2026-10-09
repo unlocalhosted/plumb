@@ -129,7 +129,7 @@ test('agent excludes debt, preserves variants, and does not choose among multipl
   const css = join(directory, 'src/styles.css'); await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing: 1px;', '--spacing: 1px;\n /* why: separate groups */ --spacing-step-large: 12px;'));
   output = run(directory, ['--agent'], 1).stdout;
   // Two close decisions: both edits are offered as options and Plumb does not pick one.
-  assert.match(output, /Choose a decision using its reason/);
+  assert.match(output, /Choose a token using its reason/);
   assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-small!`  \(8px\)/);
   assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-large!`  \(12px\)/);
   assert.doesNotMatch(output, /Edit: replace `hover:gap-10!`/);

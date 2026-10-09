@@ -154,27 +154,37 @@ function brief(why: string, decision?: Decision): string {
 const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 const share = (part: number, total: number) => total ? ` (${Math.round(part / total * 100)}%)` : '';
 
-function formatFinding(finding: Finding, path: (file: string) => string): string {
-  const lines = [`${finding.rule}  ${finding.why.replace(/\.$/, '')}  ${count(finding.sites.length, 'site')}`];
-  if (finding.decisions.length) {
+function formatFinding(finding: Finding, path: (file: string) => string, verbose: boolean): string {
+  // What is wrong, why it matters, what to write instead, where, and how to keep it if it is intended (docs/MESSAGES.md).
+  const title = finding.title || finding.why.replace(/\.$/, '');
+  const lines = [`${title}${verbose ? `  [${finding.rule}]` : ''}  ${count(finding.sites.length, 'site')}`];
+  const because = finding.because || '';
+  if (because && because !== title) lines.push(`  ${because}`);
+  const choices = finding.choices ?? finding.decisions;
+  if (choices.length) {
     // One finding groups every syntax and property that wrote the same amount (gap-10, py-10, margin: 10px), so a
-    // row names the decision once: its utility suffix, which each site prefixes as it already does, and its variable.
-    const rows = finding.decisions.map(decision => {
+    // row names the token once: its utility suffix, which each site prefixes as it already does, and its variable.
+    const rows = choices.map(decision => {
       const css = decision.use?.css.replace(/^[\w-]+:\s*/, '');
       const suffix = decision.use?.class?.replace(/^.*?-(?=mu-|[^-]*$)/, '') ?? undefined;
       const token = decision.use?.class && decision.name.startsWith('--spacing-') ? decision.name.slice('--spacing-'.length) : suffix;
-      return { amount: decision.resolved ?? decision.value, use: [token, css].filter(Boolean).join('  ') || decision.name, why: brief(decision.why, decision) };
+      return { amount: decision.resolved ?? decision.value, token: token ?? (css ? '' : decision.name), css: css ?? '', why: brief(decision.why, decision) };
     });
-    const amountWidth = Math.max(...rows.map(row => row.amount.length));
-    const useWidth = Math.max(...rows.map(row => row.use.length));
-    rows.forEach((row, i) => lines.push(`    ${i ? '   ' : 'use'}  ${row.amount.padEnd(amountWidth)}  ${row.use.padEnd(useWidth)}${row.why ? `  ${row.why}` : ''}`.trimEnd()));
-  } else if (finding.fix) {
-    lines.push(`    fix  ${finding.fix}`);
+    const width = (key: 'amount' | 'token' | 'css') => Math.max(...rows.map(row => row[key].length));
+    const [amountWidth, tokenWidth, cssWidth] = [width('amount'), width('token'), width('css')];
+    rows.forEach((row, i) => lines.push(`  ${i ? '   ' : 'use'}  ${row.amount.padEnd(amountWidth)}  ${tokenWidth ? `${row.token.padEnd(tokenWidth)}  ` : ''}${row.css.padEnd(cssWidth)}${row.why ? `  ${row.why}` : ''}`.trimEnd()));
+  } else {
+    const action = finding.action ?? finding.fix;
+    if (action) lines.push(`  ${action}`);
   }
   const shown = finding.sites.slice(0, SITES_SHOWN).map(site => ({ at: `${path(site.file)}:${site.line}:${site.column}`, text: site.text }));
   const atWidth = Math.min(64, Math.max(...shown.map(site => site.at.length)));
-  for (const site of shown) lines.push(`    ${site.at.padEnd(atWidth)}  ${site.text}`);
-  if (finding.sites.length > SITES_SHOWN) lines.push(`    … ${count(finding.sites.length - SITES_SHOWN, 'more site')}  (--json lists every site)`);
+  for (const site of shown) lines.push(`  ${site.at.padEnd(atWidth)}  ${site.text}`);
+  if (finding.sites.length > SITES_SHOWN) lines.push(`  … ${count(finding.sites.length - SITES_SHOWN, 'more site')}  (--json lists every site)`);
+  if (finding.accept && finding.severity !== 'info') {
+    const accept = finding.sites.length > 1 ? finding.accept.replace(/--site \S+/, '--site <file:line>') : finding.accept;
+    lines.push(`  intended?  ${accept}`);
+  }
   return lines.join('\n');
 }
 
@@ -185,7 +195,11 @@ export function formatText(report: Report, verbose = false): string {
     : `tailwind ${report.tailwind.version ?? 'not installed'}  theme ${path(report.tailwind.entry)}`;
   const { tsx, jsx, css, other } = report.files;
   const rank = { error: 0, warn: 1, info: 2 } as const;
-  const ordered = [...report.findings].sort((a, b) => rank[a.severity] - rank[b.severity] || b.sites.length - a.sites.length || a.rule.localeCompare(b.rule));
+  const runtime = report.findings.filter(finding => finding.rule === 'provenance/opaque-inline');
+  const unused = report.findings.filter(finding => finding.rule.startsWith('dead/'));
+  const quiet = (finding: Finding) => finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/');
+  const ordered = [...report.findings].filter(finding => verbose || !quiet(finding))
+    .sort((a, b) => rank[a.severity] - rank[b.severity] || b.sites.length - a.sites.length || a.rule.localeCompare(b.rule));
   const byRule = new Map<string, number>();
   for (const finding of report.findings) byRule.set(finding.rule, (byRule.get(finding.rule) ?? 0) + 1);
   const { existence, inline } = report.coverage;
@@ -194,11 +208,25 @@ export function formatText(report: Report, verbose = false): string {
     .filter((entry): entry is readonly [typeof entry[0], FamilyCoverage] => entry[1] !== undefined && entry[1].total > 0);
   const numberWidth = Math.max(0, ...families.map(([, c]) => c.total.toLocaleString('en-US').length));
   const summary = [
-    `existence   ${count(existence.total, 'class token')}, ${existence.dead} dead classes${existence.deadVars ? `, ${existence.deadVars} dead variables` : ''}`,
-    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} from decisions${share(c.fromDecisions, c.total).padEnd(7)} ${count(c.findings, 'declaration')} off them`),
+    `classes     ${count(existence.total, 'class', 'classes')} read, ${existence.dead} do nothing${existence.deadVars ? `, ${existence.deadVars} undefined variables` : ''}`,
+    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} use your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} don't`),
     `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
+    ...(unused.length && !verbose ? [`unused      ${unused.map(f => `${f.sites.length.toLocaleString('en-US')} ${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family}`).join(', ')} tokens are never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
+    ...(runtime.length && !verbose ? [`runtime     ${count(runtime.reduce((n, f) => n + f.sites.length, 0), 'style')} in ${count(runtime.length, 'file')} are computed at runtime and can't be checked (--verbose lists them)`] : []),
   ];
-  const rules = [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ');
+  const kinds: [string, (rule: string) => boolean][] = [
+    ['values off your tokens', rule => rule.startsWith('provenance/') && rule !== 'provenance/opaque-inline'],
+    ['habit breaks', rule => rule.startsWith('habits/')],
+    ['broken styles', rule => rule.startsWith('existence/')],
+    ['component overrides', rule => rule.startsWith('ownership/')],
+    ['hand-built components', rule => rule.startsWith('imitation/')],
+    ['config gaps', rule => rule.startsWith('config/')],
+    ['ledger and token changes', rule => rule.startsWith('ledger/') || rule.startsWith('decisions/')],
+  ];
+  const shownFindings = report.findings.filter(finding => verbose || !quiet(finding));
+  const rules = verbose
+    ? [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ')
+    : kinds.map(([name, match]) => [name, shownFindings.filter(finding => match(finding.rule)).length] as const).filter(([, n]) => n).map(([name, n]) => `${n.toLocaleString('en-US')} ${name}`).join(', ');
   const details = verbose ? [
     `declarations ${Object.entries(report.coverage.declarations).map(([origin, n]) => `${n} ${origin}`).join(', ')}`,
     `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, n]) => `${n} ${reach}`).join(', ')}`,
@@ -209,8 +237,8 @@ export function formatText(report: Report, verbose = false): string {
   ].join('\n') + '\n' : '';
   return `plumb ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
-    `${ordered.map(finding => formatFinding(finding, path)).join('\n\n') || 'no findings'}\n\n` +
+    `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || 'no findings'}\n\n` +
     `${summary.join('\n')}\n` +
-    `${report.findings.length ? `${count(report.findings.length, 'finding')}: ${rules}\n` : ''}` +
+    `${shownFindings.length ? `${count(shownFindings.length, 'finding')}: ${rules}\n` : ''}` +
     details;
 }
