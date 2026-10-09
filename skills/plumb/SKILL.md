@@ -1,9 +1,11 @@
 ---
 name: plumb
-description: Keep UI code on the project's design system with the Plumb CLI. Use before and after writing or changing styles in a project that has plumb.config.ts, .plumb/ledger.jsonl or @unlocalhosted/plumb installed: Tailwind classes, cn/cva maps, CSS, @apply, inline style objects, or a design-system component's props. Also use when asked why a style is flagged, which token to use, or whether a value is on the scale.
+description: Keep UI code on the project's design system with the Plumb CLI (works with any coding agent or by hand). Use before and after writing or changing styles in a project that has plumb.config.ts, .plumb/ledger.jsonl or @unlocalhosted/plumb installed: Tailwind classes, cn/cva maps, CSS, @apply, inline style objects, or a design-system component's props. Also use when asked why a style is flagged, which token to use, or whether a value is on the scale.
 ---
 
 # Plumb
+
+These instructions are for any coding agent (Claude Code, Codex, Cursor, Copilot, Gemini CLI, Windsurf) and for people. They only use the `plumb` CLI.
 
 Plumb judges every styling choice by the CSS it compiles to, against the project's own tokens, component contracts and habits. Run it; don't guess the tokens.
 
@@ -38,7 +40,7 @@ Run it again until it prints `0 new`.
 ## Never
 
 - Edit `plumb.config.ts`, `.plumb/ledger.jsonl` or the theme to make a finding pass. Adding a token or an exception is a design decision for the user.
-- Run `plumb accept`, `plumb accept-decisions` or `plumb baseline`. If something should be an exception, say so and give the `plumb accept … --why` line from the output for the user to run.
+- Run `plumb accept`, `plumb accept-decisions` or `plumb baseline` unless the user asks you to. If something should be an exception, say so and give the `plumb accept … --why` line from the output for the user to run.
 - Invent a value or the nearest arbitrary class (`p-[13px]`, `p-3.25`) to get around a finding.
 
 ## When asked about a finding
