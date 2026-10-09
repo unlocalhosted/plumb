@@ -9,6 +9,7 @@ import { errorMessage, UsageError } from '../errors.js';
 import { tool } from '../report.js';
 import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
+import { hoverGated, positivePseudo, selector } from '../habits/css.js';
 import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
 
 type ParsedCandidate = { kind: string; root?: string; value?: { kind: string; value: string } | null };
@@ -16,6 +17,7 @@ type DesignSystem = {
   candidatesToCss(candidates: string[]): (string | null)[];
   parseCandidate(name: string): Iterable<ParsedCandidate>;
   compileAstNodes(candidate: ParsedCandidate): unknown[];
+  variants?: { keys(): Iterable<string>; kind(name: string): string };
   utilities?: { keys(kind: 'static' | 'functional'): string[]; getCompletions(name: string): { values: (string | null)[] }[] };
   theme?: { entries(): Iterable<[string, { options: number; value: string }]>; prefix?: string | null };
 };
@@ -36,7 +38,7 @@ function hash(value: string): string { return createHash('sha256').update(value)
 
 // Hash the complete stylesheet graph independently of the Node wrapper, whose
 // exported design-system loader doesn't expose its dependency callback.
-export async function tailwindGraph(entry: string, cssOverride?: string): Promise<{ hash: string; utilities: string[] }> {
+export async function tailwindGraph(entry: string, cssOverride?: string): Promise<{ hash: string; utilities: string[]; variants: string[] }> {
   const contents = new Map<string, string>();
   async function visit(file: string): Promise<void> {
     if (contents.has(file)) return;
@@ -56,21 +58,22 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
   await visit(entry);
   const utilities = [...new Set([...contents].filter(([file]) => file.endsWith('.css')).flatMap(([, css]) =>
     [...cssCode(css).matchAll(/@utility\s+([\w-]+)\s*\{/g)].map(match => match[1]!)))];
-  return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities };
+  const variants = [...new Set([...contents].filter(([file]) => file.endsWith('.css')).flatMap(([, css]) => [...cssCode(css).matchAll(/@custom-variant\s+([\w-]+)/g)].map(match => match[1]!)))];
+  return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities, variants };
 }
 
-export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[]): Promise<{
-  theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
+export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false): Promise<{
+  hoverVariants: string[]; theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
-  if (entry === null) return { theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
+  if (entry === null) return { hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
   const start = performance.now();
   try {
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     const cssGraph = await tailwindGraph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer4-cache-v3`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer5-cache-v1`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -78,6 +81,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
     const misses = candidates.filter(candidate => !Object.hasOwn(cached, candidate));
     let system: DesignSystem | undefined;
+    let defaultVariants = new Set<string>();
     let theme: ThemeValue[] | null = null;
     try { theme = JSON.parse(await readFile(join(directory, 'theme.json'), 'utf8')); } catch { /* Optional theme cache. */ }
     // Hints depend on the roots present in this candidate set, whereas compiled
@@ -85,8 +89,11 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const suggestionPath = join(directory, `suggestions-${hash(JSON.stringify(candidates))}.json`);
     let suggestions: { token: string; prefix: string }[] | null = null;
     try { suggestions = JSON.parse(await readFile(suggestionPath, 'utf8')); } catch { /* Optional hint index. */ }
+    const hoverPath = join(directory, 'hover-variants-v3.json');
+    let hoverVariants: string[] | null = probeHover ? null : [];
+    if (probeHover) try { hoverVariants = JSON.parse(await readFile(hoverPath, 'utf8')); } catch { /* Oracle proof cache follows compiler/graph identity. */ }
     // A fully warm run doesn't even load the design system.
-    if (misses.length || suggestions === null || theme === null) {
+    if (misses.length || suggestions === null || theme === null || hoverVariants === null) {
       let compilerPath = tailwindPath;
       let nodeWrapper = false;
       try {
@@ -107,7 +114,21 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           return { path, base: dirname(path), module: module.default ?? module };
         };
       }
+      if (probeHover && hoverVariants === null) {
+        const baseline = await compiler.__unstable__loadDesignSystem('', options);
+        defaultVariants = new Set(baseline.variants?.keys() ?? []);
+      }
       system = await compiler.__unstable__loadDesignSystem(await readFile(entry, 'utf8'), options);
+    }
+    if (system && probeHover && hoverVariants === null) {
+      const roots = [...new Set(['pointer-hover', ...cssGraph.variants, ...[...(system.variants?.keys() ?? [])].filter(name => system!.variants?.kind(name) === 'static' && !defaultVariants.has(name))])];
+      const variants = [...roots, ...roots.flatMap(name => [`group-${name}`, `peer-${name}`, `${name}:hover`, `${name}:group-hover`, `${name}:peer-hover`])];
+      const prefix = system.theme?.prefix ? `${system.theme.prefix}:` : '';
+      const probes = system.candidatesToCss(variants.map(name => `${prefix}${name}:[--plumb-hover-probe:1]`));
+      hoverVariants = variants.filter((_, i) => {
+        const declarations = lowerCss(probes[i] ?? null).declarations;
+        return declarations.length > 0 && declarations.every(d => positivePseudo(selector(d.when), 'hover') && hoverGated(d.when));
+      });
     }
     if (system) theme = [...(system.theme?.entries() ?? [])].map(([name, metadata]) => ({ name, value: metadata.value }));
     const loadMs = performance.now() - start;
@@ -173,9 +194,10 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       await rename(temporary, join(directory, 'candidates.json'));
       await writeFile(suggestionPath, JSON.stringify(suggestions));
       await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
+      if (probeHover) await writeFile(hoverPath, JSON.stringify(hoverVariants));
     }
     for (const candidate of candidates) results.set(candidate, cached[candidate]!);
-    return { theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
+    return { hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
     throw new UsageError(`Load project Tailwind from ${dirname(entry)}: ${errorMessage(error)}`);
   }

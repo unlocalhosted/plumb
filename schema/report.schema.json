@@ -31,6 +31,7 @@
       }
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "habits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "reason", "severity", "enabled", "breaks"], "properties": {"id": {"type": "string"}, "reason": {"type": "string"}, "severity": {"enum": ["error", "warn", "info"]}, "enabled": {"type": "boolean"}, "breaks": {"type": ["integer", "null"], "minimum": 0}}}},
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "ledger": {
@@ -131,7 +132,7 @@
             "collect": { "type": "number", "minimum": 0 }, "load": { "type": "number", "minimum": 0 },
             "compile": { "type": "number", "minimum": 0 },
             "stylesheets": { "type": "number", "minimum": 0 }, "inline": { "type": "number", "minimum": 0 },
-            "decisions": { "type": "number", "minimum": 0 }, "provenance": { "type": "number", "minimum": 0 }, "ownership": { "type": "number", "minimum": 0 }
+            "decisions": { "type": "number", "minimum": 0 }, "provenance": { "type": "number", "minimum": 0 }, "ownership": { "type": "number", "minimum": 0 }, "habits": { "type": "number", "minimum": 0 }
           }
         }
       }

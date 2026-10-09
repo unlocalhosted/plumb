@@ -6,8 +6,9 @@ import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 
-const help = `Plumb ${tool.version}: design decisions and ledger
+const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
 
@@ -49,12 +50,13 @@ async function main(): Promise<void> {
   if (args.values.version) { process.stdout.write(`${tool.version}\n`); return; }
   const command = args.positionals[0] ?? 'check';
   const deciding = command === 'decisions';
+  const listingHabits = command === 'habits';
   const explaining = command === 'explain';
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'decisions', 'explain', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why'].includes(command) ||
+  if (!['check', 'habits', 'decisions', 'explain', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why'].includes(command) ||
       ((explaining || inspecting) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
@@ -81,9 +83,14 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
     return;
   }
-  const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding,
+  const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits,
+    ...(listingHabits ? { listHabits: true } : {}),
     ...(args.values.base === undefined ? {} : { base: args.values.base }),
     ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) });
+  if (listingHabits) {
+    process.stdout.write(args.values.json ? `${JSON.stringify(report.habits, null, 2)}\n` : report.habits!.map(habit => `${habit.id}  ${habit.breaks} breaks  ${habit.severity}  ${habit.enabled ? 'enabled' : 'disabled'}\n  ${habit.reason}\n`).join(''));
+    return;
+  }
   if (mutating) {
     const result = await ledgerCommand(command, report, {
       ...(args.values.force === undefined ? {} : { force: args.values.force }),

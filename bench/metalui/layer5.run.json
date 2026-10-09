@@ -1,0 +1,476 @@
+{
+  "docs.cold": {
+    "cache": "/Users/vijaysingh/unlocalhosted/plumb-l5-habits/bench/metalui/.cache/layer5-docs",
+    "wallMs": 3967.079166,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 3756.3651250000003,
+      "phases": {
+        "discover": 6.736542,
+        "parse": 80.53453999999977,
+        "collect": 67.67962699999997,
+        "load": 169.23112500000002,
+        "compile": 124.10200000000003,
+        "stylesheets": 2151.8439590000003,
+        "inline": 83.00558300000024,
+        "decisions": 112.8190840000002,
+        "provenance": 223.72337500000003,
+        "habits": 76.76324999999997
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1302
+    },
+    "habits": [
+      {
+        "id": "hover-gate",
+        "reason": "Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 161
+      },
+      {
+        "id": "focus-outline",
+        "reason": "An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 95
+      },
+      {
+        "id": "transition-named",
+        "reason": "Name the properties that transition so an unrelated change does not start animating.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "no-ease-in",
+        "reason": "Feedback to a person’s hand should begin immediately, without a slow start.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "logical-inline",
+        "reason": "Logical inline sides mirror in right-to-left layouts; physical sides do not.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 300
+      },
+      {
+        "id": "viewport-dynamic",
+        "reason": "Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 7
+      },
+      {
+        "id": "safe-area-fallback",
+        "reason": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overflow-clip",
+        "reason": "Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 21
+      },
+      {
+        "id": "overscroll-contain",
+        "reason": "An inner scroller should keep its scroll instead of moving the page when it reaches an edge.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 19
+      }
+    ],
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 0,
+      "cacheMisses": 1303,
+      "parseMs": 110.03230200000121,
+      "totalMs": 428.94229200000007
+    }
+  },
+  "docs.warm": {
+    "cache": "/Users/vijaysingh/unlocalhosted/plumb-l5-habits/bench/metalui/.cache/layer5-docs",
+    "wallMs": 1577.8189590000002,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 1351.065917,
+      "phases": {
+        "discover": 6.025791999999996,
+        "parse": 79.74579299999985,
+        "collect": 58.96971300000013,
+        "load": 35.66274999999996,
+        "compile": 0,
+        "stylesheets": 161.76725,
+        "inline": 81.81891100000004,
+        "decisions": 115.96529199999998,
+        "provenance": 212.2816660000001,
+        "habits": 71.44425000000001
+      },
+      "cacheHits": 1302,
+      "cacheMisses": 0
+    },
+    "habits": [
+      {
+        "id": "hover-gate",
+        "reason": "Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 161
+      },
+      {
+        "id": "focus-outline",
+        "reason": "An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 95
+      },
+      {
+        "id": "transition-named",
+        "reason": "Name the properties that transition so an unrelated change does not start animating.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "no-ease-in",
+        "reason": "Feedback to a person’s hand should begin immediately, without a slow start.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "logical-inline",
+        "reason": "Logical inline sides mirror in right-to-left layouts; physical sides do not.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 300
+      },
+      {
+        "id": "viewport-dynamic",
+        "reason": "Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 7
+      },
+      {
+        "id": "safe-area-fallback",
+        "reason": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overflow-clip",
+        "reason": "Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 21
+      },
+      {
+        "id": "overscroll-contain",
+        "reason": "An inner scroller should keep its scroll instead of moving the page when it reaches an edge.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 19
+      }
+    ],
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 1303,
+      "cacheMisses": 0,
+      "parseMs": 0,
+      "totalMs": 50.180458999999985
+    }
+  },
+  "package.cold": {
+    "cache": "/Users/vijaysingh/unlocalhosted/plumb-l5-habits/bench/metalui/.cache/layer5-package",
+    "wallMs": 6622.752583000001,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 6344.903959,
+      "phases": {
+        "discover": 6.960082999999997,
+        "parse": 49.986873000000074,
+        "collect": 32.82508699999997,
+        "load": 110.73400000000001,
+        "compile": 177.261416,
+        "stylesheets": 1012.403167,
+        "inline": 31.032539999999955,
+        "decisions": 52.40629100000024,
+        "provenance": 226.8393329999999,
+        "habits": 97.20512500000041
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1387
+    },
+    "habits": [
+      {
+        "id": "hover-gate",
+        "reason": "Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 363
+      },
+      {
+        "id": "focus-outline",
+        "reason": "An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 36
+      },
+      {
+        "id": "transition-named",
+        "reason": "Name the properties that transition so an unrelated change does not start animating.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "no-ease-in",
+        "reason": "Feedback to a person’s hand should begin immediately, without a slow start.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "logical-inline",
+        "reason": "Logical inline sides mirror in right-to-left layouts; physical sides do not.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 65
+      },
+      {
+        "id": "viewport-dynamic",
+        "reason": "Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 16
+      },
+      {
+        "id": "safe-area-fallback",
+        "reason": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overflow-clip",
+        "reason": "Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overscroll-contain",
+        "reason": "An inner scroller should keep its scroll instead of moving the page when it reaches an edge.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      }
+    ],
+    "moduleGraph": {
+      "modules": 803,
+      "followed": 668,
+      "cssFiles": 0,
+      "cacheHits": 0,
+      "cacheMisses": 668,
+      "parseMs": 35.6038740000007,
+      "totalMs": 88.24466699999994
+    }
+  },
+  "package.warm": {
+    "cache": "/Users/vijaysingh/unlocalhosted/plumb-l5-habits/bench/metalui/.cache/layer5-package",
+    "wallMs": 5284.397542000001,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 4980.3935,
+      "phases": {
+        "discover": 6.491583000000006,
+        "parse": 46.93032899999989,
+        "collect": 33.407039000000154,
+        "load": 31.456958999999983,
+        "compile": 0,
+        "stylesheets": 67.23399999999998,
+        "inline": 33.66408999999996,
+        "decisions": 47.48454200000015,
+        "provenance": 227.56058399999984,
+        "habits": 91.71245799999997
+      },
+      "cacheHits": 1387,
+      "cacheMisses": 0
+    },
+    "habits": [
+      {
+        "id": "hover-gate",
+        "reason": "Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 363
+      },
+      {
+        "id": "focus-outline",
+        "reason": "An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 36
+      },
+      {
+        "id": "transition-named",
+        "reason": "Name the properties that transition so an unrelated change does not start animating.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "no-ease-in",
+        "reason": "Feedback to a person’s hand should begin immediately, without a slow start.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "logical-inline",
+        "reason": "Logical inline sides mirror in right-to-left layouts; physical sides do not.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 65
+      },
+      {
+        "id": "viewport-dynamic",
+        "reason": "Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 16
+      },
+      {
+        "id": "safe-area-fallback",
+        "reason": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overflow-clip",
+        "reason": "Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overscroll-contain",
+        "reason": "An inner scroller should keep its scroll instead of moving the page when it reaches an edge.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      }
+    ],
+    "moduleGraph": {
+      "modules": 803,
+      "followed": 668,
+      "cssFiles": 0,
+      "cacheHits": 668,
+      "cacheMisses": 0,
+      "parseMs": 0,
+      "totalMs": 30.417708000000033
+    }
+  },
+  "native": {
+    "exitCode": 0,
+    "output": "lint-css-habits: hover-gate: 0 existing\nlint-css-habits: focus-outline: 0 existing\nlint-css-habits: overscroll-contain: 0 existing\nlint-css-habits: motion-tokens: 0 existing\nlint-css-habits: transition-all: 0 existing\nlint-css-habits: ease-in: 0 existing\nlint-css-habits: logical-inline: 17 existing\nlint-css-habits: viewport-units: 0 existing\nlint-css-habits: safe-area-fallback: 0 existing\nlint-css-habits: z-index: 0 existing\nlint-css-habits: overflow-clip: 6 existing\nlint-css-habits: title-balance: 0 existing\nlint-css-habits: ellipsis-complete: 0 existing\nlint-css-habits: 23 existing, none new\n"
+  },
+  "parity": {
+    "wallMs": 527.3249170000017,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 399.552542,
+      "phases": {
+        "discover": 6.120457999999999,
+        "parse": 0,
+        "collect": 0.06300000000000239,
+        "load": 25.405666999999994,
+        "compile": 0,
+        "stylesheets": 44.803124999999994,
+        "inline": 0,
+        "decisions": 73.65395800000002,
+        "provenance": 176.851708,
+        "habits": 45.32808299999999
+      },
+      "cacheHits": 0,
+      "cacheMisses": 0
+    },
+    "habits": [
+      {
+        "id": "hover-gate",
+        "reason": "Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "focus-outline",
+        "reason": "An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "transition-named",
+        "reason": "Name the properties that transition so an unrelated change does not start animating.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "no-ease-in",
+        "reason": "Feedback to a person’s hand should begin immediately, without a slow start.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "logical-inline",
+        "reason": "Logical inline sides mirror in right-to-left layouts; physical sides do not.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 26
+      },
+      {
+        "id": "viewport-dynamic",
+        "reason": "Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 3
+      },
+      {
+        "id": "safe-area-fallback",
+        "reason": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+        "severity": "error",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overflow-clip",
+        "reason": "Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      },
+      {
+        "id": "overscroll-contain",
+        "reason": "An inner scroller should keep its scroll instead of moving the page when it reaches an edge.",
+        "severity": "warn",
+        "enabled": true,
+        "breaks": 0
+      }
+    ]
+  }
+}

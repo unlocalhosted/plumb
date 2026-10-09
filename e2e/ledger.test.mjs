@@ -37,6 +37,37 @@ async function history(directory) {
 const errors = report => report.findings.filter(finding => finding.severity === 'error');
 const newSites = finding => finding.sites.filter(site => site.ledger?.status === 'new');
 
+test('habit findings flow through baseline, new-site gates and reasoned exceptions', async t => {
+  const directory = await copy(t);
+  const config = join(directory, 'plumb.config.ts');
+  await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n  habits: ['hover-gate'],"));
+  const path = join(directory, 'src/styles.css');
+  const css = await readFile(path, 'utf8');
+  await writeFile(path, css + '\n.habit:hover { opacity: .5; }\n');
+  const first = run(directory, [], 1).findings.find(f => f.rule === 'habits/hover-gate');
+  assert.ok(first);
+  assert.equal(first.status, 'new');
+  assert.equal(first.sites[0].ledger.status, 'new');
+  const key = first.sites[0].ledger.key;
+  run(directory, ['baseline']);
+  assert.ok((await ledger(directory)).some(e => e.key === key && e.rule === 'habits/hover-gate' && e.kind === 'debt'));
+  const baselined = run(directory).findings.find(f => f.key === first.key);
+  assert.equal(baselined.status, 'debt');
+  assert.equal(baselined.sites[0].ledger.status, 'debt');
+  assert.equal(baselined.severity, 'info');
+  await writeFile(path, css + '\n.habit:hover { opacity: .5; }\n.new-habit:hover { opacity: .5; }\n');
+  const added = run(directory, [], 1);
+  assert.equal(added.ledger.new, 1);
+  assert.deepEqual(errors(added).map(f => f.rule), ['habits/hover-gate']);
+  const newHabit = errors(added)[0];
+  assert.equal(newSites(newHabit).length, 1);
+  run(directory, ['accept', newHabit.sites[0].ledger.key, '--why', 'intentional hover teaching example']);
+  const accepted = run(directory);
+  assert.equal(accepted.ledger.new, 0);
+  assert.equal(accepted.ledger.exceptions, 1);
+  assert.equal(accepted.findings.find(f => f.key === newHabit.key).status, 'exception');
+});
+
 test('spacing fix groups stay identical through baseline; one new gap-10 joins the existing 10px group', async t => {
   const directory = await copy(t, 'spacing');
   const { check } = await import('../dist/index.js');
