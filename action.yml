@@ -1,5 +1,5 @@
 name: Plumb
-description: Check design drift, annotate new sites, and review ledger growth.
+description: Check design drift, annotate new drift, touched debt and exceptions, and review ledger growth.
 inputs:
   base:
     description: PR base commit or Git ref (defaults to the PR base SHA).

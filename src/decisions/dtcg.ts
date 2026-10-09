@@ -44,13 +44,21 @@ function cssValue(raw: unknown, type: string): string {
     const value = raw as Record<string, unknown>;
     if ('value' in value && 'unit' in value) return `${value.value}${value.unit}`;
     if (type === 'color' && typeof value.colorSpace === 'string' && Array.isArray(value.components)) {
+      if (['oklab', 'oklch', 'lab', 'lch', 'hsl', 'hwb'].includes(value.colorSpace)) {
+        const parts = [...value.components];
+        if (value.colorSpace === 'hsl' || value.colorSpace === 'hwb') {
+          parts[1] = parts[1] === 'none' ? 'none' : `${parts[1]}%`;
+          parts[2] = parts[2] === 'none' ? 'none' : `${parts[2]}%`;
+        }
+        return `${value.colorSpace}(${parts.join(' ')}${value.alpha === undefined ? '' : ` / ${value.alpha}`})`;
+      }
       return `color(${value.colorSpace} ${value.components.join(' ')}${value.alpha === undefined ? '' : ` / ${value.alpha}`})`;
     }
   }
   return JSON.stringify(raw);
 }
 
-export async function readDtcg(root: string, pattern: string, family: Family): Promise<Decision[]> {
+export async function readDtcg(root: string, pattern: string, family?: Family): Promise<Decision[]> {
   const records: Decision[] = [];
   for (const file of await glob(pattern, { cwd: root, absolute: true })) {
     try {
@@ -60,11 +68,11 @@ export async function readDtcg(root: string, pattern: string, family: Family): P
         if (!node || typeof node !== 'object' || Array.isArray(node)) return;
         const token = node as Record<string, unknown>, type = typeof token.$type === 'string' ? token.$type : inherited;
         if ('$value' in token) {
-          if (type && families[type] === family) {
+          if (type && families[type] && (family === undefined || families[type] === family)) {
             const extension = (token.$extensions as { plumb?: { tier?: unknown } } | undefined)?.plumb;
             if (extension?.tier !== undefined && !['primitive', 'semantic'].includes(String(extension.tier))) throw new UsageError(`Invalid DTCG tier: ${path.join('.')}.`);
             const tier = extension?.tier as Decision['tier'] | undefined;
-            records.push(...defineDecisions([{ family, name: path.join('.'), value: cssValue(token.$value, type), why: typeof token.$description === 'string' ? token.$description : '',
+            records.push(...defineDecisions([{ family: families[type]!, name: path.join('.'), value: cssValue(token.$value, type), why: typeof token.$description === 'string' ? token.$description : '',
               ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offsets.get(path.join('.')) ?? 0, '').line } }]));
           }
           return;
