@@ -52,10 +52,11 @@ function properties(declaration: Declaration): Declaration[] {
   return sides.map((side, index) => ({ ...declaration, prop: `padding-${side}`, value: values[index]! + important }));
 }
 interface SelectorSubject { tag?: string; classes: string[] }
-function selectorMatcher(selector: string): (mount: ComponentMount) => 'caller' | 'heuristic' | undefined {
+interface SelectorMatcher { root?: SelectorSubject; test(mount: ComponentMount): 'caller' | 'heuristic' | undefined }
+function selectorMatcher(selector: string): SelectorMatcher {
   // Functional pseudos, IDs and sibling combinators are deliberately unknown.
   // Never turn :not/:is/:has into an unconditional match by stripping their body.
-  if (/:[\w-]+\(|[#+~]/.test(selector)) return () => undefined;
+  if (/:[\w-]+\(|[#+~]/.test(selector)) return { test: () => undefined };
   const clean = selector.replace(/\[[^\]]*\]/g, '').replace(/:{1,2}[\w-]+/g, '').trim();
   const tokens = clean.split(/\s*(>)\s*|\s+/).filter(Boolean);
   const subjects = tokens.map(token => {
@@ -64,11 +65,11 @@ function selectorMatcher(selector: string): (mount: ComponentMount) => 'caller' 
     return { ...(tag ? { tag } : {}), classes: [...token.matchAll(/\.([\w-]+)/g)].map(item => item[1]!) };
   });
   const root = subjects.pop();
-  if (!root || typeof root === 'string') return () => undefined;
+  if (!root || typeof root === 'string') return { test: () => undefined };
   function match(subject: SelectorSubject, elements: string[], classes: string[]): boolean {
     return !!(subject.tag || subject.classes.length) && (!subject.tag || elements.includes(subject.tag)) && subject.classes.every(name => classes.includes(name));
   }
-  return mount => {
+  return { root, test: mount => {
     if (!match(root, mount.component.roots.elements, [...mount.component.roots.classes, ...mount.classes])) return;
     // A class explicitly supplied by this caller is exact evidence for a simple
     // selector. Root hooks alone and descendant selectors remain heuristics.
@@ -86,14 +87,20 @@ function selectorMatcher(selector: string): (mount: ComponentMount) => 'caller' 
       if (!found) return;
     }
     return 'heuristic';
-  };
+  } };
 }
 
 export function judgeOwnership(declarations: Declaration[], graph: ComponentGraph, config: PlumbConfig): { findings: Finding[]; coverage: OwnershipCoverage } {
   const groups = new Map<string, Finding>();
   const selectorOwners = new Map<string, { identity: ComponentIdentity; heuristic: boolean }[]>();
-  const mounts = new Map<ComponentIdentity, ComponentMount[]>();
-  for (const mount of graph.mounts) { const group = mounts.get(mount.component) ?? []; group.push(mount); mounts.set(mount.component, group); }
+  const tags = new Map<string, ComponentMount[]>(), classes = new Map<string, ComponentMount[]>();
+  for (const mount of graph.mounts) {
+    for (const [index, names] of [[tags, mount.component.roots.elements], [classes, [...mount.component.roots.classes, ...mount.classes]]] as const) {
+      for (const name of new Set(names)) {
+        const group = index.get(name) ?? []; group.push(mount); index.set(name, group);
+      }
+    }
+  }
   const coverage: OwnershipCoverage = { callerDeclarations: 0, findings: 0, heuristicFindings: 0, byFamily: {} };
   function finding(declaration: Declaration, component: ComponentIdentity, family: string, heuristic: boolean): void {
     const key = `ownership:${component.name}:${createHash('sha256').update(JSON.stringify([relative(graph.root, component.source.file), declaration.prop, declaration.value, heuristic])).digest('hex').slice(0, 16)}`;
@@ -124,11 +131,19 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
       const selectorKey = JSON.stringify(selectors);
       let owners = selectorOwners.get(selectorKey);
       if (!owners) {
-        const matchers = selectors.map(selectorMatcher);
-        owners = graph.used.flatMap(identity => {
-          const results = (mounts.get(identity) ?? []).flatMap(mount => matchers.map(match => match(mount))).filter(Boolean);
-          return results.length ? [{ identity, heuristic: !results.includes('caller') }] : [];
-        });
+        const matches = new Map<ComponentIdentity, boolean>();
+        for (const matcher of selectors.map(selectorMatcher)) {
+          if (!matcher.root) continue;
+          const buckets = matcher.root.classes.map(name => classes.get(name) ?? []);
+          if (matcher.root.tag) buckets.push(tags.get(matcher.root.tag) ?? []);
+          // Every root token must match, so the smallest index is sufficient.
+          const candidates = buckets.sort((a, b) => a.length - b.length)[0] ?? [];
+          for (const mount of candidates) {
+            const result = matcher.test(mount);
+            if (result) matches.set(mount.component, (matches.get(mount.component) ?? true) && result !== 'caller');
+          }
+        }
+        owners = graph.used.flatMap(identity => matches.has(identity) ? [{ identity, heuristic: matches.get(identity)! }] : []);
         selectorOwners.set(selectorKey, owners);
       }
       for (const { identity, heuristic } of owners) {

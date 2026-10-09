@@ -1,3 +1,5 @@
+import { performance } from 'node:perf_hooks';
+import { profiling, profileDuration } from '../profile.js';
 import type { CustomHabit, HabitSeverity } from './predicates.js';
 import { compilePredicate, validateHabit } from './predicates.js';
 import type { Declaration, Finding } from '../report.js';
@@ -61,6 +63,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
   }
   const compiled = (list ? [] : entries).filter((entry): entry is CustomHabit => typeof entry !== 'string').map(habit => ({ habit, test: compilePredicate(habit.when) }));
   const findings = new Map<string, Finding>(), counts = new Map<string, Set<string>>();
+  const ruleTimes = new Map<string, number>();
   function add(id: string, d: Declaration, reason: string, severity: HabitSeverity, fix: string): void {
     const occurrence = JSON.stringify([d.site, d.prop, d.value, d.when]);
     const seen = counts.get(id) ?? new Set<string>(); seen.add(occurrence); counts.set(id, seen);
@@ -78,6 +81,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
     const scroller = (other: Declaration) => /^overflow(?:-[xy])?$/.test(other.prop) && /(^|\s)(auto|scroll)(\s|$)/i.test(value(other));
     for (const habit of builtins) {
       if (!active.has(habit.id)) continue;
+      const start = profiling ? performance.now() : 0;
       let broken = false, fix: string = habit.fix;
       switch (habit.id) {
         case 'hover-gate':
@@ -137,10 +141,12 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
         }
       }
       if (broken) add(habit.id, d, habit.reason, habit.severity, fix);
+      if (profiling) ruleTimes.set(habit.id, (ruleTimes.get(habit.id) ?? 0) + performance.now() - start);
     }
   }
   for (const d of declarations) if (!d.opaque) for (const { habit, test } of compiled) if (test(d)) add(habit.id, d, habit.message, habit.severity ?? 'error', habit.message);
   const summaries: HabitSummary[] = builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: habit.severity, enabled: selected.has(habit.id), breaks: active.has(habit.id) ? counts.get(habit.id)?.size ?? 0 : null }));
   for (const { habit } of compiled) summaries.push({ id: habit.id, reason: habit.message, severity: habit.severity ?? 'error', enabled: true, breaks: counts.get(habit.id)?.size ?? 0 });
+  for (const [id, duration] of ruleTimes) profileDuration(`rule:habits/${id}`, duration);
   return { findings: [...findings.values()], summaries };
 }

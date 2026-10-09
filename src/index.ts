@@ -11,10 +11,11 @@ import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
 import { references } from './collect/source.js';
+import type { SourceProgram } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
 import { readDecisions } from './decisions/index.js';
 import { provenance } from './rules/provenance.js';
-import { discoverComponents } from './ownership/components.js';
+import { cachedComponents, discoverComponents } from './ownership/components.js';
 import { judgeOwnership } from './ownership/judge.js';
 import { judgeHabits } from './habits/index.js';
 import { judgeImitation, suggestImitation } from './imitation/index.js';
@@ -25,6 +26,8 @@ import type { LedgerOptions } from './ledger/types.js';
 import { deadDecisions } from './rules/dead.js';
 import { prepareSnippet } from './try.js';
 import type { TryOptions, Snippet } from './try.js';
+import { profileDuration } from './profile.js';
+import { suggestionCache } from './rules/suggestions.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
@@ -56,6 +59,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
     throw new UsageError(`Set --root to an existing project directory: ${root}: ${errorMessage(error)}`);
   }
   const config = await loadConfig(root, options.config);
+  profileDuration('phase:config', performance.now() - start);
   const input = snippet ? prepareSnippet(root, config.value, snippet) : undefined;
   const discoverStart = performance.now();
   let project: Awaited<ReturnType<typeof discoverProject>>;
@@ -68,10 +72,16 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const discover = performance.now() - discoverStart;
   if (input?.file === project.tailwind.entry) throw new UsageError('--as must name a source file other than the Tailwind entry.');
   if (input) project.files = { tsx: input.lang === 'tsx' ? 1 : 0, jsx: 0, css: input.lang === 'css' ? 1 : 0, other: 0 };
+  const filesStart = performance.now();
   const files = await projectSourceFiles(root, config.value);
+  profileDuration('phase:source-files', performance.now() - filesStart);
   if (input && !files.includes(input.file)) files.push(input.file);
+  const componentCacheStart = performance.now();
+  const previousComponents = input ? undefined : cachedComponents(root, files, config.value, !!options.suggestImitation);
+  const componentCacheMs = performance.now() - componentCacheStart;
+  const programs = previousComponents ? undefined : new Map<string, SourceProgram>();
   const collected = await collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
-    input ? new Map([[input.file, input.text]]) : undefined, input?.file);
+    input ? new Map([[input.file, input.text]]) : undefined, input?.file, programs, input ? undefined : root);
   if (input) {
     collected.sites = collected.sites.filter(site => site.file === input.file);
     collected.styles.sites = collected.styles.sites.filter(site => site.site.file === input.file);
@@ -92,12 +102,17 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   modules.counts.cssFiles = moduleCss.size;
   const css = await lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input);
   const stylesheetsMs = performance.now() - stylesheetStart;
-  const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions);
+  const existenceStart = performance.now();
+  const ranking = await suggestionCache(root, lowered.candidates, lowered.suggestions, !!input);
+  const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
+  await ranking.save();
   const unreachable = await unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value));
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
     if (file) finding.fix = `${finding.declaration.value} is declared in ${file}, which nothing imports. Import that stylesheet or include it in source globs.`;
   }
+  profileDuration('rule:existence/classes', performance.now() - existenceStart);
+  const prepareStart = performance.now();
   const sites = collected.sites.map(site => {
     const candidate = lowered.candidates.get(site.token);
     return { ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
@@ -112,6 +127,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file));
+  profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
   const record = await readDecisions(root, config.value, graph, lowered.theme);
   const decisionsMs = performance.now() - decisionsStart;
@@ -120,19 +136,27 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
     ...[...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations].filter(d => d.prop.startsWith('--')).map(d => d.prop)]);
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
+  const variablesStart = performance.now();
   findings.push(...deadVariables(declarations, defined, record.theme));
+  profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
   const judged = provenance(declarations, record, config.value, sourceFiles);
   findings.push(...judged.findings);
+  const deadStart = performance.now();
   const dead = input ? undefined : deadDecisions(root, declarations, record, config.value);
   if (dead) findings.push(...dead.findings);
+  profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;
   const ownershipStart = performance.now();
-  const components = discoverComponents(root,
+  const components = previousComponents ?? discoverComponents(root,
     files.filter(file => input?.file !== file || input.lang === 'tsx'), config.value,
-    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation);
+    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation, programs, !!input);
+  programs?.clear();
+  profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
+  const ownershipJudgeStart = performance.now();
   const owned = judgeOwnership(declarations, components, config.value);
+  profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
-  const ownershipMs = performance.now() - ownershipStart;
+  const ownershipMs = performance.now() - ownershipStart + componentCacheMs;
   const habitsStart = performance.now();
   const contexts = new Map<Declaration, string>();
   for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
@@ -140,7 +164,9 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const habits = judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits);
   findings.push(...habits.findings);
   const habitsMs = performance.now() - habitsStart;
+  const imitationStart = performance.now();
   findings.push(...judgeImitation(components, collected.sites, declarations, config.value));
+  profileDuration('rule:imitation', performance.now() - imitationStart);
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -174,6 +200,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   };
   if (options.suggestImitation) report.imitationSuggestions = await suggestImitation(components, collected.sites, report, config.value);
   report.timing.totalMs = performance.now() - start;
+  for (const [phase, duration] of Object.entries(report.timing.phases)) profileDuration(`phase:${phase}`, duration);
   return { report, sites };
 }
 

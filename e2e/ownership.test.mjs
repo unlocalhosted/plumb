@@ -166,3 +166,32 @@ test('default-only named exports retain real component name and single-property 
  const findings=ownership(run(dir));
  assert.equal(findings.length,1); assert.equal(findings[0].rule,'ownership/Button'); assert.equal(findings[0].declaration.prop,'background-color');
 });
+
+test('warm component discovery revalidates external source, barrels and tsconfig resolution', async t => {
+ const dir = await project(t, `import { Button } from '@kit';
+ <Button style={{ backgroundColor: 'red' }} />;`, {
+  source: ['src/App.tsx', 'src/styles.css'], components: { from: 'directory:kit' },
+ }, {
+  'tsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@kit': ['kit/index.ts'] } } }),
+  'kit/index.ts': "export { Button } from './Button';",
+  'kit/Button.tsx': "type ButtonProps = { size: 'small' | 'large' }; export function Button(props: ButtonProps) { return <button className='kit-button' />; }",
+  'kit/Alternate.tsx': "type ButtonProps = { size: 'wide' | 'narrow' }; export function Button(props: ButtonProps) { return <button className='kit-button' />; }",
+  'kit/other.ts': "export { Button } from './Alternate';",
+ });
+ const cold = run(dir), warm = run(dir);
+ assert.deepEqual(warm.findings, cold.findings);
+ assert.deepEqual(warm.coverage, cold.coverage);
+ assert.deepEqual(ownership(warm)[0].component.variants.size, ['small', 'large']);
+ await writeFile(join(dir, 'kit/Button.tsx'), "type ButtonProps = { size: 'small' | 'huge' }; export function Button(props: ButtonProps) { return <button className='kit-button' />; }");
+ assert.deepEqual(ownership(run(dir))[0].component.variants.size, ['small', 'huge']);
+ await writeFile(join(dir, 'kit/index.ts'), "export { Button } from './Alternate';");
+ assert.deepEqual(ownership(run(dir))[0].component.variants.size, ['wide', 'narrow']);
+ await writeFile(join(dir, 'kit/index.ts'), "export { Button } from './Button';");
+ const restored = run(dir);
+ assert.ok(ownership(restored)[0].component.source.file.endsWith('/Button.tsx'));
+ await writeFile(join(dir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@kit': ['kit/other.ts'] } } }));
+ const remapped = run(dir);
+ assert.ok(ownership(remapped)[0].component.source.file.endsWith('/Alternate.tsx'));
+ assert.deepEqual(ownership(remapped)[0].component.variants.size, ['wide', 'narrow']);
+ assert.deepEqual(run(dir).findings, remapped.findings);
+});

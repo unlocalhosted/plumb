@@ -1,3 +1,5 @@
+import { performance } from 'node:perf_hooks';
+import { profileDuration } from '../profile.js';
 import { createHash } from 'node:crypto';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Decision, Finding, FamilyCoverage } from '../report.js';
@@ -39,8 +41,43 @@ function suggestion(decision: Decision, prop: string, theme: ReadonlySet<string>
   return `${decision.name} (${decision.resolved ?? decision.value})${decision.why ? ` "${decision.why}"` : ''}: ${use.class ? `${use.class} or ` : ''}${use.css}`;
 }
 
+// One immutable variable context per emitted scope, shared across families.
+// Cache complete resolutions only; recursive cycle/depth guards stay intact.
+function resolutionContext(declarations: Declaration[], record: DecisionRecord) {
+  const locals = new Map<string, Map<string, Variable>>();
+  const contexts = new WeakMap<Declaration, string>();
+  const context = (declaration: Declaration) => {
+    let key = contexts.get(declaration);
+    if (key === undefined) {
+      key = JSON.stringify([declaration.site.file, declaration.owner, declaration.when]);
+      contexts.set(declaration, key);
+    }
+    return key;
+  };
+  for (const declaration of declarations) if (declaration.prop.startsWith('--tw-')) {
+    const key = context(declaration), values = locals.get(key) ?? new Map();
+    values.set(declaration.prop, { value: declaration.value, dynamic: !!declaration.opaque }); locals.set(key, values);
+  }
+  const scopes = new Map<string, ReadonlyMap<string, Variable>>();
+  const resolved = new WeakMap<ReadonlyMap<string, Variable>, Map<string, string | undefined>>();
+  return {
+    variablesFor(declaration: Declaration): ReadonlyMap<string, Variable> {
+      const key = context(declaration), local = locals.get(key);
+      if (!local) return record.variables;
+      if (!scopes.has(key)) scopes.set(key, new Map([...record.variables, ...local]));
+      return scopes.get(key)!;
+    },
+    resolve(value: string, variables: ReadonlyMap<string, Variable>): string | undefined {
+      let values = resolved.get(variables);
+      if (!values) { values = new Map(); resolved.set(variables, values); }
+      if (!values.has(value)) values.set(value, resolveValue(value, variables));
+      return values.get(value);
+    },
+  };
+}
+
 function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
-  sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record)): {
+  sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
   findings: Finding[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {
   const decisions = record.decisions.filter(decision => decision.family === family);
@@ -51,7 +88,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
   const refIndex = new Map(decisions.flatMap(decision => decision.refs.map(ref => [ref, decision] as const)));
   for (const [name, variable] of record.frameworkVariables) {
     if (refIndex.has(`var(${name})`)) continue;
-    const resolved = resolveValue(variable.value, record.variables);
+    const resolved = resolution.resolve(variable.value, record.variables);
     refIndex.set(`var(${name})`, { family, name, value: variable.value, ...(resolved === undefined ? {} : { resolved }), refs: [`var(${name})`], origin: 'framework', tier: variable.tier ?? 'primitive', why: variable.why, source: variable.source });
   }
   const decisionRefs = new Set(refIndex.keys());
@@ -86,15 +123,8 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
   }
   const grouped = new Map<string, Finding>(), locations = new Map<string, Set<string>>();
   const coverage = { fromDecisions: 0, total: 0, findings: 0 };
-  // Resolve local compiler infrastructure only within the same emitted context.
-  const locals = new Map<string, Map<string, Variable>>();
-  const context = (declaration: Declaration) => JSON.stringify([declaration.site.file, declaration.owner, declaration.when]);
-  for (const declaration of declarations) if (declaration.prop.startsWith('--tw-')) {
-    const key = context(declaration), values = locals.get(key) ?? new Map();
-    values.set(declaration.prop, { value: declaration.value, dynamic: !!declaration.opaque }); locals.set(key, values);
-  }
   const judgedDeclarations = family === 'type' ? declarations.flatMap(d => typeDeclarations(d, decisionRefs)) : declarations;
-  const variablesFor = (declaration: Declaration) => locals.has(context(declaration)) ? new Map([...record.variables, ...locals.get(context(declaration))!]) : record.variables;
+  const variablesFor = resolution.variablesFor;
   const owners = attribution(family, definitions, sourceFiles, new Set(decisions.flatMap(d => d.refs)));
   const consumers = judgedDeclarations.filter(d => isJudged(d, family)).flatMap(declaration => {
     const item = owners.consume(declaration, variablesFor(declaration), declaration.decisionRefs?.filter(name => refIndex.has(`var(${name})`)) ?? []);
@@ -104,7 +134,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     if (!isJudged(declaration, family)) continue;
     coverage.total++;
     const variables = variablesFor(declaration);
-    const resolved = declaration.opaque ? undefined : resolveValue(declaration.value, variables);
+    const resolved = declaration.opaque ? undefined : resolution.resolve(declaration.value, variables);
     if (resolved !== undefined) declaration.resolved = resolved;
     let rule = '', why = '', severity: Finding['severity'] = 'error', nearest: Decision[] = [];
     if (declaration.opaque) {
@@ -122,7 +152,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
           }
           continue;
         }
-        const value = resolveValue(part, variables);
+        const value = resolution.resolve(part, variables);
         if (family !== 'spacing' && /^(?:inherit|initial|unset|revert|revert-layer)$/i.test(part)) continue;
         if (family === 'color' && colorNeutral.test(part)) continue;
         if (family === 'elevation' && (part === 'none' || (declaration.origin === 'class' || declaration.origin === 'arbitrary') && /^0(?:px)? 0(?:px)? (?:transparent|#0000|rgba\(0, ?0, ?0, ?0\))$/.test(part))) continue;
@@ -197,9 +227,12 @@ export function spacingProvenance(declarations: Declaration[], record: DecisionR
 export function provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles?: ReadonlySet<string>) {
   const findings: Finding[] = [];
   const definitions = indexDefinitions(declarations, record);
+  const resolution = resolutionContext(declarations, record);
   const coverage = {} as Record<JudgedFamily, Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>>;
   for (const family of judgedFamilies) {
-    const result = familyProvenance(family, declarations, record, config, sourceFiles, definitions);
+    const start = performance.now();
+    const result = familyProvenance(family, declarations, record, config, sourceFiles, definitions, resolution);
+    profileDuration(`rule:provenance/${family}`, performance.now() - start);
     findings.push(...result.findings); coverage[family] = result.coverage;
   }
   return { findings, coverage };

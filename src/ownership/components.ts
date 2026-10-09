@@ -3,11 +3,11 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
-import { globSync } from 'tinyglobby';
+import { componentCache, componentFiles, fileHash } from './cache.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
 import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
-import type { SourceText } from '../collect/source.js';
+import type { SourceText, SourceProgram } from '../collect/source.js';
 import { UsageError } from '../errors.js';
 
 export interface ComponentIdentity {
@@ -61,15 +61,33 @@ function walk(node: Node, visit: (node: Node) => void, types = false): void {
 const inDirectory = (file: string, directory: string) => file === directory || file.startsWith(directory + sep);
 const isFunction = (node: Node) => ['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(node.type);
 const memberName = (node: Node): string => node.type === 'MemberExpression' && !node.computed ? `${memberName(node.object)}.${nodeName(node.property)}` : nodeName(node);
+const resolverOptions = { tsconfig: 'auto' as const, extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
+  extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
+  conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] };
 
-export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map(), includeUnused = false): ComponentGraph {
+/** Read before collection so a warm graph does not retain unneeded source ASTs. */
+export function cachedComponents(root: string, files: string[], config: PlumbConfig, includeUnused = false): ComponentGraph | undefined {
+  const resolver = new ResolverFactory(resolverOptions);
+  const contexts = new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+  return componentCache(root, files, config, includeUnused).read((file, specifier) => resolver.resolveFileSync(file, specifier).path,
+    (file, specifier) => contexts.resolveFileSync(file, specifier).path);
+}
+
+export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map(), includeUnused = false, programs: ReadonlyMap<string, SourceProgram> = new Map(), readOnly = false): ComponentGraph {
   const rootRanges = new Map<ComponentIdentity, RootRange[]>();
   const fingerprintClasses = new Map<ComponentIdentity, string[]>();
-  const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
-    extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
-    conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
+  const resolver = new ResolverFactory(resolverOptions);
   // Resolve shadcn aliases to directories even when callers use relative imports.
   const contextResolver = new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+  const cache = !readOnly && !overrides.size ? componentCache(root, files, config, includeUnused) : undefined;
+  const cached = cache?.read((file, specifier) => resolver.resolveFileSync(file, specifier).path,
+    (file, specifier) => contextResolver.resolveFileSync(file, specifier).path);
+  if (cached) return cached;
+  const watchedFiles = new Map<string, string | null>(), watchedDirectories = new Map<string, string[]>();
+  const contexts = new Map<string, string | undefined>();
+  function exists(file: string): boolean {
+    watchedFiles.set(file, fileHash(file)); return existsSync(file);
+  }
   const modules = new Map<string, Module>(), selected = new Set<string>(), identities = new Map<string, ComponentIdentity | null>();
   const directories: string[] = [], prefixes: string[] = [], packages: string[] = [];
   const configured = config.components?.from;
@@ -78,32 +96,36 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       if (item.startsWith('package:')) packages.push(item.slice(8));
       else if (item.startsWith('directory:')) directories.push(resolve(root, item.slice(10)));
       else if (item.startsWith('import:')) prefixes.push(item.slice(7));
-      else if (existsSync(resolve(root, item))) directories.push(resolve(root, item));
+      else if (exists(resolve(root, item))) directories.push(resolve(root, item));
       else prefixes.push(item);
     }
   } else {
     const shadcn = join(root, 'components.json');
-    if (existsSync(shadcn)) {
+    if (exists(shadcn)) {
       try {
         const value = JSON.parse(readFileSync(shadcn, 'utf8')) as { aliases?: { ui?: string; components?: string } };
         const alias = value.aliases?.ui ?? value.aliases?.components;
         if (alias) {
-          if (existsSync(resolve(root, alias))) directories.push(resolve(root, alias));
+          if (exists(resolve(root, alias))) directories.push(resolve(root, alias));
           else {
             prefixes.push(alias.replace(/\/$/, ''));
             for (const file of files.filter(file => /\.[jt]sx?$/.test(file))) {
               const path = contextResolver.resolveFileSync(file, alias).path;
+              contexts.set(`${file}\0${alias}`, path);
               if (path && !directories.includes(path)) directories.push(path);
             }
           }
         } else directories.push(join(root, 'src/components/ui'));
       } catch (error) { throw new UsageError(`Read components.json: ${String(error)}`); }
-    } else directories.push(join(root, existsSync(join(root, 'src/components/ui')) ? 'src/components/ui' : 'src/components'));
+    } else directories.push(join(root, exists(join(root, 'src/components/ui')) ? 'src/components/ui' : 'src/components'));
   }
   const discoveryDirectories = [...directories];
+  const resolutions = new Map<string, string | undefined>();
   function selectedFile(file: string): boolean { return selected.has(file) || directories.some(directory => inDirectory(file, directory)); }
   function target(file: string, specifier: string): string | undefined {
-    const path = resolver.resolveFileSync(file, specifier).path;
+    const key = `${file}\0${specifier}`;
+    if (!resolutions.has(key)) resolutions.set(key, resolver.resolveFileSync(file, specifier).path);
+    const path = resolutions.get(key);
     if (!path || !/\.[cm]?[jt]sx?$/.test(path)) return;
     const chosen = prefixes.some(prefix => specifier === prefix || specifier.startsWith(prefix.endsWith('/') ? prefix : prefix + '/'));
     if (chosen) selected.add(path);
@@ -113,7 +135,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       let directory = dirname(path);
       while (directory !== dirname(directory)) {
         const manifest = join(directory, 'package.json');
-        if (existsSync(manifest)) {
+        if (exists(manifest)) {
           try {
             const name = (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name;
             if (name && packages.includes(name)) { if (!directories.includes(directory)) directories.push(directory); break; }
@@ -127,9 +149,16 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   }
   function module(file: string): Module {
     const cached = modules.get(file); if (cached) return cached;
-    const text = overrides.get(file) ?? readFileSync(file, 'utf8'), parsed = parseSync(file, text, parserOptions);
-    if (parsed.errors.length) throw new UsageError(`Read component ${file}: ${parsed.errors[0]?.message}`);
-    const value: Module = { file, text, lineStarts: lineStarts(text), ast: parsed.program, bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
+    const shared = programs.get(file);
+    const text = overrides.get(file) ?? shared?.text ?? readFileSync(file, 'utf8');
+    watchedFiles.set(file, fileHash(file));
+    let ast = shared?.text === text ? shared.ast : undefined;
+    if (!ast) {
+      const parsed = parseSync(file, text, parserOptions);
+      if (parsed.errors.length) throw new UsageError(`Read component ${file}: ${parsed.errors[0]?.message}`);
+      ast = parsed.program;
+    }
+    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ast, bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
     modules.set(file, value);
     for (const statement of value.ast.body) {
       if (statement.type === 'ImportDeclaration') {
@@ -238,7 +267,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     walk(node, item => { if (item.type === 'TSTypeReference' && item.typeName.type === 'Identifier') propNames.add(item.typeName.name); }, true);
     propNames.add(`${name.split('.')[0]}Props`);
     const declarationFile = value.file.replace(/\.[cm]?jsx?$/, '.d.ts');
-    const propSource = !value.types.size && declarationFile !== value.file && existsSync(declarationFile) ? module(declarationFile) : value;
+    const propSource = !value.types.size && declarationFile !== value.file && exists(declarationFile) ? module(declarationFile) : value;
     for (const propName of propNames) {
       const type = propSource.types.get(propName); if (!type) continue;
       walk(type, item => {
@@ -356,7 +385,11 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     const [base, ...parts] = name.split('.'), edge = value.imports.get(base!);
     if (edge) {
       const path = target(value.file, edge.file); if (!path) return;
-      return exported(path, [edge.name === '*' ? '' : edge.name, ...parts].filter(Boolean).join('.'), seen);
+      const found = exported(path, [edge.name === '*' ? '' : edge.name, ...parts].filter(Boolean).join('.'), seen);
+      // Positive aliases are stable within this graph. Do not cache misses:
+      // cycles and newly selected re-exports can change their interpretation.
+      if (found) identities.set(key, found);
+      return found;
     }
     const binding = value.bindings.get(base!); if (!binding) return;
     let node = unwrap(binding.node), publicName = [...value.exports].find(([exported, local]) => exported !== 'default' && local === base)?.[0] ?? base!;
@@ -416,6 +449,8 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   }
   const usages = new Map<string, Usage[]>(), used = new Map<string, ComponentIdentity>(), mounts: ComponentMount[] = [];
   const elements: ElementIdentity[] = [], elementsByFile = new Map<string, ElementIdentity[]>();
+  const elementLocations = new Map<string, Map<number, ElementIdentity | undefined>>();
+  const callerLocations = new Map<string, Map<number, ComponentIdentity | undefined>>();
   for (const file of files.filter(file => /\.[jt]sx?$/.test(file))) {
     const value = module(file), ranges: Usage[] = [];
     function scan(node: Node, inherited?: ComponentIdentity, shadowed = new Set<string>(), ancestors: ComponentMount['ancestors'] = []): void {
@@ -454,14 +489,16 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       }
       for (const child of children(node)) scan(child, inherited, shadows, ancestors);
     }
-    scan(value.ast); usages.set(file, ranges);
+    if (value.text.includes('<')) scan(value.ast);
+    usages.set(file, ranges);
   }
   // Imitation needs identities even when every caller hand-builds the component.
   // Walk selected exports only on request; ownership's normal discovery stays unchanged.
   const fingerprints = Object.keys(config.imitation ?? {});
   if ((includeUnused || fingerprints.length) && files[0]) for (const specifier of [...packages, ...prefixes]) { const path = target(files[0], specifier); if (path) module(path); }
-  if (includeUnused || fingerprints.length) for (const directory of discoveryDirectories) if (existsSync(directory)) {
-    for (const file of globSync('**/*.{tsx,jsx,ts,js,mts,mjs,cts,cjs}', { cwd: directory, absolute: true, ignore: ['**/node_modules/**', '**/*.d.ts'], followSymbolicLinks: false })) module(file);
+  if (includeUnused || fingerprints.length) for (const directory of discoveryDirectories) {
+    const discovered = componentFiles(directory); watchedDirectories.set(directory, discovered);
+    for (const file of discovered) module(file);
   }
   if (includeUnused) {
     for (const value of modules.values()) if (selectedFile(value.file)) {
@@ -484,21 +521,32 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     });
     sourceTokens.set(file, inventory);
   }
-  return { root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
+  const graph: ComponentGraph = { root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
     element(site) {
       const value = modules.get(site.file); if (!value) return;
       const offset = value.lineStarts[site.line - 1]! + site.column - 1;
+      const locations = elementLocations.get(site.file) ?? new Map<number, ElementIdentity | undefined>();
+      elementLocations.set(site.file, locations);
+      if (locations.has(offset)) return locations.get(offset);
       // Nested JSX in render/style expressions belongs to the smallest opening.
-      return elementsByFile.get(site.file)?.filter(item => item.styling.some(range => offset >= range.start && offset < range.end)).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+      const found = elementsByFile.get(site.file)?.filter(item => item.styling.some(range => offset >= range.start && offset < range.end)).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+      locations.set(offset, found); return found;
     },
     caller(declaration) {
       const value = modules.get(declaration.site.file); if (!value) return;
       const offset = value.lineStarts[declaration.site.line - 1]! + declaration.site.column - 1;
+      const locations = callerLocations.get(value.file) ?? new Map<number, ComponentIdentity | undefined>();
+      callerLocations.set(value.file, locations);
+      if (locations.has(offset)) return locations.get(offset);
       const usage = usages.get(value.file)?.find(item => offset >= item.start && offset < item.end);
-      if (usage) return usage.component.source.file === value.file ? undefined : usage.component;
+      const component = usage?.component.source.file === value.file ? undefined : usage?.component;
+      locations.set(offset, component);
+      if (usage) return component;
       // Literal constants retain definition and usage sites. The usage range is
       // authoritative: definitions outside an attribute are not callers.
       return;
     },
   };
+  cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
+  return graph;
 }

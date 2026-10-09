@@ -15,6 +15,7 @@ export function decisionEntry(decision: Decision): LedgerEntry {
 }
 export function findingGroups(report: Report): Map<string, FindingGroup> {
   const groups = new Map<string, FindingGroup>();
+  const groupLocations = new Map<string, Set<string>>();
   const locations = new Map<string, Declaration[]>();
   const location = siteLocation;
   for (const declaration of report.declarations) {
@@ -26,13 +27,21 @@ export function findingGroups(report: Report): Map<string, FindingGroup> {
     // Finding sites may be distinct objects from their exact declarations. Keep
     // acceptance on the report site, without changing the fix group's key.
     finding.sites = finding.sites.map(({ ledger: _ledger, ...site }) => site);
-    const sites = new Map(finding.sites.map(site => [location(site), site]));
+    const sites = new Map<string, typeof finding.sites>();
+    for (const site of finding.sites) {
+      const key = location(site), copies = sites.get(key) ?? [];
+      copies.push(site); sites.set(key, copies);
+    }
     const occurrences = finding.occurrences ?? finding.sites.map(site => {
       const candidates = locations.get(location(site)) ?? [];
       return candidates.find(declaration => declaration.prop === finding.declaration.prop) ?? candidates[0] ?? { ...finding.declaration, site };
     });
+    // A finding can retain a site without an occurrence (for example after
+    // compiler fallback grouping). It still needs its own authored identity.
+    const occurrenceLocations = new Set(occurrences.map(declaration => location(declaration.site)));
+    const missing = finding.sites.filter(site => !occurrenceLocations.has(location(site)));
     const keys = new Set<string>();
-    for (const declaration of occurrences) {
+    for (const declaration of [...occurrences, ...missing.map(site => ({ ...finding.declaration, site }))]) {
       const site = declaration.site;
       const path = relative(report.root, site.file).replaceAll('\\', '/');
       const anchor = site.anchor ?? '<module>';
@@ -40,16 +49,20 @@ export function findingGroups(report: Report): Map<string, FindingGroup> {
       const authored = normalizeAuthored(site.text);
       const key = `${finding.rule}:${owner}:${declaration.prop}:${authored}@${path}#${anchor}`;
       keys.add(key);
-      const reportSite = sites.get(location(site));
-      if (reportSite && !reportSite.ledger) reportSite.ledger = { key, status: 'new' };
+      for (const reportSite of sites.get(location(site)) ?? []) {
+        if (!reportSite.ledger) reportSite.ledger = { key, status: 'new' };
+      }
       let group = groups.get(key);
       if (!group) {
         group = { entry: { key, kind: 'debt', rule: finding.rule, family: finding.family, owner, prop: declaration.prop, authored, path, anchor,
           resolved: declaration.resolved ?? declaration.value, count: 0 }, finding, declarations: [], sites: [] };
         groups.set(key, group);
+        groupLocations.set(key, new Set());
       }
       // Compiler fallbacks/conditions are not additional physical authored sites.
-      if (group.sites.some(previous => location(previous) === location(site))) continue;
+      const seen = groupLocations.get(key)!;
+      if (seen.has(location(site))) continue;
+      seen.add(location(site));
       group.sites.push(site); group.declarations.push(declaration); group.entry.count = group.sites.length;
     }
     finding.ledgerKeys = [...keys];

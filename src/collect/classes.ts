@@ -10,8 +10,10 @@ import { collectInline } from './inline.js';
 import type { SourceStyles } from './inline.js';
 import { constExport, namedAnchors, sourceSite } from './source.js';
 import type { NamedAnchor } from './source.js';
+import type { SourceProgram } from './source.js';
 import { moduleImports } from './modules.js';
 import type { ModuleImport } from './modules.js';
+import { collectionCache, sourceHash } from './cache.js';
 
 export interface ClassSite extends Site {
   token: string;
@@ -35,7 +37,7 @@ type LazyBinding = () => Binding | null;
 type Scope = Map<string, Binding | LazyBinding | null>;
 // The installed oxc runtime supports this experimental option; its .d.ts omits it.
 // Fall back to JSON transfer on platforms that cannot allocate raw-transfer buffers.
-const parserOptions = { preserveParens: true, experimentalRawTransfer: rawTransferSupported() };
+const parserOptions = { preserveParens: false, experimentalRawTransfer: rawTransferSupported() };
 const typeOnlyKeys = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeArguments', 'implements']);
 const builtins = ['cn', 'clsx', 'cx', 'classNames', 'twMerge', 'twJoin', 'cva', 'tv'];
 
@@ -83,7 +85,7 @@ function site(source: Source, offset: number, text: string): Site {
   return sourceSite(source, offset, text);
 }
 
-export async function collectClasses(files: string[], classHelpers: string[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string): Promise<{
+export async function collectClasses(files: string[], classHelpers: string[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string): Promise<{
   sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
 }> {
   const start = performance.now();
@@ -98,6 +100,17 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   const helperNames = [...helpers];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
+  const dependencies = new Map<string, string>(), resolutions = new Map<string, string | undefined>();
+  const resolveImport = (file: string, specifier: string) => {
+    const key = `${file}\0${specifier}`;
+    if (!resolutions.has(key)) resolutions.set(key, resolver.resolveFileSync(file, specifier).path);
+    return resolutions.get(key);
+  };
+  const cache = cacheRoot && !overrides.size && !onlyFile ? collectionCache(cacheRoot, classHelpers, texts) : undefined;
+  // A cold component graph needs the shared programs; otherwise warm collection
+  // restores only authored evidence, without allocating any ASTs.
+  const cached = programs ? undefined : await cache?.read(resolveImport);
+  if (cached) return { ...cached, modules: new Map(cached.modules), parseMs: 0, inlineMs: 0, collectMs: performance.now() - start };
   const sites = new Map<string, ClassSite>();
   let classContext: string | undefined;
 
@@ -105,6 +118,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     const cached = sources.get(file);
     if (cached && (!fullAst || cached.ast)) return cached;
     const text = texts.get(file) ?? readFileSync(file, 'utf8');
+    dependencies.set(file, sourceHash(text));
     const parseStart = performance.now();
     const result = parseSync(file, text, parserOptions);
     const ast = result.program;
@@ -114,6 +128,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     const lineStarts = [0];
     for (let index = text.indexOf('\n'); index !== -1; index = text.indexOf('\n', index + 1)) lineStarts.push(index + 1);
     const value: Source = { file, text, ast, lineStarts, exports: null, anchors: namedAnchors(ast) };
+    programs?.set(file, { file, text, ast, lineStarts });
     sources.set(file, value);
     return value;
   }
@@ -302,7 +317,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     const inlineStart = performance.now();
     const inlineParseStart = parseMs;
     const inline = collectInline(ast, src, (id, name) => {
-      const path = resolver.resolveFileSync(file, id).path;
+      const path = resolveImport(file, id);
       if (!path || !/\.[jt]sx?$/.test(path)) return null;
       const imported = source(path, true);
       const node = constExport(imported.ast!, name);
@@ -320,7 +335,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
       for (const specifier of statement.specifiers) {
         const key = specifier.type === 'ImportSpecifier' ? name(specifier.imported) : 'default';
         imports.set(specifier.local.name, () => {
-          const path = resolver.resolveFileSync(file, statement.source.value).path;
+          const path = resolveImport(file, statement.source.value);
           if (!path || !/\.(?:[jt]sx?|[mc][jt]s)$/.test(path)) return null;
           return exports(source(path)).get(key) ?? null;
         });
@@ -386,5 +401,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     exports(src);
     src.ast = null;
   }
-  return { sites: [...sites.values()], opaque, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs, styles, modules };
+  const result = { sites: [...sites.values()], opaque, styles, modules: [...modules] };
+  await cache?.write(result, dependencies, resolutions);
+  return { ...result, modules, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs };
 }

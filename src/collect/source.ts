@@ -4,6 +4,8 @@ import type { Site } from '../report.js';
 
 export interface NamedAnchor { start: number; end: number; name: string }
 export interface SourceText { file: string; text: string; lineStarts: number[]; anchors?: NamedAnchor[] }
+/** Analysis-local parse shared by collectors and component discovery. */
+export interface SourceProgram extends SourceText { ast: Program }
 
 export function namedAnchors(ast: Program): NamedAnchor[] {
   const anchors: NamedAnchor[] = [];

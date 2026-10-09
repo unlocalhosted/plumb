@@ -1121,3 +1121,154 @@ Fixture acceptance: unused token reported; family/name/source exports silence it
 The benchmark also exposed equal dead-variable sites emitted in multiple CSS contexts with different object property order. A one-line physical-location deduplication correction prevents ledger classification from dereferencing a missing key; a CLI import-context fixture covers that boundary.
 
 Final verification: **93 integration/e2e tests passed, zero failures/skips**; `npm run typecheck` and `git diff --check` passed. Protected report formatter code was compared byte-for-byte against HEAD and is unchanged. Notes: [docs/layers/10-dead-try.md](docs/layers/10-dead-try.md).
+
+## Performance pass
+
+Final pass on main, pinned MetalUI **faa2036e4634e4f6c8d49feaa2dac87a77559501**. The archive and adapted preset live under `bench/metalui/.cache/final-check/`. All token/theme inputs, component sources and docs come from that archive; only existing dependencies are linked for reads. The configuration is `bench/metalui/imitation.config.ts` plus all nine habits from `layer5.config.ts`. Default ledger classification is enabled throughout. No installation, worktree commit or live MetalUI write occurred.
+
+The crash regression replays duplicate compiler-fallback sites with different property insertion order through a full fixture analysis, baseline and classification. Before the fix it reproduces **Cannot read properties of undefined (reading 'key')** in `applyLedger`. Ledger identity now reaches every equal site object, missing occurrences receive an authored identity, and physical fallback copies count once. A missing identity at classification fails closed as new and records a note. The pinned temporary copy's actual CLI **baseline and check both exit 0**, with imitation enabled and the default ledger on; the complete setup receipt is retained in `final-after.json`.
+
+Measured before optimization after the ledger repair, then after optimization. Three unprofiled fresh processes per warm measurement; wall time includes startup and compact report serialization to a file. A separate normal text CLI process exercises the real delivery lane. Cold means an empty Plumb cache, not an empty OS filesystem cache. Receipts: [before](bench/metalui/final-before.json), [after](bench/metalui/final-after.json). Raw reports and CPU profiles remain in the ignored final-check cache.
+
+| Measurement | Before | After |
+| --- | ---: | ---: |
+| Warm report median | 2184.5 ms | 997.0 ms |
+| Warm process median | 2325.4 ms | 1140.4 ms |
+| Warm text CLI | 2269.7 ms | 1138.2 ms |
+| Warm report range | 2176.4–2246.7 ms | 977.6–1008.1 ms |
+| Cold report / process | Not rerun before optimization | 4210.2 / 4368.9 ms |
+
+**Every final warm report and the text CLI finish under 1.3 seconds.** These are local measurements, not a latency guarantee under arbitrary machine load.
+
+### Phase times
+
+Unprofiled medians in milliseconds. Ownership includes component discovery/cache validation and judging. Provenance includes missing-variable checks and unused-decision reachability. Warm parse/inline are zero because complete collection evidence is restored from a validated source cache; fresh source contents and import resolutions are still checked.
+
+| Report phase | Before | After |
+| --- | ---: | ---: |
+| discover | 6.0 | 6.8 |
+| parse | 81.3 | 0.0 |
+| collect | 101.7 | 32.1 |
+| load | 33.6 | 36.4 |
+| compile | 0.0 | 0.0 |
+| stylesheets | 178.0 | 176.0 |
+| inline | 68.2 | 0.0 |
+| decisions | 127.8 | 146.5 |
+| provenance | 264.2 | 257.2 |
+| habits | 67.8 | 70.0 |
+| ownership | 665.6 | 74.3 |
+
+Detailed phase marks from one separate `--cpu-prof` process with `PLUMB_PROFILE=1`, in milliseconds. Components is nested inside ownership; these rows are not additive to the preceding table.
+
+| Detailed phase | Before | After |
+| --- | ---: | ---: |
+| config | 31.9 | 33.7 |
+| source-files | 3.3 | 1.7 |
+| declarations | 10.9 | 16.6 |
+| components | 405.4 | 55.4 |
+| ledger | 62.8 | 66.9 |
+
+### Rule times
+
+Opt-in performance marks in milliseconds, measured during the same profiled process. These are judging passes: `existence/classes` covers dead and dynamic classes plus unreachable-sheet fix lookup; provenance rows include all subrules for that family; `dead` shares one reachability pass across families; ownership and imitation share discovery and then judge all configured components. Habit rows measure each built-in's work, including finding creation; their surrounding grouping/companion indexing belongs to the habits phase. Profiles add sampling/clock overhead, so use the unprofiled totals above for the target.
+
+| Rule pass | Before | After |
+| --- | ---: | ---: |
+| existence/classes | 461.4 | 48.9 |
+| existence/dead-var | 14.9 | 19.3 |
+| provenance/spacing | 30.3 | 31.7 |
+| provenance/color | 79.8 | 80.8 |
+| provenance/radius | 10.0 | 8.9 |
+| provenance/type | 28.2 | 31.1 |
+| provenance/motion | 24.8 | 21.1 |
+| provenance/elevation | 31.9 | 28.0 |
+| provenance/z | 5.5 | 3.9 |
+| dead | 27.8 | 29.5 |
+| ownership | 290.5 | 32.6 |
+| habits/hover-gate | 10.2 | 7.6 |
+| habits/focus-outline | 6.4 | 7.1 |
+| habits/transition-named | 1.8 | 2.5 |
+| habits/no-ease-in | 2.0 | 2.2 |
+| habits/logical-inline | 10.6 | 11.7 |
+| habits/viewport-dynamic | 2.1 | 2.3 |
+| habits/safe-area-fallback | 5.2 | 5.8 |
+| habits/overflow-clip | 4.8 | 8.5 |
+| habits/overscroll-contain | 3.2 | 4.3 |
+| imitation | 31.0 | 34.4 |
+
+Removed repeated work:
+
+- Source collection caches class/inline/embedded-CSS evidence and module edges by full source-content hashes, class helpers, imported dependency contents and freshly revalidated import targets. Inline declaration identity is restored so companion checks keep their exact semantics. On a component-cache miss, collectors and discovery share one analysis-local parsed program.
+- Component discovery caches its graph using every read source/manifest, missing declaration/config inputs, directory inventories, fresh import resolution and shadcn context resolution. Aliases resolve once per analysis. This removes repeated source parsing for ownership and imitation while preserving canonical component identities.
+- Ownership selectors choose candidate mounts from tag/class indexes; declaration and class sites reuse element/caller lookups. Ledger counts use location sets instead of repeatedly scanning each group's sites.
+- Suggestion rankings are cached against the complete current hint set and compilable candidates. Existence proof, actual sites and fix grouping still run fresh. The ranking algorithm and its wording remain unchanged.
+- Provenance builds compiler-local variable contexts once and memoizes complete resolutions by immutable context/value. Recursive depth/cycle checks remain unchanged.
+- Text mode already selected formatting before JSON serialization; a real-CLI guard now proves that no complete report is serialized in text mode. Small cache receipts may still use JSON. `src/report.ts` and `src/surfaces/agent.ts` are byte-for-byte unchanged.
+
+Before/after **findings, coverage, ledger keys, declarations, decisions and ledger summary are deeply equal**, including site ordering, fixes, conditions and acceptance. Cold/warm final reports are also deeply equal. Both durable receipts contain identical SHA-256 fingerprints of the compared data; the harness performs the full deep comparisons before writing the after receipt. Regression slices cover duplicate keys/counts, defensive missing-key classification, warm source/inline companions, external constant edits, barrel/component edits, tsconfig remapping and text serialization. The existing try slices retain their complete no-write checks.
+
+Reproduce after building: `node bench/metalui/final-pass.mjs setup` runs the actual baseline/check pair. `node bench/metalui/final-pass.mjs before` captures the implementation at that point; run `after` after a change to compare against that saved full report and record cold/warm timings. All benchmark writes stay in Plumb's benchmark directory or its temporary snapshot. `PLUMB_PROFILE=1` exposes `plumb:phase:*` and `plumb:rule:*` performance entries without changing report/output schemas.
+
+## Final state
+
+**137 integration/e2e tests**, zero unit tests, failures or skips. `npm test`, `npm run typecheck` and `git diff --check` are green. Layers **0–10** are present: harness, class/existence lowering, stylesheet/inline lowering, decisions/spacing, family provenance, habits, ledger, ownership, imitation, surfaces, and dead decisions/try. Size and opacity decisions remain inspectable; their provenance rules remain outside the implemented judging families.
+
+MetalUI totals below use the pinned archive and all enabled rules before any rule is suppressed by the temporary baseline. Baseline classification retains the same findings/sites, changing acceptance/severity only. **1072 groups / 3890 grouped site rows**. Default ledger: **5743 entries, 3910 debt obligations, 0 new, 0 exceptions, 0 stale, 0 growth**. Grouped site rows and authored property obligations are separate measures. Informational dead decisions contribute their definition sites.
+
+| Rule | Groups | Sites |
+| --- | ---: | ---: |
+| dead/color | 1 | 497 |
+| dead/elevation | 1 | 70 |
+| dead/motion | 1 | 36 |
+| dead/radius | 1 | 75 |
+| dead/size | 1 | 2 |
+| dead/spacing | 1 | 840 |
+| dead/type | 1 | 82 |
+| dead/z | 1 | 10 |
+| existence/dead-class | 40 | 66 |
+| existence/dead-var | 2 | 3 |
+| existence/dynamic-class | 3 | 3 |
+| habits/focus-outline | 91 | 95 |
+| habits/hover-gate | 121 | 161 |
+| habits/logical-inline | 255 | 300 |
+| habits/no-ease-in | 0 | 0 |
+| habits/overflow-clip | 13 | 21 |
+| habits/overscroll-contain | 15 | 19 |
+| habits/safe-area-fallback | 0 | 0 |
+| habits/transition-named | 0 | 0 |
+| habits/viewport-dynamic | 7 | 7 |
+| imitation/Field | 1 | 1 |
+| imitation/Textarea | 2 | 9 |
+| ownership/Avatar | 1 | 2 |
+| ownership/Button | 14 | 14 |
+| ownership/Field.Input | 1 | 1 |
+| ownership/FormField.Label | 4 | 4 |
+| ownership/Icon | 2 | 5 |
+| ownership/IconButton | 1 | 1 |
+| ownership/Kbd | 1 | 1 |
+| ownership/Link | 1 | 1 |
+| ownership/MarkLine | 3 | 7 |
+| ownership/Row | 2 | 2 |
+| ownership/Row.Text | 3 | 3 |
+| ownership/ScrollArea | 4 | 7 |
+| ownership/Skeleton.Text | 1 | 1 |
+| ownership/Surface | 1 | 1 |
+| provenance/arbitrary | 24 | 33 |
+| provenance/color | 55 | 63 |
+| provenance/color/by-value | 46 | 58 |
+| provenance/color/framework | 2 | 2 |
+| provenance/elevation | 92 | 130 |
+| provenance/elevation/by-value | 5 | 7 |
+| provenance/motion | 11 | 15 |
+| provenance/motion/by-value | 34 | 52 |
+| provenance/motion/framework | 2 | 43 |
+| provenance/opaque-inline | 7 | 388 |
+| provenance/radius | 4 | 13 |
+| provenance/radius/framework | 1 | 2 |
+| provenance/spacing | 111 | 378 |
+| provenance/type | 62 | 294 |
+| provenance/type/framework | 3 | 5 |
+| provenance/z | 12 | 28 |
+| provenance/z/by-value | 4 | 32 |
+
+Final all-rule cold report/process: **4210.2 / 4368.9 ms**, 0 compiler hits / 1302 misses. Warm report/process medians: **997.0 / 1140.4 ms**, 1302 hits / 0 misses. Warm text CLI: **1138.2 ms**, exit 0. Exact phase/rule data, full counts, equality fingerprints and baseline/check receipts are in [final-after.json](bench/metalui/final-after.json).

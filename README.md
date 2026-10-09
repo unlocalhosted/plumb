@@ -2,7 +2,7 @@
 
 Plumb is a CLI for Tailwind v4, CSS and React projects. Its planned checks compare the CSS declarations produced by UI code with a team's tokens, component contracts and written styling rules. The [design](docs/DESIGN.md) describes those checks and their build layers.
 
-Status: **layer 2: stylesheet and inline lowering**. The CLI lowers classes through the project's Tailwind v4, follows reachable CSS imports, and reads static JSX stylesheets and inline style objects. One declaration format retains origins, source locations, owners and conditions. Dead classes and dynamic class fragments are judged; provenance, habits and ownership remain planned. CSS selectors count as existing only in reachable stylesheets, source-glob CSS or static JSX stylesheets. See [Layer 2](docs/layers/2-stylesheets-inline.md) and the [benchmark](BENCHMARK.md). Node 22.18 or newer is required.
+Status: **all ten layers built, not yet published (0.0.0)**. Plumb lowers classes, stylesheets, `@apply` and inline styles to the CSS they produce with the project's own Tailwind v4, and judges them for dead classes and variables, provenance in seven families (spacing, colour, radius, type, motion, elevation, z-index), team habits, component ownership and hand-built copies of components. A ledger records accepted debt and reasoned exceptions so CI fails only on new drift. Output comes as text, JSON, SARIF, GitHub annotations and per-site agent instructions. Layer notes are in [docs/layers](docs/layers) and measurements against MetalUI in the [benchmark](BENCHMARK.md). Node 22.18 or newer is required.
 
 From this checkout, install dependencies and run:
 

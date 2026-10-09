@@ -366,3 +366,47 @@ test('first-run site keys are authored ledger identities that accept and show co
   assert.equal(shown.findings.length, 1);
   assert.ok(shown.ledger.some(line => line.entry.why === 'intentional teaching example'));
 });
+
+// Replay the compiler-fallback shape from the pinned MetalUI crash through a
+// complete fixture report and the same baseline/classification commands as CLI.
+test('compiler fallback duplicate sites all receive counted ledger identity through baseline/check', async t => {
+  const directory = await copy(t);
+  const css = join(directory, 'src/styles.css');
+  await writeFile(css, (await readFile(css, 'utf8')) + '\n.fallback { background: var(--missing-fallback, red); }\n');
+  const { check } = await import('../dist/index.js');
+  const { applyLedger } = await import('../dist/ledger/check.js');
+  const { ledgerCommand } = await import('../dist/ledger/commands.js');
+  const report = await check({ root: directory, ledger: false });
+  const finding = report.findings.find(f => f.rule === 'existence/dead-var');
+  assert.ok(finding);
+  const site = finding.sites[0];
+  // Different property order, same physical site, as compatibility CSS emitted
+  // through two contexts before dead-var's later collector-side deduplication.
+  finding.sites.push({ text: site.text, column: site.column, line: site.line, file: site.file, anchor: site.anchor });
+  const first = await applyLedger(report);
+  assert.ok(finding.sites.every(s => s.ledger?.status === 'new'));
+  assert.equal(new Set(finding.sites.map(s => s.ledger.key)).size, 1);
+  const key = finding.sites[0].ledger.key;
+  const count = first.ledger.new;
+  await ledgerCommand('baseline', report, {});
+  assert.equal((await ledger(directory)).find(e => e.key === key).count, 1, 'fallback contexts count one physical site');
+  const checked = await applyLedger(report);
+  assert.equal(checked.ledger.new, 0);
+  assert.ok(finding.sites.every(s => s.ledger.status === 'debt' && s.ledger.key === key));
+  assert.equal(checked.ledger.debt, count);
+  run(directory);
+  // Finding sites with no matching occurrence still belong to the finding.
+  finding.sites.push({ ...site, line: site.line + 1 });
+  const extra = await applyLedger(report);
+  assert.equal(extra.ledger.new, 1);
+  assert.equal(finding.sites.at(-1).ledger.status, 'new');
+  assert.equal(finding.sites.at(-1).ledger.key, key);
+  // Classification awaits ledger I/O after assigning identities. An incomplete
+  // report at that boundary must fail closed and leave an actionable note.
+  const pending = applyLedger(report);
+  delete finding.sites.at(-1).ledger;
+  const guarded = await pending;
+  assert.equal(finding.sites.at(-1).ledger.status, 'new');
+  assert.equal(guarded.ledger.new, 1);
+  assert.ok(guarded.notes.some(note => note.includes('Ledger identity missing') && note.includes('treated as new')));
+});

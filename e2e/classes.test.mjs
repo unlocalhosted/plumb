@@ -197,3 +197,37 @@ test('collector shortcuts keep earlier-file exports and escaped helper calls', a
   assert.ok(sites.some(site => site.token === 'bg-brand'), 'literal export survives releasing the earlier file AST');
   assert.ok(sites.some(site => site.token === 'escaped-dead' && site.owner.name === 'Escaped'), 'escaped helper spelling disables function pruning');
 });
+
+test('warm collection keeps inline companion identity and revalidates imported constants and paths', async t => {
+  const { directory, cache } = await setup(t);
+  await mkdir(join(directory, 'external'), { recursive: true });
+  await writeFile(join(directory, 'external/one.ts'), 'export const paint = { outline: "none", color: "red" }; export const classes = "bg-brnad";');
+  await writeFile(join(directory, 'external/two.ts'), 'export const paint = { outline: "none", color: "blue" }; export const classes = "bg-brand";');
+  await writeFile(join(directory, 'tsconfig.json'), JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@paint': ['external/one.ts'] } } }));
+  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], habits: ["overscroll-contain"] };');
+  await writeFile(join(directory, 'src/App.tsx'), 'import { paint, classes } from "@paint"; export const App = () => <><div className={classes} style={paint} /><div style={{ overflowY: "auto", overscrollBehaviorY: "contain" }} /></>;');
+  const report = () => JSON.parse(run(directory, cache, ['--json']).stdout);
+  const cold = report(), warm = report();
+  assert.deepEqual(warm.findings, cold.findings);
+  assert.deepEqual(warm.coverage, cold.coverage);
+  assert.equal(warm.timing.phases.parse, 0);
+  assert.equal(warm.timing.phases.inline, 0);
+  assert.ok(!warm.findings.some(f => f.rule === 'habits/overscroll-contain'), 'inline companions survive cache hydration');
+  await writeFile(join(directory, 'external/one.ts'), 'export const paint = { outline: "none", color: "green" }; export const classes = "new-dead-class";');
+  const edited = report();
+  assert.ok(edited.findings.some(f => f.rule === 'existence/dead-class' && f.declaration.value === 'new-dead-class'));
+  assert.ok(edited.declarations.some(d => d.origin === 'inline' && d.value === 'green'));
+  assert.deepEqual(report().findings, edited.findings);
+  await writeFile(join(directory, 'tsconfig.json'), JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@paint': ['external/two.ts'] } } }));
+  const remapped = report();
+  assert.ok(!remapped.findings.some(f => f.rule === 'existence/dead-class'));
+  assert.ok(remapped.declarations.some(d => d.origin === 'inline' && d.value === 'blue'));
+  assert.deepEqual(report().findings, remapped.findings);
+  // A normal text check must never serialize the complete report. Execute the
+  // real CLI with a guard around JSON.stringify, allowing small cache payloads.
+  const guarded = spawnSync(process.execPath, ['--input-type=module', '-e', `const stringify=JSON.stringify; JSON.stringify=function(value,...args) { if(value?.schemaVersion===1 && value?.findings && value?.coverage) throw new Error('full report serialization in text mode'); return stringify.call(JSON,value,...args); }; process.argv=['node','--root',${JSON.stringify(directory)}]; await import(${JSON.stringify(new URL('../dist/cli.js', import.meta.url).href)});`], { encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache } });
+  assert.ifError(guarded.error);
+  assert.equal(guarded.stderr, '');
+  assert.ok([0, 1].includes(guarded.status));
+  assert.match(guarded.stdout, /files .*tsx/);
+});

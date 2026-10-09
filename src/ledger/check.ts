@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks';
+import { profileDuration } from '../profile.js';
 import type { Declaration, Finding, Report, Site } from '../report.js';
 import { changedFiles, configGrowth, ledgerAt } from './git.js';
 import { currentDecisions, decisionEntry, decisionKey, findingGroups, siteLocation } from './keys.js';
@@ -62,9 +63,29 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}): 
     });
     statuses.set(group.entry.key, sites);
   }
+  const unclassified = new Set<string>();
   for (const finding of report.findings) {
     for (const site of finding.sites) {
-      site.ledger = statuses.get(site.ledger!.key)!.get(siteLocation(site))!;
+      const status = site.ledger && statuses.get(site.ledger.key)?.get(siteLocation(site));
+      if (status) site.ledger = status;
+      else {
+        // Fail closed if a future rule supplies an incomplete ledger identity.
+        // An unclassified site must never be silently accepted or crash check.
+        site.ledger = { key: site.ledger?.key ?? `${finding.key}:${siteLocation(site)}`, status: 'new' };
+        report.notes.push(`Ledger identity missing for ${finding.rule} at ${site.file}:${site.line}:${site.column}; treated as new.`);
+        const counted = finding.ledgerKeys?.map(key => statuses.get(key)?.get(siteLocation(site))).find(Boolean);
+        const identity = `${counted?.key ?? site.ledger.key}:${siteLocation(site)}`;
+        if (!unclassified.has(identity)) {
+          unclassified.add(identity);
+          if (counted?.status === 'debt') summary.debt--;
+          if (counted?.status === 'exception') summary.exceptions--;
+          if (counted?.status !== 'new') {
+            if (changed && !changed.has(site.file)) summary.outOfScope++;
+            else summary.new++;
+          }
+        }
+        if (!finding.ledgerKeys?.includes(site.ledger.key)) (finding.ledgerKeys ??= []).push(site.ledger.key);
+      }
       if (changed) site.inScope = changed.has(site.file);
     }
     finding.status = finding.sites.some(site => site.ledger!.status === 'new') ? 'new'
@@ -102,6 +123,8 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}): 
   summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${summary.exceptions} exception sites; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumb baseline to record current debt and accept the current decisions.';
   report.ledger = summary;
   report.notes.push(summary.message);
-  report.timing.totalMs += performance.now() - start;
+  const elapsed = performance.now() - start;
+  profileDuration('phase:ledger', elapsed);
+  report.timing.totalMs += elapsed;
   return report;
 }
