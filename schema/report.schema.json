@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plumb report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "tool": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": { "name": { "const": "plumb" }, "version": { "type": "string" } }
+    },
+    "root": { "type": "string" },
+    "config": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "inferred"],
+      "properties": { "path": { "type": ["string", "null"] }, "inferred": { "type": "boolean" } }
+    },
+    "tailwind": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entry", "version"],
+      "properties": { "entry": { "type": ["string", "null"] }, "version": { "type": ["string", "null"] } }
+    },
+    "files": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tsx", "jsx", "css", "other"],
+      "properties": {
+        "tsx": { "$ref": "#/$defs/count" }, "jsx": { "$ref": "#/$defs/count" },
+        "css": { "$ref": "#/$defs/count" }, "other": { "$ref": "#/$defs/count" }
+      }
+    },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "coverage": { "type": "object", "additionalProperties": { "$ref": "#/$defs/coverage" } },
+    "timing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["totalMs", "phases"],
+      "properties": {
+        "totalMs": { "type": "number", "minimum": 0 },
+        "phases": {
+          "type": "object", "additionalProperties": false,
+          "required": ["discover"],
+          "properties": { "discover": { "type": "number", "minimum": 0 } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "count": { "type": "integer", "minimum": 0 },
+    "strings": { "type": "array", "items": { "type": "string" } },
+    "family": { "enum": ["spacing", "color", "radius", "type", "motion", "elevation", "size", "z", "opacity"] },
+    "site": {
+      "type": "object", "additionalProperties": false,
+      "required": ["file", "line", "column", "text"],
+      "properties": {
+        "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }
+      }
+    },
+    "condition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "text"],
+      "properties": {
+        "kind": { "enum": ["media", "pseudo", "selector", "container", "supports", "branch"] },
+        "text": { "type": "string" }
+      }
+    },
+    "declaration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["prop", "value", "refs", "when", "site", "owner", "origin"],
+      "properties": {
+        "prop": { "type": "string" }, "value": { "type": "string" }, "resolved": { "type": "string" },
+        "refs": { "$ref": "#/$defs/strings" },
+        "when": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "site": { "$ref": "#/$defs/site" },
+        "owner": {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": { "kind": { "enum": ["element", "component"] }, "name": { "type": "string" } }
+        },
+        "origin": { "enum": ["class", "arbitrary", "stylesheet", "apply", "inline", "custom-property"] },
+        "opaque": { "enum": ["dynamic-value", "dynamic-class", "spread"] }
+      }
+    },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family", "name", "value", "refs", "origin", "tier", "why", "source"],
+      "properties": {
+        "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" },
+        "refs": { "$ref": "#/$defs/strings" }, "origin": { "enum": ["project", "framework", "inferred"] },
+        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "source": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "rule", "family", "severity", "sites", "declaration", "decisions", "why", "fix"],
+      "properties": {
+        "key": { "type": "string" }, "rule": { "type": "string" }, "family": { "type": "string" },
+        "severity": { "enum": ["info", "warn", "error"] },
+        "sites": { "type": "array", "items": { "$ref": "#/$defs/site" } },
+        "declaration": { "$ref": "#/$defs/declaration" },
+        "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+        "why": { "type": "string" }, "fix": { "type": "string" }
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fromDecisions", "total", "findings", "debt", "exceptions"],
+      "properties": {
+        "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" },
+        "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" },
+        "exceptions": { "$ref": "#/$defs/count" }
+      }
+    }
+  }
+}

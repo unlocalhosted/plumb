@@ -1,0 +1,9 @@
+:root {
+  --color-brand: #2563eb;
+  --color-text-muted: var(--color-brand);
+  --space-small: 4px;
+  --space-medium: 8px;
+}
+
+.panel { padding: var(--space-medium); }
+.caption { color: var(--color-text-muted); }
