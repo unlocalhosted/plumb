@@ -1,3 +1,4 @@
+import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 export const tool = {
@@ -79,16 +80,24 @@ export interface Report {
   tailwind: { entry: string | null; version: string | null };
   files: FileCounts;
   findings: Finding[];
-  coverage: Record<string, FamilyCoverage>;
-  timing: { totalMs: number; phases: { discover: number } };
+  notes: string[];
+  coverage: { existence: { total: number; dead: number } };
+  classes: { unique: number; opaque: number };
+  timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number }; cacheHits: number; cacheMisses: number };
 }
 
-export function formatText(report: Report): string {
+export function formatText(report: Report, verbose = false): string {
+  const path = (file: string) => relative(report.root, file) || '.';
   const tailwind = report.tailwind.entry === null
     ? 'plain CSS'
-    : `tailwind ${report.tailwind.version ?? 'not installed'}  theme ${report.tailwind.entry}`;
+    : `tailwind ${report.tailwind.version ?? 'not installed'}  theme ${path(report.tailwind.entry)}`;
   const { tsx, jsx, css, other } = report.files;
+  const findings = report.findings.map(finding => `${finding.rule}  ${finding.declaration.value}\n  ${finding.fix}\n` +
+    finding.sites.map(site => `  ${path(site.file)}:${site.line}:${site.column}  ${site.text}`).join('\n')).join('\n\n');
   return `plumb ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
-    'no findings (layer 0 judges nothing yet)\n';
+    `${findings || 'no findings'}\n\n` +
+    (verbose ? report.notes.map(note => `note: ${note}\n`).join('') : '') +
+    `existence ${report.coverage.existence.total} class tokens, ${report.coverage.existence.dead} dead  ${report.findings.length} findings  ${report.classes.opaque} opaque\n` +
+    `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${report.timing.cacheHits} hits, ${report.timing.cacheMisses} misses\n`;
 }

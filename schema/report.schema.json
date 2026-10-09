@@ -3,7 +3,7 @@
   "title": "Plumb report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing"],
+  "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing", "classes", "notes"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "tool": {
@@ -31,16 +31,34 @@
       }
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
-    "coverage": { "type": "object", "additionalProperties": { "$ref": "#/$defs/coverage" } },
+    "notes": { "$ref": "#/$defs/strings" },
+    "classes": {
+      "type": "object", "additionalProperties": false, "required": ["unique", "opaque"],
+      "properties": { "unique": { "$ref": "#/$defs/count" }, "opaque": { "$ref": "#/$defs/count" } }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false, "required": ["existence"],
+      "properties": {
+        "existence": {
+          "type": "object", "additionalProperties": false, "required": ["total", "dead"],
+          "properties": { "total": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" } }
+        }
+      }
+    },
     "timing": {
       "type": "object", "additionalProperties": false,
-      "required": ["totalMs", "phases"],
+      "required": ["totalMs", "phases", "cacheHits", "cacheMisses"],
       "properties": {
         "totalMs": { "type": "number", "minimum": 0 },
+        "cacheHits": { "$ref": "#/$defs/count" }, "cacheMisses": { "$ref": "#/$defs/count" },
         "phases": {
           "type": "object", "additionalProperties": false,
-          "required": ["discover"],
-          "properties": { "discover": { "type": "number", "minimum": 0 } }
+          "required": ["discover", "parse", "collect", "load", "compile"],
+          "properties": {
+            "discover": { "type": "number", "minimum": 0 }, "parse": { "type": "number", "minimum": 0 },
+            "collect": { "type": "number", "minimum": 0 }, "load": { "type": "number", "minimum": 0 },
+            "compile": { "type": "number", "minimum": 0 }
+          }
         }
       }
     }

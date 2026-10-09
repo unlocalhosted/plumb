@@ -26,6 +26,8 @@ export interface CustomHabit {
 export interface PlumbConfig {
   css?: string;
   source?: string[];
+  markers?: string[];
+  classHelpers?: string[];
   decisions?: Partial<Record<Family, DecisionSource>>;
   components?: {
     from: string | string[];
@@ -45,7 +47,7 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
   return config;
 }
 
-const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation'];
+const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
 const filenames = ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'];
 
@@ -104,6 +106,8 @@ function validate(value: unknown): PlumbConfig {
   keys(config, allowedKeys, 'config');
   if ('css' in config) string(config.css, 'css');
   if ('source' in config) strings(config.source, 'source');
+  if ('markers' in config) strings(config.markers, 'markers');
+  if ('classHelpers' in config) strings(config.classHelpers, 'classHelpers');
   if ('decisions' in config) {
     const decisions = object(config.decisions, 'decisions');
     keys(decisions, families, 'decisions');

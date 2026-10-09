@@ -1,0 +1,35 @@
+{
+  "cold": {
+    "wallMs": 1226.609834,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 1157.863,
+      "phases": {
+        "discover": 8.472541999999997,
+        "parse": 89.52926799999966,
+        "collect": 65.78248200000036,
+        "load": 155.496917,
+        "compile": 105.77475000000004
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1244
+    }
+  },
+  "warm": {
+    "wallMs": 834.6033749999999,
+    "exitCode": 1,
+    "timing": {
+      "totalMs": 762.905,
+      "phases": {
+        "discover": 6.309625000000004,
+        "parse": 87.24608799999996,
+        "collect": 54.34224500000005,
+        "load": 25.643166999999977,
+        "compile": 0
+      },
+      "cacheHits": 1244,
+      "cacheMisses": 0
+    }
+  },
+  "commit": "ca465732b94e7ba654a05b69fd5bc7615788d4b6"
+}

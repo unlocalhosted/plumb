@@ -1,0 +1,530 @@
+{
+  "environment": {
+    "node": "v25.9.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "availableParallelism": 8,
+    "oxcParser": "0.153.0"
+  },
+  "siteHash": "48c5de8a70031e3f636a26dc3b50b9a67a8c689014196f68daebb6b0ba24d5a4",
+  "initialProfile": {
+    "nativeAndJsonTransferMs": 52.304,
+    "astDeserializeMs": 201.353,
+    "parseMs": 253.806,
+    "collectMs": 247.303,
+    "parsedFiles": 280
+  },
+  "rawOnlyOriginalCollector": {
+    "parseMs": 91.759,
+    "collectMs": 233.366,
+    "parsedFiles": 280
+  },
+  "finalJsonProfile": {
+    "nativeAndJsonTransferMs": 47.348955,
+    "astDeserializeMs": 199.52967,
+    "parseMs": 246.878625,
+    "collectMs": 63.410125,
+    "walkMs": 49.253988,
+    "parsedFiles": 259
+  },
+  "finalRawProfile": {
+    "nativeAndRawTransferMs": 22.813742,
+    "astDeserializeMs": 45.452842,
+    "parseMs": 68.266584,
+    "collectMs": 49.383333,
+    "walkMs": 36.112713,
+    "parsedFiles": 259
+  },
+  "workersOriginalOptimizedCollector": {
+    "2": 268.241542,
+    "4": 209.055708,
+    "8": 371.931
+  },
+  "workersFinalCollector": {
+    "2": 182.2515,
+    "4": 159.158167,
+    "8": 196.0385
+  },
+  "rejected": {
+    "experimentalLazy": "node.params is not iterable; different lazy AST API",
+    "rawWithJsAst": "opaque count changed from 144 to 143; parity failed"
+  },
+  "intermediateCliRuns": {
+    "raw-optimized": {
+      "cold": {
+        "wallMs": 1132.157041,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1054.779958,
+          "phases": {
+            "discover": 7.379958000000002,
+            "parse": 104.13083700000016,
+            "collect": 90.16549699999985,
+            "load": 116.57404199999996,
+            "compile": 108.88412499999998
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 468.357708,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 406.461916,
+          "phases": {
+            "discover": 6.474249999999998,
+            "parse": 92.68347199999987,
+            "collect": 84.35644400000014,
+            "load": 15.61991599999999,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "raw-lazy-imports": {
+      "cold": {
+        "wallMs": 1100.3515,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1013.6441659999999,
+          "phases": {
+            "discover": 7.095875000000007,
+            "parse": 79.71754100000031,
+            "collect": 85.8280009999997,
+            "load": 142.085875,
+            "compile": 111.51216599999998
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 448.1519169999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 386.19712499999997,
+          "phases": {
+            "discover": 6.150834000000003,
+            "parse": 75.61359400000012,
+            "collect": 81.33423899999988,
+            "load": 16.151917000000026,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "raw-runtime-walk": {
+      "cold": {
+        "wallMs": 1093.124583,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1007.471209,
+          "phases": {
+            "discover": 6.820791999999997,
+            "parse": 82.91328300000008,
+            "collect": 83.2428419999999,
+            "load": 116.756416,
+            "compile": 113.262834
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 462.662916,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 401.271917,
+          "phases": {
+            "discover": 6.370541000000003,
+            "parse": 87.35258799999977,
+            "collect": 71.43520300000023,
+            "load": 16.04879199999999,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "raw-context-key": {
+      "cold": {
+        "wallMs": 1063.379875,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 977.330292,
+          "phases": {
+            "discover": 6.7620000000000005,
+            "parse": 83.04800200000005,
+            "collect": 81.76391399999994,
+            "load": 107.79425,
+            "compile": 110.46075000000002
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 446.9442919999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 384.912459,
+          "phases": {
+            "discover": 6.404499999999999,
+            "parse": 86.41558699999975,
+            "collect": 69.15083000000025,
+            "load": 15.747833000000014,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "suggestions-review": {
+      "cold": {
+        "wallMs": 2331.5031249999997,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 2240.244167,
+          "phases": {
+            "discover": 7.642124999999993,
+            "parse": 83.45237900000006,
+            "collect": 88.79116299999993,
+            "load": 132.20875,
+            "compile": 114.06645800000001
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 1863.592333,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1790.6123750000002,
+          "phases": {
+            "discover": 6.486207999999991,
+            "parse": 84.19925500000014,
+            "collect": 73.70299499999985,
+            "load": 18.815915999999987,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "suggestions-bounded": {
+      "cold": {
+        "wallMs": 1270.4582910000001,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1182.933833,
+          "phases": {
+            "discover": 8.383749999999992,
+            "parse": 95.8388299999999,
+            "collect": 81.14604500000009,
+            "load": 127.10729200000003,
+            "compile": 127.97416700000002
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 894.4396669999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 821.971625,
+          "phases": {
+            "discover": 6.143290999999998,
+            "parse": 85.44237599999987,
+            "collect": 79.67808200000015,
+            "load": 17.979916000000003,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "suggestions-final": {
+      "cold": {
+        "wallMs": 1299.519333,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1197.646958,
+          "phases": {
+            "discover": 6.886333999999991,
+            "parse": 98.24779300000027,
+            "collect": 80.46858199999976,
+            "load": 134.49929200000003,
+            "compile": 128.03079200000002
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 863.7474169999998,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 796.651167,
+          "phases": {
+            "discover": 6.160458999999996,
+            "parse": 86.9859520000002,
+            "collect": 67.33675599999978,
+            "load": 16.695334000000003,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "review-final": {
+      "cold": {
+        "wallMs": 1215.900708,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1153.6631670000002,
+          "phases": {
+            "discover": 9.030834000000006,
+            "parse": 90.19949200000025,
+            "collect": 80.42792399999976,
+            "load": 133.88,
+            "compile": 108.43962499999998
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 825.2394170000002,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 763.607125,
+          "phases": {
+            "discover": 6.351875,
+            "parse": 87.67271000000025,
+            "collect": 71.37603999999973,
+            "load": 17.426457999999997,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "layer1-review": {
+      "cold": {
+        "wallMs": 1384.3142500000001,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1282.4138329999998,
+          "phases": {
+            "discover": 7.789625000000001,
+            "parse": 112.42316799999973,
+            "collect": 91.82270700000028,
+            "load": 163.310291,
+            "compile": 137.92075
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 905.3983329999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 835.395667,
+          "phases": {
+            "discover": 7.241958999999994,
+            "parse": 86.10670899999967,
+            "collect": 72.89587400000032,
+            "load": 22.53679200000002,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "raw-leaf-skip": {
+      "cold": {
+        "wallMs": 1304.734,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1216.6724590000001,
+          "phases": {
+            "discover": 8.278916999999993,
+            "parse": 93.17203800000004,
+            "collect": 77.49437899999998,
+            "load": 150.25275,
+            "compile": 127.67500000000001
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 859.3891249999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 789.622625,
+          "phases": {
+            "discover": 6.493666999999995,
+            "parse": 79.52158999999986,
+            "collect": 66.47778500000015,
+            "load": 20.26695799999999,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "final": {
+      "cold": {
+        "wallMs": 1178.7345420000001,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1106.959458,
+          "phases": {
+            "discover": 7.515082999999997,
+            "parse": 84.04171400000003,
+            "collect": 81.24970199999997,
+            "load": 149.667667,
+            "compile": 109.75795799999997
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 843.4114589999999,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 774.353375,
+          "phases": {
+            "discover": 6.270249999999997,
+            "parse": 80.93982999999994,
+            "collect": 63.74008600000005,
+            "load": 18.873582999999996,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "verified-review": {
+      "cold": {
+        "wallMs": 1237.160042,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1165.13425,
+          "phases": {
+            "discover": 7.624916000000006,
+            "parse": 89.54203599999997,
+            "collect": 74.52392200000003,
+            "load": 140.299834,
+            "compile": 116.13354099999998
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 855.089166,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 790.071458,
+          "phases": {
+            "discover": 6.732666999999992,
+            "parse": 87.32424099999973,
+            "collect": 72.11113400000029,
+            "load": 28.810709000000003,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "released-asts": {
+      "cold": {
+        "wallMs": 1160.3979160000001,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1075.610416,
+          "phases": {
+            "discover": 7.187625000000011,
+            "parse": 97.08485600000026,
+            "collect": 66.29664399999973,
+            "load": 116.25945900000002,
+            "compile": 116.01795900000002
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 841.6086670000002,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 775.39025,
+          "phases": {
+            "discover": 6.150625000000005,
+            "parse": 89.42067200000012,
+            "collect": 63.65803699999988,
+            "load": 29.147707999999994,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    },
+    "function-pruning": {
+      "cold": {
+        "wallMs": 1231.347,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 1154.2990419999999,
+          "phases": {
+            "discover": 7.386332999999993,
+            "parse": 78.58800200000036,
+            "collect": 52.345289999999636,
+            "load": 143.513417,
+            "compile": 126.09091599999999
+          },
+          "cacheHits": 0,
+          "cacheMisses": 1244
+        }
+      },
+      "warm": {
+        "wallMs": 875.9114580000003,
+        "exitCode": 1,
+        "timing": {
+          "totalMs": 807.7714169999999,
+          "phases": {
+            "discover": 6.0845839999999995,
+            "parse": 90.53732699999964,
+            "collect": 54.91871500000036,
+            "load": 27.069125000000014,
+            "compile": 0
+          },
+          "cacheHits": 1244,
+          "cacheMisses": 0
+        }
+      }
+    }
+  }
+}

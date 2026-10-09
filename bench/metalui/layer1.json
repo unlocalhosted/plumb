@@ -1,0 +1,1635 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "plumb",
+    "version": "0.0.0"
+  },
+  "root": "/Users/vijaysingh/unlocalhosted/metalui",
+  "config": {
+    "path": "/Users/vijaysingh/unlocalhosted/plumb/bench/metalui/plumb.config.ts",
+    "inferred": false
+  },
+  "tailwind": {
+    "entry": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/styles.css",
+    "version": "4.3.3"
+  },
+  "files": {
+    "tsx": 234,
+    "jsx": 0,
+    "css": 33,
+    "other": 24
+  },
+  "findings": [
+    {
+      "key": "existence/dead-class:block-ai-composer",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/ai-composer/ai-composer.tsx",
+          "line": 317,
+          "column": 60,
+          "text": "block-ai-composer"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-ai-composer",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/ai-composer/ai-composer.tsx",
+          "line": 317,
+          "column": 60,
+          "text": "block-ai-composer"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-ai-composer compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:block-availability-picker",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 297,
+          "column": 85,
+          "text": "block-availability-picker"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-availability-picker",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 297,
+          "column": 85,
+          "text": "block-availability-picker"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-availability-picker compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:block-settings",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/settings/settings.tsx",
+          "line": 324,
+          "column": 19,
+          "text": "block-settings"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-settings",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/settings/settings.tsx",
+          "line": 324,
+          "column": 19,
+          "text": "block-settings"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-settings compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:block-share-panel",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 289,
+          "column": 21,
+          "text": "block-share-panel"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-share-panel",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 289,
+          "column": 21,
+          "text": "block-share-panel"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-share-panel compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:block-studio-week",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 356,
+          "column": 75,
+          "text": "block-studio-week"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-studio-week",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 356,
+          "column": 75,
+          "text": "block-studio-week"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-studio-week compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:block-task-inbox",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/task-inbox/task-inbox.tsx",
+          "line": 528,
+          "column": 19,
+          "text": "block-task-inbox"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "block-task-inbox",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/task-inbox/task-inbox.tsx",
+          "line": 528,
+          "column": 19,
+          "text": "block-task-inbox"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "block-task-inbox compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:bw-label-field",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 70,
+          "column": 36,
+          "text": "bw-label-field"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "bw-label-field",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 70,
+          "column": 36,
+          "text": "bw-label-field"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "label"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "bw-label-field compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:bw-light",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 90,
+          "column": 43,
+          "text": "bw-light"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "bw-light",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 90,
+          "column": 43,
+          "text": "bw-light"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "bw-light compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:bw-shadow",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 108,
+          "column": 43,
+          "text": "bw-shadow"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "bw-shadow",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 108,
+          "column": 43,
+          "text": "bw-shadow"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "bw-shadow compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:bw-shape",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 76,
+          "column": 43,
+          "text": "bw-shape"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "bw-shape",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 76,
+          "column": 43,
+          "text": "bw-shape"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "bw-shape compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:bw-type",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 101,
+          "column": 43,
+          "text": "bw-type"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "bw-type",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ButtonSmartControls.tsx",
+          "line": 101,
+          "column": 43,
+          "text": "bw-type"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "section"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "bw-type compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-field",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/FieldXray.tsx",
+          "line": 144,
+          "column": 34,
+          "text": "ed-field"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-field",
+        "refs": [],
+        "when": [
+          {
+            "kind": "branch",
+            "text": "still"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/FieldXray.tsx",
+          "line": 144,
+          "column": 34,
+          "text": "ed-field"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Field"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-field compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-lasso-specimen",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/LassoSpecimens.tsx",
+          "line": 56,
+          "column": 44,
+          "text": "ed-lasso-specimen"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-lasso-specimen",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/LassoSpecimens.tsx",
+          "line": 56,
+          "column": 44,
+          "text": "ed-lasso-specimen"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-lasso-specimen compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-lc-well",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/LinkCardSpecimens.tsx",
+          "line": 94,
+          "column": 49,
+          "text": "ed-lc-well"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-lc-well",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/LinkCardSpecimens.tsx",
+          "line": 94,
+          "column": 49,
+          "text": "ed-lc-well"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-lc-well compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-pal-still",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 162,
+          "column": 54,
+          "text": "ed-pal-still"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-pal-still",
+        "refs": [],
+        "when": [
+          {
+            "kind": "branch",
+            "text": "still"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 162,
+          "column": 54,
+          "text": "ed-pal-still"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-pal-still compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-tb-well",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToolbarSpecimens.tsx",
+          "line": 216,
+          "column": 49,
+          "text": "ed-tb-well"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-tb-well",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToolbarSpecimens.tsx",
+          "line": 216,
+          "column": 49,
+          "text": "ed-tb-well"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-tb-well compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:ed-toast-well",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 101,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 160,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 197,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 252,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 294,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 332,
+          "column": 46,
+          "text": "ed-toast-well"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "ed-toast-well",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ToastSpecimens.tsx",
+          "line": 101,
+          "column": 46,
+          "text": "ed-toast-well"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "ed-toast-well compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:fold-demo",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/FolderUnfold.tsx",
+          "line": 247,
+          "column": 45,
+          "text": "fold-demo"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "fold-demo",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/FolderUnfold.tsx",
+          "line": 247,
+          "column": 45,
+          "text": "fold-demo"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "fold-demo compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:fold-region",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/FolderUnfold.tsx",
+          "line": 251,
+          "column": 40,
+          "text": "fold-region"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "fold-region",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/FolderUnfold.tsx",
+          "line": 251,
+          "column": 40,
+          "text": "fold-region"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "fold-region compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:group-data-checked:recipe-status-led-live",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 309,
+          "column": 77,
+          "text": "group-data-checked:recipe-status-led-live"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "group-data-checked:recipe-status-led-live",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 309,
+          "column": 77,
+          "text": "group-data-checked:recipe-status-led-live"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "span"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "group-data-checked:recipe-status-led-live compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean group-data-checked:recipe-status-lamp or group-data-checked:recipe-status-badge?"
+    },
+    {
+      "key": "existence/dead-class:icon-hero-stage",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconDetail.tsx",
+          "line": 120,
+          "column": 23,
+          "text": "icon-hero-stage"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "icon-hero-stage",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconDetail.tsx",
+          "line": 120,
+          "column": 23,
+          "text": "icon-hero-stage"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "icon-hero-stage compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:icon-library",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconLibrary.tsx",
+          "line": 117,
+          "column": 34,
+          "text": "icon-library"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "icon-library",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconLibrary.tsx",
+          "line": 117,
+          "column": 34,
+          "text": "icon-library"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "icon-library compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:icon-morph",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconDetail.tsx",
+          "line": 54,
+          "column": 21,
+          "text": "icon-morph"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "icon-morph",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconDetail.tsx",
+          "line": 54,
+          "column": 21,
+          "text": "icon-morph"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "icon-morph compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:icon-search",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconLibrary.tsx",
+          "line": 133,
+          "column": 42,
+          "text": "icon-search"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "icon-search",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/IconLibrary.tsx",
+          "line": 133,
+          "column": 42,
+          "text": "icon-search"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Field"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "icon-search compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:is-contact",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ButtonXray.tsx",
+          "line": 217,
+          "column": 53,
+          "text": "is-contact"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "is-contact",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/ButtonXray.tsx",
+          "line": 217,
+          "column": 53,
+          "text": "is-contact"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "is-contact compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:library-discovery",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/Library.tsx",
+          "line": 46,
+          "column": 23,
+          "text": "library-discovery"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "library-discovery",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/Library.tsx",
+          "line": 46,
+          "column": 23,
+          "text": "library-discovery"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "library-discovery compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:max-w-mu-measure",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Link.tsx",
+          "line": 14,
+          "column": 28,
+          "text": "max-w-mu-measure"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Progress.tsx",
+          "line": 26,
+          "column": 55,
+          "text": "max-w-mu-measure"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "max-w-mu-measure",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Link.tsx",
+          "line": 14,
+          "column": 28,
+          "text": "max-w-mu-measure"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "p"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "max-w-mu-measure compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean max-w-mu-group or max-w-mu-related?"
+    },
+    {
+      "key": "existence/dead-class:meta",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 52,
+          "column": 22,
+          "text": "meta"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 65,
+          "column": 36,
+          "text": "meta"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Select.tsx",
+          "line": 61,
+          "column": 22,
+          "text": "meta"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "meta",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 52,
+          "column": 22,
+          "text": "meta"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "span"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "meta compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:mu-palette-empty",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 146,
+          "column": 16,
+          "text": "mu-palette-empty"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 185,
+          "column": 40,
+          "text": "mu-palette-empty"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "mu-palette-empty",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 146,
+          "column": 16,
+          "text": "mu-palette-empty"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "mu-palette-empty compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean m-palette-lip-y or m-palette-edge?"
+    },
+    {
+      "key": "existence/dead-class:mu-palette-eng",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/app/SiteSearch.tsx",
+          "line": 76,
+          "column": 157,
+          "text": "mu-palette-eng"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/app/SiteSearch.tsx",
+          "line": 77,
+          "column": 306,
+          "text": "mu-palette-eng"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CommandPalette.tsx",
+          "line": 28,
+          "column": 180,
+          "text": "mu-palette-eng"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "mu-palette-eng",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/app/SiteSearch.tsx",
+          "line": 76,
+          "column": 157,
+          "text": "mu-palette-eng"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "span"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "mu-palette-eng compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean palette-eng or m-palette-edge?"
+    },
+    {
+      "key": "existence/dead-class:mu-palette-group",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 173,
+          "column": 42,
+          "text": "mu-palette-group"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "mu-palette-group",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/PaletteSpecimens.tsx",
+          "line": 173,
+          "column": 42,
+          "text": "mu-palette-group"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "mu-palette-group compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean mb-palette-row-gap or mb-palette-row-pad?"
+    },
+    {
+      "key": "existence/dead-class:recipe-status-led-off",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 309,
+          "column": 55,
+          "text": "recipe-status-led-off"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "recipe-status-led-off",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/studio-week/studio-week.tsx",
+          "line": 309,
+          "column": 55,
+          "text": "recipe-status-led-off"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "span"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "recipe-status-led-off compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean recipe-status-lamp or recipe-status-badge?"
+    },
+    {
+      "key": "existence/dead-class:recipe-surface",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 48,
+          "column": 136,
+          "text": "recipe-surface"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Popover.tsx",
+          "line": 48,
+          "column": 139,
+          "text": "recipe-surface"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Select.tsx",
+          "line": 60,
+          "column": 138,
+          "text": "recipe-surface"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "recipe-surface",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 48,
+          "column": 136,
+          "text": "recipe-surface"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "recipe-surface compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean recipe-surface-lens or recipe-surface-frost?"
+    },
+    {
+      "key": "existence/dead-class:rounded-field",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ColourCue.tsx",
+          "line": 22,
+          "column": 104,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueDocumentProof.tsx",
+          "line": 24,
+          "column": 97,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+          "line": 46,
+          "column": 47,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/EnumCue.tsx",
+          "line": 32,
+          "column": 102,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/LinkCue.tsx",
+          "line": 21,
+          "column": 113,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/PersonCue.tsx",
+          "line": 29,
+          "column": 104,
+          "text": "rounded-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/TagCue.tsx",
+          "line": 27,
+          "column": 98,
+          "text": "rounded-field"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "rounded-field",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ColourCue.tsx",
+          "line": 22,
+          "column": 104,
+          "text": "rounded-field"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "textarea"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "rounded-field compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean rounded-field-field-radius or rounded-field-compact-radius?"
+    },
+    {
+      "key": "existence/dead-class:rounded-mu-space-3",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 48,
+          "column": 117,
+          "text": "rounded-mu-space-3"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Popover.tsx",
+          "line": 48,
+          "column": 120,
+          "text": "rounded-mu-space-3"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Select.tsx",
+          "line": 60,
+          "column": 119,
+          "text": "rounded-mu-space-3"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "rounded-mu-space-3",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Menu.tsx",
+          "line": 48,
+          "column": 117,
+          "text": "rounded-mu-space-3"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "rounded-mu-space-3 compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean rounded-menu-radius or rounded-menu-row-radius?"
+    },
+    {
+      "key": "existence/dead-class:text-ink-dim",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 69,
+          "column": 36,
+          "text": "text-ink-dim"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "text-ink-dim",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 69,
+          "column": 36,
+          "text": "text-ink-dim"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "output"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "text-ink-dim compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean text-ink or text-ink2?"
+    },
+    {
+      "key": "existence/dead-class:type-doc-body",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Status.tsx",
+          "line": 48,
+          "column": 26,
+          "text": "type-doc-body"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Status.tsx",
+          "line": 70,
+          "column": 19,
+          "text": "type-doc-body"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Status.tsx",
+          "line": 89,
+          "column": 19,
+          "text": "type-doc-body"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Status.tsx",
+          "line": 99,
+          "column": 187,
+          "text": "type-doc-body"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Toast.tsx",
+          "line": 128,
+          "column": 19,
+          "text": "type-doc-body"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "type-doc-body",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Status.tsx",
+          "line": 48,
+          "column": 26,
+          "text": "type-doc-body"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "span"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "type-doc-body compiles to nothing and no project stylesheet declares it.",
+      "fix": "Did you mean type-doc-code or type-doc-title?"
+    },
+    {
+      "key": "existence/dead-class:xr-menubtn",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/MenuXray.tsx",
+          "line": 196,
+          "column": 23,
+          "text": "xr-menubtn"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "xr-menubtn",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/MenuXray.tsx",
+          "line": 196,
+          "column": 23,
+          "text": "xr-menubtn"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "xr-menubtn compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dead-class:xr-tip-solid",
+      "rule": "existence/dead-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/TooltipXray.tsx",
+          "line": 217,
+          "column": 153,
+          "text": "xr-tip-solid"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/TooltipXray.tsx",
+          "line": 218,
+          "column": 120,
+          "text": "xr-tip-solid"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "xr-tip-solid",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/TooltipXray.tsx",
+          "line": 217,
+          "column": 153,
+          "text": "xr-tip-solid"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Tooltip"
+        },
+        "origin": "class"
+      },
+      "decisions": [],
+      "why": "xr-tip-solid compiles to nothing and no project stylesheet declares it.",
+      "fix": "Remove this class or declare it in a project stylesheet."
+    },
+    {
+      "key": "existence/dynamic-class:mu-frost-${f}",
+      "rule": "existence/dynamic-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Materials.tsx",
+          "line": 66,
+          "column": 33,
+          "text": "mu-frost-${f}"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "mu-frost-${f}",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Materials.tsx",
+          "line": 66,
+          "column": 33,
+          "text": "mu-frost-${f}"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "class",
+        "opaque": "dynamic-class"
+      },
+      "decisions": [],
+      "why": "Dynamic class fragment mu-frost-${f} cannot be generated by Tailwind.",
+      "fix": "Use a map of complete class names instead of constructing a class fragment."
+    },
+    {
+      "key": "existence/dynamic-class:mu-tint-${tint}",
+      "rule": "existence/dynamic-class",
+      "family": "existence",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/demos/FeelingsComposer.tsx",
+          "line": 72,
+          "column": 37,
+          "text": "mu-tint-${tint}"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "mu-tint-${tint}",
+        "refs": [],
+        "when": [
+          {
+            "kind": "branch",
+            "text": "tint"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/demos/FeelingsComposer.tsx",
+          "line": 72,
+          "column": 37,
+          "text": "mu-tint-${tint}"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "svg"
+        },
+        "origin": "class",
+        "opaque": "dynamic-class"
+      },
+      "decisions": [],
+      "why": "Dynamic class fragment mu-tint-${tint} cannot be generated by Tailwind.",
+      "fix": "Use a map of complete class names instead of constructing a class fragment."
+    }
+  ],
+  "notes": [
+    "CSS scan apps/launch-video/music/.venv/lib/python3.12/site-packages/matplotlib/backends/web_backend/css/boilerplate.css: Unexpected token Semicolon",
+    "-translate-x-1/2: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "-translate-y-1/2: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "border-spacing-x-24: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "border-spacing-y-12: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "brightness-110: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "brightness-95: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "data-checked:translate-y-px: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "data-held:translate-y-button-travel: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "divide-y: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "ring-1: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "ring-rule: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "shadow-[0_0_0_.5px_rgba(0,0,0,.25)]: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "shadow-[0_0_0_.5px_rgba(0,0,0,.3)]: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "shadow-[inset_0_0_0_.5px_rgba(0,0,0,.08)]: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "shadow-[inset_0_0_0_.5px_rgba(0,0,0,.12)]: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "sm:divide-x: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "tabular-nums: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "translate-y-2: Kept --tw-* assignments: not all reads can be folded within the same rule.",
+    "translate-y-button-travel: Kept --tw-* assignments: not all reads can be folded within the same rule."
+  ],
+  "coverage": {
+    "existence": {
+      "total": 6726,
+      "dead": 65
+    }
+  },
+  "classes": {
+    "unique": 1244,
+    "opaque": 144
+  },
+  "timing": {
+    "totalMs": 762.905,
+    "phases": {
+      "discover": 6.309625000000004,
+      "parse": 87.24608799999996,
+      "collect": 54.34224500000005,
+      "load": 25.643166999999977,
+      "compile": 0
+    },
+    "cacheHits": 1244,
+    "cacheMisses": 0
+  }
+}

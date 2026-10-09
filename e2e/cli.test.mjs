@@ -86,7 +86,7 @@ test('tailwind-min emits the schema and zero findings', () => {
   assert.ok(report.tailwind.entry.endsWith('src/styles.css'));
   assert.deepEqual(report.files, { tsx: 3, jsx: 0, css: 1, other: 0 });
   assert.deepEqual(report.findings, []);
-  assert.deepEqual(report.coverage, {});
+  assert.deepEqual(report.coverage, { existence: { total: 10, dead: 0 } });
   assert.ok(report.timing.totalMs >= report.timing.phases.discover);
 });
 
@@ -138,7 +138,7 @@ test('text mode prints header, counts, timing and layer status', () => {
   assert.ok(result.stdout.startsWith(`plumb ${metadata.version}  ${fixture('tailwind-min')}  tailwind `));
   assert.match(result.stdout, /theme .*src\/styles\.css/);
   assert.match(result.stdout, /files 3 tsx, 0 jsx, 1 css, 0 other\s+\d+\.\dms/);
-  assert.match(result.stdout, /no findings \(layer 0 judges nothing yet\)/);
+  assert.match(result.stdout, /no findings/);
 });
 
 test('default cwd, relative root and both commands use the same harness', () => {
@@ -153,7 +153,7 @@ test('--help describes supported commands, flags and exits', () => {
   const result = run(['--help', '--root', fixture('bad-config')]);
   assert.equal(result.status, 0);
   assert.equal(result.stderr, '');
-  for (const text of ['plumb [check]', '--json', '--root', '--config', '--version', '--help', 'Exit codes:']) {
+  for (const text of ['plumb [check]', '--json', '--verbose', '--root', '--config', '--version', '--help', 'Exit codes:']) {
     assert.ok(result.stdout.includes(text), text);
   }
 });

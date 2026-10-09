@@ -6,8 +6,8 @@ import { errorMessage, UsageError } from './errors.js';
 import type { PlumbConfig } from './config.js';
 import type { FileCounts, Report } from './report.js';
 
-const ignore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.git/**'];
-const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
+export const ignore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.git/**'];
+export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
 const tailwindImport = /@import\s+(?:url\(\s*)?["']tailwindcss(?:\/[^"']*)?["']/;
 
 async function entryCss(root: string, css?: string): Promise<string | null> {
@@ -66,4 +66,10 @@ export async function discoverProject(root: string, config: PlumbConfig): Promis
     else counts.other++;
   }
   return { tailwind: { entry, version: await tailwindVersion(entry) }, files: counts };
+}
+
+export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {
+  return (await glob(config.source ?? defaultSource, {
+    cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false,
+  })).filter(file => /\.[jt]sx?$/.test(file)).sort();
 }

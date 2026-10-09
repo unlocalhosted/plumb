@@ -1,0 +1,3 @@
+@theme { --color-brand: #2563eb; }
+@utility folded { --tw-local: 12px; padding: var(--tw-local); }
+@utility literal-content { --tw-local: red; content: "var(--tw-local) /* text */ {;}"; }

@@ -1,0 +1,3 @@
+/* Deliberately outside the Tailwind import graph. */
+.plain-card { color: red; }
+:is(.nested-hook, .escaped\:hook) { display: block; }
