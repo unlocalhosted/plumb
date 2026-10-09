@@ -44,23 +44,8 @@
  * ───────────────────────────────────────────────────────── */
 const TIMING = { grow: 220, contentIn: 120, light: 160, swap: 140 };
 
-// One glyph per family of design decisions, authored on a 12-unit grid at one stroke weight. A pin says what is
-// wrong before any text is read, and three spacing findings share a glyph: their place on the skeleton tells them apart.
-const GLYPHS = {
-  spacing: '<path d="M1.75 3.25v5.5M10.25 3.25v5.5M1.75 6h8.5"/>',
-  radius: '<path d="M2.25 10.25V7.25a5 5 0 0 1 5-5h2.5"/>',
-  type: '<path d="M2.5 2.5h7M6 2.5v7.25"/>',
-  color: '<circle cx="6" cy="6" r="4.25"/><path d="M6 1.75a4.25 4.25 0 0 0 0 8.5z" fill="currentColor" stroke="none"/>',
-  shadow: '<path d="M8.25 3.5h2.25v7h-7V8.25h4.75z" fill="currentColor" fill-opacity=".5" stroke="none"/><rect x="1.75" y="1.75" width="6.5" height="6.5" rx="1"/>',
-  motion: '<path d="M1.75 10.25C5.5 10.25 6 1.75 10.25 1.75"/>',
-  z: '<rect x="1.75" y="4" width="6.25" height="6.25" rx="1"/><path d="M4 1.75h6.25V8"/>',
-  habit: '<path d="M3 1.75l6.5 4.25-3 .75-1.4 2.9z"/>',
-  ownership: '<rect x="1.75" y="1.75" width="8.5" height="8.5" rx="1.5"/><path d="M1.75 5h8.5"/>',
-  imitation: '<rect x="1.25" y="3.25" width="4.25" height="5.5" rx="1"/><rect x="6.5" y="3.25" width="4.25" height="5.5" rx="1" stroke-dasharray="1.6 1.4"/>',
-  existence: '<circle cx="6" cy="6" r="4.25"/><path d="M3 9l6-6"/>',
-};
+import { GLYPH_CSS, glyph } from '../src/glyphs.js';
 const FAMILY = { spacing: 'spacing', radius: 'radius', type: 'type', shadow: 'shadow', fill: 'color' };
-const glyph = (family, cls = '') => `<svg class="g ${cls}" viewBox="0 0 12 12" aria-hidden="true">${GLYPHS[family]}</svg>`;
 
 
 const tokensCss = await (await fetch('../src/tokens.css')).text();
@@ -118,11 +103,11 @@ const css = `
   .d-child { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
   .d-child.text { box-shadow: none; }
   .d-child b { position: absolute; border-radius: 2px; background: var(--pl-ink-3); opacity: 0.7; }
-  .g { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .pin .g { width: 13px; height: 13px; }
   .read .t { display: flex; align-items: center; gap: 8px; }
-  .read .t .g { width: 13px; height: 13px; }
+  .read .t .g { width: 14px; height: 14px; }
   .read .t .g.off { color: var(--pl-off); } .read .t .g.soft { color: var(--pl-soft); }
-  .pin { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  .pin { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
          display: grid; place-items: center;
          color: var(--pl-paper); background: var(--pl-off); box-shadow: 0 0 0 2px var(--pl-paper); transition: transform var(--pl-dur-feedback) var(--pl-ease-out); }
   .pin.soft { background: var(--pl-soft); }
@@ -228,7 +213,7 @@ function mount(target) {
   const root = host.attachShadow({ mode: 'open' });
   const b = target.getBoundingClientRect(), x = b.left + scrollX, y = b.top + scrollY;
   const f = reading.findings;
-  root.innerHTML = `<style>${tokensCss}${css}</style>
+  root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${css}</style>
     ${[[x, y, 1, 1], [x + b.width - 8, y, -1, 1], [x, y + b.height - 8, 1, -1], [x + b.width - 8, y + b.height - 8, -1, -1]].map(([l, t, a, d]) => `<i class="tick" style="left:${l}px;top:${t}px;transform:scale(${a},${d})"></i>`).join('')}
     <i class="lit"></i>
     <section class="w" data-state="tag" tabindex="0" role="dialog" aria-label="Plumb reading for ${reading.element}, ${f.length} findings" style="left:${x}px;top:${y + b.height + 8}px">

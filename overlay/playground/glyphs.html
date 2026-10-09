@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb glyphs</title>
+<style>
+  html { background: #c9c7c0; }
+  body { margin: 0; padding: 24px; font: 12px/1.4 system-ui, sans-serif; color: #1c1f1d; }
+  h1 { font-size: 14px; margin: 0 0 16px; font-weight: 600; }
+  .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+</style>
+</head>
+<body>
+<h1>Plumb glyphs · review sheet</h1>
+<div class="panes"><plumb-glyphs data-scheme="light"></plumb-glyphs><plumb-glyphs data-scheme="dark"></plumb-glyphs></div>
+<script type="module">
+import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
+const tokens = await (await fetch('../src/tokens.css')).text();
+const names = { spacing: 'spacing', radius: 'radius', type: 'type', color: 'colour', shadow: 'shadow', motion: 'motion', z: 'z-index', habit: 'habit', ownership: 'component override', imitation: 'hand-built copy', existence: 'does nothing' };
+customElements.define('plumb-glyphs', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${tokens}${GLYPH_CSS}
+      :host { display: block; background: var(--pl-paper); color: var(--pl-ink); border-radius: 10px; padding: 20px; }
+      .g { width: 100%; height: 100%; display: block; }
+      table { border-collapse: collapse; width: 100%; }
+      td, th { padding: 7px 6px; border-bottom: 1px solid var(--pl-rule); text-align: center; vertical-align: middle; }
+      th { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); text-transform: uppercase; }
+      td.n { text-align: start; font: var(--pl-text-row); color: var(--pl-ink); white-space: nowrap; }
+      .s12 { width: 14px; height: 14px; display: inline-block; } .s16 { width: 16px; height: 16px; display: inline-block; } .s24 { width: 24px; height: 24px; display: inline-block; }
+      .big { width: 48px; height: 48px; display: inline-block; position: relative; background-image: linear-gradient(var(--pl-rule) 1px, transparent 1px), linear-gradient(90deg, var(--pl-rule) 1px, transparent 1px); background-size: 2px 2px; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+      .big::after { content: ""; position: absolute; inset: 6px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-brass) 55%, transparent); }
+      .pin { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--pl-paper); box-shadow: 0 0 0 2px var(--pl-paper); }
+      .pin .g { width: 13px; height: 13px; }
+      .pin.off { background: var(--pl-off); } .pin.soft { background: var(--pl-soft); }
+      .inline { display: inline-flex; align-items: center; gap: 7px; font: var(--pl-text-title); font-weight: 500; }
+      .inline .g { width: 14px; height: 14px; color: var(--pl-off); }
+    </style>
+    <table><thead><tr><th></th><th>14</th><th>16</th><th>24</th><th>48 on grid</th><th>pin</th><th>soft</th><th>in a title</th></tr></thead><tbody>
+    ${Object.keys(GLYPHS).map(k => `<tr><td class="n">${names[k]}</td>
+      <td><span class="s12">${glyph(k)}</span></td><td><span class="s16">${glyph(k)}</span></td><td><span class="s24">${glyph(k)}</span></td>
+      <td><span class="big">${glyph(k)}</span></td>
+      <td><span class="pin off">${glyph(k)}</span></td><td><span class="pin soft">${glyph(k)}</span></td>
+      <td><span class="inline">${glyph(k)}<span>${names[k]}</span></span></td></tr>`).join('')}
+    </tbody></table>`;
+  }
+});
+</script>
+</body>
+</html>

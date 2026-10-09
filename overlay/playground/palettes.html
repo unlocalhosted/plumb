@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb palettes</title>
+<style>
+  html { background: #bdbdbb; }
+  body { margin: 0; padding: 28px; font: 13px/1.4 system-ui, sans-serif; color: #111; }
+  h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; } p.lead { margin: 0 0 22px; color: #444; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  .opt h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; }
+  .scene { padding: 18px; border-radius: 12px; margin-bottom: 12px; }
+  .scene.light { background: #eef0f3; } .scene.dark { background: #0d0e10; }
+</style>
+</head>
+<body>
+<h1>Plumb palettes · pick the colour</h1>
+<p class="lead">The same widget in three palettes, on a light and a dark host page. Glyphs, type and layout are identical; only colour changes.</p>
+<div class="grid" id="grid"></div>
+<script type="module">
+import { GLYPH_CSS, glyph } from '../src/glyphs.js';
+
+const P = {
+  'Ink and signal': {
+    light: { paper: '#fbfbfa', paper2: '#f1f1ef', rule: '#e3e3e0', ink: '#141415', ink2: '#5f6064', ink3: '#a7a8ab', line: '#141415', off: '#d9480f', soft: '#d9480f', softOutline: 1 },
+    dark:  { paper: '#161618', paper2: '#1f1f22', rule: '#2c2c30', ink: '#f2f2f3', ink2: '#a2a3a8', ink3: '#55565b', line: '#f2f2f3', off: '#ff6b35', soft: '#ff6b35', softOutline: 1 },
+  },
+  'Blueprint': {
+    light: { paper: '#f6f8fb', paper2: '#eaf0f7', rule: '#d7e0ec', ink: '#0e1c33', ink2: '#4b5a72', ink3: '#9aa8bd', line: '#2a62d8', off: '#d7263d', soft: '#c7731f', softOutline: 0 },
+    dark:  { paper: '#0c1526', paper2: '#132036', rule: '#1f2e48', ink: '#e9eef7', ink2: '#9aabc6', ink3: '#4d5f7c', line: '#6b9bff', off: '#ff5468', soft: '#f0a04b', softOutline: 0 },
+  },
+  'Swiss': {
+    light: { paper: '#ffffff', paper2: '#f4f4f4', rule: '#e6e6e6', ink: '#0a0a0a', ink2: '#5c5c5c', ink3: '#b3b3b3', line: '#0a0a0a', off: '#e10600', soft: '#e10600', softOutline: 1 },
+    dark:  { paper: '#0a0a0a', paper2: '#171717', rule: '#262626', ink: '#fafafa', ink2: '#a3a3a3', ink3: '#525252', line: '#fafafa', off: '#ff3b30', soft: '#ff3b30', softOutline: 1 },
+  },
+};
+
+const css = c => `
+  :host { display: block; font: 400 12px/16px system-ui, sans-serif; }
+  ${GLYPH_CSS}
+  .row { width: 360px; height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 14px; background: var(--host-row); box-sizing: border-box; position: relative; }
+  .row i { width: 30px; height: 30px; border-radius: 50%; background: var(--host-av); flex: none; }
+  .row b { font: 500 13.5px system-ui; color: var(--host-ink); flex: 1; }
+  .row u { text-decoration: none; height: 28px; padding: 0 10px; display: grid; place-items: center; border-radius: 8px; font: 500 12px system-ui; color: var(--host-ink); box-shadow: inset 0 0 0 1px var(--host-rule); }
+  .tick { position: absolute; width: 8px; height: 8px; border-color: ${c.line}; border-style: solid; border-width: 0; }
+  .tl { left: -1px; top: -1px; border-left-width: 1px; border-top-width: 1px; } .tr { right: -1px; top: -1px; border-right-width: 1px; border-top-width: 1px; }
+  .bl { left: -1px; bottom: -1px; border-left-width: 1px; border-bottom-width: 1px; } .br { right: -1px; bottom: -1px; border-right-width: 1px; border-bottom-width: 1px; }
+  .lit { position: absolute; left: 14px; right: 14px; top: 0; height: 10px; background: repeating-linear-gradient(-45deg, color-mix(in oklab, ${c.off} 55%, transparent) 0 1px, transparent 1px 4px); box-shadow: inset 0 0 0 1px ${c.off}; }
+  .w { width: 360px; margin-top: 8px; background: ${c.paper}; color: ${c.ink}; border-radius: 6px; box-shadow: 0 0 0 1px ${c.rule}, 0 10px 28px -12px rgb(0 0 0 / .35); overflow: hidden; }
+  .top { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 10px; font: 500 10.5px system-ui; }
+  .top b { font-weight: 600; } .top .n { color: ${c.off}; font: 400 11px ui-monospace, Menlo, monospace; } .top .f { margin-left: auto; color: ${c.ink2}; font: 400 11px ui-monospace, Menlo, monospace; }
+  .d { position: relative; margin: 8px 12px 0; height: 62px; }
+  .d .box { position: absolute; inset: 6px 0 4px; border-radius: 12px; box-shadow: inset 0 0 0 1px ${c.ink3}; }
+  .d .c { position: absolute; top: 18px; height: 30px; box-shadow: inset 0 0 0 1px ${c.ink3}; border-radius: 3px; }
+  .pin { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; display: grid; place-items: center; background: ${c.off}; color: ${c.paper}; box-shadow: 0 0 0 2px ${c.paper}; }
+  .pin.soft { background: ${c.softOutline ? c.paper : c.soft}; color: ${c.softOutline ? c.soft : c.paper}; box-shadow: 0 0 0 2px ${c.paper}, inset 0 0 0 1px ${c.soft}; }
+  .pin.on { transform: scale(1.18); box-shadow: 0 0 0 2px ${c.paper}, 0 0 0 3px ${c.ink}; }
+  .pin .g { width: 13px; height: 13px; }
+  .read { padding: 10px 12px; display: grid; gap: 7px; }
+  .t { display: flex; align-items: center; gap: 7px; font: 500 12.5px system-ui; } .t .g { width: 14px; height: 14px; color: ${c.off}; }
+  .o { display: grid; grid-template-columns: 22px 150px 1fr; gap: 10px; align-items: center; font: 400 11px ui-monospace, Menlo, monospace; padding: 2px 6px; margin: 0 -6px; border-radius: 3px; }
+  .o .v { color: ${c.ink2}; text-align: right; } .o .bar { height: 8px; border-radius: 1px; box-shadow: inset 0 0 0 1px ${c.ink3}; }
+  .o.pick { background: ${c.paper2}; } .o.pick .bar { background: ${c.ink}; box-shadow: none; }
+  .o.you .v, .o.you .who { color: ${c.off}; } .o.you .bar { background: repeating-linear-gradient(-45deg, ${c.off} 0 1.5px, transparent 1.5px 4px); box-shadow: inset 0 0 0 1px ${c.off}; }
+  .o .who b { font-weight: 500; } .use { font: 500 10px system-ui; background: ${c.ink}; color: ${c.paper}; padding: 0 4px; border-radius: 2px; margin-left: 6px; }
+  .e { font: 400 11px ui-monospace, Menlo, monospace; display: flex; gap: 8px; } .e s { color: ${c.ink2}; text-decoration-color: ${c.off}; } .e .l { margin-left: auto; font: 500 10.5px system-ui; }
+  .bar2 { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; box-shadow: 0 -1px 0 ${c.rule}; font: 400 11px ui-monospace, Menlo, monospace; color: ${c.ink2}; }
+  .bar2 .sp { margin-right: auto; } .bar2 button { all: unset; height: 26px; padding: 0 12px; border-radius: 3px; background: ${c.ink}; color: ${c.paper}; font: 500 10.5px system-ui; display: grid; place-items: center; }
+`;
+const mock = (c, host) => `<style>${css(c)}</style>
+  <div class="row" style="--host-row:${host.row};--host-av:${host.av};--host-ink:${host.ink};--host-rule:${host.rule}"><span class="lit"></span><i></i><b>Sync calendar</b><u>Run now</u><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span></div>
+  <div class="w"><div class="top"><b>div</b><span class="n">7 off</span><span class="f">SyncRow.tsx:18</span></div>
+    <div class="d"><div class="box"></div><div class="c" style="left:16px;width:30px;border-radius:50%"></div><div class="c" style="left:58px;width:160px"></div><div class="c" style="left:262px;width:58px"></div>
+      <span class="pin on" style="left:50%;top:6px">${glyph('spacing')}</span><span class="pin" style="left:8px;top:33px">${glyph('spacing')}</span><span class="pin" style="left:52px;top:33px">${glyph('spacing')}</span>
+      <span class="pin" style="left:330px;top:9px">${glyph('radius')}</span><span class="pin" style="left:140px;top:33px">${glyph('type')}</span><span class="pin soft" style="left:240px;top:20px">${glyph('color')}</span><span class="pin" style="left:240px;top:58px">${glyph('shadow')}</span></div>
+    <div class="read"><div class="t">${glyph('spacing')}padding-top 10px isn't on your spacing scale</div>
+      <div class="o pick"><span class="v">8</span><span class="bar" style="width:80px"></span><span class="who"><b>mu-space-8</b><span class="use">use</span></span></div>
+      <div class="o you"><span class="v">10</span><span class="bar" style="width:100px"></span><span class="who">yours</span></div>
+      <div class="o"><span class="v">12</span><span class="bar" style="width:120px"></span><span class="who"><b>mu-related</b></span></div>
+      <div class="e"><s>py-[10px]</s>→<b>py-mu-space-8</b><span class="l">new</span></div></div>
+    <div class="bar2"><span class="sp">1 of 7</span>‹ ›<button>Copy for agent</button></div></div>`;
+
+const hosts = { light: { row: '#ffffff', av: '#c9d3dd', ink: '#15181b', rule: '#d0d5db' }, dark: { row: '#1d2125', av: '#3a434c', ink: '#e9ebee', rule: '#3a4047' } };
+document.getElementById('grid').innerHTML = Object.keys(P).map((name, i) => `<section class="opt"><h2>${i + 1} · ${name}</h2>
+  <div class="scene light"><plumb-mock data-p="${name}" data-s="light"></plumb-mock></div>
+  <div class="scene dark"><plumb-mock data-p="${name}" data-s="dark"></plumb-mock></div></section>`).join('');
+customElements.define('plumb-mock', class extends HTMLElement { connectedCallback() { this.attachShadow({ mode: 'open' }).innerHTML = mock(P[this.dataset.p][this.dataset.s], hosts[this.dataset.s]); } });
+</script>
+</body>
+</html>

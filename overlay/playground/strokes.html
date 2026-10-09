@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb glyph strokes</title>
+<style>
+  :root { --paper: #f3f2ee; --ink: #1c1f1d; --ink2: #535955; --rule: #d5d2c9; --off: #b8391f; --soft: #9c5f08; }
+  html { background: #c9c7c0; }
+  body { margin: 0; padding: 28px; font: 13px/1.4 system-ui, sans-serif; color: var(--ink); }
+  h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+  p { margin: 0 0 20px; color: var(--ink2); }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .t { background: var(--paper); border-radius: 12px; padding: 18px 20px 22px; }
+  .t h2 { font-size: 13px; margin: 0 0 2px; font-weight: 600; }
+  .t small { color: var(--ink2); }
+  .big { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 18px; }
+  .big div { aspect-ratio: 1; background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: calc(100% / 24) calc(100% / 24); box-shadow: inset 0 0 0 1px #b9b6ad; }
+  .big svg { width: 100%; height: 100%; display: block; }
+  .row { display: flex; align-items: center; gap: 14px; padding-block: 8px; border-top: 1px solid var(--rule); }
+  .row span.l { width: 64px; color: var(--ink2); font-size: 11px; }
+  .s14 svg { width: 14px; height: 14px; } .s20 svg { width: 20px; height: 20px; }
+  .pin { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--paper); background: var(--off); box-shadow: 0 0 0 2px var(--paper); }
+  .pin.soft { background: var(--soft); }
+  .pin svg { width: 13px; height: 13px; }
+  .line { display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px system-ui; }
+  .line svg { width: 14px; height: 14px; color: var(--off); }
+  .dark { background: #1a1d1c; border-radius: 6px; padding: 8px 10px; color: #ecedeb; display: flex; gap: 14px; align-items: center; }
+  .dark svg { width: 14px; height: 14px; }
+  .dark .pin { box-shadow: 0 0 0 2px #1a1d1c; color: #1a1d1c; background: #f07a62; }
+</style>
+</head>
+<body>
+<h1>Plumb glyph strokes · pick the feel</h1>
+<p>Same four glyphs, same geometry on a 24-unit grid, three stroke treatments. Shown large on the grid, then at the sizes they actually render: 14 and 20, in a pin, in a title, on dark.</p>
+<div class="grid" id="grid"></div>
+<script type="module">
+/* The geometry is shared; only the stroke differs. Curves meet their straights tangentially; corners share one radius. */
+const G = {
+  spacing: { main: 'M4.5 5v14M19.5 5v14', second: 'M8 12h8M8 9.5v5M16 9.5v5' },
+  radius: { main: 'M4.5 19.5V13a8.5 8.5 0 0 1 8.5-8.5h6.5', second: 'M13 11v4M11 13h4' },
+  type: { main: 'M5.75 19.5 12 4.5l6.25 15', second: 'M8.25 14h7.5' },
+  color: { main: 'M8.5 3.75h7a2.75 2.75 0 0 1 2.75 2.75v11a2.75 2.75 0 0 1-2.75 2.75h-7A2.75 2.75 0 0 1 5.75 17.5v-11A2.75 2.75 0 0 1 8.5 3.75z', second: 'M5.75 15.25h12.5', fill: 'M8.6 4.6h6.8a1.9 1.9 0 0 1 1.9 1.9v8h-10.6v-8a1.9 1.9 0 0 1 1.9-1.9z' },
+};
+const T = {
+  A: { name: 'A · Drafting pen', note: 'constant 1px at every size, exact construction', main: 'stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="butt" stroke-linejoin="miter"', second: 'stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="butt"', fillOpacity: 1 },
+  B: { name: 'B · Soft round', note: '1.5 units, round ends and joins, generous radii', main: 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"', second: 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"', fillOpacity: 1 },
+  C: { name: 'C · Two weights', note: '1.75 for the thing, hairline for the measure', main: 'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"', second: 'stroke-width=".9" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".85"', fillOpacity: 1 },
+};
+const svg = (k, t) => { const g = G[k], s = T[t];
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" shape-rendering="geometricPrecision" aria-hidden="true">${g.fill ? `<path d="${g.fill}" fill="currentColor" stroke="none" opacity="${s.fillOpacity}"/>` : ''}<path d="${g.main}" ${s.main}/><path d="${g.second}" ${s.second}/></svg>`; };
+document.getElementById('grid').innerHTML = Object.keys(T).map(t => `<section class="t"><h2>${T[t].name}</h2><small>${T[t].note}</small>
+  <div class="big">${Object.keys(G).map(k => `<div>${svg(k, t)}</div>`).join('')}</div>
+  <div class="row"><span class="l">14 · 20</span><span class="s14">${Object.keys(G).map(k => svg(k, t)).join(' ')}</span><span class="s20">${Object.keys(G).map(k => svg(k, t)).join(' ')}</span></div>
+  <div class="row"><span class="l">pins</span>${Object.keys(G).map((k, i) => `<span class="pin ${i === 3 ? 'soft' : ''}">${svg(k, t)}</span>`).join('')}</div>
+  <div class="row"><span class="l">in a title</span><span class="line">${svg('spacing', t)}10px isn't on your spacing scale</span></div>
+  <div class="row"><span class="l">on dark</span><span class="dark">${Object.keys(G).map(k => svg(k, t)).join('')}<span class="pin">${svg('radius', t)}</span></span></div>
+</section>`).join('');
+</script>
+</body>
+</html>
