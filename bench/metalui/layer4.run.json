@@ -1,19 +1,19 @@
 {
   "cold": {
-    "wallMs": 3879.085458,
+    "wallMs": 3827.611375,
     "exitCode": 1,
     "timing": {
-      "totalMs": 3719.0636250000002,
+      "totalMs": 3643.576958,
       "phases": {
-        "discover": 7.080416999999997,
-        "parse": 90.64554599999971,
-        "collect": 66.48632600000033,
-        "load": 150.173541,
-        "compile": 115.41579200000001,
-        "stylesheets": 2136.332583,
-        "inline": 78.89979399999993,
-        "decisions": 124.5114580000004,
-        "provenance": 238.032291
+        "discover": 7.643958999999995,
+        "parse": 96.72800299999976,
+        "collect": 72.078698,
+        "load": 110.14654200000001,
+        "compile": 133.36845800000003,
+        "stylesheets": 2114.735375,
+        "inline": 82.33317400000024,
+        "decisions": 117.5635000000002,
+        "provenance": 243.91183300000012
       },
       "cacheHits": 0,
       "cacheMisses": 1302
@@ -24,25 +24,25 @@
       "cssFiles": 4,
       "cacheHits": 0,
       "cacheMisses": 1303,
-      "parseMs": 110.7138300000014,
-      "totalMs": 437.314167
+      "parseMs": 106.99678200000494,
+      "totalMs": 437.5837499999999
     }
   },
   "warm": {
-    "wallMs": 1428.3621249999997,
+    "wallMs": 1469.38625,
     "exitCode": 1,
     "timing": {
-      "totalMs": 1280.033083,
+      "totalMs": 1319.645875,
       "phases": {
-        "discover": 5.965333000000001,
-        "parse": 79.42354299999987,
-        "collect": 56.09595000000023,
-        "load": 31.867124999999987,
+        "discover": 6.045083000000005,
+        "parse": 78.30178399999978,
+        "collect": 56.75342700000027,
+        "load": 33.119958,
         "compile": 0,
-        "stylesheets": 155.677792,
-        "inline": 77.07592299999989,
-        "decisions": 112.66624999999988,
-        "provenance": 215.749458
+        "stylesheets": 151.99712499999998,
+        "inline": 74.49537199999997,
+        "decisions": 118.42487499999993,
+        "provenance": 256.863709
       },
       "cacheHits": 1302,
       "cacheMisses": 0
@@ -54,7 +54,7 @@
       "cacheHits": 1303,
       "cacheMisses": 0,
       "parseMs": 0,
-      "totalMs": 52.96083299999998
+      "totalMs": 48.843583000000024
     }
   }
 }

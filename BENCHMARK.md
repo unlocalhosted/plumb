@@ -592,7 +592,7 @@ Final checks: **58 CLI integration/e2e tests passed**, zero failures/skips; `npm
 
 # Layer 4 benchmark: all judged families and dead variables
 
-Measured read-only against the same MetalUI commit `9cb04dc818ac84d981f8215352237d5c5ab2f85b`, Tailwind 4.3.3, apps/docs source globs and source tree as Layer 3. No MetalUI source, CSS, tokens or cache was written. Plumb caches/reports stay here. Reproduce with `node bench/metalui/measure.mjs layer4`, then `node bench/metalui/reconcile-layer4.mjs` and `node bench/metalui/decision-manifest.mjs`. Reports: [cold](bench/metalui/layer4.cold.json), [warm](bench/metalui/layer4.warm.json), [timing](bench/metalui/layer4.run.json). Both CLI runs exit 1 because real debt remains. Cold/warm findings, declarations, decisions and coverage are asserted equal.
+Measured read-only against the same MetalUI commit `9cb04dc818ac84d981f8215352237d5c5ab2f85b`, Tailwind 4.3.3, apps/docs source globs and source tree as Layer 3. No MetalUI source, CSS, tokens or cache was written. Plumb caches/reports stay here. Reproduce with `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer4 node bench/metalui/measure.mjs layer4` (fresh directory for cold), then `node bench/metalui/reconcile-layer4.mjs` and `node bench/metalui/decision-manifest.mjs`. Reports: [cold](bench/metalui/layer4.cold.json), [warm](bench/metalui/layer4.warm.json), [timing](bench/metalui/layer4.run.json). Both CLI runs exit 1 because real debt remains. Cold/warm findings, declarations, decisions and coverage are asserted equal.
 
 ## Decision choices and exclusions
 
@@ -604,9 +604,9 @@ Every selected record and every excluded key in those project CSS inputs has an 
 - **Radius:** adopt foundations.radius, corresponding project theme keys/aliases and exposed recipe radius keys. These are actual approved radii, not all dimensional props containing a convenient number. Use value identity and both tiers for the flat vocabulary. Relative units/elliptical forms must still match an actual decision.
 - **Type:** adopt complete foundations/editorial type-role outputs, their tracking and project font-family/weight theme keys. Do not synthesize independent size, weight or leading decisions from each role's JSON ingredients: CSS_SYSTEM says they are one role, not freely recombinable knobs. Exclude font-stretch and other unjudged type properties. Static project role uses are judged at their definitions; those package definitions remain outside this benchmark's source globs. Legacy kds font shorthands are judged here.
 - **Motion:** adopt project ease aliases and generated durations/curves from springs, gestures, waiting and recipe timing. Exclude stiffness, damping, zeta, travel, animation names/keyframe contents, and geometry because those are not CSS times/easings. Named whole animation tokens may carry their timing; literal keyword easings remain literals. Zero reduced-motion duration/delay is a neutral, not an added token.
-- **Elevation:** adopt project shadow aliases and whole authored offset/blur/spread/color stacks from token outputs, including material/colorway/recipe shadows. Exclude isolated offset, blur, spread, tint knobs and gradients: none defines a whole box-shadow choice. Nondecision legacy aliases can resolve to the same stack but still warn by value under reference identity.
+- **Elevation:** adopt project shadow aliases and whole authored offset/blur/spread/color stacks from token outputs, including material/colorway/recipe shadows. Exclude isolated offset, blur, spread, tint knobs and gradients: none defines a whole box-shadow choice. Nondecision legacy aliases now follow authored definitions: local literals are checked once there, outside-source literals are excluded, and references reaching approved elevation decisions pass.
 - **Z:** adopt named integer recipe stacking planes ending in z/z-index and any project z theme keys. No general-purpose numeric z scale is inferred. Auto/0/1/-1 pass; coincident higher integers warn by value and other integers error.
-- **Spacing stays Layer 3:** only the shared ladder and three relationship gaps. Recipe spacing, control heights and arbitrary geometry remain excluded from that ladder. **Size/opacity are record-only**; layout dimensions, fractions and opacity brackets are reasoned passes for this layer.
+- **Spacing policy stays Layer 3:** only the shared ladder and three relationship gaps. Nondecision recipe literals outside the docs source globs are now excluded at their consumers. Recipe spacing, control heights and arbitrary geometry remain excluded from that ladder. **Size/opacity are record-only**; layout dimensions, fractions and opacity brackets are reasoned passes for this layer.
 
 The benchmark explicitly allows both primitive and semantic callers in each adopted family. MetalUI's output uses one intent-named vocabulary plus recipe/foundation primitives; its docs do not impose a universal two-tier caller contract. This is an explicit project policy, not a weakening of the core default. The fixture proves the core default flips to semantic in every family and that literals cannot bypass it. Framework defaults stay excluded. Some selected tokens have no recorded why: color 98/656, radius 15/98, type 51/90, motion 10/123, elevation 55/100, z 0/11. These gaps are reported honestly; a source-wide description is used only where it actually describes the colorway/material family.
 
@@ -616,15 +616,15 @@ Counts are judged declaration contexts, including opaque warnings; grouped findi
 
 | Family | Accepted | Judged | Failing/warning contexts | Grouped findings | Physical sites in family |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| spacing | 1608 | 2183 | 575 | 124 | 568 |
-| color | 1393 | 1707 | 314 | 123 | 291 |
+| spacing | 1601 | 2168 | 567 | 124 | 560 |
+| color | 1046 | 1268 | 222 | 110 | 211 |
 | radius | 358 | 447 | 89 | 6 | 89 |
-| type | 168 | 675 | 507 | 72 | 220 |
-| motion | 242 | 413 | 171 | 48 | 132 |
-| elevation | 26 | 293 | 267 | 106 | 223 |
+| type | 171 | 567 | 396 | 69 | 214 |
+| motion | 230 | 401 | 171 | 48 | 132 |
+| elevation | 34 | 220 | 186 | 99 | 153 |
 | z | 26 | 87 | 61 | 17 | 61 |
 
-Spacing remains **1,608 / 2,183 accepted**, with **575** failing/warning contexts; its Layer 3 reconciliation remains valid. Existence remains **40 dead class names / 66 class sites**, plus the existing dynamic classes. Dead variables now add **2 names / 3 name-site pairs**, described below. Fully opaque inline entries remain **177**, without fabricated family coverage; all **1,361** opaque inline declarations remain visible.
+Spacing now has **1,601 / 2,168 accepted**, with **567** failing/warning contexts and **124 groups / 560 sites**. The numeric grep still accounts for 109 failing contexts; the other 458 remain outside that grep. Eight prior recipe-use failures belonged to definitions outside source; direct numeric ladder checks are unchanged. Layer 3 numbers above are historical. Existence remains **40 dead class names / 66 class sites**, plus the existing dynamic classes. Dead variables now add **2 names / 3 name-site pairs**, described below. Fully opaque inline entries remain **177**, without fabricated family coverage; all **1,361** opaque inline declarations remain visible.
 
 ## Top findings and verdicts
 
@@ -633,25 +633,25 @@ Spacing remains **1,608 / 2,183 accepted**, with **575** failing/warning context
 | Family | Rule / amount | Sites | Example | Verdict |
 | --- | --- | ---: | --- | --- |
 | color | provenance/opaque-inline: dynamic-value | 76 | apps/docs/src/pages/components/ButtonSmartControls.tsx:110 | Known runtime property; warn, value unknown. |
-| color | provenance/color: var(--well) | 32 | apps/docs/src/kds.css:125 | Unapproved literal or unresolved recipe expression; debt. |
-| color | provenance/color: var(--btn-sh) | 25 | apps/docs/src/kds.css:104 | Unapproved literal or unresolved recipe expression; debt. |
+| color | provenance/color/by-value: #fff | 7 | apps/docs/src/kds.css:143 | Equal authored literal; reference identity warning. |
+| color | provenance/color: ring-1 | 5 | apps/docs/src/pages/components/IconButton.tsx:21 | Unapproved authored value or unresolved expression; debt. |
 | radius | provenance/opaque-inline: dynamic-value | 74 | apps/docs/src/pages/components/ButtonSmartControls.tsx:80 | Known runtime property; warn, value unknown. |
-| radius | provenance/radius: calc(infinity * 1px) | 9 | apps/docs/src/pages/Icons.tsx:224 | Unapproved literal or unresolved recipe expression; debt. |
+| radius | provenance/radius: calc(infinity * 1px) | 9 | apps/docs/src/pages/Icons.tsx:224 | Unapproved authored value or unresolved expression; debt. |
 | radius | provenance/radius/framework: var(--radius-xl) | 2 | apps/docs/src/pages/components/Status.tsx:50 | Unadopted framework default; error. |
-| type | provenance/type/by-value: var(--sans) | 69 | apps/docs/src/kds.css:76 | Equal nondecision alias/literal; reference identity warning. |
-| type | provenance/type: 500 | 63 | apps/docs/src/kds.css:104 | Unapproved literal or unresolved recipe expression; debt. |
-| type | provenance/type: 400 | 41 | apps/docs/src/kds.css:76 | Unapproved literal or unresolved recipe expression; debt. |
+| type | provenance/type: 500 | 63 | apps/docs/src/kds.css:104 | Unapproved authored value or unresolved expression; debt. |
+| type | provenance/type: 400 | 41 | apps/docs/src/kds.css:76 | Unapproved authored value or unresolved expression; debt. |
+| type | provenance/type: 12.5px | 27 | apps/docs/src/kds.css:104 | Unapproved authored value or unresolved expression; debt. |
 | motion | provenance/opaque-inline: dynamic-value | 41 | apps/docs/src/pages/components/Folder.tsx:146 | Known runtime property; warn, value unknown. |
 | motion | provenance/motion/framework: var(--tw-duration, var(--default-transition-duration)) | 24 | apps/docs/src/blocks/ai-composer/ai-composer.tsx:342 | Unadopted framework default; error. |
 | motion | provenance/motion/framework: var(--tw-ease, var(--default-transition-timing-function)) | 19 | apps/docs/src/blocks/ai-composer/ai-composer.tsx:342 | Unadopted framework default; error. |
-| elevation | provenance/elevation/by-value: var(--well) | 32 | apps/docs/src/kds.css:125 | Equal nondecision alias/literal; reference identity warning. |
-| elevation | provenance/elevation/by-value: var(--btn-sh) | 25 | apps/docs/src/kds.css:104 | Equal nondecision alias/literal; reference identity warning. |
 | elevation | provenance/opaque-inline: dynamic-value | 15 | apps/docs/src/pages/components/ButtonSmartControls.tsx:110 | Known runtime property; warn, value unknown. |
-| z | provenance/z/by-value: 2 | 26 | apps/docs/src/kds.css:171 | Equal nondecision alias/literal; reference identity warning. |
-| z | provenance/z: 3 | 8 | apps/docs/src/kds.css:763 | Unapproved literal or unresolved recipe expression; debt. |
-| z | provenance/z: 10 | 4 | apps/docs/src/blocks/settings/settings.tsx:451 | Unapproved literal or unresolved recipe expression; debt. |
+| elevation | provenance/elevation: 0 0 0 .9px var(--mu-presence-guide) | 7 | apps/docs/src/ui/edit/edit.css:95 | Unapproved authored value or unresolved expression; debt. |
+| elevation | provenance/elevation: 0 0 0 .5px transparent | 6 | apps/docs/src/ui/edit/edit.css:93 | Unapproved authored value or unresolved expression; debt. |
+| z | provenance/z/by-value: 2 | 26 | apps/docs/src/kds.css:171 | Equal authored literal; reference identity warning. |
+| z | provenance/z: 3 | 8 | apps/docs/src/kds.css:763 | Unapproved authored value or unresolved expression; debt. |
+| z | provenance/z: 10 | 4 | apps/docs/src/blocks/settings/settings.tsx:451 | Unapproved authored value or unresolved expression; debt. |
 
-Radius `rounded-full` becomes `calc(infinity * 1px)`, not the finite 999px pill decision, so the nine contexts remain unresolved/off-decision debt. The two `rounded-xl` contexts name Tailwind's framework radius. Type's 500/400 weights and scalar sizes remain findings because adopting complete type roles does not approve arbitrary recombinations of their constituent values. Legacy `var(--sans)` / `var(--mono)` aliases match project font families but lose the direct decision reference. Color's legacy shadow aliases such as `--well` and `--btn-sh` have conditional/material color components the resolver cannot certify; elevation additionally names coincident whole stacks by value. Literal/dynamic paint in x-ray renderers remains reported when it reaches a known CSS property.
+Radius `rounded-full` becomes `calc(infinity * 1px)`, not the finite 999px pill decision, so the nine contexts remain unresolved/off-decision debt. The two `rounded-xl` contexts name Tailwind's framework radius. Type's 500/400 weights and scalar sizes remain findings because adopting complete type roles does not approve arbitrary recombinations of their constituent values. Legacy `--sans` / `--mono` aliases reach approved font decisions at their definitions, so their consumers no longer create repeated by-value warnings. The docs' `--well` / `--btn-sh` definitions reference `--mu-*` package tokens; those color literals are outside source globs and no longer create use-site findings. Direct decision origin/tier checks remain at consumers. Literal/dynamic paint in x-ray renderers remains reported when it reaches a known CSS property.
 
 ## Every grep hit reconciled
 
@@ -690,18 +690,37 @@ The initial run falsely marked four `--ed-status-*-bg/shadow` keys dead. Read-on
 
 | Measurement | Cold | Warm |
 | --- | ---: | ---: |
-| Process wall, startup + JSON included | 3879.1 ms | 1428.4 ms |
-| Report total | 3719.1 ms | 1280.0 ms |
-| discover | 7.1 ms | 6.0 ms |
-| parse | 90.6 ms | 79.4 ms |
-| collect | 66.5 ms | 56.1 ms |
-| load | 150.2 ms | 31.9 ms |
-| compile | 115.4 ms | 0.0 ms |
-| stylesheets | 2136.3 ms | 155.7 ms |
-| inline | 78.9 ms | 77.1 ms |
-| decisions | 124.5 ms | 112.7 ms |
-| provenance | 238.0 ms | 215.7 ms |
+| Process wall, startup + JSON included | 3827.6 ms | 1469.4 ms |
+| Report total | 3643.6 ms | 1319.6 ms |
+| discover | 7.6 ms | 6.0 ms |
+| parse | 96.7 ms | 78.3 ms |
+| collect | 72.1 ms | 56.8 ms |
+| load | 110.1 ms | 33.1 ms |
+| compile | 133.4 ms | 0.0 ms |
+| stylesheets | 2114.7 ms | 152.0 ms |
+| inline | 82.3 ms | 74.5 ms |
+| decisions | 117.6 ms | 118.4 ms |
+| provenance | 243.9 ms | 256.9 ms |
 
-Warm **report total 1280.0 ms meets 1.3 s**. Full process **1428.4 ms** exceeds it by 128.4 ms: startup, serializing/writing the 11.5 MB expanded full JSON report and process overhead add 148.3 ms. We report both rather than claim the process meets the limit. The first family run was 1,447.2 ms report / 1,572.9 ms wall; indexing token source lines and caching repeated value matches/perceptual nearest lists removed repeated work. Final warm compiler cache has 1,302 hits / 0 misses; module cache 1,303 / 0. Cold means a new Plumb cache, not OS eviction. Measurements are individual processes, not latency guarantees. Earlier valid warm report/process pairs were 1,175.4/1,301.1 ms and 1,212.6/1,335.9 ms; the final retained run follows the effective-reset registry correction.
+Warm **report total 1319.6 ms misses 1.3 s by 19.6 ms**. Full process is **1469.4 ms**, including startup and full JSON output. The benchmark's existing 1.3 s assertion remains enabled; measured cold/warm reports and timing are now written before that assertion so a failed target cannot leave stale artifacts. Cold/warm semantic parity passed. Provenance is 256.9 ms warm; definition metadata is indexed once for all families and repeated static-resolution maps are reused. Candidate cache: 1,302 hits / 0 misses; module cache: 1,303 / 0. Cold uses a fresh Plumb cache, not OS eviction. These are individual measurements, not latency guarantees.
 
-Final verification: **65 CLI integration/e2e tests**, no failures/skips/unit tests; typecheck and whitespace check green. Protected text functions are unchanged. No installs, commits, MetalUI writes or project-specific core mapping. Details: [Layer 4](docs/layers/4-families.md).
+Final verification: **69 CLI integration/e2e tests**, no failures/skips/unit tests; typecheck and whitespace check green. Protected text functions are unchanged. No installs, commits, MetalUI writes or project-specific core mapping. Details: [Layer 4](docs/layers/4-families.md).
+
+## Layer 4 attribution correction (2026-10-09)
+
+Nondecision custom properties retain their authored declaration site. Static literal parts reaching judged properties are checked once per definition and family; findings carry `variable: { name, useCount }`, and consumer sites are omitted. Counts deduplicate physical consumers, include transitive alias uses, and do not multiply comma selectors, property kinds or repeated import contexts. Definitions outside source globs remain existence/resolution inputs, without consumer provenance debt. Decision refs retain consumer origin/tier checks; compiler `--tw-*` infrastructure and the `--spacing` unit retain their prior treatment. Cycles, over-cap chains and runtime values retain unresolved consumer diagnostics when no statically authored literal is reached. Mixed declarations still judge their own literal parts.
+
+MetalUI's example is the outside-source case: `kds.css:59 --well: var(--mu-well)` reaches generated package tokens, including the color literal once reported at 32 shadow consumers. None of those 32 consumers now has a color/elevation finding for `var(--well)`. Likewise `--btn-sh` no longer repeats its imported literals. No MetalUI file or token mapping was changed.
+
+Local definition debts:
+
+| Family | Variable | Definition | Distinct uses |
+| --- | --- | --- | ---: |
+| color | --lamp | apps/docs/src/kds.css:89:19 | 1 |
+| color | --lamp | apps/docs/src/kds.css:90:47 | 1 |
+| color | --syn-case | apps/docs/src/kds.css:51:3 | 1 |
+| color | --mu-r-button-primary-shadow | apps/docs/src/kds.css:670:3 | 2 |
+
+Overall grouped findings fall from **541 to 518**. Per-family failing contexts change from spacing 575 to 567, color 314 to 222, type 507 to 396, and elevation 267 to 186; radius 89, motion 171 and z 61 remain unchanged. Existence remains 40 dead classes / 66 class sites and two dead variables / three name-site pairs. Raw source declarations, inline coverage and decision records are retained; accepted/total family coverage now counts attribution obligations rather than duplicating variable consumers. Color/218-arbitrary/duration grep results remain exactly 206/218/51 hits with the prior verdict counts; reconciliation JSON now includes variable use-count metadata on definition findings.
+
+Four added real-CLI fixture e2e slices cover local/source versus outside/package definitions, all seven families, direct decision tiers, transitive counts, comma-selector deduplication, mixed literals, compiled arbitrary classes, inline/embedded CSS, scoped/conditional definitions and warm source/source-glob edits. The prior spacing fixture now accepts both on-ladder media-variable definitions at their authored sites while retaining cycle/runtime diagnostics. `npm test`: 69 passed, no failures/skips; `npm run typecheck` and whitespace checks green. The benchmark performance target failed as recorded above; semantic checks and hit-by-hit reconciliation passed. No commits or package installs; protected text functions unchanged.

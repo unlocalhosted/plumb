@@ -66,6 +66,8 @@ export interface Finding {
   decisions: Decision[];
   why: string;
   fix: string;
+  /** Nondecision custom property owning this value; distinct consumer sites. */
+  variable?: { name: string; useCount: number };
 }
 
 export interface FileCounts {

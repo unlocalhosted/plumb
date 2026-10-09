@@ -1,7 +1,7 @@
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import { cssImports } from '../collect/stylesheets.js';
-import type { Origin, Tier } from '../report.js';
+import type { Origin, Site, Tier } from '../report.js';
 
 export interface CssVariable {
   name: string;
@@ -13,6 +13,7 @@ export interface CssVariable {
   why: string;
   tier?: Tier;
   source: { file: string; line: number };
+  site: Site;
 }
 
 // Read declaration/source metadata before compilation drops comments and unused
@@ -70,7 +71,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
           const tier = /\btier:\s*(primitive|semantic)\b/.exec(comment)?.[1] as Tier | undefined;
           result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic,
             origin: sheet.sourceOrigin, why: comment.startsWith('why:') ? comment.slice(4).replace(/\s*tier:\s*(primitive|semantic)\b/, '').trim() : '',
-            ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offset, '').line } });
+            ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offset, '').line }, site: sourceSite(source, offset, text) });
         }
         if (delimiter === '}') return index + 1;
         index++;

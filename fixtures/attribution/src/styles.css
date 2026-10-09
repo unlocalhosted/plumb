@@ -1,0 +1,16 @@
+@import '../vendor/theme.css';
+:root {
+  --color-brand: #2563eb;
+  --color-text-muted: var(--color-brand);
+  --well: 0 2px 4px rgba(60,55,40,.11);
+  --tint: #ff0010;
+  --well-alias: var(--well);
+}
+.first, .second { box-shadow: var(--well); }
+.third { box-shadow: var(--well-alias); }
+.mixed { background: linear-gradient(var(--tint), #00ff10); }
+.primitive { color: var(--color-brand); }
+.semantic { color: var(--color-text-muted); }
+.outside { box-shadow: var(--vendor-well); }
+.outside-color { color: var(--vendor-ink); }
+.outside-mixed { background: linear-gradient(var(--vendor-ink), #ff00ff); }

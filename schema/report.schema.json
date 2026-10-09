@@ -190,7 +190,11 @@
         "sites": { "type": "array", "items": { "$ref": "#/$defs/site" } },
         "declaration": { "$ref": "#/$defs/declaration" },
         "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
-        "why": { "type": "string" }, "fix": { "type": "string" }
+        "why": { "type": "string" }, "fix": { "type": "string" },
+        "variable": {
+          "type": "object", "additionalProperties": false, "required": ["name", "useCount"],
+          "properties": { "name": { "type": "string" }, "useCount": { "$ref": "#/$defs/count" } }
+        }
       }
     },
     "coverage": {

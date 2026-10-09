@@ -37,14 +37,14 @@
   },
   "coverage": {
     "spacing": {
-      "fromDecisions": 1608,
-      "total": 2183,
-      "findings": 575
+      "fromDecisions": 1601,
+      "total": 2168,
+      "findings": 567
     },
     "color": {
-      "fromDecisions": 1393,
-      "total": 1707,
-      "findings": 314
+      "fromDecisions": 1046,
+      "total": 1268,
+      "findings": 222
     },
     "radius": {
       "fromDecisions": 358,
@@ -52,19 +52,19 @@
       "findings": 89
     },
     "type": {
-      "fromDecisions": 168,
-      "total": 675,
-      "findings": 507
+      "fromDecisions": 171,
+      "total": 567,
+      "findings": 396
     },
     "motion": {
-      "fromDecisions": 242,
-      "total": 413,
+      "fromDecisions": 230,
+      "total": 401,
       "findings": 171
     },
     "elevation": {
-      "fromDecisions": 26,
-      "total": 293,
-      "findings": 267
+      "fromDecisions": 34,
+      "total": 220,
+      "findings": 186
     },
     "z": {
       "fromDecisions": 26,
@@ -5477,368 +5477,6 @@
         ]
       },
       {
-        "key": "e3474207585fcb904fb8823baf707f9a28f1ea587ecce85fd0d4bde715e2f484",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--well)",
-        "why": "rgba(60,55,40,.11) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 125,
-            "column": 80,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 158,
-            "column": 197,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 172,
-            "column": 126,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 197,
-            "column": 101,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 221,
-            "column": 146,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 259,
-            "column": 143,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 267,
-            "column": 186,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 295,
-            "column": 165,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 380,
-            "column": 183,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 551,
-            "column": 160,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 625,
-            "column": 194,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 833,
-            "column": 242,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 859,
-            "column": 202,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 12,
-            "column": 149,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 21,
-            "column": 231,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 44,
-            "column": 145,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 76,
-            "column": 235,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 9,
-            "column": 104,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 23,
-            "column": 170,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 26,
-            "column": 233,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 52,
-            "column": 200,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-library.css",
-            "line": 27,
-            "column": 173,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-cell.css",
-            "line": 9,
-            "column": 105,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-plate.css",
-            "line": 5,
-            "column": 104,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 30,
-            "column": 264,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 53,
-            "column": 175,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 68,
-            "column": 251,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 90,
-            "column": 168,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 95,
-            "column": 120,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 105,
-            "column": 199,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 6,
-            "column": 74,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 86,
-            "column": 74,
-            "text": "box-shadow: var(--well)"
-          }
-        ]
-      },
-      {
-        "key": "08fbc97b8aeb00845150be776257e869681954d7354d728bcd552d6f29d4d9b0",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--btn-sh)",
-        "why": "rgba(255,255,255,.9) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 104,
-            "column": 135,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 126,
-            "column": 36,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 139,
-            "column": 109,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 152,
-            "column": 137,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 183,
-            "column": 165,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 205,
-            "column": 153,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 294,
-            "column": 283,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 346,
-            "column": 30,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 413,
-            "column": 132,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 455,
-            "column": 198,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 765,
-            "column": 161,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 36,
-            "column": 108,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 49,
-            "column": 51,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 66,
-            "column": 75,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 88,
-            "column": 84,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 32,
-            "column": 199,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-cell.css",
-            "line": 15,
-            "column": 130,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-plate.css",
-            "line": 6,
-            "column": 132,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 24,
-            "column": 171,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 35,
-            "column": 80,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 37,
-            "column": 130,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 59,
-            "column": 121,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 65,
-            "column": 95,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 94,
-            "column": 157,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 107,
-            "column": 149,
-            "text": "box-shadow: var(--btn-sh)"
-          }
-        ]
-      },
-      {
         "key": "4516b30d5de2406b306da40ace839a308a376698b22fa6f61fbedccf3d273a63",
         "rule": "provenance/color/by-value",
         "severity": "warn",
@@ -5971,46 +5609,6 @@
         ]
       },
       {
-        "key": "3c35e9a67e9531bc20897bc046fd827f45d75d684742242733ab56b6c60351cf",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--raise-sm)",
-        "why": "rgba(255,255,255,.85) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 163,
-            "column": 167,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 173,
-            "column": 163,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 271,
-            "column": 141,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 392,
-            "column": 97,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/SelectionFrame.tsx",
-            "line": 90,
-            "column": 13,
-            "text": "boxShadow: 'var(--mu-raise-sm)'"
-          }
-        ]
-      },
-      {
         "key": "40ed35ae53fa970945f113d58d51b80245dda7acab44b66a5cabc5c4f1eee35c",
         "rule": "provenance/arbitrary",
         "severity": "warn",
@@ -6035,62 +5633,6 @@
             "line": 131,
             "column": 52,
             "text": "shadow-[0_0_0_.5px_rgba(0,0,0,.25)]"
-          }
-        ]
-      },
-      {
-        "key": "31cff6b60fd07adfb985a006b225bc67b1ed358c8e6c2407721e6814d456372c",
-        "rule": "provenance/color/by-value",
-        "severity": "warn",
-        "value": "var(--raise)",
-        "why": "rgba(255,255,255,.75) equals --color-brush-ring-ink, but color requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 124,
-            "column": 88,
-            "text": "box-shadow: var(--raise)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 262,
-            "column": 35,
-            "text": "box-shadow: var(--raise)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 377,
-            "column": 195,
-            "text": "box-shadow: var(--raise)"
-          }
-        ]
-      },
-      {
-        "key": "d942702d47c3ca5707d735df89a6ba83fdf544b5cc0eaa70415e754eda729700",
-        "rule": "provenance/color/by-value",
-        "severity": "warn",
-        "value": "var(--pressed-sh)",
-        "why": "rgba(60,55,40,.14) equals --color-dial-track-edge, but color requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 142,
-            "column": 92,
-            "text": "box-shadow: var(--pressed-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 154,
-            "column": 73,
-            "text": "box-shadow: var(--pressed-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 348,
-            "column": 79,
-            "text": "box-shadow: var(--pressed-sh)"
           }
         ]
       },
@@ -6147,34 +5689,6 @@
             "line": 634,
             "column": 40,
             "text": "background: rgba(255,255,255,.012)"
-          }
-        ]
-      },
-      {
-        "key": "3bee13242619fc7cb871be992faae76dca45afdc6323bbd5108f048f8b053792",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--bw-cap-bg)",
-        "why": "var(--bw-cap-bg) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 71,
-            "column": 117,
-            "text": "background: var(--bw-cap-bg)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 88,
-            "column": 106,
-            "text": "background: var(--bw-cap-bg)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 98,
-            "column": 130,
-            "text": "background: var(--bw-cap-bg)"
           }
         ]
       },
@@ -6251,28 +5765,6 @@
         ]
       },
       {
-        "key": "264d0b47e4e37c9b1c99c8c0033f58671ff24461c798d147f2daa12894ec4417",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "inset 0 0 5px 1px rgba(255,255,255,.07), inset 1px 2px 2px -1px rgba(255,255,255,.18), 0 0 0 .5px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.15), 0 5px 12px -4px rgba(0,0,0,.22)",
-        "why": "rgba(255,255,255,.07) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 143,
-            "column": 72,
-            "text": "box-shadow: inset 0 0 5px 1px rgba(255,255,255,.07), inset 1px 2px 2px -1px rgba(255,255,255,.18), 0 0 0 .5px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.15), 0 5px 12px -4px rgba(0,0,0,.22)"
-          },
-          {
-            "file": "apps/docs/src/pages/foundations/Spacing.tsx",
-            "line": 99,
-            "column": 148,
-            "text": "boxShadow: 'var(--mu-primary-sh)'"
-          }
-        ]
-      },
-      {
         "key": "bab64b5889d4286045c3e40668c353e8710ac97cb73f93df736eecbaa26a86a3",
         "rule": "provenance/color/by-value",
         "severity": "warn",
@@ -6291,28 +5783,6 @@
             "line": 634,
             "column": 76,
             "text": "box-shadow: inset 0 2px 6px -1px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(0,0,0,.4)"
-          }
-        ]
-      },
-      {
-        "key": "a446e8309a44d4bde72d68f1b5861dd8d48cdd9959edb07b0809f61d674435d5",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--bw-cap-sh)",
-        "why": "var(--bw-cap-sh) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 71,
-            "column": 147,
-            "text": "box-shadow: var(--bw-cap-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 88,
-            "column": 136,
-            "text": "box-shadow: var(--bw-cap-sh)"
           }
         ]
       },
@@ -6467,22 +5937,6 @@
         ]
       },
       {
-        "key": "0c0500586e0fe657d03a5168f0ca9fb48bf8992faa81b913e8e6cd83518f3181",
-        "rule": "provenance/color/by-value",
-        "severity": "warn",
-        "value": "radial-gradient(120% 90% at 20% 0%, var(--lamp), transparent 60%)",
-        "why": "rgba(255,255,255,.55) equals --mu-engraving-emphasis, but color requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 87,
-            "column": 3,
-            "text": "background: radial-gradient(120% 90% at 20% 0%, var(--lamp), transparent 60%)"
-          }
-        ]
-      },
-      {
         "key": "f9776c670a14ff983dee63144bb3267288bc6e6108ca021b63802c8b0ce5c7f1",
         "rule": "provenance/color",
         "severity": "error",
@@ -6503,7 +5957,7 @@
         "rule": "provenance/color/by-value",
         "severity": "warn",
         "value": "var(--raise), 0 0 0 9.5px rgba(120,214,165,.16)",
-        "why": "rgba(255,255,255,.75) equals --color-brush-ring-ink, but color requires a reference.",
+        "why": "rgba(120,214,165,.16) equals --color-presence-collar, but color requires a reference.",
         "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
         "sites": [
           {
@@ -6579,22 +6033,6 @@
         ]
       },
       {
-        "key": "114f0b8f1eaa557c94ee1ddb88a1c406b852cbcda0d6f15cb8a09ca02eec5628",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--cap-sh)",
-        "why": "rgba(255,255,255,.9) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 135,
-            "column": 138,
-            "text": "box-shadow: var(--cap-sh)"
-          }
-        ]
-      },
-      {
         "key": "a64049c32498cfb31b6bbd56dfcfc09177355e556832c694c147179d9565f61a",
         "rule": "provenance/color",
         "severity": "error",
@@ -6607,6 +6045,22 @@
             "line": 143,
             "column": 25,
             "text": "background: linear-gradient(#38383C, #252528)"
+          }
+        ]
+      },
+      {
+        "key": "264d0b47e4e37c9b1c99c8c0033f58671ff24461c798d147f2daa12894ec4417",
+        "rule": "provenance/color",
+        "severity": "error",
+        "value": "inset 0 0 5px 1px rgba(255,255,255,.07), inset 1px 2px 2px -1px rgba(255,255,255,.18), 0 0 0 .5px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.15), 0 5px 12px -4px rgba(0,0,0,.22)",
+        "why": "rgba(255,255,255,.07) is not a color decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
+        "sites": [
+          {
+            "file": "apps/docs/src/kds.css",
+            "line": 143,
+            "column": 72,
+            "text": "box-shadow: inset 0 0 5px 1px rgba(255,255,255,.07), inset 1px 2px 2px -1px rgba(255,255,255,.18), 0 0 0 .5px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.15), 0 5px 12px -4px rgba(0,0,0,.22)"
           }
         ]
       },
@@ -6931,22 +6385,6 @@
         ]
       },
       {
-        "key": "32d0e2d050e6bd5067d127addc1a252af4064138e5aab9640fa24689cba1aac2",
-        "rule": "provenance/color/by-value",
-        "severity": "warn",
-        "value": "var(--syn-case)",
-        "why": "#9FE3BF equals --color-code-card-diff-add-ink, but color requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 291,
-            "column": 106,
-            "text": "color: var(--syn-case)"
-          }
-        ]
-      },
-      {
         "key": "bb5efd7c11395560ad901ec3a33dce3af3dfc8694161a223463ba66778767c2a",
         "rule": "provenance/color/by-value",
         "severity": "warn",
@@ -6959,22 +6397,6 @@
             "line": 291,
             "column": 170,
             "text": "color: #6D6E73"
-          }
-        ]
-      },
-      {
-        "key": "68f32dc32b2039851ec8d9df085708e952053e8dd7b762e11ecb16445f160ea0",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--mu-r-well-self-region-shadow)",
-        "why": "rgba(24,22,16,.08) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 305,
-            "column": 3,
-            "text": "box-shadow: var(--mu-r-well-self-region-shadow)"
           }
         ]
       },
@@ -7523,54 +6945,6 @@
         ]
       },
       {
-        "key": "83cabecc1d23c1ffe9115abae967113ec98bab0033061bec58dc8567880f3139",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--well), 0 0 0 2px var(--green-deep)",
-        "why": "rgba(60,55,40,.11) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 834,
-            "column": 28,
-            "text": "box-shadow: var(--well), 0 0 0 2px var(--green-deep)"
-          }
-        ]
-      },
-      {
-        "key": "9e2a3689e3a5367789ba169c6b2b8a56c82e296a7f8f27e9cbb421b9ae74e078",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--well), inset 0 0 0 1px color-mix(in srgb,var(--green-deep) 35%,transparent)",
-        "why": "rgba(60,55,40,.11) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 60,
-            "column": 65,
-            "text": "box-shadow: var(--well), inset 0 0 0 1px color-mix(in srgb,var(--green-deep) 35%,transparent)"
-          }
-        ]
-      },
-      {
-        "key": "c0742c89f1df67aafdfcde0bb353ca9d88f828358172ead777b4d78f235699d7",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--btn-sh),0 0 0 2px var(--green-deep)",
-        "why": "rgba(255,255,255,.9) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 76,
-            "column": 156,
-            "text": "box-shadow: var(--btn-sh),0 0 0 2px var(--green-deep)"
-          }
-        ]
-      },
-      {
         "key": "000b1babf93a561330506a0d70ecca1cd96691c9e4b6b9efdb6157f2a61018ec",
         "rule": "provenance/color",
         "severity": "error",
@@ -7599,22 +6973,6 @@
             "line": 89,
             "column": 148,
             "text": "box-shadow: 0 0 0 5px rgba(216,151,60,.12), 0 0 22px rgba(216,151,60,.5)"
-          }
-        ]
-      },
-      {
-        "key": "140ba826ff6bfbcaf3cc794a5b8a436f5bbd7c1e52761814555d234918a37d95",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--well), 0 0 0 1.5px color-mix(in srgb, var(--mu-presence-guide) 55%, transparent)",
-        "why": "rgba(60,55,40,.11) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 12,
-            "column": 64,
-            "text": "box-shadow: var(--well), 0 0 0 1.5px color-mix(in srgb, var(--mu-presence-guide) 55%, transparent)"
           }
         ]
       },
@@ -7679,22 +7037,6 @@
             "line": 111,
             "column": 72,
             "text": "box-shadow: 0 0 0 .75px var(--mu-presence-guide), 0 0 8px rgba(255,200,80,.9)"
-          }
-        ]
-      },
-      {
-        "key": "1ecdcdad978ed4bd8797c288fb0de937b336cdfeccd26932e1822dfaa77b2bf6",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "var(--well), 0 0 0 1.5px var(--mu-presence-guide)",
-        "why": "rgba(60,55,40,.11) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 119,
-            "column": 31,
-            "text": "box-shadow: var(--well), 0 0 0 1.5px var(--mu-presence-guide)"
           }
         ]
       },
@@ -7923,22 +7265,6 @@
         ]
       },
       {
-        "key": "659e5d5b84c03016a8d30b0ec9c3c4786fa5b603561dee9d8199da5751353f86",
-        "rule": "provenance/color",
-        "severity": "error",
-        "value": "linear-gradient(180deg, color-mix(in srgb, var(--mu-folder-top) var(--mu-r-folder-shape-translucency), transparent), color-mix(in srgb, var(--mu-folder-bottom) var(--mu-r-folder-shape-translucency), transparent))",
-        "why": "var(--mu-folder-top) is not a color decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/ui/FolderUnfold.tsx",
-            "line": 275,
-            "column": 120,
-            "text": "background: 'linear-gradient(180deg, color-mix(in srgb, var(--mu-folder-top) var(--mu-r-folder-shape-translucency), transparent), color-mix(in srgb, var(--mu-folder-bottom) var(--mu-r-folder-shape-translucency), transparent))'"
-          }
-        ]
-      },
-      {
         "key": "75f10c3c224e1a7b2f789100a9ab01da3c692a217202c9d40c93a9d41ec38706",
         "rule": "provenance/color",
         "severity": "error",
@@ -7983,6 +7309,86 @@
             "line": 113,
             "column": 205,
             "text": "boxShadow: '0 0 0 1px rgba(0,0,0,.4)'"
+          }
+        ]
+      },
+      {
+        "key": "f397b05dbc372b1213f5a81159673b57701d1f43cb069a1d8f1e2e41193c1812",
+        "rule": "provenance/color/by-value",
+        "severity": "warn",
+        "value": "rgba(255,255,255,.55)",
+        "why": "--lamp: rgba(255,255,255,.55) equals --mu-engraving-emphasis, but color requires a reference.",
+        "variable": {
+          "name": "--lamp",
+          "useCount": 1
+        },
+        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "sites": [
+          {
+            "file": "apps/docs/src/kds.css",
+            "line": 89,
+            "column": 19,
+            "text": "--lamp: rgba(255,255,255,.55)"
+          }
+        ]
+      },
+      {
+        "key": "6dd4e97242e5913cdefa0fac7c07297a4e1e1da2b94d34d28311ac0480ab1efc",
+        "rule": "provenance/color/by-value",
+        "severity": "warn",
+        "value": "rgba(255,255,255,.035)",
+        "why": "--lamp: rgba(255,255,255,.035) equals --mu-r-select-veil-hover, but color requires a reference.",
+        "variable": {
+          "name": "--lamp",
+          "useCount": 1
+        },
+        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "sites": [
+          {
+            "file": "apps/docs/src/kds.css",
+            "line": 90,
+            "column": 47,
+            "text": "--lamp: rgba(255,255,255,.035)"
+          }
+        ]
+      },
+      {
+        "key": "bb12cb788ea82917ba576e3412f6212e2a8a88eff6db8f1b6383869f7fde9549",
+        "rule": "provenance/color/by-value",
+        "severity": "warn",
+        "value": "#9FE3BF",
+        "why": "--syn-case: #9FE3BF equals --color-code-card-diff-add-ink, but color requires a reference.",
+        "variable": {
+          "name": "--syn-case",
+          "useCount": 1
+        },
+        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "sites": [
+          {
+            "file": "apps/docs/src/kds.css",
+            "line": 51,
+            "column": 3,
+            "text": "--syn-case: #9FE3BF"
+          }
+        ]
+      },
+      {
+        "key": "5d71d249c6764706d691437daadae425dbc03f54a645ca270e518d03aaa38901",
+        "rule": "provenance/color/by-value",
+        "severity": "warn",
+        "value": "inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 1px rgba(70,0,0,.35), 0 0 0 .5px rgba(90,8,0,.7), 0 1px 1px rgba(40,0,0,.22), 0 6px 14px -7px rgba(60,6,0,.5)",
+        "why": "--mu-r-button-primary-shadow: rgba(255,255,255,.3) equals --mu-r-link-underline-ink, but color requires a reference.",
+        "variable": {
+          "name": "--mu-r-button-primary-shadow",
+          "useCount": 2
+        },
+        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "sites": [
+          {
+            "file": "apps/docs/src/kds.css",
+            "line": 670,
+            "column": 3,
+            "text": "--mu-r-button-primary-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 1px rgba(70,0,0,.35), 0 0 0 .5px rgba(90,8,0,.7), 0 1px 1px rgba(40,0,0,.22), 0 6px 14px -7px rgba(60,6,0,.5)"
           }
         ]
       }
@@ -8584,430 +7990,6 @@
       }
     ],
     "type": [
-      {
-        "key": "9827932f3af89839c9bc5672275ecd035d35939a4536139b2a1f033e598788d5",
-        "rule": "provenance/type/by-value",
-        "severity": "warn",
-        "value": "var(--sans)",
-        "why": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Helvetica Neue\", system-ui, sans-serif equals --font-sans, but type requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 76,
-            "column": 3,
-            "text": "font: 400 15px/24px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 104,
-            "column": 162,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 108,
-            "column": 14,
-            "text": "font: 600 18px/24px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 109,
-            "column": 14,
-            "text": "font: 500 15px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 110,
-            "column": 12,
-            "text": "font: 600 13.5px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 111,
-            "column": 11,
-            "text": "font: 500 13.5px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 112,
-            "column": 9,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 113,
-            "column": 11,
-            "text": "font: 400 12.5px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 114,
-            "column": 11,
-            "text": "font: 400 11px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 139,
-            "column": 3,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 160,
-            "column": 3,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 193,
-            "column": 12,
-            "text": "font: 600 15px/1 var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 197,
-            "column": 3,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 216,
-            "column": 3,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 230,
-            "column": 72,
-            "text": "font: 400 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 243,
-            "column": 68,
-            "text": "font: 600 20px/28px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 247,
-            "column": 46,
-            "text": "font: 600 15px/22px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 248,
-            "column": 46,
-            "text": "font: 600 13.5px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 254,
-            "column": 13,
-            "text": "font: 600 28px/34px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 272,
-            "column": 49,
-            "text": "font: 400 13px/19px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 295,
-            "column": 210,
-            "text": "font: 400 13px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 341,
-            "column": 53,
-            "text": "font: 400 12.5px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 362,
-            "column": 110,
-            "text": "font: 500 12.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 366,
-            "column": 155,
-            "text": "font: 500 12.5px/1 var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 382,
-            "column": 91,
-            "text": "font: 500 15px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 386,
-            "column": 137,
-            "text": "font: 500 13px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 390,
-            "column": 39,
-            "text": "font: 400 11.5px/15px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 395,
-            "column": 136,
-            "text": "font: 400 11px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 398,
-            "column": 54,
-            "text": "font: 400 13px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 403,
-            "column": 31,
-            "text": "font: 400 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 514,
-            "column": 20,
-            "text": "font-family: var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 524,
-            "column": 19,
-            "text": "font: 400 11.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 535,
-            "column": 35,
-            "text": "font: 600 44px/48px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 537,
-            "column": 45,
-            "text": "font: 400 17px/27px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 553,
-            "column": 11,
-            "text": "font: 600 15px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 554,
-            "column": 22,
-            "text": "font: 400 13px/19px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 559,
-            "column": 23,
-            "text": "font: 400 13px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 565,
-            "column": 14,
-            "text": "font: 400 12.5px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 624,
-            "column": 32,
-            "text": "font: 400 13px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 701,
-            "column": 28,
-            "text": "font: 600 28px/34px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 775,
-            "column": 87,
-            "text": "font: 500 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 777,
-            "column": 93,
-            "text": "font: 500 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 781,
-            "column": 36,
-            "text": "font: 400 12px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 820,
-            "column": 75,
-            "text": "font: 500 45px/1 var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 833,
-            "column": 132,
-            "text": "font: 500 13px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 16,
-            "column": 54,
-            "text": "font: 400 12px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 19,
-            "column": 664,
-            "text": "font-family: var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 26,
-            "column": 94,
-            "text": "font: 600 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 33,
-            "column": 209,
-            "text": "font: 500 11.5px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 36,
-            "column": 55,
-            "text": "font: 500 11px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 53,
-            "column": 219,
-            "text": "font: 500 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 59,
-            "column": 148,
-            "text": "font: 500 11px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 62,
-            "column": 76,
-            "text": "font: 500 11px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 67,
-            "column": 62,
-            "text": "font: 400 12px/17px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 75,
-            "column": 125,
-            "text": "font: 500 13px/18px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 83,
-            "column": 192,
-            "text": "font: 500 10px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 85,
-            "column": 84,
-            "text": "font: 500 11px/15px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 88,
-            "column": 166,
-            "text": "font: 500 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 89,
-            "column": 222,
-            "text": "font: 20px/1 var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 91,
-            "column": 81,
-            "text": "font: 500 11px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 98,
-            "column": 186,
-            "text": "font: 500 12px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 101,
-            "column": 84,
-            "text": "font: 500 11px/16px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 105,
-            "column": 224,
-            "text": "font: 500 10px/14px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/ui/xray/checkbox-specimens.css",
-            "line": 1,
-            "column": 95,
-            "text": "font: 500 11px/1.3 var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/ui/xray/chip-specimens.css",
-            "line": 20,
-            "column": 17,
-            "text": "font: 400 13px/20px var(--sans)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/Checkbox.tsx",
-            "line": 58,
-            "column": 119,
-            "text": "font: '500 13px/20px var(--sans)'"
-          },
-          {
-            "file": "apps/docs/src/pages/components/Checkbox.tsx",
-            "line": 77,
-            "column": 58,
-            "text": "font: '500 15px/22px var(--sans)'"
-          },
-          {
-            "file": "apps/docs/src/ui/floating.tsx",
-            "line": 41,
-            "column": 71,
-            "text": "font: '500 15px/22px var(--sans)'"
-          },
-          {
-            "file": "apps/docs/src/ui/xray/CheckboxXray.tsx",
-            "line": 212,
-            "column": 57,
-            "text": "font: '500 15px/22px var(--sans)'"
-          }
-        ]
-      },
       {
         "key": "1920153f0127c9aabf51d5ee783d8bab55571308785bbf0c53b047febf512fca",
         "rule": "provenance/type",
@@ -9649,190 +8631,6 @@
             "line": 20,
             "column": 17,
             "text": "font: 400 13px/20px var(--sans)"
-          }
-        ]
-      },
-      {
-        "key": "591286d582cdf1205e5ea5a06ecabb4ae82bf64bee1d415589d6ec8ffacfb2b1",
-        "rule": "provenance/type/by-value",
-        "severity": "warn",
-        "value": "var(--mono)",
-        "why": "\"SF Mono\", ui-monospace, SFMono-Regular, Menlo, monospace equals --font-mono, but type requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 115,
-            "column": 18,
-            "text": "font: 500 9px/12px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 116,
-            "column": 26,
-            "text": "font: 500 10.5px/14px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 117,
-            "column": 11,
-            "text": "font: 400 10.5px/17px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 135,
-            "column": 3,
-            "text": "font: 500 10px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 183,
-            "column": 3,
-            "text": "font: 500 9.5px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 265,
-            "column": 8,
-            "text": "font: 400 .84em/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 273,
-            "column": 48,
-            "text": "font: 500 9px/12px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 282,
-            "column": 3,
-            "text": "font: 400 12px/19px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 289,
-            "column": 65,
-            "text": "font: 500 9px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 294,
-            "column": 123,
-            "text": "font: 500 9px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 345,
-            "column": 141,
-            "text": "font: 500 10px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 356,
-            "column": 12,
-            "text": "font: 500 10.5px/14px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 391,
-            "column": 34,
-            "text": "font: 500 9px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 490,
-            "column": 19,
-            "text": "font: 500 9px/12px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 515,
-            "column": 20,
-            "text": "font-family: var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 609,
-            "column": 17,
-            "text": "font: 500 13px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 639,
-            "column": 3,
-            "text": "font: 500 9px/12px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 21,
-            "column": 35,
-            "text": "font-family: var(--mono, ui-monospace, monospace)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 22,
-            "column": 57,
-            "text": "font: 500 11px/16px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 34,
-            "column": 150,
-            "text": "font: 500 11.5px/16px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 52,
-            "column": 76,
-            "text": "font: 500 10px/14px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 84,
-            "column": 20,
-            "text": "font: 500 10px/14px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 93,
-            "column": 62,
-            "text": "font: 500 10px/16px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 102,
-            "column": 29,
-            "text": "font: 500 11px/16px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 111,
-            "column": 64,
-            "text": "font: 500 11px/16px var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 8,
-            "column": 17,
-            "text": "font: 500 9px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 9,
-            "column": 11,
-            "text": "font: 500 12.5px/1 var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 61,
-            "column": 15,
-            "text": "font-family: var(--mono)"
-          },
-          {
-            "file": "apps/docs/src/ui/xray/toast-specimens.css",
-            "line": 51,
-            "column": 60,
-            "text": "font: 500 9px/1 var(--mono)"
           }
         ]
       },
@@ -11343,28 +10141,6 @@
             "line": 57,
             "column": 66,
             "text": "font-normal"
-          }
-        ]
-      },
-      {
-        "key": "a102c8b52fb1636ac5c1c590d6032012c8a6bab52f338019e43ad928606ebb9d",
-        "rule": "provenance/type/by-value",
-        "severity": "warn",
-        "value": "var(--pixel)",
-        "why": "\"Doto\", \"Doto Variable\", \"Martian Mono\", ui-monospace, monospace equals --font-pixel, but type requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 118,
-            "column": 12,
-            "text": "font: 700 40px/44px var(--pixel)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 516,
-            "column": 21,
-            "text": "font-family: var(--pixel)"
           }
         ]
       },
@@ -13497,368 +12273,6 @@
     ],
     "elevation": [
       {
-        "key": "17a8af6c4696dda601fea512d4676fec1b1caa5c456e89aff37f7edcfa4434ec",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
-        "value": "var(--well)",
-        "why": "inset 1px 2px 5px -1px rgba(60,55,40,.11), inset 0 0 0 .5px rgba(24,22,16,.10), 0 .5px 0 rgba(255,255,255,.9) equals --shadow-well, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 125,
-            "column": 80,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 158,
-            "column": 197,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 172,
-            "column": 126,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 197,
-            "column": 101,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 221,
-            "column": 146,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 259,
-            "column": 143,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 267,
-            "column": 186,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 295,
-            "column": 165,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 380,
-            "column": 183,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 551,
-            "column": 160,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 625,
-            "column": 194,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 833,
-            "column": 242,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 859,
-            "column": 202,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 12,
-            "column": 149,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 21,
-            "column": 231,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 44,
-            "column": 145,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 76,
-            "column": 235,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 9,
-            "column": 104,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 23,
-            "column": 170,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 26,
-            "column": 233,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 52,
-            "column": 200,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-library.css",
-            "line": 27,
-            "column": 173,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-cell.css",
-            "line": 9,
-            "column": 105,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-plate.css",
-            "line": 5,
-            "column": 104,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 30,
-            "column": 264,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 53,
-            "column": 175,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 68,
-            "column": 251,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 90,
-            "column": 168,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 95,
-            "column": 120,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 105,
-            "column": 199,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 6,
-            "column": 74,
-            "text": "box-shadow: var(--well)"
-          },
-          {
-            "file": "apps/docs/src/ui/edit/edit.css",
-            "line": 86,
-            "column": 74,
-            "text": "box-shadow: var(--well)"
-          }
-        ]
-      },
-      {
-        "key": "b6393d0c5b61314877874dafaed23120401d16f743f54d5b767cc204b1480f6c",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
-        "value": "var(--btn-sh)",
-        "why": "inset 0 0 4px 1px rgba(255,255,255,.9), inset 1px 2px 2px -1px #FFFFFF, 0 0 0 .5px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 4px 9px -3px rgba(0,0,0,.08) equals --shadow-cap, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 104,
-            "column": 135,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 126,
-            "column": 36,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 139,
-            "column": 109,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 152,
-            "column": 137,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 183,
-            "column": 165,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 205,
-            "column": 153,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 294,
-            "column": 283,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 346,
-            "column": 30,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 413,
-            "column": 132,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 455,
-            "column": 198,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 765,
-            "column": 161,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 36,
-            "column": 108,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 49,
-            "column": 51,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 66,
-            "column": 75,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/library.css",
-            "line": 88,
-            "column": 84,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/icon-detail.css",
-            "line": 32,
-            "column": 199,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-cell.css",
-            "line": 15,
-            "column": 130,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/ui/icon-plate.css",
-            "line": 6,
-            "column": 132,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 24,
-            "column": 171,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 35,
-            "column": 80,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 37,
-            "column": 130,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 59,
-            "column": 121,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 65,
-            "column": 95,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 94,
-            "column": 157,
-            "text": "box-shadow: var(--btn-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 107,
-            "column": 149,
-            "text": "box-shadow: var(--btn-sh)"
-          }
-        ]
-      },
-      {
         "key": "3d71e298f2bc57073d797609609f6981b7a3af46780bfef20356e1f2ae3020ed",
         "rule": "provenance/opaque-inline",
         "severity": "warn",
@@ -14177,40 +12591,6 @@
         ]
       },
       {
-        "key": "b2425007fa924924b6fb05f7d8de43183b2f4d3d88db60d0e755ef41308d87f1",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
-        "value": "var(--raise-sm)",
-        "why": "inset 0 0 4px 1px rgba(255,255,255,.85), inset 1px 2px 2px -1px #FFFFFF, 0 0 0 .5px rgba(24,22,16,.05), 0 1px 2px rgba(24,22,16,.07), 0 5px 12px -4px rgba(24,22,16,.09) equals --shadow-raise-sm, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 163,
-            "column": 167,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 173,
-            "column": 163,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 271,
-            "column": 141,
-            "text": "box-shadow: var(--raise-sm)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 392,
-            "column": 97,
-            "text": "box-shadow: var(--raise-sm)"
-          }
-        ]
-      },
-      {
         "key": "5a2bb0400b8a1b7093d1b479024078e94b3c91723db9a6d3ab7e05579a2433e2",
         "rule": "provenance/elevation",
         "severity": "error",
@@ -14273,34 +12653,6 @@
         ]
       },
       {
-        "key": "d5ff02ca95dde830bf8384ad8efa144129bd3fd0008ab3e739f7efdeddbf6ef4",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
-        "value": "var(--raise)",
-        "why": "inset 0 0 6px 2px rgba(255,255,255,.75), inset 2px 3px 3px -1px rgba(255,255,255,.95), inset -1px -3px 5px -2px rgba(110,100,80,.07), 0 0 0 .5px rgba(24,22,16,.045), 0 1px 2px rgba(24,22,16,.05), 0 8px 18px -6px rgba(24,22,16,.08), 0 26px 50px -16px rgba(24,22,16,.13), 0 52px 96px -36px rgba(24,22,16,.13) equals --shadow-raise, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 124,
-            "column": 88,
-            "text": "box-shadow: var(--raise)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 262,
-            "column": 35,
-            "text": "box-shadow: var(--raise)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 377,
-            "column": 195,
-            "text": "box-shadow: var(--raise)"
-          }
-        ]
-      },
-      {
         "key": "bd0b5872f9a1fa5b09f7e0218b925e04847140fde21587c16c86e004b0dd5e48",
         "rule": "provenance/elevation",
         "severity": "error",
@@ -14325,34 +12677,6 @@
             "line": 261,
             "column": 62,
             "text": "box-shadow: 0 1px 0 var(--rule-lip)"
-          }
-        ]
-      },
-      {
-        "key": "2e54240d66d9cb4f936a1f7917387ec9ffcd2c90eafc7fc20b5afff51820be32",
-        "rule": "provenance/elevation",
-        "severity": "error",
-        "value": "var(--pressed-sh)",
-        "why": "inset 0 2px 5px -1px rgba(60,55,40,.14), inset 0 0 0 .5px rgba(0,0,0,.035), inset 0 -2px 3px -2px rgba(255,255,255,.9) is not a elevation decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 142,
-            "column": 92,
-            "text": "box-shadow: var(--pressed-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 154,
-            "column": 73,
-            "text": "box-shadow: var(--pressed-sh)"
-          },
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 348,
-            "column": 79,
-            "text": "box-shadow: var(--pressed-sh)"
           }
         ]
       },
@@ -14507,28 +12831,6 @@
         ]
       },
       {
-        "key": "4b133d57c7ec04e4ee9656eb5dfc37f5ad2c20f4176eacca4ce1456e5a4c461f",
-        "rule": "provenance/elevation",
-        "severity": "error",
-        "value": "var(--bw-cap-sh)",
-        "why": "var(--bw-cap-sh) is not a elevation decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 71,
-            "column": 147,
-            "text": "box-shadow: var(--bw-cap-sh)"
-          },
-          {
-            "file": "apps/docs/src/pages/components/button-workbench.css",
-            "line": 88,
-            "column": 136,
-            "text": "box-shadow: var(--bw-cap-sh)"
-          }
-        ]
-      },
-      {
         "key": "47ee716bbda092df4d5fe9376e4248da58205236e645715fb052d429cb1df772",
         "rule": "provenance/elevation",
         "severity": "error",
@@ -14599,12 +12901,12 @@
         ]
       },
       {
-        "key": "cf6516d32bcd0c8659e50f809c03717a6c431f84d2bc61969c78cb152b6f232b",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "fdb3acaf46f3d7b40d4f326a84a0573ce3d35c5cab2c9fb848b95931b86d2590",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--raise), 0 0 0 9.5px rgba(120,214,165,.16)",
-        "why": "inset 0 0 6px 2px rgba(255,255,255,.75), inset 2px 3px 3px -1px rgba(255,255,255,.95), inset -1px -3px 5px -2px rgba(110,100,80,.07), 0 0 0 .5px rgba(24,22,16,.045), 0 1px 2px rgba(24,22,16,.05), 0 8px 18px -6px rgba(24,22,16,.08), 0 26px 50px -16px rgba(24,22,16,.13), 0 52px 96px -36px rgba(24,22,16,.13) equals --shadow-raise, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "0 0 0 9.5px rgba(120,214,165,.16) is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/kds.css",
@@ -14675,22 +12977,6 @@
             "line": 133,
             "column": 40,
             "text": "box-shadow: 0 0 0 .5px rgba(0,0,0,.35), inset 0 .5px 0 rgba(255,255,255,.2)"
-          }
-        ]
-      },
-      {
-        "key": "8c4aac1a34fb9928578194a229ed5fdbe8e1da75fcc6a01b561d203042d2b9a6",
-        "rule": "provenance/elevation",
-        "severity": "error",
-        "value": "var(--cap-sh)",
-        "why": "inset 0 0 3px 1px rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.07) is not a elevation decision.",
-        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
-        "sites": [
-          {
-            "file": "apps/docs/src/kds.css",
-            "line": 135,
-            "column": 138,
-            "text": "box-shadow: var(--cap-sh)"
           }
         ]
       },
@@ -15143,12 +13429,12 @@
         ]
       },
       {
-        "key": "3d69cfa593f27bafc3e39945315fecb5fce6802ccc0dc50938acdec3ad4d186b",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "140693b691078fd19c6731348f430005a3a0d3f46a67321dbb296e39ace8e370",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--well), 0 0 0 2px var(--green-deep)",
-        "why": "inset 1px 2px 5px -1px rgba(60,55,40,.11), inset 0 0 0 .5px rgba(24,22,16,.10), 0 .5px 0 rgba(255,255,255,.9) equals --shadow-well, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "0 0 0 2px #3FB97A is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/kds.css",
@@ -15255,12 +13541,12 @@
         ]
       },
       {
-        "key": "77385e56377a661f06c9664015952684869ff3c1f2b81715b0d27fcf2a337292",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "1c9e565138ce767376faf7ee694ff615b7592334ea001a36b5ba3b02f7528f6b",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--well), inset 0 0 0 1px color-mix(in srgb,var(--green-deep) 35%,transparent)",
-        "why": "inset 1px 2px 5px -1px rgba(60,55,40,.11), inset 0 0 0 .5px rgba(24,22,16,.10), 0 .5px 0 rgba(255,255,255,.9) equals --shadow-well, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "inset 0 0 0 1px color-mix(in srgb,#3FB97A 35%,transparent) is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/pages/components/button-workbench.css",
@@ -15271,12 +13557,12 @@
         ]
       },
       {
-        "key": "e1e0b1997dc89f6081d8bf6e8c6bf78f3e1c871b2833daa9f752f1a1fae0ad5e",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "9dcd554801cd6b2111c9f642ede3c2a5a79e82387a8b570c5ade6df723d3940c",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--btn-sh),0 0 0 2px var(--green-deep)",
-        "why": "inset 0 0 4px 1px rgba(255,255,255,.9), inset 1px 2px 2px -1px #FFFFFF, 0 0 0 .5px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 4px 9px -3px rgba(0,0,0,.08) equals --shadow-cap, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "0 0 0 2px #3FB97A is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/pages/components/button-workbench.css",
@@ -15303,12 +13589,12 @@
         ]
       },
       {
-        "key": "aa462b5205798227d7e61ebd50e6c2b98284f124e3b0d75a3a7f29f7ad40b159",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "63f7691c76b0ca54cd430bd35dffb8802988f63db242e4556247c1c1c5382143",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--well), 0 0 0 1.5px color-mix(in srgb, var(--mu-presence-guide) 55%, transparent)",
-        "why": "inset 1px 2px 5px -1px rgba(60,55,40,.11), inset 0 0 0 .5px rgba(24,22,16,.10), 0 .5px 0 rgba(255,255,255,.9) equals --shadow-well, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "0 0 0 1.5px color-mix(in srgb, #3FB97A 55%, transparent) is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/ui/edit/edit.css",
@@ -15367,12 +13653,12 @@
         ]
       },
       {
-        "key": "b4eae0b759c1f431f4df36d0c5e1c4275fe6a6d7ae64851da7068b8fa8f079c7",
-        "rule": "provenance/elevation/by-value",
-        "severity": "warn",
+        "key": "973ff52b5f62064bd401d8451abbf85b0d42f3d20dc500416c669484a63420f5",
+        "rule": "provenance/elevation",
+        "severity": "error",
         "value": "var(--well), 0 0 0 1.5px var(--mu-presence-guide)",
-        "why": "inset 1px 2px 5px -1px rgba(60,55,40,.11), inset 0 0 0 .5px rgba(24,22,16,.10), 0 .5px 0 rgba(255,255,255,.9) equals --shadow-well, but elevation requires a reference.",
-        "verdict": "Debt: matching literal/nondecision alias loses token identity; warning retained.",
+        "why": "0 0 0 1.5px #3FB97A is not a elevation decision.",
+        "verdict": "Debt: unapproved authored value or unresolved expression; review named decision.",
         "sites": [
           {
             "file": "apps/docs/src/ui/edit/edit.css",

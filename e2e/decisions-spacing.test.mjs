@@ -60,9 +60,12 @@ test('spacing slice judges all origins, resolves chains/calc, groups fixes and n
   const chain = report.decisions.find(d => d.name === '--spacing-chain');
   assert.equal(chain.resolved, '12px');
   assert.ok(report.declarations.some(d => d.value === 'calc(var(--middle-step) + 4px)' && d.resolved === '16px'));
-  for (const value of ['var(--cycle-a)', 'var(--media-step)', 'var(--dark-step)']) {
+  for (const value of ['var(--cycle-a)', 'var(--dark-step)']) {
     assert.ok(report.findings.some(f => f.declaration.value === value && f.declaration.resolved === undefined));
   }
+  // Both authored media-step definitions use the ladder. Their unresolved
+  // consumer is no longer a separate provenance obligation.
+  assert.ok(!report.findings.some(f => f.declaration.value === 'var(--media-step)'));
   assert.ok(!report.findings.some(f => f.sites.some(site => /gap-s2|gap-12|-m-12|space-x-12/.test(site.text))));
   assert.equal(report.findings.find(f => f.rule === 'provenance/opaque-inline').severity, 'warn');
   assert.equal(report.coverage.spacing.total, report.coverage.spacing.fromDecisions + report.coverage.spacing.findings);

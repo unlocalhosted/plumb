@@ -91,7 +91,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
   findings.push(...deadVariables(declarations, defined, record.theme));
-  const judged = provenance(declarations, record, config.value);
+  const judged = provenance(declarations, record, config.value, sourceFiles);
   findings.push(...judged.findings);
   const provenanceMs = performance.now() - provenanceStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
