@@ -39,8 +39,15 @@ test('SARIF 2.1.0 has required fields, rule help and per-site baseline/fingerpri
   const { tool, results, columnKind } = sarif.runs[0];
   assert.equal(tool.driver.name, 'plumb'); assert.equal(typeof tool.driver.version, 'string'); assert.equal(columnKind, 'utf16CodeUnits');
   assert.equal(results.length, data.findings.reduce((n, f) => n + f.sites.length, 0));
-  assert.deepEqual(results.map(r => r.baselineState).sort(), ['new', 'unchanged']);
-  for (const result of results) {
+  const drift = results.filter(r => r.ruleId === 'provenance/spacing');
+  const dead = results.filter(r => r.ruleId === 'dead/spacing');
+  assert.equal(results.length, drift.length + dead.length);
+  assert.deepEqual(drift.map(r => r.baselineState).sort(), ['new', 'unchanged']);
+  assert.equal(dead.length, 1);
+  assert.equal(dead[0].level, 'note'); assert.equal(dead[0].baselineState, 'unchanged');
+  assert.equal(dead[0].locations[0].physicalLocation.artifactLocation.uri, 'src/styles.css');
+  assert.ok(dead[0].properties.ledgerKey.startsWith('dead/spacing:'));
+  for (const result of drift) {
     const rule = tool.driver.rules[result.ruleIndex]; assert.equal(result.ruleId, rule.id);
     assert.ok(rule.shortDescription.text); assert.ok(rule.fullDescription.text); assert.ok(rule.help.text.includes('related parts'));
     assert.ok(result.message.text); assert.ok(['error', 'warning', 'note'].includes(result.level));
@@ -63,7 +70,7 @@ test('GitHub annotates only new scoped sites, writes summary sections and compar
   const commands = result.stdout.split('\n').filter(line => line.startsWith('::'));
   assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=provenance\/spacing::/);
   const markdown = await readFile(summary, 'utf8');
-  assert.match(markdown, /^Existing step summary\./); assert.match(markdown, /1 new, 0 fixed, 1 debt/); assert.match(markdown, /spacing: 0\/2 \(0%\); \+0 pp vs base/);
+  assert.match(markdown, /^Existing step summary\./); assert.match(markdown, /1 new, 0 fixed, 2 debt/); assert.match(markdown, /spacing: 0\/2 \(0%\); \+0 pp vs base/);
   assert.match(markdown, /color: no decisions/); assert.match(markdown, /0 growth lines/);
   // Newly untracked files are included, while unchanged old findings stay out of commands.
   git(directory, 'restore', 'src/App.tsx'); await writeFile(join(directory, 'src/New.tsx'), 'export const New = () => <div className="gap-10" />;');
@@ -79,15 +86,18 @@ test('GitHub annotation properties and messages escape authored filenames and re
   await writeFile(join(directory, 'src/odd,%:name.tsx'), 'export const Odd = () => <div className="gap-10" />;');
   const output = run(directory, ['--format', 'github'], 1).stdout;
   const commands = output.split('\n').filter(line => line.startsWith('::'));
-  assert.equal(commands.length, 1); assert.match(commands[0], /file=src\/odd%2C%25%3Aname.tsx/);
-  assert.match(commands[0], /50%25/); assert.doesNotMatch(output, /\n::error file=spoof/);
+  assert.equal(commands.length, 2);
+  const errors = commands.filter(line => line.startsWith('::error'));
+  assert.equal(errors.length, 1); assert.match(errors[0], /file=src\/odd%2C%25%3Aname.tsx/);
+  assert.match(errors[0], /50%25/); assert.doesNotMatch(output, /\n::error file=spoof/);
+  assert.equal(commands.filter(line => line.startsWith('::notice') && line.includes('title=dead/spacing::')).length, 1);
 });
 
 test('summary fixed count and positive coverage delta come from actual base declarations', async t => {
   const directory = await fixture(t); run(directory, ['baseline']); await history(directory);
   await writeFile(join(directory, 'src/App.tsx'), 'export function App() { return <div className="gap-step-small" />; }');
   const result = run(directory, ['--base', 'HEAD', '--format', 'github']);
-  assert.match(result.stdout, /0 new, 1 fixed, 0 debt/); assert.match(result.stdout, /spacing: 1\/1 \(100%\); \+100 pp vs base/);
+  assert.match(result.stdout, /0 new, 2 fixed, 0 debt/); assert.match(result.stdout, /spacing: 1\/1 \(100%\); \+100 pp vs base/);
 });
 
 test('scripted agent applies exact new gap-10 edit, reaches 0 new and preserves ledger', async t => {

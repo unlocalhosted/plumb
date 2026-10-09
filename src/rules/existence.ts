@@ -126,7 +126,7 @@ export function deadVariables(declarations: Declaration[], defined: ReadonlySet<
       if (previous) {
         previous.occurrences!.push(declaration);
         if (severity === 'error') previous.severity = 'error';
-        if (!previous.sites.some(s => JSON.stringify(s) === JSON.stringify(declaration.site))) previous.sites.push(declaration.site);
+        if (!previous.sites.some(s => s.file === declaration.site.file && s.line === declaration.site.line && s.column === declaration.site.column && s.text === declaration.site.text)) previous.sites.push(declaration.site);
         continue;
       }
       // Reuse dead-class ranking: namespace, theme, shared prefix, edit distance,

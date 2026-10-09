@@ -1004,3 +1004,57 @@ These are individual local process measurements, including startup and serializa
 The scripted-agent fixture e2e consumes the exact `--changed --agent` replacement for one new gap-10, changes only its TSX source, and reaches `0 new` under `--strict-ledger` with the ledger unchanged. Action approval is tested by executing its script on committed GitHub API response fixtures; the full runner executes the real CLI against a fixture PR/local REST server, first denies unapproved growth, then succeeds with approval, creating one sticky comment and updating it on rerun. This is local fixture evidence, not a hosted GitHub PR run. Hook installation preserves existing settings/events and remains idempotent. See [Layer 9 notes](docs/layers/9-surfaces.md) for output contracts and limits.
 
 Final verification: **96 integration/e2e tests pass**, zero failures/skips; typecheck and whitespace checks green. Protected text functions unchanged; no packages installed or worktree commits made.
+
+## Layer 10: dead decisions and plumb try (2026-10-09)
+
+Measured read-only MetalUI HEAD **`55debff37a40d478b1e970de3b5507e9413bfef7`**, source **`apps/docs/src/**/*.{tsx,jsx,ts,js,css}`**, using the existing benchmark preset. All Plumb caches use **`PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer10`**. No packages installed, commits made or MetalUI files written. Earlier layer tables retain their historical snapshots.
+
+Reproduce after building:
+
+```sh
+PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer10 node bench/metalui/dead-try.mjs
+```
+
+[Structured evidence](bench/metalui/layer10.run.json) retains every unused decision, value, references, tier and source. Repeated checks assert identical counts. These are project decisions from the adopted record **plus the existing project-theme inventory**, not only the judging ladders. Reference usage is transitive; equal literals do not count. Decision definitions do not seed usage. Framework/inferred decisions are excluded.
+
+| Family | Project decisions | Referenced in docs | Unused in docs | Unused after publication marking | Verdict |
+| --- | ---: | ---: | ---: | ---: | --- |
+| spacing | 866 | 26 | 840 | 0 | Published layout and recipe theme vocabulary. Inventory includes recipe keys outside the 17 adopted global spacing decisions; docs usage cannot justify deleting them. |
+| color | 656 | 159 | 497 | 0 | Published palette, colorway and recipe paint keys. Unused by the docs source slice, potentially used by package components and consumers. |
+| radius | 98 | 23 | 75 | 0 | Published material/control radius keys. A docs-only scan is insufficient evidence for removal. |
+| type | 90 | 8 | 82 | 0 | Published typography role properties. Component/consumer references outside docs are intentionally outside this usage proof. |
+| motion | 123 | 87 | 36 | 0 | Published durations, curves and stagger decisions. Keep public motion vocabulary; absence in docs is informational. |
+| elevation | 100 | 30 | 70 | 0 | Published material and recipe shadows. Package recipes and downstream consumers may reference these directly. |
+| z | 11 | 1 | 10 | 0 | Published stacking roles. Docs exercise only one observed role; public consumers remain unseen. |
+| size | 2 | 0 | 2 | 0 | Two published theme inventory keys; size provenance remains outside the current judging families. |
+| opacity | 0 | 0 | 0 | 0 | No project-origin opacity decisions in this record; no dead finding. |
+
+**1,612 of 1,946 project decisions** are not referenced by lowered declarations in the docs source globs. These form **eight informational groups**, each carrying its complete record list and exact definition sites. None independently fails CI. Every unused record in this snapshot originates in one of the three published library sources below, so the appropriate publication config silences all 1,612. This does not claim the tokens are unused across MetalUI or its downstream projects.
+
+[Layer 10 bench config](bench/metalui/dead-try.config.ts) extends the existing preset additively:
+
+```ts
+exported: [
+  'tokens/tokens.json',
+  'packages/metalui/src/components/theme.css',
+  'packages/metalui/src/components/tokens.css',
+]
+```
+
+This marks the published source records, leaving future docs-only decisions visible. A family composed entirely of public decisions can instead use `decisions.<family>.exported: true`; individual name/ref-alias globs are supported too. Publication marking changes only unused-decision reporting, not provenance/ledger approval. With all current records marked, summary counts are 1,946 exported, zero unexported-used and zero dead: exported takes priority in the disjoint count partition.
+
+| Measurement | Process wall, startup/output included | Report total | Exit |
+| --- | ---: | ---: | ---: |
+| Warm whole-project check | 1556.4 ms | 1389.2 ms | 1 (existing provenance debt) |
+| Warm try 1: `gap-mu-related` | 788.0 ms | 708.5 ms | 0 |
+| Warm try 2: `gap-mu-related` | 762.9 ms | 682.6 ms | 0 |
+| Warm try 3: `gap-mu-related` | 766.4 ms | 689.5 ms | 0 |
+| Try `gap-10` | 762.9 ms | 684.9 ms | 1 |
+
+The named gap produces no findings. Invalid `gap-10` produces exactly one error at the virtual docs file, resolving to **10px** and naming **8px `--spacing-mu-space-8`** and **12px `--spacing-mu-related`**, with the semantic token's actual source reason. Warm try process median is **766.4 ms**. These are individual fresh CLI processes using an already populated project cache; try reads caches but does not populate a snippet cache or write files. No latency guarantee is claimed.
+
+Fixture acceptance: unused token reported; family/name/source exports silence it; used semantic token keeps its primitive alive, including inline theme and `@apply` rewrites; orphan semantic token does not keep its primitive alive; `gap-10` fails with nearest decisions; `gap-s3` passes; CSS inference/imports/`@apply` work; text/JSON/agent output and exit codes work; baseline debt cannot excuse a snippet; cold and warm try leave complete source/cache/ledger file and directory snapshots unchanged.
+
+The benchmark also exposed equal dead-variable sites emitted in multiple CSS contexts with different object property order. A one-line physical-location deduplication correction prevents ledger classification from dereferencing a missing key; a CLI import-context fixture covers that boundary.
+
+Final verification: **93 integration/e2e tests passed, zero failures/skips**; `npm run typecheck` and `git diff --check` passed. Protected report formatter code was compared byte-for-byte against HEAD and is unchanged. Notes: [docs/layers/10-dead-try.md](docs/layers/10-dead-try.md).

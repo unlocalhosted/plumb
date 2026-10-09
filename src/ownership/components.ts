@@ -54,7 +54,7 @@ const inDirectory = (file: string, directory: string) => file === directory || f
 const isFunction = (node: Node) => ['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(node.type);
 const memberName = (node: Node): string => node.type === 'MemberExpression' && !node.computed ? `${memberName(node.object)}.${nodeName(node.property)}` : nodeName(node);
 
-export function discoverComponents(root: string, files: string[], config: PlumbConfig): ComponentGraph {
+export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map()): ComponentGraph {
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
     conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
@@ -116,7 +116,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   }
   function module(file: string): Module {
     const cached = modules.get(file); if (cached) return cached;
-    const text = readFileSync(file, 'utf8'), parsed = parseSync(file, text, parserOptions);
+    const text = overrides.get(file) ?? readFileSync(file, 'utf8'), parsed = parseSync(file, text, parserOptions);
     if (parsed.errors.length) throw new UsageError(`Read component ${file}: ${parsed.errors[0]?.message}`);
     const value: Module = { file, text, lineStarts: lineStarts(text), ast: parsed.program, bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
     modules.set(file, value);

@@ -34,6 +34,15 @@
     "habits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "reason", "severity", "enabled", "breaks"], "properties": {"id": {"type": "string"}, "reason": {"type": "string"}, "severity": {"enum": ["error", "warn", "info"]}, "enabled": {"type": "boolean"}, "breaks": {"type": ["integer", "null"], "minimum": 0}}}},
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "deadDecisions": {
+      "type": "object", "additionalProperties": false,
+      "patternProperties": {
+        "^(spacing|color|radius|type|motion|elevation|size|z|opacity)$": {
+          "type": "object", "additionalProperties": false, "required": ["total", "used", "exported", "dead"],
+          "properties": { "total": { "$ref": "#/$defs/count" }, "used": { "$ref": "#/$defs/count" }, "exported": { "$ref": "#/$defs/count" }, "dead": { "$ref": "#/$defs/count" } }
+        }
+      }
+    },
     "ledger": {
       "type": "object", "additionalProperties": false,
       "required": ["exists", "path", "entries", "new", "debt", "exceptions", "outOfScope", "stale", "growth", "message"],

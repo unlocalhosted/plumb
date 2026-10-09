@@ -36,7 +36,7 @@ export function moduleImports(module: EcmaScriptModule, text: string): ModuleImp
 
 interface CachedModule { mtimeMs: number; size: number; imports: ModuleImport[]; resolved: (string | null)[] }
 
-export async function collectModules(root: string, sources: Map<string, ModuleImport[]>): Promise<{
+export async function collectModules(root: string, sources: Map<string, ModuleImport[]>, readOnly = false): Promise<{
   imports: CssImport[]; notes: string[]; counts: Report['moduleGraph'];
 }> {
   const start = performance.now();
@@ -51,7 +51,10 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
     conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'], aliasFields: ['browser'], builtinModules: true });
   const queue = [...sources.keys()].filter(moduleFile);
-  const sourcePaths = new Map(queue.map(file => [realpathSync.native(file), file]));
+  const sourcePaths = new Map(queue.map(file => {
+    try { return [realpathSync.native(file), file]; }
+    catch (error) { if (readOnly && (error as NodeJS.ErrnoException).code === 'ENOENT') return [file, file]; throw error; }
+  }));
   const seen = new Set(queue);
   const imports: CssImport[] = [];
   const notes: string[] = [];
@@ -111,10 +114,12 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
     if (cached) nextCache[file] = { ...cached, resolved };
   }
   if (limited) notes.push(`Module graph skipped ${limited} modules at its 20,000-module, 64 MiB total or 4 MiB per-file limit.`);
-  await mkdir(directory, { recursive: true });
-  const temporary = `${path}.${process.pid}.tmp`;
-  await writeFile(temporary, JSON.stringify(nextCache));
-  await rename(temporary, path);
+  if (!readOnly) {
+    await mkdir(directory, { recursive: true });
+    const temporary = `${path}.${process.pid}.tmp`;
+    await writeFile(temporary, JSON.stringify(nextCache));
+    await rename(temporary, path);
+  }
   counts.totalMs = performance.now() - start;
   return { imports, notes, counts };
 }

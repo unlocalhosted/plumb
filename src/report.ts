@@ -112,6 +112,8 @@ export interface Report {
   notes: string[];
   /** Project theme decisions, including keys outside configured judging ladders. */
   decisionInventory?: Decision[];
+  /** Whole-project reference reachability, grouped for summary consumers. */
+  deadDecisions?: import('./rules/dead.js').DeadDecisionCounts;
   ledger?: import('./ledger/types.js').LedgerSummary;
   declarations: Declaration[];
   stylesheets: { file: string; sourceOrigin: 'project' | 'framework'; package?: string; reached: { kind: 'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style'; from?: string; specifier?: string }[] }[];

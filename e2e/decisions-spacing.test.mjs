@@ -70,7 +70,7 @@ test('spacing slice judges all origins, resolves chains/calc, groups fixes and n
   assert.equal(report.findings.find(f => f.rule === 'provenance/opaque-inline').severity, 'warn');
   assert.equal(report.coverage.spacing.total, report.coverage.spacing.fromDecisions + report.coverage.spacing.findings);
   assert.ok(report.declarations.some(d => d.origin === 'keyframes' && d.value === '13px'));
-  assert.ok(!report.findings.some(f => f.declaration.origin === 'keyframes' || f.declaration.sourceOrigin === 'framework' || f.declaration.prop.startsWith('--')));
+  assert.ok(!report.findings.filter(f => !f.rule.startsWith('dead/')).some(f => f.declaration.origin === 'keyframes' || f.declaration.sourceOrigin === 'framework' || f.declaration.prop.startsWith('--')));
   const warm = run(fixture('spacing'));
   assert.deepEqual(warm.findings, report.findings);
   assert.deepEqual(warm.decisions, report.decisions);
@@ -89,7 +89,7 @@ test('imported project CSS outside source globs proves existence without spacing
   assert.ok(report.stylesheets.some(sheet => sheet.file === outside && sheet.sourceOrigin === 'project'));
   assert.ok(!report.findings.some(f => f.rule.startsWith('existence/')), 'outside CSS still proves class existence');
   assert.ok(!report.declarations.some(d => d.site.file === outside));
-  const spacing = report.findings.filter(f => f.family === 'spacing');
+  const spacing = report.findings.filter(f => f.family === 'spacing' && !f.rule.startsWith('dead/'));
   assert.equal(spacing.length, 1);
   assert.equal(spacing[0].rule, 'provenance/spacing');
   assert.equal(spacing[0].declaration.resolved, '13px');
@@ -213,7 +213,7 @@ test('fully opaque inline declarations remain inline counts while only known dyn
       <div style={{ opacity: measured }} />
     </>; }`);
   const opaque = run(directory);
-  assert.deepEqual(opaque.findings, []);
+  assert.deepEqual(opaque.findings.filter(f => !f.rule.startsWith('dead/')), []);
   assert.deepEqual(opaque.coverage.spacing, { fromDecisions: 0, total: 0, findings: 0 });
   assert.deepEqual(opaque.coverage.inline, { sites: 4, literalSites: 0, opaque: 4, fullyOpaque: 3, spreads: 3 });
   await writeFile(join(directory, 'src/App.tsx'), `import './styles.css';

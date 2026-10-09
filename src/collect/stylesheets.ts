@@ -68,9 +68,10 @@ export function maskImports(css: string, references = false): string {
   return css;
 }
 
-export async function collectStylesheets(entry: string | null, sources: string[], imports: CssImport[]): Promise<StylesheetGraph> {
+export async function collectStylesheets(entry: string | null, sources: string[], imports: CssImport[], overrides: ReadonlyMap<string, string> = new Map()): Promise<StylesheetGraph> {
   const graph: StylesheetGraph = { files: new Map(), roots: [], notes: [] };
-  const sourcePaths = new Map([...sources.filter(file => file.endsWith('.css')), ...(entry ? [entry] : [])].map(file => [realpathSync.native(file), file]));
+  const isCss = (file: string) => file.endsWith('.css') || overrides.has(file);
+  const sourcePaths = new Map([...sources.filter(isCss), ...(entry ? [entry] : [])].map(file => [overrides.has(file) ? file : realpathSync.native(file), file]));
   const projectPath = (file: string) => sourcePaths.get(file) ?? file;
   function promote(file: string): void {
     const sheet = graph.files.get(file);
@@ -103,7 +104,7 @@ export async function collectStylesheets(entry: string | null, sources: string[]
       return;
     }
     let css: string;
-    try { css = await readFile(file, 'utf8'); }
+    try { css = overrides.get(file) ?? await readFile(file, 'utf8'); }
     catch (error) { throw new UsageError(`Read stylesheet ${file}: ${errorMessage(error)}`); }
     const pkg = packageName(file) ?? (external ? await owner(dirname(file)) : undefined);
     const sheet: Stylesheet = { file, css, sourceOrigin: external || pkg ? 'framework' : 'project', ...(pkg ? { package: pkg } : {}), reached: [reach], imports: [] };
@@ -127,7 +128,7 @@ export async function collectStylesheets(entry: string | null, sources: string[]
     graph.roots.push(file);
     await visit(file, { kind: item.external ? 'module' : 'side-effect', from: item.file, specifier: item.specifier }, item.external);
   }
-  for (const file of sources.filter(file => file.endsWith('.css'))) {
+  for (const file of sources.filter(isCss)) {
     graph.roots.push(file);
     await visit(file, { kind: 'source' });
   }
