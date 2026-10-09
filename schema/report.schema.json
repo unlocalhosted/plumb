@@ -12,6 +12,10 @@
       "properties": { "name": { "const": "plumb" }, "version": { "type": "string" } }
     },
     "root": { "type": "string" },
+    "configHints": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "type": { "type": "string" } }
+    },
     "config": {
       "type": "object", "additionalProperties": false,
       "required": ["path", "inferred"],

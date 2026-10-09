@@ -1272,3 +1272,9 @@ MetalUI totals below use the pinned archive and all enabled rules before any rul
 | provenance/z/by-value | 4 | 32 |
 
 Final all-rule cold report/process: **4210.2 / 4368.9 ms**, 0 compiler hits / 1302 misses. Warm report/process medians: **997.0 / 1140.4 ms**, 1302 hits / 0 misses. Warm text CLI: **1138.2 ms**, exit 0. Exact phase/rule data, full counts, equality fingerprints and baseline/check receipts are in [final-after.json](bench/metalui/final-after.json).
+
+## Roadmap item 6: noise pass (2026-10-10)
+
+Same MetalUI sources and `bench/metalui/all.config.ts`, with `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/noise`: **1,050 → 856 groups (−194, −18.5%)**. No rule disabled and no theme, ledger or benchmark config changed. Equal token literals retain every site and token as family warnings; symmetric physical sides and focus false positives are removed.
+
+[Noise notes](docs/roadmap/6-noise.md) include groups per rule, the ten largest groups before/after, three real examples per removal category, all 198 removed/replaced groups, four added family groups, and the one retained group's removed noise site. `node bench/metalui/noise-audit.mjs` verifies the full reconciliation against the retained reports. Six new feature-slice E2E checks; **186 tests pass**, typecheck green. The original under-400 target is not met; this pass meets the task's revised requirement of a substantial, fully justified reduction.

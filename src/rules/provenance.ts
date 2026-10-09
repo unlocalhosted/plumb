@@ -206,7 +206,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
         nearest = closest(judgedValue, declaration.prop);
         break;
       }
-      if (rule && declaration.origin === 'arbitrary' && !rule.endsWith('/framework') && !rule.endsWith('/tier')) {
+      if (rule && declaration.origin === 'arbitrary' && !rule.endsWith('/framework') && !rule.endsWith('/tier') && !rule.endsWith('/by-value')) {
         rule = 'provenance/arbitrary'; title = `\`${declaration.site.text}\` hardcodes ${judgedValue || resolved || declaration.value}`; because = familyReasons[family]!;
       }
     }
@@ -223,7 +223,8 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
       finding = makeFinding({ key, rule, family, severity, sites: [], occurrences: [], declaration: definition ? { ...definition, ...(resolved === undefined ? {} : { resolved }) } : declaration,
         decisions: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })), title, because, edits: [],
         ...(definition ? { variable: { name: definition.prop, useCount: uses.size } } : {}),
-        ...(rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: noFit(amount) }) });
+        ...(rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
+          ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) }) });
       if (rule.endsWith('/by-value') && alternatives[0]) {
         const use = useFor(alternatives[0], fixProp, record.theme);
         finding.action = `Use ${use.class ? `\`${use.class}\` or ` : ''}\`var(${alternatives[0].name})\`.`;
@@ -264,7 +265,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
 export function spacingProvenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig) {
   return familyProvenance('spacing', declarations, record, config);
 }
-export function provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles?: ReadonlySet<string>) {
+export function provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles?: ReadonlySet<string>, verbose = false) {
   const findings: Finding[] = [];
   const definitions = indexDefinitions(declarations, record);
   const resolution = resolutionContext(declarations, record);
@@ -273,7 +274,7 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
     const start = performance.now();
     const result = familyProvenance(family, declarations, record, config, sourceFiles, definitions, resolution);
     profileDuration(`rule:provenance/${family}`, performance.now() - start);
-    findings.push(...result.findings); coverage[family] = result.coverage;
+    findings.push(...(verbose || config.decisions?.[family]?.byValue === 'each' ? result.findings : groupByValue(family, result.findings))); coverage[family] = result.coverage;
   }
   const opaque = new Map<string, Finding>();
   const grouped = findings.filter(f => {
@@ -287,6 +288,22 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
     return false;
   });
   return { findings: [...grouped, ...opaque.values()], coverage };
+}
+
+/** Group presentation only: authored occurrences and ledger identities stay intact. */
+function groupByValue(family: string, findings: Finding[]): Finding[] {
+  const copies = findings.filter(f => f.rule === `provenance/${family}/by-value`);
+  if (!copies.length) return findings;
+  const sites = [...new Map(copies.flatMap(f => f.sites).map(site => [JSON.stringify([site.file, site.line, site.column, site.text]), site])).values()];
+  const edits = copies.flatMap(f => f.edits ?? []);
+  const decisions = [...new Map(copies.flatMap(f => f.decisions).map(d => [d.name, d])).values()];
+  const action = 'Use the matching token at each site (--verbose lists individual values):\n' + edits.map(edit =>
+    `  ${edit.site.file}:${edit.site.line}:${edit.site.column}  ${edit.site.text}  ${edit.token}  ${edit.text}`).join('\n');
+  const grouped = makeFinding({ key: `by-value:${family}`, rule: copies[0]!.rule, family, declaration: copies[0]!.declaration,
+    because: copies[0]!.because, severity: 'warn', sites,
+    occurrences: copies.flatMap(f => f.occurrences ?? [f.declaration]), decisions, choices: [], edits,
+    title: `${sites.length} values in your ${family} match tokens but don't use them`, action });
+  return [...findings.filter(f => !copies.includes(f)), grouped];
 }
 
 function frameworkThing(family: string, prop: string): string {

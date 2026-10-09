@@ -27,3 +27,16 @@ export function hoverGated(when: Condition[]): boolean {
   return requires(/\(\s*hover\s*:\s*hover\s*\)/i) && requires(/\(\s*pointer\s*:\s*fine\s*\)/i);
 }
 export const selector = (when: Condition[]) => when.filter(condition => condition.kind === 'selector').map(condition => condition.text).join(', ');
+
+/** Every selector-list branch must explicitly constrain direction. */
+export function directionSpecific(value: string): boolean {
+  return tokens(value, /,/).every(branch => {
+    const excluded = [...calls(branch, 'not'), ...calls(branch, 'has')].sort((a, b) => a.start - b.start);
+    for (const call of excluded.filter(call => !excluded.some(parent => parent.start < call.start && parent.end >= call.end)).reverse()) branch = branch.slice(0, call.start) + branch.slice(call.end);
+    const alternatives = [...calls(branch, 'is'), ...calls(branch, 'where')].sort((a, b) => a.start - b.start);
+    for (const call of alternatives.filter(call => !alternatives.some(parent => parent.start < call.start && parent.end >= call.end)).reverse()) {
+      branch = branch.slice(0, call.start) + (directionSpecific(call.args) ? ':dir(ltr)' : '') + branch.slice(call.end);
+    }
+    return /(?<!\\):dir\(\s*(?:ltr|rtl)\s*\)|\[dir\s*=\s*["']?(?:ltr|rtl)["']?\s*(?:i\s*)?\]/i.test(branch);
+  });
+}

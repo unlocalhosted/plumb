@@ -116,6 +116,8 @@ async function main(): Promise<void> {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
   }
   const options = {
+    // Agent edits need a single matching value, not a family's token inventory.
+    verbose: args.values.verbose === true || args.values.agent === true,
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
@@ -235,6 +237,7 @@ async function main(): Promise<void> {
     process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
     if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
   } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
+    Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
     (!report.config.path && !report.ledger?.exists ? '\nNext: run plumb init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
   process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
 }

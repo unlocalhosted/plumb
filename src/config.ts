@@ -13,6 +13,8 @@ export interface DecisionSource {
   inferred?: boolean;
   from?: string | string[] | (() => Decision[] | Promise<Decision[]>);
   identity?: 'reference' | 'value';
+  /** Show equal literals individually instead of one warning per family. */
+  byValue?: 'group' | 'each';
   callers?: ('primitive' | 'semantic')[];
   origins?: ('project' | 'framework' | 'inferred')[];
   exported?: boolean;
@@ -111,7 +113,8 @@ export function validateConfig(value: unknown): PlumbConfig {
     for (const [family, entry] of Object.entries(decisions)) {
       const path = `decisions.${family}`;
       const source = object(entry, path);
-      keys(source, ['from', 'identity', 'callers', 'origins', 'exported', 'inferred', 'suggest'], path);
+      keys(source, ['from', 'identity', 'byValue', 'callers', 'origins', 'exported', 'inferred', 'suggest'], path);
+      if ('byValue' in source && source.byValue !== 'group' && source.byValue !== 'each') invalid(`${path}.byValue`, '"group" or "each"');
       if ('suggest' in source) strings(source.suggest, `${path}.suggest`);
       if ('inferred' in source && typeof source.inferred !== 'boolean') invalid(`${path}.inferred`, 'a boolean');
       if ('from' in source && typeof source.from !== 'function') from(source.from, `${path}.from`);

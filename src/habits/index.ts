@@ -5,8 +5,9 @@ import type { CustomHabit, HabitSeverity } from './predicates.js';
 import { compilePredicate, validateHabit } from './predicates.js';
 import type { Declaration, Finding } from '../report.js';
 import { UsageError } from '../errors.js';
-import { code, calls, hoverGated, positivePseudo, selector } from './css.js';
-import { tokens } from '../rules/families.js';
+import { code, calls, hoverGated, positivePseudo, selector, directionSpecific } from './css.js';
+import { pixels, resolveValue } from '../decisions/resolve.js';
+import { tokens, oklab } from '../rules/families.js';
 
 export const builtins = [
   { id: 'hover-gate', severity: 'error', reason: 'Touch can leave a hover style stuck after a tap.', fix: 'Wrap only the hover branch in @media (hover: hover) and (pointer: fine).' },
@@ -39,6 +40,16 @@ const isClass = (d: Declaration) => d.origin === 'class' || d.origin === 'arbitr
 const outline = (d: Declaration) => /^(outline|outline-style)$/.test(d.prop);
 const none = (d: Declaration) => /(^|\s)(none|0(?:px)?)(\s|$)/i.test(valueOf(d));
 const visibleOutline = (d: Declaration) => outline(d) && !none(d) && !/^(initial|unset|revert|revert-layer|inherit)$/.test(valueOf(d));
+const visibleRing = (d: Declaration) => d.prop === 'box-shadow' && tokens(d.value, /,/).some(shadow => {
+  const parts = tokens(shadow, /\s/).filter(part => part !== 'inset' && !/^var\(--tw-ring-inset,\s*\)$/.test(part));
+  const lengths = parts.slice(0, 4).map(part => {
+    // Tailwind adds its unitless zero ring offset to the authored length.
+    const length = part.replace(/^calc\(([-\d.]+px)\s*\+\s*0\)$/, '$1');
+    return pixels(resolveValue(length, new Map()) ?? length);
+  });
+  return lengths[0] === 0 && lengths[1] === 0 && lengths[2] === 0 && lengths[3] !== undefined && lengths[3] > 0 &&
+    !parts.slice(4).some(part => part === 'transparent' || oklab(part)?.[3] === 0);
+});
 const focusBase = (s: string) => s.replace(/(?<!\\):focus-(visible|within)(?![\w-])/gi, '');
 
 /** This receives only source-glob declarations. Companions never certify a computed cascade. */
@@ -56,8 +67,16 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
   const groupKey = (d: Declaration) => `${d.site.file}\0${target(d)}\0${scope(d)}`;
   for (const d of declarations.filter(d => d.origin !== 'keyframes')) {
     const key = groupKey(d); const group = groups.get(key) ?? []; group.push(d); groups.set(key, group);
+  }
+  for (const d of eligible) {
+    if (!outline(d) && d.prop !== 'box-shadow') continue;
     const s = selector(d.when);
-    if (!d.opaque && visibleOutline(d) && (positive(s, 'focus-visible') || positive(s, 'focus-within'))) {
+    const focus = positive(s, 'focus-visible') || positive(s, 'focus-within');
+    const ringUtility = isClass(d) && /(?:^|:)(?:inset-)?ring(?:-|$)/.test(d.site.text);
+    const transparentRing = d.prop === 'box-shadow' && groups.get(groupKey(d))!.some(other => /^(--tw-ring-color|--tw-inset-ring-color)$/.test(other.prop) &&
+      JSON.stringify(other.when.filter(c => ['pseudo', 'branch'].includes(c.kind))) === JSON.stringify(d.when.filter(c => ['pseudo', 'branch'].includes(c.kind))) &&
+      (value(other) === 'transparent' || oklab(value(other))?.[3] === 0));
+    if (!/(?<!\\)::?(before|after)(?![\w-])/.test(s) && (visibleOutline(d) && focus || visibleRing(d) && !transparentRing && (focus || ringUtility))) {
       const key = `${d.site.file}\0${isClass(d) ? target(d) : focusBase(s)}`;
       const matches = rings.get(key) ?? []; matches.push(d); rings.set(key, matches);
     }
@@ -108,15 +127,27 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
           const restored = (rings.get(`${d.site.file}\0${isClass(d) ? target(d) : focusBase(s)}`) ?? []).some(ring =>
             ['hover', 'active', 'disabled', 'checked'].every(name => !positive(selector(ring.when), name) || positive(s, name)) &&
             ring.when.filter(c => ['media', 'supports', 'container', 'branch'].includes(c.kind)).every(c =>
-              c.kind === 'media' && /^\(\s*forced-colors\s*:\s*active\s*\)$/i.test(c.text) || d.when.some(t => t.kind === c.kind && t.text === c.text))); 
-          broken = outline(d) && none(d) && !restored || p === 'box-shadow' && positive(s, 'focus-visible') && !/::?(before|after)$/.test(s) && !peer(outline) && !restored;
+              visibleOutline(ring) && c.kind === 'media' && /^\(\s*forced-colors\s*:\s*active\s*\)$/i.test(c.text) || d.when.some(t => t.kind === c.kind && t.text === c.text)));
+          broken = outline(d) && none(d) && !restored;
           break;
         }
         case 'transition-named': broken = /^transition(?:-property)?$/.test(p) && tokens(v.toLowerCase()).includes('all'); break;
         case 'no-ease-in': broken = /^(transition|animation)(-|$)/.test(p) && tokens(v.toLowerCase()).includes('ease-in'); break;
         case 'logical-inline': {
+          if (s && directionSpecific(s)) break;
           const centered = /^(?:calc\()?\s*(?:50%|1\s*\/\s*2\s*\*\s*100%)/.test(v);
           broken = /^(?:left|right|(?:margin|padding|scroll-margin|scroll-padding)-(?:left|right)|border-(?:left|right)(?:-(?:width|style|color))?|border-(?:top|bottom)-(?:left|right)-radius)$/.test(p) && !centered || /^(text-align|float|clear)$/.test(p) && /^(left|right)$/i.test(v);
+          if (broken && !['text-align', 'float', 'clear'].includes(p)) {
+            const opposite = p.replace(/left|right/, side => side === 'left' ? 'right' : 'left');
+            const state = (other: Declaration) => JSON.stringify(other.when.filter(c => ['pseudo', 'branch'].includes(c.kind)));
+            const amount = (other: Declaration) => {
+              const resolved = resolveValue(value(other), new Map()) ?? other.resolved ?? value(other);
+              return pixels(resolved) ?? resolved;
+            };
+            // Equal companions under the same conditions already mirror. A
+            // hover-only or conditional counterpart cannot certify the base.
+            if (group.some(other => other.prop === opposite && !other.opaque && state(other) === state(d) && amount(other) === amount(d))) broken = false;
+          }
           const parts = tokens(v, /\s/);
           if (/^(padding|margin|inset)$/.test(p) && parts.length === 4 && parts[1] !== parts[3]) broken = true;
           break;

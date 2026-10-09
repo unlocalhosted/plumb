@@ -80,7 +80,8 @@ test('suggest globs limit choices and equal-value matching across every judged f
   const r=cli(dir);
   for(const f of families) {
     const finding=checks(r).find(d=>d.rule===`provenance/${f}`);
-    assert.ok(finding,f); assert.equal(finding.decisions.length,0); assert.ok(finding.action.startsWith('No token is close to'));
+    assert.ok(finding,f); assert.equal(finding.decisions.length,0);
+    assert.ok(finding.action.startsWith(f === 'elevation' ? 'No tokens fit:' : 'No token is close to'));
     assert.ok(!at(r, `${props[f]}: var(`).some(d=>d.family===f),f);
   }
   await writeFile(join(dir,'plumb.config.ts'), 'export default { decisions: { color: { suggest: [42] } } };');
@@ -201,7 +202,7 @@ test('choices deduplicate resolved amounts before limiting suggestions and prefe
     ${tokens.map(([, ns,, lower, upper]) => `--${ns}-a-bare: ${lower}; --${ns}-b-alias: var(--${ns}-a-bare); --${ns}-c-bare: ${upper};`).join('\n')}
   } .off { ${tokens.map(([,, prop,,, amount]) => `${prop}: ${amount};`).join(' ')} }
   .copy { ${tokens.map(([,, prop, lower]) => `${prop}: ${lower};`).join(' ')} }`);
-  const r = cli(dir);
+  const r = cli(dir, ['--verbose']);
   for (const [family, ns, prop, lower, upper,, low, high] of tokens) {
     const copy = at(r, `${prop}: ${lower}`).find(f => f.rule === `provenance/${family}/by-value`);
     assert.ok(copy, family);

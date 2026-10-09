@@ -226,6 +226,12 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "byValue": {
+          "enum": [
+            "group",
+            "each"
+          ]
         }
       }
     },
