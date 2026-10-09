@@ -1,0 +1,13 @@
+:root {
+  /* why: Related items use eight pixels. */
+  --spacing-related: 8px;
+  --spacing-group: 16px;
+  --color-ink: #123456;
+}
+.row { gap: 10px; }
+.row:hover { color: var(--color-ink); }
+.outline { outline: none; }
+.viewport { height: 100vh; }
+.scroller { overflow: auto; }
+.physical { margin-left: 10px; }
+.moving { transition: all 200ms ease-in; }

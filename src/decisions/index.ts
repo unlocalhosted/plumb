@@ -59,7 +59,13 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     if (source === undefined) return familyFor(name) === family;
     if (familyFor(name) !== undefined && familyFor(name) !== family) return false;
     if (typeof source === 'function') return false;
-    return (Array.isArray(source) ? source : [source]).some(pattern => pattern.startsWith('theme:') ? isTheme && matches(name, pattern.slice(6)) : pattern.startsWith('dtcg:') ? false : matches(file, pattern.replace(/^css:/, '')) || matches(file.slice(root.length + 1), pattern.replace(/^css:/, '')));
+    return (Array.isArray(source) ? source : [source]).some(pattern => {
+      if (pattern.startsWith('theme:')) return isTheme && matches(name, pattern.slice(6));
+      if (pattern.startsWith('dtcg:')) return false;
+      const selector = pattern.replace(/^css:/, ''), fragment = /^(.*)#(--[^#]+)$/.exec(selector);
+      const path = fragment?.[1] ?? selector;
+      return (!fragment || matches(name, fragment[2]!)) && (matches(file, path) || matches(file.slice(root.length + 1), path));
+    });
   }
   for (const item of theme) {
     const meta = metadata.get(item.name), family = familyFor(item.name) ?? Object.keys(config.decisions ?? {}).find(family => selected(item.name, family as Family, meta?.source.file ?? '', true)) as Family | undefined;

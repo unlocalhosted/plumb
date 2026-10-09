@@ -1,4 +1,4 @@
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
 import { parseSync } from 'oxc-parser';
@@ -8,7 +8,7 @@ import { parseCss, selectorText } from '../lower/css.js';
 import type { Rule } from 'lightningcss';
 import { familiesFor } from '../rules/families.js';
 import type { Report } from '../report.js';
-import { defaultSource } from '../project.js';
+import { initProject } from '../adoption/init.js';
 import { author } from './git.js';
 import { currentDecisions, decisionEntry, decisionKey, findingGroups } from './keys.js';
 import { entryCount, ledgerPath, readLedger, writeLedger } from './store.js';
@@ -65,6 +65,10 @@ async function anchorExists(root: string, entry: LedgerEntry): Promise<boolean> 
   } catch { return true; } // An unreadable retained file is never automatic approval.
 }
 export async function ledgerCommand(command: string, report: Report, options: CommandOptions): Promise<{ message: string; entries: LedgerEntry[]; moves: { from: string; to: string }[] }> {
+  if (command === 'init') return initProject(report.root, {
+    ...(report.config.path ? { config: report.config.path } : {}),
+    ...(options.force === undefined ? {} : { force: options.force }),
+  }, text => process.stdout.write(text));
   const ledger = await readLedger(report.root);
   const groups = findingGroups(report);
   const current = new Map([...groups].map(([key, group]) => [key, group.entry]));
@@ -96,19 +100,6 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     // An exception-only adoption still starts with a snapshot of current decisions.
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
     message = `Accepted ${selected.length} exception entries: ${[...keys].join(', ')}.`;
-  } else if (command === 'init') {
-    if (report.config.path) throw new UsageError(`Config already exists: ${report.config.path}; edit it, then run plumb accept-decisions.`);
-    const decisions: Record<string, { from: string[]; inferred: boolean }> = {};
-    for (const decision of currentDecisions(report)) {
-      const source = decision.source.file.endsWith('.css') ? `css:${relative(report.root, decision.source.file).replaceAll('\\', '/')}` : `theme:${decision.name}`;
-      const entry = decisions[decision.family] ??= { from: [], inferred: true };
-      if (!entry.from.includes(source)) entry.from.push(source);
-    }
-    const config = { ...(report.tailwind.entry ? { css: relative(report.root, report.tailwind.entry) } : {}), source: defaultSource, decisions };
-    const path = resolve(report.root, 'plumb.config.ts');
-    await writeFile(path, `// Inferred by Plumb; review decision sources before adopting.\nexport default ${JSON.stringify(config, null, 2)};\n`, { flag: 'wx' });
-    entries = acceptSet(report, entries, undefined, true);
-    message = `Wrote inferred ${path} and accepted current decisions. Run plumb baseline to record current debt.`;
   } else if (command === 'ledger') {
     if (!ledger.exists) throw new UsageError('No ledger exists; run plumb baseline first.');
     if (options.rebase) {
@@ -145,7 +136,6 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${entries.length} entries.`;
   } else throw new UsageError(`Unknown ledger command: ${command}.`);
   await writeLedger(report.root, entries);
-  if (command === 'init') await writeFile(pendingPath, 'Run plumb baseline to record current debt.\n');
   if (command === 'baseline') await rm(pendingPath, { force: true });
   return { message, entries, moves };
 }

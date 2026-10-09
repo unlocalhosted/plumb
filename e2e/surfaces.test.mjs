@@ -181,7 +181,7 @@ test('install --hooks merges settings, preserves existing hooks and stays idempo
 
 test('surfaces reject conflicting formats and invalid hook/scope flags', async t => {
   const directory = await fixture(t);
-  for (const args of [['--agent', '--json'], ['--format', 'nope'], ['--base', 'HEAD', '--changed'], ['install'], ['check', '--hooks']]) run(directory, args, 2);
+  for (const args of [['--agent', '--json'], ['--format', 'nope'], ['--base', 'HEAD', '--changed'], ['doctor', '--json'], ['check', '--hooks'], ['check', '--ci']]) run(directory, args, 2);
 });
 
 test('approval script checks recorded GitHub API review states and author exemption', async t => {
