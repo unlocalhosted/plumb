@@ -1,0 +1,4018 @@
+{
+  "root": "/Users/vijaysingh/unlocalhosted/metalui",
+  "commit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "snapshot": true,
+  "ignoredWorkingTreeChanges": [],
+  "sourceSha256": "a69d30120e1f7e84af5e73c3ac54e82d98750d53a7e0cdfeffcd2ddc4c896ef6",
+  "coverage": {
+    "callerDeclarations": 493,
+    "findings": 45,
+    "heuristicFindings": 5,
+    "byFamily": {
+      "size": {
+        "total": 77,
+        "allowed": 77,
+        "findings": 0
+      },
+      "layout": {
+        "total": 72,
+        "allowed": 72,
+        "findings": 0
+      },
+      "padding": {
+        "total": 65,
+        "allowed": 56,
+        "findings": 9
+      },
+      "other": {
+        "total": 139,
+        "allowed": 139,
+        "findings": 0
+      },
+      "paint": {
+        "total": 27,
+        "allowed": 8,
+        "findings": 19
+      },
+      "elevation": {
+        "total": 8,
+        "allowed": 3,
+        "findings": 5
+      },
+      "position": {
+        "total": 63,
+        "allowed": 63,
+        "findings": 0
+      },
+      "margin": {
+        "total": 3,
+        "allowed": 3,
+        "findings": 0
+      },
+      "custom-property": {
+        "total": 18,
+        "allowed": 18,
+        "findings": 0
+      },
+      "radius": {
+        "total": 7,
+        "allowed": 3,
+        "findings": 4
+      },
+      "type": {
+        "total": 14,
+        "allowed": 6,
+        "findings": 8
+      }
+    }
+  },
+  "findings": [
+    {
+      "key": "ownership:Avatar:2ec9b2ca3de196e0",
+      "rule": "ownership/Avatar",
+      "family": "type",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+          "line": 37,
+          "column": 111,
+          "text": "mark-person"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+          "line": 80,
+          "column": 137,
+          "text": "mark-person"
+        }
+      ],
+      "declaration": {
+        "prop": "font",
+        "value": "var(--mu-type-badge)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".mark-person"
+          }
+        ],
+        "refs": [
+          "--mu-type-badge"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+          "line": 37,
+          "column": 111,
+          "text": "mark-person"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Avatar"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Avatar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/avatar/avatar.tsx",
+          "line": 53
+        },
+        "variants": {
+          "size": [
+            "small",
+            "regular",
+            "large"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "flex-none",
+            "inline-grid",
+            "mu-avatar",
+            "place-items-center",
+            "recipe-surface-raise-sm",
+            "relative",
+            "rounded-full",
+            "select-none",
+            "size-avatar-size-large",
+            "size-avatar-size-regular",
+            "size-avatar-size-small",
+            "type-meta",
+            "type-title",
+            "type-ui"
+          ]
+        }
+      },
+      "why": "Avatar owns font (type). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/avatar/avatar.tsx:53.",
+      "fix": "Choose Avatar's variants: size=small | regular | large. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/avatar/avatar.tsx:53."
+    },
+    {
+      "key": "ownership:Button:14fbc1c9d709101a",
+      "rule": "ownership/Button",
+      "family": "type",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 666,
+          "column": 3,
+          "text": "letter-spacing: -.005em"
+        }
+      ],
+      "declaration": {
+        "prop": "letter-spacing",
+        "value": "-.005em",
+        "refs": [],
+        "when": [
+          {
+            "kind": "layer",
+            "text": "base"
+          },
+          {
+            "kind": "selector",
+            "text": ".landing-cta"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 666,
+          "column": 3,
+          "text": "letter-spacing: -.005em"
+        },
+        "authoredCss": "-.005em",
+        "owner": {
+          "kind": "element",
+          "name": ".landing-cta"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "-.005em"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns letter-spacing (type). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:17023a88f0f61147",
+      "rule": "ownership/Button",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 262,
+          "column": 51,
+          "text": "px-0!"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-inline-end",
+        "value": "0px !important",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".px-0\\!"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 262,
+          "column": 51,
+          "text": "px-0!"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "0px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns padding-inline-end (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:2a46e8ce1cda1b8e",
+      "rule": "ownership/Button",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 667,
+          "column": 3,
+          "text": "text-shadow: 0 -1px 0 rgba(90, 10, 0, .35)"
+        }
+      ],
+      "declaration": {
+        "prop": "text-shadow",
+        "value": "0 -1px 0 rgba(90, 10, 0, .35)",
+        "refs": [],
+        "when": [
+          {
+            "kind": "layer",
+            "text": "base"
+          },
+          {
+            "kind": "selector",
+            "text": ".landing-cta"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 667,
+          "column": 3,
+          "text": "text-shadow: 0 -1px 0 rgba(90, 10, 0, .35)"
+        },
+        "authoredCss": "0 -1px 0 rgba(90, 10, 0, .35)",
+        "owner": {
+          "kind": "element",
+          "name": ".landing-cta"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "0 -1px 0 rgba(90, 10, 0, .35)"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns text-shadow (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:5536477a26be6f51",
+      "rule": "ownership/Button",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 209,
+          "column": 72,
+          "text": "bg-s!"
+        }
+      ],
+      "declaration": {
+        "prop": "background-color",
+        "value": "var(--mu-s) !important",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".bg-s\\!"
+          }
+        ],
+        "refs": [
+          "--mu-s"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 209,
+          "column": 72,
+          "text": "bg-s!"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#F6F5F2"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns background-color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:61cf15c2e308a46e",
+      "rule": "ownership/Button",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 262,
+          "column": 51,
+          "text": "px-0!"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-inline-start",
+        "value": "0px !important",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".px-0\\!"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 262,
+          "column": 51,
+          "text": "px-0!"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "0px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns padding-inline-start (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:66c357c772dfde6e",
+      "rule": "ownership/Button",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 502,
+          "column": 146,
+          "text": "py-6"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-block-start",
+        "value": "calc(1px * 6)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".py-6"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 502,
+          "column": 146,
+          "text": "py-6"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "6px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns padding-block-start (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:69c88f4e12741919",
+      "rule": "ownership/Button",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 532,
+          "column": 87,
+          "text": "outline-green-deep"
+        }
+      ],
+      "declaration": {
+        "prop": "outline-color",
+        "value": "var(--mu-green-deep)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".outline-green-deep"
+          }
+        ],
+        "refs": [
+          "--mu-green-deep"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 532,
+          "column": 87,
+          "text": "outline-green-deep"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#3FB97A"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns outline-color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:789759e0f0e3b175",
+      "rule": "ownership/Button",
+      "family": "radius",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/WordmarkXray.tsx",
+          "line": 56,
+          "column": 104,
+          "text": "borderRadius: '999px'"
+        }
+      ],
+      "declaration": {
+        "prop": "border-radius",
+        "value": "999px",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/xray/WordmarkXray.tsx",
+          "line": 56,
+          "column": 104,
+          "text": "borderRadius: '999px'"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "inline",
+        "sourceOrigin": "project",
+        "resolved": "999px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns border-radius (radius). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:7ec4437754215c12",
+      "rule": "ownership/Button",
+      "family": "type",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 665,
+          "column": 3,
+          "text": "font-weight: 600"
+        }
+      ],
+      "declaration": {
+        "prop": "font-weight",
+        "value": "600",
+        "refs": [],
+        "when": [
+          {
+            "kind": "layer",
+            "text": "base"
+          },
+          {
+            "kind": "selector",
+            "text": ".landing-cta"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/kds.css",
+          "line": 665,
+          "column": 3,
+          "text": "font-weight: 600"
+        },
+        "authoredCss": "600",
+        "owner": {
+          "kind": "element",
+          "name": ".landing-cta"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "600"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns font-weight (type). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:8aa32e8b6da34c32",
+      "rule": "ownership/Button",
+      "family": "elevation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 209,
+          "column": 78,
+          "text": "shadow-none!"
+        }
+      ],
+      "declaration": {
+        "prop": "box-shadow",
+        "value": "0 0 transparent, 0 0 transparent, 0 0 transparent, 0 0 transparent, 0 0 #0000 !important",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".shadow-none\\!"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 209,
+          "column": 78,
+          "text": "shadow-none!"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "0 0 transparent, 0 0 transparent, 0 0 transparent, 0 0 transparent, 0 0 #0000"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns box-shadow (elevation). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:a869a37a60d1d928",
+      "rule": "ownership/Button",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 531,
+          "column": 82,
+          "text": "text-ink!"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink) !important",
+        "when": [
+          {
+            "kind": "branch",
+            "text": "cap === 'standard'"
+          },
+          {
+            "kind": "selector",
+            "text": ".text-ink\\!"
+          }
+        ],
+        "refs": [
+          "--mu-ink"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 531,
+          "column": 82,
+          "text": "text-ink!"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#1B1B1D"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:b32f7abb33d58919",
+      "rule": "ownership/Button",
+      "family": "elevation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 392,
+          "column": 64,
+          "text": "data-held:recipe-button-primary-pressed"
+        }
+      ],
+      "declaration": {
+        "prop": "box-shadow",
+        "value": "var(--mu-r-button-primary-pressed-shadow)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".data-held\\:recipe-button-primary-pressed[data-held]"
+          }
+        ],
+        "refs": [
+          "--mu-r-button-primary-pressed-shadow"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 392,
+          "column": 64,
+          "text": "data-held:recipe-button-primary-pressed"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns box-shadow (elevation). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:cac0cb37cf9432d7",
+      "rule": "ownership/Button",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 502,
+          "column": 146,
+          "text": "py-6"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-block-end",
+        "value": "calc(1px * 6)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".py-6"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Button.tsx",
+          "line": 502,
+          "column": 146,
+          "text": "py-6"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "6px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns padding-block-end (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Button:d2e7b0bca0e90378",
+      "rule": "ownership/Button",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 392,
+          "column": 64,
+          "text": "data-held:recipe-button-primary-pressed"
+        }
+      ],
+      "declaration": {
+        "prop": "background",
+        "value": "var(--mu-r-button-primary-pressed-background)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".data-held\\:recipe-button-primary-pressed[data-held]"
+          }
+        ],
+        "refs": [
+          "--mu-r-button-primary-pressed-background"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/availability-picker/availability-picker.tsx",
+          "line": 392,
+          "column": 64,
+          "text": "data-held:recipe-button-primary-pressed"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Button"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Button owns background (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85.",
+      "fix": "Choose Button's variants: cap=standard | primary | destructive | link | graphite | strip | strip-danger; size=default | compact; state=idle | waiting | done | error. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx:85."
+    },
+    {
+      "key": "ownership:Field.Input:e1c4579ee33fe621",
+      "rule": "ownership/Field.Input",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 373,
+          "column": 167,
+          "text": "text-ink2"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink2)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".text-ink2"
+          }
+        ],
+        "refs": [
+          "--mu-ink2"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 373,
+          "column": 167,
+          "text": "text-ink2"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Field.Input"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#5C5C60"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Field.Input",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 58
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "bg-transparent",
+            "border-0",
+            "caret-field-field-caret",
+            "flex-1",
+            "h-full",
+            "large",
+            "min-w-0",
+            "mu-field-input",
+            "outline-none",
+            "p-0",
+            "text-entry",
+            "text-field-field-ink",
+            "type-field-field",
+            "type-ui"
+          ]
+        }
+      },
+      "why": "Field.Input owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx:58.",
+      "fix": "Remove the caller's color override; Field.Input owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx:58."
+    },
+    {
+      "key": "ownership:FormField.Label:2e2f41a1fe423eb3",
+      "rule": "ownership/FormField.Label",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-bottom",
+        "value": "0",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".sr-only"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "FormField.Label"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "FormField.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-form-field-label",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "why": "FormField.Label owns padding-bottom (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39.",
+      "fix": "Remove the caller's padding-bottom override; FormField.Label owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39."
+    },
+    {
+      "key": "ownership:FormField.Label:7d7ea8c816837934",
+      "rule": "ownership/FormField.Label",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-left",
+        "value": "0",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".sr-only"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "FormField.Label"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "FormField.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-form-field-label",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "why": "FormField.Label owns padding-left (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39.",
+      "fix": "Remove the caller's padding-left override; FormField.Label owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39."
+    },
+    {
+      "key": "ownership:FormField.Label:8b5b17c1210cd04e",
+      "rule": "ownership/FormField.Label",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-right",
+        "value": "0",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".sr-only"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "FormField.Label"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "FormField.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-form-field-label",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "why": "FormField.Label owns padding-right (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39.",
+      "fix": "Remove the caller's padding-right override; FormField.Label owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39."
+    },
+    {
+      "key": "ownership:FormField.Label:d90539c06d016df2",
+      "rule": "ownership/FormField.Label",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-top",
+        "value": "0",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".sr-only"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/share-panel/share-panel.tsx",
+          "line": 310,
+          "column": 43,
+          "text": "sr-only"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "FormField.Label"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "FormField.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-form-field-label",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "why": "FormField.Label owns padding-top (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39.",
+      "fix": "Remove the caller's padding-top override; FormField.Label owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx:39."
+    },
+    {
+      "key": "ownership:Icon:0885bbb945609239",
+      "rule": "ownership/Icon",
+      "family": "paint",
+      "severity": "warn",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/library.css",
+          "line": 16,
+          "column": 34,
+          "text": "color: var(--ink2)"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/library.css",
+          "line": 29,
+          "column": 36,
+          "text": "color: var(--ink2)"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--ink2)",
+        "refs": [
+          "--ink2"
+        ],
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".section-entry svg"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/library.css",
+          "line": 16,
+          "column": 34,
+          "text": "color: var(--ink2)"
+        },
+        "authoredCss": "var(--ink2)",
+        "owner": {
+          "kind": "element",
+          "name": ".section-entry svg"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "#5C5C60"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Icon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx",
+          "line": 176
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "mu-ic-",
+            "mu-icon"
+          ]
+        }
+      },
+      "why": "Icon owns color (paint). Descendant selector may paint its root (heuristic). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx:176.",
+      "fix": "Remove the caller's color override; Icon owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx:176."
+    },
+    {
+      "key": "ownership:Icon:1ea69cc9041d4659",
+      "rule": "ownership/Icon",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Sizing.tsx",
+          "line": 63,
+          "column": 77,
+          "text": "text-ink2"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Spacing.tsx",
+          "line": 81,
+          "column": 58,
+          "text": "text-ink2"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Spacing.tsx",
+          "line": 91,
+          "column": 64,
+          "text": "text-ink2"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink2)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".text-ink2"
+          }
+        ],
+        "refs": [
+          "--mu-ink2"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/foundations/Sizing.tsx",
+          "line": 63,
+          "column": 77,
+          "text": "text-ink2"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Icon"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#5C5C60"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Icon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx",
+          "line": 176
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "mu-ic-",
+            "mu-icon"
+          ]
+        }
+      },
+      "why": "Icon owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx:176.",
+      "fix": "Remove the caller's color override; Icon owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx:176."
+    },
+    {
+      "key": "ownership:IconButton:39c2b17a3e960b01",
+      "rule": "ownership/IconButton",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/task-inbox/task-inbox.tsx",
+          "line": 609,
+          "column": 30,
+          "text": "aria-pressed:text-success"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-success)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".aria-pressed\\:text-success[aria-pressed=\"true\"]"
+          }
+        ],
+        "refs": [
+          "--mu-success"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/task-inbox/task-inbox.tsx",
+          "line": 609,
+          "column": 30,
+          "text": "aria-pressed:text-success"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "IconButton"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#AAD47C"
+      },
+      "decisions": [],
+      "component": {
+        "name": "IconButton",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/icon-button/icon-button.tsx",
+          "line": 32
+        },
+        "variants": {
+          "variant": [
+            "tool",
+            "ghost",
+            "mini"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button"
+          ],
+          "classes": [
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "cursor-pointer",
+            "flex-none",
+            "h-icon-button-mini-h",
+            "icon-button-mini-hit",
+            "icon-button-tool-hover",
+            "inline-grid",
+            "mini",
+            "mu-icon-button",
+            "mu-icon-trigger",
+            "p-0",
+            "place-items-center",
+            "recipe-icon-button-tool",
+            "relative",
+            "rounded-icon-button-tool-radius",
+            "rounded-pill",
+            "size-icon-button-ghost-size",
+            "size-icon-button-tool-size",
+            "tap-highlight-none",
+            "text-icon-button-ghost-ink",
+            "text-icon-button-mini-ink",
+            "text-icon-button-tool-ink",
+            "transition-icon-button",
+            "transition-icon-button-tool",
+            "type-icon-button-mini",
+            "w-icon-button-mini-w"
+          ]
+        }
+      },
+      "why": "IconButton owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/icon-button/icon-button.tsx:32.",
+      "fix": "Choose IconButton's variants: variant=tool | ghost | mini. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/icon-button/icon-button.tsx:32."
+    },
+    {
+      "key": "ownership:Kbd:a219ec75a43658e8",
+      "rule": "ownership/Kbd",
+      "family": "elevation",
+      "severity": "warn",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/edit/edit.css",
+          "line": 68,
+          "column": 48,
+          "text": "box-shadow: 0 0 0 1.5px var(--mu-presence-guide-dark)"
+        }
+      ],
+      "declaration": {
+        "prop": "box-shadow",
+        "value": "0 0 0 1.5px var(--mu-presence-guide-dark)",
+        "refs": [
+          "--mu-presence-guide-dark"
+        ],
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".ed-tag-key[data-held] kbd"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/edit/edit.css",
+          "line": 68,
+          "column": 48,
+          "text": "box-shadow: 0 0 0 1.5px var(--mu-presence-guide-dark)"
+        },
+        "owner": {
+          "kind": "element",
+          "name": ".ed-tag-key[data-held] kbd"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "0 0 0 1.5px #78D6A5"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Kbd",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/kbd/kbd.tsx",
+          "line": 34
+        },
+        "variants": {
+          "size": [
+            "default",
+            "small"
+          ],
+          "surface": [
+            "default",
+            "strip",
+            "sunk",
+            "plain"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "kbd"
+          ],
+          "classes": [
+            "align-middle",
+            "box-border",
+            "h-kbd-height",
+            "h-kbd-small-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "min-w-kbd-min",
+            "min-w-kbd-small-min",
+            "mu-kbd",
+            "px-kbd-pad",
+            "px-kbd-small-pad",
+            "recipe-kbd",
+            "recipe-kbd-strip",
+            "recipe-kbd-sunk",
+            "rounded-kbd-radius",
+            "rounded-kbd-small-radius",
+            "rounded-pill",
+            "sunk",
+            "text-ink2",
+            "text-kbd-strip-ink",
+            "text-kbd-sunk-ink",
+            "type-kbd",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "why": "Kbd owns box-shadow (elevation). Descendant selector may paint its root (heuristic). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/kbd/kbd.tsx:34.",
+      "fix": "Choose Kbd's variants: size=default | small; surface=default | strip | sunk | plain. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/kbd/kbd.tsx:34."
+    },
+    {
+      "key": "ownership:Link:253ed01a0ed13979",
+      "rule": "ownership/Link",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Link.tsx",
+          "line": 20,
+          "column": 280,
+          "text": "focus-ring"
+        }
+      ],
+      "declaration": {
+        "prop": "outline",
+        "value": "var(--mu-focus-width) solid var(--mu-focus)",
+        "when": [
+          {
+            "kind": "branch",
+            "text": "state === 'focus'"
+          },
+          {
+            "kind": "selector",
+            "text": ".focus-ring"
+          }
+        ],
+        "refs": [
+          "--mu-focus-width",
+          "--mu-focus"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Link.tsx",
+          "line": 20,
+          "column": 280,
+          "text": "focus-ring"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Link"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Link",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/link/link.tsx",
+          "line": 25
+        },
+        "variants": {
+          "kind": [
+            "inline",
+            "quiet",
+            "standalone"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "why": "Link owns outline (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/link/link.tsx:25.",
+      "fix": "Choose Link's variants: kind=inline | quiet | standalone. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/link/link.tsx:25."
+    },
+    {
+      "key": "ownership:MarkLine:29ea02bd5e423181",
+      "rule": "ownership/MarkLine",
+      "family": "type",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 26,
+          "text": "type-content"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/NumericCue.tsx",
+          "line": 48,
+          "column": 26,
+          "text": "type-content"
+        }
+      ],
+      "declaration": {
+        "prop": "font",
+        "value": "500 15px/20px var(--mu-sans)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".type-content"
+          }
+        ],
+        "refs": [
+          "--mu-sans"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 26,
+          "text": "type-content"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "MarkLine"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "MarkLine",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 78
+        },
+        "variants": {
+          "presentation": [
+            "semantic",
+            "reading"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "why": "MarkLine owns font (type). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78.",
+      "fix": "Choose MarkLine's variants: presentation=semantic | reading. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78."
+    },
+    {
+      "key": "ownership:MarkLine:a7b5708bb0ef2fba",
+      "rule": "ownership/MarkLine",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 39,
+          "text": "text-ink"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/NumericCue.tsx",
+          "line": 48,
+          "column": 39,
+          "text": "text-ink"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/cues/ProvenanceDocument.tsx",
+          "line": 119,
+          "column": 111,
+          "text": "text-ink"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".text-ink"
+          }
+        ],
+        "refs": [
+          "--mu-ink"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 39,
+          "text": "text-ink"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "MarkLine"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#1B1B1D"
+      },
+      "decisions": [],
+      "component": {
+        "name": "MarkLine",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 78
+        },
+        "variants": {
+          "presentation": [
+            "semantic",
+            "reading"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "why": "MarkLine owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78.",
+      "fix": "Choose MarkLine's variants: presentation=semantic | reading. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78."
+    },
+    {
+      "key": "ownership:MarkLine:c4cab7f0840a7e13",
+      "rule": "ownership/MarkLine",
+      "family": "type",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 26,
+          "text": "type-content"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/NumericCue.tsx",
+          "line": 48,
+          "column": 26,
+          "text": "type-content"
+        }
+      ],
+      "declaration": {
+        "prop": "letter-spacing",
+        "value": "-0.012em",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".type-content"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 28,
+          "column": 26,
+          "text": "type-content"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "MarkLine"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "MarkLine",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 78
+        },
+        "variants": {
+          "presentation": [
+            "semantic",
+            "reading"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "why": "MarkLine owns letter-spacing (type). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78.",
+      "fix": "Choose MarkLine's variants: presentation=semantic | reading. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx:78."
+    },
+    {
+      "key": "ownership:Row:7000b9417c65ab63",
+      "rule": "ownership/Row",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 98,
+          "column": 39,
+          "text": "recipe-well-field"
+        }
+      ],
+      "declaration": {
+        "prop": "background",
+        "value": "var(--mu-r-well-self-field-background)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".recipe-well-field"
+          }
+        ],
+        "refs": [
+          "--mu-r-well-self-field-background"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 98,
+          "column": 39,
+          "text": "recipe-well-field"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Row"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Row",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 36
+        },
+        "variants": {
+          "variant": [
+            "list",
+            "panel",
+            "option"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "div",
+            "li",
+            "tr"
+          ],
+          "classes": [
+            "box-border",
+            "cursor-pointer",
+            "flex",
+            "gap-row-list-gap",
+            "gap-row-option-gap",
+            "gap-row-panel-gap",
+            "h-row-option-height",
+            "items-center",
+            "items-start",
+            "mu-row",
+            "outline-none",
+            "px-row-list-pad-x",
+            "px-row-option-pad-x",
+            "px-row-panel-pad-x",
+            "py-row-list-pad-y",
+            "py-row-panel-pad-y",
+            "relative",
+            "rounded-row-list-radius",
+            "rounded-row-option-radius",
+            "rounded-row-panel-radius",
+            "text-ink",
+            "transition-row",
+            "type-row-list",
+            "type-row-option",
+            "type-row-panel"
+          ]
+        }
+      },
+      "why": "Row owns background (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:36.",
+      "fix": "Choose Row's variants: variant=list | panel | option. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:36."
+    },
+    {
+      "key": "ownership:Row:9dc009bb45054c6d",
+      "rule": "ownership/Row",
+      "family": "elevation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 98,
+          "column": 39,
+          "text": "recipe-well-field"
+        }
+      ],
+      "declaration": {
+        "prop": "box-shadow",
+        "value": "var(--mu-r-well-self-field-shadow)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".recipe-well-field"
+          }
+        ],
+        "refs": [
+          "--mu-r-well-self-field-shadow"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 98,
+          "column": 39,
+          "text": "recipe-well-field"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Row"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "Row",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 36
+        },
+        "variants": {
+          "variant": [
+            "list",
+            "panel",
+            "option"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "div",
+            "li",
+            "tr"
+          ],
+          "classes": [
+            "box-border",
+            "cursor-pointer",
+            "flex",
+            "gap-row-list-gap",
+            "gap-row-option-gap",
+            "gap-row-panel-gap",
+            "h-row-option-height",
+            "items-center",
+            "items-start",
+            "mu-row",
+            "outline-none",
+            "px-row-list-pad-x",
+            "px-row-option-pad-x",
+            "px-row-panel-pad-x",
+            "py-row-list-pad-y",
+            "py-row-panel-pad-y",
+            "relative",
+            "rounded-row-list-radius",
+            "rounded-row-option-radius",
+            "rounded-row-panel-radius",
+            "text-ink",
+            "transition-row",
+            "type-row-list",
+            "type-row-option",
+            "type-row-panel"
+          ]
+        }
+      },
+      "why": "Row owns box-shadow (elevation). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:36.",
+      "fix": "Choose Row's variants: variant=list | panel | option. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:36."
+    },
+    {
+      "key": "ownership:Row.Text:154096c0f9eb2feb",
+      "rule": "ownership/Row.Text",
+      "family": "paint",
+      "severity": "warn",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/edit/edit.css",
+          "line": 148,
+          "column": 36,
+          "text": "color: var(--ink3)"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--ink3)",
+        "refs": [
+          "--ink3"
+        ],
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".ed-layer[data-off] .mu-row-text"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/edit/edit.css",
+          "line": 148,
+          "column": 36,
+          "text": "color: var(--ink3)"
+        },
+        "owner": {
+          "kind": "element",
+          "name": ".ed-layer[data-off] .mu-row-text"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "#6C6C6F"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Row.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 57
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-1",
+            "min-w-0",
+            "mu-row-text"
+          ]
+        }
+      },
+      "why": "Row.Text owns color (paint). Descendant selector may paint its root (heuristic). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57.",
+      "fix": "Remove the caller's color override; Row.Text owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57."
+    },
+    {
+      "key": "ownership:Row.Text:20ff1234c3983a5e",
+      "rule": "ownership/Row.Text",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 99,
+          "column": 102,
+          "text": "text-ink"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink)",
+        "when": [
+          {
+            "kind": "branch",
+            "text": "!(pending(item))"
+          },
+          {
+            "kind": "selector",
+            "text": ".text-ink"
+          }
+        ],
+        "refs": [
+          "--mu-ink"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 99,
+          "column": 102,
+          "text": "text-ink"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Row.Text"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#1B1B1D"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Row.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 57
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-1",
+            "min-w-0",
+            "mu-row-text"
+          ]
+        }
+      },
+      "why": "Row.Text owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57.",
+      "fix": "Remove the caller's color override; Row.Text owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57."
+    },
+    {
+      "key": "ownership:Row.Text:f8e89e75f22056be",
+      "rule": "ownership/Row.Text",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 99,
+          "column": 88,
+          "text": "text-ink2"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--mu-ink2)",
+        "when": [
+          {
+            "kind": "branch",
+            "text": "pending(item)"
+          },
+          {
+            "kind": "selector",
+            "text": ".text-ink2"
+          }
+        ],
+        "refs": [
+          "--mu-ink2"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/Spinner.tsx",
+          "line": 99,
+          "column": 88,
+          "text": "text-ink2"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Row.Text"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "#5C5C60"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Row.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 57
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-1",
+            "min-w-0",
+            "mu-row-text"
+          ]
+        }
+      },
+      "why": "Row.Text owns color (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57.",
+      "fix": "Remove the caller's color override; Row.Text owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx:57."
+    },
+    {
+      "key": "ownership:ScrollArea:6df52fb285b9aa00",
+      "rule": "ownership/ScrollArea",
+      "family": "paint",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 91,
+          "text": "recipe-well-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 57,
+          "column": 50,
+          "text": "recipe-well-field"
+        }
+      ],
+      "declaration": {
+        "prop": "background",
+        "value": "var(--mu-r-well-self-field-background)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".recipe-well-field"
+          }
+        ],
+        "refs": [
+          "--mu-r-well-self-field-background"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 91,
+          "text": "recipe-well-field"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "ScrollArea"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "ScrollArea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "min-h-0",
+            "mu-scroll-area",
+            "overflow-hidden",
+            "relative"
+          ]
+        }
+      },
+      "why": "ScrollArea owns background (paint). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34.",
+      "fix": "Remove the caller's background override; ScrollArea owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34."
+    },
+    {
+      "key": "ownership:ScrollArea:9a62a4168ee93c11",
+      "rule": "ownership/ScrollArea",
+      "family": "elevation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 91,
+          "text": "recipe-well-field"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 57,
+          "column": 50,
+          "text": "recipe-well-field"
+        }
+      ],
+      "declaration": {
+        "prop": "box-shadow",
+        "value": "var(--mu-r-well-self-field-shadow)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".recipe-well-field"
+          }
+        ],
+        "refs": [
+          "--mu-r-well-self-field-shadow"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 91,
+          "text": "recipe-well-field"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "ScrollArea"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "decisions": [],
+      "component": {
+        "name": "ScrollArea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "min-h-0",
+            "mu-scroll-area",
+            "overflow-hidden",
+            "relative"
+          ]
+        }
+      },
+      "why": "ScrollArea owns box-shadow (elevation). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34.",
+      "fix": "Remove the caller's box-shadow override; ScrollArea owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34."
+    },
+    {
+      "key": "ownership:ScrollArea:b571fea16ea90e34",
+      "rule": "ownership/ScrollArea",
+      "family": "padding",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/ai-composer/ai-composer.tsx",
+          "line": 324,
+          "column": 90,
+          "text": "pt-mu-space-12"
+        }
+      ],
+      "declaration": {
+        "prop": "padding-top",
+        "value": "var(--mu-space-12)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".pt-mu-space-12"
+          }
+        ],
+        "refs": [
+          "--mu-space-12"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/blocks/ai-composer/ai-composer.tsx",
+          "line": 324,
+          "column": 90,
+          "text": "pt-mu-space-12"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "ScrollArea"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "12px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "ScrollArea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "min-h-0",
+            "mu-scroll-area",
+            "overflow-hidden",
+            "relative"
+          ]
+        }
+      },
+      "why": "ScrollArea owns padding-top (padding). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34.",
+      "fix": "Remove the caller's padding-top override; ScrollArea owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34."
+    },
+    {
+      "key": "ownership:ScrollArea:c5156063c996d4d0",
+      "rule": "ownership/ScrollArea",
+      "family": "radius",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 78,
+          "text": "rounded-card"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 57,
+          "column": 37,
+          "text": "rounded-card"
+        }
+      ],
+      "declaration": {
+        "prop": "border-radius",
+        "value": "var(--radius-card)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".rounded-card"
+          }
+        ],
+        "refs": [
+          "--radius-card"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ScrollArea.tsx",
+          "line": 23,
+          "column": 78,
+          "text": "rounded-card"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "ScrollArea"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "24px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "ScrollArea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "min-h-0",
+            "mu-scroll-area",
+            "overflow-hidden",
+            "relative"
+          ]
+        }
+      },
+      "why": "ScrollArea owns border-radius (radius). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34.",
+      "fix": "Remove the caller's border-radius override; ScrollArea owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx:34."
+    },
+    {
+      "key": "ownership:Skeleton.Text:f527ea8f3769b213",
+      "rule": "ownership/Skeleton.Text",
+      "family": "paint",
+      "severity": "warn",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/library.css",
+          "line": 37,
+          "column": 40,
+          "text": "color: var(--ink2)"
+        }
+      ],
+      "declaration": {
+        "prop": "color",
+        "value": "var(--ink2)",
+        "refs": [
+          "--ink2"
+        ],
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".place-note > span"
+          }
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/library.css",
+          "line": 37,
+          "column": 40,
+          "text": "color: var(--ink2)"
+        },
+        "authoredCss": "var(--ink2)",
+        "owner": {
+          "kind": "element",
+          "name": ".place-note > span"
+        },
+        "origin": "stylesheet",
+        "sourceOrigin": "project",
+        "resolved": "#5C5C60"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Skeleton.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "gap-skeleton-line-gap",
+            "grid",
+            "mu-skeleton-text"
+          ]
+        }
+      },
+      "why": "Skeleton.Text owns color (paint). Descendant selector may paint its root (heuristic). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx:34.",
+      "fix": "Remove the caller's color override; Skeleton.Text owns it. No static variant axes found. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx:34."
+    },
+    {
+      "key": "ownership:Surface:6f334b5a3d66ce24",
+      "rule": "ownership/Surface",
+      "family": "radius",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/LayerSorter.tsx",
+          "line": 45,
+          "column": 111,
+          "text": "borderRadius: 7"
+        }
+      ],
+      "declaration": {
+        "prop": "border-radius",
+        "value": "7px",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/LayerSorter.tsx",
+          "line": 45,
+          "column": 111,
+          "text": "borderRadius: 7"
+        },
+        "owner": {
+          "kind": "component",
+          "name": "Surface"
+        },
+        "origin": "inline",
+        "sourceOrigin": "project",
+        "resolved": "7px"
+      },
+      "decisions": [],
+      "component": {
+        "name": "Surface",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/surface/surface.tsx",
+          "line": 52
+        },
+        "variants": {
+          "material": [
+            "raise",
+            "raise-lite",
+            "raise-sm",
+            "frost",
+            "plate",
+            "panel",
+            "pop",
+            "tip",
+            "lens",
+            "graphite",
+            "graphite-plain",
+            "graphite-strip",
+            "graphite-deep",
+            "graphite-glass"
+          ],
+          "radius": [
+            "pill",
+            "hero",
+            "card",
+            "plate",
+            "strip",
+            "region",
+            "tip",
+            "row"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "aside",
+            "div",
+            "header",
+            "nav",
+            "section",
+            "span"
+          ],
+          "classes": [
+            "backdrop-surface-blur-frost",
+            "backdrop-surface-blur-graphite",
+            "backdrop-surface-blur-graphite-glass",
+            "backdrop-surface-blur-graphite-strip",
+            "backdrop-surface-blur-lens",
+            "backdrop-surface-blur-panel",
+            "backdrop-surface-blur-plate",
+            "backdrop-surface-blur-pop",
+            "backdrop-surface-blur-tip",
+            "box-border",
+            "graphite-deep",
+            "graphite-glass",
+            "graphite-plain",
+            "graphite-strip",
+            "mu-surface",
+            "raise-lite",
+            "raise-sm",
+            "recipe-surface-frost",
+            "recipe-surface-graphite",
+            "recipe-surface-graphite-deep",
+            "recipe-surface-graphite-glass",
+            "recipe-surface-lens",
+            "recipe-surface-panel",
+            "recipe-surface-plate",
+            "recipe-surface-pop",
+            "recipe-surface-raise",
+            "recipe-surface-raise-lite",
+            "recipe-surface-raise-sm",
+            "recipe-surface-tip",
+            "relative",
+            "rounded-surface-radius-card",
+            "rounded-surface-radius-hero",
+            "rounded-surface-radius-pill",
+            "rounded-surface-radius-plate",
+            "rounded-surface-radius-region",
+            "rounded-surface-radius-row",
+            "rounded-surface-radius-strip",
+            "rounded-surface-radius-tip",
+            "string"
+          ]
+        }
+      },
+      "why": "Surface owns border-radius (radius). Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/surface/surface.tsx:52.",
+      "fix": "Choose Surface's variants: material=raise | raise-lite | raise-sm | frost | plate | panel | pop | tip | lens | graphite | graphite-plain | graphite-strip | graphite-deep | graphite-glass; radius=pill | hero | card | plate | strip | region | tip | row. Source: /Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/surface/surface.tsx:52."
+    }
+  ]
+}
