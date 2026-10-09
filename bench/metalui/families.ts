@@ -98,3 +98,18 @@ export function familyDecisions(family: string) {
     return defineDecisions([...records.values()]);
   };
 }
+
+/** Recipe tokens encode component geometry/paint, not general theme choices.
+ * Follow aliases too: --radius-field-regular-radius and --shadow-* recipe keys
+ * resolve into --mu-r-*. Keep their references valid, but never recommend them
+ * as equal-value replacements for unrelated authored code. */
+export async function suggestibleTokens(): Promise<string[]> {
+  const { raw, byName } = await inputs();
+  function recipe(name: string, seen = new Set<string>()): boolean {
+    if (name.startsWith('--mu-r-')) return true;
+    if (seen.has(name)) return false;
+    const next = new Set([...seen, name]);
+    return [...(byName.get(name)?.value ?? '').matchAll(/var\((--[\w-]+)/g)].some(match => recipe(match[1]!, next));
+  }
+  return [...new Set(raw.map((item: any) => item.name))].filter(name => !recipe(name)).sort();
+}

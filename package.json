@@ -18,7 +18,8 @@
     "schema",
     "action.yml",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "skills"
   ],
   "engines": {
     "node": ">=22.18"

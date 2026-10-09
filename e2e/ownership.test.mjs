@@ -35,7 +35,7 @@ test('ownership follows barrels, renames, namespace imports, forwarding wrappers
  const button = findings.find(f => f.declaration.prop === 'background-color');
  assert.deepEqual(button.component.variants.variant, ['default','destructive','outline']);
  assert.deepEqual(button.component.variants.size, ['default','sm','lg']);
- assert.ok(button.fix.includes('variant=default | destructive | outline')); assert.ok(button.component.source.file.endsWith('/button.tsx'));
+ assert.ok(button.fix.includes('variant = default | destructive | outline')); assert.ok(button.component.source.file.endsWith('/button.tsx'));
  for (const family of ['margin','size']) assert.equal(r.coverage.ownership.byFamily[family].findings, 0);
  assert.deepEqual(run(dir).findings, r.findings);
 });
@@ -100,7 +100,7 @@ test('descendant stylesheet paint warns by root subject, own source and outside 
  });
  const findings=ownership(run(dir));
  assert.equal(findings.length,1); assert.equal(findings[0].severity,'warn');
- assert.ok(findings[0].why.includes('heuristic')); assert.equal(findings[0].declaration.prop,'background-color');
+ assert.ok(findings[0].title.endsWith('(may apply)')); assert.equal(findings[0].declaration.prop,'background-color');
  assert.ok(findings[0].sites.every(s=>s.file.endsWith('/src/paint.css')));
 });
 

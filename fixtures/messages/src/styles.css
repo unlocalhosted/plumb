@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@theme {
+  --spacing: 1px;
+  --spacing-small: 8px; --spacing-large: 12px;
+  --color-brand: #123456;
+  --radius-control: 12px; --text-body: 16px;
+  --duration-quick: 120ms; --ease-snap: cubic-bezier(.2,0,.2,1);
+  --shadow-float: 0 2px 4px var(--color-brand); --z-dialog: 50;
+}

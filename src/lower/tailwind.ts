@@ -73,7 +73,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     const cssGraph = await tailwindGraph(entry);
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer10-decision-refs-layer5-cache-v1`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v2`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -146,7 +146,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           // static and functional). Only a compiling value-bearing parse is
           // evidence that the author supplied a value, rather than a utility.
           const authoredValue = [...system.parseCandidate(candidate)].some(parsed =>
-            (parsed.kind === 'arbitrary' || parsed.kind === 'functional' && parsed.value != null) && system.compileAstNodes(parsed).length > 0);
+            (parsed.kind === 'arbitrary' || parsed.kind === 'functional' && parsed.value != null && !(parsed.value.kind === 'named' && ['full', 'none', 'px'].includes(parsed.value.value))) && system.compileAstNodes(parsed).length > 0);
           const result = lowerCss(css[index] ?? null);
           for (const parsed of system.parseCandidate(candidate)) {
             if (parsed.kind !== 'functional' || parsed.value?.kind !== 'named' || !system.compileAstNodes(parsed).length) continue;

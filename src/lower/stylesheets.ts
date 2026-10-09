@@ -186,7 +186,7 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[], readOnly = false): Promise<LoweredStylesheets> {
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file, graph.files.get(file)?.css)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer10-apply-refs-layer6-anchors-layer5-authored-css-v1', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v2', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');
@@ -306,6 +306,12 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   if (entry && applied.length) {
     const oracle = await lowerTailwind(root, entry, version, applied, false, readOnly);
     for (const declaration of applications) {
+      const candidates = tokens(declaration).flatMap(token => {
+        const candidate = oracle.candidates.get(token);
+        return candidate?.declarations.filter(d => d.prop === declaration.prop).map(d => ({ declaration: d, authoredValue: candidate.authoredValue === true })) ?? [];
+      });
+      const exact = candidates.filter(item => item.declaration.value === declaration.value);
+      declaration.authoredValue = (exact.length ? exact : candidates).some(item => item.authoredValue);
       const refs = tokens(declaration).flatMap(token => oracle.candidates.get(token)?.declarations
         .filter(d => d.prop === declaration.prop).flatMap(d => d.decisionRefs ?? references(d.value)) ?? []);
       if (refs.length) declaration.decisionRefs = [...new Set(refs)];

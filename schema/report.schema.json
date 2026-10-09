@@ -227,18 +227,23 @@
       "properties": {
         "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" }, "resolved": { "type": "string" },
         "refs": { "$ref": "#/$defs/strings" }, "origin": { "enum": ["project", "framework", "inferred"] },
-        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }
+        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "groupWhy": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }
       }
     },
     "finding": {
       "type": "object", "additionalProperties": false,
-      "required": ["key", "rule", "family", "severity", "sites", "declaration", "decisions", "why", "fix"],
+      "allOf": [{ "if": { "not": { "required": ["choices"] } }, "then": { "required": ["action"] } }],
+      "required": ["key", "rule", "family", "severity", "sites", "declaration", "decisions", "title", "because", "accept", "why", "fix"],
       "properties": {
         "key": { "type": "string" }, "rule": { "type": "string" }, "family": { "type": "string" },
         "severity": { "enum": ["info", "warn", "error"] },
         "sites": { "type": "array", "items": { "$ref": "#/$defs/site" } },
         "declaration": { "$ref": "#/$defs/declaration" },
         "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+        "title": { "type": "string", "minLength": 1 }, "because": { "type": "string", "minLength": 1 },
+        "action": { "type": "string" }, "accept": { "type": "string" },
+        "edits": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["site", "text"], "properties": { "site": { "$ref": "#/$defs/site" }, "text": { "type": "string" }, "token": { "type": "string" } } } },
+        "choices": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/decision" } },
         "why": { "type": "string" }, "fix": { "type": "string" },
         "variable": {
           "type": "object", "additionalProperties": false, "required": ["name", "useCount"],

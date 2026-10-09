@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plumb config (serializable fields; TS configs also support from callbacks)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "css": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "markers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "classHelpers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "exported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "spacing": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "color": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "radius": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "type": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "motion": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "elevation": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "size": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "z": {
+          "$ref": "#/$defs/decisionSource"
+        },
+        "opacity": {
+          "$ref": "#/$defs/decisionSource"
+        }
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ]
+        },
+        "own": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "contracts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "own": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "deny": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "habits": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "$ref": "#/$defs/customHabit"
+          }
+        ]
+      }
+    },
+    "imitation": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fingerprint"
+        ],
+        "properties": {
+          "elements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "fingerprint": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "decisionSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inferred": {
+          "type": "boolean"
+        },
+        "from": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ]
+        },
+        "identity": {
+          "enum": [
+            "value",
+            "reference"
+          ]
+        },
+        "callers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          }
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          }
+        },
+        "exported": {
+          "type": "boolean"
+        },
+        "suggest": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "customHabit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "when",
+        "message"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "prop": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            },
+            "origin": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              ]
+            },
+            "owner": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "element",
+                        "component"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "ownerElements": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "when": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "has": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "media": {
+                      "type": "string"
+                    },
+                    "pseudo": {
+                      "type": "string"
+                    },
+                    "selector": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "lacks": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "media": {
+                      "type": "string"
+                    },
+                    "pseudo": {
+                      "type": "string"
+                    },
+                    "selector": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      }
+    }
+  }
+}

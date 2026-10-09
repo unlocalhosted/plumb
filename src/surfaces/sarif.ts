@@ -6,8 +6,8 @@ import { pathFor } from './sites.js';
 export function sarif(report: Report) {
   const rules = [...new Set(report.findings.map(f => f.rule))].sort().map(id => {
     const findings = report.findings.filter(f => f.rule === id);
-    return { id, shortDescription: { text: id }, fullDescription: { text: [...new Set(findings.map(f => f.why))].join('\n') },
-      help: { text: [...new Set(findings.map(f => `${f.why}\n${f.fix}`))].join('\n\n') } };
+    return { id, shortDescription: { text: findings[0]!.title }, fullDescription: { text: [...new Set(findings.map(f => f.why))].join('\n') },
+      help: { text: [...new Set(findings.map(f => `${f.title}\n${f.because}\n${f.fix}\n${f.accept}`))].join('\n\n') } };
   });
   return {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json', version: '2.1.0',
@@ -16,7 +16,7 @@ export function sarif(report: Report) {
       results: report.findings.flatMap(finding => finding.sites.map(site => ({
         ruleId: finding.rule, ruleIndex: rules.findIndex(rule => rule.id === finding.rule),
         level: finding.severity === 'warn' ? 'warning' : finding.severity === 'info' ? 'note' : 'error',
-        message: { text: [finding.why, finding.fix].filter(Boolean).join('\n') },
+        message: { text: [finding.title, finding.because, finding.fix, finding.accept].filter(Boolean).join('\n') },
         locations: [{ physicalLocation: { artifactLocation: { uri: pathFor(report, site.file).split('/').map(encodeURIComponent).join('/') },
           region: { startLine: site.line, startColumn: site.column } } }],
         baselineState: site.ledger && site.ledger.status !== 'new' ? 'unchanged' : 'new',

@@ -32,7 +32,7 @@ test('class lowering and existence: real CLI over literals, helpers, maps, branc
   const report = JSON.parse(cold.stdout);
   const dead = new Map(report.findings.filter(f => f.rule === 'existence/dead-class').map(f => [f.declaration.value, f]));
   assert.deepEqual([...dead.keys()].sort(), ['bg-brnad', 'branch-off-dead', 'branch-on-dead', 'compound-dead', 'configured-dead', 'cva-dead', 'jsx-dead', 'logical-dead', 'map-dead', 'object-dead', 'outside-dead', 'slot-dead', 'wrapped-dead']);
-  assert.match(dead.get('bg-brnad').fix, /^Did you mean bg-brand/, 'close match suggested');
+  assert.match(dead.get('bg-brnad').fix, /^Did you mean `bg-brand`/, 'close match suggested');
   assert.doesNotMatch(dead.get('outside-dead').fix, /Did you mean/, 'no suggestion when nothing is close');
   assert.equal(dead.get('map-dead').sites.length, 2);
   assert.deepEqual(dead.get('map-dead').sites.map(s => [s.file.slice(directory.length + 1), s.line]), [['src/sizes.ts', 1], ['src/App.tsx', 15]]);
@@ -165,9 +165,9 @@ test('suggestions prefer theme keys, preserve variants and suppress distant iden
   assert.equal(cold.status, 1);
   const findings = new Map(JSON.parse(cold.stdout).findings.map(finding => [finding.declaration.value, finding.fix]));
   assert.match(findings.get('text-ink-dim'), /text-ink[23]/);
-  assert.match(findings.get('recipe-status-led-live'), /Did you mean recipe-status-lamp/);
-  assert.match(findings.get('group-data-checked:recipe-status-led-live'), /Did you mean group-data-checked:recipe-status-lamp/);
-  assert.match(findings.get('mu-palette-eng'), /Did you mean palette-eng/);
+  assert.match(findings.get('recipe-status-led-live'), /Did you mean `recipe-status-lamp/);
+  assert.match(findings.get('group-data-checked:recipe-status-led-live'), /Did you mean `group-data-checked:recipe-status-lamp/);
+  assert.match(findings.get('mu-palette-eng'), /Did you mean `palette-eng/);
   assert.match(findings.get('rounded-gone'), /rounded-never-collected/, 'same utility prefix qualifies despite distant spelling; own uncollected theme key wins');
   for (const token of ['block-ai-composer', 'block-settings']) assert.doesNotMatch(findings.get(token), /Did you mean/, 'no suggestion when nothing is close');
   assert.deepEqual(JSON.parse(run(directory, cache, ['--json']).stdout).findings, JSON.parse(cold.stdout).findings);
@@ -176,7 +176,7 @@ test('suggestions prefer theme keys, preserve variants and suppress distant iden
   const subset = JSON.parse(run(directory, cache, ['--json']).stdout);
   assert.equal(subset.timing.cacheMisses, 0, 'candidate subset reuses compiled CSS');
   assert.equal(subset.timing.phases.compile, 0, 'refreshing hint roots never recompiles cached candidates');
-  assert.match(subset.findings.find(f => f.declaration.value === 'mu-palette-eng').fix, /Did you mean palette-eng/);
+  assert.match(subset.findings.find(f => f.declaration.value === 'mu-palette-eng').fix, /Did you mean `palette-eng/);
 
   await writeFile(join(directory, 'src/theme.css'), (await readFile(join(directory, 'src/theme.css'), 'utf8')) + '\n@utility recipe-status-lamp-live { color: green; }');
   const withLive = JSON.parse(run(directory, cache, ['--json']).stdout).findings;

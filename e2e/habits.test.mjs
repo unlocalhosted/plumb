@@ -61,13 +61,13 @@ test('zero config/disabled habits judge nothing; habits command counts all built
 test('Tailwind oracle finds alternate custom variant, honors cache invalidation, and falls back to declaration', async t => {
   const dir = await project(t, '@import "tailwindcss"; @custom-variant fine-hover { &:hover { @media (hover: hover) and (pointer: fine) { @slot; } } }', '<button className="hover:opacity-50 fine-hover:opacity-50" />;');
   const first = report(dir);
-  const f = breaks(first, 'hover-gate'); assert.equal(f.length, 1); assert.match(f[0].fix, /Use fine-hover:/);
+  const f = breaks(first, 'hover-gate'); assert.equal(f.length, 1); assert.match(f[0].edits[0].text, /Use fine-hover:/);
   const warm = report(dir); assert.deepEqual(warm.findings, first.findings); assert.equal(warm.timing.cacheMisses, 0);
   await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @custom-variant fine-hover { &:hover { @media (pointer: coarse) { @slot; } } }');
-  assert.ok(breaks(report(dir), 'hover-gate').every(f => f.fix.includes('@custom-variant pointer-hover')));
+  assert.ok(breaks(report(dir), 'hover-gate').every(f => f.edits.some(e => e.text.includes('@custom-variant pointer-hover'))));
   await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @custom-variant pointer-hover { &:hover { @media (hover: hover) and (pointer: fine) { @slot; } } }');
   await writeFile(join(dir, 'src/App.tsx'), '<button className="hover:opacity-50 pointer-hover:opacity-50" />;');
-  assert.match(breaks(report(dir), 'hover-gate')[0].fix, /Use pointer-hover:/);
+  assert.match(breaks(report(dir), 'hover-gate')[0].edits[0].text, /Use pointer-hover:/);
 });
 
 test('class companions respect element, branch and media; source globs alone are judged', async t => {
@@ -112,19 +112,19 @@ test('quoted selectors, nested negations, nested declaration runs and group fixe
   assert.ok(breaks(r, 'no-ease-in').length);
   assert.ok(breaks(r, 'hover-gate').some(f => f.declaration.owner.name.startsWith('.quoted')));
   assert.ok(!breaks(r, 'hover-gate').some(f => f.declaration.owner.name.startsWith('.rest')));
-  assert.ok(breaks(r, 'hover-gate').some(f => f.fix.includes('group-pointer-hover/test:')));
-  assert.ok(breaks(r, 'hover-gate').some(f => f.fix.includes('peer-pointer-hover:')));
+  assert.ok(breaks(r, 'hover-gate').some(f => f.edits.some(e => e.text.includes('group-pointer-hover/test:'))));
+  assert.ok(breaks(r, 'hover-gate').some(f => f.edits.some(e => e.text.includes('peer-pointer-hover:'))));
   assert.equal(breaks(r, 'frame-height').length, 1);
 });
 
 test('compiler-proven pointer-only custom variant composes hover; plugin variants are discovered', async t => {
   const dir = await project(t, '@import "tailwindcss"; @custom-variant fine-input (@media (pointer: fine));', '<button className="hover:opacity-50 group-hover/card:opacity-50" />;');
   const r = report(dir);
-  assert.ok(breaks(r, 'hover-gate').some(f => f.fix.includes('fine-input:hover:')));
-  assert.ok(breaks(r, 'hover-gate').some(f => f.fix.includes('fine-input:group-hover/card:')));
+  assert.ok(breaks(r, 'hover-gate').some(f => f.edits.some(e => e.text.includes('fine-input:hover:'))));
+  assert.ok(breaks(r, 'hover-gate').some(f => f.edits.some(e => e.text.includes('fine-input:group-hover/card:'))));
   await writeFile(join(dir, 'plugin.mjs'), 'export default function({addVariant}) { addVariant("mouse-over", "@media (hover: hover) and (pointer: fine) { &:hover }") }');
   await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @plugin "../plugin.mjs";');
-  assert.ok(breaks(report(dir), 'hover-gate').every(f => /mouse-over/.test(f.fix)));
+  assert.ok(breaks(report(dir), 'hover-gate').every(f => f.edits.some(e => /mouse-over/.test(e.text))));
 });
 
 test('focus restoration must cover branches and media; scroll containment covers each scrolling axis', async t => {
@@ -147,7 +147,7 @@ test('focus restoration must cover branches and media; scroll containment covers
 test('legacy z-named and motion-tokens names delegate to provenance without duplicate habit findings', async t => {
   const dir = await project(t, '.a { z-index: 10; transition-duration: 200ms; }', '', { habits: ['z-named', 'motion-tokens'] });
   const r = report(dir);
-  assert.ok(r.findings.some(f => f.rule === 'provenance/z'));
-  assert.ok(r.findings.some(f => f.rule === 'provenance/motion'));
+  assert.ok(r.findings.some(f => f.rule === 'config/no-tokens' && f.family === 'z'));
+  assert.ok(r.findings.some(f => f.rule === 'config/no-tokens' && f.family === 'motion'));
   assert.ok(!r.findings.some(f => f.rule.startsWith('habits/')));
 });

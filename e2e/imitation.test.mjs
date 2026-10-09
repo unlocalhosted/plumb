@@ -23,9 +23,9 @@ test('imitation catches raw classes, globs and lowered inline/stylesheet vars, e
   assert.deepEqual(lines('imitation/Textarea'), [6,9,13,14]);
   assert.deepEqual(lines('imitation/Field'), [10]);
   assert.ok(findings.every(f => f.severity === 'error' && f.sites.every(s => s.file.endsWith('/App.tsx'))));
-  assert.ok(findings.some(f => f.fix.includes('use <Textarea>; it already owns class kit-well')));
-  assert.ok(findings.some(f => f.fix.includes('var(--kit-well-')));
-  assert.ok(findings.some(f => f.fix.includes('kit-field-*')));
+  assert.ok(findings.some(f => f.fix.includes('Use <Textarea> from ')));
+  assert.ok(findings.some(f => f.title.includes('var(--kit-well-')));
+  assert.ok(findings.some(f => f.title.includes('kit-field-*')));
   assert.ok(report.ledger.new >= 5);
   for (const finding of findings) for (const site of finding.sites) {
     assert.equal(site.ledger.status, 'new');

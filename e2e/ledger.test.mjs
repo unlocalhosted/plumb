@@ -201,13 +201,13 @@ test('theme decision outside configured ladder cannot silently pass; changed/van
   const changed = run(directory, [], 1);
   const decision = errors(changed).filter(f => f.rule === 'decisions/unaccepted');
   assert.equal(decision.length, 1);
-  assert.match(decision[0].why, /--spacing-13/);
+  assert.match(decision[0].title, /--spacing-13/);
   run(directory, ['accept-decisions', '--why', 'new step approved']);
   assert.deepEqual(errors(run(directory)), []);
   await writeFile(path, css.replace('8px', '9px'));
   const removed = run(directory, [], 1);
   assert.ok(removed.findings.some(f => f.rule === 'decisions/vanished'));
-  assert.ok(removed.findings.some(f => f.rule === 'decisions/unaccepted' && f.why.includes('--spacing-step-small')));
+  assert.ok(removed.findings.some(f => f.rule === 'decisions/unaccepted' && f.title.includes('--spacing-step-small')));
   run(directory, ['accept-decisions']);
   run(directory, ['ledger', '--prune']);
   assert.ok(!run(directory).findings.some(f => f.rule.startsWith('decisions/')));
@@ -297,7 +297,7 @@ test('strict ledger blocks exceptions, decision changes and config growth vs HEA
   git(directory, ['restore', '.plumb/ledger.jsonl']);
   const config = join(directory, 'plumb.config.ts');
   await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n  markers: ['branch-hook'],"));
-  assert.ok(errors(run(directory, ['check', '--strict-ledger'], 1)).some(f => f.why.includes('Config grew')));
+  assert.ok(errors(run(directory, ['check', '--strict-ledger'], 1)).some(f => f.rule === 'ledger/grew' && f.sites.some(s => s.file.endsWith('plumb.config.ts'))));
   git(directory, ['restore', 'plumb.config.ts']);
   const path = join(directory, 'src/App.tsx');
   await writeFile(path, (await readFile(path, 'utf8')).replaceAll('className="gap-10"', 'className="gap-12"'));

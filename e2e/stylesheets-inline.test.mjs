@@ -23,7 +23,7 @@ test('component modules provide CSS existence proof across workspace and package
   await cp(join(root, 'fixtures/module-css'), directory, { recursive: true });
   const cold = run(directory).report;
   assert.deepEqual(cold.findings.map(finding => finding.declaration.value), ['kit-unused']);
-  assert.match(cold.findings[0].fix, /unreachable.css, which nothing imports/);
+  assert.match(cold.findings[0].title, /unreachable.css, but nothing imports/);
   assert.equal(cold.moduleGraph.followed, 4);
   assert.equal(cold.moduleGraph.cssFiles, 3);
   const kit = cold.stylesheets.find(sheet => sheet.file.endsWith('/kit.css'));
@@ -82,7 +82,7 @@ test('stylesheet and inline feature slice through real CLI and explain', async t
   const first = run(directory);
   assert.equal(first.status, 1);
   assert.deepEqual(first.report.findings.filter(finding => finding.rule.startsWith('existence/')).map(finding => finding.declaration.value), ['forgotten']);
-  assert.match(first.report.findings[0].fix, /declared in styles\/unreachable.css, which nothing imports/);
+  assert.match(first.report.findings[0].title, /defined in styles\/unreachable.css, but nothing imports/);
   const page = first.report.stylesheets.find(sheet => sheet.file.endsWith('/src/page.css'));
   assert.deepEqual(page.reached, [{ kind: 'side-effect', from: join(directory, 'src/App.tsx'), specifier: './page.css' }, { kind: 'source' }]);
   assert.ok(first.report.stylesheets.some(sheet => sheet.sourceOrigin === 'framework' && sheet.reached.some(reach => reach.kind === 'import')));

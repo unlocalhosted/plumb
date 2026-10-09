@@ -1,3 +1,4 @@
+import { makeFinding } from '../messages.js';
 import { performance } from 'node:perf_hooks';
 import { profileDuration } from '../profile.js';
 import type { Declaration, Finding, Report, Site } from '../report.js';
@@ -8,7 +9,10 @@ import type { LedgerEntry, LedgerOptions } from './types.js';
 
 export function diagnostic(rule: string, severity: Finding['severity'], site: Site, why: string, fix: string, key = `${rule}:${site.text}`): Finding {
   const declaration: Declaration = { prop: 'ledger', value: site.text, refs: [], when: [], site, owner: { kind: 'element', name: 'ledger' }, origin: 'stylesheet' };
-  return { key, rule, severity, family: rule.startsWith('decisions/') ? 'decisions' : 'ledger', sites: [site], declaration, decisions: [], why, fix };
+  const title = rule === 'ledger/no-why' ? `Exception \`${key}\` has no reason` : rule === 'decisions/unaccepted' ? `\`${site.text.split(':')[0]}\` is new in your theme and not yet accepted` : rule === 'ledger/grew' ? 'This change adds 1 ledger entries' : why.replace(/decision/g, 'token');
+  const because = rule === 'ledger/no-why' ? 'Every exception needs a reason a reviewer can check.' : rule === 'decisions/unaccepted' ? 'New tokens change what everyone may use.' : rule === 'ledger/grew' ? 'New exceptions and tokens are design decisions and need review.' : rule === 'decisions/vanished' ? 'Accepted tokens should stay in sync with the theme.' : 'The ledger should record only remaining exceptions and debt.';
+  const action = rule === 'ledger/no-why' ? `plumb accept ${key} --why "…"` : rule === 'decisions/unaccepted' ? 'plumb accept-decisions --why "…"' : fix;
+  return makeFinding({ key, rule, severity, family: rule.startsWith('decisions/') ? 'decisions' : 'ledger', sites: [site], declaration, decisions: [], title, because, action });
 }
 function grew(entry: LedgerEntry, previous: LedgerEntry | undefined): boolean {
   if (!previous || entry.kind !== previous.kind) return true;
@@ -119,6 +123,7 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}): 
       diagnostics.push(diagnostic('ledger/grew', 'error', { ...site, column: 1 }, 'Config grew in the working tree versus HEAD.', 'Do not grow config to pass an agent check; fix the sites or report NEEDS-DECISION.'));
     }
   }
+  for (const finding of diagnostics) if (finding.rule === 'ledger/grew') finding.title = `This change adds ${summary.growth} ledger entries`;
   report.findings.push(...diagnostics);
   summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${summary.exceptions} exception sites; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumb baseline to record current debt and accept the current decisions.';
   report.ledger = summary;

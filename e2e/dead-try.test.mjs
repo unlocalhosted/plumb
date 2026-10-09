@@ -135,7 +135,7 @@ test('try shares per-site agent instructions and preserves hover oracle and owne
     const spacing = report.findings.find(f => f.rule === 'provenance/spacing');
     assert.equal(spacing.sites.length, 2);
     for (const site of spacing.sites) assert.ok(output.includes(`then edit at src/__plumb_try__.tsx:${site.line}:${site.column}:`));
-    assert.match(report.findings.find(f => f.rule === 'habits/hover-gate').fix, /Use fine-hover:/);
+    assert.match(report.findings.find(f => f.rule === 'habits/hover-gate').fix, /Use `pointer-hover:`/);
     assert.ok(report.findings.some(f => f.rule === 'ownership/Button'));
   };
   const cold = await snapshot(directory);

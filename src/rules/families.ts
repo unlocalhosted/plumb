@@ -22,7 +22,7 @@ export function familiesFor(prop: string): JudgedFamily[] {
 }
 export function isJudged(declaration: Declaration, family?: Family): boolean {
   return declaration.origin !== 'keyframes' && declaration.sourceOrigin !== 'framework' &&
-    (!(declaration.origin === 'class' || declaration.origin === 'arbitrary') || declaration.authoredValue === true) &&
+    (!(declaration.origin === 'class' || declaration.origin === 'arbitrary' || declaration.origin === 'apply') || declaration.authoredValue === true) &&
     (family ? familiesFor(declaration.prop).includes(family as JudgedFamily) : familiesFor(declaration.prop).length > 0);
 }
 

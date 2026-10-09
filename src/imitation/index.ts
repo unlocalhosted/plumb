@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { makeFinding } from '../messages.js';
 import { readFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 import type { PlumbConfig } from '../config.js';
@@ -95,11 +96,12 @@ export function judgeImitation(graph: ComponentGraph, classes: ClassSite[], decl
       const key = `imitation:${name}:${createHash('sha256').update(JSON.stringify([component ? relative(graph.root, component.source.file) : '', matches])).digest('hex').slice(0, 16)}`;
       const declaration = representative(item, matches), previous = groups.get(key);
       if (previous) { previous.sites.push(declaration.site); previous.occurrences!.push(declaration); continue; }
-      const owns = matches.map(part => part.startsWith('var(--') ? `declarations using ${part}` : `class ${part}`).join(', ');
-      groups.set(key, { key, rule: `imitation/${name}`, family: 'imitation', severity: 'error', sites: [declaration.site],
+      const source = typeof config.components?.from === 'string' && config.components.from.startsWith('package:') ? config.components.from.slice(8) : component ? relative(graph.root, component.source.file) : name;
+      groups.set(key, makeFinding({ key, rule: `imitation/${name}`, family: 'imitation', severity: 'error', sites: [declaration.site],
         declaration, occurrences: [declaration], decisions: [], ...(component ? { component } : {}),
-        why: `Raw elements carry ${name}'s fingerprint: ${matches.join(', ')}.`,
-        fix: `use <${name}>; it already owns ${owns}.` });
+        title: `This <${item.element.tag}> rebuilds ${name} by hand (\`${matches.join(', ')}\`)`,
+        because: `A copy misses ${name}'s states, focus ring and future fixes.`,
+        action: `Use <${name}> from ${source}.` }));
     }
   }
   return [...groups.values()].sort((a, b) => a.rule.localeCompare(b.rule) || a.key.localeCompare(b.key));

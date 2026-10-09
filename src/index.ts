@@ -28,6 +28,7 @@ import { prepareSnippet } from './try.js';
 import type { TryOptions, Snippet } from './try.js';
 import { profileDuration } from './profile.js';
 import { suggestionCache } from './rules/suggestions.js';
+import { finishMessages } from './messages.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
@@ -109,7 +110,10 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const unreachable = await unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value));
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
-    if (file) finding.fix = `${finding.declaration.value} is declared in ${file}, which nothing imports. Import that stylesheet or include it in source globs.`;
+    if (file) {
+      finding.title = `\`${finding.declaration.value}\` is defined in ${file}, but nothing imports that file`;
+      finding.action = `Import ${file} where \`${finding.declaration.value}\` is used, or move the rule.`;
+    }
   }
   profileDuration('rule:existence/classes', performance.now() - existenceStart);
   const prepareStart = performance.now();
@@ -201,13 +205,13 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   if (options.suggestImitation) report.imitationSuggestions = await suggestImitation(components, collected.sites, report, config.value);
   report.timing.totalMs = performance.now() - start;
   for (const [phase, duration] of Object.entries(report.timing.phases)) profileDuration(`phase:${phase}`, duration);
-  return { report, sites };
+  return { report: finishMessages(report), sites };
 }
 
 export interface ExplainedClassSite extends ClassSite { declarations: import('./report.js').Declaration[]; notes: string[] }
 export async function check(options: CheckOptions = {}): Promise<Report> {
   const { report } = await analyze(options);
-  return options.ledger === false ? report : applyLedger(report, options);
+  return options.ledger === false ? report : finishMessages(await applyLedger(report, options));
 }
 /** Judge stdin as an in-memory source; bypass ledger allowances and whole-project dead checks. */
 export async function trySnippet(text: string, options: TryOptions = {}): Promise<Report> {

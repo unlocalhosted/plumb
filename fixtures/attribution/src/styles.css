@@ -1,4 +1,4 @@
-@import '../vendor/theme.css';
+@import '../vendor/theme.css'; :root { --shadow-token: 0 1px 2px #000; }
 :root {
   --color-brand: #2563eb;
   --color-text-muted: var(--color-brand);

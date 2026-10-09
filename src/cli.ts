@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   }
   if (inspecting) {
     const result = await inspectLedger(command as 'show' | 'why', args.positionals[1]!, report);
-    const text = result.findings.map(finding => `${finding.key}\n  ${finding.why}\n  ${finding.sites.map(site => `${relative(report.root, site.file)}:${site.line}  ${site.text}`).join('\n  ')}\n`).join('') +
+    const text = result.findings.map(finding => `${finding.key}\n  ${finding.title}\n  ${finding.because}\n  ${finding.sites.map(site => `${relative(report.root, site.file)}:${site.line}  ${site.text}`).join('\n  ')}\n`).join('') +
       result.declarations.map(d => `  ${d.prop}: ${d.resolved ?? d.value}\n`).join('') +
       result.decisions.map(d => `  decision ${d.name}: ${d.value}  ${d.why}\n`).join('') +
       result.ledger.map(line => `  ${relative(report.root, line.file)}:${line.line}  ${line.entry.kind}  ${line.entry.key}  ${line.entry.why ?? '(no why)'}\n`).join('');

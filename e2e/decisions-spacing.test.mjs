@@ -50,8 +50,8 @@ test('spacing slice judges all origins, resolves chains/calc, groups fixes and n
   const report = run(fixture('spacing'));
   const arbitrary = report.findings.find(f => f.rule === 'provenance/arbitrary');
   assert.deepEqual(arbitrary.decisions.map(d => d.resolved), ['12px', '16px']);
-  assert.match(arbitrary.fix, /between label and control.*gap-s3/);
-  assert.match(arbitrary.fix, /breathing room for a group.*gap-s4/);
+  assert.match(arbitrary.fix, /gap-s3.*between label and control/);
+  assert.match(arbitrary.fix, /gap-s4.*breathing room for a group/);
   const ten = report.findings.filter(f => f.rule === 'provenance/spacing' && f.declaration.resolved === '10px');
   assert.equal(ten.length, 1);
   assert.equal(ten[0].sites.length, 2);
@@ -67,7 +67,7 @@ test('spacing slice judges all origins, resolves chains/calc, groups fixes and n
   // consumer is no longer a separate provenance obligation.
   assert.ok(!report.findings.some(f => f.declaration.value === 'var(--media-step)'));
   assert.ok(!report.findings.some(f => f.sites.some(site => /gap-s2|gap-12|-m-12|space-x-12/.test(site.text))));
-  assert.equal(report.findings.find(f => f.rule === 'provenance/opaque-inline').severity, 'warn');
+  assert.equal(report.findings.find(f => f.rule === 'provenance/opaque-inline').severity, 'info');
   assert.equal(report.coverage.spacing.total, report.coverage.spacing.fromDecisions + report.coverage.spacing.findings);
   assert.ok(report.declarations.some(d => d.origin === 'keyframes' && d.value === '13px'));
   assert.ok(!report.findings.filter(f => !f.rule.startsWith('dead/')).some(f => f.declaration.origin === 'keyframes' || f.declaration.sourceOrigin === 'framework' || f.declaration.prop.startsWith('--')));
@@ -119,7 +119,7 @@ test('spacing policies enforce origin, tier and reference identity and refresh o
   await writeFile(join(directory, 'node_modules/scale/theme.css'), '@theme { --spacing-scale: 12px; }');
   await writeFile(join(directory, 'src/styles.css'), '@import "tailwindcss"; @import "scale";');
   await writeFile(join(directory, 'src/App.tsx'), "import './styles.css'; <div className='gap-scale' />;");
-  assert.equal(run(directory).findings[0].rule, 'provenance/spacing/framework');
+  assert.equal(run(directory).findings[0].rule, 'config/no-tokens');
   await writeFile(join(directory, 'plumb.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-*', origins: ['project', 'framework'] } } };");
   assert.deepEqual(run(directory).findings, []);
 });

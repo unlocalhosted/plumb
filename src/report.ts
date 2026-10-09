@@ -57,12 +57,22 @@ export interface Decision {
   origin: Origin;
   tier: Tier;
   why: string;
+  /** Shared recipe/group description, never displayed as this token's reason. */
+  groupWhy?: string;
   source: { file: string; line: number };
   /** What to write instead at a finding's sites: the utility for class sites, the declaration for stylesheet and inline sites. */
   use?: { class?: string; css: string };
 }
 
 export interface Finding {
+  title: string;
+  because: string;
+  action?: string;
+  accept: string;
+  /** Suggestible tokens only; decisions also retains non-choice metadata. */
+  choices?: Decision[];
+  /** Per-site instructions, with a token name when they belong to a choice. */
+  edits?: { site: Site; text: string; token?: string }[];
   key: string;
   rule: string;
   family: string;

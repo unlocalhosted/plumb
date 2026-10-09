@@ -6,6 +6,7 @@ import type { ThemeValue } from '../lower/tailwind.js';
 import { cssCode } from '../collect/stylesheets.js';
 import { references } from '../collect/source.js';
 import { UsageError } from '../errors.js';
+import { tokenReasons } from '../messages.js';
 import { readDtcg } from './dtcg.js';
 import type { CssVariable } from './css.js';
 import { readCssVariables } from './css.js';
@@ -47,7 +48,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   function add(record: Decision, explicit = false): void {
     if (record.name === '--spacing') return;
     if (!record.name || typeof record.value !== 'string' || !record.source || !record.source.file || !Number.isInteger(record.source.line) || record.source.line < 1 ||
-        !['project', 'framework', 'inferred'].includes(record.origin) || !['primitive', 'semantic'].includes(record.tier) || !Array.isArray(record.refs) || record.refs.some(ref => typeof ref !== 'string') || typeof record.why !== 'string') {
+        !['project', 'framework', 'inferred'].includes(record.origin) || !['primitive', 'semantic'].includes(record.tier) || !Array.isArray(record.refs) || record.refs.some(ref => typeof ref !== 'string') || typeof record.why !== 'string' || record.groupWhy !== undefined && typeof record.groupWhy !== 'string') {
       throw new UsageError(`Invalid decision record in decisions.${record.family}.from.`);
     }
     decisions.set(`${record.family}:${record.name}`, { ...record, refs: [...record.refs], source: { ...record.source, file: resolve(root, record.source.file) } });
@@ -113,5 +114,6 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const selected = decisions.get(`${family}:${item.name}`);
     return selected ? [selected] : defineDecisions([{ family, name: item.name, value: item.value, why: meta.why, source: meta.source }]);
   });
+  tokenReasons([...decisions.values(), ...inventory]);
   return { inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }

@@ -73,7 +73,7 @@ test('dead vars group names, rank close names, warn on fallback and accept every
  const r=run(dir), dead=r.findings.filter(f=>f.rule==='existence/dead-var');
  assert.deepEqual(dead.map(f=>f.declaration.refs[0]),['--colr-brand','--missing']);
  assert.match(dead[0].fix,/--color-brand/); assert.equal(dead[0].severity,'error'); assert.equal(dead[1].severity,'warn'); assert.equal(dead[1].sites.length,2);
- assert.ok(finding(r,'padding: var(--missing, 4px)','provenance/spacing')); assert.equal(r.coverage.existence.deadVars,3);
+ assert.ok(finding(r,'padding: var(--missing, 4px)','config/no-tokens')); assert.equal(r.coverage.existence.deadVars,3);
  await writeFile(join(dir,'src/extra.ts'),'node.style.setProperty("--missing", 4);');
  assert.ok(!run(dir).findings.some(f=>f.rule==='existence/dead-var' && f.declaration.refs.includes('--missing')));
 });
@@ -109,7 +109,7 @@ test('each family restricts primitives even when semantic names sort first, and 
 });
 
 test('tailwind-min Layer 4 acceptance examples name framework tokens, by-value decisions and neutral z', async t => {
- const dir=await project(t,`@import "tailwindcss"; @theme { --color-brand: #2563eb; --color-text-muted: var(--color-brand); --ease-snap: cubic-bezier(.2,0,.2,1); }
+ const dir=await project(t,`@import "tailwindcss"; @theme { --color-brand: #2563eb; --color-text-muted: var(--color-brand); --ease-snap: cubic-bezier(.2,0,.2,1); --radius-control: 12px; --z-dialog: 60; --shadow-float: 0 1px 2px var(--color-brand); }
  .drift { color: #ff0000; background-color: #2563eb; box-shadow: 0 2px 4px #123; }
  .mix { color: color-mix(in oklab, var(--color-brand) 50%, transparent); }`,
  `<div className="bg-red-500 rounded-lg bg-brand text-text-muted duration-150 ease-snap z-50 z-1" />;`,allTiers);

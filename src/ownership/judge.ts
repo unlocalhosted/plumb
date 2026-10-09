@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { makeFinding } from '../messages.js';
 import { relative } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Finding } from '../report.js';
@@ -109,12 +110,13 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
       if (!previous.sites.some(site => site.file === declaration.site.file && site.line === declaration.site.line && site.column === declaration.site.column && site.text === declaration.site.text)) previous.sites.push(declaration.site);
       return;
     }
-    const variants = Object.entries(component.variants).map(([axis, values]) => `${axis}=${values.join(' | ')}`).join('; ');
-    const source = `${component.source.file}:${component.source.line}`;
-    groups.set(key, { key, rule: `ownership/${component.name}`, family, severity: heuristic ? 'warn' : 'error', sites: [declaration.site],
+    const variants = Object.entries(component.variants).map(([axis, values]) => `${axis} = ${values.join(' | ')}`).join('; ');
+    const source = `${relative(graph.root, component.source.file)}:${component.source.line}`;
+    groups.set(key, makeFinding({ key, rule: `ownership/${component.name}`, family, severity: heuristic ? 'warn' : 'error', sites: [declaration.site],
       declaration, decisions: [], component,
-      why: `${component.name} owns ${declaration.prop} (${family}).${heuristic ? ' Descendant selector may paint its root (heuristic).' : ''} Source: ${source}.`,
-      fix: variants ? `Choose ${component.name}'s variants: ${variants}. Source: ${source}.` : `Remove the caller's ${declaration.prop} override; ${component.name} owns it. No static variant axes found. Source: ${source}.` });
+      title: `\`${['class', 'arbitrary', 'apply'].includes(declaration.origin) ? declaration.site.text : declaration.prop}\` changes ${component.name}'s ${declaration.prop}${heuristic ? ' (may apply)' : ''}`,
+      because: `${component.name} controls its ${{ paint: 'colour', type: 'type', radius: 'corners', elevation: 'shadow', padding: 'padding' }[family] ?? family}; outside overrides break when its design changes.`,
+      action: `${variants ? `Use a variant: ${variants}.` : `${component.name} has no variant for this. Ask for one, or wrap it in an element you style.`} Defined in ${source}.` }));
   }
   for (const original of declarations) {
     if (original.origin === 'keyframes' || original.sourceOrigin === 'framework') continue;

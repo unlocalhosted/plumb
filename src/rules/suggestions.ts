@@ -7,7 +7,7 @@ import type { CandidateCss } from '../lower/css.js';
 /** Rankings depend only on the current hint set and compilable candidates.
  * Locations, marker/existence proof and grouping still run on fresh inputs. */
 export async function suggestionCache(root: string, candidates: Map<string, CandidateCss>, hints: { token: string; prefix: string }[], readOnly = false) {
-  const key = createHash('sha256').update(JSON.stringify(['ranking-v1', hints, [...candidates].map(([token, result]) => [token, !!result.css?.trim()])])).digest('hex');
+  const key = createHash('sha256').update(JSON.stringify(['ranking-messages-v3', hints, [...candidates].map(([token, result]) => [token, !!result.css?.trim()])])).digest('hex');
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'rankings');
   const path = join(directory, `${key}.json`);
   let entries: [string, string[]][] = [];

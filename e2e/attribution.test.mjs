@@ -30,7 +30,7 @@ test('nondecision literals belong to one source definition per family with disti
     assert.ok(f.sites[0].ledger.key.includes(':--well:--well:'));
     assert.ok(f.occurrences.every(d => d.prop === '--well' && d.origin === 'custom-property'));
     assert.equal(f.declaration.origin, 'custom-property'); assert.equal(f.declaration.prop, '--well');
-    assert.equal(f.declaration.value, '0 2px 4px rgba(60,55,40,.11)'); assert.match(f.why, /--well/);
+    assert.equal(f.declaration.value, '0 2px 4px rgba(60,55,40,.11)'); assert.ok(f.sites[0].text.includes('--well'));
     assert.ok(f.decisions.every(d => d.use.css.startsWith('--well:')));
   }
   assert.ok(!report.findings.some(f => f.sites.some(s => /box-shadow: var\(--well|boxShadow:/.test(s.text))));
@@ -77,7 +77,7 @@ test('outside-source and package nondecisions prove existence but produce no use
 
 test('definition attribution covers every judged family, compiled classes, inline and embedded CSS', async t => {
   const dir = await fixture(t);
-  await writeFile(join(dir, 'src/styles.css'), `@import 'tailwindcss';
+  await writeFile(join(dir, 'src/styles.css'), `@import 'tailwindcss'; @theme { --spacing-control: 12px; --radius-control: 12px; --text-body: 16px; --duration-quick: 120ms; --z-dialog: 50; --shadow-float: 0 1px 2px var(--color-brand); --color-brand: #000; }
     :root { --gap: 13px; --round: 13px; --text: 17px; --time: 123ms; --depth: 51; --local-shadow: 0 2px 5px #123456; }
     .uses { padding: var(--gap); border-radius: var(--round); font-size: var(--text); transition-duration: var(--time); z-index: var(--depth); }
     .again { margin: var(--gap); border-top-left-radius: var(--round); line-height: var(--text); animation-duration: var(--time); z-index: var(--depth); }
@@ -107,7 +107,7 @@ test('definition attribution covers every judged family, compiled classes, inlin
 
 test('scoped and conditional literals retain distinct definitions without consumer findings', async t => {
   const dir = await fixture(t);
-  await writeFile(join(dir, 'src/styles.css'), `:root { --alias: var(--scoped); --conditional: #fedcba; }
+  await writeFile(join(dir, 'src/styles.css'), `:root { --color-brand: #000; --alias: var(--scoped); --conditional: #fedcba; }
     .one { --scoped: #123456; }
     .two { --scoped: #abcdef; }
     @media (min-width: 600px) { :root { --conditional: #123456; } }
@@ -121,7 +121,7 @@ test('scoped and conditional literals retain distinct definitions without consum
     assert.ok(fs.every(f => f.sites.length === 1 && f.variable.useCount === 2));
     assert.notEqual(fs[0].key, fs[1].key);
   }
-  assert.ok(r.findings.every(f => f.declaration.origin === 'custom-property'));
+  assert.ok(r.findings.filter(f => !f.rule.startsWith('dead/')).every(f => f.declaration.origin === 'custom-property'));
   assert.ok(!r.findings.some(f => f.variable?.name === '--alias'));
   assert.deepEqual(r.coverage.color, { fromDecisions: 0, total: 4, findings: 4 });
 });

@@ -1,3 +1,4 @@
+import { makeFinding, familyNames } from '../messages.js';
 import { matchesGlob, relative } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { DecisionRecord } from '../decisions/index.js';
@@ -61,9 +62,10 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
     group.sort((a, b) => a.name.localeCompare(b.name));
     const occurrences: Declaration[] = group.map(d => ({ prop: d.name, value: d.value, refs: valueRefs(d.value), when: [],
       site: { ...d.source, column: 1, text: `${d.name}: ${d.value}` }, owner: { kind: 'element', name: 'decisions' }, origin: 'custom-property', sourceOrigin: 'project' }));
-    return { key: `dead/${family}`, rule: `dead/${family}`, family, severity: 'info', sites: occurrences.map(d => d.site),
-      declaration: occurrences[0]!, occurrences, decisions: group, why: `${group.length} unused ${family} decision${group.length === 1 ? '' : 's'}; no source declaration references them.`,
-      fix: `Review unused decisions; mark published tokens with decisions.${family}.exported: true or exported name/source globs.` };
+    return makeFinding({ key: `dead/${family}`, rule: `dead/${family}`, family, severity: 'info', sites: occurrences.map(d => d.site),
+      declaration: occurrences[0]!, occurrences, decisions: group, title: `${group.length} ${familyNames[family] ?? family} tokens are never used in ${(config.source ?? ['src/**', 'app/**']).join(', ')}`,
+      because: 'Unused tokens make the theme harder to choose from.',
+      action: `If other apps use them, mark them published: decisions.${family}.exported: true. Otherwise remove them.` });
   });
   return { findings, counts };
 }

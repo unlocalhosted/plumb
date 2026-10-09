@@ -1,3 +1,4 @@
+import { makeFinding } from '../messages.js';
 import { performance } from 'node:perf_hooks';
 import { profiling, profileDuration } from '../profile.js';
 import type { CustomHabit, HabitSeverity } from './predicates.js';
@@ -8,15 +9,15 @@ import { code, calls, hoverGated, positivePseudo, selector } from './css.js';
 import { tokens } from '../rules/families.js';
 
 export const builtins = [
-  { id: 'hover-gate', severity: 'error', reason: 'Touch can leave hover stuck. Hover feedback requires both a hover-capable input and a fine pointer.', fix: 'Wrap only the hover branch in @media (hover: hover) and (pointer: fine).' },
-  { id: 'focus-outline', severity: 'error', reason: 'An outline survives forced colors. Removing it requires an outline restored on focus-visible or focus-within on the same target.', fix: 'Restore a visible outline on :focus-visible (or :focus-within for a field shell), including forced colors.' },
+  { id: 'hover-gate', severity: 'error', reason: 'Touch can leave a hover style stuck after a tap.', fix: 'Wrap only the hover branch in @media (hover: hover) and (pointer: fine).' },
+  { id: 'focus-outline', severity: 'error', reason: 'Keyboard users lose track of focus, and forced-colors mode shows nothing.', fix: 'Restore a visible outline on :focus-visible (or :focus-within for a field shell), including forced colors.' },
   { id: 'transition-named', severity: 'error', reason: 'Name the properties that transition so an unrelated change does not start animating.', fix: 'Replace all with the specific properties that should transition.' },
   { id: 'no-ease-in', severity: 'error', reason: 'Feedback to a person’s hand should begin immediately, without a slow start.', fix: 'Use the project’s responsive easing decision instead of ease-in.' },
-  { id: 'logical-inline', severity: 'error', reason: 'Logical inline sides mirror in right-to-left layouts; physical sides do not.', fix: 'Use the corresponding inline-start/inline-end property, start/end alignment, or logical corner.' },
-  { id: 'viewport-dynamic', severity: 'error', reason: 'Mobile browser toolbars change the usable viewport. Choose dynamic, small or large viewport units deliberately.', fix: 'Use dvh/dvw for a changing viewport, svh/svw for a minimum, or lvh/lvw for a maximum.' },
+  { id: 'logical-inline', severity: 'error', reason: "It doesn't mirror in right-to-left layouts.", fix: 'Use the corresponding inline-start/inline-end property, start/end alignment, or logical corner.' },
+  { id: 'viewport-dynamic', severity: 'error', reason: 'Mobile toolbars change the viewport height.', fix: 'Use dvh/dvw for a changing viewport, svh/svw for a minimum, or lvh/lvw for a maximum.' },
   { id: 'safe-area-fallback', severity: 'error', reason: 'A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.', fix: 'Add a fallback: env(safe-area-inset-*, 0px), alongside the element’s own spacing.' },
-  { id: 'overflow-clip', severity: 'warn', reason: 'Clipping decoration should not create a scroll container: hidden changes sticky behavior and permits script scrolling.', fix: 'Use overflow: clip if no programmatic scrolling, measurement or formatting context is required; review those semantics first.' },
-  { id: 'overscroll-contain', severity: 'warn', reason: 'An inner scroller should keep its scroll instead of moving the page when it reaches an edge.', fix: 'Set overscroll-behavior: contain (or the matching axis) on this scroll container.' },
+  { id: 'overflow-clip', severity: 'warn', reason: 'It breaks position: sticky inside and still allows script scrolling.', fix: 'Use overflow: clip if no programmatic scrolling, measurement or formatting context is required; review those semantics first.' },
+  { id: 'overscroll-contain', severity: 'warn', reason: 'Reaching its edge scrolls the page behind it.', fix: 'Set overscroll-behavior: contain (or the matching axis) on this scroll container.' },
 ] as const;
 export type BuiltinHabit = typeof builtins[number]['id'];
 export interface HabitSummary { id: string; reason: string; severity: HabitSeverity; enabled: boolean; breaks: number | null }
@@ -69,8 +70,13 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
     const seen = counts.get(id) ?? new Set<string>(); seen.add(occurrence); counts.set(id, seen);
     const key = `habits/${id}:${d.prop}:${d.value}:${selector(d.when)}:${fix}`;
     const existing = findings.get(key);
-    if (existing) { if (!existing.sites.some(s => s.file === d.site.file && s.line === d.site.line && s.column === d.site.column)) existing.sites.push(d.site); }
-    else findings.set(key, { key, rule: `habits/${id}`, family: 'habits', severity, sites: [d.site], declaration: d, decisions: [], why: reason, fix });
+    if (existing) { if (!existing.sites.some(s => s.file === d.site.file && s.line === d.site.line && s.column === d.site.column)) { existing.sites.push(d.site); existing.edits!.push({ site: d.site, text: fix }); } }
+    else {
+      const authored = isClass(d) ? d.site.text : selector(d.when) || d.prop;
+      const owner = d.owner.name;
+      const { title, action } = habitMessage(id, d, authored, owner, value(d), fix);
+      findings.set(key, makeFinding({ key, rule: `habits/${id}`, family: 'habits', severity, sites: [d.site], declaration: d, decisions: [], title, because: reason, action, edits: [{ site: d.site, text: fix }] }));
+    }
   }
   for (const d of eligible) {
     const s = selector(d.when), v = value(d), p = d.prop, group = groups.get(groupKey(d))!;
@@ -149,4 +155,28 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
   for (const { habit } of compiled) summaries.push({ id: habit.id, reason: habit.message, severity: habit.severity ?? 'error', enabled: true, breaks: counts.get(habit.id)?.size ?? 0 });
   for (const [id, duration] of ruleTimes) profileDuration(`rule:habits/${id}`, duration);
   return { findings: [...findings.values()], summaries };
+}
+
+function logicalProperty(prop: string, value: string): string {
+  if (['text-align', 'float', 'clear'].includes(prop)) return value === 'left' ? 'start' : 'end';
+  if (prop === 'left' || prop === 'right') return prop === 'left' ? 'inset-inline-start' : 'inset-inline-end';
+  const corner = /^border-(top|bottom)-(left|right)-radius$/.exec(prop);
+  if (corner) return `border-${corner[1] === 'top' ? 'start' : 'end'}-${corner[2] === 'left' ? 'start' : 'end'}-radius`;
+  if (prop === 'padding' || prop === 'margin' || prop === 'inset') return `${prop}-inline-start / ${prop}-inline-end`;
+  return prop.replace(/-(left|right)(?=-|$)/, (_, side: string) => `-inline-${side === 'left' ? 'start' : 'end'}`);
+}
+
+function habitMessage(id: string, d: Declaration, authored: string, owner: string, value: string, fix: string): { title: string; action: string } {
+  switch (id) {
+    case 'hover-gate': return { title: `\`${authored}\` also applies on touch screens`, action: 'Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).' };
+    case 'focus-outline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` removes the focus outline on ${owner}`, action: 'Restore an outline on :focus-visible.' };
+    case 'logical-inline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` is a physical side`, action: `Use \`${logicalProperty(d.prop, value)}\`.` };
+    case 'viewport-dynamic': return { title: `\`${value}\` uses vh, which jumps on mobile`, action: 'Use dvh for a changing viewport, svh for the smallest, lvh for the largest.' };
+    case 'overflow-clip': return { title: `\`overflow-hidden\` on ${owner} creates a scroll container`, action: 'Use overflow-clip if nothing scrolls it.' };
+    case 'overscroll-contain': return { title: `${owner} scrolls, and its scroll leaks to the page`, action: 'Add overscroll-contain.' };
+    case 'transition-named': return { title: `\`${authored}\` transitions every property`, action: fix };
+    case 'no-ease-in': return { title: `\`${authored}\` starts feedback slowly with ease-in`, action: fix };
+    case 'safe-area-fallback': return { title: `\`${value}\` has no safe-area fallback`, action: fix };
+    default: return { title: `\`${d.site.text}\` breaks ${id}`, action: fix };
+  }
 }

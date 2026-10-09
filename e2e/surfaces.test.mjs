@@ -68,7 +68,7 @@ test('GitHub annotates only new scoped sites, writes summary sections and compar
   const summary = join(directory, 'summary.md'); await writeFile(summary, 'Existing step summary.\n');
   const result = run(directory, ['--base', 'HEAD', '--format', 'github'], 1, { GITHUB_STEP_SUMMARY: summary });
   const commands = result.stdout.split('\n').filter(line => line.startsWith('::'));
-  assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=provenance\/spacing::/);
+  assert.equal(commands.length, 1); assert.match(commands[0], /^::error file=src\/App.tsx,line=1,col=\d+,title=10px isn't on your spacing scale::/);
   const markdown = await readFile(summary, 'utf8');
   assert.match(markdown, /^Existing step summary\./); assert.match(markdown, /1 new, 0 fixed, 2 debt/); assert.match(markdown, /spacing: 0\/2 \(0%\); \+0 pp vs base/);
   assert.match(markdown, /color: no decisions/); assert.match(markdown, /0 growth lines/);
@@ -90,7 +90,7 @@ test('GitHub annotation properties and messages escape authored filenames and re
   const errors = commands.filter(line => line.startsWith('::error'));
   assert.equal(errors.length, 1); assert.match(errors[0], /file=src\/odd%2C%25%3Aname.tsx/);
   assert.match(errors[0], /50%25/); assert.doesNotMatch(output, /\n::error file=spoof/);
-  assert.equal(commands.filter(line => line.startsWith('::notice') && line.includes('title=dead/spacing::')).length, 1);
+  assert.equal(commands.filter(line => line.startsWith('::notice') && line.includes('spacing tokens are never used in')).length, 1);
 });
 
 test('summary fixed count and positive coverage delta come from actual base declarations', async t => {
@@ -140,7 +140,7 @@ test('agent never announces 0 new while strict config or unaccepted decisions fa
   const config = join(directory, 'plumb.config.ts');
   await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n markers: ['branch-only'],"));
   const output = run(directory, ['--changed', '--agent', '--strict-ledger'], 1).stdout;
-  assert.doesNotMatch(output, /^0 new/); assert.match(output, /Config grew/); assert.match(output, /NEEDS-DECISION/);
+  assert.doesNotMatch(output, /^0 new/); assert.match(output, /New exceptions and tokens/); assert.match(output, /NEEDS-DECISION/);
   git(directory, 'restore', 'plumb.config.ts');
   const css = join(directory, 'src/styles.css');
   await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing: 1px;', '--spacing: 1px; --spacing-step-large: 12px;'));

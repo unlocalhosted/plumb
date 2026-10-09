@@ -29,7 +29,7 @@ export function githubSummary(report: Report, base?: Report): SummarySection[] {
   }
   sections.push({ title: 'Coverage', lines: coverage });
   const growth = report.findings.filter(f => f.rule === 'ledger/grew');
-  sections.push({ title: 'Ledger', lines: [`${report.ledger?.growth ?? 0} growth lines.`, ...growth.map(f => markdown(f.why))] });
+  sections.push({ title: 'Ledger', lines: [`${report.ledger?.growth ?? 0} growth lines.`, ...growth.map(f => markdown(f.title))] });
   return sections;
 }
 export function renderSummary(sections: SummarySection[]): string {
@@ -39,5 +39,5 @@ const escapeData = (s: string) => s.replaceAll('%', '%25').replaceAll('\r', '%0D
 const escapeProperty = (s: string) => escapeData(s).replaceAll(':', '%3A').replaceAll(',', '%2C');
 export function githubCommands(report: Report): string {
   return report.findings.flatMap(finding => newSites(finding).map(site =>
-    `::${finding.severity === 'error' ? 'error' : finding.severity === 'warn' ? 'warning' : 'notice'} file=${escapeProperty(pathFor(report, site.file))},line=${site.line},col=${site.column},title=${escapeProperty(finding.rule)}::${escapeData([finding.why, finding.fix].filter(Boolean).join(' '))}`)).join('\n');
+    `::${finding.severity === 'error' ? 'error' : finding.severity === 'warn' ? 'warning' : 'notice'} file=${escapeProperty(pathFor(report, site.file))},line=${site.line},col=${site.column},title=${escapeProperty(finding.title)}::${escapeData([finding.because, finding.fix, finding.accept].filter(Boolean).join(' '))}`)).join('\n');
 }

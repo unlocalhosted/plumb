@@ -1,19 +1,23 @@
-import { familyDecisions } from './families.ts';
+import { familyDecisions, suggestibleTokens } from './families.ts';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { defineDecisions } from '../../dist/index.js';
+
+// Exact token-name globs exclude recipes and every alias that reaches them.
+const suggest = await suggestibleTokens();
 
 export default {
   css: 'apps/docs/src/styles.css',
   source: ['apps/docs/src/**/*.{tsx,jsx,ts,js,css}'],
   decisions: {
-    color: { from: familyDecisions('color'), identity: 'reference', callers: ['primitive', 'semantic'] },
-    radius: { from: familyDecisions('radius'), callers: ['primitive', 'semantic'] },
-    type: { from: familyDecisions('type'), callers: ['primitive', 'semantic'] },
-    motion: { from: familyDecisions('motion'), identity: 'reference', callers: ['primitive', 'semantic'] },
-    elevation: { from: familyDecisions('elevation'), identity: 'reference', callers: ['primitive', 'semantic'] },
-    z: { from: familyDecisions('z'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    color: { suggest, from: familyDecisions('color'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    radius: { suggest, from: familyDecisions('radius'), callers: ['primitive', 'semantic'] },
+    type: { suggest, from: familyDecisions('type'), callers: ['primitive', 'semantic'] },
+    motion: { suggest, from: familyDecisions('motion'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    elevation: { suggest, from: familyDecisions('elevation'), identity: 'reference', callers: ['primitive', 'semantic'] },
+    z: { suggest, from: familyDecisions('z'), identity: 'reference', callers: ['primitive', 'semantic'] },
     spacing: {
+      suggest,
       identity: 'value', callers: ['primitive', 'semantic'],
       // Only the shared layout ladder and semantic gaps, never recipe geometry.
       from: async () => {
