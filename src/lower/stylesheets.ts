@@ -12,7 +12,7 @@ import { cssCode, maskImports, packageName, resolveStylesheet } from '../collect
 import type { EmbeddedStylesheet } from '../collect/inline.js';
 import { lineStarts, references, sourceSite } from '../collect/source.js';
 import { errorMessage, UsageError } from '../errors.js';
-import { atRuleText, declaredClasses, parseCss, pseudos, selectorText } from './css.js';
+import { atRuleText, declarationStart, declaredClasses, parseCss, pseudos, selectorText } from './css.js';
 import { tailwindGraph } from './tailwind.js';
 
 interface RawDeclaration { prop: string; value: string; offset: number; text: string }
@@ -38,6 +38,7 @@ function delimiter(css: string, start: number, target: '{' | '}'): number {
 // declaration AST lacks property locations and normalizes values. Keep authored
 // values/positions, including the final declaration without a semicolon.
 function declarationsAt(css: string, offset: number, nested: boolean, limit = Infinity): RawDeclaration[] {
+  if (nested) offset = declarationStart(css, offset);
   if (!nested) offset = delimiter(css, offset, '{') + 1;
   const declarations: RawDeclaration[] = [];
   let start = offset, depth = 0, braces = 0, quote = '';
@@ -178,7 +179,7 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[]): Promise<LoweredStylesheets> {
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file)).hash));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer4-authored-css-v1', version, entry, dependencies, embeddedDependencies,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'layer5-authored-css-v1', version, entry, dependencies, embeddedDependencies,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');

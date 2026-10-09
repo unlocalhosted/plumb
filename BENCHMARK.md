@@ -705,3 +705,97 @@ The initial run falsely marked four `--ed-status-*-bg/shadow` keys dead. Read-on
 Warm **report total 1280.0 ms meets 1.3 s**. Full process **1428.4 ms** exceeds it by 128.4 ms: startup, serializing/writing the 11.5 MB expanded full JSON report and process overhead add 148.3 ms. We report both rather than claim the process meets the limit. The first family run was 1,447.2 ms report / 1,572.9 ms wall; indexing token source lines and caching repeated value matches/perceptual nearest lists removed repeated work. Final warm compiler cache has 1,302 hits / 0 misses; module cache 1,303 / 0. Cold means a new Plumb cache, not OS eviction. Measurements are individual processes, not latency guarantees. Earlier valid warm report/process pairs were 1,175.4/1,301.1 ms and 1,212.6/1,335.9 ms; the final retained run follows the effective-reset registry correction.
 
 Final verification: **65 CLI integration/e2e tests**, no failures/skips/unit tests; typecheck and whitespace check green. Protected text functions are unchanged. No installs, commits, MetalUI writes or project-specific core mapping. Details: [Layer 4](docs/layers/4-families.md).
+
+# Layer 5 benchmark
+
+Measured 2026-10-09 against read-only MetalUI HEAD `faa2036e4634e4f6c8d49feaa2dac87a77559501`, Tailwind 4.3.3, Node 25.9.0, macOS arm64. This checkout has unrelated pre-existing AGENTS/capture changes; no Plumb run wrote to MetalUI. Layer 2 used the older `ca465732b94e7ba654a05b69fd5bc7615788d4b6`. No packages installed or commits made. Protected text-view functions are unchanged.
+
+## Reproduce and scopes
+
+```sh
+npm run build
+node bench/metalui/measure-layer5.mjs
+node bench/metalui/reconcile-layer5.mjs
+```
+
+Docs config: [layer5.config.ts](bench/metalui/layer5.config.ts), extending the prior benchmark decisions/markers and enabling all nine habits. Package config: [layer5-package.config.ts](bench/metalui/layer5-package.config.ts), entry `packages/metalui/styles.input.css`, source `packages/metalui/src/**/*.{tsx,jsx,ts,js,css}`. Both judge only source-glob declarations.
+
+Parity additionally uses [layer5-parity.config.ts](bench/metalui/layer5-parity.config.ts) over the exact emitted package CSS. This third lane is necessary: native lint checks emitted utilities, while authored source contains unused utility definitions, actual call sites, inline styles and separately imported icon CSS. An emitted `.overflow-auto` or `.outline-none` definition cannot establish its caller's companions. Native and Plumb both defer those primitive definitions to class sites.
+
+The measurement script clears only its own caches, then sets `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer5-docs` and `.../layer5-package`. Parity uses `.../layer5`; its emitted CSS stays under `.../layer5/parity`. Native `scripts/lint-css-habits.mjs` runs without `--ratchet`, compiling into its own temp directory, and exits **0: 23 existing, none new**. Explicit `--css` per-rule outputs are asserted equal to the native default temp-compilation counts.
+
+## Habit counts
+
+Breaks count lowered declaration contexts, not source lines or grouped findings. Disabled checks do not run; `plumb habits` lists built-ins and evaluates their break counts without failing.
+
+| Habit | Docs | Package authored source | Native emitted CSS | Plumb emitted CSS | Native TSX scan |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| hover-gate | 161 | 363 | 0 | 0 | 0 |
+| focus-outline | 95 | 36 | 0 | 0 | 0 |
+| transition-named | 0 | 0 | 0 | 0 | 0 |
+| no-ease-in | 0 | 0 | 0 | 0 | 0 |
+| logical-inline | 300 | 65 | 17 | 26 | 0 |
+| viewport-dynamic | 7 | 16 | 0 | 3 | 0 |
+| safe-area-fallback | 0 | 0 | 0 | 0 | 0 |
+| overflow-clip | 21 | 0 | 3 | 0 | 3 |
+| overscroll-contain | 19 | 0 | 0 | 0 | 0 |
+
+Z and motion remain provenance rules, with no duplicate habit findings. Native motion/z/title/ellipsis checks outside these nine built-ins are not represented as Plumb habit parity.
+
+## Hover: all 22 stylesheets and 30 grep hits
+
+All **22** Layer 2 docs stylesheets have ungated hover findings: **112 ungated CSS declaration contexts**, with five separately gated contexts in kds.css. The old file-level test missed kds because it also contains gated hover. The table below accounts for every stylesheet. `library.css` now has 12 rather than 11 hover contexts: the generic nested-declaration location repair recovers `color: var(--ink)` at **65:93**, previously lost after the compiled compatibility block. No MetalUI edit caused that delta.
+
+| Stylesheet under apps/docs/src | Hover contexts | Ungated | Gated |
+| --- | ---: | ---: | ---: |
+| kds.css | 37 | 32 | 5 |
+| pages/icon-detail.css | 2 | 2 | 0 |
+| pages/icon-library.css | 1 | 1 | 0 |
+| pages/library.css | 12 | 12 | 0 |
+| ui/edit/edit.css | 4 | 4 | 0 |
+| ui/icon-cell.css | 3 | 3 | 0 |
+| ui/xray/checkbox-specimens.css | 2 | 2 | 0 |
+| ui/xray/chip-specimens.css | 2 | 2 | 0 |
+| ui/xray/dialog-specimens.css | 1 | 1 | 0 |
+| ui/xray/folder-specimens.css | 4 | 4 | 0 |
+| ui/xray/icon-button-specimens.css | 1 | 1 | 0 |
+| ui/xray/kbd-specimens.css | 2 | 2 | 0 |
+| ui/xray/lasso-specimens.css | 5 | 5 | 0 |
+| ui/xray/link-card-specimens.css | 7 | 7 | 0 |
+| ui/xray/menu-specimens.css | 2 | 2 | 0 |
+| ui/xray/palette-specimens.css | 2 | 2 | 0 |
+| ui/xray/snap-guides-specimens.css | 6 | 6 | 0 |
+| ui/xray/status-specimens.css | 3 | 3 | 0 |
+| ui/xray/swatch-specimens.css | 3 | 3 | 0 |
+| ui/xray/switcher-specimens.css | 10 | 10 | 0 |
+| ui/xray/toast-specimens.css | 4 | 4 | 0 |
+| ui/xray/tooltip-specimens.css | 4 | 4 | 0 |
+
+The reproducible unprefixed `hover:` TSX grep still yields **30 textual class hits**. Every one links to an actual lowered finding. The collector also follows **six reused locations**, yielding **36 class-token locations**; the reconciliation records every token, source position, declaration count and finding key, including arbitrary color-mix and multi-declaration material classes. The broader docs hover total is **161 declaration-context breaks**. The compiler proves `pointer-hover` exists in this checkout, so actual Tailwind fixes name `pointer-hover:`. No name is assumed from spelling or project identity.
+
+## Every native/Plumb difference
+
+Complete per-key multiplicities and reasons are in [layer5.reconciliation.json](bench/metalui/layer5.reconciliation.json); no key is left unreconciled. Six emitted-CSS habits agree at zero. The other three are reconciled as follows.
+
+- **Logical inline: all 17 native keys match.** Plumb adds eight physical corner declarations: four calendar range corners, two rounded-top sheet corners and two rounded-left sheet corners. Each has a logical corner equivalent; native's side regex omits corner longhands. The ninth additional declaration is the reduced-motion `left` directly inside `.progress-segment`'s nested media block. Native's `walkRules` plus direct-rule-declaration filter misses declarations inside a nested at-rule with no nested selector; Plumb carries the parent selector and media condition.
+
+- **Viewport: three additional vw declarations**, `.palette-at`, `.dialog-frame`, `.sheet-width`. Native checks vh only; Layer 5 explicitly requests vh and vw. There are no native-only viewport findings.
+
+- **Overflow: three native CSS warnings conservatively pass.** `.form-field-error > *` participates in its parent's grid-row height reveal; `.accordion-panel` explicitly measures/transitions height; `.combobox-fit` explicitly transitions height. These are named reviewed formatting/measurement exceptions in CSS_HABITS.md. No decoration-only proof supports a generic clip replacement. The native TSX lane adds two `navigation-menu.tsx` overflow-hidden strings (resizing popup and viewport) and one `scroll-area.tsx` root. Those are also documented formatting/scroll exceptions; Plumb gives no decoration-only warning. Each of the six native warnings is recorded individually, including duplicate path/token occurrences.
+
+Package-source differences are also retained per finding. The **363 hover contexts** belong to separately imported icon CSS inside the requested source globs, absent from styles.input.css's emitted bundle. Source focus findings inspect outline removal at actual class sites, unlike native's primitive utility-definition exemption. Inline/source/unused utility declarations and actual class uses account for additional logical/viewport contexts; they are not fabricated emitted-CSS discrepancies. Nothing outside source globs is judged to improve parity.
+
+## Cold/warm timing
+
+| Slice / cache | Report total | Process wall incl. JSON | Habit phase |
+| --- | ---: | ---: | ---: |
+| docs.cold | 3756.4 ms | 3967.1 ms | 76.8 ms |
+| docs.warm | 1351.1 ms | 1577.8 ms | 71.4 ms |
+| package.cold | 6344.9 ms | 6622.8 ms | 97.2 ms |
+| package.warm | 4980.4 ms | 5284.4 ms | 91.7 ms |
+
+Both warm candidate caches have **zero misses and zero compilation time**; docs has 1,302 hits and package has 1,387. Cold/warm findings, declarations and habit summaries are asserted identical. Cold means fresh Plumb caches, not OS-cache eviction. Full package CLI timing includes prior existence/suggestion/graph/provenance work; the habit phase is reported separately, without claiming the entire process is equally fast. These are individual local measurements.
+
+Artifacts: [run timings and native stdout](bench/metalui/layer5.run.json), [docs warm report](bench/metalui/layer5.docs.warm.json), [package warm report](bench/metalui/layer5.package.warm.json), [emitted-CSS report](bench/metalui/layer5.parity.json), [hit-by-hit reconciliation](bench/metalui/layer5.reconciliation.json). Emitted CSS SHA-256: `39b85d36c33e368b54409297da40ec0b900c57931bf34b0230064be97a808a5f`.
+
+Final validation: **74 CLI integration/e2e tests passed**, no failures/skips/unit tests; typecheck and whitespace checks green. Details and DSL contract: [Layer 5 notes](docs/layers/5-habits.md).

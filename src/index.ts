@@ -14,18 +14,23 @@ import { references } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
 import { readDecisions } from './decisions/index.js';
 import { provenance } from './rules/provenance.js';
+import { judgeHabits } from './habits/index.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 
 export { defineDecisions } from './decisions/index.js';
 export type { DecisionInput } from './decisions/index.js';
 export { defineConfig } from './config.js';
+export type { HabitPredicate, ConditionPredicates, HabitSeverity } from './habits/predicates.js';
+export type { HabitSummary, BuiltinHabit } from './habits/index.js';
 export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
 export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage, JudgedFamily, ProvenanceCoverage } from './report.js';
 
 export interface CheckOptions {
   root?: string;
   config?: string;
+  /** Evaluate all built-ins for the habits inspection command. */
+  listHabits?: boolean;
 }
 
 async function analyze(options: CheckOptions): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
@@ -49,7 +54,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   const files = await projectSourceFiles(root, config.value);
   const collected = await collectClasses(files.filter(file => /\.[jt]sx?$/.test(file)), config.value.classHelpers);
   const unique = [...new Set(collected.sites.filter(site => !site.opaque).map(site => site.token))].sort();
-  const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique);
+  const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true);
   const stylesheetStart = performance.now();
   const modules = await collectModules(root, collected.modules);
   const graph = await collectStylesheets(project.tailwind.entry, files, modules.imports);
@@ -94,6 +99,13 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   const judged = provenance(declarations, record, config.value);
   findings.push(...judged.findings);
   const provenanceMs = performance.now() - provenanceStart;
+  const habitsStart = performance.now();
+  const contexts = new Map<Declaration, string>();
+  for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
+  for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
+  const habits = judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits);
+  findings.push(...habits.findings);
+  const habitsMs = performance.now() - habitsStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -107,6 +119,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     config: { path: config.path, inferred: config.path === null },
     ...project,
     findings,
+    habits: habits.summaries,
     decisions: record.decisions,
     declarations,
     stylesheets,
@@ -120,7 +133,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
         fullyOpaque: collected.styles.declarations.filter(declaration => declaration.prop === '*' && declaration.opaque).length,
         spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
     classes: { unique: unique.length, opaque: collected.opaque },
-    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
+    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs, habits: habitsMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
   return { report, sites };
 }

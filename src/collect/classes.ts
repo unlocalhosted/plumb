@@ -14,6 +14,8 @@ import type { ModuleImport } from './modules.js';
 
 export interface ClassSite extends Site {
   token: string;
+  /** Shared expression/element context for declaration companions. */
+  context?: string;
   owner: Declaration['owner'];
   conditions: Condition[];
   opaque?: 'dynamic-class';
@@ -101,6 +103,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   const sites = new Map<string, ClassSite>();
+  let classContext: string | undefined;
 
   function source(file: string, fullAst = false): Source {
     const cached = sources.get(file);
@@ -154,7 +157,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
       const token = match[0];
       const locations = [site(src, offset + match.index, token), ...(usage ? [{ ...usage, text: token }] : [])];
       for (const location of locations) {
-        const entry: ClassSite = { ...location, token, owner, conditions, ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
+        const entry: ClassSite = { ...location, token, owner, conditions, ...(classContext ? { context: classContext } : {}), ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
         const key = `${location.file}\0${location.line}:${location.column}\0${token}\0${context}`;
         sites.set(key, entry);
       }
@@ -360,12 +363,16 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
         const element = name(node.name);
         owner = { kind: /^[A-Z]/.test(element) ? 'component' : 'element', name: element };
         for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && attr.value) {
-          if (['className', 'class'].includes(name(attr.name))) evaluate(attr.value, src, next, owner);
+          if (['className', 'class'].includes(name(attr.name))) {
+            classContext = `${file}:${node.start}`;
+            evaluate(attr.value, src, next, owner);
+            classContext = undefined;
+          }
           else if (attr.value.type === 'JSXExpressionContainer') walk(attr.value.expression, next, owner);
         }
         return;
       }
-      if (node.type === 'CallExpression' && helpers.has(name(node.callee))) { evaluate(node, src, next, owner); return; }
+      if (node.type === 'CallExpression' && helpers.has(name(node.callee))) { classContext = `${file}:${node.start}`; evaluate(node, src, next, owner); classContext = undefined; return; }
       // Walk directly: avoid a temporary children array at every AST node.
       const record = node as unknown as Record<string, unknown>;
       for (const key of keys) {

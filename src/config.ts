@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { errorMessage, UsageError } from './errors.js';
 import type { Decision, Family } from './report.js';
+import { validateHabits } from './habits/index.js';
+import type { CustomHabit } from './habits/predicates.js';
+export type { CustomHabit } from './habits/predicates.js';
 
 export interface DecisionSource {
   from?: string | string[] | (() => Decision[] | Promise<Decision[]>);
@@ -15,12 +18,6 @@ export interface DecisionSource {
 export interface ComponentContract {
   own?: string[];
   allow?: string[];
-}
-
-export interface CustomHabit {
-  id: string;
-  when: Record<string, unknown>;
-  message: string;
 }
 
 export interface PlumbConfig {
@@ -89,18 +86,6 @@ function from(value: unknown, path: string): void {
   else string(value, path);
 }
 
-// The design fixes the habit envelope but not the nested predicate grammar yet.
-// Keep predicates declarative without inventing execution semantics in Layer 0.
-function declarative(value: unknown, path: string): void {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean' ||
-      (typeof value === 'number' && Number.isFinite(value))) return;
-  if (Array.isArray(value)) {
-    for (const item of value) declarative(item, path);
-  } else if (typeof value === 'object') {
-    for (const item of Object.values(object(value, path))) declarative(item, path);
-  } else invalid(path, 'declarative data, without callbacks');
-}
-
 function validate(value: unknown): PlumbConfig {
   const config = object(value, 'config');
   keys(config, allowedKeys, 'config');
@@ -141,16 +126,7 @@ function validate(value: unknown): PlumbConfig {
   }
   if ('habits' in config) {
     if (!Array.isArray(config.habits)) invalid('habits', 'an array');
-    for (const entry of config.habits) {
-      if (typeof entry === 'string') string(entry, 'habits');
-      else {
-        const habit = object(entry, 'habits');
-        keys(habit, ['id', 'when', 'message'], 'habits');
-        string(habit.id, 'habits.id');
-        string(habit.message, 'habits.message');
-        declarative(object(habit.when, 'habits.when'), 'habits.when');
-      }
-    }
+    validateHabits(config.habits);
   }
   if ('imitation' in config) {
     for (const [name, value] of Object.entries(object(config.imitation, 'imitation'))) {

@@ -1,0 +1,38 @@
+.ungated:hover { color: red; }
+.rest:not(:hover) { color: red; }
+@media (hover: hover) { .half:hover { color: red; } }
+@media (hover: hover) and (pointer: fine) { .gated:hover { color: red; } }
+@media (hover: hover), (pointer: fine) { .alternative:hover { color: red; } }
+@media not (pointer: fine) { @media (hover: hover) { .negated:hover { color: red; } } }
+@media (hover: hover) { @media (pointer: fine) { .nested:hover { color: red; } } }
+.mixed:hover, .plain { color: red; }
+.escaped\:hover { color: red; }
+.deep:is(:hover, :focus) { color: red; }
+.nested-rest:not(:is(:hover)) { color: red; }
+.focus-bad:focus-visible { box-shadow: 0 0 0 2px; }
+.focus-good:focus-visible { outline: 2px solid; box-shadow: 0 0 0 2px; }
+.focus-layer:focus-visible::before { box-shadow: 0 0 0 2px; }
+.removed { outline: none; }
+.restored { outline: none; }
+.restored:focus-visible { outline: 2px solid; }
+.field { outline: none; }
+.field:focus-within { outline-style: solid; }
+.invisible:focus-visible { outline: none; box-shadow: 0 0 0 2px; }
+.transitions { transition: all 1s ease-in; transition-property: opacity, all; animation: show 1s ease-in; }
+.transitions-good { transition: opacity 1s ease-in-out; transition-property: transform; }
+.physical { left: 10px; margin-right: 2px; border-left-width: 1px; text-align: left; padding: 1px 2px 3px 4px; border-top-left-radius: 2px; }
+.logical { inset-inline-start: 10px; margin-inline-end: 2px; left: 50%; right: calc(50% - 2px); padding: 1px 2px 3px 2px; }
+.viewport { height: calc(100vh - 2px); width: 100vw; }
+.viewport-good { min-height: 100svh; height: 100dvh; width: 100lvw; content: "100vh ease-in env(safe-area-inset-top)"; }
+.safe { padding: env(safe-area-inset-top); margin: var(--space, env(safe-area-inset-bottom)); }
+.safe-good { padding: env(safe-area-inset-top, max(0px, 1px)); }
+.decor { overflow: hidden; border-radius: 10px; }
+.scroll { overflow-y: auto; }
+.scroll-good { overflow-y: auto; overscroll-behavior-y: contain; }
+.scroll-wrong-axis { overflow-y: auto; overscroll-behavior-x: contain; }
+.scroll-auto { overflow: auto; overscroll-behavior: auto; }
+.paired { overflow-x: hidden; overflow-y: auto; border-radius: 10px; overscroll-behavior: none; }
+.unknown-semantics { overflow: hidden; }
+.animated { overflow: hidden; border-radius: 10px; transition: height 1s; }
+.truncated { overflow: hidden; border-radius: 10px; white-space: nowrap; text-overflow: ellipsis; }
+@keyframes example { from { left: 3px; } to { left: 10px; } }

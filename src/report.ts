@@ -94,6 +94,7 @@ export interface Report {
   tailwind: { entry: string | null; version: string | null };
   files: FileCounts;
   findings: Finding[];
+  habits?: import('./habits/index.js').HabitSummary[];
   decisions: Decision[];
   notes: string[];
   declarations: Declaration[];
@@ -101,7 +102,7 @@ export interface Report {
   moduleGraph: { modules: number; followed: number; cssFiles: number; cacheHits: number; cacheMisses: number; parseMs: number; totalMs: number };
   coverage: ProvenanceCoverage & { existence: { total: number; dead: number; deadVars: number }; declarations: Record<Declaration['origin'], number>; stylesheets: Record<'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style', number>; inline: { sites: number; literalSites: number; opaque: number; fullyOpaque: number; spreads: number } };
   classes: { unique: number; opaque: number };
-  timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number; stylesheets: number; inline: number; decisions: number; provenance: number }; cacheHits: number; cacheMisses: number };
+  timing: { totalMs: number; phases: { discover: number; parse: number; collect: number; load: number; compile: number; stylesheets: number; inline: number; decisions: number; provenance: number; habits?: number }; cacheHits: number; cacheMisses: number };
 }
 
 // The text report is read by a person deciding what to change, so it leads with what is wrong and what to write

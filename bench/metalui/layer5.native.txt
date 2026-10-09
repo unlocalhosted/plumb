@@ -1,0 +1,14 @@
+lint-css-habits: hover-gate: 0 existing
+lint-css-habits: focus-outline: 0 existing
+lint-css-habits: overscroll-contain: 0 existing
+lint-css-habits: motion-tokens: 0 existing
+lint-css-habits: transition-all: 0 existing
+lint-css-habits: ease-in: 0 existing
+lint-css-habits: logical-inline: 17 existing
+lint-css-habits: viewport-units: 0 existing
+lint-css-habits: safe-area-fallback: 0 existing
+lint-css-habits: z-index: 0 existing
+lint-css-habits: overflow-clip: 6 existing
+lint-css-habits: title-balance: 0 existing
+lint-css-habits: ellipsis-complete: 0 existing
+lint-css-habits: 23 existing, none new

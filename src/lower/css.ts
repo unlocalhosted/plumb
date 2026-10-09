@@ -39,12 +39,24 @@ export function selectorText(selector: Selector): string {
   const css = print([{ ...sentinel, value: { ...sentinel.value, selectors: [selector] } }]);
   return css.slice(0, cssCode(css).indexOf('{')).trim();
 }
+/** Nested declaration locations point at the first value. Recover its property in O(property length). */
+export function declarationStart(css: string, offset: number): number {
+  let end = offset;
+  while (end > 0 && /\s/.test(css[end - 1]!)) end--;
+  if (css[end - 1] !== ':') return offset;
+  let start = end - 1;
+  while (start > 0 && /\s/.test(css[start - 1]!)) start--;
+  while (start > 0 && /[-\w]/.test(css[start - 1]!)) start--;
+  return start;
+}
+
 // Keep declaration values as authored by Tailwind. Returning lightningcss's
 // parsed declaration AST through a JS visitor cannot round-trip infinity
 // (rounded-full), so use its rule locations and validated declaration counts.
 function declarationText(block: DeclarationBlock, css: string, loc: { line: number; column: number }, nested: boolean): { prop: string; value: string }[] {
   const lines = css.split('\n');
   let offset = lines.slice(0, loc.line).reduce((count, line) => count + line.length + 1, 0) + loc.column - 1;
+  if (nested) offset = declarationStart(css, offset);
   if (!nested) {
     let quote = '';
     while (offset < css.length) {

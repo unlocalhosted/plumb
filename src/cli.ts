@@ -5,8 +5,9 @@ import { check, explain } from './index.js';
 import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 
-const help = `Plumb ${tool.version}: layer 3, decision record and spacing provenance
+const help = `Plumb ${tool.version}: design decisions and habits
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
 
@@ -35,11 +36,12 @@ async function main(): Promise<void> {
       throw new UsageError(`${errorMessage(error)}; run plumb --help for supported flags.`);
     }
   })();
+  const listingHabits = args.positionals[0] === 'habits';
   const deciding = args.positionals[0] === 'decisions';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
   const explaining = args.positionals[0] === 'explain';
-  if (explaining ? args.positionals.length !== 2 : args.positionals.length > 1 || (args.positionals.length === 1 && args.positionals[0] !== 'check' && !deciding)) {
+  if (explaining ? args.positionals.length !== 2 : args.positionals.length > 1 || (args.positionals.length === 1 && args.positionals[0] !== 'check' && !deciding && !listingHabits)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   if (args.values.help) { process.stdout.write(help); return; }
@@ -61,7 +63,11 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
     return;
   }
-  const report = await check(options);
+  const report = await check({ ...options, ...(listingHabits ? { listHabits: true } : {}) });
+  if (listingHabits) {
+    process.stdout.write(args.values.json ? `${JSON.stringify(report.habits, null, 2)}\n` : report.habits!.map(habit => `${habit.id}  ${habit.breaks} breaks  ${habit.severity}  ${habit.enabled ? 'enabled' : 'disabled'}\n  ${habit.reason}\n`).join(''));
+    return;
+  }
   if (deciding) {
     const records = report.decisions.filter(record => args.values.family === undefined || record.family === args.values.family);
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record => `${record.family}  ${record.name}: ${record.value}\n  resolved: ${record.resolved ?? 'unresolved'}  origin: ${record.origin}  tier: ${record.tier}\n  why: ${record.why || '(none)'}\n  ${relative(report.root, record.source.file)}:${record.source.line}\n`).join(''));
