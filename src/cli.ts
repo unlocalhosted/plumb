@@ -21,6 +21,7 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb try [--lang tsx|css] [--as <path>] [--json|--agent] < snippet
+       plumb imitation --suggest [--json] [--root <dir>] [--config <path>]
 
        plumb init | baseline [--force]
        plumb accept <key> --why "…"
@@ -51,7 +52,7 @@ async function main(): Promise<void> {
           json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' },
-          family: { type: 'string' }, version: { type: 'boolean' }, help: { type: 'boolean' },
+          family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' },
         },
         allowPositionals: true,
@@ -67,16 +68,17 @@ async function main(): Promise<void> {
   const deciding = command === 'decisions';
   const listingHabits = command === 'habits';
   const explaining = command === 'explain';
+  const suggesting = command === 'imitation';
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'habits', 'decisions', 'explain', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install'].includes(command) ||
+  if (!['check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install'].includes(command) ||
       ((explaining || inspecting) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
-    base: ['check'], changed: ['check'], agent: ['check', 'try'], sarif: ['check'], format: ['check'], hooks: ['install'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'],
+    base: ['check'], changed: ['check'], agent: ['check', 'try'], sarif: ['check'], format: ['check'], hooks: ['install'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'],
   };
@@ -85,6 +87,7 @@ async function main(): Promise<void> {
   if ([args.values.json, args.values.sarif, args.values.agent, args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
   if (command === 'install' && !args.values.hooks) throw new UsageError('Use plumb install --hooks.');
+  if (suggesting && !args.values.suggest) throw new UsageError('Use plumb imitation --suggest to report candidate fingerprints.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
   for (const name of ['root', 'config'] as const) {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
@@ -116,8 +119,9 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
     return;
   }
-  const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits,
+  const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits && !suggesting,
     ...(listingHabits ? { listHabits: true } : {}),
+    ...(suggesting ? { suggestImitation: true } : {}),
     ...(args.values.base === undefined ? {} : { base: args.values.base }),
     ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
     ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) });
@@ -138,6 +142,14 @@ async function main(): Promise<void> {
       ...(args.values.rebase === undefined ? {} : { rebase: args.values.rebase }),
     });
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : `${result.message}\n`);
+    return;
+  }
+  if (suggesting) {
+    const proposals = report.imitationSuggestions ?? [];
+    process.stdout.write(args.values.json ? `${JSON.stringify(proposals, null, 2)}\n` :
+      'Candidate fingerprints (report only; none enabled):\n' + proposals.map(proposal =>
+        `${proposal.component.name}  ${proposal.rawElements} raw elements\n  fingerprint: ${JSON.stringify(proposal.fingerprint)}\n  source: ${relative(report.root, proposal.component.source.file)}:${proposal.component.source.line}\n` +
+        (proposal.notes ?? []).map(note => `  note: ${note}\n`).join('')).join(''));
     return;
   }
   if (inspecting) {

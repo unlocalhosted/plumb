@@ -17,6 +17,7 @@ import { provenance } from './rules/provenance.js';
 import { discoverComponents } from './ownership/components.js';
 import { judgeOwnership } from './ownership/judge.js';
 import { judgeHabits } from './habits/index.js';
+import { judgeImitation, suggestImitation } from './imitation/index.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 import { applyLedger } from './ledger/check.js';
@@ -42,6 +43,8 @@ export interface CheckOptions extends LedgerOptions {
   ledger?: boolean;
   /** Evaluate all built-ins for the habits inspection command. */
   listHabits?: boolean;
+  /** Report candidate fingerprints without enabling or persisting them. */
+  suggestImitation?: boolean;
 }
 
 async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
@@ -124,9 +127,10 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   if (dead) findings.push(...dead.findings);
   const provenanceMs = performance.now() - provenanceStart;
   const ownershipStart = performance.now();
-  const owned = judgeOwnership(declarations, discoverComponents(root,
+  const components = discoverComponents(root,
     files.filter(file => input?.file !== file || input.lang === 'tsx'), config.value,
-    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined), config.value);
+    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation);
+  const owned = judgeOwnership(declarations, components, config.value);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart;
   const habitsStart = performance.now();
@@ -136,6 +140,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const habits = judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits);
   findings.push(...habits.findings);
   const habitsMs = performance.now() - habitsStart;
+  findings.push(...judgeImitation(components, collected.sites, declarations, config.value));
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -167,6 +172,8 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
     classes: { unique: unique.length, opaque: collected.opaque },
     timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs, habits: habitsMs, ownership: ownershipMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
+  if (options.suggestImitation) report.imitationSuggestions = await suggestImitation(components, collected.sites, report, config.value);
+  report.timing.totalMs = performance.now() - start;
   return { report, sites };
 }
 

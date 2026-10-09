@@ -1,0 +1,6206 @@
+{
+  "root": "/Users/vijaysingh/unlocalhosted/metalui",
+  "commit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "proposals": [
+    {
+      "component": {
+        "name": "Accordion",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/accordion/accordion.tsx",
+          "line": 29
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "grid",
+            "mu-accordion"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Accordion.Item",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/accordion/accordion.tsx",
+          "line": 33
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-accordion-item",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Accordion.Panel",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/accordion/accordion.tsx",
+          "line": 62
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "accordion-panel",
+            "mu-accordion-panel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Accordion.Trigger",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/accordion/accordion.tsx",
+          "line": 50
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-accordion-header"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 36
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Actions",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 72
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "dialog-actions",
+            "mu-dialog-actions"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Cancel",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 77
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Confirm",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 93
+        },
+        "variants": {
+          "tone": [
+            "destructive",
+            "primary"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Description",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 68
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "alert-dialog-description",
+            "mu-alert-dialog-description",
+            "text-ink2",
+            "type-body"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Popup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 53
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "dialog-frame",
+            "dialog-top",
+            "fixed",
+            "mu-alert-dialog",
+            "mu-dialog",
+            "outline-none",
+            "transition-dialog",
+            "z-dialog-scrim-z"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AlertDialog.Title",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/alert-dialog/alert-dialog.tsx",
+          "line": 63
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-dialog-title",
+            "text-balance",
+            "text-ink",
+            "type-title"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Attachment",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/attachment/attachment.tsx",
+          "line": 64
+        },
+        "variants": {
+          "uploadState": [
+            "idle",
+            "uploading",
+            "complete",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "attachment-land",
+            "flex",
+            "gap-attachment-gap",
+            "items-center",
+            "min-h-attachment-height",
+            "min-w-0",
+            "mu-attachment",
+            "p-attachment-pad",
+            "recipe-surface-raise-sm",
+            "relative",
+            "rounded-attachment-radius",
+            "w-full"
+          ]
+        }
+      },
+      "fingerprint": [
+        "attachment-land",
+        "gap-attachment-gap",
+        "min-h-attachment-height",
+        "mu-attachment",
+        "p-attachment-pad",
+        "rounded-attachment-radius",
+        "var(--mu-r-attachment-self-gap)",
+        "var(--mu-r-attachment-self-height)",
+        "var(--mu-r-attachment-self-pad)",
+        "var(--mu-r-attachment-self-radius)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Avatar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/avatar/avatar.tsx",
+          "line": 53
+        },
+        "variants": {
+          "size": [
+            "small",
+            "regular",
+            "large"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "flex-none",
+            "inline-grid",
+            "mu-avatar",
+            "place-items-center",
+            "recipe-surface-raise-sm",
+            "relative",
+            "rounded-full",
+            "select-none",
+            "size-avatar-size-large",
+            "size-avatar-size-regular",
+            "size-avatar-size-small",
+            "type-meta",
+            "type-title",
+            "type-ui"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "AvatarGroup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/avatar/avatar.tsx",
+          "line": 78
+        },
+        "variants": {
+          "size": [
+            "small",
+            "regular",
+            "large"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "avatar-stack",
+            "inline-flex",
+            "items-center",
+            "mu-avatar-group"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "BlockSilhouette",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/block-silhouette/block-silhouette.tsx",
+          "line": 52
+        },
+        "variants": {
+          "kind": [
+            "text",
+            "code",
+            "link",
+            "swatch",
+            "image",
+            "file",
+            "region"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "animate-silhouette-in",
+            "box-border",
+            "mu-silhouette",
+            "overflow-clip",
+            "p-silhouette-code-pad",
+            "p-silhouette-region-pad",
+            "recipe-silhouette-code",
+            "recipe-silhouette-file",
+            "recipe-silhouette-image",
+            "recipe-silhouette-link",
+            "recipe-silhouette-region",
+            "recipe-silhouette-swatch",
+            "relative",
+            "rounded-silhouette-code-radius",
+            "rounded-silhouette-file-radius",
+            "rounded-silhouette-image-radius",
+            "rounded-silhouette-link-radius",
+            "rounded-silhouette-region-radius",
+            "rounded-silhouette-swatch-radius",
+            "rounded-silhouette-text-radius"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Breadcrumbs",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/breadcrumbs/breadcrumbs.tsx",
+          "line": 53
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "nav"
+          ],
+          "classes": [
+            "mu-breadcrumbs"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-breadcrumbs"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "BrushCursor",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/brush-cursor/brush-cursor.tsx",
+          "line": 61
+        },
+        "variants": {
+          "mode": [
+            "pen",
+            "pencil",
+            "marker",
+            "eraser",
+            "line",
+            "arrow",
+            "rectangle",
+            "ellipse"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "fixed",
+            "left-0",
+            "mu-brush-cursor",
+            "overflow-visible",
+            "pointer-events-none",
+            "top-0",
+            "z-brush-z"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-brush-cursor",
+        "var(--mu-r-brush-self-z)",
+        "z-brush-z"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Button",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button/button.tsx",
+          "line": 85
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary",
+            "destructive",
+            "link",
+            "graphite",
+            "strip",
+            "strip-danger"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ],
+          "state": [
+            "idle",
+            "waiting",
+            "done",
+            "error"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "span"
+          ],
+          "classes": [
+            "antialiased",
+            "basis-full",
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "compact",
+            "cursor-default",
+            "cursor-pointer",
+            "default",
+            "destructive",
+            "function",
+            "gap-button-compact-gap",
+            "gap-button-gap",
+            "graphite",
+            "h-auto",
+            "h-button-compact-height",
+            "h-button-graphite-height",
+            "h-button-height",
+            "h-button-strip-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "m-0",
+            "mu-button",
+            "mu-icon-trigger",
+            "overflow-clip",
+            "p-0",
+            "primary",
+            "px-button-compact-pad",
+            "px-button-graphite-pad",
+            "px-button-pad",
+            "px-button-strip-pad",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-compact-pressed",
+            "recipe-button-destructive",
+            "recipe-button-destructive-pressed",
+            "recipe-button-graphite",
+            "recipe-button-pressed",
+            "recipe-button-primary",
+            "recipe-button-primary-pressed",
+            "relative",
+            "rounded-button-strip-radius",
+            "rounded-none",
+            "rounded-pill",
+            "select-none",
+            "sr-only",
+            "standard",
+            "strip",
+            "strip-danger",
+            "tap-highlight-none",
+            "text-button-destructive-ink",
+            "text-button-graphite-ink",
+            "text-button-link-ink",
+            "text-button-primary-ink",
+            "text-button-strip-danger-ink",
+            "text-button-strip-ink",
+            "text-ink",
+            "text-ink2",
+            "transition-button",
+            "transition-button-compact",
+            "translate-y-button-travel",
+            "type-button-compact",
+            "type-button-graphite",
+            "type-button-link",
+            "type-button-strip",
+            "type-doc-caption",
+            "type-ui",
+            "w-button-compact-height",
+            "w-button-graphite-height",
+            "w-button-height",
+            "w-button-strip-height",
+            "waiting",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [
+        "basis-full",
+        "type-doc-caption"
+      ],
+      "rawElements": 29
+    },
+    {
+      "component": {
+        "name": "ButtonGroup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button-group/button-group.tsx",
+          "line": 35
+        },
+        "variants": {
+          "cap": [
+            "standard",
+            "primary"
+          ],
+          "size": [
+            "default",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "button-group-bar",
+            "button-group-rocker",
+            "compact",
+            "inline-flex",
+            "items-stretch",
+            "mu-button-group",
+            "primary",
+            "recipe-button",
+            "recipe-button-compact",
+            "recipe-button-primary",
+            "rounded-pill",
+            "text-button-primary-ink",
+            "text-ink"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ButtonGroupReadout",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button-group/button-group.tsx",
+          "line": 68
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "output"
+          ],
+          "classes": [
+            "inline-grid",
+            "place-items-center",
+            "px-button-pad",
+            "recipe-well-field",
+            "tabular-nums",
+            "text-ink2",
+            "type-meta"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Calendar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/calendar/calendar.tsx",
+          "line": 111
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "gap-calendar-head-gap",
+            "inline-grid",
+            "max-w-full",
+            "mu-calendar",
+            "p-calendar-pad",
+            "select-none"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Card.Description",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/card/card.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "p"
+          ],
+          "classes": [
+            "m-0",
+            "mu-card-description",
+            "text-ink2",
+            "type-body"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Card.Footer",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/card/card.tsx",
+          "line": 70
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-wrap",
+            "gap-card-footer-gap",
+            "items-center",
+            "mt-card-footer-gap",
+            "mu-card-footer",
+            "relative",
+            "z-1"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Card.Media",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/card/card.tsx",
+          "line": 45
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "img"
+          ],
+          "classes": [
+            "card-media-bleed",
+            "h-card-media",
+            "mu-card-media"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Card.Title",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/card/card.tsx",
+          "line": 58
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-card-title",
+            "static",
+            "text-balance",
+            "text-ink",
+            "type-title"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Checkbox",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/checkbox/checkbox.tsx",
+          "line": 74
+        },
+        "variants": {
+          "size": [
+            "margin",
+            "row"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "h-max",
+            "inline-flex",
+            "leading-none",
+            "mu-dimple-slot",
+            "w-max"
+          ]
+        }
+      },
+      "fingerprint": [
+        "h-max",
+        "mu-dimple-slot"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "CheckboxGroup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/checkbox-group/checkbox-group.tsx",
+          "line": 41
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "CheckboxGroup.Item",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/checkbox-group/checkbox-group.tsx",
+          "line": 88
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "label"
+          ],
+          "classes": [
+            "checkbox-group-cascade",
+            "checkbox-group-press",
+            "cursor-pointer",
+            "gap-checkbox-group-row-gap",
+            "inline-flex",
+            "items-center",
+            "min-h-checkbox-group-row-height",
+            "mu-checkbox-group-row",
+            "ps-checkbox-group-indent",
+            "select-none",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "CheckboxGroup.Parent",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/checkbox-group/checkbox-group.tsx",
+          "line": 72
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "label"
+          ],
+          "classes": [
+            "checkbox-group-cascade",
+            "checkbox-group-press",
+            "cursor-pointer",
+            "gap-checkbox-group-row-gap",
+            "inline-flex",
+            "items-center",
+            "min-h-checkbox-group-row-height",
+            "mu-checkbox-group-row",
+            "select-none",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Chip",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/chip/chip.tsx",
+          "line": 35
+        },
+        "variants": {
+          "variant": [
+            "suggestion",
+            "glass",
+            "glass-action",
+            "tag"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "a",
+            "button",
+            "div",
+            "span"
+          ],
+          "classes": [
+            "backdrop-chip-glass-blur",
+            "box-border",
+            "cursor-pointer",
+            "gap-chip-glass-gap",
+            "gap-chip-suggestion-gap",
+            "glass-action",
+            "h-chip-glass-height",
+            "h-chip-suggestion-height",
+            "inline-flex",
+            "items-center",
+            "mu-chip",
+            "no-underline",
+            "pe-chip-suggestion-pad-right",
+            "ps-chip-suggestion-pad-left",
+            "px-chip-glass-pad-x",
+            "px-chip-tag-pad-x",
+            "recipe-chip-glass",
+            "recipe-chip-glass-action",
+            "recipe-chip-suggestion",
+            "recipe-chip-tag",
+            "rounded-chip-glass-radius",
+            "rounded-pill",
+            "text-chip-glass-action-ink",
+            "text-chip-glass-ink",
+            "text-chip-suggestion-ink",
+            "text-chip-tag-ink",
+            "type-chip-glass",
+            "type-chip-suggestion",
+            "type-chip-tag",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Chip.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/chip/chip.tsx",
+          "line": 50
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "mu-chip-text"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "CodeCard",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/code-card/code-card.tsx",
+          "line": 80
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "max-w-code-card-max-width",
+            "min-w-code-card-min-width",
+            "mu-codecard"
+          ]
+        }
+      },
+      "fingerprint": [
+        "max-w-code-card-max-width",
+        "min-w-code-card-min-width",
+        "mu-codecard",
+        "var(--mu-r-code-card-self-max-width)",
+        "var(--mu-r-code-card-self-min-width)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ColourCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/colour-cue/colour-cue.tsx",
+          "line": 48
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Combobox",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/combobox/combobox.tsx",
+          "line": 85
+        },
+        "variants": {
+          "size": [
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "CommandPalette",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/command-palette/command-palette.tsx",
+          "line": 114
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Connector",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/connector/connector.tsx",
+          "line": 111
+        },
+        "variants": {
+          "look": [
+            "elastic",
+            "current",
+            "stardust"
+          ],
+          "flow": [
+            "forward",
+            "backward",
+            "both"
+          ],
+          "state": [
+            "rest",
+            "hover",
+            "selected"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span",
+            "svg"
+          ],
+          "classes": [
+            "connector-label",
+            "connector-layer",
+            "mu-connector",
+            "mu-connector-label"
+          ]
+        }
+      },
+      "fingerprint": [
+        "connector-label",
+        "mu-connector",
+        "mu-connector-label",
+        "var(--mu-r-connector-label-pad-x)",
+        "var(--mu-r-connector-label-pad-y)",
+        "var(--mu-r-connector-label-radius)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ContextMenu",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 108
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "createIcon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx",
+          "line": 208
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "createLifeIcon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/life/LifeIcon.tsx",
+          "line": 69
+        },
+        "variants": {
+          "tint": [
+            "ember",
+            "blush",
+            "tide",
+            "spark",
+            "graphite",
+            "dusk",
+            "iris"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DateCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/date-cue/date-cue.tsx",
+          "line": 57
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DatePicker",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/calendar/calendar.tsx",
+          "line": 327
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "gap-mu-space-8",
+            "mu-stack"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Day",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 341
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Day.Line",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 323
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "figure"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-day-text-gap",
+            "m-0"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Day.Page",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 255
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "flex-none",
+            "h-day-page-height",
+            "mu-day-page",
+            "overflow-clip",
+            "rounded-day-page-radius"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Day.Root",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 193
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Day.Year",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 292
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "gap-day-year-gap",
+            "h-day-year-height",
+            "items-center"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DayTile",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/day/day.tsx",
+          "line": 367
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-day-tile",
+            "p-day-tile-pad",
+            "size-day-tile-size"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Dial",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dial/dial.tsx",
+          "line": 161
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "cursor-pointer",
+            "mu-dial",
+            "relative",
+            "select-none",
+            "touch-none"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-dial"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Dialog",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dialog/dialog.tsx",
+          "line": 23
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Dialog.Actions",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dialog/dialog.tsx",
+          "line": 54
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "dialog-actions",
+            "mu-dialog-actions"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Dialog.Popup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dialog/dialog.tsx",
+          "line": 40
+        },
+        "variants": {
+          "material": [
+            "raise",
+            "raise-lite",
+            "raise-sm",
+            "frost",
+            "plate",
+            "panel",
+            "pop",
+            "tip",
+            "lens",
+            "graphite",
+            "graphite-plain",
+            "graphite-strip",
+            "graphite-deep",
+            "graphite-glass"
+          ],
+          "radius": [
+            "pill",
+            "hero",
+            "card",
+            "plate",
+            "strip",
+            "region",
+            "tip",
+            "row"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "dialog-frame",
+            "dialog-top",
+            "fixed",
+            "mu-dialog",
+            "outline-none",
+            "transition-dialog",
+            "z-dialog-scrim-z"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Dialog.Title",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dialog/dialog.tsx",
+          "line": 49
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-dialog-title",
+            "text-balance",
+            "text-ink",
+            "type-title"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DotDisplay",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/dot-display/dot-display.tsx",
+          "line": 37
+        },
+        "variants": {
+          "size": [
+            "default",
+            "mini"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "dot-display",
+            "dot-display-mini",
+            "mini"
+          ]
+        }
+      },
+      "fingerprint": [
+        "dot-display",
+        "dot-display-mini",
+        "var(--dot-in)",
+        "var(--dot-out)",
+        "var(--dot-pitch)",
+        "var(--dot-size)",
+        "var(--mu-r-dot-display-mini-dot)",
+        "var(--mu-r-dot-display-mini-pitch)",
+        "var(--mu-r-dot-display-self-dot)",
+        "var(--mu-r-dot-display-self-pitch)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DrawTools",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/draw-tools/draw-tools.tsx",
+          "line": 43
+        },
+        "variants": {
+          "tool": [
+            "pen",
+            "pencil",
+            "marker",
+            "line",
+            "arrow",
+            "rectangle",
+            "ellipse",
+            "eraser"
+          ],
+          "ink": [
+            "ink",
+            "red",
+            "blue",
+            "green",
+            "amber"
+          ],
+          "width": [
+            "fine",
+            "regular",
+            "bold"
+          ],
+          "variant": [
+            "frost",
+            "graphite"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "DropZone",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/drop-zone/drop-zone.tsx",
+          "line": 87
+        },
+        "variants": {
+          "reason": [
+            "type",
+            "size",
+            "count"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "label"
+          ],
+          "classes": [
+            "content-center",
+            "cursor-pointer",
+            "drop-zone-disabled",
+            "drop-zone-edge",
+            "drop-zone-sink",
+            "flex",
+            "gap-drop-zone-compact-gap",
+            "gap-drop-zone-gap",
+            "grid",
+            "h-drop-zone-compact-height",
+            "items-center",
+            "justify-items-center",
+            "max-w-full",
+            "min-h-drop-zone-min-height",
+            "min-w-0",
+            "mu-drop-zone",
+            "p-drop-zone-pad",
+            "px-drop-zone-compact-pad-x",
+            "recipe-well-field",
+            "relative",
+            "rounded-drop-zone-radius",
+            "select-none",
+            "text-center",
+            "text-start"
+          ]
+        }
+      },
+      "fingerprint": [
+        "content-center",
+        "drop-zone-disabled",
+        "drop-zone-edge",
+        "drop-zone-sink",
+        "gap-drop-zone-compact-gap",
+        "gap-drop-zone-gap",
+        "h-drop-zone-compact-height",
+        "min-h-drop-zone-min-height",
+        "mu-drop-zone",
+        "p-drop-zone-pad",
+        "px-drop-zone-compact-pad-x",
+        "rounded-drop-zone-radius",
+        "var(--mu-r-drop-zone-compact-gap)",
+        "var(--mu-r-drop-zone-compact-height)",
+        "var(--mu-r-drop-zone-compact-pad-x)",
+        "var(--mu-r-drop-zone-self-armed)",
+        "var(--mu-r-drop-zone-self-disabled)",
+        "var(--mu-r-drop-zone-self-edge)",
+        "var(--mu-r-drop-zone-self-gap)",
+        "var(--mu-r-drop-zone-self-min-height)",
+        "var(--mu-r-drop-zone-self-pad)",
+        "var(--mu-r-drop-zone-self-radius)",
+        "var(--mu-r-drop-zone-self-sink)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "EmptyState",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/empty-state/empty-state.tsx",
+          "line": 38
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "empty-state-arrive",
+            "flex",
+            "flex-wrap",
+            "gap-empty-state-gap",
+            "grid",
+            "items-center",
+            "justify-center",
+            "justify-items-center",
+            "max-w-empty-state-max-width",
+            "mu-empty-state",
+            "mx-auto",
+            "p-empty-state-pad",
+            "py-empty-state-gap",
+            "text-center",
+            "text-ink3",
+            "type-body"
+          ]
+        }
+      },
+      "fingerprint": [
+        "empty-state-arrive",
+        "gap-empty-state-gap",
+        "max-w-empty-state-max-width",
+        "mu-empty-state",
+        "mx-auto",
+        "p-empty-state-pad",
+        "py-empty-state-gap",
+        "var(--mu-r-empty-state-self-gap)",
+        "var(--mu-r-empty-state-self-max-width)",
+        "var(--mu-r-empty-state-self-pad)"
+      ],
+      "rawElements": 2
+    },
+    {
+      "component": {
+        "name": "EnumCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/enum-cue/enum-cue.tsx",
+          "line": 51
+        },
+        "variants": {
+          "kind": [
+            "pointer",
+            "keyboard",
+            "wheel"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 40
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Action",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 247
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Ink",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 250
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "draw-picks"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 85
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Picker",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 103
+        },
+        "variants": {
+          "direction": [
+            "up",
+            "both"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "mu-fan-picker",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Tray",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 200
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fan.Width",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/fan/fan.tsx",
+          "line": 254
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "draw-picks"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Field",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 47
+        },
+        "variants": {
+          "tone": [
+            "light",
+            "graphite"
+          ],
+          "size": [
+            "large",
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Field.Icon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 55
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-none",
+            "inline-grid",
+            "mu-field-icon"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Field.Input",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 58
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "bg-transparent",
+            "border-0",
+            "caret-field-field-caret",
+            "flex-1",
+            "h-full",
+            "large",
+            "min-w-0",
+            "mu-field-input",
+            "outline-none",
+            "p-0",
+            "text-entry",
+            "text-field-field-ink",
+            "type-field-field",
+            "type-ui"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Field.Trail",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 64
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "inline-flex",
+            "items-center",
+            "ms-auto",
+            "mu-field-trail"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fieldset",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 62
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "border-0",
+            "gap-form-field-fieldset-gap",
+            "grid",
+            "m-0",
+            "min-w-0",
+            "mu-fieldset",
+            "p-0"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Fieldset.Legend",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "engraved",
+            "form-field-legend",
+            "mu-fieldset-legend",
+            "type-label"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "FilterBar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/filter-bar/filter-bar.tsx",
+          "line": 58
+        },
+        "variants": {
+          "view": [
+            "place",
+            "list",
+            "table",
+            "timeline",
+            "gallery"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Folder",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/folder/folder.tsx",
+          "line": 113
+        },
+        "variants": {
+          "hue": [
+            "neutral",
+            "red",
+            "amber",
+            "green",
+            "blue",
+            "violet"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "folder",
+            "mu-folder"
+          ]
+        }
+      },
+      "fingerprint": [
+        "folder",
+        "mu-folder",
+        "var(--mu-folder-bottom)",
+        "var(--mu-folder-top)",
+        "var(--mu-folder-wash)",
+        "var(--mu-r-folder-back-radius)",
+        "var(--mu-r-folder-hue-amber-bottom)",
+        "var(--mu-r-folder-hue-amber-top)",
+        "var(--mu-r-folder-hue-blue-bottom)",
+        "var(--mu-r-folder-hue-blue-top)",
+        "var(--mu-r-folder-hue-green-bottom)",
+        "var(--mu-r-folder-hue-green-top)",
+        "var(--mu-r-folder-hue-neutral-bottom)",
+        "var(--mu-r-folder-hue-neutral-top)",
+        "var(--mu-r-folder-hue-red-bottom)",
+        "var(--mu-r-folder-hue-red-top)",
+        "var(--mu-r-folder-hue-violet-bottom)",
+        "var(--mu-r-folder-hue-violet-top)",
+        "var(--mu-r-folder-self-height)",
+        "var(--mu-r-folder-self-perspective)",
+        "var(--mu-r-folder-self-width)",
+        "var(--mu-r-folder-wash-amber)",
+        "var(--mu-r-folder-wash-blue)",
+        "var(--mu-r-folder-wash-green)",
+        "var(--mu-r-folder-wash-neutral)",
+        "var(--mu-r-folder-wash-red)",
+        "var(--mu-r-folder-wash-violet)"
+      ],
+      "rawElements": 4
+    },
+    {
+      "component": {
+        "name": "Form",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 75
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "form"
+          ],
+          "classes": [
+            "gap-form-field-form-gap",
+            "grid",
+            "mu-form"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "FormField",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 35
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-form-field-gap",
+            "grid",
+            "mu-form-field"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "FormField.Description",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 43
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-form-field-description",
+            "text-ink3",
+            "type-meta"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "FormField.Error",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 51
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "form-field-error",
+            "mu-form-field-error",
+            "text-form-field-error-ink",
+            "type-meta"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "FormField.Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/form-field/form-field.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-form-field-label",
+            "text-ink",
+            "type-ui",
+            "w-max"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "GlassFace",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/glass-face/glass-face.tsx",
+          "line": 12
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "box-border",
+            "mu-glass-face",
+            "p-glass-face-pad",
+            "recipe-glass-face",
+            "rounded-glass-face-radius"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-glass-face",
+        "p-glass-face-pad",
+        "recipe-glass-face",
+        "rounded-glass-face-radius",
+        "var(--mu-r-glass-face-self-background)",
+        "var(--mu-r-glass-face-self-pad)",
+        "var(--mu-r-glass-face-self-radius)",
+        "var(--mu-r-glass-face-self-shadow)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Glyph",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/glyph/glyph.tsx",
+          "line": 27
+        },
+        "variants": {
+          "size": [
+            "tiny",
+            "small",
+            "regular"
+          ],
+          "tone": [
+            "ink",
+            "ink2",
+            "ink3",
+            "inherit"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-none",
+            "glyph-drop-tiny",
+            "inline-grid",
+            "mu-glyph",
+            "place-items-center",
+            "text-glyph-ink-ink",
+            "text-glyph-ink-ink2",
+            "text-glyph-ink-ink3"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "HoverEngraving",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/hover-engraving/hover-engraving.tsx",
+          "line": 52
+        },
+        "variants": {
+          "led": [
+            "live",
+            "waiting",
+            "failed",
+            "off"
+          ],
+          "placement": [
+            "beside",
+            "below"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "absolute",
+            "engraving-below-out",
+            "engraving-beside-out",
+            "engraving-motion",
+            "engraving-sleep",
+            "flex",
+            "gap-engraving-gap",
+            "h-engraving-height",
+            "items-center",
+            "ms-engraving-beside-gap",
+            "mt-engraving-below-gap",
+            "mu-engraving",
+            "opacity-0",
+            "pointer-events-none",
+            "px-engraving-pad",
+            "start-0",
+            "start-full",
+            "top-engraving-beside-top",
+            "top-full",
+            "whitespace-nowrap",
+            "z-hover-engraving-z"
+          ]
+        }
+      },
+      "fingerprint": [
+        "[@media(hover:hover)_and_(pointer:fine)]:[.mu-icon-trigger:hover>&]:not-data-[open=false]:engraving-shown",
+        "data-[open=true]:data-immediate:delay-0",
+        "data-[open=true]:engraving-shown",
+        "engraving-below-out",
+        "engraving-beside-out",
+        "engraving-motion",
+        "engraving-sleep",
+        "gap-engraving-gap",
+        "h-engraving-height",
+        "ms-engraving-beside-gap",
+        "mt-engraving-below-gap",
+        "mu-engraving",
+        "px-engraving-pad",
+        "start-full",
+        "top-engraving-beside-top",
+        "var(--mu-engraving-below-gap)",
+        "var(--mu-engraving-beside-gap)",
+        "var(--mu-engraving-beside-top)",
+        "var(--mu-engraving-dwell-ms)",
+        "var(--mu-engraving-fade-ms)",
+        "var(--mu-engraving-gap)",
+        "var(--mu-engraving-height)",
+        "var(--mu-engraving-move-ms)",
+        "var(--mu-engraving-pad)",
+        "var(--mu-engraving-rise)",
+        "var(--mu-engraving-slide)",
+        "var(--mu-r-hover-engraving-self-z)",
+        "z-hover-engraving-z"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Icon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/Icon.tsx",
+          "line": 176
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "mu-ic-",
+            "mu-icon"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "IconButton",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/icon-button/icon-button.tsx",
+          "line": 32
+        },
+        "variants": {
+          "variant": [
+            "tool",
+            "ghost",
+            "mini"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button"
+          ],
+          "classes": [
+            "bg-transparent",
+            "border-0",
+            "box-border",
+            "cursor-pointer",
+            "flex-none",
+            "h-icon-button-mini-h",
+            "icon-button-mini-hit",
+            "icon-button-tool-hover",
+            "inline-grid",
+            "mini",
+            "mu-icon-button",
+            "mu-icon-trigger",
+            "p-0",
+            "place-items-center",
+            "recipe-icon-button-tool",
+            "relative",
+            "rounded-icon-button-tool-radius",
+            "rounded-pill",
+            "size-icon-button-ghost-size",
+            "size-icon-button-tool-size",
+            "tap-highlight-none",
+            "text-icon-button-ghost-ink",
+            "text-icon-button-mini-ink",
+            "text-icon-button-tool-ink",
+            "transition-icon-button",
+            "transition-icon-button-tool",
+            "type-icon-button-mini",
+            "w-icon-button-mini-w"
+          ]
+        }
+      },
+      "fingerprint": [
+        "[&>svg]:size-icon-button-ghost-glyph",
+        "data-pressed:after:absolute",
+        "data-pressed:after:end-icon-button-led-inset",
+        "data-pressed:after:recipe-icon-button-led",
+        "data-pressed:after:rounded-round",
+        "data-pressed:after:size-icon-button-led-size",
+        "data-pressed:after:top-icon-button-led-inset",
+        "data-pressed:recipe-icon-button-ghost-hover",
+        "data-pressed:recipe-icon-button-tool-pressed",
+        "data-pressed:text-icon-button-ghost-ink-hover",
+        "data-pressed:translate-y-icon-button-tool-press",
+        "h-icon-button-mini-h",
+        "icon-button-mini-hit",
+        "mu-icon-button",
+        "pointer-hover:recipe-icon-button-ghost-hover",
+        "pointer-hover:recipe-icon-button-mini-hover",
+        "pointer-hover:text-icon-button-ghost-ink-hover",
+        "pointer-hover:text-icon-button-mini-accept-ink",
+        "pointer-hover:text-icon-button-mini-ink-hover",
+        "size-icon-button-ghost-size",
+        "text-icon-button-ghost-ink",
+        "text-icon-button-mini-ink",
+        "transition-icon-button",
+        "type-icon-button-mini",
+        "var(--mu-r-icon-button-ghost-glyph)",
+        "var(--mu-r-icon-button-ghost-hover-background)",
+        "var(--mu-r-icon-button-ghost-ink)",
+        "var(--mu-r-icon-button-ghost-ink-hover)",
+        "var(--mu-r-icon-button-led-background)",
+        "var(--mu-r-icon-button-led-inset)",
+        "var(--mu-r-icon-button-led-shadow)",
+        "var(--mu-r-icon-button-led-size)",
+        "var(--mu-r-icon-button-mini-accept-ink)",
+        "var(--mu-r-icon-button-mini-font)",
+        "var(--mu-r-icon-button-mini-h)",
+        "var(--mu-r-icon-button-mini-hit)",
+        "var(--mu-r-icon-button-mini-hover-background)",
+        "var(--mu-r-icon-button-mini-ink)",
+        "var(--mu-r-icon-button-mini-ink-hover)",
+        "var(--mu-r-icon-button-mini-w)",
+        "var(--mu-r-icon-button-self-transition)",
+        "w-icon-button-mini-w"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "InkPicks",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/draw-picks/draw-picks.tsx",
+          "line": 68
+        },
+        "variants": {
+          "value": [
+            "ink",
+            "red",
+            "blue",
+            "green",
+            "amber"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "draw-picks",
+            "mu-draw-picks"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Island",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/island/island.tsx",
+          "line": 87
+        },
+        "variants": {
+          "tone": [
+            "live",
+            "working",
+            "offline",
+            "quiet"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Item",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/radio/radio.tsx",
+          "line": 59
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "label"
+          ],
+          "classes": [
+            "cursor-pointer",
+            "gap-radio-row-gap",
+            "inline-flex",
+            "items-center",
+            "min-h-radio-row-height",
+            "mu-radio",
+            "select-none",
+            "tap-highlight-none",
+            "text-ink",
+            "type-ui"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Kbd",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/kbd/kbd.tsx",
+          "line": 34
+        },
+        "variants": {
+          "size": [
+            "default",
+            "small"
+          ],
+          "surface": [
+            "default",
+            "strip",
+            "sunk",
+            "plain"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "kbd"
+          ],
+          "classes": [
+            "align-middle",
+            "box-border",
+            "h-kbd-height",
+            "h-kbd-small-height",
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "min-w-kbd-min",
+            "min-w-kbd-small-min",
+            "mu-kbd",
+            "px-kbd-pad",
+            "px-kbd-small-pad",
+            "recipe-kbd",
+            "recipe-kbd-strip",
+            "recipe-kbd-sunk",
+            "rounded-kbd-radius",
+            "rounded-kbd-small-radius",
+            "rounded-pill",
+            "sunk",
+            "text-ink2",
+            "text-kbd-strip-ink",
+            "text-kbd-sunk-ink",
+            "type-kbd",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [
+        "[.mu-kbd+&]:ms-kbd-gap",
+        "h-kbd-height",
+        "h-kbd-small-height",
+        "min-w-kbd-min",
+        "min-w-kbd-small-min",
+        "mu-kbd",
+        "px-kbd-pad",
+        "px-kbd-small-pad",
+        "recipe-kbd",
+        "recipe-kbd-strip",
+        "recipe-kbd-sunk",
+        "rounded-kbd-radius",
+        "rounded-kbd-small-radius",
+        "text-kbd-strip-ink",
+        "text-kbd-sunk-ink",
+        "type-kbd",
+        "var(--mu-r-kbd-self-background)",
+        "var(--mu-r-kbd-self-font)",
+        "var(--mu-r-kbd-self-gap)",
+        "var(--mu-r-kbd-self-height)",
+        "var(--mu-r-kbd-self-min)",
+        "var(--mu-r-kbd-self-pad)",
+        "var(--mu-r-kbd-self-radius)",
+        "var(--mu-r-kbd-self-shadow)",
+        "var(--mu-r-kbd-self-tracking)",
+        "var(--mu-r-kbd-small-height)",
+        "var(--mu-r-kbd-small-min)",
+        "var(--mu-r-kbd-small-pad)",
+        "var(--mu-r-kbd-small-radius)",
+        "var(--mu-r-kbd-strip-background)",
+        "var(--mu-r-kbd-strip-ink)",
+        "var(--mu-r-kbd-strip-shadow)",
+        "var(--mu-r-kbd-sunk-background)",
+        "var(--mu-r-kbd-sunk-ink)",
+        "var(--mu-r-kbd-sunk-shadow)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "Label",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/label/label.tsx",
+          "line": 67
+        },
+        "variants": {
+          "variant": [
+            "engraved",
+            "small",
+            "title",
+            "heading",
+            "query",
+            "count",
+            "cell",
+            "value",
+            "value-small",
+            "display",
+            "display-quiet",
+            "readout",
+            "readout-dim",
+            "on-graphite",
+            "dark",
+            "name",
+            "detail"
+          ],
+          "tone": [
+            "accent"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "b",
+            "div",
+            "h2",
+            "h3",
+            "i",
+            "input",
+            "p",
+            "small",
+            "span",
+            "td",
+            "th"
+          ],
+          "classes": [
+            "accent",
+            "bg-transparent",
+            "border-0",
+            "box-content",
+            "caret-green-deep",
+            "cursor-text",
+            "detail",
+            "display",
+            "display-quiet",
+            "field-sizing-content",
+            "input",
+            "label-placeholder",
+            "m-0",
+            "min-w-0",
+            "mu-label",
+            "name",
+            "not-italic",
+            "on-graphite",
+            "outline-none",
+            "p-0",
+            "readout-dim",
+            "recipe-label-dark",
+            "recipe-label-engraved",
+            "text-label-accent-color",
+            "text-label-cell-color",
+            "text-label-count-color",
+            "text-label-dark-color",
+            "text-label-detail-color",
+            "text-label-display-color",
+            "text-label-display-quiet-color",
+            "text-label-engraved-color",
+            "text-label-heading-color",
+            "text-label-name-color",
+            "text-label-on-graphite-color",
+            "text-label-query-color",
+            "text-label-readout-color",
+            "text-label-readout-dim-color",
+            "text-label-title-color",
+            "text-label-value-color",
+            "text-label-value-small-color",
+            "text-shadow-none",
+            "transition-label",
+            "type-label-cell",
+            "type-label-count",
+            "type-label-detail",
+            "type-label-display",
+            "type-label-display-quiet",
+            "type-label-engraved",
+            "type-label-heading",
+            "type-label-name",
+            "type-label-on-graphite",
+            "type-label-query",
+            "type-label-readout",
+            "type-label-small",
+            "type-label-title",
+            "type-label-value",
+            "type-label-value-small",
+            "value-small",
+            "whitespace-normal",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [
+        "[&_b]:text-label-emphasis-color",
+        "[&_b]:weight-label-emphasis-weight",
+        "box-content",
+        "field-sizing-content",
+        "label-placeholder",
+        "mu-label",
+        "not-italic",
+        "recipe-label-dark",
+        "recipe-label-engraved",
+        "text-label-accent-color",
+        "text-label-cell-color",
+        "text-label-count-color",
+        "text-label-dark-color",
+        "text-label-detail-color",
+        "text-label-display-color",
+        "text-label-display-quiet-color",
+        "text-label-engraved-color",
+        "text-label-heading-color",
+        "text-label-name-color",
+        "text-label-on-graphite-color",
+        "text-label-query-color",
+        "text-label-readout-color",
+        "text-label-readout-dim-color",
+        "text-label-title-color",
+        "text-label-value-color",
+        "text-label-value-small-color",
+        "text-shadow-none",
+        "transition-label",
+        "type-label-cell",
+        "type-label-count",
+        "type-label-detail",
+        "type-label-display",
+        "type-label-display-quiet",
+        "type-label-engraved",
+        "type-label-heading",
+        "type-label-name",
+        "type-label-on-graphite",
+        "type-label-query",
+        "type-label-readout",
+        "type-label-small",
+        "type-label-title",
+        "type-label-value",
+        "type-label-value-small",
+        "var(--mu-r-label-accent-color)",
+        "var(--mu-r-label-cell-color)",
+        "var(--mu-r-label-cell-font)",
+        "var(--mu-r-label-cell-tracking)",
+        "var(--mu-r-label-count-color)",
+        "var(--mu-r-label-count-font)",
+        "var(--mu-r-label-count-tracking)",
+        "var(--mu-r-label-dark-color)",
+        "var(--mu-r-label-dark-text-shadow)",
+        "var(--mu-r-label-detail-color)",
+        "var(--mu-r-label-detail-font)",
+        "var(--mu-r-label-detail-tracking)",
+        "var(--mu-r-label-display-color)",
+        "var(--mu-r-label-display-font)",
+        "var(--mu-r-label-display-quiet-color)",
+        "var(--mu-r-label-display-quiet-font)",
+        "var(--mu-r-label-display-quiet-tracking)",
+        "var(--mu-r-label-display-tracking)",
+        "var(--mu-r-label-emphasis-color)",
+        "var(--mu-r-label-emphasis-weight)",
+        "var(--mu-r-label-engraved-color)",
+        "var(--mu-r-label-engraved-font)",
+        "var(--mu-r-label-engraved-text-shadow)",
+        "var(--mu-r-label-engraved-tracking)",
+        "var(--mu-r-label-engraved-transform)",
+        "var(--mu-r-label-heading-color)",
+        "var(--mu-r-label-heading-font)",
+        "var(--mu-r-label-heading-tracking)",
+        "var(--mu-r-label-name-color)",
+        "var(--mu-r-label-name-font)",
+        "var(--mu-r-label-name-tracking)",
+        "var(--mu-r-label-on-graphite-color)",
+        "var(--mu-r-label-on-graphite-font)",
+        "var(--mu-r-label-on-graphite-tracking)",
+        "var(--mu-r-label-placeholder-color)",
+        "var(--mu-r-label-placeholder-weight)",
+        "var(--mu-r-label-query-color)",
+        "var(--mu-r-label-query-font)",
+        "var(--mu-r-label-query-tracking)",
+        "var(--mu-r-label-readout-color)",
+        "var(--mu-r-label-readout-dim-color)",
+        "var(--mu-r-label-readout-font)",
+        "var(--mu-r-label-readout-tracking)",
+        "var(--mu-r-label-self-transition)",
+        "var(--mu-r-label-small-font)",
+        "var(--mu-r-label-small-tracking)",
+        "var(--mu-r-label-small-transform)",
+        "var(--mu-r-label-title-color)",
+        "var(--mu-r-label-title-font)",
+        "var(--mu-r-label-title-tracking)",
+        "var(--mu-r-label-value-color)",
+        "var(--mu-r-label-value-font)",
+        "var(--mu-r-label-value-small-color)",
+        "var(--mu-r-label-value-small-font)",
+        "var(--mu-r-label-value-small-tracking)",
+        "var(--mu-r-label-value-tracking)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Lasso",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/lasso/lasso.tsx",
+          "line": 48
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "absolute",
+            "mu-lasso",
+            "pointer-events-none",
+            "presence-guide-leave",
+            "presence-lasso",
+            "select-none"
+          ]
+        }
+      },
+      "fingerprint": [
+        "data-[state=drawing]:transition-none",
+        "mu-lasso",
+        "presence-lasso",
+        "var(--mu-presence-lasso-fill)",
+        "var(--mu-presence-lasso-fill-dark)",
+        "var(--mu-presence-lasso-width)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "Led",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/led/led.tsx",
+          "line": 23
+        },
+        "variants": {
+          "kind": [
+            "live",
+            "waiting",
+            "failed",
+            "link",
+            "off"
+          ],
+          "size": [
+            "default",
+            "small"
+          ],
+          "gesture": [
+            "steady",
+            "flicker",
+            "breathe",
+            "blink2",
+            "rise"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-none",
+            "inline-flex",
+            "mu-led",
+            "p-status-lamp-bezel",
+            "recipe-status-socket",
+            "rounded-round"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-led",
+        "p-status-lamp-bezel"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "LensBar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/filter-bar/filter-bar.tsx",
+          "line": 99
+        },
+        "variants": {
+          "mode": [
+            "place",
+            "list",
+            "table",
+            "timeline",
+            "gallery"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "LifeIcon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/life/LifeIcon.tsx",
+          "line": 41
+        },
+        "variants": {
+          "tint": [
+            "ember",
+            "blush",
+            "tide",
+            "spark",
+            "graphite",
+            "dusk",
+            "iris"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "mu-il-",
+            "mu-life",
+            "mu-tint-"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "LineHandles",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/line-handles/line-handles.tsx",
+          "line": 41
+        },
+        "variants": {
+          "state": [
+            "rest",
+            "hover",
+            "selected"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "connector-layer",
+            "mu-line-handles"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-line-handles"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Link",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/link/link.tsx",
+          "line": 25
+        },
+        "variants": {
+          "kind": [
+            "inline",
+            "quiet",
+            "standalone"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "LinkCard",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/link-card/link-card.tsx",
+          "line": 80
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "link-card-tint",
+            "mu-linkcard",
+            "w-link-card-width"
+          ]
+        }
+      },
+      "fingerprint": [
+        "link-card-tint",
+        "mu-linkcard",
+        "var(--mu-r-link-card-screen-tint)",
+        "var(--mu-r-link-card-self-width)",
+        "w-link-card-width"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "LinkCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/link-cue/link-cue.tsx",
+          "line": 43
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "canvas",
+            "span"
+          ],
+          "classes": [
+            "align-baseline",
+            "gap-mu-space-4",
+            "group",
+            "inline-flex",
+            "inline-grid",
+            "items-center",
+            "mu-link-cue",
+            "relative",
+            "text-ink",
+            "type-content"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-link-cue"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ListGlide",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "recipe-menu-row-hover",
+            "rounded-menu-row-radius"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Mark",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 84
+        },
+        "variants": {
+          "kind": [
+            "date",
+            "duration",
+            "amount",
+            "measurement",
+            "tag",
+            "derived-tag",
+            "hex",
+            "match"
+          ],
+          "meaning": [
+            "time",
+            "money",
+            "sleep",
+            "steps",
+            "colour",
+            "person"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "derived-tag",
+            "mark-chip",
+            "mark-date",
+            "mark-derived-tag",
+            "mark-hex",
+            "mark-match",
+            "mark-measure",
+            "mark-quiet",
+            "mark-recognised",
+            "mark-semantic",
+            "mark-tag",
+            "mu-cue",
+            "relative",
+            "tag"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MarkInferred",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 145
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "mark-chip",
+            "mark-inferred",
+            "mu-cue",
+            "mu-cue-inferred"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MarkLife",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 163
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "mark-life",
+            "mu-cue-life"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MarkLine",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 78
+        },
+        "variants": {
+          "presentation": [
+            "semantic",
+            "reading"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MarkUrgency",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 151
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "mark-urgency",
+            "mu-cue-urgency"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MarkUrl",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/mark/mark.tsx",
+          "line": 130
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "a"
+          ],
+          "classes": [
+            "mark-url",
+            "mu-cue-url",
+            "type-ui"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Menu",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 80
+        },
+        "variants": {
+          "side": [
+            "bottom",
+            "top",
+            "left",
+            "right"
+          ],
+          "align": [
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Menubar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menubar/menubar.tsx",
+          "line": 32
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-menubar-gap",
+            "inline-flex",
+            "items-center",
+            "mu-menubar",
+            "p-menubar-pad",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Menubar.Menu",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menubar/menubar.tsx",
+          "line": 51
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MenuCheckboxItem",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 155
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "cursor-default",
+            "flex",
+            "gap-menu-row-gap",
+            "h-menu-row-height",
+            "items-center",
+            "mu-icon-trigger",
+            "mu-menu-row",
+            "outline-none",
+            "px-menu-row-pad",
+            "relative",
+            "rounded-menu-row-radius",
+            "select-none",
+            "text-ink",
+            "type-menu-row",
+            "z-1"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MenuItem",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 137
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "cursor-default",
+            "flex",
+            "gap-menu-row-gap",
+            "h-menu-row-height",
+            "items-center",
+            "mu-icon-trigger",
+            "mu-menu-row",
+            "outline-none",
+            "px-menu-row-pad",
+            "relative",
+            "rounded-menu-row-radius",
+            "select-none",
+            "text-ink",
+            "type-menu-row",
+            "z-1"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MenuSeparator",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/menu/menu.tsx",
+          "line": 170
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "h-menu-sep-thickness",
+            "mu-menu-sep",
+            "mx-menu-sep-inset-x",
+            "my-menu-sep-inset-y",
+            "recipe-menu-sep"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Meter",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/meter/meter.tsx",
+          "line": 43
+        },
+        "variants": {
+          "bad": [
+            "high",
+            "low"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-meter-head-gap",
+            "grid",
+            "min-w-meter-min-width",
+            "mu-meter"
+          ]
+        }
+      },
+      "fingerprint": [
+        "gap-meter-head-gap",
+        "min-w-meter-min-width",
+        "mu-meter",
+        "var(--mu-r-meter-self-head-gap)",
+        "var(--mu-r-meter-self-min-width)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MorphGlyph",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/MorphIcon.tsx",
+          "line": 54
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "defs"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MorphIcon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/icons/MorphIcon.tsx",
+          "line": 86
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "mu-morph-icon"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "MorphShape",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/motion/morph-shape.tsx",
+          "line": 105
+        },
+        "variants": {
+          "material": [
+            "graphite-deep",
+            "tool",
+            "pop"
+          ],
+          "from": [
+            "top",
+            "left"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "NavigationMenu",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/navigation-menu/navigation-menu.tsx",
+          "line": 43
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-navigation-menu",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "NavigationMenu.Item",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/navigation-menu/navigation-menu.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "NavigationMenu.Link",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/navigation-menu/navigation-menu.tsx",
+          "line": 90
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-navigation-menu-link-gap",
+            "grid",
+            "mu-navigation-link",
+            "no-underline",
+            "outline-none",
+            "px-navigation-menu-link-pad-x",
+            "py-navigation-menu-link-pad-y",
+            "rounded-navigation-menu-link-radius",
+            "transition-row"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "NumberField",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/number-field/number-field.tsx",
+          "line": 52
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-number-field-gap",
+            "inline-grid",
+            "mu-number-field"
+          ]
+        }
+      },
+      "fingerprint": [
+        "gap-number-field-gap",
+        "mu-number-field",
+        "var(--mu-r-number-field-self-gap)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "NumericCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/numeric-cue/numeric-cue.tsx",
+          "line": 61
+        },
+        "variants": {
+          "meaning": [
+            "time",
+            "money",
+            "sleep",
+            "steps",
+            "colour",
+            "person"
+          ],
+          "axis": [
+            "value",
+            "unit"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "canvas"
+          ],
+          "classes": [
+            "align-baseline",
+            "inline-block",
+            "mu-numeric-cue",
+            "numeric-cue",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [
+        "has-[input:focus-visible]:focus-ring",
+        "mu-numeric-cue",
+        "numeric-cue",
+        "var(--mu-tooltip-z)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Pagination",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/pagination/pagination.tsx",
+          "line": 51
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "nav"
+          ],
+          "classes": [
+            "mu-pagination"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-pagination"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "PastBanner",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/past-banner/past-banner.tsx",
+          "line": 31
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "animate-pastbanner-in",
+            "gap-pastbanner-gap",
+            "h-pastbanner-height",
+            "inline-flex",
+            "items-center",
+            "mu-pastbanner",
+            "pe-pastbanner-pad-end",
+            "ps-pastbanner-pad-start",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [
+        "animate-pastbanner-in",
+        "gap-pastbanner-gap",
+        "h-pastbanner-height",
+        "mu-pastbanner",
+        "pe-pastbanner-pad-end",
+        "ps-pastbanner-pad-start",
+        "var(--mu-pastbanner-gap)",
+        "var(--mu-pastbanner-height)",
+        "var(--mu-pastbanner-pad-end)",
+        "var(--mu-pastbanner-pad-start)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "PerfectPreview",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/perfect-preview/perfect-preview.tsx",
+          "line": 46
+        },
+        "variants": {
+          "phase": [
+            "idle",
+            "holding",
+            "done",
+            "tuning"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span",
+            "svg"
+          ],
+          "classes": [
+            "mu-perfect-preview",
+            "mu-perfect-readout",
+            "perfect-layer",
+            "perfect-readout"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-perfect-preview",
+        "mu-perfect-readout",
+        "perfect-layer",
+        "perfect-readout",
+        "var(--mu-r-perfect-tune-readout-gap)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "PersonCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/person-cue/person-cue.tsx",
+          "line": 52
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 47
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover.Body",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 112
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "mt-popover-body-gap",
+            "mu-popover-body"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover.Content",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 88
+        },
+        "variants": {
+          "side": [
+            "bottom",
+            "top",
+            "left",
+            "right"
+          ],
+          "align": [
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover.Description",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 107
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mt-popover-gap",
+            "mu-popover-description",
+            "text-ink2",
+            "type-body"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover.Title",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 103
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-popover-title",
+            "text-balance",
+            "text-ink",
+            "type-title"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Popover.Trigger",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/popover/popover.tsx",
+          "line": 67
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "PreviewCard",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/preview-card/preview-card.tsx",
+          "line": 49
+        },
+        "variants": {
+          "side": [
+            "bottom",
+            "top"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Progress",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/progress/progress.tsx",
+          "line": 53
+        },
+        "variants": {
+          "state": [
+            "idle",
+            "running",
+            "complete",
+            "failed",
+            "paused",
+            "cancelled"
+          ],
+          "shape": [
+            "bar",
+            "slim",
+            "ring",
+            "segmented",
+            "buffered"
+          ],
+          "size": [
+            "compact",
+            "regular"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ProvenanceProvider",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/provenance-tooltip/provenance-tooltip.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ProvenanceTooltip",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/provenance-tooltip/provenance-tooltip.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-provenance"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "RadioGroup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/radio/radio.tsx",
+          "line": 54
+        },
+        "variants": {
+          "orientation": [
+            "vertical",
+            "horizontal"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "flex",
+            "flex-col",
+            "flex-row",
+            "flex-wrap",
+            "gap-radio-group-gap",
+            "gap-x-radio-group-gap-across",
+            "gap-y-radio-group-gap"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "RadioKeys",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toggle/toggle.tsx",
+          "line": 77
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "flex-wrap",
+            "gap-toggle-gap",
+            "inline-flex",
+            "items-center",
+            "mu-toggle-group"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "RadioKeys.Key",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toggle/toggle.tsx",
+          "line": 82
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-toggle",
+            "recipe-button",
+            "text-ink",
+            "toggle-travel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Region",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/region/region.tsx",
+          "line": 143
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "RegionRow",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/region/region.tsx",
+          "line": 119
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-region-row"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "RenameEditor",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/rename-editor/rename-editor.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "gap-mu-related",
+            "mu-rename-editor",
+            "mu-stack"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-rename-editor"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Row",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 36
+        },
+        "variants": {
+          "variant": [
+            "list",
+            "panel",
+            "option"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "div",
+            "li",
+            "tr"
+          ],
+          "classes": [
+            "box-border",
+            "cursor-pointer",
+            "flex",
+            "gap-row-list-gap",
+            "gap-row-option-gap",
+            "gap-row-panel-gap",
+            "h-row-option-height",
+            "items-center",
+            "items-start",
+            "mu-row",
+            "outline-none",
+            "px-row-list-pad-x",
+            "px-row-option-pad-x",
+            "px-row-panel-pad-x",
+            "py-row-list-pad-y",
+            "py-row-panel-pad-y",
+            "relative",
+            "rounded-row-list-radius",
+            "rounded-row-option-radius",
+            "rounded-row-panel-radius",
+            "text-ink",
+            "transition-row",
+            "type-row-list",
+            "type-row-option",
+            "type-row-panel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Row.Lead",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 54
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-none",
+            "inline-flex",
+            "mu-row-lead"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Row.Root",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 36
+        },
+        "variants": {
+          "variant": [
+            "list",
+            "panel",
+            "option"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button",
+            "div",
+            "li",
+            "tr"
+          ],
+          "classes": [
+            "box-border",
+            "cursor-pointer",
+            "flex",
+            "gap-row-list-gap",
+            "gap-row-option-gap",
+            "gap-row-panel-gap",
+            "h-row-option-height",
+            "items-center",
+            "items-start",
+            "mu-row",
+            "outline-none",
+            "px-row-list-pad-x",
+            "px-row-option-pad-x",
+            "px-row-panel-pad-x",
+            "py-row-list-pad-y",
+            "py-row-panel-pad-y",
+            "relative",
+            "rounded-row-list-radius",
+            "rounded-row-option-radius",
+            "rounded-row-panel-radius",
+            "text-ink",
+            "transition-row",
+            "type-row-list",
+            "type-row-option",
+            "type-row-panel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Row.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 57
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-1",
+            "min-w-0",
+            "mu-row-text"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Row.Trail",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/row/row.tsx",
+          "line": 60
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "gap-row-option-gap",
+            "inline-flex",
+            "items-center",
+            "ms-auto",
+            "mu-row-trail"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Rule",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/rule/rule.tsx",
+          "line": 21
+        },
+        "variants": {
+          "orientation": [
+            "vertical",
+            "horizontal"
+          ],
+          "tone": [
+            "default",
+            "graphite"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "block",
+            "flex-none",
+            "h-rule-thickness",
+            "mu-rule",
+            "mx-rule-margin",
+            "recipe-rule",
+            "recipe-rule-graphite",
+            "self-center",
+            "w-rule-thickness"
+          ]
+        }
+      },
+      "fingerprint": [
+        "h-rule-thickness",
+        "mu-rule",
+        "mx-rule-margin",
+        "recipe-rule",
+        "recipe-rule-graphite",
+        "var(--mu-r-rule-self-graphite-background)",
+        "var(--mu-r-rule-self-graphite-shadow)",
+        "var(--mu-r-rule-self-margin)",
+        "var(--mu-r-rule-self-thickness)",
+        "w-rule-thickness"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ScrollArea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/scroll-area/scroll-area.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "min-h-0",
+            "mu-scroll-area",
+            "overflow-hidden",
+            "relative"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-scroll-area"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SearchField",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 80
+        },
+        "variants": {
+          "tone": [
+            "light",
+            "graphite"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "button"
+          ],
+          "classes": [
+            "border-0",
+            "box-border",
+            "cursor-text",
+            "flex",
+            "gap-field-search-gap",
+            "h-field-search-height",
+            "items-center",
+            "min-w-field-search-min-width",
+            "mu-search-field",
+            "pe-field-search-pad-right",
+            "ps-field-search-pad-left",
+            "recipe-well-field",
+            "recipe-well-graphite",
+            "rounded-field-search-radius",
+            "text-field-field-hint",
+            "text-field-search-ink",
+            "type-field-search"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Select",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/select/select.tsx",
+          "line": 105
+        },
+        "variants": {
+          "size": [
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SelectionFrame",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/selection-frame/selection-frame.tsx",
+          "line": 137
+        },
+        "variants": {
+          "state": [
+            "rest",
+            "hover",
+            "selected"
+          ],
+          "variant": [
+            "ring",
+            "lite"
+          ],
+          "mode": [
+            "idle",
+            "writing",
+            "moving"
+          ],
+          "handles": [
+            "object",
+            "text",
+            "none"
+          ],
+          "edge": [
+            "n",
+            "e",
+            "s",
+            "w"
+          ],
+          "corner": [
+            "nw",
+            "ne",
+            "se",
+            "sw"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "absolute",
+            "duration-settle",
+            "ease-settle",
+            "inset-0",
+            "mu-selection-frame",
+            "pointer-events-none",
+            "presence-frame",
+            "transition-opacity"
+          ]
+        }
+      },
+      "fingerprint": [
+        "data-[mode=writing]:opacity-0",
+        "group/sf",
+        "mu-selection-frame",
+        "presence-frame",
+        "var(--mu-select-offset)",
+        "var(--mu-sf-radius)",
+        "var(--o)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Settings",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/settings/settings.tsx",
+          "line": 29
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-settings-section-gap",
+            "mu-settings"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Settings.Keys",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/settings/settings.tsx",
+          "line": 71
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Settings.Row",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/settings/settings.tsx",
+          "line": 58
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-wrap",
+            "gap-x-settings-row-gap",
+            "gap-y-settings-stack-gap",
+            "items-center",
+            "min-h-settings-row-min",
+            "mu-settings-row",
+            "px-settings-row-pad-x",
+            "py-settings-row-pad-y"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Settings.Section",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/settings/settings.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "section"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-settings-heading-gap",
+            "mu-settings-section"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 37
+        },
+        "variants": {
+          "side": [
+            "right",
+            "bottom"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet.Close",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 74
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet.Description",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 70
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-sheet-description",
+            "text-ink2",
+            "type-body"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet.Popup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 50
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet.Title",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "m-0",
+            "mu-sheet-title",
+            "text-balance",
+            "text-ink",
+            "type-title"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sheet.Trigger",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sheet/sheet.tsx",
+          "line": 45
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 44
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar.Footer",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 68
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-sidebar-section-gap",
+            "mu-sidebar-edge"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar.Header",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 64
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-sidebar-section-gap",
+            "mu-sidebar-edge"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar.Item",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 91
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar.Section",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 72
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "flex-col",
+            "gap-sidebar-section-gap",
+            "mu-sidebar-section"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sidebar.Toggle",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sidebar/sidebar.tsx",
+          "line": 121
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SizeReadout",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/size-readout/size-readout.tsx",
+          "line": 40
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "duration-settle",
+            "ease-settle",
+            "gap-presence-readout-gap-inner",
+            "h-presence-readout-height",
+            "inline-flex",
+            "items-center",
+            "mu-readout",
+            "pe-presence-readout-pad-end",
+            "ps-presence-readout-pad-start",
+            "transition-opacity",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [
+        "gap-presence-readout-gap-inner",
+        "h-presence-readout-height",
+        "mu-readout",
+        "pe-presence-readout-pad-end",
+        "ps-presence-readout-pad-start",
+        "var(--mu-presence-readout-gap-inner)",
+        "var(--mu-presence-readout-height)",
+        "var(--mu-presence-readout-pad-end)",
+        "var(--mu-presence-readout-pad-start)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Skeleton",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx",
+          "line": 28
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "block",
+            "mu-skeleton",
+            "recipe-well-field",
+            "rounded-skeleton-radius",
+            "skeleton-arrive",
+            "skeleton-sheen"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Skeleton.Circle",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx",
+          "line": 45
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "block",
+            "flex-none",
+            "mu-skeleton",
+            "recipe-well-field",
+            "rounded-full",
+            "skeleton-arrive",
+            "skeleton-sheen"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Skeleton.Swap",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx",
+          "line": 61
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "mu-skeleton-swap",
+            "skeleton-swap-in"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Skeleton.Text",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/skeleton/skeleton.tsx",
+          "line": 34
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "gap-skeleton-line-gap",
+            "grid",
+            "mu-skeleton-text"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Slider",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/slider/slider.tsx",
+          "line": 64
+        },
+        "variants": {
+          "size": [
+            "compact",
+            "regular",
+            "large"
+          ],
+          "tone": [
+            "green",
+            "neutral"
+          ],
+          "orientation": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Slider.Knob",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/slider/slider.tsx",
+          "line": 164
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "cursor-grab",
+            "mu-slider-knob",
+            "rounded-round",
+            "slider-knob-box",
+            "slider-position"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Slider.Marks",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/slider/slider.tsx",
+          "line": 156
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "absolute",
+            "mu-slider-marks",
+            "pointer-events-none",
+            "slider-marks-place",
+            "slider-travel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Slider.Root",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/slider/slider.tsx",
+          "line": 64
+        },
+        "variants": {
+          "size": [
+            "compact",
+            "regular",
+            "large"
+          ],
+          "tone": [
+            "green",
+            "neutral"
+          ],
+          "orientation": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Slider.Track",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/slider/slider.tsx",
+          "line": 141
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "absolute",
+            "end-0",
+            "mu-slider-track",
+            "slider-track-place",
+            "start-0"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SlidingIndicator",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/motion/indicator.tsx",
+          "line": 44
+        },
+        "variants": {
+          "spring": [
+            "part",
+            "settle"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "absolute",
+            "left-0",
+            "mu-indicator",
+            "pointer-events-none",
+            "top-0",
+            "z-0"
+          ]
+        }
+      },
+      "fingerprint": [
+        "data-animate:data-[spring=settle]:indicator-glide-settle",
+        "data-animate:indicator-glide",
+        "data-animate:motion-reduce:transition-none",
+        "mu-indicator"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SnapGuides",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/snap-guides/snap-guides.tsx",
+          "line": 75
+        },
+        "variants": {
+          "axis": [
+            "vertical",
+            "horizontal"
+          ],
+          "kind": [
+            "edge",
+            "center"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "absolute",
+            "left-0",
+            "mu-snap-guides",
+            "overflow-visible",
+            "pointer-events-none",
+            "presence-guide-leave",
+            "top-0"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Sparkline",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/sparkline/sparkline.tsx",
+          "line": 37
+        },
+        "variants": {
+          "size": [
+            "regular",
+            "mini"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "block",
+            "h-sparkline-height",
+            "h-sparkline-height-mini",
+            "mu-sparkline",
+            "overflow-visible",
+            "w-full"
+          ]
+        }
+      },
+      "fingerprint": [
+        "h-sparkline-height",
+        "h-sparkline-height-mini",
+        "mu-sparkline",
+        "var(--mu-r-sparkline-self-height)",
+        "var(--mu-r-sparkline-self-height-mini)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SpatialFieldCanvas",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/spatial-field/spatial-field.tsx",
+          "line": 290
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "canvas"
+          ],
+          "classes": [
+            "absolute",
+            "h-full",
+            "inset-0",
+            "pointer-events-none",
+            "w-full"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Spinner",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/spinner/spinner.tsx",
+          "line": 27
+        },
+        "variants": {
+          "size": [
+            "regular",
+            "small"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "flex-none",
+            "inline-block",
+            "mu-spinner",
+            "number",
+            "relative",
+            "rounded-full",
+            "size-spinner-size",
+            "size-spinner-small",
+            "small",
+            "spinner-arrive",
+            "waiting"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SplitButton",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/button-group/button-group.tsx",
+          "line": 81
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div",
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SplitPane",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/split-pane/split-pane.tsx",
+          "line": 51
+        },
+        "variants": {
+          "orientation": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "flex",
+            "h-full",
+            "min-h-0",
+            "min-w-0",
+            "mu-split-pane",
+            "relative",
+            "w-full"
+          ]
+        }
+      },
+      "fingerprint": [
+        "data-[orientation=vertical]:flex-col",
+        "mu-split-pane"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "StatusBadge",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/status/status.tsx",
+          "line": 28
+        },
+        "variants": {
+          "led": [
+            "live",
+            "waiting",
+            "failed",
+            "link",
+            "off"
+          ],
+          "tone": [
+            "default",
+            "quiet",
+            "strong"
+          ],
+          "surface": [
+            "solid",
+            "transparent",
+            "frosted"
+          ],
+          "gesture": [
+            "steady",
+            "flicker",
+            "breathe",
+            "blink2",
+            "rise"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SuggestionChip",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/suggestion-chip/suggestion-chip.tsx",
+          "line": 39
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "animate-suggestion-in",
+            "duration-settle",
+            "ease-settle",
+            "mu-suggestion",
+            "opacity-suggestion-rest-opacity",
+            "transition-opacity"
+          ]
+        }
+      },
+      "fingerprint": [
+        "[@media(hover:hover)_and_(pointer:fine)]:in-[.mu-icon-trigger:hover]:opacity-100",
+        "animate-suggestion-in",
+        "data-host-hover:opacity-100",
+        "focus-within:opacity-100",
+        "mu-suggestion",
+        "opacity-suggestion-rest-opacity",
+        "pointer-hover:opacity-100",
+        "var(--mu-suggestion-rest-opacity)"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Surface",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/surface/surface.tsx",
+          "line": 52
+        },
+        "variants": {
+          "material": [
+            "raise",
+            "raise-lite",
+            "raise-sm",
+            "frost",
+            "plate",
+            "panel",
+            "pop",
+            "tip",
+            "lens",
+            "graphite",
+            "graphite-plain",
+            "graphite-strip",
+            "graphite-deep",
+            "graphite-glass"
+          ],
+          "radius": [
+            "pill",
+            "hero",
+            "card",
+            "plate",
+            "strip",
+            "region",
+            "tip",
+            "row"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "aside",
+            "div",
+            "header",
+            "nav",
+            "section",
+            "span"
+          ],
+          "classes": [
+            "backdrop-surface-blur-frost",
+            "backdrop-surface-blur-graphite",
+            "backdrop-surface-blur-graphite-glass",
+            "backdrop-surface-blur-graphite-strip",
+            "backdrop-surface-blur-lens",
+            "backdrop-surface-blur-panel",
+            "backdrop-surface-blur-plate",
+            "backdrop-surface-blur-pop",
+            "backdrop-surface-blur-tip",
+            "box-border",
+            "graphite-deep",
+            "graphite-glass",
+            "graphite-plain",
+            "graphite-strip",
+            "mu-surface",
+            "raise-lite",
+            "raise-sm",
+            "recipe-surface-frost",
+            "recipe-surface-graphite",
+            "recipe-surface-graphite-deep",
+            "recipe-surface-graphite-glass",
+            "recipe-surface-lens",
+            "recipe-surface-panel",
+            "recipe-surface-plate",
+            "recipe-surface-pop",
+            "recipe-surface-raise",
+            "recipe-surface-raise-lite",
+            "recipe-surface-raise-sm",
+            "recipe-surface-tip",
+            "relative",
+            "rounded-surface-radius-card",
+            "rounded-surface-radius-hero",
+            "rounded-surface-radius-pill",
+            "rounded-surface-radius-plate",
+            "rounded-surface-radius-region",
+            "rounded-surface-radius-row",
+            "rounded-surface-radius-strip",
+            "rounded-surface-radius-tip",
+            "string"
+          ]
+        }
+      },
+      "fingerprint": [
+        "backdrop-surface-blur-frost",
+        "backdrop-surface-blur-graphite",
+        "backdrop-surface-blur-graphite-glass",
+        "backdrop-surface-blur-graphite-strip",
+        "backdrop-surface-blur-lens",
+        "backdrop-surface-blur-panel",
+        "backdrop-surface-blur-plate",
+        "backdrop-surface-blur-pop",
+        "backdrop-surface-blur-tip",
+        "mu-surface",
+        "recipe-surface-frost",
+        "recipe-surface-graphite",
+        "recipe-surface-graphite-deep",
+        "recipe-surface-graphite-glass",
+        "recipe-surface-lens",
+        "recipe-surface-panel",
+        "recipe-surface-plate",
+        "recipe-surface-pop",
+        "recipe-surface-raise-lite",
+        "recipe-surface-tip",
+        "rounded-surface-radius-hero",
+        "rounded-surface-radius-pill",
+        "rounded-surface-radius-plate",
+        "rounded-surface-radius-region",
+        "rounded-surface-radius-row",
+        "rounded-surface-radius-strip",
+        "rounded-surface-radius-tip",
+        "var(--mu-r-surface-blur-frost)",
+        "var(--mu-r-surface-blur-graphite)",
+        "var(--mu-r-surface-blur-graphite-glass)",
+        "var(--mu-r-surface-blur-graphite-strip)",
+        "var(--mu-r-surface-blur-lens)",
+        "var(--mu-r-surface-blur-panel)",
+        "var(--mu-r-surface-blur-plate)",
+        "var(--mu-r-surface-blur-pop)",
+        "var(--mu-r-surface-blur-tip)",
+        "var(--mu-r-surface-radius-hero)",
+        "var(--mu-r-surface-radius-pill)",
+        "var(--mu-r-surface-radius-plate)",
+        "var(--mu-r-surface-radius-region)",
+        "var(--mu-r-surface-radius-row)",
+        "var(--mu-r-surface-radius-strip)",
+        "var(--mu-r-surface-radius-tip)",
+        "var(--mu-r-surface-self-frost-background)",
+        "var(--mu-r-surface-self-frost-shadow)",
+        "var(--mu-r-surface-self-graphite-background)",
+        "var(--mu-r-surface-self-graphite-deep-background)",
+        "var(--mu-r-surface-self-graphite-deep-shadow)",
+        "var(--mu-r-surface-self-graphite-glass-background)",
+        "var(--mu-r-surface-self-graphite-glass-shadow)",
+        "var(--mu-r-surface-self-graphite-shadow)",
+        "var(--mu-r-surface-self-lens-background)",
+        "var(--mu-r-surface-self-lens-shadow)",
+        "var(--mu-r-surface-self-panel-background)",
+        "var(--mu-r-surface-self-panel-shadow)",
+        "var(--mu-r-surface-self-plate-background)",
+        "var(--mu-r-surface-self-plate-shadow)",
+        "var(--mu-r-surface-self-pop-background)",
+        "var(--mu-r-surface-self-pop-shadow)",
+        "var(--mu-r-surface-self-raise-lite-background)",
+        "var(--mu-r-surface-self-raise-lite-shadow)",
+        "var(--mu-r-surface-self-tip-background)",
+        "var(--mu-r-surface-self-tip-shadow)"
+      ],
+      "rawElements": 8
+    },
+    {
+      "component": {
+        "name": "SwapIcon",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/motion/swap.tsx",
+          "line": 144
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "align-top",
+            "flex-none",
+            "inline-grid",
+            "mu-swap-icon",
+            "place-items-center"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "SwapText",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/motion/swap.tsx",
+          "line": 95
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "align-top",
+            "inline-grid",
+            "justify-items-start",
+            "mu-swap-text",
+            "relative",
+            "swap-footprint",
+            "whitespace-nowrap"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Swatch",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/swatch/swatch.tsx",
+          "line": 37
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "box-border",
+            "cursor-pointer",
+            "mu-swatch",
+            "recipe-swatch",
+            "relative",
+            "rounded-swatch-radius",
+            "size-swatch-size"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-swatch",
+        "recipe-swatch",
+        "rounded-swatch-radius",
+        "size-swatch-size",
+        "var(--mu-r-swatch-self-background)",
+        "var(--mu-r-swatch-self-radius)",
+        "var(--mu-r-swatch-self-shadow)",
+        "var(--mu-r-swatch-self-size)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "Switch",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/switch/switch.tsx",
+          "line": 43
+        },
+        "variants": {
+          "size": [
+            "regular",
+            "small"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "label"
+          ],
+          "classes": [
+            "cursor-pointer",
+            "gap-mu-space-8",
+            "mu-cluster",
+            "mu-switch-label",
+            "text-ink",
+            "type-ui"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-switch-label"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Switcher",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/switcher/switcher.tsx",
+          "line": 53
+        },
+        "variants": {
+          "size": [
+            "compact",
+            "regular"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "inline-flex",
+            "mu-switcher",
+            "p-switcher-pad",
+            "recipe-switcher",
+            "relative",
+            "rounded-pill"
+          ]
+        }
+      },
+      "fingerprint": [
+        "data-disabled:opacity-switcher-option-disabled",
+        "mu-switcher",
+        "p-switcher-pad",
+        "recipe-switcher",
+        "var(--mu-r-switcher-option-disabled)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "Table",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/table/table.tsx",
+          "line": 72
+        },
+        "variants": {
+          "direction": [
+            "ascending",
+            "descending"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "table"
+          ],
+          "classes": [
+            "mu-table",
+            "table-reset",
+            "w-full"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-table",
+        "table-reset"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TabList",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tabs/tabs.tsx",
+          "line": 72
+        },
+        "variants": {
+          "size": [
+            "compact",
+            "regular"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "tabs-track"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TabPanel",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tabs/tabs.tsx",
+          "line": 87
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-tabs-panel",
+            "tabs-panel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Tabs",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tabs/tabs.tsx",
+          "line": 63
+        },
+        "variants": {
+          "orientation": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-tabs"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TagCue",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tag-cue/tag-cue.tsx",
+          "line": 12
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TagCue.Picker",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tag-cue/tag-cue.tsx",
+          "line": 24
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Textarea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/textarea/textarea.tsx",
+          "line": 60
+        },
+        "variants": {
+          "size": [
+            "large",
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "block",
+            "mu-textarea-slot"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-textarea-slot"
+      ],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TimeScrubber",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/time-scrubber/time-scrubber.tsx",
+          "line": 75
+        },
+        "variants": {
+          "shape": [
+            "bar",
+            "dial"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div",
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToastProvider",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toast/toast.tsx",
+          "line": 244
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Toggle",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toggle/toggle.tsx",
+          "line": 36
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "button"
+          ],
+          "classes": [
+            "mu-toggle",
+            "recipe-button",
+            "text-ink",
+            "toggle-travel"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToggleGroup",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toggle/toggle.tsx",
+          "line": 59
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "button-group-bar",
+            "flex-wrap",
+            "gap-toggle-gap",
+            "inline-flex",
+            "items-center",
+            "items-stretch",
+            "mu-button-group",
+            "mu-toggle-group",
+            "recipe-button",
+            "rounded-pill",
+            "text-ink"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Toolbar",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toolbar/toolbar.tsx",
+          "line": 37
+        },
+        "variants": {
+          "variant": [
+            "frost",
+            "graphite"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToolbarSearch",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toolbar/toolbar.tsx",
+          "line": 100
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "border-0",
+            "cursor-text",
+            "flex",
+            "items-center",
+            "mu-toolbar-search",
+            "toolbar-frost-search"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToolbarSeparator",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toolbar/toolbar.tsx",
+          "line": 87
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": [
+            "mu-toolbar-sep",
+            "toolbar-frost-sep"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToolButton",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/toolbar/toolbar.tsx",
+          "line": 66
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "ToolStrip",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/tool-strip/tool-strip.tsx",
+          "line": 79
+        },
+        "variants": {},
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Tooltip",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tooltip/tooltip.tsx",
+          "line": 57
+        },
+        "variants": {
+          "side": [
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Tooltip.Dim",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tooltip/tooltip.tsx",
+          "line": 77
+        },
+        "variants": {
+          "side": [
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "span"
+          ],
+          "classes": [
+            "mu-tooltip-key",
+            "text-tooltip-key-ink"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "TooltipProvider",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/tooltip/tooltip.tsx",
+          "line": 84
+        },
+        "variants": {},
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Weather",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/weather/weather.tsx",
+          "line": 635
+        },
+        "variants": {
+          "sky": [
+            "clear",
+            "partly",
+            "cloud",
+            "rain",
+            "drizzle",
+            "storm",
+            "snow",
+            "sleet",
+            "mist",
+            "windy",
+            "heat"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "WeatherGlyph",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/weather/weather.tsx",
+          "line": 353
+        },
+        "variants": {
+          "kind": [
+            "clear",
+            "partly",
+            "cloud",
+            "rain",
+            "drizzle",
+            "storm",
+            "snow",
+            "sleet",
+            "mist",
+            "windy",
+            "heat"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "svg"
+          ],
+          "classes": [
+            "block",
+            "flex-none",
+            "mu-weather-glyph"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "WeatherTile",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/blocks/weather/weather.tsx",
+          "line": 675
+        },
+        "variants": {
+          "sky": [
+            "clear",
+            "partly",
+            "cloud",
+            "rain",
+            "drizzle",
+            "storm",
+            "snow",
+            "sleet",
+            "mist",
+            "windy",
+            "heat"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    },
+    {
+      "component": {
+        "name": "Well",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/well/well.tsx",
+          "line": 37
+        },
+        "variants": {
+          "variant": [
+            "field",
+            "track",
+            "region",
+            "graphite"
+          ],
+          "radius": [
+            "pill",
+            "field",
+            "region",
+            "strip",
+            "row"
+          ],
+          "hue": [
+            "neutral",
+            "red",
+            "amber",
+            "green",
+            "blue",
+            "violet"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div",
+            "label",
+            "span"
+          ],
+          "classes": [
+            "box-border",
+            "mu-well",
+            "neutral",
+            "recipe-well-field",
+            "recipe-well-graphite",
+            "recipe-well-region",
+            "recipe-well-region-over",
+            "recipe-well-track",
+            "region",
+            "region-hue",
+            "relative",
+            "rounded-well-radius-field",
+            "rounded-well-radius-pill",
+            "rounded-well-radius-region",
+            "rounded-well-radius-row",
+            "rounded-well-radius-strip",
+            "string",
+            "transition-well"
+          ]
+        }
+      },
+      "fingerprint": [
+        "mu-well",
+        "recipe-well-region",
+        "recipe-well-region-over",
+        "recipe-well-track",
+        "region-hue",
+        "rounded-well-radius-field",
+        "rounded-well-radius-pill",
+        "rounded-well-radius-region",
+        "rounded-well-radius-row",
+        "rounded-well-radius-strip",
+        "transition-well",
+        "var(--mu-r-folder-region-ring-amber)",
+        "var(--mu-r-folder-region-ring-blue)",
+        "var(--mu-r-folder-region-ring-green)",
+        "var(--mu-r-folder-region-ring-neutral)",
+        "var(--mu-r-folder-region-ring-red)",
+        "var(--mu-r-folder-region-ring-violet)",
+        "var(--mu-r-folder-region-wash-amber)",
+        "var(--mu-r-folder-region-wash-blue)",
+        "var(--mu-r-folder-region-wash-green)",
+        "var(--mu-r-folder-region-wash-neutral)",
+        "var(--mu-r-folder-region-wash-red)",
+        "var(--mu-r-folder-region-wash-violet)",
+        "var(--mu-r-well-radius-field)",
+        "var(--mu-r-well-radius-pill)",
+        "var(--mu-r-well-radius-region)",
+        "var(--mu-r-well-radius-row)",
+        "var(--mu-r-well-radius-strip)",
+        "var(--mu-r-well-self-region-background)",
+        "var(--mu-r-well-self-region-over-background)",
+        "var(--mu-r-well-self-region-over-shadow)",
+        "var(--mu-r-well-self-region-shadow)",
+        "var(--mu-r-well-self-track-background)",
+        "var(--mu-r-well-self-track-shadow)",
+        "var(--mu-r-well-self-transition)",
+        "var(--mu-region-ring)",
+        "var(--mu-region-wash)"
+      ],
+      "rawElements": 1
+    },
+    {
+      "component": {
+        "name": "WidthPicks",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/draw-picks/draw-picks.tsx",
+          "line": 89
+        },
+        "variants": {
+          "value": [
+            "fine",
+            "regular",
+            "bold"
+          ],
+          "ink": [
+            "ink",
+            "red",
+            "blue",
+            "green",
+            "amber"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": [
+            "draw-picks",
+            "mu-draw-picks"
+          ]
+        }
+      },
+      "fingerprint": [],
+      "rawElements": 0
+    }
+  ]
+}

@@ -62,7 +62,7 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
   return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities, variants };
 }
 
-export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false): Promise<{
+export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false, reportOnly = false): Promise<{
   hoverVariants: string[]; theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
@@ -159,7 +159,12 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           }
           cached[candidate] = { ...result, authoredValue };
         }
-        catch (error) { throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`); }
+        catch (error) {
+          if (!reportOnly) throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`);
+          // Inference may retain the compiler text as inventory evidence. Failed
+          // declarations are never judged, nor cached as successfully lowered.
+          results.set(candidate, { css: css[index] ?? null, declarations: [], notes: [`Could not lower ${candidate}: ${errorMessage(error)}`] });
+        }
       }
     }
     const compileMs = system && misses.length ? performance.now() - compileStart : 0;
@@ -202,7 +207,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
       if (probeHover) await writeFile(hoverPath, JSON.stringify(hoverVariants));
     }
-    for (const candidate of candidates) results.set(candidate, cached[candidate]!);
+    for (const candidate of candidates) if (!results.has(candidate)) results.set(candidate, cached[candidate]!);
     return { hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
     throw new UsageError(`Load project Tailwind from ${dirname(entry)}: ${errorMessage(error)}`);
