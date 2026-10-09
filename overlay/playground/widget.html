@@ -26,7 +26,7 @@
 <body>
 <div class="page" data-host="light">
   <h1>Light host page · hold Alt and hover the row, click to pin</h1>
-  <div style="display:flex;gap:120px;align-items:flex-start"><div class="row" id="target-light"><div class="avatar"></div><div class="text"><div class="title">Sync calendar</div><div class="meta">Last run 4 minutes ago</div></div><button class="btn">Run now</button></div><div style="display:grid;gap:300px"><span class="chipx" id="target-chip"><span class="title">Beta</span></span><span class="chipx" id="target-chip-zoom"><span class="title">Beta</span></span></div></div>
+  <div style="display:flex;gap:120px;align-items:flex-start"><div class="row" id="target-light"><div class="avatar"></div><div class="text"><div class="title">Sync calendar</div><div class="meta">Last run 4 minutes ago</div></div><button class="btn">Run now</button></div><span class="chipx" id="target-chip"><span class="title">Beta</span></span></div>
 </div>
 <div class="page" data-host="dark">
   <h1>Dark host page</h1>
@@ -97,7 +97,12 @@ const css = `
   .top { height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; font: var(--pl-text-label); white-space: nowrap; }
   .top .el { font-weight: 600; color: var(--pl-ink); }
   .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
-  .top .scale-note { font: var(--pl-text-reading); color: var(--pl-instrument); }
+  .top .zoom { display: flex; gap: 1px; margin-inline-start: 8px; }
+  .top .zoom button { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 16px; line-height: 16px; border-radius: 2px; cursor: pointer; }
+  .top .zoom button[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .top .zoom button:disabled { color: var(--pl-ink-3); cursor: default; }
+  .top .zoom button:focus-visible { outline: 1px solid var(--pl-instrument); }
+  .diagram { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); } .diagram.swapping { opacity: 0; }
   .top .file { font: var(--pl-text-reading); color: var(--pl-ink-2); margin-inline-start: auto; overflow: hidden; text-overflow: ellipsis; }
 
   /* the diagram: the element at its real proportions, pins where each problem is */
@@ -228,7 +233,7 @@ function mount(target, data = reading) {
     ${[[x, y, 1, 1], [x + b.width - 8, y, -1, 1], [x, y + b.height - 8, 1, -1], [x + b.width - 8, y + b.height - 8, -1, -1]].map(([l, t, a, d]) => `<i class="tick" style="left:${l}px;top:${t}px;transform:scale(${a},${d})"></i>`).join('')}
     <i class="lit"></i>
     <section class="w" data-state="tag" tabindex="0" role="dialog" aria-label="Plumb reading for ${data.element}, ${f.length} findings" style="left:${x}px;top:${y + b.height + 8}px">
-      <div class="top"><span class="el">${data.element}</span><span class="n">${f.length} off</span><span class="file">${data.file}:${data.line}</span>${data.zoom ? '<span class="scale-note"></span>' : ''}</div>
+      <div class="top"><span class="el">${data.element}</span><span class="n">${f.length} off</span><span class="file">${data.file}:${data.line}</span><span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button data-z="${z}" aria-pressed="${z === 1}">${z}×</button>`).join('')}</span></div>
       <div class="body">
         <div class="diagram"></div>
         <div class="read" aria-live="polite"></div>
@@ -246,58 +251,62 @@ function mount(target, data = reading) {
   // region a finding is about, computed from the same geometry that lights the real element.
   const widgetW = Math.round(Math.min(480, Math.max(360, b.width + 24)));
   w.style.width = widgetW + 'px';
-  // Small elements are drawn magnified (data.zoom) so their glyphs have room; the scale is printed in the header.
-  const fit = (widgetW - 24) / b.width, k = data.zoom ? Math.min(fit, 4, Math.max(1, 96 / b.height)) : Math.min(1, fit), pad = 12;
-  const diagram = root.querySelector('.diagram'); // room above the outline for glyphs set into its top edge
-  const toD = r => ({ x: (r.x - x) * k, y: (r.y - y) * k + pad, w: r.w * k, h: r.h * k });
-  const drawH = b.height * k;
-  const note = root.querySelector('.scale-note'); if (note) note.textContent = `drawn ${Math.round(k * 10) / 10}×`;
-  diagram.style.height = pad + drawH + 22 + 'px'; // room below for the shadow and glyphs set into the bottom edge
-  const cs = getComputedStyle(target);
-  let shapes = '';
-  for (const child of target.children) {
-    const c = child.getBoundingClientRect(), d = toD({ x: c.left + scrollX, y: c.top + scrollY, w: c.width, h: c.height });
-    const round = getComputedStyle(child).borderRadius;
-    const lines = child.querySelectorAll('.title, .meta');
-    const inner = [...lines].map(l => { const lr = l.getBoundingClientRect(); const ld = toD({ x: lr.left + scrollX, y: lr.top + scrollY, w: lr.width, h: lr.height }); return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y + ld.h * 0.3}px;width:${Math.min(ld.w, d.w) * 0.7}px;height:${Math.max(3, ld.h * 0.4)}px"></b>`; }).join('');
-    shapes += `<i class="d-child${lines.length ? ' text' : ''}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${round.includes('50%') ? '50%' : parseFloat(round) * k + 'px'}">${inner}</i>`;
-  }
-  // Findings are set into the drawing's own line, as a technical drawing prints a measurement in a break of the line it
-  // measures: each finding takes the edge nearest its region, sits over its anchor, and the outline breaks around it.
-  const W = b.width * k, R = parseFloat(cs.borderTopRightRadius) * k, top = pad, bot = pad + drawH, GAPW = 9, MIN = 22;
-  const regions = f.map(it => toD(placeOnElement(it.where, target)));
-  const edgeOf = (it, r) => it.where === 'shadow' ? 'bottom' : it.where === 'pad-left' ? 'left' : (r.y + r.h / 2) < top + drawH / 2 ? 'top' : 'bottom';
-  const marks = f.map((it, i) => { const r = regions[i], edge = edgeOf(it, r);
-    const along = edge === 'left' || edge === 'right' ? r.y + r.h / 2 : it.where === 'corner' ? W - R * 0.6 : r.x + r.w / 2;
-    return { i, edge, along }; });
-  for (const edge of ['top', 'bottom', 'left', 'right']) {
-    const row = marks.filter(m => m.edge === edge).sort((a, c) => a.along - c.along);
-    const lo = edge === 'left' || edge === 'right' ? top + R : R, hi = edge === 'left' || edge === 'right' ? bot - R : W - R;
-    let last = -Infinity;
-    for (const m of row) { m.along = Math.min(hi - GAPW, Math.max(lo + GAPW, m.along, last + MIN)); last = m.along; }
-  }
-  const gapsOn = edge => marks.filter(m => m.edge === edge && !['corner', 'shadow'].includes(f[m.i].where)).map(m => [m.along - GAPW, m.along + GAPW]);
-  const cut = (a, b, gaps) => { let segs = [[a, b]]; for (const [g0, g1] of gaps) segs = segs.flatMap(([p, q]) => g1 <= p || g0 >= q ? [[p, q]] : [[p, g0], [g1, q]].filter(([u, v]) => v - u > 0.5)); return segs; };
-  const h = v => Math.round(v) + 0.5;
-  const outline = [
-    ...cut(R, W - R, gapsOn('top')).map(([a, c]) => `M${a} ${h(top)}H${c}`),
-    ...cut(R, W - R, gapsOn('bottom')).map(([a, c]) => `M${a} ${h(bot)}H${c}`),
-    ...cut(top + R, bot - R, gapsOn('left')).map(([a, c]) => `M0.5 ${a}V${c}`),
-    ...cut(top + R, bot - R, gapsOn('right')).map(([a, c]) => `M${W - 0.5} ${a}V${c}`),
-    `M0.5 ${top + R}A${R} ${R} 0 0 1 ${R} ${h(top)}M${W - R} ${h(top)}A${R} ${R} 0 0 1 ${W - 0.5} ${top + R}`,
-    `M0.5 ${bot - R}A${R} ${R} 0 0 0 ${R} ${h(bot)}M${W - R} ${h(bot)}A${R} ${R} 0 0 0 ${W - 0.5} ${bot - R}`,
-  ].join('');
-  // Glyphs read their context: the radius arc faces the corner it marks and sits on that corner's arc; a spacing mark
-  // turns to the axis it measures; a shadow sits below the outline, where the shadow falls, instead of in a break.
-  const corner = { x: 'right', y: 'top' }; // the corner this element's radius finding is about
-  const markXY = m => { const it = f[m.i];
-    if (it.where === 'corner') { const cx = corner.x === 'right' ? W - R : R, cy = corner.y === 'top' ? top + R : bot - R, d = R * Math.SQRT1_2;
-      return [cx + (corner.x === 'right' ? d : -d), cy + (corner.y === 'top' ? -d : d)]; }
-    if (it.where === 'shadow') return [m.along, bot + 10];
-    return m.edge === 'top' ? [m.along, top] : m.edge === 'bottom' ? [m.along, bot] : m.edge === 'left' ? [0, m.along] : [W, m.along]; };
-  const orient = it => it.kind === 'spacing' && it.axis === 'y' ? 'rotate(90deg)' : it.kind === 'radius' ? `scale(${corner.x === 'right' ? -1 : 1}, ${corner.y === 'bottom' ? -1 : 1})` : 'none';
-  diagram.innerHTML = `<svg class="outline" width="${W}" height="${pad + drawH + 22}" aria-hidden="true">${regions.map((r, i) => `<rect class="reg ${f[i].soft ? 'soft' : ''}" data-i="${i}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${f[i].where === 'corner' ? R / 2 : 1}"/>`).join('')}<path d="${outline}"/></svg>` + shapes +
-    marks.map(m => { const it = f[m.i], [mx, my] = markXY(m); return `<button class="pin ${it.soft ? 'soft' : ''} ${it.where === 'corner' ? 'on-arc' : ''}" style="left:${mx}px;top:${my}px;--orient:${orient(it)}" aria-label="${FAMILY[it.kind]}: ${it.title}" data-i="${m.i}">${glyph(FAMILY[it.kind])}</button>`; }).join('');
+  // The drawing is the element at 1:1 by default. Magnifying redraws the same SVG at 2x or 4x: lines stay 1px and
+  // glyphs keep their size, only the drawing grows. Steps that would not fit the widget's width are disabled.
+  const fit = (widgetW - 24) / b.width, diagram = root.querySelector('.diagram');
+  let zoom = 1;
+  const drawDiagram = zoom => {
+    const k = Math.min(fit, zoom), pad = 12;
+    const toD = r => ({ x: (r.x - x) * k, y: (r.y - y) * k + pad, w: r.w * k, h: r.h * k });
+    const drawH = b.height * k;
+    diagram.style.height = pad + drawH + 22 + 'px'; // room below for the shadow and glyphs set into the bottom edge
+    const cs = getComputedStyle(target);
+    let shapes = '';
+    for (const child of target.children) {
+      const c = child.getBoundingClientRect(), d = toD({ x: c.left + scrollX, y: c.top + scrollY, w: c.width, h: c.height });
+      const round = getComputedStyle(child).borderRadius;
+      const lines = child.querySelectorAll('.title, .meta');
+      const inner = [...lines].map(l => { const lr = l.getBoundingClientRect(); const ld = toD({ x: lr.left + scrollX, y: lr.top + scrollY, w: lr.width, h: lr.height }); return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y + ld.h * 0.3}px;width:${Math.min(ld.w, d.w) * 0.7}px;height:${Math.max(3, ld.h * 0.4)}px"></b>`; }).join('');
+      shapes += `<i class="d-child${lines.length ? ' text' : ''}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${round.includes('50%') ? '50%' : parseFloat(round) * k + 'px'}">${inner}</i>`;
+    }
+    // Findings are set into the drawing's own line, as a technical drawing prints a measurement in a break of the line it
+    // measures: each finding takes the edge nearest its region, sits over its anchor, and the outline breaks around it.
+    const W = b.width * k, R = parseFloat(cs.borderTopRightRadius) * k, top = pad, bot = pad + drawH, GAPW = 9, MIN = 22;
+    const regions = f.map(it => toD(placeOnElement(it.where, target)));
+    const edgeOf = (it, r) => it.where === 'shadow' ? 'bottom' : it.where === 'pad-left' ? 'left' : (r.y + r.h / 2) < top + drawH / 2 ? 'top' : 'bottom';
+    const marks = f.map((it, i) => { const r = regions[i], edge = edgeOf(it, r);
+      const along = edge === 'left' || edge === 'right' ? r.y + r.h / 2 : it.where === 'corner' ? W - R * 0.6 : r.x + r.w / 2;
+      return { i, edge, along }; });
+    for (const edge of ['top', 'bottom', 'left', 'right']) {
+      const row = marks.filter(m => m.edge === edge).sort((a, c) => a.along - c.along);
+      const lo = edge === 'left' || edge === 'right' ? top + R : R, hi = edge === 'left' || edge === 'right' ? bot - R : W - R;
+      let last = -Infinity;
+      for (const m of row) { m.along = Math.min(hi - GAPW, Math.max(lo + GAPW, m.along, last + MIN)); last = m.along; }
+    }
+    const gapsOn = edge => marks.filter(m => m.edge === edge && !['corner', 'shadow'].includes(f[m.i].where)).map(m => [m.along - GAPW, m.along + GAPW]);
+    const cut = (a, b, gaps) => { let segs = [[a, b]]; for (const [g0, g1] of gaps) segs = segs.flatMap(([p, q]) => g1 <= p || g0 >= q ? [[p, q]] : [[p, g0], [g1, q]].filter(([u, v]) => v - u > 0.5)); return segs; };
+    const h = v => Math.round(v) + 0.5;
+    const outline = [
+      ...cut(R, W - R, gapsOn('top')).map(([a, c]) => `M${a} ${h(top)}H${c}`),
+      ...cut(R, W - R, gapsOn('bottom')).map(([a, c]) => `M${a} ${h(bot)}H${c}`),
+      ...cut(top + R, bot - R, gapsOn('left')).map(([a, c]) => `M0.5 ${a}V${c}`),
+      ...cut(top + R, bot - R, gapsOn('right')).map(([a, c]) => `M${W - 0.5} ${a}V${c}`),
+      `M0.5 ${top + R}A${R} ${R} 0 0 1 ${R} ${h(top)}M${W - R} ${h(top)}A${R} ${R} 0 0 1 ${W - 0.5} ${top + R}`,
+      `M0.5 ${bot - R}A${R} ${R} 0 0 0 ${R} ${h(bot)}M${W - R} ${h(bot)}A${R} ${R} 0 0 0 ${W - 0.5} ${bot - R}`,
+    ].join('');
+    // Glyphs read their context: the radius arc faces the corner it marks and sits on that corner's arc; a spacing mark
+    // turns to the axis it measures; a shadow sits below the outline, where the shadow falls, instead of in a break.
+    const corner = { x: 'right', y: 'top' }; // the corner this element's radius finding is about
+    const markXY = m => { const it = f[m.i];
+      if (it.where === 'corner') { const cx = corner.x === 'right' ? W - R : R, cy = corner.y === 'top' ? top + R : bot - R, d = R * Math.SQRT1_2;
+        return [cx + (corner.x === 'right' ? d : -d), cy + (corner.y === 'top' ? -d : d)]; }
+      if (it.where === 'shadow') return [m.along, bot + 10];
+      return m.edge === 'top' ? [m.along, top] : m.edge === 'bottom' ? [m.along, bot] : m.edge === 'left' ? [0, m.along] : [W, m.along]; };
+    const orient = it => it.kind === 'spacing' && it.axis === 'y' ? 'rotate(90deg)' : it.kind === 'radius' ? `scale(${corner.x === 'right' ? -1 : 1}, ${corner.y === 'bottom' ? -1 : 1})` : 'none';
+    diagram.innerHTML = `<svg class="outline" width="${W}" height="${pad + drawH + 22}" aria-hidden="true">${regions.map((r, i) => `<rect class="reg ${f[i].soft ? 'soft' : ''}" data-i="${i}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${f[i].where === 'corner' ? R / 2 : 1}"/>`).join('')}<path d="${outline}"/></svg>` + shapes +
+      marks.map(m => { const it = f[m.i], [mx, my] = markXY(m); return `<button class="pin ${it.soft ? 'soft' : ''} ${it.where === 'corner' ? 'on-arc' : ''}" style="left:${mx}px;top:${my}px;--orient:${orient(it)}" aria-label="${FAMILY[it.kind]}: ${it.title}" data-i="${m.i}">${glyph(FAMILY[it.kind])}</button>`; }).join('');
+  };
+  drawDiagram(zoom);
   w.style.setProperty('--tag-w', root.querySelector('.top .n').getBoundingClientRect().right - w.getBoundingClientRect().left + 8 + 'px');
   let active = 0;
   // Each family is compared in its own material: spacing as bars, corners as arcs, type as type, shadows on the
@@ -341,7 +350,14 @@ function mount(target, data = reading) {
   w.addEventListener('click', e => { if (w.dataset.state === 'tag') open(); });
   root.querySelector('.prev').addEventListener('click', e => { e.stopPropagation(); go(active - 1); });
   root.querySelector('.next').addEventListener('click', e => { e.stopPropagation(); go(active + 1); });
-  root.querySelectorAll('.pin').forEach(p => p.addEventListener('click', e => { e.stopPropagation(); go(Number(p.dataset.i)); }));
+  const bindPins = () => root.querySelectorAll('.pin').forEach(p => p.addEventListener('click', e => { e.stopPropagation(); go(Number(p.dataset.i)); }));
+  bindPins();
+  root.querySelectorAll('.zoom button').forEach(z => {
+    if (Number(z.dataset.z) > 1 && Number(z.dataset.z) > fit) z.disabled = true;
+    z.addEventListener('click', e => { e.stopPropagation(); zoom = Number(z.dataset.z);
+      root.querySelectorAll('.zoom button').forEach(o => o.setAttribute('aria-pressed', String(o === z)));
+      diagram.classList.add('swapping'); setTimeout(() => { drawDiagram(zoom); bindPins(); render(active); diagram.classList.remove('swapping'); }, TIMING.swap / 2); });
+  });
   root.querySelector('.copy').addEventListener('click', async e => { e.stopPropagation(); const btn = e.currentTarget; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy for agent', 1200); });
   w.addEventListener('keydown', e => {
     if (e.key === 'Enter' && w.dataset.state === 'tag') open();
@@ -353,14 +369,6 @@ function mount(target, data = reading) {
 }
 mount(document.getElementById('target-light')).open();
 mount(document.getElementById('target-chip'), { element: 'span', file: 'src/ui/Badge.tsx', line: 9, findings: [
-  { where: 'pad-top', kind: 'spacing', axis: 'y', title: 'padding-top 3px isn\'t on your spacing scale', value: 3, authored: 'py-[3px]', ledger: 'new', choices: [{ v: 2, name: 'mu-space-2', use: 'py-mu-space-2' }, { v: 4, name: 'mu-space-4', use: 'py-mu-space-4' }], pick: 1 },
-  { where: 'pad-left', kind: 'spacing', axis: 'x', title: 'padding-inline 9px isn\'t on your spacing scale', value: 9, authored: 'px-[9px]', ledger: 'new', choices: [{ v: 8, name: 'mu-space-8', use: 'px-mu-space-8' }, { v: 12, name: 'mu-related', use: 'px-mu-related' }], pick: 0 },
-  { where: 'corner', kind: 'radius', title: 'border-radius 7px isn\'t on your radius scale', value: 7, authored: 'rounded-[7px]', ledger: 'new', choices: [{ v: 6, name: 'key', use: 'rounded-key' }, { v: 12, name: 'row', use: 'rounded-row' }], pick: 0 },
-  { where: 'text', kind: 'type', title: 'font-size 11.5px isn\'t on your type scale', value: 11.5, authored: 'text-[11.5px]', ledger: 'new', choices: [{ v: 11, name: 'label', use: 'type-label' }, { v: 12, name: 'ui', use: 'type-ui' }], pick: 0 },
-  { where: 'fill', kind: 'fill', soft: true, title: '#e8edf7 isn\'t one of your colour tokens', value: '#e8edf7', authored: 'bg-[#e8edf7]', ledger: 'new', choices: [{ v: '#eaeff5', name: 'paper-2', use: 'bg-paper-2' }], pick: 0 },
-  { where: 'shadow', kind: 'shadow', title: 'This shadow is hand-written, not one of your shadow tokens', value: '0 1px 3px rgba(0,0,0,.16)', authored: 'shadow-[0_1px_3px…]', ledger: 'new', choices: [{ v: '0 1px 2px rgba(0,0,0,.12)', name: 'raise-sm', use: 'shadow-raise-sm' }], pick: 0 },
-] }).open();
-mount(document.getElementById('target-chip-zoom'), { zoom: true, element: 'span', file: 'src/ui/Badge.tsx', line: 9, findings: [
   { where: 'pad-top', kind: 'spacing', axis: 'y', title: 'padding-top 3px isn\'t on your spacing scale', value: 3, authored: 'py-[3px]', ledger: 'new', choices: [{ v: 2, name: 'mu-space-2', use: 'py-mu-space-2' }, { v: 4, name: 'mu-space-4', use: 'py-mu-space-4' }], pick: 1 },
   { where: 'pad-left', kind: 'spacing', axis: 'x', title: 'padding-inline 9px isn\'t on your spacing scale', value: 9, authored: 'px-[9px]', ledger: 'new', choices: [{ v: 8, name: 'mu-space-8', use: 'px-mu-space-8' }, { v: 12, name: 'mu-related', use: 'px-mu-related' }], pick: 0 },
   { where: 'corner', kind: 'radius', title: 'border-radius 7px isn\'t on your radius scale', value: 7, authored: 'rounded-[7px]', ledger: 'new', choices: [{ v: 6, name: 'key', use: 'rounded-key' }, { v: 12, name: 'row', use: 'rounded-row' }], pick: 0 },
