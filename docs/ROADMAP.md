@@ -1,4 +1,6 @@
 # Improving Plumb: from a correct CLI to a daily tool
+> **Owner decision, 2026-10-10:** no MCP server. Agents use the CLI directly (`plumb try`, `plumb check --changed --agent`, `plumb why`), taught by the shipped skill file `skills/plumb/SKILL.md`, which `plumb install` copies into the project. Item 4 below is dropped; the overlay's "Copy for agent" hands over text the agent acts on with the same CLI.
+
 
 Written 2026-10-10 against Plumb at the "Final state" of BENCHMARK.md (layers 0 to 10, 137 e2e tests, warm run 997 ms on MetalUI docs) and against react-grab and react.doctor as they are today. Sources: Plumb's README, docs/DESIGN.md, docs/layers/*.md, BENCHMARK.md (Performance pass, Final state), docs/research/react-doctor-landscape.md; react-grab's README, react-grab.com and its "how it works" page; www.react.doctor. Anything I could not confirm from a primary source is marked UNVERIFIED.
 
