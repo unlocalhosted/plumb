@@ -1,0 +1,35 @@
+{
+  "name": "@unlocalhosted/plumb",
+  "version": "0.0.0",
+  "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "plumb": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test e2e/"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "5.9"
+  },
+  "dependencies": {
+    "tinyglobby": "^0.2.17"
+  }
+}
