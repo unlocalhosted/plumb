@@ -141,3 +141,9 @@ export async function explain(file: string, options: CheckOptions = {}): Promise
   const absolute = resolve(report.root, file);
   return { root: report.root, file: absolute, sites: sites.filter(site => site.file === absolute), declarations: report.declarations.filter(declaration => declaration.site.file === absolute), opaque: report.classes.opaque };
 }
+
+export { sarif } from './surfaces/sarif.js';
+export { githubSummary, renderSummary, githubCommands } from './surfaces/github.js';
+export type { SummarySection } from './surfaces/github.js';
+export { formatAgent } from './surfaces/agent.js';
+export { agentDocs } from './surfaces/docs.js';

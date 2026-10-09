@@ -21,7 +21,7 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}): 
   const ledger = await readLedger(report.root);
   const path = ledgerPath(report.root);
   const accepted = new Map(ledger.entries.map(entry => [entry.key, entry]));
-  const changed = options.base === undefined ? undefined : changedFiles(report.root, options.base);
+  const changed = options.base === undefined && !options.changed ? undefined : changedFiles(report.root, options.base ?? 'HEAD');
   const summary = { exists: ledger.exists, path, entries: ledger.entries.length, new: 0, debt: 0, exceptions: 0, outOfScope: 0, stale: 0, growth: 0, message: '' };
   const diagnostics: Finding[] = [];
   const siteFor = (entry: LedgerEntry): Site => ({ file: path, line: ledger.entries.indexOf(entry) + 1, column: 1, text: JSON.stringify(entry) });
@@ -63,7 +63,10 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}): 
     statuses.set(group.entry.key, sites);
   }
   for (const finding of report.findings) {
-    for (const site of finding.sites) site.ledger = statuses.get(site.ledger!.key)!.get(siteLocation(site))!;
+    for (const site of finding.sites) {
+      site.ledger = statuses.get(site.ledger!.key)!.get(siteLocation(site))!;
+      if (changed) site.inScope = changed.has(site.file);
+    }
     finding.status = finding.sites.some(site => site.ledger!.status === 'new') ? 'new'
       : finding.sites.some(site => site.ledger!.status === 'debt') ? 'debt' : 'exception';
     // A new site outside --base scope remains visible as data but cannot fail.

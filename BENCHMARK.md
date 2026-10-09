@@ -782,3 +782,30 @@ Acceptance on the copied docs:
 - Disposable Git fixture: `check --base HEAD` emits `ledger/grew` for each added ledger line, with new debt growth failing; reasoned exception growth is informational. Changed-file scope includes untracked files. Strict ledger/config growth fails versus HEAD; debt shrinkage passes.
 
 Final verification: `npm test` **79 integration/e2e tests pass, zero failures/skips**; `npm run typecheck` and `git diff --check` pass. Ledger notes: [docs/layers/6-ledger.md](docs/layers/6-ledger.md). Text-view functions in `src/report.ts` remain untouched; its additions are types only.
+
+## Layer 9: surfaces (2026-10-09)
+
+Measured against MetalUI HEAD **`faa2036e4634e4f6c8d49feaa2dac87a77559501`**, using a disposable copy of its docs tree. Existing dependency and package directories were linked for reads. MetalUI remained read-only. No package installation or Plumb worktree commit occurred. This is a different source snapshot from Layer 6; raw debt differences are not attributed to surfaces.
+
+Reproduce after building:
+
+```sh
+PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer9 node bench/metalui/surfaces.mjs
+```
+
+Results: [layer9.run.json](bench/metalui/layer9.run.json). Baseline records **1,204 debt obligations** and **0 new**. SARIF contains **1,171 results**, exactly one per grouped report site, all `unchanged`; ledger obligations and grouped report sites are separate measures. Baseline agent output starts with `0 new`. Adding one copied TSX `gap-10` yields **1 new**, one GitHub error annotation and agent instructions naming the new file with recorded decision alternatives and NEEDS-DECISION. PLUMB.md generation writes **511,837 bytes** of decision/policy/loop data into the temporary copy. The ledger is byte-for-byte unchanged throughout the output/doc commands.
+
+| Surface | Process wall | Exit | Output bytes |
+| --- | ---: | ---: | ---: |
+| Baseline setup | 4,691.2 ms | 0 | 50 |
+| JSON ledger check | 1,361.0 ms | 0 | 12,212,340 |
+| SARIF baseline check | 1,332.0 ms | 0 | 1,916,845 |
+| Agent with one new gap | 1,337.9 ms | 1 | 4,981 |
+| GitHub with one new gap | 1,363.9 ms | 1 | 4,156 |
+| Agent docs with one new gap | 1,379.2 ms | 0 | 262 |
+
+These are individual local process measurements, including startup and serialization, over the layer cache. They do not measure hosted Action latency or base snapshot analysis. No new provenance rules or benchmark grep categories were introduced.
+
+The scripted-agent fixture e2e consumes the exact `--changed --agent` replacement for one new gap-10, changes only its TSX source, and reaches `0 new` under `--strict-ledger` with the ledger unchanged. Action approval is tested by executing its script on committed GitHub API response fixtures; the full runner executes the real CLI against a fixture PR/local REST server, first denies unapproved growth, then succeeds with approval, creating one sticky comment and updating it on rerun. This is local fixture evidence, not a hosted GitHub PR run. Hook installation preserves existing settings/events and remains idempotent. See [Layer 9 notes](docs/layers/9-surfaces.md) for output contracts and limits.
+
+Final verification: **96 integration/e2e tests pass**, zero failures/skips; typecheck and whitespace checks green. Protected text functions unchanged; no packages installed or worktree commits made.

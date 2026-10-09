@@ -1,0 +1,52 @@
+{
+  "sourceHead": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "sourceReadOnly": true,
+  "copiedDocs": true,
+  "cache": "/Users/vijaysingh/unlocalhosted/plumb-l9-surfaces/bench/metalui/.cache/layer9",
+  "runs": {
+    "baseline": {
+      "wallMs": 4691.187208,
+      "exitCode": 0,
+      "outputBytes": 50
+    },
+    "--json": {
+      "wallMs": 1360.9817920000005,
+      "exitCode": 0,
+      "outputBytes": 12212340
+    },
+    "--sarif": {
+      "wallMs": 1332.000000000001,
+      "exitCode": 0,
+      "outputBytes": 1916845
+    },
+    "--agent": {
+      "wallMs": 1337.8533749999988,
+      "exitCode": 1,
+      "outputBytes": 4981
+    },
+    "--format github": {
+      "wallMs": 1363.9048340000008,
+      "exitCode": 1,
+      "outputBytes": 4156
+    },
+    "agent-docs": {
+      "wallMs": 1379.155417,
+      "exitCode": 0,
+      "outputBytes": 262
+    }
+  },
+  "acceptance": {
+    "baseline": {
+      "new": 0,
+      "debt": 1204,
+      "sarifResults": 1171
+    },
+    "addedGap": {
+      "new": 1,
+      "githubErrors": 1,
+      "agentNamesSite": true
+    },
+    "docsBytes": 511837,
+    "ledgerUntouched": true
+  }
+}
