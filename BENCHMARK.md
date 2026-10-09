@@ -31,7 +31,7 @@ Scope: `apps/docs/src/**/*.{tsx,jsx,ts,js,css}`; entry `apps/docs/src/styles.css
 
 Compilation timing includes parsing candidate CSS and folding local --tw-* assignments. Remaining total includes CSS selector registration, theme hint indexing/ranking, cache I/O, existence judgement and attaching sites. Cold/warm refer to Plumb's candidate cache, not flushing the OS filesystem cache. The warm parse+collect target is met in the final run: **141.6 ms**, versus **503.2 ms** in a fresh pre-review warm run. End-to-end remains under 10 seconds cold and 2 seconds warm. These are individual local measurements, not latency guarantees; intermediate pre-pruning warm trials ranged from 144.7 to 165.1 ms.
 
-Fresh pre-review comparison: [cold](bench/metalui/baseline-review.cold.json), [warm](bench/metalui/baseline-review.warm.json), [timings](bench/metalui/baseline-review.run.json). Original 1,733.0/859.0 ms wall measurements are retained in [before-review.run.json](bench/metalui/before-review.run.json).
+Before the review fixes, wall time was 1,733.0 ms cold and 859.0 ms warm; the intermediate comparison reports were not kept.
 
 Final report: **39 grouped dead-class findings at 65 sites**, plus **2 dynamic-class findings at 2 sites**. Of those dead sites, 18 match the hand-verified baseline and 47 are additional inert or stale names. A separate registry reconciliation found **486 distinct uncompiled candidates declared in project CSS**, all protected from dead-class findings; the root-wide registry contains 1,143 class names. There are zero CSS-declared dead-class findings.
 
