@@ -189,6 +189,19 @@ const css = `
   .nav { width: 26px; height: 26px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-ink-2); cursor: pointer; display: grid; place-items: center; }
   .nav svg { width: 12px; height: 12px; }
   @media (hover: hover) and (pointer: fine) { .nav:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .sync { height: 26px; padding-inline: 10px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-instrument); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-instrument) 45%, var(--pl-paper)); }
+  @media (hover: hover) and (pointer: fine) { .sync:hover { background: color-mix(in oklab, var(--pl-instrument) 10%, var(--pl-paper)); } }
+  .synced { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 12px; box-shadow: 0 -1px 0 var(--pl-rule); }
+  .synced .state { font: var(--pl-text-label); color: var(--pl-on); margin-inline-end: auto; display: flex; align-items: center; gap: 6px; }
+  .synced .state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--pl-on); }
+  .synced button { height: 26px; padding-inline: 10px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-ink-2); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); cursor: pointer; }
+  .synced button[aria-pressed="true"] { background: var(--pl-paper-2); color: var(--pl-ink); }
+  .synced .write { background: var(--pl-ink); color: var(--pl-paper); }
+  .synced .write:disabled { opacity: .45; cursor: not-allowed; }
+  .sync:focus-visible, .synced button:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 2px; }
+  .pin.ok, .pin.ok[aria-current="true"] { color: var(--pl-on); }
+  .top .n.ok { color: var(--pl-on); }
+  .w[data-synced] .bar { display: none; }
   .copy { height: 26px; padding-inline: 12px; border: 0; border-radius: var(--pl-radius-tag); background: var(--pl-ink); color: var(--pl-paper); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); cursor: pointer; margin-inline-start: 4px; }
   .nav:focus-visible, .copy:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 `;
@@ -241,7 +254,14 @@ function mount(target, data = reading) {
           <span class="count"></span>
           <button class="nav prev" aria-label="Previous finding"><svg viewBox="0 0 12 12"><path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></button>
           <button class="nav next" aria-label="Next finding"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 8 6 4.5 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></button>
+          <button class="sync">Sync to system</button>
           <button class="copy">Copy for agent</button>
+        </div>
+        <div class="synced" hidden>
+          <span class="state"></span>
+          <button class="flip" aria-pressed="false">Before</button>
+          <button class="undo">Undo</button>
+          <button class="write" disabled title="Writes each edit at its file:line through Plumb's Vite plugin. Not available in this playground.">Write edits</button>
         </div>
       </div>
     </section>`;
@@ -333,6 +353,40 @@ function mount(target, data = reading) {
     }
     return `<div class="cmp chips">${rows.map(r => `<button ${attrs(r)}><span class="chip" style="background:${r.v}"></span>${opt(r)}</button>`).join('')}<span class="same">same colour</span></div>`;
   };
+  // Sync to system: apply each finding's chosen token to the live element as a reversible preview. A finding with no
+  // close token is left alone (it stays NEEDS-DECISION); nothing touches the ledger or the theme. Writing the same edits
+  // to source goes through Plumb's dev-server plugin.
+  const original = new Map();
+  const remember = (node, prop) => { const key = [node, prop]; if (![...original.keys()].some(([n, p]) => n === node && p === prop)) original.set(key, node.style[prop]); };
+  const set = (node, prop, value) => { remember(node, prop); node.style[prop] = value; };
+  const applyFix = it => { const c = it.choices?.[it.pick]; if (!c) return false; const title = target.querySelector('.title');
+    switch (it.where) {
+      case 'pad-top': set(target, 'paddingTop', c.v + 'px'); set(target, 'paddingBottom', c.v + 'px'); break;
+      case 'pad-left': set(target, 'paddingLeft', c.v + 'px'); set(target, 'paddingRight', c.v + 'px'); break;
+      case 'gap': set(target, 'gap', c.v + 'px'); break;
+      case 'corner': set(target, 'borderRadius', c.v + 'px'); break;
+      case 'text': if (title) set(title, 'fontSize', c.v + 'px'); break;
+      case 'shadow': set(target, 'boxShadow', c.v); break;
+      case 'fill': set(target, 'background', c.v); break;
+      default: return false;
+    }
+    return true; };
+  const restore = () => { for (const [[node, prop], value] of original) node.style[prop] = value; };
+  const reapply = () => f.forEach(it => it.synced && applyFix(it));
+  const refresh = () => { drawDiagram(zoom); bindPins(); root.querySelectorAll('.pin').forEach(p => p.classList.toggle('ok', !!f[Number(p.dataset.i)].synced && !w.hasAttribute('data-before'))); render(active); };
+  const synced = root.querySelector('.synced'), n = root.querySelector('.top .n');
+  root.querySelector('.sync').addEventListener('click', e => { e.stopPropagation();
+    const done = f.filter(it => (it.synced = applyFix(it))).length, left = f.length - done;
+    w.setAttribute('data-synced', ''); synced.hidden = false;
+    synced.querySelector('.state').textContent = left ? `${done} on the system · ${left} need a decision · preview` : `On the system · preview`;
+    synced.querySelector('.write').textContent = `Write ${done} edit${done === 1 ? '' : 's'}`;
+    n.textContent = left ? `${left} off` : 'on system'; n.classList.toggle('ok', !left);
+    requestAnimationFrame(refresh); });
+  synced.querySelector('.flip').addEventListener('click', e => { e.stopPropagation(); const b = e.currentTarget, before = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(before)); w.toggleAttribute('data-before', before); before ? restore() : reapply(); requestAnimationFrame(refresh); });
+  synced.querySelector('.undo').addEventListener('click', e => { e.stopPropagation(); restore(); original.clear(); f.forEach(it => delete it.synced);
+    w.removeAttribute('data-synced'); w.removeAttribute('data-before'); synced.hidden = true; synced.querySelector('.flip').setAttribute('aria-pressed', 'false');
+    n.textContent = `${f.length} off`; n.classList.remove('ok'); requestAnimationFrame(refresh); });
   const render = i => {
     const it = f[i];
     read.innerHTML = `<div class="t">${glyph(FAMILY[it.kind], it.soft ? 'soft' : 'off')}<span>${it.title}</span></div>${compare(it)}<div class="edit"><s>${it.authored}</s>→<b>${it.choices[it.pick].use}</b><span class="ledger ${it.ledger}">${it.ledger}</span></div>`;
