@@ -26,14 +26,18 @@ async function plan(root: string, name: string, event: string, entry: object, cu
   settings.hooks = { ...hooks, [event]: [...existing, entry] };
   return { file, before, after: JSON.stringify(settings, null, 2) + '\n' };
 }
-export async function installHooks(root: string, agents: ('claude' | 'cursor')[] = ['claude', 'cursor'], project?: string): Promise<string> {
+export async function planHooks(root: string, agents: ('claude' | 'cursor')[] = ['claude', 'cursor'], project?: string): Promise<Plan[]> {
   const checkCommand = project === undefined ? command : `${command} --root '${project.replaceAll("'", "'\\''")}'`;
   // Validate every target before writing either. Unknown settings and hooks survive.
   const plans = [];
   if (agents.includes('claude')) plans.push(await plan(root, '.claude/settings.json', 'PostToolUse', { matcher: 'Edit|Write|MultiEdit', hooks: [{ type: 'command', command: checkCommand }] }, false, checkCommand));
   if (agents.includes('cursor')) plans.push(await plan(root, '.cursor/hooks.json', 'afterFileEdit', { command: checkCommand }, true, checkCommand));
+  return plans;
+}
+export async function writeHooks(plans: Plan[], list = false): Promise<string> {
   const output: string[] = [];
   for (const { file, before, after } of plans) {
+    if (list) { output.push(`Would write ${file}.`); continue; }
     if (after === before) { output.push(`${file}: unchanged.`); continue; }
     await mkdir(dirname(file), { recursive: true });
     const temp = `${file}.plumb-${process.pid}.tmp`;
@@ -42,4 +46,8 @@ export async function installHooks(root: string, agents: ('claude' | 'cursor')[]
     output.push(`--- ${file}\n+++ ${file}\n@@ settings before / after @@\n` + before.trimEnd().split('\n').filter(Boolean).map(line => `-${line}`).join('\n') + '\n' + after.trimEnd().split('\n').map(line => `+${line}`).join('\n'));
   }
   return output.join('\n\n') + '\n';
+}
+
+export async function installHooks(root: string, agents: ('claude' | 'cursor')[] = ['claude', 'cursor'], project?: string, list = false): Promise<string> {
+  return writeHooks(await planHooks(root, agents, project), list);
 }

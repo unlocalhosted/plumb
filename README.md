@@ -31,7 +31,35 @@ export default defineConfig({
 
 Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumb --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumb init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
-Adopt with `plumb`, `plumb init`, then `plumb install --ci`. Init writes inferred token sources, enables hover-gate, focus-outline, viewport-dynamic and overscroll-contain, lists other habits with break counts, and records the baseline and accepted tokens. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first. Install detects project or repository agent settings, preserves existing docs and hooks, adds the Plumb instructions, and writes a workflow using this repository's Action. `plumb doctor` checks Node, Tailwind, CSS entry, config, ledger and cache, with a fix on each line. [Adoption notes and transcripts](docs/roadmap/1-adoption.md).
+Adopt with `plumb`, `plumb init`, then `plumb install --ci`. Init writes inferred token sources, enables hover-gate, focus-outline, viewport-dynamic and overscroll-contain, lists other habits with break counts, and records the baseline and accepted tokens. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first. `plumb doctor` checks Node, Tailwind, CSS entry, config, ledger and cache, with a fix on each line.
+
+## Agent installation
+
+`plumb install` renders the unchanged instructions shipped in `skills/plumb/SKILL.md` into every detected agent's format. The skill resolves from the installed package, independent of the current directory. Preview without writes using `plumb install --list`. Repeat `--agent <name>` to add targets even when not detected:
+
+```sh
+plumb install --list
+plumb install --agent codex --agent cursor
+plumb install --ci
+```
+
+Detection checks the project root, then its Git repository root. Instructions are written at the project root; Claude and Cursor hooks use the detected settings scope, with `--root` for nested projects. Forced agents with no marker get hooks at the project root.
+
+| Agent name | Detection markers | Instructions written |
+| --- | --- | --- |
+| `claude` | `.claude/` or `CLAUDE.md` | `.claude/skills/plumb/SKILL.md`, including skill frontmatter, plus PostToolUse hook |
+| `codex` | `AGENTS.md` or `.codex/` | Marked block in `AGENTS.md` |
+| `cursor` | `.cursor/` | `.cursor/rules/plumb.mdc`, plus afterFileEdit hook |
+| `copilot` | `.github/copilot-instructions.md` | Marked block in that file |
+| `gemini` | `GEMINI.md` or `.gemini/` | Marked block in `GEMINI.md` |
+| `windsurf` | `.windsurf/` | `.windsurf/rules/plumb.md` |
+| `generic` | Explicit `--agent generic`, or fallback when no agents are detected | Marked block in `AGENTS.md` |
+
+Plain Markdown targets receive the skill body without frontmatter between `<!-- plumb:start -->` and `<!-- plumb:end -->`. Only that block is replaced; surrounding bytes survive. Missing blocks are appended. Malformed or duplicate markers fail before install writes. Dedicated Plumb skill/rule files are rewritten only when content differs; unrelated rules and hook settings survive. Every write is printed. Reinstallation preserves bytes. No agent detected creates only `AGENTS.md`; other agent selections don't create it unless Codex or generic is selected. Existing `CLAUDE.md` and `PLUMB.md` are left alone; use `plumb agent-docs` to generate the optional project token reference.
+
+Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, and `alwaysApply: false`, as documented in [Cursor Rules](https://cursor.com/docs/rules). Windsurf rules use Markdown with `trigger: always_on` frontmatter, documented in [Cascade Rules](https://docs.windsurf.com/windsurf/cascade/memories). Agent application behavior remains unverified in the editors; [adoption notes](docs/roadmap/1-adoption.md#agent-format-notes) record format verification and limits.
+
+`--ci` additionally writes the existing GitHub Action workflow when absent. `install --hooks` keeps its explicit hooks-only behavior for Claude and Cursor; `install --hooks --list` previews those hooks.
 
 ## Layer 9 surfaces
 

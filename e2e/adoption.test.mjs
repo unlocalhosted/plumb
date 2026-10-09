@@ -67,11 +67,11 @@ test('three-command transcript: first look, init baseline, detected agents and C
   const beforeInstall = await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8');
   const installed = run(directory, ['install', '--ci']).stdout;
   assert.match(installed, /Agents: Claude Code, Cursor, Codex/);
-  assert.match(installed, /Wrote PLUMB.md/);
+  assert.match(installed, /Wrote .claude\/skills\/plumb\/SKILL.md/);
   assert.match(installed, /Wrote .github\/workflows\/plumb.yml/);
   assert.ok((await readFile(join(directory, 'AGENTS.md'), 'utf8')).startsWith('# Team\nKeep this.\n'));
   assert.ok((await readFile(join(directory, 'CLAUDE.md'), 'utf8')).startsWith('# Claude\nKeep this too.'));
-  assert.match(await readFile(join(directory, 'AGENTS.md'), 'utf8'), /--strict-ledger/);
+  assert.match(await readFile(join(directory, 'AGENTS.md'), 'utf8'), /npx plumb check --changed --agent/);
   const claude = JSON.parse(await readFile(join(directory, '.claude/settings.json'), 'utf8'));
   const cursor = JSON.parse(await readFile(join(directory, '.cursor/hooks.json'), 'utf8'));
   assert.deepEqual(claude.permissions, { allow: ['Read'] });
@@ -88,9 +88,9 @@ test('three-command transcript: first look, init baseline, detected agents and C
   assert.equal(checked.ledger.new, 0);
   assert.ok(!checked.findings.some(finding => finding.severity === 'error'));
   assert.equal(await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8'), beforeInstall);
-  const targets = ['AGENTS.md', 'CLAUDE.md', 'PLUMB.md', '.claude/settings.json', '.cursor/hooks.json', '.github/workflows/plumb.yml'];
+  const targets = ['AGENTS.md', 'CLAUDE.md', '.claude/skills/plumb/SKILL.md', '.cursor/rules/plumb.mdc', '.claude/settings.json', '.cursor/hooks.json', '.github/workflows/plumb.yml'];
   const contents = await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8')));
-  assert.match(run(directory, ['install', '--ci']).stdout, /Kept PLUMB.md/);
+  assert.match(run(directory, ['install', '--ci']).stdout, /Kept .claude\/skills\/plumb\/SKILL.md/);
   assert.deepEqual(await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8'))), contents);
   const healthy = run(directory, ['doctor']).stdout;
   assert.equal(healthy.trim().split('\n').length, 6);
@@ -235,10 +235,126 @@ test('packaged CLI never uses its enclosing consumer repository HEAD as a Plumb 
   t.after(() => rm(packageRoot, { recursive: true, force: true }));
   await cp(join(root, 'dist'), join(packageRoot, 'dist'), { recursive: true });
   await cp(join(root, 'package.json'), join(packageRoot, 'package.json'));
+  await cp(join(root, 'skills'), join(packageRoot, 'skills'), { recursive: true });
   await cp(join(root, 'action.yml'), join(packageRoot, 'action.yml'));
   await symlink(join(root, 'node_modules'), join(packageRoot, 'node_modules'));
   const directory = await fixture(t);
-  run(directory, ['install', '--ci'], 0, join(packageRoot, 'dist/cli.js'));
+  await file(directory, 'skills/plumb/SKILL.md', 'Consumer decoy skill.');
+  run(directory, ['install', '--ci', '--agent', 'claude'], 0, join(packageRoot, 'dist/cli.js'));
+  assert.equal(await readFile(join(directory, '.claude/skills/plumb/SKILL.md'), 'utf8'),
+    await readFile(join(packageRoot, 'skills/plumb/SKILL.md'), 'utf8'));
   const workflow = await readFile(join(directory, '.github/workflows/plumb.yml'), 'utf8');
   assert.match(workflow, /uses: unlocalhosted\/plumb@main/);
+});
+
+const skill = await readFile(join(root, 'skills/plumb/SKILL.md'), 'utf8');
+const skillBody = skill.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+const instructionTargets = ['.claude/skills/plumb/SKILL.md', 'AGENTS.md', '.cursor/rules/plumb.mdc', '.github/copilot-instructions.md', 'GEMINI.md', '.windsurf/rules/plumb.md'];
+const allTargets = [...instructionTargets, '.claude/settings.json', '.cursor/hooks.json'];
+const snapshot = async (directory, targets = allTargets) => Promise.all(targets.map(path => readFile(join(directory, path), 'utf8')));
+const stripFrontmatter = text => text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+const fenced = text => text.split('<!-- plumb:start -->\n')[1].split('<!-- plumb:end -->')[0];
+
+test('all six agent markers install exact packaged instructions, replace only blocks, and reinstall without writes', async t => {
+  const directory = await fixture(t);
+  const prefix = '# Team\r\nPreserve prefix.\r\n';
+  const suffix = '\r\nPreserve suffix without final newline.';
+  for (const name of ['AGENTS.md', '.github/copilot-instructions.md', 'GEMINI.md']) {
+    await file(directory, name, prefix + '<!-- plumb:start -->\nold instructions\n<!-- plumb:end -->' + suffix);
+  }
+  await file(directory, '.claude/settings.json', '{"permissions":{"allow":["Read"]}}\n');
+  await file(directory, '.cursor/hooks.json', '{"version":1,"hooks":{"afterFileEdit":[{"command":"format"}]}}\n');
+  await mkdir(join(directory, '.windsurf'));
+  // A decoy in cwd must never become the installed source.
+  await file(directory, 'skills/plumb/SKILL.md', 'Consumer skill: do not copy.\n');
+  const before = await snapshot(directory, ['AGENTS.md', '.github/copilot-instructions.md', 'GEMINI.md', '.claude/settings.json', '.cursor/hooks.json']);
+  const preview = run(directory, ['install', '--list']).stdout;
+  assert.match(preview, /Agents: Claude Code, Cursor, Codex, Copilot, Gemini CLI, Windsurf/);
+  for (const path of allTargets) assert.ok(preview.includes(`Would write ${path}.`), preview);
+  assert.deepEqual(await snapshot(directory, ['AGENTS.md', '.github/copilot-instructions.md', 'GEMINI.md', '.claude/settings.json', '.cursor/hooks.json']), before);
+  for (const path of [instructionTargets[0], instructionTargets[2], instructionTargets[5], '.cache', 'PLUMB.md']) {
+    await assert.rejects(readFile(join(directory, path)), { code: 'ENOENT' });
+  }
+  const output = run(directory, ['install']).stdout;
+  for (const path of instructionTargets) assert.ok(output.includes(`Wrote ${path}.`));
+  const contents = await snapshot(directory);
+  assert.equal(contents[0], skill);
+  for (const i of [1, 3, 4]) {
+    assert.equal(fenced(contents[i]), skillBody);
+    assert.equal(contents[i], prefix + '<!-- plumb:start -->\n' + skillBody + '<!-- plumb:end -->' + suffix);
+  }
+  assert.equal(stripFrontmatter(contents[2]), skillBody);
+  assert.match(contents[2], /^---\ndescription: .+\nglobs: \*\*\/\*\.tsx,\*\*\/\*\.jsx,\*\*\/\*\.ts,\*\*\/\*\.js,\*\*\/\*\.css\nalwaysApply: false\n---\n/);
+  assert.equal(contents[5], '---\ntrigger: always_on\n---\n' + skillBody);
+  assert.deepEqual(JSON.parse(contents[6]).permissions, { allow: ['Read'] });
+  assert.equal(JSON.parse(contents[7]).hooks.afterFileEdit[0].command, 'format');
+  const again = run(directory, ['install']).stdout;
+  assert.doesNotMatch(again, /Wrote |\+\+\+/);
+  assert.deepEqual(await snapshot(directory), contents);
+  // Dedicated Plumb files update when stale; unrelated rules survive.
+  await file(directory, '.cursor/rules/team.mdc', 'Team rule stays.');
+  await file(directory, '.cursor/rules/plumb.mdc', 'Stale Plumb rule.');
+  assert.match(run(directory, ['install']).stdout, /Wrote .cursor\/rules\/plumb.mdc/);
+  assert.equal(await readFile(join(directory, '.cursor/rules/plumb.mdc'), 'utf8'), contents[2]);
+  assert.equal(await readFile(join(directory, '.cursor/rules/team.mdc'), 'utf8'), 'Team rule stays.');
+});
+
+test('forcing each agent without detection installs only its own format and supported hook', async t => {
+  for (const [agent, target] of [['claude', instructionTargets[0]], ['codex', instructionTargets[1]], ['generic', instructionTargets[1]], ['cursor', instructionTargets[2]], ['copilot', instructionTargets[3]], ['gemini', instructionTargets[4]], ['windsurf', instructionTargets[5]]]) {
+    const directory = await fixture(t);
+    const preview = run(directory, ['--root', directory, 'install', '--list', '--agent', agent]).stdout;
+    assert.match(preview, /Agents: none detected/);
+    assert.ok(preview.includes(`Would write ${target}.`));
+    const output = run(directory, ['install', '--agent', agent]).stdout;
+    assert.ok(output.includes(`Wrote ${target}.`));
+    const installed = await readFile(join(directory, target), 'utf8');
+    assert.equal(agent === 'claude' ? stripFrontmatter(installed) : ['cursor', 'windsurf'].includes(agent) ? stripFrontmatter(installed) : fenced(installed), skillBody);
+    const expected = [target, ...agent === 'claude' ? ['.claude/settings.json'] : agent === 'cursor' ? ['.cursor/hooks.json'] : []];
+    for (const path of [...allTargets, 'PLUMB.md', 'CLAUDE.md'].filter(path => !expected.includes(path))) {
+      await assert.rejects(readFile(join(directory, path)), { code: 'ENOENT' });
+    }
+    const bytes = await snapshot(directory, expected);
+    assert.doesNotMatch(run(directory, ['install', '--agent', agent]).stdout, /Wrote |\+\+\+/);
+    assert.deepEqual(await snapshot(directory, expected), bytes);
+  }
+});
+
+test('repeatable forced agents augment detection; invalid targets and missing names fail before writes', async t => {
+  const directory = await fixture(t);
+  await mkdir(join(directory, '.gemini'));
+  for (const args of [['install', '--agent', 'unknown'], ['install', '--agent'], ['install', '--agent=']]) run(directory, args, 2);
+  for (const path of allTargets) await assert.rejects(readFile(join(directory, path)), { code: 'ENOENT' });
+  const output = run(directory, ['install', '--agent', 'claude', '--agent=cursor', '--agent', 'cursor']).stdout;
+  for (const path of [instructionTargets[0], instructionTargets[2], instructionTargets[4]]) assert.ok(output.includes(`Wrote ${path}.`));
+  await assert.rejects(readFile(join(directory, 'AGENTS.md')), { code: 'ENOENT' });
+});
+
+test('no detected agents creates only AGENTS.md and reinstallation preserves bytes', async t => {
+  const directory = await fixture(t);
+  const preview = run(directory, ['install', '--list']).stdout;
+  assert.match(preview, /Agents: none detected/);
+  assert.equal(preview.match(/Would write .+/g)?.join('\n'), 'Would write AGENTS.md.');
+  run(directory, ['install']);
+  const agents = await readFile(join(directory, 'AGENTS.md'), 'utf8');
+  assert.equal(fenced(agents), skillBody);
+  assert.doesNotMatch(run(directory, ['install']).stdout, /Wrote /);
+  assert.equal(await readFile(join(directory, 'AGENTS.md'), 'utf8'), agents);
+  for (const path of [...allTargets, 'PLUMB.md', 'CLAUDE.md', '.cache'].filter(path => path !== 'AGENTS.md')) await assert.rejects(readFile(join(directory, path)), { code: 'ENOENT' });
+});
+
+test('malformed marked instructions and hook settings cause no partial install', async t => {
+  for (const malformed of ['<!-- plumb:start -->\nOnly start.', '<!-- plumb:end -->', '<!-- plumb:end -->\n<!-- plumb:start -->', '<!-- plumb:start --><!-- plumb:end --><!-- plumb:start --><!-- plumb:end -->']) {
+    const directory = await fixture(t);
+    await file(directory, 'AGENTS.md', malformed);
+    await mkdir(join(directory, '.claude'));
+    assert.match(run(directory, ['install'], 2).stderr, /Invalid Plumb markers/);
+    assert.equal(await readFile(join(directory, 'AGENTS.md'), 'utf8'), malformed);
+    await assert.rejects(readFile(join(directory, instructionTargets[0])), { code: 'ENOENT' });
+    await assert.rejects(readFile(join(directory, '.claude/settings.json')), { code: 'ENOENT' });
+  }
+  const directory = await fixture(t);
+  await file(directory, '.cursor/hooks.json', '{broken');
+  run(directory, ['install', '--agent', 'claude'], 2);
+  await assert.rejects(readFile(join(directory, instructionTargets[0])), { code: 'ENOENT' });
+  await assert.rejects(readFile(join(directory, '.claude/settings.json')), { code: 'ENOENT' });
 });

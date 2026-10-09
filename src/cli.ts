@@ -18,7 +18,7 @@ import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { formatDeadSummary } from './rules/dead.js';
 import { initProject } from './adoption/init.js';
-import { installProject } from './adoption/install.js';
+import { installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
 
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
@@ -41,7 +41,7 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb check [--base <git-ref>] [--changed] [--strict-ledger]
        plumb check [--sarif | --agent | --format github]
        plumb agent-docs
-       plumb install [--ci] | install --hooks
+       plumb install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumb doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
@@ -57,15 +57,19 @@ Exit codes: 0 ok, 1 failing findings, 2 usage/config error
 async function main(): Promise<void> {
   const args = (() => {
     try {
-      return parseArgs({
-        options: {
+      const options = {
           json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' },
-          markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' },
-        },
+          markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
+      } as const;
+      // Probe command with all value-taking flags known; --agent is an install
+      // target only for install, and remains a boolean report flag elsewhere.
+      const probe = parseArgs({ options: { ...options, agent: { type: 'string', multiple: true } }, strict: false, allowPositionals: true });
+      return parseArgs({
+        options: { ...options, agent: probe.positionals[0] === 'install' ? { type: 'string', multiple: true } : { type: 'boolean' } },
         allowPositionals: true,
         strict: true,
       });
@@ -90,7 +94,7 @@ async function main(): Promise<void> {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
-    base: ['check'], changed: ['check'], agent: ['check', 'try'], sarif: ['check'], format: ['check', 'parity'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
+    base: ['check'], changed: ['check'], agent: ['check', 'try', 'install'], list: ['install'], sarif: ['check'], format: ['check', 'parity'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'],
     markdown: ['report'], since: ['report'], strict: ['parity'],
@@ -102,6 +106,8 @@ async function main(): Promise<void> {
   if (args.values.since?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --since.');
   if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumb parity.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
+  const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
+  if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
   if (suggesting && !args.values.suggest) throw new UsageError('Use plumb imitation --suggest to report candidate fingerprints.');
@@ -121,7 +127,8 @@ async function main(): Promise<void> {
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
     return;
   }
-  if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()))); return; }
+  if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
+  if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
   if (command === 'doctor') {
     const result = await doctor(resolve(options.root ?? process.cwd()), options.config);
     process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;
@@ -182,7 +189,6 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'agent-docs') { process.stdout.write(await writeAgentDocs(report, (await loadConfig(report.root, options.config)).value)); return; }
-  if (command === 'install') { process.stdout.write(await installProject(report, (await loadConfig(report.root, options.config)).value, args.values.ci)); return; }
   if (mutating) {
     const result = await ledgerCommand(command, report, {
       ...(args.values.force === undefined ? {} : { force: args.values.force }),

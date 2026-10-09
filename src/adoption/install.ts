@@ -3,17 +3,30 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, relative, resolve, matchesGlob } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { PlumbConfig } from '../config.js';
-import type { Report } from '../report.js';
-import { agentDocs } from '../surfaces/docs.js';
-import { installHooks } from '../surfaces/hooks.js';
+import { planHooks, writeHooks } from '../surfaces/hooks.js';
+import { UsageError } from '../errors.js';
 
-const block = '<!-- plumb:start -->\n' +
-  'Read PLUMB.md for tokens, component permissions and enabled habits.\n' +
-  'Run `plumb check --changed --agent --strict-ledger` after edits; stop on "0 new".\n' +
-  'Never edit plumb.config.ts, .plumb/ledger.jsonl or the theme to pass.\n' +
-  'If no token fits, report NEEDS-DECISION with the location and wanted value.\n' +
-  '<!-- plumb:end -->\n';
+export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
+export type AgentName = typeof agentNames[number];
+const markers = { start: '<!-- plumb:start -->', end: '<!-- plumb:end -->' };
+const globs = '**/*.tsx,**/*.jsx,**/*.ts,**/*.js,**/*.css';
+const labels: Record<AgentName, string> = { claude: 'Claude Code', cursor: 'Cursor', codex: 'Codex', copilot: 'Copilot', gemini: 'Gemini CLI', windsurf: 'Windsurf', generic: 'generic' };
+const detection: Partial<Record<AgentName, string[]>> = {
+  claude: ['.claude', 'CLAUDE.md'], cursor: ['.cursor'], codex: ['AGENTS.md', '.codex'],
+  copilot: ['.github/copilot-instructions.md'], gemini: ['GEMINI.md', '.gemini'], windsurf: ['.windsurf'],
+};
+export function validateAgents(names: (string | boolean)[] = []): AgentName[] {
+  for (const name of names) if (!agentNames.includes(name as AgentName)) throw new UsageError('Unknown agent ' + JSON.stringify(name) + '; choose ' + agentNames.join(', ') + '.');
+  return [...new Set(names)] as AgentName[];
+}
+function instructions(before: string, body: string, file: string): string {
+  const starts = before.split(markers.start).length - 1;
+  const ends = before.split(markers.end).length - 1;
+  if (!starts && !ends) return before + (before ? (before.endsWith('\n') ? '\n' : '\n\n') : '') + markers.start + '\n' + body + markers.end + '\n';
+  const start = before.indexOf(markers.start), end = before.indexOf(markers.end);
+  if (starts !== 1 || ends !== 1 || end < start) throw new UsageError('Invalid Plumb markers in ' + file + '; no install files changed.');
+  return before.slice(0, start + markers.start.length) + '\n' + body + before.slice(end);
+}
 
 function git(root: string, ...args: string[]): string | undefined {
   const result = spawnSync('git', ['-C', root, ...args], { encoding: 'utf8' });
@@ -75,45 +88,64 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
     `          ledger-approvers: ${JSON.stringify(owners.logins.join(', '))}\n` };
 }
 
-export async function installProject(report: Report, config: PlumbConfig, ci = false): Promise<string> {
-  const root = report.root;
+interface InstallOptions { ci?: boolean; list?: boolean; agents?: AgentName[] }
+export async function installProject(root: string, options: InstallOptions = {}): Promise<string> {
   const repo = git(root, 'rev-parse', '--show-toplevel') ?? root;
   const scopes = [...new Set([root, repo])];
-  const claudeRoot = scopes.find(scope => existsSync(join(scope, '.claude')));
-  const cursorRoot = scopes.find(scope => existsSync(join(scope, '.cursor')));
-  const claude = claudeRoot !== undefined;
-  const cursor = cursorRoot !== undefined;
-  const codex = scopes.some(scope => existsSync(join(scope, 'AGENTS.md')));
-  const docs = new Set<string>(['PLUMB.md']);
-  // Codex has no post-edit hook in the existing integration. Its agent block
-  // carries the same check command; never fabricate a hook configuration.
-  if (codex || cursor || !claude) docs.add('AGENTS.md');
-  if (claude || existsSync(join(root, 'CLAUDE.md'))) docs.add('CLAUDE.md');
-  const plans: { file: string; before?: string; after: string }[] = [];
-  for (const name of docs) {
-    const file = join(root, name), before = await content(file);
-    const after = name === 'PLUMB.md' ? before ?? agentDocs(report, config) :
-      before?.includes('<!-- plumb:start -->') ? before : `${before ?? ''}${before ? (before.endsWith('\n') ? '\n' : '\n\n') : ''}${block}`;
-    plans.push({ file, ...(before === undefined ? {} : { before }), after });
+  const detected = new Map<AgentName, string>();
+  for (const agent of agentNames) {
+    const scope = scopes.find(scope => detection[agent]?.some(marker => existsSync(join(scope, marker))));
+    if (scope) detected.set(agent, scope);
   }
-  const ciPlan = ci ? await workflow(root) : undefined;
+  const selected = [...new Set([...detected.keys(), ...options.agents ?? []])];
+  if (!selected.length) selected.push('generic');
+  // Read the package's copy, never a consumer's similarly named skill.
+  const skill = await readFile(new URL('../../skills/plumb/SKILL.md', import.meta.url), 'utf8');
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(skill);
+  if (!frontmatter) throw new UsageError('Packaged Plumb skill is missing frontmatter.');
+  const body = skill.slice(frontmatter[0].length);
+  const description = /^description: (.*)$/m.exec(frontmatter[1]!)?.[1];
+  if (!description) throw new UsageError('Packaged Plumb skill is missing description.');
+  const plans: { file: string; before?: string; after: string }[] = [];
+  async function add(name: string, render: (before: string | undefined) => string): Promise<void> {
+    const file = join(root, name);
+    if (plans.some(plan => plan.file === file)) return;
+    const before = await content(file);
+    plans.push({ file, ...(before === undefined ? {} : { before }), after: render(before) });
+  }
+  for (const agent of selected) {
+    if (agent === 'claude') await add('.claude/skills/plumb/SKILL.md', () => skill);
+    else if (agent === 'cursor') await add('.cursor/rules/plumb.mdc', () => '---\ndescription: ' + JSON.stringify(description) + '\nglobs: ' + globs + '\nalwaysApply: false\n---\n' + body);
+    else if (agent === 'windsurf') await add('.windsurf/rules/plumb.md', () => '---\ntrigger: always_on\n---\n' + body);
+    else {
+      const name = agent === 'copilot' ? '.github/copilot-instructions.md' : agent === 'gemini' ? 'GEMINI.md' : 'AGENTS.md';
+      await add(name, before => instructions(before ?? '', body, name));
+    }
+  }
+  const ciPlan = options.ci ? await workflow(root) : undefined;
   if (ciPlan) {
     const before = await content(ciPlan.file);
     plans.push({ file: ciPlan.file, ...(before === undefined ? {} : { before }), after: before ?? ciPlan.text });
   }
-  const output = [`Agents: ${[claude && 'Claude Code', cursor && 'Cursor', codex && 'Codex'].filter(Boolean).join(', ') || 'none detected'}.`];
+  const hooks = [];
   for (const scope of scopes) {
-    const agents = [...(claudeRoot === scope ? ['claude' as const] : []), ...(cursorRoot === scope ? ['cursor' as const] : [])];
-    if (!agents.length) continue;
-    const hooks = await installHooks(scope, agents, scope === root ? undefined : relative(scope, root).replaceAll('\\', '/'));
-    if (hooks) output.push(hooks.replaceAll(scope + '/', (relative(root, scope).replaceAll('\\', '/') || '.') + '/').trimEnd());
+    const agents = (['claude', 'cursor'] as const).filter(agent => selected.includes(agent) && (detected.get(agent) ?? root) === scope);
+    if (agents.length) hooks.push(...await planHooks(scope, agents, scope === root ? undefined : relative(scope, root).replaceAll('\\', '/')));
   }
+  const output = ['Agents: ' + ([...detected.keys()].map(agent => labels[agent]).join(', ') || 'none detected') + '.',
+    'Selected: ' + selected.map(agent => labels[agent]).join(', ') + '.'];
+  const name = (file: string) => relative(root, file).replaceAll('\\', '/');
+  if (options.list) {
+    output.push(...[...plans, ...hooks].map(plan => (plan.before === plan.after ? 'Kept ' : 'Would write ') + name(plan.file) + '.'));
+    return output.join('\n') + '\n';
+  }
+  const hookOutput = await writeHooks(hooks);
+  if (hookOutput) output.push(hookOutput.trimEnd());
   for (const plan of plans) {
-    const name = relative(root, plan.file).replaceAll('\\', '/');
-    if (plan.before === plan.after) { output.push(`Kept ${name}.`); continue; }
+    if (plan.before === plan.after) { output.push('Kept ' + name(plan.file) + '.'); continue; }
     await mkdir(dirname(plan.file), { recursive: true });
     await writeFile(plan.file, plan.after, { flag: plan.before === undefined ? 'wx' : 'w' });
-    output.push(`${plan.before === undefined ? 'Wrote' : 'Added Plumb instructions to'} ${name}.`);
+    output.push('Wrote ' + name(plan.file) + '.');
   }
   if (ciPlan && plans.find(plan => plan.file === ciPlan.file)?.before === undefined) output.push(...ciPlan.notes);
   return output.join('\n') + '\n';
