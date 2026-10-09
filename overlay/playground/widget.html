@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb overlay widget</title>
+<style>
+  /* Stand-in host pages: an ordinary app row with the kind of drift Plumb finds. */
+  html { background: #eceef1; }
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #15181b; }
+  .page { padding: 48px 64px 300px; }
+  .page[data-host="dark"] { background: #0f1113; color: #e9ebee; }
+  h1 { font-size: 13px; font-weight: 600; margin: 0 0 24px; color: #6a7078; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; width: 440px; background: #fff; border-radius: 14px; box-shadow: 0 2px 7px rgba(0,0,0,.13); }
+  [data-host="dark"] .row { background: #1d2125; box-shadow: 0 2px 7px rgba(0,0,0,.6); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #c9d3dd; flex: none; }
+  .text { flex: 1; min-width: 0; }
+  .title { font: 500 13.5px/20px system-ui, sans-serif; }
+  .meta { font: 400 12px/16px system-ui, sans-serif; color: #6a7078; }
+  .btn { height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: #fff; color: #15181b; font: 500 12.5px system-ui; box-shadow: 0 0 0 1px #d0d5db; }
+  [data-host="dark"] .btn { background: #2a2f34; color: #e9ebee; box-shadow: 0 0 0 1px #3a4047; }
+</style>
+</head>
+<body>
+<div class="page" data-host="light">
+  <h1>Light host page · hold Alt and hover the row, click to pin</h1>
+  <div class="row" id="target-light"><div class="avatar"></div><div class="text"><div class="title">Sync calendar</div><div class="meta">Last run 4 minutes ago</div></div><button class="btn">Run now</button></div>
+</div>
+<div class="page" data-host="dark">
+  <h1>Dark host page</h1>
+  <div class="row" id="target-dark"><div class="avatar"></div><div class="text"><div class="title">Sync calendar</div><div class="meta">Last run 4 minutes ago</div></div><button class="btn">Run now</button></div>
+</div>
+<script type="module">
+/* ─────────────────────────────────────────────────────────
+ * ANIMATION STORYBOARD · Plumb reading widget
+ *
+ *  hover     reticle ticks settle on the element, tag "div · 6 off" hangs below
+ *  pin  0ms  the tag is the widget's shape: it grows (one shape, transform only)
+ *     120ms  diagram and reading line fade in inside it
+ *     160ms  the first finding's place lights up on the real element
+ *  next      pin ring moves, the reading line crossfades, the lit place moves
+ *  unpin     the widget shrinks back into the tag
+ *  reduced motion: every step is instant
+ * ───────────────────────────────────────────────────────── */
+const TIMING = { grow: 220, contentIn: 120, light: 160, swap: 140 };
+
+const tokensCss = await (await fetch('../src/tokens.css')).text();
+
+/* What Plumb answers for this element (the /element contract), as sample data. Order is severity, then reading order. */
+const reading = {
+  element: 'div', file: 'src/settings/SyncRow.tsx', line: 18,
+  findings: [
+    { where: 'pad-top', title: 'padding-top 10px isn\'t on your spacing scale', scale: [4, 6, 8, 12, 16], value: 10, edit: ['py-[10px]', 'py-mu-space-8'], ledger: 'new' },
+    { where: 'pad-left', title: 'padding-inline 14px isn\'t on your spacing scale', scale: [8, 12, 16, 20], value: 14, edit: ['px-14', 'px-mu-space-12'], ledger: 'debt' },
+    { where: 'gap', title: 'gap 10px isn\'t on your spacing scale', scale: [4, 6, 8, 12, 16], value: 10, edit: ['gap-10', 'gap-mu-related'], ledger: 'new' },
+    { where: 'corner', title: 'border-radius 14px isn\'t on your radius scale', scale: [6, 12, 18, 24], value: 14, edit: ['rounded-[14px]', 'rounded-row'], ledger: 'new' },
+    { where: 'text', title: 'font-size 13.5px isn\'t on your type scale', scale: [12, 12.5, 13, 15, 18], value: 13.5, edit: ['text-[13.5px]', 'type-ui'], ledger: 'new' },
+    { where: 'shadow', title: 'This shadow is hand-written, not one of your shadow tokens', edit: ['shadow-[0_2px_7px…]', 'shadow-raise-sm'], ledger: 'new' },
+    { where: 'fill', soft: true, title: 'bg-white matches --color-s-hi but doesn\'t use it', edit: ['bg-white', 'bg-s-hi'], ledger: 'new' },
+  ],
+};
+
+const css = `
+  :host { position: absolute; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-text-row); color: var(--pl-ink); }
+  * { box-sizing: border-box; }
+  .tick { position: absolute; width: var(--pl-tick); height: var(--pl-tick); transition: transform var(--pl-dur-travel) var(--pl-spring); }
+  .tick::before, .tick::after { content: ""; position: absolute; background: var(--pl-brass); box-shadow: 0 0 0 1px var(--pl-halo); }
+  .tick::before { width: var(--pl-tick); height: 1px; } .tick::after { width: 1px; height: var(--pl-tick); }
+
+  /* the lit place on the real element: hatching in the off colour over exactly the region the finding is about */
+  .lit { position: absolute; border-radius: 2px; opacity: 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), transform var(--pl-dur-travel) var(--pl-spring), width var(--pl-dur-travel) var(--pl-spring), height var(--pl-dur-travel) var(--pl-spring);
+         background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--pl-off) 55%, transparent) 0 1px, transparent 1px 4px); box-shadow: inset 0 0 0 1px var(--pl-off); }
+  .lit.on { opacity: 1; }
+  .lit.ring { background: none; border-radius: 50%; }
+
+  /* ONE widget. Closed it is the tag; pinned it is the reading. The same element, the same corners. */
+  .w { position: absolute; pointer-events: auto; background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
+       width: 360px; transform-origin: 24px 0; overflow: clip; transition: clip-path var(--pl-dur-card) var(--pl-ease-out); }
+  .w:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 2px; }
+  .w[data-state="tag"] { clip-path: inset(0 calc(100% - var(--tag-w)) calc(100% - var(--pl-tag-h)) 0 round var(--pl-radius-tag)); }
+  .w[data-state="open"] { clip-path: inset(0 0 0 0 round var(--pl-radius-card)); }
+  .w[data-state="tag"] .body { opacity: 0; } .body { transition: opacity var(--pl-dur-card) var(--pl-ease-out) 60ms; }
+
+  .top { height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; font: var(--pl-text-label); white-space: nowrap; }
+  .top .el { font-weight: 600; color: var(--pl-ink); }
+  .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
+  .top .file { font: var(--pl-text-reading); color: var(--pl-ink-2); margin-inline-start: auto; overflow: hidden; text-overflow: ellipsis; }
+
+  /* the diagram: the element at its real proportions, pins where each problem is */
+  .diagram { position: relative; margin: 10px 12px 0; }
+  .d-box { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .d-child { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .d-child.text { box-shadow: none; }
+  .d-child b { position: absolute; border-radius: 2px; background: var(--pl-ink-3); opacity: 0.7; }
+  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+         display: grid; place-items: center; font: 600 9.5px/1 var(--pl-sans); font-variant-numeric: tabular-nums;
+         color: var(--pl-paper); background: var(--pl-off); box-shadow: 0 0 0 2px var(--pl-paper); transition: transform var(--pl-dur-feedback) var(--pl-ease-out); }
+  .pin.soft { background: var(--pl-soft); }
+  .pin[aria-current="true"] { transform: scale(1.25); box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3.5px var(--pl-ink); }
+  .pin:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) { .pin:hover { transform: scale(1.15); } }
+
+  /* the one reading line */
+  .read { margin: 6px 12px 0; padding-block: 10px 12px; display: grid; gap: 7px; min-height: 92px; }
+  .read .t { font: var(--pl-text-title); font-weight: 500; text-wrap: balance; }
+  .read .scale { position: relative; height: 20px; }
+  .read .scale::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1px; background: var(--pl-rule); }
+  .read .scale i { position: absolute; top: 1px; width: 1px; height: 9px; background: var(--pl-ink-2); }
+  .read .scale span { position: absolute; top: 9px; transform: translateX(-50%); font: 400 9.5px/12px var(--pl-mono); color: var(--pl-ink-2); }
+  .read .scale span.near { color: var(--pl-ink); font-weight: 600; }
+  .read .scale .you { position: absolute; top: 1px; width: 8px; height: 8px; margin-left: -4px; background: var(--pl-off); transform: rotate(45deg); box-shadow: 0 0 0 1.5px var(--pl-paper); }
+  .read .edit { display: flex; align-items: center; gap: 8px; font: var(--pl-text-reading); }
+  .read .edit s { color: var(--pl-ink-2); text-decoration-color: var(--pl-off); }
+  .read .edit b { font-weight: 600; }
+  .read .edit .ledger { margin-inline-start: auto; font: var(--pl-text-label); color: var(--pl-ink-2); }
+  .read .edit .ledger.new { color: var(--pl-ink); }
+  .read > * { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
+  .read.swapping > * { opacity: 0; }
+
+  .bar { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 12px; box-shadow: 0 -1px 0 var(--pl-rule); }
+  .bar .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); margin-inline-end: auto; }
+  .nav { width: 26px; height: 26px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-ink-2); cursor: pointer; display: grid; place-items: center; }
+  .nav svg { width: 12px; height: 12px; }
+  @media (hover: hover) and (pointer: fine) { .nav:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .copy { height: 26px; padding-inline: 12px; border: 0; border-radius: var(--pl-radius-tag); background: var(--pl-ink); color: var(--pl-paper); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); cursor: pointer; margin-inline-start: 4px; }
+  .nav:focus-visible, .copy:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 2px; }
+`;
+
+function hostIsDark(node) {
+  for (let n = node; n; n = n.parentElement) {
+    const c = getComputedStyle(n).backgroundColor.match(/[\d.]+/g)?.map(Number);
+    if (c && (c[3] ?? 1) > 0.5) { const [r, g, b] = c.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.2; }
+  }
+  return matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/* where each finding sits, on the diagram (percent of the diagram) and on the real element (from computed style) */
+function placeOnElement(where, target) {
+  const b = target.getBoundingClientRect(), cs = getComputedStyle(target), x = b.left + scrollX, y = b.top + scrollY;
+  const pt = parseFloat(cs.paddingTop), pl = parseFloat(cs.paddingLeft), r = parseFloat(cs.borderTopRightRadius);
+  const [c0, c1] = target.children, a = c0.getBoundingClientRect(), t = c1.getBoundingClientRect();
+  switch (where) {
+    case 'pad-top': return { x: x + pl, y, w: b.width - pl * 2, h: pt };
+    case 'pad-left': return { x, y: y + pt, w: pl, h: b.height - pt * 2 };
+    case 'gap': return { x: a.right + scrollX, y: y + pt, w: t.left - a.right, h: b.height - pt * 2 };
+    case 'corner': return { x: x + b.width - r * 2, y, w: r * 2, h: r * 2, ring: true };
+    case 'text': { const tt = target.querySelector('.title').getBoundingClientRect(); return { x: tt.left + scrollX, y: tt.top + scrollY, w: tt.width, h: tt.height }; }
+    case 'shadow': return { x, y: y + b.height, w: b.width, h: 6 };
+    case 'fill': return { x: x + b.width - 120, y: y + pt, w: 100, h: b.height - pt * 2 };
+  }
+}
+
+function mount(target) {
+  const host = document.createElement('plumb-widget');
+  host.dataset.scheme = hostIsDark(target) ? 'dark' : 'light';
+  document.body.append(host);
+  const root = host.attachShadow({ mode: 'open' });
+  const b = target.getBoundingClientRect(), x = b.left + scrollX, y = b.top + scrollY;
+  const f = reading.findings;
+  root.innerHTML = `<style>${tokensCss}${css}</style>
+    ${[[x, y, 1, 1], [x + b.width - 8, y, -1, 1], [x, y + b.height - 8, 1, -1], [x + b.width - 8, y + b.height - 8, -1, -1]].map(([l, t, a, d]) => `<i class="tick" style="left:${l}px;top:${t}px;transform:scale(${a},${d})"></i>`).join('')}
+    <i class="lit"></i>
+    <section class="w" data-state="tag" tabindex="0" role="dialog" aria-label="Plumb reading for ${reading.element}, ${f.length} findings" style="left:${x}px;top:${y + b.height + 8}px">
+      <div class="top"><span class="el">${reading.element}</span><span class="n">${f.length} off</span><span class="file">${reading.file}:${reading.line}</span></div>
+      <div class="body">
+        <div class="diagram"></div>
+        <div class="read" aria-live="polite"></div>
+        <div class="bar">
+          <span class="count"></span>
+          <button class="nav prev" aria-label="Previous finding"><svg viewBox="0 0 12 12"><path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></button>
+          <button class="nav next" aria-label="Next finding"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 8 6 4.5 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></button>
+          <button class="copy">Copy for agent</button>
+        </div>
+      </div>
+    </section>`;
+
+  const w = root.querySelector('.w'), read = root.querySelector('.read'), lit = root.querySelector('.lit'), count = root.querySelector('.count');
+  // The diagram is the element scaled into the widget: its box, its children, and a pin at the centre of every
+  // region a finding is about, computed from the same geometry that lights the real element.
+  const widgetW = Math.round(Math.min(480, Math.max(360, b.width + 24)));
+  w.style.width = widgetW + 'px';
+  const diagram = root.querySelector('.diagram'), k = Math.min(1, (widgetW - 24) / b.width), pad = 10;
+  const toD = r => ({ x: (r.x - x) * k, y: (r.y - y) * k + pad, w: r.w * k, h: r.h * k });
+  diagram.style.height = b.height * k + pad * 2 + 10 + 'px';
+  const cs = getComputedStyle(target);
+  let shapes = `<div class="d-box" style="left:0;top:${pad}px;width:${b.width * k}px;height:${b.height * k}px;border-radius:${parseFloat(cs.borderTopRightRadius) * k}px"></div>`;
+  for (const child of target.children) {
+    const c = child.getBoundingClientRect(), d = toD({ x: c.left + scrollX, y: c.top + scrollY, w: c.width, h: c.height });
+    const round = getComputedStyle(child).borderRadius;
+    const lines = child.querySelectorAll('.title, .meta');
+    const inner = [...lines].map(l => { const lr = l.getBoundingClientRect(); const ld = toD({ x: lr.left + scrollX, y: lr.top + scrollY, w: lr.width, h: lr.height }); return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y + ld.h * 0.3}px;width:${Math.min(ld.w, d.w) * 0.7}px;height:${Math.max(3, ld.h * 0.4)}px"></b>`; }).join('');
+    shapes += `<i class="d-child${lines.length ? ' text' : ''}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${round.includes('50%') ? '50%' : parseFloat(round) * k + 'px'}">${inner}</i>`;
+  }
+  diagram.innerHTML = shapes + f.map((it, i) => { const at = placeOnElement(it.where, target), d = toD(at);
+    const [px_, py_] = it.where === 'corner' ? [d.x + d.w - 3, d.y + 3] : it.where === 'shadow' ? [d.x + d.w * 0.7, d.y + 7] : [d.x + d.w / 2, d.y + d.h / 2];
+    return `<button class="pin ${it.soft ? 'soft' : ''}" style="left:${px_}px;top:${py_}px" aria-label="Finding ${i + 1}: ${it.title}" data-i="${i}">${i + 1}</button>`; }).join('');
+  w.style.setProperty('--tag-w', root.querySelector('.top .n').getBoundingClientRect().right - w.getBoundingClientRect().left + 8 + 'px');
+  let active = 0;
+  const render = i => {
+    const it = f[i];
+    const scale = it.scale ? (() => { const [lo, hi] = [it.scale[0], it.scale.at(-1)]; const p = v => ((v - lo) / (hi - lo)) * 100;
+      const near = [it.scale.filter(s => s < it.value).at(-1), it.scale.find(s => s > it.value)];
+      return `<div class="scale">${it.scale.map(s => `<i style="left:${p(s)}%"></i><span class="${near.includes(s) ? 'near' : ''}" style="left:${p(s)}%">${s}</span>`).join('')}<b class="you" style="left:${p(it.value)}%"></b></div>`; })() : '';
+    read.innerHTML = `<div class="t">${it.title}</div>${scale}<div class="edit"><s>${it.edit[0]}</s>→<b>${it.edit[1]}</b><span class="ledger ${it.ledger}">${it.ledger}</span></div>`;
+    count.textContent = `${i + 1} of ${f.length}`;
+    root.querySelectorAll('.pin').forEach(p => p.setAttribute('aria-current', String(Number(p.dataset.i) === i)));
+    const at = placeOnElement(it.where, target);
+    lit.classList.toggle('ring', !!at.ring);
+    lit.style.left = '0'; lit.style.top = '0'; lit.style.width = at.w + 'px'; lit.style.height = at.h + 'px'; lit.style.transform = `translate(${at.x}px, ${at.y}px)`;
+  };
+  const go = i => { active = (i + f.length) % f.length; read.classList.add('swapping'); setTimeout(() => { render(active); read.classList.remove('swapping'); }, TIMING.swap / 2); };
+  const open = () => { w.dataset.state = 'open'; render(active); setTimeout(() => lit.classList.add('on'), TIMING.light); };
+  const close = () => { w.dataset.state = 'tag'; lit.classList.remove('on'); };
+  w.addEventListener('click', e => { if (w.dataset.state === 'tag') open(); });
+  root.querySelector('.prev').addEventListener('click', e => { e.stopPropagation(); go(active - 1); });
+  root.querySelector('.next').addEventListener('click', e => { e.stopPropagation(); go(active + 1); });
+  root.querySelectorAll('.pin').forEach(p => p.addEventListener('click', e => { e.stopPropagation(); go(Number(p.dataset.i)); }));
+  root.querySelector('.copy').addEventListener('click', async e => { e.stopPropagation(); const btn = e.currentTarget; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy for agent', 1200); });
+  w.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && w.dataset.state === 'tag') open();
+    else if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); go(active + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(active - 1); }
+  });
+  return { open };
+}
+mount(document.getElementById('target-light')).open();
+mount(document.getElementById('target-dark')).open();
+</script>
+</body>
+</html>
