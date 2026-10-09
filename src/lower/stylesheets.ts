@@ -146,10 +146,16 @@ async function compiler(entry: string): Promise<{ compile(css: string, options: 
   const tailwind = require.resolve('tailwindcss');
   let path = tailwind;
   try {
+    // Tests force the plain tailwindcss path that projects without @tailwindcss/node take.
+    if (process.env.PLUMB_TAILWIND_DIRECT === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
     const node = require.resolve('@tailwindcss/node');
     if (createRequire(node).resolve('tailwindcss') === tailwind) path = node;
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error; }
-  return import(pathToFileURL(path).href);
+  // require.resolve finds a package's CommonJS build; importing that puts the API under default.
+  const loaded = await import(pathToFileURL(path).href) as { compile?: unknown; default?: { compile?: unknown } };
+  const api = typeof loaded.compile === 'function' ? loaded : loaded.default;
+  if (typeof api?.compile !== 'function') throw new Error(`${path} does not export compile; Plumb needs Tailwind CSS 4.`);
+  return api as Awaited<ReturnType<typeof compiler>>;
 }
 
 function mapLocations(css: string, filename: string, map: DecodedSourceMap, embedded?: EmbeddedStylesheet): (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string } {

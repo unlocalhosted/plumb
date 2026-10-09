@@ -1,6 +1,6 @@
 {
   "name": "@unlocalhosted/plumb",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,10 @@
   },
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "action.yml",
+    "LICENSE",
+    "README.md"
   ],
   "engines": {
     "node": ">=22.18"
@@ -23,7 +26,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test e2e/*.test.mjs"
+    "test": "npm run build && node --test e2e/*.test.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
     "@tailwindcss/node": "4.3",
@@ -36,5 +40,28 @@
     "oxc-parser": "^0.153.0",
     "oxc-resolver": "^11.24.2",
     "tinyglobby": "^0.2.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unlocalhosted/plumb.git"
+  },
+  "homepage": "https://github.com/unlocalhosted/plumb#readme",
+  "bugs": {
+    "url": "https://github.com/unlocalhosted/plumb/issues"
+  },
+  "author": "Vijay Singh",
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "design-system",
+    "design-tokens",
+    "lint",
+    "css",
+    "react",
+    "drift",
+    "ai-agents"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -97,11 +97,16 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       let compilerPath = tailwindPath;
       let nodeWrapper = false;
       try {
+        // Tests force the plain tailwindcss path that projects without @tailwindcss/node take.
+        if (process.env.PLUMB_TAILWIND_DIRECT === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
         const nodePath = require.resolve('@tailwindcss/node');
         const nodeRequire = createRequire(nodePath);
         if (nodeRequire.resolve('tailwindcss') === tailwindPath) { compilerPath = nodePath; nodeWrapper = true; }
       } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error; }
-      const compiler = await import(pathToFileURL(compilerPath).href) as Compiler;
+      // require.resolve finds a package's CommonJS build; importing that puts the API under default.
+      const loaded = await import(pathToFileURL(compilerPath).href) as Partial<Compiler> & { default?: Partial<Compiler> };
+      const compiler = (typeof loaded.__unstable__loadDesignSystem === 'function' ? loaded : loaded.default) as Compiler;
+      if (typeof compiler?.__unstable__loadDesignSystem !== 'function') throw new Error(`${compilerPath} does not export __unstable__loadDesignSystem; Plumb needs Tailwind CSS 4.`);
       const options: LoaderOptions = { base: dirname(entry) };
       if (!nodeWrapper) {
         options.loadStylesheet = async (id, base) => {
