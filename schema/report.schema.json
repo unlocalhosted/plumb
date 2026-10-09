@@ -32,6 +32,17 @@
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "habits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "reason", "severity", "enabled", "breaks"], "properties": {"id": {"type": "string"}, "reason": {"type": "string"}, "severity": {"enum": ["error", "warn", "info"]}, "enabled": {"type": "boolean"}, "breaks": {"type": ["integer", "null"], "minimum": 0}}}},
+    "presets": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "source", "decisions", "exported", "components", "imitation", "habits", "markers"],
+        "properties": {
+          "name": {"type": "string"}, "source": {"type": "string"}, "decisions": {"$ref": "#/$defs/count"}, "exported": {"$ref": "#/$defs/count"},
+          "components": {"type": "object", "additionalProperties": false, "required": ["from", "contracts"], "properties": {"from": {"$ref": "#/$defs/strings"}, "contracts": {"$ref": "#/$defs/strings"}}},
+          "imitation": {"$ref": "#/$defs/strings"}, "habits": {"$ref": "#/$defs/strings"}, "markers": {"$ref": "#/$defs/strings"}
+        }
+      }
+    },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "deadDecisions": {
@@ -225,6 +236,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["family", "name", "value", "refs", "origin", "tier", "why", "source"],
       "properties": {
+        "exported": { "type": "boolean" },
         "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" }, "resolved": { "type": "string" },
         "refs": { "$ref": "#/$defs/strings" }, "origin": { "enum": ["project", "framework", "inferred"] },
         "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }

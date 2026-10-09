@@ -25,7 +25,7 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
   for (const [name, variable] of record.variables) edge(name, variable.value);
   for (const definition of record.definitions) edge(definition.name, definition.value);
   for (const declaration of declarations) if (declaration.prop.startsWith('--')) edge(declaration.prop, declaration.authoredCss ?? declaration.value);
-  const published = new Set(decisions.filter(d => config.decisions?.[d.family]?.exported || config.exported?.some(pattern =>
+  const published = new Set(decisions.filter(d => d.exported || config.decisions?.[d.family]?.exported || config.exported?.some(pattern =>
     [d.name, relative(root, d.source.file), ...d.refs.map(refName)].some(name => matchesGlob(name, pattern)))));
   const used = new Set<Decision>(), seen = new Set<string>(), queue: string[] = [];
   for (const declaration of declarations) {

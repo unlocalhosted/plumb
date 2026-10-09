@@ -49,6 +49,7 @@ export interface Declaration {
 }
 
 export interface Decision {
+  exported?: boolean;
   resolved?: string;
   family: Family;
   name: string;
@@ -100,6 +101,7 @@ export type JudgedFamily = Exclude<Family, 'size' | 'opacity'>;
 export type ProvenanceCoverage = Record<JudgedFamily, Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>>;
 
 export interface Report {
+  presets?: import('./presets/index.js').PresetSummary[];
   schemaVersion: 1;
   tool: { name: 'plumb'; version: string };
   root: string;

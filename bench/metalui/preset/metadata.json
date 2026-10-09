@@ -1,0 +1,143 @@
+{
+  "decisions": {
+    "color": {
+      "identity": "reference",
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "radius": {
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "type": {
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "motion": {
+      "identity": "reference",
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "elevation": {
+      "identity": "reference",
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "z": {
+      "identity": "reference",
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    },
+    "spacing": {
+      "identity": "value",
+      "callers": [
+        "primitive",
+        "semantic"
+      ],
+      "exported": true
+    }
+  },
+  "components": {
+    "from": "package:@unlocalhosted/metalui",
+    "contracts": {
+      "SlidingIndicator": {
+        "allow": [
+          "paint",
+          "radius",
+          "elevation"
+        ]
+      },
+      "Surface": {
+        "allow": [
+          "padding",
+          "type",
+          "color",
+          "outline",
+          "outline-color"
+        ]
+      },
+      "Well": {
+        "allow": [
+          "padding",
+          "type",
+          "color"
+        ]
+      },
+      "GlassFace": {
+        "allow": [
+          "type",
+          "color"
+        ]
+      },
+      "GlassFace.Screen": {
+        "allow": [
+          "padding",
+          "background",
+          "background-color",
+          "background-image"
+        ]
+      }
+    }
+  },
+  "imitation": {
+    "Textarea": {
+      "elements": [
+        "textarea"
+      ],
+      "fingerprint": [
+        "material-well",
+        "var(--mu-r-well-"
+      ]
+    },
+    "Field": {
+      "elements": [
+        "input"
+      ],
+      "fingerprint": [
+        "material-well",
+        "var(--mu-r-well-"
+      ]
+    }
+  },
+  "habits": [
+    "hover-gate",
+    "focus-outline",
+    "transition-named",
+    "no-ease-in",
+    "logical-inline",
+    "viewport-dynamic",
+    "safe-area-fallback",
+    "overflow-clip",
+    "overscroll-contain"
+  ],
+  "markers": [
+    "mu-tooltip",
+    "mu-tooltip-key",
+    "mu-dialog-title",
+    "mu-palette-status",
+    "is-flat",
+    "is-drop",
+    "library-card-label",
+    "part-dot-display",
+    "xr-ib-glyph",
+    "xr-slider-vars"
+  ]
+}

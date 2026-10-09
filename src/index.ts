@@ -33,6 +33,8 @@ export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
 export { defineDecisions } from './decisions/index.js';
 export type { DecisionInput } from './decisions/index.js';
+export { definePreset } from './presets/index.js';
+export type { Preset, PresetSelection, PresetSummary } from './presets/index.js';
 export { defineConfig } from './config.js';
 export type { HabitPredicate, ConditionPredicates, HabitSeverity } from './habits/predicates.js';
 export type { HabitSummary, BuiltinHabit } from './habits/index.js';
@@ -181,6 +183,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
     ...project,
     findings,
     habits: habits.summaries,
+    presets: config.presets ?? [],
     decisions: record.decisions,
     decisionInventory: record.inventory ?? [],
     ...(dead ? { deadDecisions: dead.counts } : {}),

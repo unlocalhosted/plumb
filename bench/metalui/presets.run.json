@@ -1,0 +1,56 @@
+{
+  "commit": "e0a0b31349a371e48ad38f0cc8099be5fc1b2be5",
+  "packageVersion": "0.4.1",
+  "consumer": "fixtures/metalui-consumer",
+  "cache": "bench/metalui/.cache/5-presets",
+  "runs": [
+    {
+      "lane": "cold",
+      "processMs": 442.5,
+      "reportMs": 227.7,
+      "presets": [
+        {
+          "name": "@unlocalhosted/metalui",
+          "decisions": 1095,
+          "exported": 1095,
+          "contracts": 5,
+          "fingerprints": 2,
+          "habits": 9
+        }
+      ],
+      "tokens": 1095,
+      "deadTokens": 0,
+      "ownership": [
+        {
+          "rule": "ownership/Button",
+          "property": "background-color",
+          "variants": {}
+        }
+      ]
+    },
+    {
+      "lane": "warm",
+      "processMs": 285.3,
+      "reportMs": 164.3,
+      "presets": [
+        {
+          "name": "@unlocalhosted/metalui",
+          "decisions": 1095,
+          "exported": 1095,
+          "contracts": 5,
+          "fingerprints": 2,
+          "habits": 9
+        }
+      ],
+      "tokens": 1095,
+      "deadTokens": 0,
+      "ownership": [
+        {
+          "rule": "ownership/Button",
+          "property": "background-color",
+          "variants": {}
+        }
+      ]
+    }
+  ]
+}

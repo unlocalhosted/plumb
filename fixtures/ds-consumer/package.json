@@ -1,0 +1,1 @@
+{ "name": "preset-consumer", "type": "module", "dependencies": { "@fixtures/design-system": "file:../ds-package", "tailwindcss": "^4.1" } }

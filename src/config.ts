@@ -1,3 +1,5 @@
+import { loadPresets, validatePresetSelection } from './presets/index.js';
+import type { PresetSelection, PresetSummary } from './presets/index.js';
 import { stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -23,6 +25,7 @@ export interface ComponentContract {
 }
 
 export interface PlumbConfig {
+  presets?: PresetSelection;
   css?: string;
   source?: string[];
   markers?: string[];
@@ -41,6 +44,7 @@ export interface PlumbConfig {
 
 export interface LoadedConfig {
   path: string | null;
+  presets?: PresetSummary[];
   value: PlumbConfig;
 }
 
@@ -48,7 +52,7 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
   return config;
 }
 
-const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported'];
+const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
 const filenames = ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'];
 
@@ -90,9 +94,10 @@ function from(value: unknown, path: string): void {
   else string(value, path);
 }
 
-function validate(value: unknown): PlumbConfig {
+export function validateConfig(value: unknown): PlumbConfig {
   const config = object(value, 'config');
   keys(config, allowedKeys, 'config');
+  if ('presets' in config) validatePresetSelection(config.presets);
   if ('css' in config) string(config.css, 'css');
   if ('source' in config) strings(config.source, 'source');
   if ('markers' in config) strings(config.markers, 'markers');
@@ -166,7 +171,7 @@ export async function loadConfig(root: string, explicitPath?: string): Promise<L
       }
     }
   }
-  if (path === null) return { path: null, value: {} };
+  if (path === null) return { path: null, ...await loadPresets(root, {}) };
   let module: { default?: unknown };
   try {
     module = await import(pathToFileURL(path).href) as { default?: unknown };
@@ -174,7 +179,7 @@ export async function loadConfig(root: string, explicitPath?: string): Promise<L
     throw new UsageError(`Fix or create config ${path}: ${errorMessage(error)}`);
   }
   try {
-    return { path, value: validate(module.default) };
+    return { path, ...await loadPresets(root, validateConfig(module.default)) };
   } catch (error) {
     throw new UsageError(`Fix config ${path}: ${errorMessage(error)}`);
   }
