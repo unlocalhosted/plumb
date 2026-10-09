@@ -107,20 +107,19 @@ const css = `
   .read .t { display: flex; align-items: center; gap: 8px; }
   .read .t .g { width: 14px; height: 14px; }
   .read .t .g.off { color: var(--pl-off); } .read .t .g.soft { color: var(--pl-soft); }
-  /* callout markers: small tags on the rails, quiet until active */
-  .pin { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 4px; border: 0; padding: 0; cursor: pointer;
-         display: grid; place-items: center; background: var(--pl-paper); color: var(--pl-off);
-         box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-off) 55%, var(--pl-paper));
-         transition: background-color var(--pl-dur-feedback) var(--pl-ease-out), color var(--pl-dur-feedback) var(--pl-ease-out); }
-  .pin.soft { color: var(--pl-soft); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-soft) 55%, var(--pl-paper)); }
-  .pin[aria-current="true"] { background: var(--pl-off); color: var(--pl-paper); box-shadow: none; }
-  .pin.soft[aria-current="true"] { background: var(--pl-soft); }
-  .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 2px; }
-  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { background: var(--pl-paper-2); } }
-  .leaders { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-  .leaders path { fill: none; stroke: var(--pl-ink-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-  .leaders circle { fill: var(--pl-ink-3); }
-  .leaders [data-active] { stroke: var(--pl-off); } .leaders circle[data-active] { fill: var(--pl-off); stroke: none; }
+  /* glyphs set into the outline: no chip, no fill; the break in the line is their frame */
+  .outline { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+  .outline path { fill: none; stroke: var(--pl-ink-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .outline .reg { fill: transparent; transition: fill var(--pl-dur-feedback) var(--pl-ease-out); }
+  .outline .reg[data-active] { fill: color-mix(in oklab, var(--pl-off) 20%, transparent); }
+  .outline .reg.soft[data-active] { fill: color-mix(in oklab, var(--pl-soft) 22%, transparent); }
+  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-ink-2);
+         display: grid; place-items: center; border-radius: 3px; transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
+  .pin .g { width: 13px; height: 13px; }
+  .pin[aria-current="true"] { color: var(--pl-off); }
+  .pin.soft[aria-current="true"] { color: var(--pl-soft); }
+  .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-ink); } }
 
   /* the one reading line */
   .read { margin: 6px 12px 0; padding-block: 10px 12px; display: grid; gap: 10px; min-height: 132px; align-content: start; }
@@ -242,12 +241,12 @@ function mount(target) {
   // region a finding is about, computed from the same geometry that lights the real element.
   const widgetW = Math.round(Math.min(480, Math.max(360, b.width + 24)));
   w.style.width = widgetW + 'px';
-  const diagram = root.querySelector('.diagram'), k = Math.min(1, (widgetW - 24) / b.width), pad = 32; // pad = one callout rail above the drawing
+  const diagram = root.querySelector('.diagram'), k = Math.min(1, (widgetW - 24) / b.width), pad = 12; // room above the outline for glyphs set into its top edge
   const toD = r => ({ x: (r.x - x) * k, y: (r.y - y) * k + pad, w: r.w * k, h: r.h * k });
-  const drawH = b.height * k, railBottom = pad + drawH + 12 + 20; // the shadow sits under the box; the lower rail under that
-  diagram.style.height = railBottom + 12 + 'px';
+  const drawH = b.height * k;
+  diagram.style.height = pad + drawH + 22 + 'px'; // room below for the shadow and glyphs set into the bottom edge
   const cs = getComputedStyle(target);
-  let shapes = `<div class="d-box" style="left:0;top:${pad}px;width:${b.width * k}px;height:${b.height * k}px;border-radius:${parseFloat(cs.borderTopRightRadius) * k}px"></div>`;
+  let shapes = '';
   for (const child of target.children) {
     const c = child.getBoundingClientRect(), d = toD({ x: c.left + scrollX, y: c.top + scrollY, w: c.width, h: c.height });
     const round = getComputedStyle(child).borderRadius;
@@ -255,29 +254,34 @@ function mount(target) {
     const inner = [...lines].map(l => { const lr = l.getBoundingClientRect(); const ld = toD({ x: lr.left + scrollX, y: lr.top + scrollY, w: lr.width, h: lr.height }); return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y + ld.h * 0.3}px;width:${Math.min(ld.w, d.w) * 0.7}px;height:${Math.max(3, ld.h * 0.4)}px"></b>`; }).join('');
     shapes += `<i class="d-child${lines.length ? ' text' : ''}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${round.includes('50%') ? '50%' : parseFloat(round) * k + 'px'}">${inner}</i>`;
   }
-  // Callouts, as on an engineering drawing: the drawing stays clean; each finding's marker sits on a rail above or
-  // below it, joined to its exact point by a 1px leader that runs vertically and steps sideways only at right angles.
-  const W = b.width * k, MARK = 18, GAP = 6, railTop = 10;
-  const anchors = f.map(it => { const d = toD(placeOnElement(it.where, target));
-    return it.where === 'corner' ? [d.x + d.w - 4, d.y + 4] : it.where === 'shadow' ? [d.x + d.w * 0.7, d.y + 3] : [d.x + d.w / 2, d.y + d.h / 2]; });
-  const rails = { top: [], bottom: [] };
-  f.forEach((it, i) => rails[anchors[i][1] < pad + drawH / 2 ? 'top' : 'bottom'].push(i));
-  const markX = [];
-  for (const side of ['top', 'bottom']) {
-    // keep each marker over its anchor; where two would touch, push the later one right, then pull the row back in
-    const row = rails[side].sort((a, c) => anchors[a][0] - anchors[c][0]);
-    let edge = -Infinity;
-    for (const i of row) { markX[i] = Math.max(anchors[i][0], edge + MARK + GAP); edge = markX[i]; }
-    const over = edge + MARK / 2 - W; if (over > 0) for (const i of row) markX[i] -= over;
-    for (const i of row) markX[i] = Math.max(MARK / 2, markX[i]);
+  // Findings are set into the drawing's own line, as a technical drawing prints a measurement in a break of the line it
+  // measures: each finding takes the edge nearest its region, sits over its anchor, and the outline breaks around it.
+  const W = b.width * k, R = parseFloat(cs.borderTopRightRadius) * k, top = pad, bot = pad + drawH, GAPW = 9, MIN = 22;
+  const regions = f.map(it => toD(placeOnElement(it.where, target)));
+  const edgeOf = (it, r) => it.where === 'shadow' ? 'bottom' : it.where === 'pad-left' ? 'left' : (r.y + r.h / 2) < top + drawH / 2 ? 'top' : 'bottom';
+  const marks = f.map((it, i) => { const r = regions[i], edge = edgeOf(it, r);
+    const along = edge === 'left' || edge === 'right' ? r.y + r.h / 2 : it.where === 'corner' ? W - R * 0.6 : r.x + r.w / 2;
+    return { i, edge, along }; });
+  for (const edge of ['top', 'bottom', 'left', 'right']) {
+    const row = marks.filter(m => m.edge === edge).sort((a, c) => a.along - c.along);
+    const lo = edge === 'left' || edge === 'right' ? top + R : R, hi = edge === 'left' || edge === 'right' ? bot - R : W - R;
+    let last = -Infinity;
+    for (const m of row) { m.along = Math.min(hi - GAPW, Math.max(lo + GAPW, m.along, last + MIN)); last = m.along; }
   }
-  const railY = i => rails.top.includes(i) ? railTop : railBottom;
-  const leader = i => { const [ax, ay] = anchors[i], mx = markX[i], my = railY(i), top = rails.top.includes(i);
-    const from = top ? my + MARK / 2 : my - MARK / 2, knee = top ? Math.min(from + 6, ay - 4) : Math.max(from - 6, ay + 4);
-    const r = v => Math.round(v) + 0.5;
-    return Math.abs(mx - ax) < 0.5 ? `M${r(mx)} ${from}V${ay}` : `M${r(mx)} ${from}V${r(knee)}H${r(ax)}V${ay}`; };
-  diagram.innerHTML = shapes + `<svg class="leaders" width="${W}" height="${railBottom + 12}" aria-hidden="true">${f.map((_, i) => `<path data-i="${i}" d="${leader(i)}"/><circle data-i="${i}" cx="${anchors[i][0]}" cy="${anchors[i][1]}" r="2"/>`).join('')}</svg>` +
-    f.map((it, i) => `<button class="pin ${it.soft ? 'soft' : ''}" style="left:${markX[i]}px;top:${railY(i)}px" aria-label="${FAMILY[it.kind]}: ${it.title}" data-i="${i}">${glyph(FAMILY[it.kind])}</button>`).join('');
+  const gapsOn = edge => marks.filter(m => m.edge === edge).map(m => [m.along - GAPW, m.along + GAPW]);
+  const cut = (a, b, gaps) => { let segs = [[a, b]]; for (const [g0, g1] of gaps) segs = segs.flatMap(([p, q]) => g1 <= p || g0 >= q ? [[p, q]] : [[p, g0], [g1, q]].filter(([u, v]) => v - u > 0.5)); return segs; };
+  const h = v => Math.round(v) + 0.5;
+  const outline = [
+    ...cut(R, W - R, gapsOn('top')).map(([a, c]) => `M${a} ${h(top)}H${c}`),
+    ...cut(R, W - R, gapsOn('bottom')).map(([a, c]) => `M${a} ${h(bot)}H${c}`),
+    ...cut(top + R, bot - R, gapsOn('left')).map(([a, c]) => `M0.5 ${a}V${c}`),
+    ...cut(top + R, bot - R, gapsOn('right')).map(([a, c]) => `M${W - 0.5} ${a}V${c}`),
+    `M0.5 ${top + R}A${R} ${R} 0 0 1 ${R} ${h(top)}M${W - R} ${h(top)}A${R} ${R} 0 0 1 ${W - 0.5} ${top + R}`,
+    `M0.5 ${bot - R}A${R} ${R} 0 0 0 ${R} ${h(bot)}M${W - R} ${h(bot)}A${R} ${R} 0 0 0 ${W - 0.5} ${bot - R}`,
+  ].join('');
+  const markXY = m => m.edge === 'top' ? [m.along, top] : m.edge === 'bottom' ? [m.along, bot] : m.edge === 'left' ? [0, m.along] : [W, m.along];
+  diagram.innerHTML = `<svg class="outline" width="${W}" height="${pad + drawH + 22}" aria-hidden="true">${regions.map((r, i) => `<rect class="reg ${f[i].soft ? 'soft' : ''}" data-i="${i}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${f[i].where === 'corner' ? R / 2 : 1}"/>`).join('')}<path d="${outline}"/></svg>` + shapes +
+    marks.map(m => { const it = f[m.i], [mx, my] = markXY(m); return `<button class="pin ${it.soft ? 'soft' : ''}" style="left:${mx}px;top:${my}px" aria-label="${FAMILY[it.kind]}: ${it.title}" data-i="${m.i}">${glyph(FAMILY[it.kind])}</button>`; }).join('');
   w.style.setProperty('--tag-w', root.querySelector('.top .n').getBoundingClientRect().right - w.getBoundingClientRect().left + 8 + 'px');
   let active = 0;
   // Each family is compared in its own material: spacing as bars, corners as arcs, type as type, shadows on the
@@ -310,7 +314,7 @@ function mount(target) {
     read.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); it.pick = Number(b.dataset.pick); render(i); }));
     count.textContent = `${i + 1} of ${f.length}`;
     root.querySelectorAll('.pin').forEach(p => p.setAttribute('aria-current', String(Number(p.dataset.i) === i)));
-    root.querySelectorAll('.leaders [data-i]').forEach(n => n.toggleAttribute('data-active', Number(n.dataset.i) === i));
+    root.querySelectorAll('.outline .reg').forEach(n => n.toggleAttribute('data-active', Number(n.dataset.i) === i));
     const at = placeOnElement(it.where, target);
     lit.classList.toggle('ring', !!at.ring);
     lit.style.left = '0'; lit.style.top = '0'; lit.style.width = at.w + 'px'; lit.style.height = at.h + 'px'; lit.style.transform = `translate(${at.x}px, ${at.y}px)`;
