@@ -30,7 +30,7 @@ customElements.define('plumb-glyphs', class extends HTMLElement {
       td.n { text-align: start; font: var(--pl-text-row); color: var(--pl-ink); white-space: nowrap; }
       .s12 { width: 14px; height: 14px; display: inline-block; } .s16 { width: 16px; height: 16px; display: inline-block; } .s24 { width: 24px; height: 24px; display: inline-block; }
       .big { width: 48px; height: 48px; display: inline-block; position: relative; background-image: linear-gradient(var(--pl-rule) 1px, transparent 1px), linear-gradient(90deg, var(--pl-rule) 1px, transparent 1px); background-size: 2px 2px; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
-      .big::after { content: ""; position: absolute; inset: 6px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-brass) 55%, transparent); }
+      .big::after { content: ""; position: absolute; inset: 6px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-instrument) 55%, transparent); }
       .pin { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--pl-paper); box-shadow: 0 0 0 2px var(--pl-paper); }
       .pin .g { width: 13px; height: 13px; }
       .pin.off { background: var(--pl-off); } .pin.soft { background: var(--pl-soft); }

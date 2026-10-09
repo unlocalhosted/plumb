@@ -4,22 +4,22 @@
 
 :host {
   /* ground and ink: the field-book card */
-  --pl-paper: #f3f2ee;          /* card ground */
-  --pl-paper-2: #e9e7e1;        /* header strip, pressed row */
-  --pl-rule: #d5d2c9;           /* ruled lines between rows, card edge */
-  --pl-ink: #1c1f1d;            /* readings, titles: 15.6:1 on paper */
-  --pl-ink-2: #535955;          /* labels, secondary text: 6.6:1 on paper */
-  --pl-ink-3: #8a908c;          /* ticks and dividers only, never text */
+  --pl-paper: #f5f7fa;          /* card ground */
+  --pl-paper-2: #eaeff5;        /* header strip, pressed row */
+  --pl-rule: #dbe2ec;           /* ruled lines between rows, card edge */
+  --pl-ink: #26354d;            /* readings, titles: 15.6:1 on paper */
+  --pl-ink-2: #5d6b80;          /* labels, secondary text: 6.6:1 on paper */
+  --pl-ink-3: #a9b4c3;          /* ticks and dividers only, never text */
 
   /* the instrument: reticle, plumb line, bob */
-  --pl-brass: #9a6914;          /* lines only, never text: 4.3:1 on paper; on any host it rides on a halo */
+  --pl-instrument: #4f7bc9;          /* instrument lines: reticle, leaders; on any host it rides on a halo */
   --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
 
   /* verdicts: the only other colour, always paired with a mark shape */
-  --pl-on: #1d7a4f;             /* uses a token */
-  --pl-off: #b8391f;            /* off the scale, override, imitation, broken */
-  --pl-soft: #9c5f08;           /* Tailwind default, wrong tier, matches a token but doesn't use it */
-  --pl-unknown: #6b716d;        /* computed at runtime, inherited */
+  --pl-on: #3f8a68;             /* uses a token */
+  --pl-off: #bb4654;            /* off the scale, override, imitation, broken */
+  --pl-soft: #a87a3c;           /* Tailwind default, wrong tier, matches a token but doesn't use it */
+  --pl-unknown: #75839a;        /* computed at runtime, inherited */
 
   /* type: system faces only, the overlay never fetches a font */
   --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -73,18 +73,18 @@
 
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
-    --pl-paper: #1a1d1c;
-    --pl-paper-2: #232725;
-    --pl-rule: #353b38;
-    --pl-ink: #ecede8;          /* 14.9:1 on paper */
-    --pl-ink-2: #a8aeaa;        /* 7.6:1 on paper */
-    --pl-ink-3: #6f7672;
-    --pl-brass: #d7a240;        /* lines only */
-    --pl-halo: rgb(10 12 11 / 0.85);
-    --pl-on: #52bf8b;
-    --pl-off: #f07a62;
-    --pl-soft: #e0a446;
-    --pl-unknown: #8f9692;
+    --pl-paper: #141c2a;
+    --pl-paper-2: #1b2536;
+    --pl-rule: #273349;
+    --pl-ink: #d9e0ea;          /* 14.9:1 on paper */
+    --pl-ink-2: #99a6ba;        /* 7.6:1 on paper */
+    --pl-ink-3: #4f5d74;
+    --pl-instrument: #7d9fd8;        /* lines only */
+    --pl-halo: rgb(10 14 22 / 0.85);
+    --pl-on: #7fbf9c;
+    --pl-off: #de7f89;
+    --pl-soft: #d2aa6f;
+    --pl-unknown: #7b889c;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;
@@ -93,18 +93,18 @@
 
 /* An explicit scheme wins over the OS, both ways. */
 :host([data-scheme="dark"]) {
-    --pl-paper: #1a1d1c;
-    --pl-paper-2: #232725;
-    --pl-rule: #353b38;
-    --pl-ink: #ecede8;          /* 14.9:1 on paper */
-    --pl-ink-2: #a8aeaa;        /* 7.6:1 on paper */
-    --pl-ink-3: #6f7672;
-    --pl-brass: #d7a240;        /* lines only */
-    --pl-halo: rgb(10 12 11 / 0.85);
-    --pl-on: #52bf8b;
-    --pl-off: #f07a62;
-    --pl-soft: #e0a446;
-    --pl-unknown: #8f9692;
+    --pl-paper: #141c2a;
+    --pl-paper-2: #1b2536;
+    --pl-rule: #273349;
+    --pl-ink: #d9e0ea;          /* 14.9:1 on paper */
+    --pl-ink-2: #99a6ba;        /* 7.6:1 on paper */
+    --pl-ink-3: #4f5d74;
+    --pl-instrument: #7d9fd8;        /* lines only */
+    --pl-halo: rgb(10 14 22 / 0.85);
+    --pl-on: #7fbf9c;
+    --pl-off: #de7f89;
+    --pl-soft: #d2aa6f;
+    --pl-unknown: #7b889c;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;

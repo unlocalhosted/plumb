@@ -33,7 +33,7 @@ const sheetCss = `
   .type div { margin-block-end: var(--pl-space-3); }
   .type small { font: var(--pl-text-label); color: var(--pl-ink-2); margin-inline-start: var(--pl-space-4); }
   .ladder { display: flex; gap: var(--pl-space-5); align-items: flex-end; }
-  .ladder i { display: block; background: var(--pl-brass); height: 8px; }
+  .ladder i { display: block; background: var(--pl-instrument); height: 8px; }
   .ladder figure { margin: 0; font: var(--pl-text-reading); color: var(--pl-ink-2); }
   .corners figure { margin: 0; width: 56px; height: 40px; background: var(--pl-paper-2); box-shadow: 0 0 0 1px var(--pl-rule) inset; display: grid; place-items: center; font: var(--pl-text-reading); color: var(--pl-ink-2); }
 
@@ -57,11 +57,11 @@ const sheetCss = `
   .light .target { background: #eef1f4; } .dark .target { background: #24282c; } .loud .target { background: rgb(255 255 255 / 0.18); }
   .reticle { position: absolute; inset: 24px 28px auto 28px; height: 40px; }
   .tick { position: absolute; width: var(--pl-tick); height: var(--pl-tick); }
-  .tick::before, .tick::after { content: ""; position: absolute; background: var(--pl-brass); box-shadow: 0 0 0 1px var(--pl-halo); }
+  .tick::before, .tick::after { content: ""; position: absolute; background: var(--pl-instrument); box-shadow: 0 0 0 1px var(--pl-halo); }
   .tick::before { width: var(--pl-tick); height: var(--pl-line); } .tick::after { width: var(--pl-line); height: var(--pl-tick); }
   .tl { left: 0; top: 0; } .tr { right: 0; top: 0; transform: scaleX(-1); } .bl { left: 0; bottom: 0; transform: scaleY(-1); } .br { right: 0; bottom: 0; transform: scale(-1, -1); }
-  .plumb { position: absolute; left: 50%; top: 100%; width: var(--pl-line); height: var(--pl-drop); background: var(--pl-brass); box-shadow: 0 0 0 1px var(--pl-halo); transform-origin: top; }
-  .bob { position: absolute; left: calc(50% - 2px); top: calc(100% + var(--pl-drop) - 2px); width: 5px; height: 5px; background: var(--pl-brass); transform: rotate(45deg); box-shadow: 0 0 0 1px var(--pl-halo); }
+  .plumb { position: absolute; left: 50%; top: 100%; width: var(--pl-line); height: var(--pl-drop); background: var(--pl-instrument); box-shadow: 0 0 0 1px var(--pl-halo); transform-origin: top; }
+  .bob { position: absolute; left: calc(50% - 2px); top: calc(100% + var(--pl-drop) - 2px); width: 5px; height: 5px; background: var(--pl-instrument); transform: rotate(45deg); box-shadow: 0 0 0 1px var(--pl-halo); }
   .tag { position: absolute; left: 50%; top: calc(100% + var(--pl-drop) + 4px); transform: translateX(-50%); height: var(--pl-tag-h); padding-inline: var(--pl-space-4); display: flex; align-items: center; gap: var(--pl-space-3); background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label); white-space: nowrap; }
   .tag .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; }
 
@@ -81,7 +81,7 @@ const sheetCss = `
   .btn { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); height: 26px; padding-inline: var(--pl-space-5); border-radius: var(--pl-radius-tag); border: 0; cursor: pointer; }
   .btn.primary { background: var(--pl-ink); color: var(--pl-paper); }
   .btn.quiet { background: transparent; color: var(--pl-ink-2); box-shadow: 0 0 0 1px var(--pl-rule) inset; }
-  .btn:focus-visible { outline: 2px solid var(--pl-brass); outline-offset: 2px; }
+  .btn:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
   @media (hover: hover) and (pointer: fine) { .btn.primary:hover { background: color-mix(in oklab, var(--pl-ink) 88%, var(--pl-paper)); } }
 
   /* motion demo */
@@ -94,7 +94,7 @@ const sheetCss = `
   .stage .plumb { transition: transform var(--pl-dur-drop) var(--pl-ease-out); }
   .stage.moving .plumb { transform: scaleY(0); }
   .note { font: var(--pl-text-label); color: var(--pl-ink-2); margin-block-start: var(--pl-space-3); }
-  ::selection { background: color-mix(in oklab, var(--pl-brass) 30%, transparent); }
+  ::selection { background: color-mix(in oklab, var(--pl-instrument) 30%, transparent); }
 `;
 
 const instrument = (label, count) => `
@@ -135,7 +135,7 @@ customElements.define('plumb-sheet', class extends HTMLElement {
         <p class="note">travel 220ms on a settling spring (under 2% overshoot), drop 140ms exponential ease-out; reduced motion: both 0ms.</p>
       </section>`;
 
-    const tokens = [['paper', '--pl-paper'], ['paper-2', '--pl-paper-2'], ['rule', '--pl-rule'], ['ink', '--pl-ink'], ['ink-2', '--pl-ink-2'], ['ink-3', '--pl-ink-3'], ['brass', '--pl-brass']];
+    const tokens = [['paper', '--pl-paper'], ['paper-2', '--pl-paper-2'], ['rule', '--pl-rule'], ['ink', '--pl-ink'], ['ink-2', '--pl-ink-2'], ['ink-3', '--pl-ink-3'], ['brass', '--pl-instrument']];
     const verdicts = [['on a token', '--pl-on', 'on'], ['off the scale', '--pl-off', 'off'], ['default / tier / match', '--pl-soft', 'soft'], ['unknown', '--pl-unknown', 'unknown']];
     const style = getComputedStyle(this);
     const lum = c => { const m = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
