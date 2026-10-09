@@ -1,3 +1,4 @@
+import { componentConfigs } from '../presets/index.js';
 import { createHash } from 'node:crypto';
 import { makeFinding } from '../messages.js';
 import { relative } from 'node:path';
@@ -28,17 +29,17 @@ export function ownershipFamily(prop: string): string {
   return 'other';
 }
 function owned(prop: string, family: string, component: ComponentIdentity, config: PlumbConfig): boolean {
-  const base = config.components?.contracts?.[component.name.split('.')[0]!];
-  const specific = config.components?.contracts?.[component.name];
-  const contracts = [...new Set([base, specific].filter(value => value !== undefined))];
-  let owns = config.components?.own ?? defaults;
-  for (const contract of contracts) if (contract.own) owns = contract.own;
   const matches = (item: string) => item === prop || item === family || item === 'spacing' && isSpacing(prop) || item !== 'color' && familiesFor(prop).some(value => value === item);
-  let result = owns.some(matches);
-  // Specific contracts refine the family contract; deny wins within one contract.
-  for (const contract of contracts) {
-    if (contract.allow?.some(matches)) result = false;
-    if (contract.deny?.some(matches)) result = true;
+  let result = defaults.some(matches);
+  for (const layer of componentConfigs(config, component)) {
+    if (layer.components?.own) result = layer.components.own.some(matches);
+    const base = layer.components?.contracts?.[component.name.split('.')[0]!];
+    const specific = layer.components?.contracts?.[component.name];
+    for (const contract of new Set([base, specific].filter(value => value !== undefined))) {
+      if (contract.own) result = contract.own.some(matches);
+      if (contract.allow?.some(matches)) result = false;
+      if (contract.deny?.some(matches)) result = true;
+    }
   }
   return result;
 }

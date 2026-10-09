@@ -23,6 +23,7 @@ import { doctor } from './adoption/doctor.js';
 
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumb presets [--json] [--root <dir>] [--config <path>]
        plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -84,7 +85,7 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
+  if (!['presets', 'check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
       ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
@@ -112,6 +113,14 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  if (command === 'presets') {
+    const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
+    process.stdout.write(args.values.json ? `${JSON.stringify(loaded.presets ?? [], null, 2)}\n` :
+      loaded.presets?.length ? loaded.presets.map(preset => `${preset.name}  ${preset.decisions} tokens (${preset.exported} published), ${preset.components.contracts.length} contracts, ${preset.imitation.length} fingerprints, ${preset.habits.length} habits\n` +
+        `  source: ${preset.source}\n  components: ${preset.components.from.join(', ') || 'none'}\n` +
+        `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
+    return;
+  }
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()))); return; }
   if (command === 'doctor') {
     const result = await doctor(resolve(options.root ?? process.cwd()), options.config);

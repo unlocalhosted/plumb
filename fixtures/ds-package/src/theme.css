@@ -1,0 +1,7 @@
+@theme {
+  --color-ds-canvas: #334455;
+  --color-ds-danger: #bb3344;
+  --spacing-ds-gap: 12px;
+}
+.ds-field { background-color: var(--color-ds-canvas); }
+.ds-button { border-radius: 6px; }

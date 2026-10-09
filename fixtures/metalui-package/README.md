@@ -1,0 +1,1 @@
+Component sources copied from MetalUI commit e0a0b31349a371e48ad38f0cc8099be5fc1b2be5 for CLI fixture analysis. The fixture exports the actual Button and Surface implementations; it does not execute or render React. Tests copy the portable preset from bench/metalui/preset into this package and create a local file link, without installing packages.

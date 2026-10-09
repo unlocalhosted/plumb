@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/martian-mono/standard.css";
+@import "@fontsource-variable/doto";
+@import "@unlocalhosted/metalui/tokens.css";
+@import "@unlocalhosted/metalui/theme.css";
+
+/* The site is not a host app, so it may set the base scale and fonts that the library leaves alone:
+   one pixel per spacing step (p-12 is 12px) and the library's own system fonts. */
+@theme inline {
+  --spacing: 1px;
+  --font-sans: var(--mu-sans);
+  --font-mono: var(--mu-mono);
+}
+@import "dialkit/styles.css";
+
+/* The library's own sources use these utilities too. */
+@source "../../../packages/metalui/src";
+
+/* The site's base layer only. Everything else is Tailwind utilities from the generated theme
+   (type-doc-* is the reading scale, material-stage the demo object, syn-* the code inks). */
+@import "./kds.css" layer(base);
+
+/* The reference site's stylesheet (kds.css) carries the page, shell, prose, stage and cues.
+   This layer only adds what the reference didn't have: twinkleplop's token classes. */
+@layer base {
+  /* Highlighted code (twinkleplop's token classes) in the syntax inks. The inks follow the
+     colorway of the nearest [data-mu-colorway], so a code screen can set its own. */
+  .twinkleplop { color: var(--mu-syn-text); }
+  .twinkleplop .ln { display: inline-block; width: 3ch; margin-right: 2ch; text-align: right; color: var(--mu-syn-line); user-select: none; }
+  .twinkleplop :is(.keyword, .boolean, .null, .builtin, .directive, .svelte_block) { color: var(--mu-syn-keyword); }
+  .twinkleplop :is(.type, .class_name, .namespace, .tag_name, .selector, .selector_class, .selector_id, .selector_pseudo, .decorator, .heading, .heading_marker) { color: var(--mu-syn-type); }
+  .twinkleplop :is(.function, .property, .attr_name, .attribute, .css_variable, .label, .link_text) { color: var(--mu-syn-member); }
+  .twinkleplop :is(.string, .template, .regex, .string_escape, .url, .inserted) { color: var(--mu-syn-string); }
+  .twinkleplop :is(.number, .unit, .constant, .hash) { color: var(--mu-syn-number); }
+  .twinkleplop :is(.comment, .prompt, .front_matter_marker) { color: var(--mu-syn-comment); }
+  .twinkleplop :is(.punctuation, .operator, .list_marker, .code_fence, .deleted) { color: var(--mu-syn-punct); }
+}
+
+/* Development only: the feedback toolbar (agentation, in its own shadow root) owns the bottom-right
+   corner, so the page's DialKit tuner stacks one dock above it. Production has no toolbar. */
+html[data-dev-docks] .dialkit-panel {
+  bottom: 72px !important;
+}

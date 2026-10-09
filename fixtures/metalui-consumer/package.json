@@ -1,0 +1,1 @@
+{ "name": "metalui-preset-consumer", "type": "module", "dependencies": { "@unlocalhosted/metalui": "file:../metalui-package" } }

@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { presetDecisions } from '../presets/index.js';
+import { relative, resolve } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { Decision, Family } from '../report.js';
 import type { StylesheetGraph } from '../collect/stylesheets.js';
@@ -45,15 +46,19 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   }
   for (const item of theme) variables.set(item.name, { value: item.value, dynamic: metadata.get(item.name)?.dynamic ?? false });
   const decisions = new Map<string, Decision>(), overrides = new Set<string>();
-  function add(record: Decision, explicit = false): void {
+  function add(record: Decision, explicit = false, projectOverride = false): void {
     if (record.name === '--spacing') return;
     if (!record.name || typeof record.value !== 'string' || !record.source || !record.source.file || !Number.isInteger(record.source.line) || record.source.line < 1 ||
         !['project', 'framework', 'inferred'].includes(record.origin) || !['primitive', 'semantic'].includes(record.tier) || !Array.isArray(record.refs) || record.refs.some(ref => typeof ref !== 'string') || typeof record.why !== 'string' || record.groupWhy !== undefined && typeof record.groupWhy !== 'string') {
       throw new UsageError(`Invalid decision record in decisions.${record.family}.from.`);
     }
+    const previous = decisions.get(`${record.family}:${record.name}`);
+    if (previous?.exported && (!projectOverride && (record.origin === 'framework' || relative(root, resolve(root, record.source.file)).startsWith('../')))) return;
+    if (previous?.exported && previous.value === record.value) record = { ...record, exported: true };
     decisions.set(`${record.family}:${record.name}`, { ...record, refs: [...record.refs], source: { ...record.source, file: resolve(root, record.source.file) } });
     if (explicit) overrides.add(`${record.family}:${record.name}`);
   }
+  for (const record of presetDecisions(config)) add(record, true);
   function selected(name: string, family: Family, file: string, isTheme: boolean): boolean {
     const source = config.decisions?.[family]?.from;
     if (source === undefined) return familyFor(name) === family;
@@ -86,13 +91,14 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
       if (!Array.isArray(records)) throw new UsageError(`decisions.${family}.from must return decision records.`);
       for (const record of records) {
         if (record.family !== family) throw new UsageError(`decisions.${family}.from returned family ${record.family}.`);
-        add(record, true);
+        add(record, true, true);
       }
     } else for (const pattern of Array.isArray(source.from) ? source.from : source.from === undefined ? [] : [source.from]) if (pattern.startsWith('dtcg:')) {
-      for (const record of await readDtcg(root, pattern.slice(5), family as Family)) add(record, hasTierOverride(record));
+      for (const record of await readDtcg(root, pattern.slice(5), family as Family)) add(record, hasTierOverride(record), true);
     }
   }
-  for (const record of decisions.values()) variables.set(record.name, variables.get(record.name) ?? { value: record.value });
+  const projectNamesForValues = new Set(raw.filter(item => item.origin === 'project' && !relative(root, item.source.file).startsWith('../')).map(item => item.name));
+  for (const record of decisions.values()) variables.set(record.name, record.exported && !projectNamesForValues.has(record.name) ? { value: record.value } : variables.get(record.name) ?? { value: record.value });
   // DTCG references share the resolver with CSS variables.
   const cssValue = (value: string) => value.replace(/\{([\w.-]+)\}/g, 'var($1)');
   for (const [name, variable] of variables) variables.set(name, { ...variable, value: cssValue(variable.value) });
@@ -109,7 +115,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     else delete record.resolved;
   }
   const themeNames = new Set(theme.map(item => item.name));
-  const defined = new Set([...raw.filter(item => !item.theme).map(item => item.name), ...themeNames]);
+  const defined = new Set([...presetDecisions(config).map(record => record.name), ...raw.filter(item => !item.theme).map(item => item.name), ...themeNames]);
   for (const sheet of graph.files.values()) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   const frameworkVariables = new Map<string, CssVariable>();
   const projectNames = new Set(raw.filter(item => item.origin === 'project').map(item => item.name));

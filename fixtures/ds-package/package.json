@@ -1,0 +1,6 @@
+{
+  "name": "@fixtures/design-system",
+  "type": "module",
+  "exports": { ".": { "plumb": "./plumb.mjs", "default": "./src/index.ts" }, "./theme.css": "./src/theme.css" },
+  "peerDependencies": { "@unlocalhosted/plumb": "*" }
+}

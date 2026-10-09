@@ -1,0 +1,6 @@
+{
+  "name": "@unlocalhosted/metalui",
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./plumb": "./plumb/index.mjs" },
+  "plumb": "./plumb/index.mjs"
+}

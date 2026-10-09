@@ -1,3 +1,4 @@
+import { presetImitation, presetComponentMatches } from '../presets/index.js';
 import { createHash } from 'node:crypto';
 import { makeFinding } from '../messages.js';
 import { readFile } from 'node:fs/promises';
@@ -87,8 +88,8 @@ function representative(item: Evidence, matches: string[]): Declaration {
 export function judgeImitation(graph: ComponentGraph, classes: ClassSite[], declarations: Declaration[], config: PlumbConfig): Finding[] {
   if (!config.imitation) return [];
   const items = evidence(graph, classes, declarations), groups = new Map<string, Finding>();
-  for (const [name, entry] of Object.entries(config.imitation)) {
-    const identities = graph.components.filter(component => component.name === name || component.name.startsWith(name + '.'));
+  for (const { name, entry, directories } of presetImitation(config)) {
+    const identities = graph.components.filter(component => presetComponentMatches(directories, component) && (component.name === name || component.name.startsWith(name + '.')));
     const component = identities.find(component => component.name === name) ?? identities[0];
     for (const item of items) {
       if (!raw(item, component, entry) || identities.some(identity => identity.source.file === item.element.site.file)) continue;
