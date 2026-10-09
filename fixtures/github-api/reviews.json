@@ -1,0 +1,9 @@
+{
+  "growth": 1,
+  "approvers": "@designer, owner",
+  "pullRequest": { "number": 42, "user": { "login": "contributor", "type": "User" }, "head": { "sha": "abc123" } },
+  "reviews": [
+    { "id": 101, "user": { "login": "designer" }, "state": "APPROVED", "submitted_at": "2026-10-08T12:00:00Z", "commit_id": "abc123" },
+    { "id": 102, "user": { "login": "designer" }, "state": "COMMENTED", "submitted_at": "2026-10-08T12:01:00Z", "commit_id": "abc123" }
+  ]
+}

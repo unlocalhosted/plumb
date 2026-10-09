@@ -33,7 +33,7 @@ export interface LedgerSummary {
   growth: number;
   message: string;
 }
-export interface LedgerOptions { base?: string; strictLedger?: boolean }
+export interface LedgerOptions { base?: string; strictLedger?: boolean; changed?: boolean }
 export interface FindingGroup {
   entry: LedgerEntry;
   finding: Finding;

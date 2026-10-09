@@ -21,7 +21,7 @@ function utilityPrefix(prop: string): string | undefined {
   }
   return ({ gap: 'gap', 'row-gap': 'gap-y', 'column-gap': 'gap-x', inset: 'inset', 'inset-inline': 'inset-x', 'inset-block': 'inset-y', 'inset-inline-start': 'start', 'inset-inline-end': 'end', top: 'top', right: 'right', bottom: 'bottom', left: 'left' } as Record<string, string>)[prop];
 }
-function useFor(decision: Decision, prop: string, theme: ReadonlySet<string>): { class?: string; css: string } {
+export function useFor(decision: Decision, prop: string, theme: ReadonlySet<string>): { class?: string; css: string } {
   const spacingPrefix = utilityPrefix(prop);
   const prefix = decision.family === 'spacing' ? spacingPrefix : decision.family === 'color' ?
     prop.startsWith('background') ? 'bg' : prop === 'color' || prop.startsWith('text-decoration') ? (prop === 'color' ? 'text' : 'decoration') : prop.startsWith('border') ? 'border' : prop === 'outline' || prop === 'outline-color' ? 'outline' : ({ fill: 'fill', stroke: 'stroke', 'caret-color': 'caret', 'accent-color': 'accent' } as Record<string, string>)[prop] :

@@ -17,6 +17,8 @@ export interface Site {
   text: string;
   /** Stable enclosing function/component or resolved stylesheet selector. */
   anchor?: string;
+  /** Whether this authored site belongs to the requested Git file scope. */
+  inScope?: boolean;
   /** Authored-site identity and acceptance, independent of report grouping. */
   ledger?: { key: string; status: 'new' | 'debt' | 'exception'; why?: string };
 }

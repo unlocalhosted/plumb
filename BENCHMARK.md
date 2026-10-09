@@ -976,3 +976,31 @@ Paths below are relative to apps/docs/src. Each row is one property/site pair; s
 Warm compiler **1302 hits / 0 misses**; module graph **1303 hits / 0 misses**. Cold/warm declarations, decisions, coverage and all findings are deeply equal. This is one local process pair, not a latency guarantee; warm full CLI is above two seconds. Full phase receipt: [layer7.run.json](bench/metalui/layer7.run.json). Reproduce: `npm run build`, `node bench/metalui/measure-layer7.mjs`, `node bench/metalui/reconcile-layer7.mjs`; the cache is exactly `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer7`.
 
 Final validation: **75 CLI integration/e2e tests green**, typecheck and whitespace check green. Core covers discovery precedence, aliases/barrels/namespaces/default exports, forwarding wrappers, compound parts, both render-prop directions, dynamic inline properties, compiled/static/arbitrary classes, per-property/family allow/deny, source-glob boundary, root-selector warnings, cva/tv and prop unions (including adjacent declaration files for published JS). Known static limits: opaque whole style objects/spreads and unlowered template holes have no invented properties; no runtime identity or cascade analysis; selector functions/siblings/IDs and ancestry across independently rendered files remain unknown. `PRESSED[cap]` inside Button.tsx:533's template is an existing opaque class-reader boundary, while the literal pressed recipe in availability-picker is lowered and caught. Details: [Layer 7 notes](docs/layers/7-ownership.md).
+
+
+## Layer 9: surfaces (2026-10-09)
+
+Measured against MetalUI HEAD **`faa2036e4634e4f6c8d49feaa2dac87a77559501`**, using a disposable copy of its docs tree. Existing dependency and package directories were linked for reads. MetalUI remained read-only. No package installation or Plumb worktree commit occurred. This is a different source snapshot from Layer 6; raw debt differences are not attributed to surfaces.
+
+Reproduce after building:
+
+```sh
+PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer9 node bench/metalui/surfaces.mjs
+```
+
+Results: [layer9.run.json](bench/metalui/layer9.run.json). Baseline records **1,204 debt obligations** and **0 new**. SARIF contains **1,171 results**, exactly one per grouped report site, all `unchanged`; ledger obligations and grouped report sites are separate measures. Baseline agent output starts with `0 new`. Adding one copied TSX `gap-10` yields **1 new**, one GitHub error annotation and agent instructions naming the new file with recorded decision alternatives and NEEDS-DECISION. PLUMB.md generation writes **511,837 bytes** of decision/policy/loop data into the temporary copy. The ledger is byte-for-byte unchanged throughout the output/doc commands.
+
+| Surface | Process wall | Exit | Output bytes |
+| --- | ---: | ---: | ---: |
+| Baseline setup | 4,691.2 ms | 0 | 50 |
+| JSON ledger check | 1,361.0 ms | 0 | 12,212,340 |
+| SARIF baseline check | 1,332.0 ms | 0 | 1,916,845 |
+| Agent with one new gap | 1,337.9 ms | 1 | 4,981 |
+| GitHub with one new gap | 1,363.9 ms | 1 | 4,156 |
+| Agent docs with one new gap | 1,379.2 ms | 0 | 262 |
+
+These are individual local process measurements, including startup and serialization, over the layer cache. They do not measure hosted Action latency or base snapshot analysis. No new provenance rules or benchmark grep categories were introduced.
+
+The scripted-agent fixture e2e consumes the exact `--changed --agent` replacement for one new gap-10, changes only its TSX source, and reaches `0 new` under `--strict-ledger` with the ledger unchanged. Action approval is tested by executing its script on committed GitHub API response fixtures; the full runner executes the real CLI against a fixture PR/local REST server, first denies unapproved growth, then succeeds with approval, creating one sticky comment and updating it on rerun. This is local fixture evidence, not a hosted GitHub PR run. Hook installation preserves existing settings/events and remains idempotent. See [Layer 9 notes](docs/layers/9-surfaces.md) for output contracts and limits.
+
+Final verification: **96 integration/e2e tests pass**, zero failures/skips; typecheck and whitespace checks green. Protected text functions unchanged; no packages installed or worktree commits made.

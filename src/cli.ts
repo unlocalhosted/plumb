@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
-import { relative } from 'node:path';
+import { relative, resolve } from 'node:path';
+import { appendFile } from 'node:fs/promises';
+import { loadConfig } from './config.js';
+import { sarif } from './surfaces/sarif.js';
+import { githubCommands, githubSummary, renderSummary } from './surfaces/github.js';
+import { formatAgent } from './surfaces/agent.js';
+import { writeAgentDocs } from './surfaces/docs.js';
+import { installHooks } from './surfaces/hooks.js';
+import { baseReport } from './surfaces/base.js';
 import { check, explain } from './index.js';
 import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
@@ -18,7 +26,10 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb accept-decisions [--why "…"]
        plumb ledger [--ratchet] [--prune] [--rebase]
        plumb show <key|rule> | why <file:line>
-       plumb check [--base <git-ref>] [--strict-ledger]
+       plumb check [--base <git-ref>] [--changed] [--strict-ledger]
+       plumb check [--sarif | --agent | --format github]
+       plumb agent-docs
+       plumb install --hooks
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
@@ -37,6 +48,7 @@ async function main(): Promise<void> {
         options: {
           json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
+          changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' },
           family: { type: 'string' }, version: { type: 'boolean' }, help: { type: 'boolean' },
         },
         allowPositionals: true,
@@ -56,15 +68,19 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'habits', 'decisions', 'explain', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why'].includes(command) ||
+  if (!['check', 'habits', 'decisions', 'explain', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install'].includes(command) ||
       ((explaining || inspecting) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
-    base: ['check'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'],
+    base: ['check'], changed: ['check'], agent: ['check'], sarif: ['check'], format: ['check'], hooks: ['install'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
+  if (args.values.format !== undefined && args.values.format !== 'github') throw new UsageError('--format supports github.');
+  if ([args.values.json, args.values.sarif, args.values.agent, args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
+  if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
+  if (command === 'install' && !args.values.hooks) throw new UsageError('Use plumb install --hooks.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
   for (const name of ['root', 'config'] as const) {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
@@ -73,6 +89,7 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  if (command === 'install') { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()))); return; }
   if (explaining) {
     const result = await explain(args.positionals[1]!, options);
     const text = result.sites.map(site => `${relative(result.root, site.file)}:${site.line}:${site.column}  ${site.token}  <${site.owner.name}>\n` +
@@ -86,11 +103,13 @@ async function main(): Promise<void> {
   const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits,
     ...(listingHabits ? { listHabits: true } : {}),
     ...(args.values.base === undefined ? {} : { base: args.values.base }),
+    ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
     ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) });
   if (listingHabits) {
     process.stdout.write(args.values.json ? `${JSON.stringify(report.habits, null, 2)}\n` : report.habits!.map(habit => `${habit.id}  ${habit.breaks} breaks  ${habit.severity}  ${habit.enabled ? 'enabled' : 'disabled'}\n  ${habit.reason}\n`).join(''));
     return;
   }
+  if (command === 'agent-docs') { process.stdout.write(await writeAgentDocs(report, (await loadConfig(report.root, options.config)).value)); return; }
   if (mutating) {
     const result = await ledgerCommand(command, report, {
       ...(args.values.force === undefined ? {} : { force: args.values.force }),
@@ -119,7 +138,15 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record => `${record.family}  ${record.name}: ${record.value}\n  resolved: ${record.resolved ?? 'unresolved'}  origin: ${record.origin}  tier: ${record.tier}\n  why: ${record.why || '(none)'}\n  ${relative(report.root, record.source.file)}:${record.source.line}\n`).join(''));
     return;
   }
-  process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+  if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
+  else if (args.values.agent) process.stdout.write(formatAgent(report));
+  else if (args.values.format === 'github') {
+    const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
+    const summary = renderSummary(githubSummary(report, base));
+    const commands = githubCommands(report);
+    process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
+    if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
+  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
   process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
 }
 

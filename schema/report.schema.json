@@ -170,7 +170,7 @@
       "required": ["file", "line", "column", "text"],
       "properties": {
         "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 },
-        "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }, "anchor": { "type": "string" },
+        "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }, "anchor": { "type": "string" }, "inScope": { "type": "boolean" },
         "ledger": {
           "type": "object", "additionalProperties": false, "required": ["key", "status"],
           "properties": {

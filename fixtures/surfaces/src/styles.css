@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@theme {
+  --spacing: 1px;
+  /* why: related parts */
+  --spacing-step-small: 8px;
+}

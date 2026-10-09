@@ -1,0 +1,38 @@
+name: Plumb
+description: Check design drift, annotate new sites, and review ledger growth.
+inputs:
+  base:
+    description: PR base commit or Git ref (defaults to the PR base SHA).
+    required: false
+    default: ''
+  working-directory:
+    description: Project directory containing the Plumb config.
+    required: false
+    default: '.'
+  ledger-approvers:
+    description: Comma or space separated GitHub logins allowed to approve ledger growth. Approver authors are exempt.
+    required: false
+    default: ''
+  token:
+    description: GitHub token with pull-requests write permission.
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22.18.0'
+    - name: Install Plumb
+      shell: bash
+      run: |
+        npm ci --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
+        npm run build --prefix "$GITHUB_ACTION_PATH"
+    - name: Check design decisions
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        PLUMB_BASE: ${{ inputs.base }}
+        PLUMB_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        PLUMB_LEDGER_APPROVERS: ${{ inputs.ledger-approvers }}
+      run: node "$GITHUB_ACTION_PATH/scripts/action/run.mjs"
