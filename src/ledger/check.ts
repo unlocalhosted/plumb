@@ -20,10 +20,10 @@ function grew(entry: LedgerEntry, previous: LedgerEntry | undefined): boolean {
   const canonical = (entry: LedgerEntry) => JSON.stringify(Object.entries(entry).sort(([a], [b]) => a.localeCompare(b)));
   return canonical(entry) !== canonical(previous);
 }
-export async function applyLedger(report: Report, options: LedgerOptions = {}): Promise<Report> {
+export async function applyLedger(report: Report, options: LedgerOptions = {}, snapshot?: Awaited<ReturnType<typeof readLedger>>): Promise<Report> {
   const start = performance.now();
   const groups = findingGroups(report);
-  const ledger = await readLedger(report.root);
+  const ledger = snapshot ?? await readLedger(report.root);
   const path = ledgerPath(report.root);
   const accepted = new Map(ledger.entries.map(entry => [entry.key, entry]));
   const changed = options.base === undefined && !options.changed ? undefined : changedFiles(report.root, options.base ?? 'HEAD');

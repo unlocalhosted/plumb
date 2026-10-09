@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { serve, serveStdio } from './session/server.js';
+import { clientTry, watchReports } from './session/client.js';
 import { parseArgs } from 'node:util';
 import { relative, resolve } from 'node:path';
 import { appendFile } from 'node:fs/promises';
@@ -24,6 +26,8 @@ import { doctor } from './adoption/doctor.js';
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb presets [--json] [--root <dir>] [--config <path>]
+       plumb serve [--port <number> | --stdio] [--root <dir>] [--config <path>]
+       plumb check --watch [--json|--agent] [--root <dir>]
        plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -62,7 +66,7 @@ async function main(): Promise<void> {
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
-          lang: { type: 'string' }, as: { type: 'string' },
+          lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
@@ -89,14 +93,14 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['presets', 'check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
+  if (!['serve', 'presets', 'check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
       ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
     base: ['check'], changed: ['check'], agent: ['check', 'try', 'install'], list: ['install'], sarif: ['check'], format: ['check', 'parity'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
-    lang: ['try'], as: ['try'],
+    lang: ['try'], as: ['try'], port: ['serve'], stdio: ['serve'], watch: ['check'],
     markdown: ['report'], since: ['report'], strict: ['parity'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
@@ -147,14 +151,53 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(trend, null, 2)}\n` : trendMarkdown(trend));
     return;
   }
+  const emitCheck = async (report: import('./report.js').Report): Promise<void> => {
+    if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
+    else if (args.values.agent) process.stdout.write(formatAgent(report));
+    else if (args.values.format === 'github') {
+      const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
+      const scope = args.values.base !== undefined || args.values.changed ? await changedLines(report.root, args.values.base ?? 'HEAD') : undefined;
+      const summary = renderSummary(githubSummary(report, base, scope));
+      const commands = githubCommands(report, scope);
+      process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
+      if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
+    } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
+      Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
+      (!report.config.path && !report.ledger?.exists ? '\nNext: run plumb init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+    process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
+  };
+  if (args.values.watch) {
+    const controller = new AbortController();
+    const stop = () => controller.abort();
+    process.on('SIGINT', stop); process.on('SIGTERM', stop);
+    try { await watchReports({ ...options, ...(args.values.base === undefined ? {} : { base: args.values.base }),
+      ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
+      ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }, emitCheck, controller.signal, error => process.stderr.write(`plumb: ${errorMessage(error)}\n`)); }
+    finally { process.off('SIGINT', stop); process.off('SIGTERM', stop); }
+    return;
+  }
+  if (command === 'serve') {
+    if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.');
+    if (args.values.json || args.values.verbose) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
+    if (args.values.stdio) { await serveStdio(options); return; }
+    if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.');
+    const daemon = await serve({ ...options, ...(args.values.port === undefined ? {} : { port: Number(args.values.port) }) });
+    process.stdout.write(`Plumb is listening on http://127.0.0.1:${daemon.info.port}. Connection details are in .plumb/serve.json.\n`);
+    await new Promise<void>(done => {
+      const stop = () => { process.off('SIGINT', stop); process.off('SIGTERM', stop); void daemon.close().then(done); };
+      process.on('SIGINT', stop); process.on('SIGTERM', stop);
+    });
+    return;
+  }
   if (command === 'try') {
     if (args.values.lang !== undefined && !['tsx', 'css'].includes(args.values.lang)) throw new UsageError('--lang must be tsx or css.');
     if (args.values.as?.trim() === '') throw new UsageError('Provide a non-empty path for --as.');
     let text = '';
     for await (const chunk of process.stdin) text += chunk.toString();
-    const report = await trySnippet(text, { ...options,
+    const tryOptions = { ...options,
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
-      ...(args.values.as === undefined ? {} : { as: args.values.as }) });
+      ...(args.values.as === undefined ? {} : { as: args.values.as }) };
+    const report = await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions);
     process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : args.values.agent ? formatAgent(report) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
@@ -227,19 +270,7 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record => `${record.family}  ${record.name}: ${record.value}\n  resolved: ${record.resolved ?? 'unresolved'}  origin: ${record.origin}  tier: ${record.tier}\n  why: ${record.why || '(none)'}\n  ${relative(report.root, record.source.file)}:${record.source.line}\n`).join(''));
     return;
   }
-  if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
-  else if (args.values.agent) process.stdout.write(formatAgent(report));
-  else if (args.values.format === 'github') {
-    const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
-    const scope = args.values.base !== undefined || args.values.changed ? await changedLines(report.root, args.values.base ?? 'HEAD') : undefined;
-    const summary = renderSummary(githubSummary(report, base, scope));
-    const commands = githubCommands(report, scope);
-    process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
-    if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
-  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
-    Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
-    (!report.config.path && !report.ledger?.exists ? '\nNext: run plumb init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
-  process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
+  await emitCheck(report);
 }
 
 try {

@@ -73,9 +73,9 @@ function resolutionContext(declarations: Declaration[], record: DecisionRecord) 
   };
 }
 
-function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
+export function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
   sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
-  findings: Finding[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
+  findings: Finding[]; entries: ProvenanceEntry[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {
   const decisions = record.decisions.filter(decision => decision.family === family);
   const source = config.decisions?.[family];
@@ -120,7 +120,6 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
   }
   const nearestColors = new Map<string, Decision[]>();
   const colorLabs = new Map(family === 'color' ? project.map(d => [d, oklab(d.resolved!)] as const) : []);
-  const fixProperties = new Map<string, Set<string>>();
   const choicePools = new Map<string, Decision[]>();
   const choiceLadders = new Map<string, Decision[]>();
   function closest(value: string, prop: string): Decision[] {
@@ -147,7 +146,7 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     }
     return pool.filter(close).sort((a, b) => Math.abs(Number(comparable(a.resolved!, prop)) - n) - Math.abs(Number(comparable(b.resolved!, prop)) - n)).slice(0, 2);
   }
-  const grouped = new Map<string, Finding>(), locations = new Map<string, Set<string>>();
+  const entries: ProvenanceEntry[] = [];
   const coverage = { fromDecisions: 0, total: 0, findings: 0 };
   const judgedDeclarations = family === 'type' ? declarations.flatMap(d => typeDeclarations(d, decisionRefs)) : declarations;
   const variablesFor = resolution.variablesFor;
@@ -218,13 +217,41 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
     const fixProp = definition?.prop ?? declaration.prop;
     const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier) && suggestible(d)), fixProp);
+    const message = (rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
+          ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) });
+    entries.push({ declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message });
+  }
+  return { findings: findingsForFamily(family, entries, record), entries, coverage };
+}
+
+export interface ProvenanceEntry {
+  declaration: Declaration;
+  definition: Declaration | undefined;
+  uses: Set<string>;
+  resolved: string | undefined;
+  amount: string;
+  key: string;
+  fixProp: string;
+  alternatives: Decision[];
+  rule: string;
+  title: string;
+  because: string;
+  severity: Finding['severity'];
+  message: { action: string } | { choices: Decision[] };
+}
+
+/** Same grouping and messages for cold checks and cached incremental judgements. */
+export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry[], record: DecisionRecord): Finding[] {
+  const decisions = record.decisions.filter(d => d.family === family);
+  const grouped = new Map<string, Finding>(), locations = new Map<string, Set<string>>();
+  const fixProperties = new Map<string, Set<string>>();
+  for (const { declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message } of entries) {
     let finding = grouped.get(key);
     if (!finding) {
       finding = makeFinding({ key, rule, family, severity, sites: [], occurrences: [], declaration: definition ? { ...definition, ...(resolved === undefined ? {} : { resolved }) } : declaration,
         decisions: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })), title, because, edits: [],
         ...(definition ? { variable: { name: definition.prop, useCount: uses.size } } : {}),
-        ...(rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
-          ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) }) });
+        ...message });
       if (rule.endsWith('/by-value') && alternatives[0]) {
         const use = useFor(alternatives[0], fixProp, record.theme);
         finding.action = `Use ${use.class ? `\`${use.class}\` or ` : ''}\`var(${alternatives[0].name})\`.`;
@@ -253,13 +280,13 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     if (unchecked.length) {
       const occurrences = unchecked.flatMap(f => f.occurrences ?? [f.declaration]);
       const sites = [...new Map(unchecked.flatMap(f => f.sites).map(s => [JSON.stringify([s.file, s.line, s.column, s.text]), s])).values()];
-      return { findings: [makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,
+      return [makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,
         declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${sites.length} ${familyNames[family]} values can't be checked`,
         because: 'Plumb judges values against the tokens your theme declares.',
-        action: `Add ${familyNames[family]} tokens to your theme, or point \`decisions.${family}.from\` in plumb.config.ts at where they live.` }), ...findings.filter(f => f.rule === 'provenance/opaque-inline')], coverage };
+        action: `Add ${familyNames[family]} tokens to your theme, or point \`decisions.${family}.from\` in plumb.config.ts at where they live.` }), ...findings.filter(f => f.rule === 'provenance/opaque-inline')];
     }
   }
-  return { findings, coverage };
+  return findings;
 }
 
 export function spacingProvenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig) {
@@ -276,6 +303,11 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
     profileDuration(`rule:provenance/${family}`, performance.now() - start);
     findings.push(...(verbose || config.decisions?.[family]?.byValue === 'each' ? result.findings : groupByValue(family, result.findings))); coverage[family] = result.coverage;
   }
+  return { findings: presentProvenance(findings), coverage };
+}
+
+/** Shared final presentation for cold and incremental rule results. */
+export function presentProvenance(findings: Finding[]): Finding[] {
   const opaque = new Map<string, Finding>();
   const grouped = findings.filter(f => {
     if (f.rule !== 'provenance/opaque-inline') return true;
@@ -287,11 +319,11 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
     }
     return false;
   });
-  return { findings: [...grouped, ...opaque.values()], coverage };
+  return [...grouped, ...opaque.values()];
 }
 
 /** Group presentation only: authored occurrences and ledger identities stay intact. */
-function groupByValue(family: string, findings: Finding[]): Finding[] {
+export function groupByValue(family: string, findings: Finding[]): Finding[] {
   const copies = findings.filter(f => f.rule === `provenance/${family}/by-value`);
   if (!copies.length) return findings;
   const sites = [...new Map(copies.flatMap(f => f.sites).map(site => [JSON.stringify([site.file, site.line, site.column, site.text]), site])).values()];

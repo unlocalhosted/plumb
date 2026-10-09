@@ -1,0 +1,310 @@
+{
+  "commit": "e0a0b31349a371e48ad38f0cc8099be5fc1b2be5",
+  "snapshot": "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve/input",
+  "cache": "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve",
+  "node": "v25.9.0",
+  "editedFile": "apps/docs/src/pages/components/Fan.tsx",
+  "line": 117,
+  "warmupEdits": 5,
+  "siteMs": {
+    "min": 64.14362499999697,
+    "median": 72.64570800000001,
+    "p95": 82.39991699999882,
+    "max": 85.60291700000016,
+    "samples": [
+      73.39325000000099,
+      82.39991699999882,
+      72.90066699999807,
+      72.04633299999841,
+      69.890625,
+      79.48741599999994,
+      70.52808300000106,
+      68.9442080000008,
+      79.13175000000047,
+      77.60095799999908,
+      70.55299999999988,
+      75.09945900000093,
+      64.14362499999697,
+      67.55241699999897,
+      70.05616700000246,
+      85.60291700000016,
+      67.95195799999783,
+      72.64570800000001,
+      75.67716699999801,
+      65.43283299999894
+    ]
+  },
+  "tryMs": {
+    "min": 58.25395899999785,
+    "median": 62.92462499999965,
+    "p95": 73.5469170000033,
+    "max": 76.43983300000036,
+    "samples": [
+      76.43983300000036,
+      66.86229200000162,
+      73.5469170000033,
+      63.16762500000186,
+      62.655249999999796,
+      65.8291250000002,
+      69.74508299999798,
+      62.92462499999965,
+      59.594333000000915,
+      59.21033399999942,
+      72.14833400000134,
+      58.825042000000394,
+      60.32737500000076,
+      58.27812500000073,
+      70.1976250000007,
+      61.515542000001005,
+      58.617166,
+      59.08687500000087,
+      71.1977079999997,
+      58.25395899999785
+    ]
+  },
+  "stats": {
+    "files": [
+      "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve/input/apps/docs/src/pages/components/Fan.tsx"
+    ],
+    "judged": [
+      "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve/input/apps/docs/src/pages/components/Fan.tsx"
+    ]
+  },
+  "soak": {
+    "durationMs": 600097.16775,
+    "edits": 600,
+    "samples": [
+      {
+        "elapsedMs": 0,
+        "rss": 1044004864,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 30075.021417000004,
+        "rss": 702676992,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 60088.013332999995,
+        "rss": 639991808,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 90077.256542,
+        "rss": 517816320,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 120078.92345799999,
+        "rss": 529481728,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 150089.54987500003,
+        "rss": 633077760,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 180081.339583,
+        "rss": 620363776,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 210097.744917,
+        "rss": 633618432,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 240091.62624999997,
+        "rss": 621723648,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 270083.414583,
+        "rss": 620494848,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 300076.22183299996,
+        "rss": 619347968,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 330074.390333,
+        "rss": 623443968,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 360075.784917,
+        "rss": 621248512,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 390076.1515,
+        "rss": 569884672,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 420082.810792,
+        "rss": 625213440,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 450086.60616699996,
+        "rss": 631963648,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 480093.01945799997,
+        "rss": 655097856,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 510074.05337499996,
+        "rss": 648462336,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 540084.416125,
+        "rss": 527269888,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 570081.159417,
+        "rss": 638746624,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      },
+      {
+        "elapsedMs": 600097.1372080001,
+        "rss": 629358592,
+        "caches": {
+          "files": 258,
+          "candidates": 1333,
+          "modules": 393,
+          "components": 258,
+          "localViews": 1
+        }
+      }
+    ]
+  }
+}
