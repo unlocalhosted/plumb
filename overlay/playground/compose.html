@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumb finding composition</title>
+<style>
+  html { background: #eef0f3; }
+  body { margin: 0; padding: 28px; font: 13px/1.4 system-ui, sans-serif; color: #26354d; }
+  h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; } p.lead { margin: 0 0 22px; color: #5d6b80; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; }
+  h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>How findings sit with the skeleton · pick one</h1>
+<p class="lead">Same element, same seven findings, same glyphs and palette. Hover or click the markers; the active finding is padding-top.</p>
+<div class="grid">
+  <section><h2>1 · Set into the line</h2><plumb-compose data-v="inline" data-scheme="light"></plumb-compose></section>
+  <section><h2>2 · The region is the marker</h2><plumb-compose data-v="region" data-scheme="light"></plumb-compose></section>
+  <section><h2>3 · Index strip</h2><plumb-compose data-v="strip" data-scheme="light"></plumb-compose></section>
+</div>
+<script type="module">
+import { GLYPH_CSS, glyph } from '../src/glyphs.js';
+const tokens = await (await fetch('../src/tokens.css')).text();
+
+/* The element in widget coordinates (a 360 x 52 row at 1:1 minus padding): box, children, and each finding's region. */
+const W = 336, H = 48, X = 0, Y = 0, R = 14;
+const kids = [{ x: 14, y: 8, w: 32, h: 32, r: 16 }, { x: 56, y: 10, w: 150, h: 28, r: 2, text: true }, { x: 262, y: 9, w: 60, h: 30, r: 7 }];
+const F = [
+  { fam: 'spacing', label: 'padding-top 10px', region: { x: 14, y: 0, w: 308, h: 8 }, edge: 'top', at: 168 },
+  { fam: 'spacing', label: 'padding-inline 14px', region: { x: 0, y: 8, w: 14, h: 32 }, edge: 'left', at: 24 },
+  { fam: 'spacing', label: 'gap 10px', region: { x: 46, y: 8, w: 10, h: 32 }, edge: 'bottom', at: 51 },
+  { fam: 'radius', label: 'radius 14px', region: { x: W - 28, y: 0, w: 28, h: 28, corner: true }, edge: 'top', at: W - 12 },
+  { fam: 'type', label: 'font-size 13.5px', region: { x: 56, y: 10, w: 120, h: 14 }, edge: 'top', at: 104 },
+  { fam: 'shadow', label: 'hand-written shadow', region: { x: 0, y: H, w: W, h: 5 }, edge: 'bottom', at: 236 },
+  { fam: 'color', label: 'bg-white matches s-hi', soft: true, region: { x: 214, y: 8, w: 40, h: 32 }, edge: 'bottom', at: 214 },
+];
+
+const css = `
+  ${GLYPH_CSS}
+  :host { display: block; background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-text-row); }
+  .top { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 12px; font: var(--pl-text-label); }
+  .top b { font-weight: 600; } .top .f { margin-left: auto; color: var(--pl-ink-2); font: var(--pl-text-reading); }
+  .stage { position: relative; margin: 6px 12px 0; }
+  svg.draw { display: block; overflow: visible; }
+  .draw .o { fill: none; stroke: var(--pl-ink-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .draw .reg { fill: color-mix(in oklab, var(--pl-off) 14%, transparent); stroke: none; transition: fill var(--pl-dur-feedback) var(--pl-ease-out); }
+  .draw .reg.soft { fill: color-mix(in oklab, var(--pl-soft) 16%, transparent); }
+  .draw .reg.on { fill: color-mix(in oklab, var(--pl-off) 34%, transparent); }
+  .draw .lead { fill: none; stroke: var(--pl-off); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .mk { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer; background: var(--pl-paper); color: var(--pl-ink-2); border-radius: 3px; }
+  .mk .g { width: 12px; height: 12px; }
+  .mk[aria-current="true"] { color: var(--pl-off); }
+  .mk.soft[aria-current="true"] { color: var(--pl-soft); }
+  .tabs { display: flex; gap: 2px; padding: 0 12px; margin-top: 8px; }
+  .tab { all: unset; box-sizing: border-box; height: 26px; min-width: 30px; display: grid; place-items: center; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; position: relative; }
+  .tab .g { width: 14px; height: 14px; }
+  .tab[aria-current="true"] { background: var(--pl-paper-2); color: var(--pl-off); }
+  .tab.soft[aria-current="true"] { color: var(--pl-soft); }
+  .tab[aria-current="true"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 2px; height: 1px; background: currentColor; }
+  @media (hover: hover) and (pointer: fine) { .tab:hover, .mk:hover { color: var(--pl-ink); } }
+  .tab:focus-visible, .mk:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  .read { padding: 10px 12px 12px; display: flex; align-items: center; gap: 8px; font: var(--pl-text-title); font-weight: 500; }
+  .read .g { width: 14px; height: 14px; color: var(--pl-off); }
+`;
+
+customElements.define('plumb-compose', class extends HTMLElement {
+  connectedCallback() {
+    const v = this.dataset.v, root = this.attachShadow({ mode: 'open' });
+    let active = 0;
+    const draw = () => {
+      const pad = v === 'inline' ? 10 : 6, h = H + 12 + pad * 2;
+      // the outline, with gaps cut where glyphs are set into it (variant 1)
+      const gaps = v === 'inline' ? F.filter(f => f.edge === 'top' || f.edge === 'bottom').map(f => ({ edge: f.edge, a: f.at - 10, b: f.at + 10 })) : [];
+      const hline = (y, edge) => { let segs = [[R, W - R]]; for (const g of gaps.filter(g => g.edge === edge)) segs = segs.flatMap(([a, b]) => g.b < a || g.a > b ? [[a, b]] : [[a, g.a], [g.b, b]].filter(([p, q]) => q - p > 1)); return segs.map(([a, b]) => `M${a} ${y + 0.5}H${b}`).join(''); };
+      const top = pad, bot = pad + H;
+      const outline = `${hline(top, 'top')}${hline(bot, 'bottom')}M0.5 ${top + R}V${bot - R}M${W - 0.5} ${top + R}V${bot - R}
+        M0.5 ${top + R}A${R} ${R} 0 0 1 ${R} ${top + 0.5}M${W - R} ${top + 0.5}A${R} ${R} 0 0 1 ${W - 0.5} ${top + R}M0.5 ${bot - R}A${R} ${R} 0 0 0 ${R} ${bot - 0.5}M${W - R} ${bot - 0.5}A${R} ${R} 0 0 0 ${W - 0.5} ${bot - R}`;
+      const kidsSvg = kids.map(k => k.text ? `<path class="o" d="M${k.x} ${top + k.y + 7.5}H${k.x + k.w * 0.7}M${k.x} ${top + k.y + 19.5}H${k.x + k.w * 0.5}"/>` : `<rect class="o" x="${k.x + 0.5}" y="${top + k.y + 0.5}" width="${k.w - 1}" height="${k.h - 1}" rx="${k.r}"/>`).join('');
+      const showRegions = v === 'region' ? F.map((_, i) => i) : [active];
+      const regions = showRegions.map(i => { const r = F[i].region; return `<rect class="reg ${F[i].soft ? 'soft' : ''} ${i === active ? 'on' : ''}" x="${r.x}" y="${top + r.y}" width="${r.w}" height="${r.h}" rx="${r.corner ? 6 : 1}"/>`; }).join('');
+      let markers = '';
+      if (v === 'inline') markers = F.map((f, i) => { const x = f.edge === 'left' ? 0 : f.at, y = f.edge === 'top' ? top : f.edge === 'bottom' ? bot : top + H / 2;
+        return `<button class="mk ${f.soft ? 'soft' : ''}" data-i="${i}" aria-current="${i === active}" style="left:${x}px;top:${y + 0.5}px" aria-label="${f.label}">${glyph(f.fam)}</button>`; }).join('');
+      return `<div class="stage" style="height:${h}px"><svg class="draw" width="${W}" height="${h}">${regions}<path class="o" d="${outline}"/>${kidsSvg}</svg>${markers}</div>`;
+    };
+    const tabs = () => v === 'inline' ? '' : `<div class="tabs" role="tablist">${F.map((f, i) => `<button class="tab ${f.soft ? 'soft' : ''}" role="tab" data-i="${i}" aria-current="${i === active}" aria-label="${f.label}">${glyph(f.fam)}</button>`).join('')}</div>`;
+    const render = () => {
+      root.innerHTML = `<style>${tokens}${css}</style><div class="top"><b>div</b><span style="color:var(--pl-off);font:var(--pl-text-reading)">7 off</span><span class="f">SyncRow.tsx:18</span></div>
+        ${v === 'strip' ? tabs() + draw() : draw() + tabs()}
+        <div class="read">${glyph(F[active].fam)}${F[active].label} isn't on your scale</div>`;
+      root.querySelectorAll('[data-i]').forEach(b => { b.addEventListener('click', () => { active = Number(b.dataset.i); render(); }); b.addEventListener('mouseenter', () => { if (v !== 'region') { active = Number(b.dataset.i); render(); } }); });
+    };
+    render();
+  }
+});
+</script>
+</body>
+</html>
