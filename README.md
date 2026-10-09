@@ -29,7 +29,9 @@ export default defineConfig({
 })
 ```
 
-Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumb --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). Exit codes are 0 for success, 1 for error findings (including the first run), and 2 for usage or config errors.
+Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumb --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumb init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
+
+Adopt with `plumb`, `plumb init`, then `plumb install --ci`. Init writes inferred token sources, enables hover-gate, focus-outline, viewport-dynamic and overscroll-contain, lists other habits with break counts, and records the baseline and accepted tokens. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first. Install detects project or repository agent settings, preserves existing docs and hooks, adds the Plumb instructions, and writes a workflow using this repository's Action. `plumb doctor` checks Node, Tailwind, CSS entry, config, ledger and cache, with a fix on each line. [Adoption notes and transcripts](docs/roadmap/1-adoption.md).
 
 ## Layer 9 surfaces
 

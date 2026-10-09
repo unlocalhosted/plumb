@@ -14,6 +14,9 @@ import { errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { formatDeadSummary } from './rules/dead.js';
+import { initProject } from './adoption/init.js';
+import { installProject } from './adoption/install.js';
+import { doctor } from './adoption/doctor.js';
 
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -32,7 +35,8 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb check [--base <git-ref>] [--changed] [--strict-ledger]
        plumb check [--sarif | --agent | --format github]
        plumb agent-docs
-       plumb install --hooks
+       plumb install [--ci] | install --hooks
+       plumb doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
@@ -51,7 +55,7 @@ async function main(): Promise<void> {
         options: {
           json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
-          changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' },
+          changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' },
         },
@@ -73,12 +77,12 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
-  if (!['check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install'].includes(command) ||
+  if (!['check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor'].includes(command) ||
       ((explaining || inspecting) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
-    base: ['check'], changed: ['check'], agent: ['check', 'try'], sarif: ['check'], format: ['check'], hooks: ['install'], 'strict-ledger': ['check'], force: ['baseline'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
+    base: ['check'], changed: ['check'], agent: ['check', 'try'], sarif: ['check'], format: ['check'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'],
   };
@@ -86,7 +90,8 @@ async function main(): Promise<void> {
   if (args.values.format !== undefined && args.values.format !== 'github') throw new UsageError('--format supports github.');
   if ([args.values.json, args.values.sarif, args.values.agent, args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
-  if (command === 'install' && !args.values.hooks) throw new UsageError('Use plumb install --hooks.');
+  if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
+  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
   if (suggesting && !args.values.suggest) throw new UsageError('Use plumb imitation --suggest to report candidate fingerprints.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
   for (const name of ['root', 'config'] as const) {
@@ -96,7 +101,17 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
-  if (command === 'install') { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()))); return; }
+  if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()))); return; }
+  if (command === 'doctor') {
+    const result = await doctor(resolve(options.root ?? process.cwd()), options.config);
+    process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;
+  }
+  if (command === 'init') {
+    const result = await initProject(resolve(options.root ?? process.cwd()), { ...options,
+      ...(args.values.force === undefined ? {} : { force: args.values.force }) },
+      text => args.values.json ? process.stderr.write(text) : process.stdout.write(text));
+    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : `${result.message}\n`); return;
+  }
   if (command === 'try') {
     if (args.values.lang !== undefined && !['tsx', 'css'].includes(args.values.lang)) throw new UsageError('--lang must be tsx or css.');
     if (args.values.as?.trim() === '') throw new UsageError('Provide a non-empty path for --as.');
@@ -130,6 +145,7 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'agent-docs') { process.stdout.write(await writeAgentDocs(report, (await loadConfig(report.root, options.config)).value)); return; }
+  if (command === 'install') { process.stdout.write(await installProject(report, (await loadConfig(report.root, options.config)).value, args.values.ci)); return; }
   if (mutating) {
     const result = await ledgerCommand(command, report, {
       ...(args.values.force === undefined ? {} : { force: args.values.force }),
@@ -174,8 +190,9 @@ async function main(): Promise<void> {
     const commands = githubCommands(report);
     process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
     if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
-  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + formatDeadSummary(report.deadDecisions) + (report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
-  process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
+  } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + formatDeadSummary(report.deadDecisions) +
+    (!report.config.path && !report.ledger?.exists ? '\nNext steps\nRun plumb init to write inferred token sources and record current findings as debt.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+  process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
 }
 
 try {
