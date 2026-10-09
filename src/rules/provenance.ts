@@ -167,10 +167,11 @@ function familyProvenance(family: JudgedFamily, declarations: Declaration[], rec
     const alternatives = nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier));
     let finding = grouped.get(key);
     if (!finding) {
-      finding = { key, rule, family, severity, sites: [], declaration, decisions: nearest.map(decision => ({ ...decision, use: useFor(decision, declaration.prop, record.theme) })), why,
+      finding = { key, rule, family, severity, sites: [], declaration, occurrences: [], decisions: nearest.map(decision => ({ ...decision, use: useFor(decision, declaration.prop, record.theme) })), why,
         fix: rule === 'provenance/opaque-inline' ? 'Pass the measured number through a custom property and style from CSS.' : alternatives.length ? alternatives.map(decision => suggestion(decision, declaration.prop, record.theme)).join('; ') : `NEEDS-DECISION: no comparable ${family} decisions; choose or request a named decision.` };
       grouped.set(key, finding); locations.set(key, new Set()); fixProperties.set(key, new Set());
     }
+    finding.occurrences!.push(declaration);
     const properties = fixProperties.get(key)!;
     if (!properties.has(declaration.prop)) {
       if (properties.size && alternatives.length && rule !== 'provenance/opaque-inline') finding.fix += '; ' + alternatives.map(decision => suggestion(decision, declaration.prop, record.theme)).join('; ');

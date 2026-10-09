@@ -705,3 +705,62 @@ The initial run falsely marked four `--ed-status-*-bg/shadow` keys dead. Read-on
 Warm **report total 1280.0 ms meets 1.3 s**. Full process **1428.4 ms** exceeds it by 128.4 ms: startup, serializing/writing the 11.5 MB expanded full JSON report and process overhead add 148.3 ms. We report both rather than claim the process meets the limit. The first family run was 1,447.2 ms report / 1,572.9 ms wall; indexing token source lines and caching repeated value matches/perceptual nearest lists removed repeated work. Final warm compiler cache has 1,302 hits / 0 misses; module cache 1,303 / 0. Cold means a new Plumb cache, not OS eviction. Measurements are individual processes, not latency guarantees. Earlier valid warm report/process pairs were 1,175.4/1,301.1 ms and 1,212.6/1,335.9 ms; the final retained run follows the effective-reset registry correction.
 
 Final verification: **65 CLI integration/e2e tests**, no failures/skips/unit tests; typecheck and whitespace check green. Protected text functions are unchanged. No installs, commits, MetalUI writes or project-specific core mapping. Details: [Layer 4](docs/layers/4-families.md).
+
+
+## Layer 6: ledger baseline and gates
+
+Measured 2026-10-09 on a temporary **copy** of MetalUI's docs tree at HEAD `9cb04dc818ac84d981f8215352237d5c5ab2f85b`, with the existing benchmark preset. MetalUI remained read-only: copied docs were mutated; existing installed dependencies and library sources were linked only for reads. No packages installed, no Plumb worktree commits. This is a newer MetalUI snapshot than the earlier layer tables, so differences in raw findings are not attributed to ledger code.
+
+Reproduce after building:
+
+```sh
+PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer6 node bench/metalui/ledger.mjs
+```
+
+The script also sets that exact cache path for every CLI child and deletes its temporary project in `finally`. Structured results: [layer6.run.json](bench/metalui/layer6.run.json).
+
+Baseline: **3,214 entries**, comprising **1,268 debt** at **1,355 physical sites**, **0 exceptions**, and **1,946 accepted decisions**, marked inferred on first adoption. Counted sites collapse compiler/condition duplicates. Debt keys retain authored text, owner, property, relative path and stable anchor. Accepted decisions include configured presets plus project theme keys outside those selected ladders; framework defaults are not implicitly accepted.
+
+| Debt rule | Entries |
+| --- | ---: |
+| `existence/dead-class` | 64 |
+| `existence/dynamic-class` | 3 |
+| `provenance/arbitrary` | 23 |
+| `provenance/color` | 90 |
+| `provenance/color/by-value` | 5 |
+| `provenance/color/framework` | 2 |
+| `provenance/elevation` | 114 |
+| `provenance/elevation/by-value` | 48 |
+| `provenance/motion` | 5 |
+| `provenance/motion/by-value` | 23 |
+| `provenance/motion/framework` | 41 |
+| `provenance/opaque-inline` | 327 |
+| `provenance/radius` | 8 |
+| `provenance/radius/framework` | 1 |
+| `provenance/spacing` | 245 |
+| `provenance/type` | 178 |
+| `provenance/type/by-value` | 43 |
+| `provenance/type/framework` | 4 |
+| `provenance/z` | 16 |
+| `provenance/z/by-value` | 28 |
+
+Accepted decision entries by family: color 656, elevation 100, motion 123, radius 98, size 2, spacing 866, type 90, z 11.
+
+| Run | Process wall | Report total | Exit |
+| --- | ---: | ---: | ---: |
+| Baseline (fresh temporary root) | 3593.4 ms | not recorded by mutation command | 0 |
+| First ledger check | 1348.1 ms | 1203.3 ms | 0 |
+| Repeated ledger check | 1349.2 ms | 1202.4 ms | 0 |
+
+Both ledger checks report **0 new, 1,355 debt sites, 0 exceptions, 0 stale**, with 1,302 candidate cache hits and no compilation. These are individual local measurements, not latency guarantees; the copy has a new absolute root and the layer cache can already contain dependency data. An initial implementation performed one Git-author lookup per entry and took 24,005.2 ms to baseline; the final implementation looks up attribution once per operation and the recorded baseline takes 3,593.4 ms.
+
+Acceptance on the copied docs:
+
+- Baseline followed by check exits **0**.
+- Add one new TSX `gap-10`: exit **1**, **exactly one new error finding at one site**.
+- Append a handwritten exception without why: exit **1**, `ledger/no-why`.
+- Add `--spacing-13: 13px` to the copied theme: exit **1**, exactly one `decisions/unaccepted`, even though the existing preset excludes that new key.
+- Rename `apps/docs/src/pages/components/ButtonSmartControls.tsx`: rebase prints **12 moves**, and the subsequent check exits **0**.
+- Disposable Git fixture: `check --base HEAD` emits `ledger/grew` for each added ledger line, with new debt growth failing; reasoned exception growth is informational. Changed-file scope includes untracked files. Strict ledger/config growth fails versus HEAD; debt shrinkage passes.
+
+Final verification: `npm test` **79 integration/e2e tests pass, zero failures/skips**; `npm run typecheck` and `git diff --check` pass. Ledger notes: [docs/layers/6-ledger.md](docs/layers/6-ledger.md). Text-view functions in `src/report.ts` remain untouched; its additions are types only.

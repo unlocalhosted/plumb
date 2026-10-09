@@ -32,6 +32,16 @@
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "ledger": {
+      "type": "object", "additionalProperties": false,
+      "required": ["exists", "path", "entries", "new", "debt", "exceptions", "outOfScope", "stale", "growth", "message"],
+      "properties": {
+        "exists": { "type": "boolean" }, "path": { "type": "string" }, "message": { "type": "string" },
+        "entries": { "$ref": "#/$defs/count" }, "new": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" },
+        "exceptions": { "$ref": "#/$defs/count" }, "outOfScope": { "$ref": "#/$defs/count" }, "stale": { "$ref": "#/$defs/count" }, "growth": { "$ref": "#/$defs/count" }
+      }
+    },
     "notes": { "$ref": "#/$defs/strings" },
     "declarations": { "type": "array", "items": { "$ref": "#/$defs/declaration" } },
     "moduleGraph": {
@@ -62,31 +72,31 @@
       "properties": {
         "spacing": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "color": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "radius": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "type": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "motion": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "elevation": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "z": {
           "type": "object", "additionalProperties": false, "required": ["fromDecisions", "total", "findings"],
-          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" } }
+          "properties": { "fromDecisions": { "$ref": "#/$defs/count" }, "total": { "$ref": "#/$defs/count" }, "findings": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exceptions": { "$ref": "#/$defs/count" } }
         },
         "existence": {
           "type": "object", "additionalProperties": false, "required": ["total", "dead", "deadVars"],
@@ -142,7 +152,13 @@
       "required": ["file", "line", "column", "text"],
       "properties": {
         "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 },
-        "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }
+        "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }, "anchor": { "type": "string" },
+        "ledger": {
+          "type": "object", "additionalProperties": false, "required": ["key", "status"],
+          "properties": {
+            "key": { "type": "string" }, "status": { "enum": ["new", "debt", "exception"] }, "why": { "type": "string" }
+          }
+        }
       }
     },
     "condition": {
@@ -190,7 +206,10 @@
         "sites": { "type": "array", "items": { "$ref": "#/$defs/site" } },
         "declaration": { "$ref": "#/$defs/declaration" },
         "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
-        "why": { "type": "string" }, "fix": { "type": "string" }
+        "why": { "type": "string" }, "fix": { "type": "string" },
+        "status": { "enum": ["new", "debt", "exception", "out-of-scope"] },
+        "ledgerKeys": { "$ref": "#/$defs/strings" },
+        "occurrences": { "type": "array", "items": { "$ref": "#/$defs/declaration" } }
       }
     },
     "coverage": {

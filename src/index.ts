@@ -16,6 +16,9 @@ import { readDecisions } from './decisions/index.js';
 import { provenance } from './rules/provenance.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
+import { applyLedger } from './ledger/check.js';
+import type { LedgerOptions } from './ledger/types.js';
+export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
 export { defineDecisions } from './decisions/index.js';
 export type { DecisionInput } from './decisions/index.js';
@@ -23,9 +26,11 @@ export { defineConfig } from './config.js';
 export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
 export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage, JudgedFamily, ProvenanceCoverage } from './report.js';
 
-export interface CheckOptions {
+export interface CheckOptions extends LedgerOptions {
   root?: string;
   config?: string;
+  /** Inspection/mutation commands need the full, unclassified rule output. */
+  ledger?: boolean;
 }
 
 async function analyze(options: CheckOptions): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
@@ -108,6 +113,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     ...project,
     findings,
     decisions: record.decisions,
+    decisionInventory: record.inventory ?? [],
     declarations,
     stylesheets,
     moduleGraph: modules.counts,
@@ -127,7 +133,8 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
 
 export interface ExplainedClassSite extends ClassSite { declarations: import('./report.js').Declaration[]; notes: string[] }
 export async function check(options: CheckOptions = {}): Promise<Report> {
-  return (await analyze(options)).report;
+  const { report } = await analyze(options);
+  return options.ledger === false ? report : applyLedger(report, options);
 }
 export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; declarations: Declaration[]; opaque: number }> {
   const { report, sites } = await analyze(options);

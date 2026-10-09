@@ -71,11 +71,11 @@ test('dead vars group names, rank close names, warn on fallback and accept every
  await writeFile(join(dir,'node_modules/palette/theme.css'),'.package { --package-color: #fff; }');
  await writeFile(join(dir,'src/package.css'),'@import "palette";');
  const r=run(dir), dead=r.findings.filter(f=>f.rule==='existence/dead-var');
- assert.deepEqual(dead.map(f=>f.key),['existence/dead-var:--colr-brand','existence/dead-var:--missing']);
+ assert.deepEqual(dead.map(f=>f.declaration.refs[0]),['--colr-brand','--missing']);
  assert.match(dead[0].fix,/--color-brand/); assert.equal(dead[0].severity,'error'); assert.equal(dead[1].severity,'warn'); assert.equal(dead[1].sites.length,2);
  assert.ok(finding(r,'padding: var(--missing, 4px)','provenance/spacing')); assert.equal(r.coverage.existence.deadVars,3);
  await writeFile(join(dir,'src/extra.ts'),'node.style.setProperty("--missing", 4);');
- assert.ok(!run(dir).findings.some(f=>f.key==='existence/dead-var:--missing'));
+ assert.ok(!run(dir).findings.some(f=>f.rule==='existence/dead-var' && f.declaration.refs.includes('--missing')));
 });
 
 test('composite colors check every color argument, gradients, shorthands and arbitrary family labels', async t => {

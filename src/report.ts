@@ -15,6 +15,10 @@ export interface Site {
   line: number;
   column: number;
   text: string;
+  /** Stable enclosing function/component or resolved stylesheet selector. */
+  anchor?: string;
+  /** Authored-site identity and acceptance, independent of report grouping. */
+  ledger?: { key: string; status: 'new' | 'debt' | 'exception'; why?: string };
 }
 
 export interface Condition {
@@ -66,6 +70,10 @@ export interface Finding {
   decisions: Decision[];
   why: string;
   fix: string;
+  /** Exact declarations behind grouped sites, for generic ledger consumers. */
+  occurrences?: Declaration[];
+  status?: 'new' | 'debt' | 'exception' | 'out-of-scope';
+  ledgerKeys?: string[];
 }
 
 export interface FileCounts {
@@ -96,6 +104,9 @@ export interface Report {
   findings: Finding[];
   decisions: Decision[];
   notes: string[];
+  /** Project theme decisions, including keys outside configured judging ladders. */
+  decisionInventory?: Decision[];
+  ledger?: import('./ledger/types.js').LedgerSummary;
   declarations: Declaration[];
   stylesheets: { file: string; sourceOrigin: 'project' | 'framework'; package?: string; reached: { kind: 'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style'; from?: string; specifier?: string }[] }[];
   moduleGraph: { modules: number; followed: number; cssFiles: number; cacheHits: number; cacheMisses: number; parseMs: number; totalMs: number };
