@@ -1,6 +1,6 @@
-import type { Decision, Finding, Report, Site } from '../report.js';
-import { useFor } from '../rules/provenance.js';
+import type { Report, Site } from '../report.js';
 import { atSite, newSites, pathFor } from './sites.js';
+import { editChoices, replacement } from './edits.js';
 
 export const loopRules = [
   'Do not edit plumb.config.ts (or another Plumb config), .plumb/ledger.jsonl, or the theme to make a finding pass.',
@@ -9,36 +9,13 @@ export const loopRules = [
   'Reporting NEEDS-DECISION is fine. Never add a token.',
 ];
 export const renderLoop = () => `## Rules for this loop\n\n${loopRules.map(rule => `- ${rule}`).join('\n')}\n`;
-function edit(finding: Finding, site: Site, decision: Decision, report: Report): string | undefined {
-  const d = atSite(finding, site);
-  const use = useFor(decision, d.prop, new Set(decision.use?.class ? [...report.decisions, ...report.decisionInventory ?? []].map(d => d.name) : []));
-  if (['class', 'arbitrary', 'apply'].includes(d.origin) && use.class) {
-    // Retain variants and importance, but never guess at arbitrary selectors or modifiers.
-    const token = site.text;
-    if (/[\s/]/.test(token)) return undefined;
-    let depth = 0, colon = -1;
-    for (let i = 0; i < token.length; i++) { if (token[i] === '[') depth++; if (token[i] === ']') depth--; if (token[i] === ':' && depth === 0) colon = i; }
-    const variant = token.slice(0, colon + 1), utility = token.slice(colon + 1);
-    const negative = utility.replace(/^!/, '').startsWith('-') ? '-' : '';
-    const replacement = `${variant}${utility.startsWith('!') ? '!' : ''}${negative}${use.class}${utility.endsWith('!') ? '!' : ''}`;
-    return `replace \`${token}\` with \`${replacement}\``;
-  }
-  const colon = site.text.indexOf(':');
-  if (colon < 0 || !use.css.startsWith(`${d.prop}: `)) return undefined;
-  const property = site.text.slice(0, colon).trim().replace(/["']/g, '');
-  if (property.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`) !== d.prop) return undefined;
-  const value = use.css.slice(d.prop.length + 2);
-  if (!value.startsWith('var(')) return undefined;
-  const replacement = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${JSON.stringify(value)}` : use.css;
-  return `replace \`${site.text}\` with \`${replacement}\``;
-}
 // An agent reads this to change code, so every site gets a concrete instruction: the exact edit when one decision
 // fits, the edits to choose between (by their reasons) when several do, and NEEDS-DECISION when none is close.
 export function formatAgent(report: Report): string {
   const findings = report.findings.map(finding => ({ finding, sites: newSites(finding) })).filter(f => f.sites.length);
   const where = (site: Site) => `${pathFor(report, site.file)}:${site.line}:${site.column}`;
   const sections = findings.map(({ finding, sites }, index) => {
-    const candidates = (finding.choices ?? finding.decisions).filter(d => !(finding.rule.endsWith('/framework') && d.origin === 'framework'));
+    const candidates = editChoices(finding);
     const amount = finding.declaration.resolved ?? finding.declaration.value;
     const lines = [`## ${index + 1} of ${findings.length}  ${finding.title || `${finding.declaration.prop}: ${amount}`}`, `Rule: ${finding.rule}`, `Why: ${finding.because || finding.why}`];
     if (candidates.length) {
@@ -53,7 +30,10 @@ export function formatAgent(report: Report): string {
       const d = atSite(finding, site);
       lines.push(`- ${where(site)}  \`${site.text}\``, `  Compiles to: ${d.prop}: ${d.resolved ?? d.value} (via ${d.origin})`);
       if (governed) { lines.push('  Edit: NEEDS-DECISION: report this change for review. Do not change config, ledger, or theme to pass.'); continue; }
-      const edits = candidates.map(decision => ({ decision, edit: edit(finding, site, decision, report) }));
+      const edits = candidates.map(decision => {
+        const change = replacement(finding, site, decision, report);
+        return { decision, edit: change ? `replace \`${change.from}\` with \`${change.to}\`` : undefined };
+      });
       if (candidates.length === 1 && edits[0]!.edit) lines.push(`  Edit: ${edits[0]!.edit} at ${where(site)}.`);
       else if (candidates.length > 1 && edits.every(e => e.edit)) {
         lines.push(`  Choose a token using its reason, then edit at ${where(site)}:`, ...edits.map(e => `    ${e.edit}  (${e.decision.resolved ?? e.decision.value})`));

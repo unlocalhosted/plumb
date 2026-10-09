@@ -6,7 +6,7 @@ import type { Node, Program } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
 import type { Condition, Declaration, Site } from '../report.js';
 import { UsageError } from '../errors.js';
-import { collectInline } from './inline.js';
+import { collectInline, embedded } from './inline.js';
 import type { SourceStyles } from './inline.js';
 import { constExport, namedAnchors, sourceSite } from './source.js';
 import type { NamedAnchor } from './source.js';
@@ -162,11 +162,11 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     return value.exports;
   }
 
-  function emit(value: string, src: Source, offset: number, owner: Declaration['owner'], conditions: Condition[], usage?: Site, dynamic = false): void {
+  function emit(value: string, src: Source, offset: number, owner: Declaration['owner'], conditions: Condition[], usage?: Site, dynamic = false, offsets?: number[]): void {
     const context = JSON.stringify([owner, conditions, dynamic]);
     for (const match of value.matchAll(/\S+/g)) {
       const token = match[0];
-      const locations = [site(src, offset + match.index, token), ...(usage ? [{ ...usage, text: token }] : [])];
+      const locations = [site(src, offsets?.[match.index] ?? offset + match.index, token), ...(usage ? [{ ...usage, text: token }] : [])];
       for (const location of locations) {
         const entry: ClassSite = { ...location, token, owner, conditions, ...(classContext ? { context: classContext } : {}), ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
         const key = `${location.file}\0${location.line}:${location.column}\0${token}\0${context}`;
@@ -183,7 +183,10 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     switch (node.type) {
       case 'JSXExpressionContainer': recur(node.expression); return;
       case 'Literal':
-        if (typeof node.value === 'string') emit(node.value, src, node.start + 1, owner, conditions, usage);
+        if (typeof node.value === 'string') {
+          const decoded = embedded(node, src);
+          emit(node.value, src, node.start + 1, owner, conditions, usage, false, decoded?.offsets);
+        }
         return;
       case 'TemplateLiteral': {
         opaque += node.expressions.length;
@@ -254,7 +257,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
               }
             }
           } else if (mode === 'values') recur(property.value);
-          else if (!property.computed && key) emit(key, src, property.key.start + (property.key.type === 'Literal' ? 1 : 0), owner, branch(text(property.value)), usage);
+          else if (!property.computed && key) emit(key, src, property.key.start + (property.key.type === 'Literal' ? 1 : 0), owner, branch(text(property.value)), usage, false, property.key.type === 'Literal' ? embedded(property.key, src)?.offsets : undefined);
           else opaque++;
         }
         return;

@@ -27,6 +27,7 @@ export class WarmState implements AnalysisRuntime {
   }
   readonly shards = new Map<string, ComponentGraph>();
   readonly dependencies = new Set<string>();
+  readonly configurationFiles = new Set<string>();
   readonly patterns = new Set<string>();
   private componentDependencies = new Map<string, Set<string>>();
   private dependencyEdges = new Map<string, string[]>();
@@ -44,6 +45,14 @@ export class WarmState implements AnalysisRuntime {
   private snippet = false;
   private config: PlumbConfig = {};
   constructor(readonly root: string) { this.collection = new CollectionState(root); }
+  get compilerFiles(): string[] { return this.compiler.graph?.files ?? []; }
+  sourceHash(file: string): string | undefined {
+    const slice = this.collection.slices.get(file);
+    if (slice) return slice.hash;
+    const graph = this.phases.get('graph')?.value as import('../collect/stylesheets.js').StylesheetGraph | undefined;
+    const sheet = graph?.files.get(file);
+    return sheet ? sourceHash(sheet.css) : undefined;
+  }
   get caches() { return { files: this.collection.slices.size, candidates: Object.keys(this.compiler.cached ?? {}).length,
     modules: this.componentMemory.modules.size, components: this.shards.size, localViews: this.localJudgements.size }; }
   async prepare(): Promise<void> {
@@ -58,6 +67,10 @@ export class WarmState implements AnalysisRuntime {
       this.componentHashes.delete(file); this.shards.delete(file);
     }
     this.phases.delete('collect');
+    if (paths.some(path => path.endsWith('.css'))) {
+      for (const phase of ['graph', 'css', 'unreachable']) this.phases.delete(phase);
+      if (paths.some(path => this.compilerFiles.includes(path))) { this.phases.delete('tailwind'); this.compiler = {}; }
+    }
   }
   private async memo<T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> {
     const key = signature(inputs), old = this.phases.get(name);
@@ -78,7 +91,7 @@ export class WarmState implements AnalysisRuntime {
         const resolver = new ResolverFactory({ extensions: ['.ts', '.mts', '.mjs', '.js', '.cjs', '.json'], conditionNames: ['import', 'node', 'default'] });
         const queue = [loaded.path];
         for (let i = 0; i < queue.length; i++) {
-          const file = queue[i]!; if (this.dependencies.has(file)) continue; this.dependencies.add(file);
+          const file = queue[i]!; if (this.dependencies.has(file)) continue; this.dependencies.add(file); this.configurationFiles.add(file);
           if (!/\.[cm]?[jt]s$/.test(file)) continue;
           for (const id of dependencySpecifiers(file, readFileSync(file, 'utf8'), true)) {
             const target = resolver.resolveFileSync(file, id).path;

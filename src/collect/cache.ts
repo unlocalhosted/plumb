@@ -14,7 +14,7 @@ interface SerializedData extends Omit<Data, 'styles'> {
 }
 interface Receipt { data: SerializedData; dependencies: [string, string][]; resolutions: [string, string | null][] }
 export function collectionCache(root: string, helpers: string[], texts: Map<string, string>) {
-  const key = sourceHash(JSON.stringify(['classes-inline-v2', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
+  const key = sourceHash(JSON.stringify(['classes-inline-v3', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'sources');
   const path = join(directory, `${key}.json`);
   return {

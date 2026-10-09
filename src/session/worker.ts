@@ -11,6 +11,10 @@ import { performance } from 'node:perf_hooks';
 import { Focus } from './focus.js';
 import { readLedger } from '../ledger/store.js';
 import { profileDuration } from '../profile.js';
+import { readFile } from 'node:fs/promises';
+import { structuredEdits } from '../surfaces/edits.js';
+import { sourceHash } from '../collect/cache.js';
+import { cssCode } from '../collect/stylesheets.js';
 
 const options = workerData as CheckOptions;
 const state = new WarmState(options.root!);
@@ -51,9 +55,79 @@ function site(r: Report, file: string, line: number, column?: number) {
     declarations: r.declarations.filter(d => matches(d.site)),
     findings: r.findings.filter(f => f.sites.some(matches)).map(f => ({ ...f, sites: f.sites.filter(matches), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => matches(d.site)) } : {}) })) };
 }
+// Rebuilt once per analyzed report; warm edit reads never walk unrelated findings or definitions.
+let indexedReport: Report | undefined;
+let fileFindings = new Map<string, Report['findings']>();
+let lineFindings = new Map<string, Map<number, Report['findings']>>();
+let columnFindings = new Map<string, Map<number, Map<number, Report['findings']>>>();
+let decisionNames = new Set<string>();
+let editable = new Set<string>(), protectedFiles = new Set<string>();
+function group<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
+  const groups = new Map<K, T[]>();
+  for (const item of items) { const value = key(item); let list = groups.get(value); if (!list) groups.set(value, list = []); list.push(item); }
+  return groups;
+}
+function append<K>(map: Map<K, Report['findings']>, key: K, finding: Report['findings'][number]): void {
+  let list = map.get(key); if (!list) map.set(key, list = []); list.push(finding);
+}
+function index(view: Report): void {
+  if (indexedReport === view) return;
+  indexedReport = view; fileFindings = new Map(); lineFindings = new Map(); columnFindings = new Map();
+  decisionNames = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name));
+  editable = new Set(state.collection.slices.keys());
+  for (const sheet of view.stylesheets) if (sheet.reached.some(reach => reach.kind === 'source')) editable.add(sheet.file);
+  protectedFiles = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.source.file));
+  if (view.config.path) protectedFiles.add(view.config.path);
+  if (view.tailwind.entry) protectedFiles.add(view.tailwind.entry);
+  for (const finding of view.findings) {
+    const occurrences = group(finding.occurrences ?? [], d => d.site.file);
+    for (const [file, sites] of group(finding.sites, s => s.file)) {
+      const local = { ...finding, sites, ...(finding.occurrences ? { occurrences: occurrences.get(file) ?? [] } : {}) };
+      append(fileFindings, file, local);
+      const lineOccurrences = group(local.occurrences ?? [], d => d.site.line);
+      const byLine = lineFindings.get(file) ?? new Map(); lineFindings.set(file, byLine);
+      const columns = columnFindings.get(file) ?? new Map(); columnFindings.set(file, columns);
+      for (const [line, sites] of group(local.sites, s => s.line)) {
+        const atLine = { ...local, sites, ...(local.occurrences ? { occurrences: lineOccurrences.get(line) ?? [] } : {}) };
+        append(byLine, line, atLine);
+        const columnOccurrences = group(atLine.occurrences ?? [], d => d.site.column);
+        const byColumn = columns.get(line) ?? new Map(); columns.set(line, byColumn);
+        for (const [column, sites] of group(atLine.sites, s => s.column))
+          append(byColumn, column, { ...atLine, sites, ...(atLine.occurrences ? { occurrences: columnOccurrences.get(column) ?? [] } : {}) });
+      }
+    }
+  }
+}
+function scoped(view: Report, file: string, line?: number, column?: number): Report {
+  index(view);
+  const findings = (line === undefined ? fileFindings.get(file) : column === undefined ? lineFindings.get(file)?.get(line) : columnFindings.get(file)?.get(line)?.get(column)) ?? [];
+  return { ...view, findings };
+}
+const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...raw.stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
+function queryInputs() {
+  return { inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
+    queryDependencies: [...state.collection.slices].map(([file, slice]) => [file, [...slice.dependencies.keys()]]) };
+}
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
-  if (method === 'refresh') { performance.clearMeasures(); await update(params.paths as string[]); return { revision, dependencies: dependencies(), files: state.collection.parsedFiles, judged: state.judgement.judgedFiles, timing: raw.timing, ...(process.env.PLUMB_PROFILE === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) }; }
+  if (method === 'refresh') { performance.clearMeasures(); await update(params.paths as string[]); return { revision, dependencies: dependencies(), files: state.collection.parsedFiles, judged: state.judgement.judgedFiles, timing: raw.timing, ...queryInputs(), ...(process.env.PLUMB_PROFILE === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) }; }
   if (method === 'report') return report(params as CheckOptions);
+  if (method === 'edits') {
+    const file = params.file as string, view = await report();
+    index(view);
+    if (!editable.has(file)) throw new Error('Apply requires a tracked project source file.');
+    const text = await readFile(file, 'utf8'), hash = state.sourceHash(file);
+    if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
+    if (protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
+    const edits = structuredEdits(scoped(view, file, params.line as number | undefined, params.column as number | undefined), new Map([[file, text]]), decisionNames);
+    return { file, hash, edits };
+  }
+  if (method === 'remaining') {
+    const sites = params.sites as { line: number }[], file = params.file as string, view = await report();
+    const lines = new Set(sites.map(site => site.line));
+    const local = scoped(view, file);
+    const matches = (s: { line: number }) => lines.has(s.line);
+    return { hash: state.sourceHash(file), remaining: local.findings.filter(f => f.sites.some(matches)).map(f => ({ ...f, sites: f.sites.filter(matches), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => matches(d.site)) } : {}) })) };
+  }
   if (method === 'site') {
     const file = params.file as string, line = params.line as number;
     // Definition queries need all consumer counts. A source query can judge
@@ -86,5 +160,5 @@ parentPort!.on('message', ({ id, method, params }) => {
 try {
   ledger = await readLedger(options.root!);
   raw = (await analyze({ ...options, ledger: false }, undefined, state)).report;
-  parentPort!.postMessage({ ready: true, dependencies: dependencies(), patterns: [...state.patterns], files: [...state.collection.slices.keys()] });
+  parentPort!.postMessage({ ready: true, dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error) }); }

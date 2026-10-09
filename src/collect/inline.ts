@@ -38,11 +38,12 @@ function propertyName(key: string): string {
 
 // Decode literals while retaining an offset for every cooked character. This
 // keeps CSS locations in the JSX source even after escapes and line continuations.
-function embedded(node: Node, source: SourceText): { css: string; offsets: number[] } | null {
+export function embedded(node: Node, source: SourceText): { css: string; offsets: number[] } | null {
   node = unwrap(node);
   const cooked = literal(node);
   if (typeof cooked !== 'string') return null;
   const raw = source.text.slice(node.start + 1, node.end - 1);
+  if (raw === cooked) return { css: cooked, offsets: Array.from({ length: raw.length }, (_, index) => node.start + 1 + index) };
   const offsets: number[] = [];
   for (let index = 0; index < raw.length; index++) {
     const offset = node.start + 1 + index;
@@ -51,7 +52,10 @@ function embedded(node: Node, source: SourceText): { css: string; offsets: numbe
     const next = raw[++index];
     if (next === '\n') continue;
     if (next === '\r') { if (raw[index + 1] === '\n') index++; continue; }
-    if (next === 'x') index += 2;
+    if (next && /[0-7]/.test(next)) {
+      let count = 1;
+      while (count < (next <= '3' ? 3 : 2) && /[0-7]/.test(raw[index + 1] ?? '')) { index++; count++; }
+    } else if (next === 'x') index += 2;
     else if (next === 'u') {
       if (raw[index + 1] === '{') {
         const end = raw.indexOf('}', index + 2);

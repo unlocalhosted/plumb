@@ -243,8 +243,10 @@ export type { SummarySection } from './surfaces/github.js';
 export { changedLines } from './surfaces/changed-lines.js';
 export type { LineScope } from './surfaces/changed-lines.js';
 export { formatAgent } from './surfaces/agent.js';
+export type { StructuredEdit } from './surfaces/edits.js';
 export { agentDocs } from './surfaces/docs.js';
 
 export { Session, createSession } from './session/index.js';
-export type { SessionOptions, SiteResult } from './session/index.js';
-export { serve, serveStdio } from './session/server.js';
+export type { SessionOptions, SiteResult, EditsResult, ApplyOptions, ApplyResult } from './session/index.js';
+export { serve, serveStdio, createHandler, createWebHandler } from './session/server.js';
+export type { HandlerOptions, WebHandlerOptions, ServeInfo } from './session/server.js';
