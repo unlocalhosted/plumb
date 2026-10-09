@@ -98,7 +98,7 @@ test('scripted agent applies exact new gap-10 edit, reaches 0 new and preserves 
   await writeFile(file, 'export function App() { return <div className="gap-10" />; }\n');
   const output = run(directory, ['--changed', '--agent'], 1).stdout;
   assert.match(output, /1 new/); assert.match(output, /Sites: src\/App.tsx:1:/); assert.match(output, /Compiles to: gap: 10px/);
-  assert.match(output, /use gap-step-small or gap: var\(--spacing-step-small\); why: related parts/);
+  assert.match(output, /- 8px: use gap-step-small or gap: var\(--spacing-step-small\); why: related parts/);
   assert.match(output, /NEEDS-DECISION/); assert.match(output, /Do not edit plumb.config.ts/); assert.match(output, /Never add a token/);
   const edit = output.match(/Edit: replace `([^`]+)` with `([^`]+)` at src\/App.tsx:1:(\d+)\./);
   assert.ok(edit, output);
@@ -118,7 +118,11 @@ test('agent excludes debt, preserves variants, and does not choose among multipl
   assert.doesNotMatch(output, /replace `gap-10`/);
   const css = join(directory, 'src/styles.css'); await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing: 1px;', '--spacing: 1px;\n /* why: separate groups */ --spacing-step-large: 12px;'));
   output = run(directory, ['--agent'], 1).stdout;
-  assert.match(output, /Choose a decision using its reason/); assert.doesNotMatch(output, /replace `hover:gap-10!`/);
+  // Two close decisions: both edits are offered as options and Plumb does not pick one.
+  assert.match(output, /Choose a decision using its reason/);
+  assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-small!`  \(8px\)/);
+  assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-large!`  \(12px\)/);
+  assert.doesNotMatch(output, /Edit: replace `hover:gap-10!`/);
 });
 
 test('agent never announces 0 new while strict config or unaccepted decisions fail', async t => {
