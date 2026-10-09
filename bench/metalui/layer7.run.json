@@ -1,0 +1,60 @@
+{
+  "cold": {
+    "wallMs": 4786.96775,
+    "timing": {
+      "totalMs": 4542.82575,
+      "phases": {
+        "discover": 6.8046250000000015,
+        "parse": 94.03946200000027,
+        "collect": 70.01287699999969,
+        "load": 154.69466599999998,
+        "compile": 153.550792,
+        "stylesheets": 2102.3787089999996,
+        "inline": 92.10111900000004,
+        "decisions": 136.47137500000008,
+        "provenance": 250.7855840000002,
+        "ownership": 871.682667
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1302
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 0,
+      "cacheMisses": 1303,
+      "parseMs": 113.40147100000002,
+      "totalMs": 235.56708300000003
+    }
+  },
+  "warm": {
+    "wallMs": 2187.0548339999996,
+    "timing": {
+      "totalMs": 2012.1305000000002,
+      "phases": {
+        "discover": 7.520416999999995,
+        "parse": 92.56584200000016,
+        "collect": 62.195444999999836,
+        "load": 41.17254099999997,
+        "compile": 0,
+        "stylesheets": 173.37608299999994,
+        "inline": 83.50475499999999,
+        "decisions": 119.33862499999987,
+        "provenance": 222.03229199999987,
+        "ownership": 681.7770839999998
+      },
+      "cacheHits": 1302,
+      "cacheMisses": 0
+    },
+    "moduleGraph": {
+      "modules": 1560,
+      "followed": 1303,
+      "cssFiles": 4,
+      "cacheHits": 1303,
+      "cacheMisses": 0,
+      "parseMs": 0,
+      "totalMs": 59.09862500000003
+    }
+  }
+}

@@ -14,6 +14,8 @@ import { references } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
 import { readDecisions } from './decisions/index.js';
 import { provenance } from './rules/provenance.js';
+import { discoverComponents } from './ownership/components.js';
+import { judgeOwnership } from './ownership/judge.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 
@@ -94,6 +96,10 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   const judged = provenance(declarations, record, config.value);
   findings.push(...judged.findings);
   const provenanceMs = performance.now() - provenanceStart;
+  const ownershipStart = performance.now();
+  const owned = judgeOwnership(declarations, discoverComponents(root, files, config.value), config.value);
+  findings.push(...owned.findings);
+  const ownershipMs = performance.now() - ownershipStart;
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -112,7 +118,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     stylesheets,
     moduleGraph: modules.counts,
     notes: [...modules.notes, ...css.notes, ...[...lowered.candidates].flatMap(([token, result]) => result.notes.map(note => `${token}: ${note}`))],
-    coverage: { ...judged.coverage, existence: { total: collected.sites.filter(site => !site.opaque).length,
+    coverage: { ...judged.coverage, ownership: owned.coverage, existence: { total: collected.sites.filter(site => !site.opaque).length,
       deadVars: findings.filter(f => f.rule === 'existence/dead-var').reduce((n,f) => n + f.sites.length, 0),
       dead: findings.filter(finding => finding.rule === 'existence/dead-class').reduce((count, finding) => count + finding.sites.length, 0) }, declarations: origins, stylesheets: stylesheetCounts,
       inline: { sites: collected.styles.sites.length, literalSites: collected.styles.sites.filter(site => site.literal).length,
@@ -120,7 +126,7 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
         fullyOpaque: collected.styles.declarations.filter(declaration => declaration.prop === '*' && declaration.opaque).length,
         spreads: collected.styles.declarations.filter(declaration => declaration.opaque === 'spread').length } },
     classes: { unique: unique.length, opaque: collected.opaque },
-    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
+    timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs, ownership: ownershipMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
   return { report, sites };
 }

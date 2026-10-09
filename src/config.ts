@@ -15,6 +15,7 @@ export interface DecisionSource {
 export interface ComponentContract {
   own?: string[];
   allow?: string[];
+  deny?: string[];
 }
 
 export interface CustomHabit {
@@ -30,7 +31,7 @@ export interface PlumbConfig {
   classHelpers?: string[];
   decisions?: Partial<Record<Family, DecisionSource>>;
   components?: {
-    from: string | string[];
+    from?: string | string[];
     own?: string[];
     contracts?: Record<string, ComponentContract>;
   };
@@ -127,15 +128,16 @@ function validate(value: unknown): PlumbConfig {
   if ('components' in config) {
     const components = object(config.components, 'components');
     keys(components, ['from', 'own', 'contracts'], 'components');
-    from(components.from, 'components.from');
+    if ('from' in components) from(components.from, 'components.from');
     if ('own' in components) strings(components.own, 'components.own');
     if ('contracts' in components) {
       for (const [name, value] of Object.entries(object(components.contracts, 'components.contracts'))) {
         const path = `components.contracts.${name}`;
         const contract = object(value, path);
-        keys(contract, ['own', 'allow'], path);
+        keys(contract, ['own', 'allow', 'deny'], path);
         if ('own' in contract) strings(contract.own, `${path}.own`);
         if ('allow' in contract) strings(contract.allow, `${path}.allow`);
+        if ('deny' in contract) strings(contract.deny, `${path}.deny`);
       }
     }
   }
