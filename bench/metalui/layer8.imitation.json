@@ -1,0 +1,414 @@
+{
+  "root": "/Users/vijaysingh/unlocalhosted/metalui",
+  "commit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "snapshot": true,
+  "sourceSha256": "b7fb40fd569d1b781e328aeb114e93b8cb698764f699be0278854f00ce20ecf0",
+  "findings": [
+    {
+      "key": "imitation:Field:45615211b8a29690",
+      "rule": "imitation/Field",
+      "family": "imitation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/TagCue.tsx",
+          "line": 27,
+          "column": 7,
+          "text": "<input> material-well"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "material-well",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/TagCue.tsx",
+          "line": 27,
+          "column": 7,
+          "text": "<input> material-well"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "input"
+        },
+        "origin": "class"
+      },
+      "occurrences": [
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/TagCue.tsx",
+            "line": 27,
+            "column": 7,
+            "text": "<input> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "input"
+          },
+          "origin": "class"
+        }
+      ],
+      "decisions": [],
+      "component": {
+        "name": "Field",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/field/field.tsx",
+          "line": 47
+        },
+        "variants": {
+          "tone": [
+            "light",
+            "graphite"
+          ],
+          "size": [
+            "large",
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [],
+          "classes": []
+        }
+      },
+      "why": "Raw elements carry Field's fingerprint: material-well.",
+      "fix": "use <Field>; it already owns class material-well."
+    },
+    {
+      "key": "imitation:Textarea:01553e38cf2576e3",
+      "rule": "imitation/Textarea",
+      "family": "imitation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ColourCue.tsx",
+          "line": 22,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueDocumentProof.tsx",
+          "line": 24,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+          "line": 45,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+          "line": 33,
+          "column": 5,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/EnumCue.tsx",
+          "line": 32,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/LinkCue.tsx",
+          "line": 21,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/NumericCue.tsx",
+          "line": 53,
+          "column": 5,
+          "text": "<textarea> material-well"
+        },
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/PersonCue.tsx",
+          "line": 29,
+          "column": 7,
+          "text": "<textarea> material-well"
+        }
+      ],
+      "declaration": {
+        "prop": "class",
+        "value": "material-well",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ColourCue.tsx",
+          "line": 22,
+          "column": 7,
+          "text": "<textarea> material-well"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "textarea"
+        },
+        "origin": "class"
+      },
+      "occurrences": [
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/ColourCue.tsx",
+            "line": 22,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueDocumentProof.tsx",
+            "line": 24,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/CueRecognition.tsx",
+            "line": 45,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/DateCue.tsx",
+            "line": 33,
+            "column": 5,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/EnumCue.tsx",
+            "line": 32,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/LinkCue.tsx",
+            "line": 21,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/NumericCue.tsx",
+            "line": 53,
+            "column": 5,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        },
+        {
+          "prop": "class",
+          "value": "material-well",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/pages/components/PersonCue.tsx",
+            "line": 29,
+            "column": 7,
+            "text": "<textarea> material-well"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class"
+        }
+      ],
+      "decisions": [],
+      "component": {
+        "name": "Textarea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/textarea/textarea.tsx",
+          "line": 60
+        },
+        "variants": {
+          "size": [
+            "large",
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "block",
+            "mu-textarea-slot"
+          ]
+        }
+      },
+      "why": "Raw elements carry Textarea's fingerprint: material-well.",
+      "fix": "use <Textarea>; it already owns class material-well."
+    },
+    {
+      "key": "imitation:Textarea:9eb1a44fbf90c5ca",
+      "rule": "imitation/Textarea",
+      "family": "imitation",
+      "severity": "error",
+      "sites": [
+        {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/cues/ProvenanceDocument.tsx",
+          "line": 97,
+          "column": 7,
+          "text": "<textarea> background: var(--mu-r-well-self-field-background)"
+        }
+      ],
+      "declaration": {
+        "prop": "background",
+        "value": "var(--mu-r-well-self-field-background)",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".recipe-well-field"
+          }
+        ],
+        "refs": [
+          "--mu-r-well-self-field-background"
+        ],
+        "site": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/cues/ProvenanceDocument.tsx",
+          "line": 97,
+          "column": 7,
+          "text": "<textarea> background: var(--mu-r-well-self-field-background)"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "textarea"
+        },
+        "origin": "class",
+        "sourceOrigin": "project",
+        "authoredValue": false
+      },
+      "occurrences": [
+        {
+          "prop": "background",
+          "value": "var(--mu-r-well-self-field-background)",
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".recipe-well-field"
+            }
+          ],
+          "refs": [
+            "--mu-r-well-self-field-background"
+          ],
+          "site": {
+            "file": "/Users/vijaysingh/unlocalhosted/metalui/apps/docs/src/ui/cues/ProvenanceDocument.tsx",
+            "line": 97,
+            "column": 7,
+            "text": "<textarea> background: var(--mu-r-well-self-field-background)"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "textarea"
+          },
+          "origin": "class",
+          "sourceOrigin": "project",
+          "authoredValue": false
+        }
+      ],
+      "decisions": [],
+      "component": {
+        "name": "Textarea",
+        "source": {
+          "file": "/Users/vijaysingh/unlocalhosted/metalui/packages/metalui/src/components/textarea/textarea.tsx",
+          "line": 60
+        },
+        "variants": {
+          "size": [
+            "large",
+            "regular",
+            "compact"
+          ]
+        },
+        "roots": {
+          "elements": [
+            "div"
+          ],
+          "classes": [
+            "block",
+            "mu-textarea-slot"
+          ]
+        }
+      },
+      "why": "Raw elements carry Textarea's fingerprint: var(--mu-r-well-.",
+      "fix": "use <Textarea>; it already owns declarations using var(--mu-r-well-."
+    }
+  ]
+}

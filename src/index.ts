@@ -16,6 +16,7 @@ import { readDecisions } from './decisions/index.js';
 import { provenance } from './rules/provenance.js';
 import { discoverComponents } from './ownership/components.js';
 import { judgeOwnership } from './ownership/judge.js';
+import { judgeImitation, suggestImitation } from './imitation/index.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
 import { applyLedger } from './ledger/check.js';
@@ -33,6 +34,8 @@ export interface CheckOptions extends LedgerOptions {
   config?: string;
   /** Inspection/mutation commands need the full, unclassified rule output. */
   ledger?: boolean;
+  /** Report candidate fingerprints without enabling or persisting them. */
+  suggestImitation?: boolean;
 }
 
 async function analyze(options: CheckOptions): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
@@ -102,9 +105,11 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
   findings.push(...judged.findings);
   const provenanceMs = performance.now() - provenanceStart;
   const ownershipStart = performance.now();
-  const owned = judgeOwnership(declarations, discoverComponents(root, files, config.value), config.value);
+  const components = discoverComponents(root, files, config.value, !!options.suggestImitation);
+  const owned = judgeOwnership(declarations, components, config.value);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart;
+  findings.push(...judgeImitation(components, collected.sites, declarations, config.value));
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
   const stylesheetCounts: Report['coverage']['stylesheets'] = { entry: 0, import: 0, reference: 0, 'side-effect': 0, module: 0, source: 0, 'jsx-style': 0 };
@@ -134,6 +139,8 @@ async function analyze(options: CheckOptions): Promise<{ report: Report; sites: 
     classes: { unique: unique.length, opaque: collected.opaque },
     timing: { totalMs: performance.now() - start, phases: { discover, parse: collected.parseMs, collect: collected.collectMs, load: lowered.loadMs, compile: lowered.compileMs, stylesheets: stylesheetsMs, inline: collected.inlineMs, decisions: decisionsMs, provenance: provenanceMs, ownership: ownershipMs }, cacheHits: lowered.cacheHits, cacheMisses: lowered.cacheMisses },
   };
+  if (options.suggestImitation) report.imitationSuggestions = await suggestImitation(components, collected.sites, report, config.value);
+  report.timing.totalMs = performance.now() - start;
   return { report, sites };
 }
 

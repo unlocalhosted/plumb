@@ -882,3 +882,67 @@ Paths below are relative to apps/docs/src. Each row is one property/site pair; s
 Warm compiler **1302 hits / 0 misses**; module graph **1303 hits / 0 misses**. Cold/warm declarations, decisions, coverage and all findings are deeply equal. This is one local process pair, not a latency guarantee; warm full CLI is above two seconds. Full phase receipt: [layer7.run.json](bench/metalui/layer7.run.json). Reproduce: `npm run build`, `node bench/metalui/measure-layer7.mjs`, `node bench/metalui/reconcile-layer7.mjs`; the cache is exactly `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer7`.
 
 Final validation: **75 CLI integration/e2e tests green**, typecheck and whitespace check green. Core covers discovery precedence, aliases/barrels/namespaces/default exports, forwarding wrappers, compound parts, both render-prop directions, dynamic inline properties, compiled/static/arbitrary classes, per-property/family allow/deny, source-glob boundary, root-selector warnings, cva/tv and prop unions (including adjacent declaration files for published JS). Known static limits: opaque whole style objects/spreads and unlowered template holes have no invented properties; no runtime identity or cascade analysis; selector functions/siblings/IDs and ancestry across independently rendered files remain unknown. `PRESSED[cap]` inside Button.tsx:533's template is an existing opaque class-reader boundary, while the literal pressed recipe in availability-picker is lowered and caught. Details: [Layer 7 notes](docs/layers/7-ownership.md).
+
+## Layer 8: imitation — explicit controls and report-only proposals
+
+Measured read only against MetalUI **faa2036e4634e4f6c8d49feaa2dac87a77559501**, the same revision as layer 7. Source is an immutable Git archive inside `bench/metalui/.cache/layer8/input/`; existing dependencies are linked read only. Inherited preset token/theme inputs are byte-checked against the archive. Live MetalUI moved during this work, so later working-tree/HEAD changes are excluded from these measurements. Every run uses `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer8`.
+
+### Source-grounded fingerprints
+
+[imitation.config.ts](bench/metalui/imitation.config.ts) adds only:
+
+```ts
+Textarea: { elements: ['textarea'], fingerprint: ['material-well', 'var(--mu-r-well-'] },
+Field: { elements: ['input'], fingerprint: ['material-well', 'var(--mu-r-well-'] },
+```
+
+`textarea/textarea.tsx:40` defines its WELL with `recipe-well-field`. `field/field.tsx:47` defines Field.Root, which composes Well with its field/graphite variant. `well/well.tsx:22` maps the field variant to `recipe-well-field`. `theme.css:221` defines legacy `material-well` as the well gradient and inset shadow; `theme.css:2179` defines current field-well paint with `var(--mu-r-well-self-field-background)` and `var(--mu-r-well-self-field-shadow)`. Both explicit alternatives identify well paint on native text controls. The variables/material are shared with other components, so they are deliberately tag-filtered and are not presented as inferred exclusive identities. Field's actual compound API remains the source-grounded migration target for the raw input.
+
+### Every emitted element reviewed
+
+**All eight hand-verified baseline pages caught, exactly one control each: seven Textarea findings and one Field finding.** There are **two additional catches**, listed explicitly rather than silently removing evidence to force an eight-total report. Final totals: **3 groups / 10 native elements**, all severity error before ledger classification, zero findings in component sources or on identified design-system components.
+
+| Site, relative to apps/docs/src | Rule | Matched evidence | Verdict |
+| --- | --- | --- | --- |
+| pages/components/ColourCue.tsx:22 | imitation/Textarea | material-well | Baseline true imitation: manually paints the native source editor with the well. Use Textarea while retaining cue-document input/selection behavior. |
+| pages/components/CueDocumentProof.tsx:24 | imitation/Textarea | material-well | Baseline true imitation: document-source textarea duplicates the well paint. |
+| pages/components/DateCue.tsx:33 | imitation/Textarea | material-well | Baseline true imitation: date source textarea duplicates well material; height is caller layout. |
+| pages/components/EnumCue.tsx:32 | imitation/Textarea | material-well | Baseline true imitation: enum source textarea draws its own well. |
+| pages/components/LinkCue.tsx:21 | imitation/Textarea | material-well | Baseline true imitation: link source textarea duplicates the component's well. |
+| pages/components/NumericCue.tsx:53 | imitation/Textarea | material-well | Baseline true imitation: numeric source textarea draws well paint; cue/selection callbacks must survive migration. |
+| pages/components/PersonCue.tsx:29 | imitation/Textarea | material-well | Baseline true imitation: person source textarea duplicates well paint. |
+| pages/components/TagCue.tsx:27 | imitation/Field | material-well | Baseline true imitation: this page uses input, so Field is the honest target. It is not relabeled Textarea to manufacture eight Textarea sites. |
+| pages/components/CueRecognition.tsx:45 | imitation/Textarea | material-well | Additional true imitation beyond the eight-page baseline: recognition demo manually styles a native textarea. Composition, caret/selection and recognition handlers are behavioral requirements for a migration, not an exemption from shared paint. |
+| ui/cues/ProvenanceDocument.tsx:97 | imitation/Textarea | lowered recipe-well-field declarations using var(--mu-r-well- | Additional true imitation: production docs source editor uses current well recipe on a raw textarea. Document undo, selection and tag-completion behavior must be retained. This proves the variable-prefix path independently of the legacy class. |
+
+The Textarea material group contains eight sites (seven baseline pages plus CueRecognition), Field's material group contains TagCue, and the Textarea variable group contains ProvenanceDocument. No additional catch remains unreviewed. No exception, baseline or automatic source/config edit was applied.
+
+### Actual --suggest run: five component proposals
+
+`plumb imitation --suggest --json` ran through the real CLI and exited 0, reporting **212 discovered component proposals**. Each includes its canonical source, proposed fingerprint and the number of distinct raw project elements it would catch. **None enabled.** The complete arrays are retained in [layer8.suggestions.json](bench/metalui/layer8.suggestions.json).
+
+| Component | Proposed classes / custom properties | Raw elements caught | Review |
+| --- | --- | ---: | --- |
+| Button | 2 / 0: basis-full, type-doc-caption | 29 | Syntactically exclusive in these component sources, but generic layout/type classes are weak identity. Do not enable automatically; the count demonstrates why source exclusivity alone is insufficient intent. |
+| Textarea | 1 / 0: mu-textarea-slot | 0 | Only the returned outer slot is a root fingerprint. Its inner well and textarea declarations are children, so inference does not manufacture an exclusive well fingerprint. |
+| Field | 0 / 0 | 0 | Returned root is FieldCtx.Provider; its child Well is not flattened into root declarations. Explicit, tag-filtered well evidence remains the reviewed option. |
+| Well | 11 / 26 | 1 | Includes mu-well, region/track recipes, region-hue, rounded-well-radius-* and transition-well; unique variables include --mu-r-well-radius-*, region/track material, region wash/ring and transition references. Field/graphite recipes are omitted because other component sources use them. Review the entire set before enabling. |
+| Surface | 27 / 36 | 8 | Includes mu-surface, unique recipe/backdrop/radius classes, and exact --mu-r-surface-* variables. Shared raise/card choices are omitted where they occur in another source. Counts are candidates for review, not new enabled errors. |
+
+Variable proposals use exact names, not inferred broad prefixes. Exclusivity considers all other discovered component sources, including unused exports and children. Components sharing one source file conservatively lose shared proposals. Dynamic expressions, unknown runtime helpers, provider wrappers and unlowerable declarations limit inference; no visual correctness is inferred.
+
+### Verification, receipts and inherited limitation
+
+Final `npm test`: **100 integration/e2e tests passed, zero failures/skips**, including six imitation feature slices. `npm run typecheck` and `git diff --check` pass. Protected `formatText`, `formatFinding` and `brief` remain unchanged. No installs, commits, unit tests or MetalUI writes.
+
+Pinned MetalUI's existing default `plumb check --json` crashes in `applyLedger` with `Cannot read properties of undefined (reading 'key')`. The same failure reproduces using `ownership.config.ts` with imitation disabled: duplicate compiler-fallback dead-var sites at `kds.css:509` share a physical location, and an inherited report site lacks a ledger key. Layer 8 does not edit layer 6. Its explicit-rule benchmark uses the public `check({ ledger: false })` API in fresh Node processes; fixture CLI checks and the real MetalUI suggestion CLI succeed. These receipts do not claim a successful default MetalUI check.
+
+| Measurement | Cold | Warm |
+| --- | ---: | ---: |
+| Fresh rule-report process, including JSON | 4468.3 ms | 2180.3 ms |
+| Report total before ledger classification | 4296.8 ms | 2004.6 ms |
+| Ownership discovery/judging | 673.2 ms | 658.0 ms |
+
+Real CLI `imitation --suggest` process: **5948.8 ms**, after the warm project run. Cold compiler **0 hits / 1302 misses**; warm **1302 hits / 0 misses**. Findings, declarations, decisions and coverage are deeply equal cold/warm. One local process pair, not a latency guarantee. Input hash, all ten finding sites, full proposals and timings: [layer8.imitation.json](bench/metalui/layer8.imitation.json), [layer8.suggestions.json](bench/metalui/layer8.suggestions.json), [layer8.run.json](bench/metalui/layer8.run.json).
+
+Reproduce after build: `PLUMB_CACHE_DIR=$PWD/bench/metalui/.cache/layer8 node bench/metalui/measure-layer8.mjs`. The script clears only layer 8 compiler/module receipts, retains its pinned source archive, verifies all eight baseline controls and source exclusions, compares cold/warm reports, and runs the actual suggestion CLI. Optional `METALUI_ROOT` and `METALUI_COMMIT` explicitly select another input. Implementation and conservative inference boundaries: [Layer 8 notes](docs/layers/8-imitation.md).

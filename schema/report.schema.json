@@ -33,6 +33,12 @@
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "imitationSuggestions": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false, "required": ["component", "fingerprint", "rawElements"],
+        "properties": { "component": { "$ref": "#/$defs/component" }, "fingerprint": { "$ref": "#/$defs/strings" }, "rawElements": { "$ref": "#/$defs/count" }, "notes": { "$ref": "#/$defs/strings" } }
+      }
+    },
     "ledger": {
       "type": "object", "additionalProperties": false,
       "required": ["exists", "path", "entries", "new", "debt", "exceptions", "outOfScope", "stale", "growth", "message"],

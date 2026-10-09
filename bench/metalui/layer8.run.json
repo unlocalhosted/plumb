@@ -1,0 +1,45 @@
+{
+  "cold": {
+    "wallMs": 4468.311708,
+    "timing": {
+      "totalMs": 4296.75975,
+      "phases": {
+        "discover": 6.706292000000005,
+        "parse": 85.97608800000005,
+        "collect": 99.45465300000062,
+        "load": 139.72787499999998,
+        "compile": 113.92399999999998,
+        "stylesheets": 2128.9517499999997,
+        "inline": 68.61671699999933,
+        "decisions": 139.66995899999984,
+        "provenance": 236.63745900000004,
+        "ownership": 673.19175
+      },
+      "cacheHits": 0,
+      "cacheMisses": 1302
+    }
+  },
+  "warm": {
+    "wallMs": 2180.2951249999996,
+    "timing": {
+      "totalMs": 2004.6456249999999,
+      "phases": {
+        "discover": 5.843958999999998,
+        "parse": 79.03420400000007,
+        "collect": 101.28757599999972,
+        "load": 33.51383299999998,
+        "compile": 0,
+        "stylesheets": 174.83545800000007,
+        "inline": 69.04801200000023,
+        "decisions": 122.35012499999993,
+        "provenance": 232.60908400000017,
+        "ownership": 657.977083
+      },
+      "cacheHits": 1302,
+      "cacheMisses": 0
+    }
+  },
+  "suggest": {
+    "wallMs": 5948.783542000001
+  }
+}

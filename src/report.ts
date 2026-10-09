@@ -109,6 +109,7 @@ export interface Report {
   notes: string[];
   /** Project theme decisions, including keys outside configured judging ladders. */
   decisionInventory?: Decision[];
+  imitationSuggestions?: import('./imitation/index.js').ImitationSuggestion[];
   ledger?: import('./ledger/types.js').LedgerSummary;
   declarations: Declaration[];
   stylesheets: { file: string; sourceOrigin: 'project' | 'framework'; package?: string; reached: { kind: 'entry' | 'import' | 'reference' | 'side-effect' | 'module' | 'source' | 'jsx-style'; from?: string; specifier?: string }[] }[];

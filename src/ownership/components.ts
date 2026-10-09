@@ -3,9 +3,10 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
+import { globSync } from 'tinyglobby';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
-import { lineStarts, nodeName, sourceSite, unwrap } from '../collect/source.js';
+import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
 import type { SourceText } from '../collect/source.js';
 import { UsageError } from '../errors.js';
 
@@ -27,6 +28,8 @@ interface Module extends SourceText {
 }
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
 interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[] }
+export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
+export interface RootRange { file: string; start: number; end: number }
 export interface ComponentGraph {
   root: string;
   components: ComponentIdentity[];
@@ -34,6 +37,11 @@ export interface ComponentGraph {
   used: ComponentIdentity[];
   usages: Map<string, Usage[]>;
   mounts: ComponentMount[];
+  elements: ElementIdentity[];
+  element(site: Site): ElementIdentity | undefined;
+  rootRanges: Map<ComponentIdentity, RootRange[]>;
+  fingerprintClasses: Map<ComponentIdentity, string[]>;
+  sourceTokens: Map<string, { classes: Set<string>; variables: Set<string> }>;
 }
 const parserOptions = { preserveParens: false, experimentalRawTransfer: rawTransferSupported() };
 const typeEdges = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeArguments', 'implements']);
@@ -54,7 +62,9 @@ const inDirectory = (file: string, directory: string) => file === directory || f
 const isFunction = (node: Node) => ['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(node.type);
 const memberName = (node: Node): string => node.type === 'MemberExpression' && !node.computed ? `${memberName(node.object)}.${nodeName(node.property)}` : nodeName(node);
 
-export function discoverComponents(root: string, files: string[], config: PlumbConfig): ComponentGraph {
+export function discoverComponents(root: string, files: string[], config: PlumbConfig, includeUnused = false): ComponentGraph {
+  const rootRanges = new Map<ComponentIdentity, RootRange[]>();
+  const fingerprintClasses = new Map<ComponentIdentity, string[]>();
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
     conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
@@ -90,6 +100,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       } catch (error) { throw new UsageError(`Read components.json: ${String(error)}`); }
     } else directories.push(join(root, existsSync(join(root, 'src/components/ui')) ? 'src/components/ui' : 'src/components'));
   }
+  const discoveryDirectories = [...directories];
   function selectedFile(file: string): boolean { return selected.has(file) || directories.some(directory => inDirectory(file, directory)); }
   function target(file: string, specifier: string): string | undefined {
     const path = resolver.resolveFileSync(file, specifier).path;
@@ -301,7 +312,41 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     visited.clear();
     dependency(node, false);
     const at = sourceSite(value, node.start, name);
-    return { name, source: { file: value.file, line: at.line }, variants, roots: { elements: [...elements].sort(), classes: [...classes].sort() } };
+    const identity = { name, source: { file: value.file, line: at.line }, variants, roots: { elements: [...elements].sort(), classes: [...classes].sort() } };
+    rootRanges.set(identity, rootOpenings.flatMap(item => item.type === 'JSXOpeningElement' ? item.attributes.flatMap(attr =>
+      attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name)) ? [{ file: value.file, start: attr.start, end: attr.end }] : []) : []));
+    const fingerprint = new Set<string>(), followed = new Set<string>();
+    const tokens = (text: string) => { for (const token of text.split(/\s+/)) if (token) fingerprint.add(token); };
+    function rootClasses(item: Node): void {
+      item = unwrap(item);
+      if (item.type === 'Literal' && typeof item.value === 'string') { tokens(item.value); return; }
+      if (item.type === 'Identifier') {
+        if (followed.has(item.name)) return; followed.add(item.name);
+        const binding = bindings.get(item.name); if (binding) rootClasses(binding);
+        return;
+      }
+      if (item.type === 'TemplateLiteral') {
+        item.quasis.forEach((quasi, index) => {
+          const text = quasi.value.cooked ?? '';
+          // A glued hole is opaque, not a partial class fingerprint.
+          for (const match of text.matchAll(/\S+/g)) if ((index === 0 || match.index > 0) && (index === item.quasis.length - 1 || match.index + match[0].length < text.length)) tokens(match[0]);
+        });
+        for (const expression of item.expressions) rootClasses(expression);
+        return;
+      }
+      if (item.type === 'ConditionalExpression') { rootClasses(item.consequent); rootClasses(item.alternate); return; }
+      if (item.type === 'LogicalExpression') { rootClasses(item.left); rootClasses(item.right); return; }
+      if (item.type === 'MemberExpression') { rootClasses(item.object); return; }
+      if (item.type === 'ObjectExpression') { for (const property of item.properties) if (property.type === 'Property') rootClasses(property.value); return; }
+      if (item.type === 'ArrayExpression') { for (const element of item.elements) if (element) rootClasses(element); return; }
+      if (item.type === 'JSXExpressionContainer') { rootClasses(item.expression); return; }
+      if (item.type === 'CallExpression' && /(?:^|\.)(?:cn|clsx|cx|classNames|twMerge|twJoin|cva|tv)$/.test(memberName(item.callee))) for (const argument of item.arguments) rootClasses(argument);
+    }
+    for (const opening of rootOpenings) if (opening.type === 'JSXOpeningElement') for (const attr of opening.attributes) {
+      if (attr.type === 'JSXAttribute' && ['className', 'class'].includes(nodeName(attr.name)) && attr.value) rootClasses(attr.value);
+    }
+    fingerprintClasses.set(identity, [...fingerprint].sort());
+    return identity;
   }
   function local(value: Module, name: string, seen: Set<string>): ComponentIdentity | undefined {
     const key = `${value.file}:${name}`;
@@ -370,6 +415,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     identities.set(key, found ?? null); return found;
   }
   const usages = new Map<string, Usage[]>(), used = new Map<string, ComponentIdentity>(), mounts: ComponentMount[] = [];
+  const elements: ElementIdentity[] = [], elementsByFile = new Map<string, ElementIdentity[]>();
   for (const file of files.filter(file => /\.[jt]sx?$/.test(file))) {
     const value = module(file), ranges: Usage[] = [];
     function scan(node: Node, inherited?: ComponentIdentity, shadowed = new Set<string>(), ancestors: ComponentMount['ancestors'] = []): void {
@@ -389,6 +435,12 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         const render = opening.attributes.find(attr => attr.type === 'JSXAttribute' && nodeName(attr.name) === 'render');
         // A design-system render target lends its identity to the primitive host.
         if (!component && render?.type === 'JSXAttribute' && render.value?.type === 'JSXExpressionContainer' && render.value.expression.type === 'JSXElement') component = local(value, nodeName(render.value.expression.openingElement.name), new Set());
+        const element: ElementIdentity = { start: opening.start, end: opening.end, tag, site: sourceSite(value, opening.start, `<${tag}>`),
+          styling: opening.attributes.flatMap(attr => attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name)) ? [{ start: attr.start, end: attr.end }] : []),
+          ...(component ? { component } : {}) };
+        elements.push(element);
+        const fileElements = elementsByFile.get(file) ?? [];
+        fileElements.push(element); elementsByFile.set(file, fileElements);
         const classes: string[] = [];
         for (const attr of opening.attributes) if (attr.type === 'JSXAttribute' && ['className', 'class'].includes(nodeName(attr.name)) && attr.value?.type === 'Literal' && typeof attr.value.value === 'string') classes.push(...attr.value.value.split(/\s+/));
         if (component) {
@@ -404,8 +456,41 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     }
     scan(value.ast); usages.set(file, ranges);
   }
+  // Imitation needs identities even when every caller hand-builds the component.
+  // Walk selected exports only on request; ownership's normal discovery stays unchanged.
+  const fingerprints = Object.keys(config.imitation ?? {});
+  if ((includeUnused || fingerprints.length) && files[0]) for (const specifier of [...packages, ...prefixes]) { const path = target(files[0], specifier); if (path) module(path); }
+  if (includeUnused || fingerprints.length) for (const directory of discoveryDirectories) if (existsSync(directory)) {
+    for (const file of globSync('**/*.{tsx,jsx,ts,js,mts,mjs,cts,cjs}', { cwd: directory, absolute: true, ignore: ['**/node_modules/**', '**/*.d.ts'], followSymbolicLinks: false })) module(file);
+  }
+  if (includeUnused) {
+    for (const value of modules.values()) if (selectedFile(value.file)) {
+      for (const name of value.exports.keys()) if (name !== '*') exported(value.file, name, new Set());
+      for (const star of value.stars) { const path = target(value.file, star); if (path) { selected.add(path); module(path); } }
+    }
+  } else if (fingerprints.length) {
+    for (const value of modules.values()) if (selectedFile(value.file)) for (const name of fingerprints) exported(value.file, name, new Set());
+  }
   const components = [...new Map([...identities.values()].flatMap(value => value ? [[`${value.source.file}:${value.name}`, value] as const] : [])).values()];
-  return { root, components, used: [...used.values()], usages, mounts,
+  const sourceTokens = new Map<string, { classes: Set<string>; variables: Set<string> }>();
+  if (includeUnused) for (const file of new Set(components.map(component => component.source.file))) {
+    const inventory = { classes: new Set<string>(), variables: new Set<string>() };
+    walk(module(file).ast, item => {
+      const texts = item.type === 'Literal' && typeof item.value === 'string' ? [item.value] : item.type === 'TemplateLiteral' ? item.quasis.map(quasi => quasi.value.cooked ?? '') : [];
+      for (const text of texts) {
+        for (const token of text.split(/\s+/)) if (token) inventory.classes.add(token);
+        for (const name of references(text)) inventory.variables.add(name);
+      }
+    });
+    sourceTokens.set(file, inventory);
+  }
+  return { root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
+    element(site) {
+      const value = modules.get(site.file); if (!value) return;
+      const offset = value.lineStarts[site.line - 1]! + site.column - 1;
+      // Nested JSX in render/style expressions belongs to the smallest opening.
+      return elementsByFile.get(site.file)?.filter(item => item.styling.some(range => offset >= range.start && offset < range.end)).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+    },
     caller(declaration) {
       const value = modules.get(declaration.site.file); if (!value) return;
       const offset = value.lineStarts[declaration.site.line - 1]! + declaration.site.column - 1;

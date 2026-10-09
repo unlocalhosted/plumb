@@ -1,0 +1,6 @@
+:root { --kit-well-fill: white; --kit-field-ink: black; --kit-child-fill: red; }
+.kit-well { background: var(--kit-well-fill); }
+.kit-field-control { color: var(--kit-field-ink); }
+.kit-child { color: var(--kit-child-fill); }
+.copied-well { background: var(--kit-well-fill); }
+.shared { display: block; }

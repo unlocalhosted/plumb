@@ -37,7 +37,7 @@ export interface PlumbConfig {
     contracts?: Record<string, ComponentContract>;
   };
   habits?: (string | CustomHabit)[];
-  imitation?: Record<string, { elements: string[]; fingerprint: string[] }>;
+  imitation?: Record<string, { elements?: string[]; fingerprint: string[] }>;
 }
 
 export interface LoadedConfig {
@@ -161,8 +161,12 @@ function validate(value: unknown): PlumbConfig {
       const path = `imitation.${name}`;
       const imitation = object(value, path);
       keys(imitation, ['elements', 'fingerprint'], path);
-      strings(imitation.elements, `${path}.elements`);
+      if ('elements' in imitation) {
+        strings(imitation.elements, `${path}.elements`);
+        for (const tag of imitation.elements as string[]) if (!/^[a-z][\w-]*$/.test(tag)) invalid(`${path}.elements`, 'lowercase tag names');
+      }
       strings(imitation.fingerprint, `${path}.fingerprint`);
+      if (!(imitation.fingerprint as string[]).length) invalid(`${path}.fingerprint`, 'a non-empty array of strings');
     }
   }
   return config as PlumbConfig;
