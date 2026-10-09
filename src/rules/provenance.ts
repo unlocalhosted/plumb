@@ -36,7 +36,7 @@ export function useFor(decision: Decision, prop: string, theme: ReadonlySet<stri
   const css = ref ? `${prop}: ${ref}` : `token ${decision.refs[0] ?? decision.name}`;
   return utility ? { class: utility, css } : { css };
 }
-function suggestion(decision: Decision, prop: string, theme: ReadonlySet<string>): string {
+export function suggestion(decision: Decision, prop: string, theme: ReadonlySet<string>): string {
   const use = useFor(decision, prop, theme);
   return `${decision.name} (${decision.resolved ?? decision.value})${decision.why ? ` "${decision.why}"` : ''}: ${use.class ? `${use.class} or ` : ''}${use.css}`;
 }
@@ -76,7 +76,7 @@ function resolutionContext(declarations: Declaration[], record: DecisionRecord) 
   };
 }
 
-function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
+export function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
   sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
   findings: Finding[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {

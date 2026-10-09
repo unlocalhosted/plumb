@@ -1,3 +1,4 @@
+import type { AnalysisRuntime } from './session/runtime.js';
 import { stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -50,7 +51,9 @@ export interface CheckOptions extends LedgerOptions {
   suggestImitation?: boolean;
 }
 
-async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
+export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?: AnalysisRuntime): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
+  const phase = <T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> => runtime ? runtime.phase(name, inputs, compute) : Promise.resolve(compute());
+  const sync = <T>(name: string, inputs: unknown[], compute: () => T): T => runtime ? runtime.sync(name, inputs, compute) : compute();
   const start = performance.now();
   const root = resolve(options.root ?? process.cwd());
   try {
@@ -58,13 +61,13 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   } catch (error) {
     throw new UsageError(`Set --root to an existing project directory: ${root}: ${errorMessage(error)}`);
   }
-  const config = await loadConfig(root, options.config);
+  const config = await phase('config', [root, options.config], () => loadConfig(root, options.config));
   profileDuration('phase:config', performance.now() - start);
   const input = snippet ? prepareSnippet(root, config.value, snippet) : undefined;
   const discoverStart = performance.now();
   let project: Awaited<ReturnType<typeof discoverProject>>;
   try {
-    project = await discoverProject(root, config.value);
+    project = await phase('project', [root, config.value], () => discoverProject(root, config.value));
   } catch (error) {
     if (error instanceof UsageError) throw error;
     throw new UsageError(`Fix project files under ${root}: ${errorMessage(error)}`);
@@ -73,25 +76,25 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   if (input?.file === project.tailwind.entry) throw new UsageError('--as must name a source file other than the Tailwind entry.');
   if (input) project.files = { tsx: input.lang === 'tsx' ? 1 : 0, jsx: 0, css: input.lang === 'css' ? 1 : 0, other: 0 };
   const filesStart = performance.now();
-  const files = await projectSourceFiles(root, config.value);
+  const files = await phase('files', [root, config.value], () => projectSourceFiles(root, config.value));
   profileDuration('phase:source-files', performance.now() - filesStart);
   if (input && !files.includes(input.file)) files.push(input.file);
   const componentCacheStart = performance.now();
-  const previousComponents = input ? undefined : cachedComponents(root, files, config.value, !!options.suggestImitation);
+  const previousComponents = input || runtime ? undefined : cachedComponents(root, files, config.value, !!options.suggestImitation);
   const componentCacheMs = performance.now() - componentCacheStart;
-  const programs = previousComponents ? undefined : new Map<string, SourceProgram>();
-  const collected = await collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
-    input ? new Map([[input.file, input.text]]) : undefined, input?.file, programs, input ? undefined : root);
+  const programs = previousComponents || runtime ? undefined : new Map<string, SourceProgram>();
+  const collected = await phase('collect', [files, config.value.classHelpers, input], () => collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
+    input ? new Map([[input.file, input.text]]) : undefined, input?.file, programs, input || runtime ? undefined : root));
   if (input) {
     collected.sites = collected.sites.filter(site => site.file === input.file);
     collected.styles.sites = collected.styles.sites.filter(site => site.site.file === input.file);
   }
   const unique = [...new Set(collected.sites.filter(site => !site.opaque).map(site => site.token))].sort();
-  const lowered = await lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true, !!input);
+  const lowered = await phase('tailwind', [root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true], () => lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true, !!input));
   const stylesheetStart = performance.now();
-  const modules = await collectModules(root, collected.modules, !!input);
-  const graph = await collectStylesheets(project.tailwind.entry, files, modules.imports,
-    input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined);
+  const modules = await phase('modules', [root, collected.modules], () => collectModules(root, collected.modules, !!input || !!runtime));
+  const graph = await phase('graph', [project.tailwind.entry, files, modules.imports, input], () => collectStylesheets(project.tailwind.entry, files, modules.imports,
+    input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined));
   const moduleCss = new Set<string>();
   function reachedCss(file: string): void {
     if (moduleCss.has(file)) return;
@@ -100,13 +103,13 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   }
   for (const sheet of graph.files.values()) if (sheet.reached.some(reach => reach.kind === 'module')) reachedCss(sheet.file);
   modules.counts.cssFiles = moduleCss.size;
-  const css = await lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input);
+  const css = await phase('css', [root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets], () => lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input || !!runtime));
   const stylesheetsMs = performance.now() - stylesheetStart;
   const existenceStart = performance.now();
-  const ranking = await suggestionCache(root, lowered.candidates, lowered.suggestions, !!input);
+  const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
   const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
   await ranking.save();
-  const unreachable = await unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value));
+  const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)));
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
     if (file) finding.fix = `${finding.declaration.value} is declared in ${file}, which nothing imports. Import that stylesheet or include it in source globs.`;
@@ -115,11 +118,11 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const prepareStart = performance.now();
   const sites = collected.sites.map(site => {
     const candidate = lowered.candidates.get(site.token);
-    return { ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
+    return sync('site', [site, candidate], () => ({ ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
       ...declaration, when: [...site.conditions, ...declaration.when], refs: references(declaration.value),
       site: location(site), owner: site.owner, origin: /(?:^|:)(?:-?[\w-]+-)?\[.+\](?:\/.+)?!?$/.test(site.token) ? 'arbitrary' as const : 'class' as const, sourceOrigin: 'project' as const,
       authoredValue: candidate?.authoredValue ?? false,
-    })), notes: candidate?.notes ?? [] };
+    })), notes: candidate?.notes ?? [] }));
   });
   // Import-graph files outside source globs prove existence; only source sites
   // enter the shared declaration set for provenance and later judging rules.
@@ -129,7 +132,7 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
     .filter(declaration => sourceFiles.has(declaration.site.file));
   profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
-  const record = await readDecisions(root, config.value, graph, lowered.theme);
+  const record = await phase('record', [root, config.value, graph, lowered.theme], () => readDecisions(root, config.value, graph, lowered.theme));
   const decisionsMs = performance.now() - decisionsStart;
   const provenanceStart = performance.now();
   const defined = new Set([...record.defined, ...collected.styles.definedVariables,
@@ -137,23 +140,23 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
   const variablesStart = performance.now();
-  findings.push(...deadVariables(declarations, defined, record.theme));
+  findings.push(...sync('deadVariables', [declarations, defined, record.theme], () => deadVariables(declarations, defined, record.theme)));
   profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
-  const judged = provenance(declarations, record, config.value, sourceFiles);
+  const judged = sync('provenance', [declarations, record, config.value, sourceFiles], () => provenance(declarations, record, config.value, sourceFiles));
   findings.push(...judged.findings);
   const deadStart = performance.now();
-  const dead = input ? undefined : deadDecisions(root, declarations, record, config.value);
+  const dead = input ? undefined : sync('deadDecisions', [declarations, record, config.value], () => deadDecisions(root, declarations, record, config.value));
   if (dead) findings.push(...dead.findings);
   profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;
   const ownershipStart = performance.now();
-  const components = previousComponents ?? discoverComponents(root,
+  const components = previousComponents ?? sync('components', [root, files, config.value, input], () => discoverComponents(root,
     files.filter(file => input?.file !== file || input.lang === 'tsx'), config.value,
-    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation, programs, !!input);
+    input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation, programs, !!input || !!runtime));
   programs?.clear();
   profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
   const ownershipJudgeStart = performance.now();
-  const owned = judgeOwnership(declarations, components, config.value);
+  const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;
@@ -161,11 +164,11 @@ async function analyze(options: CheckOptions, snippet?: Snippet): Promise<{ repo
   const contexts = new Map<Declaration, string>();
   for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
   for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
-  const habits = judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits);
+  const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits));
   findings.push(...habits.findings);
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
-  findings.push(...judgeImitation(components, collected.sites, declarations, config.value));
+  findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));
   profileDuration('rule:imitation', performance.now() - imitationStart);
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
@@ -226,3 +229,7 @@ export { githubSummary, renderSummary, githubCommands } from './surfaces/github.
 export type { SummarySection } from './surfaces/github.js';
 export { formatAgent } from './surfaces/agent.js';
 export { agentDocs } from './surfaces/docs.js';
+
+export { Session, createSession } from './session/index.js';
+export type { SessionOptions, SiteResult } from './session/index.js';
+export { serve, serveStdio } from './session/server.js';

@@ -1,0 +1,41 @@
+{
+  "commit": "e0a0b31349a371e48ad38f0cc8099be5fc1b2be5",
+  "snapshot": "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve/input",
+  "cache": "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve",
+  "node": "v25.9.0",
+  "editedFile": "apps/docs/src/pages/components/Fan.tsx",
+  "line": 117,
+  "warmupEdits": 5,
+  "siteMs": {
+    "min": 68.53266600000097,
+    "median": 69.19104200000038,
+    "p95": 80.32208399999945,
+    "max": 80.32208399999945,
+    "samples": [
+      70.98516699999891,
+      80.32208399999945,
+      69.19104200000038,
+      68.96858400000019,
+      68.53266600000097
+    ]
+  },
+  "tryMs": {
+    "min": 59.595375000000786,
+    "median": 63.68962499999907,
+    "p95": 74.67100000000028,
+    "max": 74.67100000000028,
+    "samples": [
+      68.4018329999999,
+      74.67100000000028,
+      61.261334000000716,
+      63.68962499999907,
+      59.595375000000786
+    ]
+  },
+  "stats": {
+    "files": [
+      "/Users/vijaysingh/unlocalhosted/plumb-r4-serve/bench/metalui/.cache/2-serve/input/apps/docs/src/pages/components/Fan.tsx"
+    ],
+    "judged": []
+  }
+}

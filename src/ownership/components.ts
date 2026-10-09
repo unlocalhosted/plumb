@@ -26,6 +26,8 @@ interface Module extends SourceText {
   exports: Map<string, Import | string>;
   stars: string[];
 }
+/** Parsed imports shared by one Session; changing a file removes its entry. */
+export interface ComponentMemory { modules: Map<string, Module> }
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
 interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[] }
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
@@ -73,7 +75,7 @@ export function cachedComponents(root: string, files: string[], config: PlumbCon
     (file, specifier) => contexts.resolveFileSync(file, specifier).path);
 }
 
-export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map(), includeUnused = false, programs: ReadonlyMap<string, SourceProgram> = new Map(), readOnly = false): ComponentGraph {
+export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map(), includeUnused = false, programs: ReadonlyMap<string, SourceProgram> = new Map(), readOnly = false, memory?: ComponentMemory): ComponentGraph {
   const rootRanges = new Map<ComponentIdentity, RootRange[]>();
   const fingerprintClasses = new Map<ComponentIdentity, string[]>();
   const resolver = new ResolverFactory(resolverOptions);
@@ -86,7 +88,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const watchedFiles = new Map<string, string | null>(), watchedDirectories = new Map<string, string[]>();
   const contexts = new Map<string, string | undefined>();
   function exists(file: string): boolean {
-    watchedFiles.set(file, fileHash(file)); return existsSync(file);
+    if (cache) watchedFiles.set(file, fileHash(file)); return existsSync(file);
   }
   const modules = new Map<string, Module>(), selected = new Set<string>(), identities = new Map<string, ComponentIdentity | null>();
   const directories: string[] = [], prefixes: string[] = [], packages: string[] = [];
@@ -149,9 +151,11 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   }
   function module(file: string): Module {
     const cached = modules.get(file); if (cached) return cached;
+    const warm = overrides.has(file) ? undefined : memory?.modules.get(file);
+    if (warm) { modules.set(file, warm); return warm; }
     const shared = programs.get(file);
     const text = overrides.get(file) ?? shared?.text ?? readFileSync(file, 'utf8');
-    watchedFiles.set(file, fileHash(file));
+    if (cache) watchedFiles.set(file, fileHash(file));
     let ast = shared?.text === text ? shared.ast : undefined;
     if (!ast) {
       const parsed = parseSync(file, text, parserOptions);
@@ -194,6 +198,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         }
       }
     }
+    if (!overrides.has(file)) memory?.modules.set(file, value);
     return value;
   }
   function exported(file: string, name: string, seen: Set<string>): ComponentIdentity | undefined {
@@ -521,10 +526,11 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     });
     sourceTokens.set(file, inventory);
   }
+  const sourceLines = new Map([...modules].map(([file, value]) => [file, value.lineStarts]));
   const graph: ComponentGraph = { root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
     element(site) {
-      const value = modules.get(site.file); if (!value) return;
-      const offset = value.lineStarts[site.line - 1]! + site.column - 1;
+      const lines = sourceLines.get(site.file); if (!lines) return;
+      const offset = lines[site.line - 1]! + site.column - 1;
       const locations = elementLocations.get(site.file) ?? new Map<number, ElementIdentity | undefined>();
       elementLocations.set(site.file, locations);
       if (locations.has(offset)) return locations.get(offset);
@@ -533,13 +539,13 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       locations.set(offset, found); return found;
     },
     caller(declaration) {
-      const value = modules.get(declaration.site.file); if (!value) return;
-      const offset = value.lineStarts[declaration.site.line - 1]! + declaration.site.column - 1;
-      const locations = callerLocations.get(value.file) ?? new Map<number, ComponentIdentity | undefined>();
-      callerLocations.set(value.file, locations);
+      const file = declaration.site.file, lines = sourceLines.get(file); if (!lines) return;
+      const offset = lines[declaration.site.line - 1]! + declaration.site.column - 1;
+      const locations = callerLocations.get(file) ?? new Map<number, ComponentIdentity | undefined>();
+      callerLocations.set(file, locations);
       if (locations.has(offset)) return locations.get(offset);
-      const usage = usages.get(value.file)?.find(item => offset >= item.start && offset < item.end);
-      const component = usage?.component.source.file === value.file ? undefined : usage?.component;
+      const usage = usages.get(file)?.find(item => offset >= item.start && offset < item.end);
+      const component = usage?.component.source.file === file ? undefined : usage?.component;
       locations.set(offset, component);
       if (usage) return component;
       // Literal constants retain definition and usage sites. The usage range is
@@ -548,5 +554,6 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     },
   };
   cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
+  modules.clear();
   return graph;
 }

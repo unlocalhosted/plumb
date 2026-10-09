@@ -117,7 +117,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   function source(file: string, fullAst = false): Source {
     const cached = sources.get(file);
     if (cached && (!fullAst || cached.ast)) return cached;
-    const text = texts.get(file) ?? readFileSync(file, 'utf8');
+    const text = overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8');
     dependencies.set(file, sourceHash(text));
     const parseStart = performance.now();
     const result = parseSync(file, text, parserOptions);

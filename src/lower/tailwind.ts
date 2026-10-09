@@ -38,7 +38,7 @@ function hash(value: string): string { return createHash('sha256').update(value)
 
 // Hash the complete stylesheet graph independently of the Node wrapper, whose
 // exported design-system loader doesn't expose its dependency callback.
-export async function tailwindGraph(entry: string, cssOverride?: string): Promise<{ hash: string; utilities: string[]; variants: string[] }> {
+export async function tailwindGraph(entry: string, cssOverride?: string): Promise<{ hash: string; utilities: string[]; variants: string[]; files: string[] }> {
   const contents = new Map<string, string>();
   async function visit(file: string): Promise<void> {
     if (contents.has(file)) return;
@@ -59,10 +59,20 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
   const utilities = [...new Set([...contents].filter(([file]) => file.endsWith('.css')).flatMap(([, css]) =>
     [...cssCode(css).matchAll(/@utility\s+([\w-]+)\s*\{/g)].map(match => match[1]!)))];
   const variants = [...new Set([...contents].filter(([file]) => file.endsWith('.css')).flatMap(([, css]) => [...cssCode(css).matchAll(/@custom-variant\s+([\w-]+)/g)].map(match => match[1]!)))];
-  return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities, variants };
+  return { hash: hash(JSON.stringify([...contents].sort(([a], [b]) => a.localeCompare(b)))), utilities, variants, files: [...contents.keys()] };
 }
 
-export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false, reportOnly = false): Promise<{
+/** A session retains one compiler identity. Replace this object when inputs change. */
+export interface TailwindMemory {
+  graph?: Awaited<ReturnType<typeof tailwindGraph>>;
+  cached?: Record<string, CandidateCss>;
+  system?: DesignSystem;
+  theme?: ThemeValue[];
+  hoverVariants?: string[];
+  hints?: Map<string, { token: string; prefix: string }[]>;
+}
+
+export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false, reportOnly = false, memory?: TailwindMemory): Promise<{
   hoverVariants: string[]; theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
@@ -72,28 +82,29 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
-    const cssGraph = await tailwindGraph(entry);
+    const cssGraph = memory?.graph ?? await tailwindGraph(entry);
+    if (memory) memory.graph = cssGraph;
     const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nlayer10-decision-refs-layer5-cache-v1`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
-    try { cached = Object.assign(Object.create(null) as Record<string, CandidateCss>, JSON.parse(await readFile(join(directory, 'candidates.json'), 'utf8')) as Record<string, CandidateCss>); }
+    try { cached = memory?.cached ?? Object.assign(Object.create(null) as Record<string, CandidateCss>, JSON.parse(await readFile(join(directory, 'candidates.json'), 'utf8')) as Record<string, CandidateCss>); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
     const misses = candidates.filter(candidate => !Object.hasOwn(cached, candidate));
-    let system: DesignSystem | undefined;
+    let system: DesignSystem | undefined = memory?.system;
     let defaultVariants = new Set<string>();
-    let theme: ThemeValue[] | null = null;
-    try { theme = JSON.parse(await readFile(join(directory, 'theme.json'), 'utf8')); } catch { /* Optional theme cache. */ }
+    let theme: ThemeValue[] | null = memory?.theme ?? null;
+    if (!theme) try { theme = JSON.parse(await readFile(join(directory, 'theme.json'), 'utf8')); } catch { /* Optional theme cache. */ }
     // Hints depend on the roots present in this candidate set, whereas compiled
     // CSS remains reusable when a source slice adds/removes candidates.
     const suggestionPath = join(directory, `suggestions-${hash(JSON.stringify(candidates))}.json`);
     let suggestions: { token: string; prefix: string }[] | null = null;
-    try { suggestions = JSON.parse(await readFile(suggestionPath, 'utf8')); } catch { /* Optional hint index. */ }
+    if (!memory?.system) try { suggestions = JSON.parse(await readFile(suggestionPath, 'utf8')); } catch { /* Optional hint index. */ }
     const hoverPath = join(directory, 'hover-variants-v3.json');
-    let hoverVariants: string[] | null = probeHover ? null : [];
-    if (probeHover) try { hoverVariants = JSON.parse(await readFile(hoverPath, 'utf8')); } catch { /* Oracle proof cache follows compiler/graph identity. */ }
+    let hoverVariants: string[] | null = probeHover ? memory?.hoverVariants ?? null : [];
+    if (probeHover && !memory?.hoverVariants) try { hoverVariants = JSON.parse(await readFile(hoverPath, 'utf8')); } catch { /* Oracle proof cache follows compiler/graph identity. */ }
     // A fully warm run doesn't even load the design system.
-    if (misses.length || suggestions === null || theme === null || hoverVariants === null) {
+    if (!system && (memory || misses.length || suggestions === null || theme === null || hoverVariants === null)) {
       let compilerPath = tailwindPath;
       let nodeWrapper = false;
       try {
@@ -135,7 +146,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         return declarations.length > 0 && declarations.every(d => positivePseudo(selector(d.when), 'hover') && hoverGated(d.when));
       });
     }
-    if (system) theme = [...(system.theme?.entries() ?? [])].map(([name, metadata]) => ({ name, value: metadata.value }));
+    if (system && !memory?.theme) theme = [...(system.theme?.entries() ?? [])].map(([name, metadata]) => ({ name, value: metadata.value }));
     const loadMs = performance.now() - start;
     const compileStart = performance.now();
     if (system && misses.length) {
@@ -173,7 +184,14 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       }
     }
     const compileMs = system && misses.length ? performance.now() - compileStart : 0;
-    if (system) {
+    const usedRoots = new Set(system ? candidates.filter(name => cached[name]?.css?.trim()).flatMap(name =>
+      [...(system!.parseCandidate?.(name) ?? [])].filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)) : []);
+    const requestedRoots = new Set(system ? candidates.flatMap(name => [...(system!.parseCandidate?.(name) ?? [])]
+      .filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)) : []);
+    const hintKey = JSON.stringify([[...usedRoots].sort(), [...requestedRoots].sort()]);
+    const warmHints = memory?.hints?.get(hintKey);
+    if (warmHints) suggestions = warmHints;
+    if (system && !warmHints) {
       // Index authored utility names and non-default @theme keys directly.
       // getClassList expands large themes into hundreds of thousands of names.
       const own = new Map(cssGraph.utilities.map(token => {
@@ -188,10 +206,6 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         const value = key.replace(/^--(?:font-weight|inset-shadow|drop-shadow|[a-z]+)-/, '');
         if (value !== key && value && !value.includes('--')) values.add(value);
       }
-      const usedRoots = new Set(candidates.filter(name => cached[name]?.css?.trim()).flatMap(name =>
-        [...(system!.parseCandidate?.(name) ?? [])].filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)));
-      const requestedRoots = new Set(candidates.flatMap(name => [...(system!.parseCandidate?.(name) ?? [])]
-        .filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)));
       const staticRoots = new Set(system.utilities?.keys('static') ?? []);
       for (const root of system.utilities?.keys('functional') ?? []) {
         // A static utility such as block is also a functional root in v4.
@@ -202,6 +216,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         }
       }
       suggestions = [...own].map(([token, prefix]) => ({ token: system.theme?.prefix ? `${system.theme.prefix}:${token}` : token, prefix }));
+      if (memory) { const hints = memory.hints ??= new Map(); if (hints.size >= 2) hints.delete(hints.keys().next().value!); hints.set(hintKey, suggestions); }
     }
     if (!readOnly && (misses.length || system)) {
       await mkdir(directory, { recursive: true });
@@ -212,6 +227,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
       if (probeHover) await writeFile(hoverPath, JSON.stringify(hoverVariants));
     }
+    if (memory) { memory.cached = cached; if (system) memory.system = system; memory.theme = theme ?? []; memory.hoverVariants = hoverVariants ?? []; }
     for (const candidate of candidates) if (!results.has(candidate)) results.set(candidate, cached[candidate]!);
     return { hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
