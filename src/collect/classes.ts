@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
+import { unreadable } from '../diagnostics.js';
+import type { Finding } from '../report.js';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
 import type { Condition, Declaration, Site } from '../report.js';
-import { UsageError } from '../errors.js';
 import { collectInline, embedded } from './inline.js';
 import type { SourceStyles } from './inline.js';
 import { constExport, namedAnchors, sourceSite } from './source.js';
@@ -86,16 +87,20 @@ function site(source: Source, offset: number, text: string): Site {
 }
 
 export async function collectClasses(files: string[], classHelpers: string[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string): Promise<{
-  sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
+  diagnostics: Finding[]; sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
 }> {
   const start = performance.now();
   let parseMs = 0;
   let opaque = 0;
   let inlineMs = 0;
   const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
+  const diagnostics: Finding[] = [];
   const sources = new Map<string, Source>();
   const modules = new Map<string, ModuleImport[]>();
-  const texts = new Map(await Promise.all(files.map(async file => [file, overrides.get(file) ?? await readFile(file, 'utf8')] as const)));
+  const texts = new Map(await Promise.all(files.map(async file => {
+    try { return [file, overrides.get(file) ?? await readFile(file, 'utf8')] as const; }
+    catch (error) { diagnostics.push(unreadable(file, file, error)); return [file, ''] as const; }
+  })));
   const helpers = new Set([...builtins, ...classHelpers]);
   const helperNames = [...helpers];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
@@ -117,14 +122,23 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   function source(file: string, fullAst = false): Source {
     const cached = sources.get(file);
     if (cached && (!fullAst || cached.ast)) return cached;
-    const text = overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8');
+    let text: string;
+    try { text = overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8'); }
+    catch (error) { diagnostics.push(unreadable(file, file, error)); text = ''; }
     dependencies.set(file, sourceHash(text));
     const parseStart = performance.now();
-    const result = parseSync(file, text, parserOptions);
-    const ast = result.program;
-    if (texts.has(file)) modules.set(file, moduleImports(result.module, text));
+    let result: ReturnType<typeof parseSync>, ast: Program;
+    try {
+      result = parseSync(file, text, parserOptions);
+      if (result.errors.length) throw new Error(result.errors[0]?.message);
+      ast = result.program;
+      if (texts.has(file)) modules.set(file, moduleImports(result.module, text));
+    } catch (error) {
+      diagnostics.push(unreadable(file, file, error));
+      ast = parseSync(file, '', parserOptions).program;
+      if (texts.has(file)) modules.set(file, []);
+    }
     parseMs += performance.now() - parseStart;
-    if (result.errors.length) throw new UsageError(`Fix source ${file}: ${result.errors[0]?.message}`);
     const lineStarts = [0];
     for (let index = text.indexOf('\n'); index !== -1; index = text.indexOf('\n', index + 1)) lineStarts.push(index + 1);
     const value: Source = { file, text, ast, lineStarts, exports: null, anchors: namedAnchors(ast) };
@@ -404,7 +418,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     exports(src);
     src.ast = null;
   }
-  const result = { sites: [...sites.values()], opaque, styles, modules: [...modules] };
-  await cache?.write(result, dependencies, resolutions);
+  const result = { diagnostics, sites: [...sites.values()], opaque, styles, modules: [...modules] };
+  if (!diagnostics.length) await cache?.write(result, dependencies, resolutions);
   return { ...result, modules, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs };
 }

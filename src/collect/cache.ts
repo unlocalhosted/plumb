@@ -5,16 +5,17 @@ import { join, resolve } from 'node:path';
 import type { ClassSite } from './classes.js';
 import type { SourceStyles } from './inline.js';
 import type { InlineSite } from './inline.js';
+import type { Finding } from '../report.js';
 import type { ModuleImport } from './modules.js';
 
 export const sourceHash = (text: string) => createHash('sha256').update(text).digest('hex');
-interface Data { sites: ClassSite[]; opaque: number; styles: SourceStyles; modules: [string, ModuleImport[]][] }
+interface Data { diagnostics: Finding[]; sites: ClassSite[]; opaque: number; styles: SourceStyles; modules: [string, ModuleImport[]][] }
 interface SerializedData extends Omit<Data, 'styles'> {
   styles: Omit<SourceStyles, 'sites'> & { sites: (Omit<InlineSite, 'declarations'> & { declarations: number[] })[] };
 }
 interface Receipt { data: SerializedData; dependencies: [string, string][]; resolutions: [string, string | null][] }
 export function collectionCache(root: string, helpers: string[], texts: Map<string, string>) {
-  const key = sourceHash(JSON.stringify(['classes-inline-v3', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
+  const key = sourceHash(JSON.stringify(['classes-inline-v4-isolated', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'sources');
   const path = join(directory, `${key}.json`);
   return {

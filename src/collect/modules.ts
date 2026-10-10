@@ -6,7 +6,8 @@ import { performance } from 'node:perf_hooks';
 import { parseSync } from 'oxc-parser';
 import type { EcmaScriptModule } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
-import { UsageError } from '../errors.js';
+import { unreadable } from '../diagnostics.js';
+import type { Finding } from '../report.js';
 import type { Report } from '../report.js';
 
 export interface ModuleImport { specifier: string; sideEffect: boolean }
@@ -37,7 +38,7 @@ export function moduleImports(module: EcmaScriptModule, text: string): ModuleImp
 interface CachedModule { mtimeMs: number; size: number; imports: ModuleImport[]; resolved: (string | null)[] }
 
 export async function collectModules(root: string, sources: Map<string, ModuleImport[]>, readOnly = false): Promise<{
-  imports: CssImport[]; notes: string[]; counts: Report['moduleGraph'];
+  diagnostics: Finding[]; imports: CssImport[]; notes: string[]; counts: Report['moduleGraph'];
 }> {
   const start = performance.now();
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
@@ -50,10 +51,11 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
     conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'], aliasFields: ['browser'], builtinModules: true });
+  const diagnostics: Finding[] = [];
   const queue = [...sources.keys()].filter(moduleFile);
   const sourcePaths = new Map(queue.map(file => {
     try { return [realpathSync.native(file), file]; }
-    catch (error) { if (readOnly && (error as NodeJS.ErrnoException).code === 'ENOENT') return [file, file]; throw error; }
+    catch (error) { if (!(readOnly && (error as NodeJS.ErrnoException).code === 'ENOENT')) diagnostics.push(unreadable(file, file, error)); return [file, file]; }
   }));
   const seen = new Set(queue);
   const imports: CssImport[] = [];
@@ -66,52 +68,56 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
   };
   for (let index = 0; index < queue.length; index++) {
     const file = queue[index]!;
-    const external = !sources.has(file);
-    let edges = sources.get(file);
-    let cached: CachedModule | undefined;
-    if (external) {
-      const info = statSync(file);
-      if (bytes + info.size > 64 * 1024 * 1024 || info.size > 4 * 1024 * 1024) {
-        limit(file);
-        continue;
+    try {
+      const external = !sources.has(file);
+      let edges = sources.get(file);
+      let cached: CachedModule | undefined;
+      if (external) {
+        const info = statSync(file);
+        if (bytes + info.size > 64 * 1024 * 1024 || info.size > 4 * 1024 * 1024) {
+          limit(file);
+          continue;
+        }
+        bytes += info.size;
+        counts.followed++;
+        const previous = cache[file];
+        if (previous?.mtimeMs === info.mtimeMs && previous.size === info.size) {
+          cached = previous; edges = previous.imports; counts.cacheHits++;
+        } else {
+          const text = readFileSync(file, 'utf8');
+          const parseStart = performance.now();
+          const parsed = parseSync(file, text);
+          if (parsed.errors.length) throw new Error(parsed.errors[0]?.message);
+          edges = moduleImports(parsed.module, text);
+          counts.parseMs += performance.now() - parseStart;
+          cached = { mtimeMs: info.mtimeMs, size: info.size, imports: edges, resolved: [] };
+          counts.cacheMisses++;
+        }
+        nextCache[file] = cached;
       }
-      bytes += info.size;
-      counts.followed++;
-      const previous = cache[file];
-      if (previous?.mtimeMs === info.mtimeMs && previous.size === info.size) {
-        cached = previous; edges = previous.imports; counts.cacheHits++;
-      } else {
-        const text = readFileSync(file, 'utf8');
-        const parseStart = performance.now();
-        const parsed = parseSync(file, text);
-        if (parsed.errors.length) throw new UsageError(`Read module imports ${file}: ${parsed.errors[0]?.message}`);
-        edges = moduleImports(parsed.module, text);
-        counts.parseMs += performance.now() - parseStart;
-        cached = { mtimeMs: info.mtimeMs, size: info.size, imports: edges, resolved: [] };
-        counts.cacheMisses++;
+      counts.modules++;
+      const resolved: (string | null)[] = [];
+      for (const edge of edges ?? []) {
+        // Revalidate resolution even on warm hits: package exports, symlinks and
+        // tsconfig paths can change independently of the importing module's stat.
+        let path: string | undefined;
+        try { path = resolver.resolveFileSync(file, edge.specifier.replace(/[?#].*$/, '')).path; }
+        catch (error) { diagnostics.push(unreadable(file, edge.specifier, error)); continue; }
+        const target = path ? sourcePaths.get(path) ?? path : undefined;
+        resolved.push(target ?? null);
+        if (target?.endsWith('.css')) {
+          imports.push({ file, specifier: edge.specifier, resolved: target, external });
+        } else if (edge.sideEffect || /\.css(?:[?#].*)?$/.test(edge.specifier)) {
+          // Preserve style-export/package-root CSS resolution from Layer 2.
+          imports.push({ file, specifier: edge.specifier, external });
+        }
+        if (!target || !moduleFile(target) || seen.has(target)) continue;
+        seen.add(target);
+        if (queue.length >= sources.size + 20_000) { limit(target); continue; }
+        queue.push(target);
       }
-      nextCache[file] = cached;
-    }
-    counts.modules++;
-    const resolved: (string | null)[] = [];
-    for (const edge of edges ?? []) {
-      // Revalidate resolution even on warm hits: package exports, symlinks and
-      // tsconfig paths can change independently of the importing module's stat.
-      const path = resolver.resolveFileSync(file, edge.specifier).path;
-      const target = path ? sourcePaths.get(path) ?? path : undefined;
-      resolved.push(target ?? null);
-      if (target?.endsWith('.css')) {
-        imports.push({ file, specifier: edge.specifier, resolved: target, external });
-      } else if (edge.sideEffect || /\.css(?:[?#].*)?$/.test(edge.specifier)) {
-        // Preserve style-export/package-root CSS resolution from Layer 2.
-        imports.push({ file, specifier: edge.specifier, external });
-      }
-      if (!target || !moduleFile(target) || seen.has(target)) continue;
-      seen.add(target);
-      if (queue.length >= sources.size + 20_000) { limit(target); continue; }
-      queue.push(target);
-    }
-    if (cached) nextCache[file] = { ...cached, resolved };
+      if (cached) nextCache[file] = { ...cached, resolved };
+    } catch (error) { diagnostics.push(unreadable(file, file, error)); }
   }
   if (limited) notes.push(`Module graph skipped ${limited} modules at its 20,000-module, 64 MiB total or 4 MiB per-file limit.`);
   if (!readOnly) {
@@ -121,5 +127,5 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
     await rename(temporary, path);
   }
   counts.totalMs = performance.now() - start;
-  return { imports, notes, counts };
+  return { diagnostics, imports, notes, counts };
 }

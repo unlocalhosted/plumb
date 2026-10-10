@@ -191,7 +191,10 @@ test('Session polling fallback reparses only dependent TSX files and recovers fr
   assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
   assert.ok(session.stats.judged.includes(join(root, 'src/B.tsx')));
   assert.ok(!session.stats.judged.includes(join(root, 'src/C.tsx')));
-  await writeFile(join(root, 'src/B.tsx'), 'export function B( {'); await assert.rejects(session.report(), /source|component/);
+  await writeFile(join(root, 'src/B.tsx'), 'export function B( {');
+  const incomplete = await session.report();
+  assert.equal(incomplete.findings.filter(f => f.rule === 'config/unreadable').length, 1);
+  assert.deepEqual(semantic(incomplete), semantic(cold(root)));
   await writeFile(join(root, 'src/B.tsx'), 'export function B() { return <div className="gap-21" /> }');
   assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
 });
@@ -325,8 +328,8 @@ for (const remote of [false, true]) test(`check --watch ${remote ? 'daemon clien
   assert.ok(output.slice(firstLength).includes('gap-[123px]'), errors);
   assert.equal(errors, '');
   await writeFile(join(root, 'src/App.tsx'), 'export function App( {');
-  for (let i = 0; i < 300 && !errors; i++) await delay(20);
-  assert.match(errors, /Fix source|Read component/); assert.equal(child.exitCode, null);
+  for (let i = 0; i < 300 && !output.slice(firstLength).includes('config/unreadable'); i++) await delay(20);
+  assert.ok(output.slice(firstLength).includes('config/unreadable')); assert.equal(errors, ''); assert.equal(child.exitCode, null);
   const recovery = output.length;
   await writeFile(join(root, 'src/App.tsx'), '<div className="gap-[124px]" />;');
   for (let i = 0; i < 300 && !output.slice(recovery).includes('gap-[124px]'); i++) await delay(20);

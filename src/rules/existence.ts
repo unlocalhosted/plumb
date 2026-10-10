@@ -57,7 +57,7 @@ export function location(site: ClassSite): Site {
 export function existence(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings = new Map<string, string[]>()): Finding[] {
   const groups = new Map<string, ClassSite[]>();
   for (const site of sites) {
-    if (!site.opaque && (candidates.get(site.token)?.css?.trim() || declared.has(site.token) || marker(site.token, markers))) continue;
+    if (!site.opaque && (candidates.get(site.token)?.unreadable || candidates.get(site.token)?.css?.trim() || declared.has(site.token) || marker(site.token, markers))) continue;
     const key = `${site.opaque ? 'existence/dynamic-class' : 'existence/dead-class'}:${site.token}`;
     const group = groups.get(key) ?? [];
     group.push(site);
@@ -65,7 +65,7 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
   }
   const needsRanking = [...groups.values()].some(([site]) => !site!.opaque && !rankings.has(site!.token));
   const theme = new Map(needsRanking ? themeUtilities.map(hint => [hint.token, hint.prefix]) : []);
-  const hints = needsRanking ? [...new Set([...theme.keys(), ...[...candidates].filter(([, result]) => result.css?.trim()).map(([token]) => token)])] : [];
+  const hints = needsRanking ? [...new Set([...theme.keys(), ...[...candidates].filter(([, result]) => !result.unreadable && result.css?.trim()).map(([token]) => token)])] : [];
   // Tailwind variants are orthogonal to utility spelling. Keep the authored
   // variant chain when suggesting a different base utility.
   function split(token: string): { variants: string; base: string } {

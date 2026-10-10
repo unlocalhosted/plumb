@@ -58,11 +58,10 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
           continue;
         }
         if (/^@(import|reference)\b/.test(text)) {
-          // Graph edge order matches authored local imports, including equal tails.
+          // Failed imports have no graph edge; match the authored specifier.
           const position = imports.findIndex(item => item.start === offset);
           if (position >= 0) {
-            const local = imports.slice(0, position + 1).filter(item => !/^(?:[a-z]+:|\/\/|#)/i.test(item.id)).length - 1;
-            const target = sheet.imports[local]?.file;
+            const target = sheet.imports.find(item => item.specifier === imports[position]!.id)?.file;
             if (target) visit(target);
           }
         }

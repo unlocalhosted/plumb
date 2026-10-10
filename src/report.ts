@@ -200,11 +200,13 @@ export function formatText(report: Report, verbose = false): string {
   const { tsx, jsx, css, other } = report.files;
   const rank = { error: 0, warn: 1, info: 2 } as const;
   const runtime = report.findings.filter(finding => finding.rule === 'provenance/opaque-inline');
+  const diagnostics = report.findings.filter(finding => finding.rule === 'config/unreadable');
+  const choices = report.findings.filter(finding => finding.rule === 'config/tailwind-entry');
   const unused = report.findings.filter(finding => finding.rule.startsWith('dead/'));
   // With a ledger, the daily view is what is new; recorded debt and exceptions are one summary line (--verbose lists them).
   const known = (finding: Finding) => finding.sites.length > 0 && finding.sites.every(site => site.ledger !== undefined && site.ledger.status !== 'new');
   const recorded = report.findings.filter(known);
-  const quiet = (finding: Finding) => finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/') || known(finding);
+  const quiet = (finding: Finding) => ['config/unreadable', 'config/tailwind-entry'].includes(finding.rule) || finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/') || known(finding);
   const ordered = [...report.findings].filter(finding => verbose || !quiet(finding))
     .sort((a, b) => rank[a.severity] - rank[b.severity] || b.sites.length - a.sites.length || a.rule.localeCompare(b.rule));
   const byRule = new Map<string, number>();
@@ -215,6 +217,8 @@ export function formatText(report: Report, verbose = false): string {
     .filter((entry): entry is readonly [typeof entry[0], FamilyCoverage] => entry[1] !== undefined && entry[1].total > 0);
   const numberWidth = Math.max(0, ...families.map(([, c]) => c.total.toLocaleString('en-US').length));
   const summary = [
+    ...(diagnostics.length && !verbose ? [`unreadable  ${count(diagnostics.length, 'item')} skipped (--verbose lists parser diagnostics)`] : []),
+    ...(!verbose ? choices.map(finding => `entry       ${finding.title}; ${finding.because}`) : []),
     `classes     ${count(existence.total, 'class', 'classes')} read, ${existence.dead} do nothing${existence.deadVars ? `, ${existence.deadVars} undefined variables` : ''}`,
     ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} use your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} don't`),
     `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
