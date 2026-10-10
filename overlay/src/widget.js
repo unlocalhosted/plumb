@@ -22,6 +22,21 @@ import { GLYPH_CSS, glyph } from './glyphs.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 const RESUME = 'plumb:resume';
+
+// Why an element has no source line, in the person's terms. Plumb never guesses one.
+function unplaced(found) {
+  const detail = found?.detail ?? {}, response = String(detail.response ?? '');
+  if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(response)) {
+    let file = String(detail.source ?? '');
+    try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
+    return { short: 'not checked', message: `This element is written in \`${file}\`, which Plumb doesn’t check. Add it to \`source\` in your Plumb config to read it here.` };
+  }
+  if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'This element wasn’t rendered by React (HTML written at runtime, or outside your app), so it has no line in your source.' };
+  if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
+    return { short: 'library only', message: 'A library rendered this element, and Plumb can’t prove which line of your code used it. Point at the component that wraps it instead.' };
+  if (found?.reason === 'map') return { short: 'no source map', message: 'The dev server’s source map for this element doesn’t lead back to your source, so Plumb won’t guess a line.' };
+  return { short: 'not placed', message: 'Plumb can’t tie this element to a line in your source, so it won’t guess one.' };
+}
 // A structural path survives a reload of the same app state; ids and classes may not (the write changes classes).
 const pathTo = element => {
   const parts = [];
@@ -235,8 +250,9 @@ class PlumbOverlay extends HTMLElement {
   read(element, fresh = false) {
     if (!fresh && this.#cache.has(element)) return this.#cache.get(element);
     const promise = (async () => {
-      const location = await locate(element);
-      if (!location) return { status: 'unplaced', tag: element.localName };
+      const found = await locate(element, { explain: true });
+      if (!found?.file) return { status: 'unplaced', tag: element.localName, ...unplaced(found) };
+      const location = found;
       const params = { file: location.file, line: location.line, column: location.column };
       const [site, edits] = await Promise.all([request('site', params), request('edits', params)]);
       if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
@@ -315,7 +331,7 @@ class PlumbOverlay extends HTMLElement {
     const name = `<span class="el">${esc(state?.tag ?? element.localName)}</span>`;
     const who = state?.component ? `<span class="who" title="${state.via === 'owner' ? 'Rendered by a library inside this component' : ''}">${esc(state.component)}</span>` : '';
     if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
-    if (state.status === 'unplaced') return `${name}<span class="n quiet">not from your source</span>`;
+    if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.message)}</span>`;
     const off = offCount(state);
@@ -422,9 +438,7 @@ class PlumbOverlay extends HTMLElement {
           <button class="btn sync">Sync to system</button><button class="btn solid copy">Copy for agent</button></div>
         <div class="synced" hidden><span class="state"></span>
           <button class="btn plain flip" aria-pressed="false">Before</button><button class="btn plain undo">Undo</button><button class="btn solid write">Write edits</button></div>`
-        : `<div class="read short"><p class="empty">${s.status === 'unplaced'
-          ? 'Plumb can’t tie this element to a line in your source. It may come from a library, a portal, or HTML written at runtime.'
-          : esc(s.message)}</p></div>`}
+        : `<div class="read short"><p class="empty">${s.status === 'unplaced' ? code(s.message) : esc(s.message)}</p></div>`}
     </div>`;
     if (opening) { w.dataset.state = 'opening'; requestAnimationFrame(() => requestAnimationFrame(() => { w.dataset.state = 'open'; })); }
     this.#bindWidget();

@@ -57,7 +57,7 @@ export function plumb(options: SessionOptions = {}): Plugin {
         }
       };
       server.httpServer?.once('close', () => { if (!owned.restarting) void relinquish(); });
-      server.middlewares.use(createHandler(owned.session, { client: true }));
+      server.middlewares.use(createHandler(owned.session, { client: true, servedRoot: server.config.root }));
     },
     transformIndexHtml: { order: 'pre', handler() {
       return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' },

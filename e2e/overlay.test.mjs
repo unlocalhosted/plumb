@@ -124,5 +124,5 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
 
   // HTML written at runtime has no source line; the overlay says so instead of guessing one.
   await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.querySelector('main').append(d); return window.__plumb.overlay.pin(d); });
-  await overlay.getByRole('dialog').filter({ hasText: 'can’t tie this element to a line in your source' }).waitFor();
+  await overlay.getByRole('dialog').filter({ hasText: 'wasn’t rendered by React' }).waitFor();
 });

@@ -26,7 +26,7 @@ import { doctor } from './adoption/doctor.js';
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb presets [--json] [--root <dir>] [--config <path>]
-       plumb serve [--port <number> | --stdio] [--overlay --origin <url>] [--root <dir>] [--config <path>]
+       plumb serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
        plumb check --watch [--json|--agent] [--root <dir>]
        plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
-          overlay: { type: 'boolean' }, origin: { type: 'string' },
+          overlay: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'], port: ['serve'], stdio: ['serve'], watch: ['check'],
     markdown: ['report'], since: ['report'], strict: ['parity'],
-    overlay: ['serve', 'install'], origin: ['serve'],
+    overlay: ['serve', 'install'], origin: ['serve'], 'served-root': ['serve'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
   if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumb parity.' : '--format supports github.');
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
   if (suggesting && !args.values.suggest) throw new UsageError('Use plumb imitation --suggest to report candidate fingerprints.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
-  for (const name of ['root', 'config'] as const) {
+  for (const name of ['root', 'config', 'served-root'] as const) {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
   }
   const options = {
@@ -183,11 +183,13 @@ async function main(): Promise<void> {
   }
   if (command === 'serve') {
     if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.');
+    if (args.values['served-root'] !== undefined && !args.values.overlay) throw new UsageError('--served-root requires serve --overlay.');
     if (args.values.stdio && (args.values.overlay || args.values.origin !== undefined)) throw new UsageError('Serve --overlay requires HTTP; omit --stdio.');
     if (args.values.json || args.values.verbose) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
     if (args.values.stdio) { await serveStdio(options); return; }
     if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.');
     const daemon = await serve({ ...options, overlay: args.values.overlay ?? false,
+      ...(args.values['served-root'] === undefined ? {} : { servedRoot: args.values['served-root'] }),
       ...(args.values.origin === undefined ? {} : { origin: args.values.origin }),
       ...(args.values.port === undefined ? {} : { port: Number(args.values.port) }) });
     process.stdout.write(`Plumb is listening on http://127.0.0.1:${daemon.info.port}. Connection details are in .plumb/serve.json.\n`);

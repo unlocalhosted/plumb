@@ -13,7 +13,7 @@ import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
-import { jsxLocation, sourcePath } from './source-location.js';
+import { jsxLocation, sourcePaths } from './source-location.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
@@ -319,9 +319,16 @@ export class Session extends EventEmitter {
     } while (true);
   }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
-  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; servedRoot?: string } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
     return this.serialize(async () => {
-      const file = sourcePath(this.root, source);
+      const candidates = sourcePaths(this.root, source, expected.servedRoot);
+      // Fall back only when the served file is absent. Invalid or untracked
+      // served evidence must never adopt a same-named repository file.
+      let file = candidates[0]!;
+      if (candidates.length > 1) for (const candidate of candidates) {
+        try { await lstat(candidate); file = candidate; break; }
+        catch (error) { if (!missing(error)) throw error; }
+      }
       await this.reconcile([file]);
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Source is not a tracked project source.');
       const inside = relative(this.root, file).replaceAll('\\', '/');

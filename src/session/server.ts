@@ -15,6 +15,7 @@ import { overlayClient, overlayModules } from '../hosts/client.js';
 export interface ServeInfo { port: number; pid: number; token: string; root: string; config: string | null; protocol: 1; overlay?: boolean; origin?: string }
 export interface HandlerOptions {
   token?: string; prefix?: string;
+  /** Absolute directory the host serves browser source paths from. */ servedRoot?: string;
   /** Additional trusted Host authorities, including port when present. */ allowedHosts?: string[];
   /** Serve the public overlay module alongside the authenticated API. */ client?: boolean;
   /** Exact browser origin allowed to use token-authenticated routes and CORS. */ origin?: string;
@@ -38,7 +39,7 @@ function position(params: Record<string, unknown>, name: string, optional = fals
   if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 1) throw new UsageError(`${name} must be a positive integer.`);
   return n;
 }
-export async function dispatch(session: Session, method: string, raw: unknown = {}): Promise<unknown> {
+export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot'> = {}): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
   if (method === 'report') {
@@ -52,7 +53,7 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
     return session.report(options);
   }
   if (method === 'site') return session.site(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
-  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
+  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
   if (method === 'edits') return session.edits(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
@@ -169,7 +170,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      return respond(200, await dispatch(current, method, params));
+      return respond(200, await dispatch(current, method, params, options));
     } catch (error) { return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
   };
 }
@@ -210,10 +211,12 @@ export function createWebHandler(session: Session | Promise<Session>, options: W
   };
 }
 
-export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
+export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string; servedRoot?: string } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
   const port = options.port ?? 0;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new UsageError('Port must be an integer from 0 to 65535.');
   if (options.overlay && options.origin === undefined) throw new UsageError('Serve --overlay requires --origin <url>.');
+  if (options.servedRoot !== undefined && !options.overlay) throw new UsageError('--served-root requires serve --overlay.');
+  if (options.servedRoot?.trim() === '') throw new UsageError('Provide a non-empty path for --served-root.');
   if (options.origin !== undefined && !options.overlay) throw new UsageError('--origin requires serve --overlay.');
   const origin = options.origin === undefined ? undefined : trustedOrigin(options.origin);
   const root = resolve(options.root ?? process.cwd()), path = resolve(root, '.plumb/serve.json');
@@ -225,10 +228,10 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
     if (alive) throw new UsageError('A server is already running for this project. Use its .plumb/serve.json connection.');
     await rm(path);
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  const { port: _port, overlay: _overlay, origin: _origin, ...sessionOptions } = options;
+  const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, ...sessionOptions } = options;
   const session = await Session.create({ ...sessionOptions, root });
   const token = randomBytes(32).toString('hex');
-  const handlerOptions: HandlerOptions = { token, client: options.overlay ?? false, ...(origin === undefined ? {} : { origin }) };
+  const handlerOptions: HandlerOptions = { token, ...(options.servedRoot === undefined ? {} : { servedRoot: resolve(options.servedRoot) }), client: options.overlay ?? false, ...(origin === undefined ? {} : { origin }) };
   const handler = createHandler(session, handlerOptions), legacy = createHandler(session, { ...handlerOptions, client: false, prefix: '/' });
   const server = createServer((request, response) => handler(request, response, () => legacy(request, response)));
   server.requestTimeout = 10_000; server.headersTimeout = 10_000;

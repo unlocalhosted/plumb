@@ -6,26 +6,33 @@ import { UsageError } from '../errors.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 
 /** Decode host spellings only. Membership and real-path checks belong to Session. */
-export function sourcePath(root: string, source: string): string {
+export function sourcePaths(root: string, source: string, servedRoot?: string): string[] {
   let path = source;
   const fileURL = path.startsWith('file://');
+  let browserPath = false;
   try { if (!fileURL) path = decodeURIComponent(path); } catch { throw new UsageError('Source must have valid URL encoding.'); }
   if (fileURL) {
     try { path = fileURLToPath(path); } catch { throw new UsageError('Source must be a local file URL.'); }
   } else if (/^webpack(?:-internal)?:\/\//.test(path)) {
+    browserPath = true;
     path = path.replace(/^webpack(?:-internal)?:\/\/[^/]*\//, '').replace(/^\([^/]*\)\//, '').replace(/^\.\//, '');
   } else if (/^https?:\/\//.test(path)) {
+    browserPath = true;
     try { path = new URL(path).pathname; } catch { throw new UsageError('Source URL must be valid.'); }
-    path = path.replace(/^\/(?:src|app)\//, match => match.slice(1));
   }
+  browserPath ||= path.startsWith('[project]/');
   path = path.replace(/^\[project\]\//, '').replace(/ \[[^\]]+\](?: \([^)]*\))?$/, '');
+  const absolute = fileURL || path.startsWith('/@fs/');
   if (path.startsWith('/@fs/')) path = path.slice(4);
-  else if (!fileURL && /^\/(?:src|app)\//.test(path)) path = path.slice(1);
+  else if (!fileURL && (browserPath || /^\/(?:src|app)\//.test(path) || servedRoot !== undefined && path.startsWith('/') && !path.startsWith(root + sep))) path = path.replace(/^\//, '');
   path = path.replace(/[?#].*$/, '');
-  const file = resolve(root, path), inside = relative(root, file);
-  if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside) || inside.split(sep).includes('node_modules'))
-    throw new UsageError('Source must be inside the project root, outside node_modules.');
-  return file;
+  const roots = absolute || isAbsolute(path) || servedRoot === undefined ? [root] : [servedRoot, root];
+  return [...new Set(roots.map(base => {
+    const file = resolve(base, path), inside = relative(root, file);
+    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside) || inside.split(sep).includes('node_modules'))
+      throw new UsageError('Source must be inside the project root, outside node_modules.');
+    return file;
+  }))];
 }
 
 export interface JSXLocation { line: number; column: number; start: number; end: number; tag: string }

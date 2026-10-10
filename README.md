@@ -96,12 +96,16 @@ export const { GET, POST } = createPlumbRoute()
 
 The encoded folder serves `/__plumb/*`; [Next.js treats literal underscore-prefixed folders as private](https://nextjs.org/docs/app/getting-started/project-structure#private-folders). Import `PlumbOverlay` from `@unlocalhosted/plumb/next` and render `<PlumbOverlay />` inside your root layout's `<body>`. The component server-renders the process token, and the client sends it as `x-plumb-token`. Routes reuse one Session across hot reloads. Production and `output: 'export'` builds never discover `route.plumb.ts`; the component renders nothing and imports no Session implementation. Keep the `.plumb.ts` suffix: renaming it to `route.ts` defeats build exclusion. `createPlumbRoute` accepts Session options, including `root` and `config`; the first active route initializes the process Session.
 
+In monorepos, Vite uses its dev-server root and Next uses the app's current working directory to resolve browser source paths, even when Plumb's `root` is the repository. Returned locations and edits remain relative to Plumb's root; only tracked sources inside it are accepted.
+
 For other hosts, start a separate local server with your page's exact development origin:
 
 ```sh
 plumb serve --overlay --origin http://localhost:5555
 plumb install --overlay
 ```
+
+When the host serves a subdirectory, add `--served-root apps/web` (relative to the current directory, or absolute) to `serve --overlay`, and use `--root` for the repository containing the Plumb config and sources.
 
 The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting Plumb, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumb serve` and stdio behavior are unchanged.
 

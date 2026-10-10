@@ -267,6 +267,8 @@ test('overlay CLI rejects incompatible flags and malformed origins before creati
     ['serve', '--overlay'], ['serve', '--origin', 'http://localhost:5555'], ['serve', '--overlay', '--stdio'],
     ['install', '--overlay', '--ci'], ['install', '--overlay', '--hooks'], ['install', '--overlay', '--agent', 'codex'],
     ['check', '--overlay'], ['install', '--origin', 'http://localhost:5555'],
+    ['check', '--served-root', 'apps/web'], ['serve', '--served-root', 'apps/web'],
+    ['serve', '--stdio', '--served-root', 'apps/web'], ['serve', '--overlay', '--origin', 'http://localhost:5555', '--served-root', ''],
     ...['null', 'file:///tmp', 'https://user:pass@example.com', 'http://localhost:5555/path', 'http://localhost:5555?x=1', 'http://localhost:5555#x'].map(origin => ['serve', '--overlay', '--origin', origin]),
   ]) {
     const result = spawnSync(process.execPath, [cli, ...args, '--root', root], { encoding: 'utf8', timeout: 10000 });

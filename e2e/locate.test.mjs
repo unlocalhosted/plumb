@@ -133,21 +133,19 @@ async function assertions(page, via) {
 }
 
 async function editSlice(page, root) {
-  const result = await page.$eval('#multiline', async element => {
-    const location = await window.__plumb.locate(element), site = await window.__plumb.site(element);
-    const headers = { 'Content-Type': 'application/json' };
-    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
-    if (token) headers['x-plumb-token'] = token;
-    const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
-    const choices = await (await fetch('/__plumb/edits?' + query, { headers })).json();
-    const edit = choices.edits.find(edit => edit.from === 'gap-[31px]');
-    if (!edit) return { choices, location, site };
-    const response = await fetch('/__plumb/apply', { method: 'POST', headers, body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
-    return { status: response.status, result: await response.json(), edit };
-  });
-  assert.equal(result.status, 200, JSON.stringify(result));
+  const location = await page.$eval('#multiline', element => window.__plumb.locate(element));
+  const origin = new URL(page.url()).origin;
+  const token = await page.evaluate(() => document.querySelector('script[data-plumb-token]')?.dataset.plumbToken);
+  const headers = { Origin: origin, 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) };
+  const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
+  const choices = await (await fetch(origin + '/__plumb/edits?' + query, { headers })).json();
+  const edit = choices.edits.find(edit => edit.from === 'gap-[31px]'); assert.ok(edit, JSON.stringify({ choices, location }));
+  // Source writes can reload the document. Keep both requests in Node.
+  const response = await fetch(origin + '/__plumb/apply', { method: 'POST', headers,
+    body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
+  assert.equal(response.status, 200, await response.text());
   const text = await readFile(join(root, 'src/App.jsx'), 'utf8');
-  assert.ok(text.includes(result.edit.to)); assert.ok(!text.includes('gap-[31px]'));
+  assert.ok(text.includes(edit.to)); assert.ok(!text.includes('gap-[31px]'));
 }
 async function hmrAssertions(page, root, vite) {
   const before = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
