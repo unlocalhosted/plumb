@@ -227,3 +227,24 @@ test('dead-token titles say in your source across every family without exposing 
   const names = { color: 'colour', elevation: 'shadow', z: 'z-index' };
   for (const f of dead) assert.equal(f.title, `${f.decisions.length} ${names[f.family] ?? f.family} tokens are never used in your source`);
 });
+
+test('suggestion policies retain exact names and glob semantics across cold, warm and changed config checks', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/App.tsx'), "import './styles.css';");
+  await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @theme { --*: initial; --spacing-small: 8px; --spacing-large: 12px; } .off { gap: 10px; padding: 10px; margin: 10px; }');
+  for (const [suggest, expected] of [
+    [['--spacing-small'], ['--spacing-small']],
+    [['--spacing-*'], ['--spacing-small', '--spacing-large']],
+    [['--spacing-@(small|large)'], ['--spacing-small', '--spacing-large']],
+    [['--spacing-large', '--spacing-missing'], ['--spacing-large']],
+    [[], []],
+  ]) {
+    await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify({ decisions: { spacing: { suggest, callers: ['primitive', 'semantic'] } } })};`);
+    const cold = cli(dir), warm = cli(dir);
+    assert.deepEqual(cold.findings, warm.findings);
+    const findings = cold.findings.filter(f => f.rule === 'provenance/spacing');
+    assert.ok(findings.length, JSON.stringify(suggest));
+    assert.equal(findings.flatMap(f => f.sites).length, 3);
+    for (const finding of findings) assert.deepEqual((finding.choices ?? []).map(d => d.name), expected);
+  }
+});

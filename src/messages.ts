@@ -22,11 +22,19 @@ export function makeFinding(input: MessageInput): Finding {
 
 /** Normalize once after the final grouping/ledger pass; all surfaces share these fields. */
 export function finishMessages(report: Report): Report {
-  const path = (file: string) => relative(report.root, file).replaceAll('\\', '/') || '.';
+  const paths = new Map<string, string>();
+  const path = (file: string): string => {
+    if (!paths.has(file)) paths.set(file, relative(report.root, file).replaceAll('\\', '/') || '.');
+    return paths.get(file)!;
+  };
   // Absolute source paths can occur inside selectors, custom messages and ledger keys.
   const files = new Set([...report.declarations.map(d => d.site.file), ...report.findings.flatMap(f => [f.declaration.owner.name, ...f.sites.map(s => s.file), ...(f.component ? [f.component.source.file] : [])]), ...report.decisions.map(d => d.source.file)]);
-  const replacements = [...files].filter(file => file.startsWith('/')).sort((a, b) => b.length - a.length);
-  const clean = (value: string) => replacements.reduce((text, file) => text.replaceAll(file, path(file)), value).replaceAll(`${report.root}/`, '');
+  const replacements = [...files].filter(file => file.startsWith('/')).sort((a, b) => b.length - a.length).map(file => [file, path(file)] as const);
+  const cleaned = new Map<string, string>();
+  const clean = (value: string): string => {
+    if (!cleaned.has(value)) cleaned.set(value, replacements.reduce((text, [file, replacement]) => text.includes(file) ? text.replaceAll(file, replacement) : text, value).replaceAll(`${report.root}/`, ''));
+    return cleaned.get(value)!;
+  };
   for (const finding of report.findings) {
     finding.title = clean(finding.title).replace(/[\r\n]+/g, ' ');
     finding.because = clean(finding.because);

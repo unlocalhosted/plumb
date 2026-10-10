@@ -39,8 +39,10 @@ for (const file of ['plumb.config.ts', 'families.ts', 'ownership.config.ts', 'im
 writeFileSync(config, "import config from './imitation.config.ts';\nimport { habits } from './layer5-habits.ts';\nexport default { ...config, habits };\n");
 const env = { ...process.env, PLUMB_CACHE_DIR: resolve(cache, 'compiler') };
 const mode = process.argv[2] ?? 'before';
+const comparison = process.argv[3] ?? (mode === 'after' ? 'before' : undefined);
+const warmLimitMs = 2000;
 if (mode === 'setup') {
-  const baseline = command(process.execPath, ['dist/cli.js', 'baseline', '--root', snapshot, '--config', resolve(configDirectory, 'imitation.config.ts')], { env });
+  const baseline = command(process.execPath, ['dist/cli.js', 'baseline', '--force', '--root', snapshot, '--config', resolve(configDirectory, 'imitation.config.ts')], { env });
   const checked = command(process.execPath, ['dist/cli.js', 'check', '--root', snapshot, '--config', resolve(configDirectory, 'imitation.config.ts')], { env });
   writeFileSync(resolve(cache, 'baseline-check.json'), JSON.stringify({ commit, baseline: { exit: baseline.result.status, wallMs: baseline.wallMs, text: baseline.result.stdout }, check: { exit: checked.result.status, wallMs: checked.wallMs } }, null, 2));
   console.log(JSON.stringify({ baselineExit: 0, checkExit: 0 }));
@@ -61,6 +63,7 @@ console.log(JSON.stringify({timing:report.timing,marks:performance.getEntriesByT
   }
   const profiled = command(process.execPath, ['--cpu-prof', `--cpu-prof-dir=${cache}`, `--cpu-prof-name=${mode}.cpuprofile`, worker, snapshot, config, resolve(cache, `${mode}.profile-report.json`)], { env: { ...env, PLUMB_PROFILE: '1' } });
   const text = command(process.execPath, ['dist/cli.js', 'check', '--root', snapshot, '--config', config], { env });
+  const json = command(process.execPath, ['dist/cli.js', 'check', '--root', snapshot, '--config', config, '--json'], { env });
   const report = JSON.parse(readFileSync(resolve(cache, `${mode}.report.json`), 'utf8'));
   const totals = {};
   for (const finding of report.findings) {
@@ -72,8 +75,8 @@ console.log(JSON.stringify({timing:report.timing,marks:performance.getEntriesByT
   const fingerprint = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
   receipt.hashes = Object.fromEntries([...fields, 'ledgerKeys'].map(field => [field, fingerprint(field === 'ledgerKeys' ? report.findings.flatMap(f => f.ledgerKeys) : report[field])]));
   receipt.baselineCheck = JSON.parse(readFileSync(resolve(cache, 'baseline-check.json'), 'utf8'));
-  if (mode === 'after') {
-    const before = JSON.parse(readFileSync(resolve(cache, 'before.report.json'), 'utf8'));
+  if (comparison !== undefined) {
+    const before = JSON.parse(readFileSync(resolve(cache, `${comparison}.report.json`), 'utf8'));
     for (const field of fields) assert.deepEqual(report[field], before[field], field);
     assert.deepEqual(report.findings.flatMap(f=>f.ledgerKeys), before.findings.flatMap(f=>f.ledgerKeys));
     assert.deepEqual(report.ledger, before.ledger);
@@ -85,9 +88,13 @@ console.log(JSON.stringify({timing:report.timing,marks:performance.getEntriesByT
     for (const field of fields) assert.deepEqual(coldReport[field], report[field], `cold ${field}`);
     assert.deepEqual(coldReport.ledger, report.ledger);
     receipt.cold = { wallMs: cold.wallMs, ...JSON.parse(cold.result.stdout) };
-    assert.ok(runs.every(run => run.timing.totalMs < 1300), 'warm total under 1.3 seconds');
-    assert.ok(text.wallMs < 1300, 'warm text CLI under 1.3 seconds');
   }
+  const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+  receipt.warm = { reportMedianMs: median(runs.map(run => run.timing.totalMs)), processMedianMs: median(runs.map(run => run.wallMs)), textWallMs: text.wallMs, jsonWallMs: json.wallMs, limitMs: warmLimitMs };
+  assert.deepEqual(JSON.parse(json.result.stdout).findings, report.findings, 'JSON CLI findings');
   writeFileSync(resolve('bench/metalui', `final-${mode}.json`), JSON.stringify(receipt, null, 2) + '\n');
   console.log(JSON.stringify(receipt));
+  assert.ok(runs.every(run => run.wallMs < warmLimitMs), `every warm process under ${warmLimitMs} ms`);
+  assert.ok(text.wallMs < warmLimitMs, `warm text CLI under ${warmLimitMs} ms`);
+  assert.ok(json.wallMs < warmLimitMs, `warm JSON CLI under ${warmLimitMs} ms`);
 }

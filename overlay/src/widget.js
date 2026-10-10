@@ -9,9 +9,10 @@
  *  pick a row  the element changes on the page at once (a preview), the mark turns on-system
  *  Write       edits go to source; the preview is lifted as the dev server reloads the real classes
  *  Esc         the reading closes; any unwritten preview is lifted
+ *  starting    while Plumb reads the project for the first time, the tag and reading say so and ask again each second
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
-const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400] };
+const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000 };
 
 import { locate } from './locate.js';
 import { request, post } from './api.js';
@@ -240,8 +241,12 @@ class PlumbOverlay extends HTMLElement {
       const [site, edits] = await Promise.all([request('site', params), request('edits', params)]);
       if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
       return { status: 'ready', ...reading(location, site, edits) };
-    })().catch(error => ({ status: 'error', tag: element.localName, message: error?.message ?? "Plumb isn't answering." }));
+    })().catch(error => error?.starting
+      ? { status: 'starting', tag: element.localName, message: 'Plumb is still reading your project…' }
+      : { status: 'error', tag: element.localName, message: error?.message ?? "Plumb isn't answering." });
     this.#cache.set(element, promise);
+    // A first read still in progress is not an answer; ask again next time.
+    promise.then(state => { if (state.status === 'starting' && this.#cache.get(element) === promise) this.#cache.delete(element); });
     return promise;
   }
 
@@ -311,6 +316,7 @@ class PlumbOverlay extends HTMLElement {
     const who = state?.component ? `<span class="who">${esc(state.component)}</span>` : '';
     if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
     if (state.status === 'unplaced') return `${name}<span class="n quiet">not from your source</span>`;
+    if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.message)}</span>`;
     const off = offCount(state);
     return `${name}${who}<span class="n ${off ? '' : 'ok'}">${off ? `${off} off` : 'on system'}</span>`;
@@ -376,6 +382,15 @@ class PlumbOverlay extends HTMLElement {
     if (this.#pinned !== p) return;
     this.#renderWidget(true);
     this.#follow();
+    // Pinned during Plumb's first read: say so, and fill the reading in as soon as the project is read.
+    while (this.#pinned === p && p.state.status === 'starting') {
+      await new Promise(r => setTimeout(r, TIMING.starting));
+      if (this.#pinned !== p) return;
+      const next = await this.read(element, true);
+      if (this.#pinned !== p || next.status === 'starting') continue;
+      p.state = structuredClone(next);
+      this.#renderWidget();
+    }
   }
 
   close() {

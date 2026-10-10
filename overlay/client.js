@@ -11,6 +11,15 @@ window.__plumb = {
     return request('site', { file: location.file, line: location.line, column: location.column });
   },
   overlay: mountOverlay(),
+  // Resolves once Plumb has finished its first read of the project (the dev server never waits for it).
+  async ready(interval = 100) {
+    for (;;) {
+      const health = await request('health', {}).catch(() => null);
+      if (health?.status === 'ready') return health;
+      if (health?.status === 'failed') throw new Error(health.diagnostic ?? 'Plumb failed to start.');
+      await new Promise(r => setTimeout(r, interval));
+    }
+  },
 };
 
 const health = await request('health', {});

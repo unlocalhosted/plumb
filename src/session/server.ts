@@ -90,7 +90,10 @@ function trustedOrigin(value: string): string {
 }
 
 /** One route/auth/body-validation core for both transports. Undefined belongs to the host app. */
-function createRoute(session: Session, options: HandlerOptions) {
+function createRoute(session: Session | Promise<Session>, options: HandlerOptions) {
+  let current: Session | undefined, diagnostic: string | undefined;
+  if ('then' in session) void session.then(value => { current = value; }, error => { diagnostic = errorMessage(error); });
+  else current = session;
   const token = options.token, prefix = options.prefix ?? '/__plumb/';
   if (!prefix.startsWith('/') || !prefix.endsWith('/') || /[?#]/.test(prefix)) throw new UsageError('Handler prefix must start and end with /.');
   if (token !== undefined && !token.trim()) throw new UsageError('Handler token must be non-empty.');
@@ -144,9 +147,14 @@ function createRoute(session: Session, options: HandlerOptions) {
       if (!trusted) return refuse(403, 'A same-origin request from a trusted loopback host is required.');
     }
     try {
-      if (!known) return refuse(404, 'Endpoint not found.');
+      if (current && !known) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
       if (client) { headers['Content-Type'] = method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
+      if (!current) {
+        const state = diagnostic === undefined ? { status: 'starting' } : { status: 'failed', diagnostic };
+        if (method !== 'health') headers['Retry-After'] = '1';
+        return respond(method === 'health' ? 200 : 503, state);
+      }
       let params: unknown = Object.fromEntries(url.searchParams);
       if (method === 'report' && object(params)) for (const key of ['changed', 'strictLedger', 'verbose', 'ledger']) if (params[key] !== undefined) {
         if (!['true', 'false'].includes(String(params[key]))) throw new UsageError(`${key} must be true or false.`);
@@ -161,13 +169,13 @@ function createRoute(session: Session, options: HandlerOptions) {
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      return respond(200, await dispatch(session, method, params));
+      return respond(200, await dispatch(current, method, params));
     } catch (error) { return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
   };
 }
 
 /** Framework-free Node middleware. Requests outside its prefix belong to the host app. */
-export function createHandler(session: Session, options: HandlerOptions = {}): (request: IncomingMessage, response: ServerResponse, next?: () => void) => void {
+export function createHandler(session: Session | Promise<Session>, options: HandlerOptions = {}): (request: IncomingMessage, response: ServerResponse, next?: () => void) => void {
   const route = createRoute(session, options);
   return (request, response, next) => {
     let url: URL;
@@ -184,7 +192,7 @@ export function createHandler(session: Session, options: HandlerOptions = {}): (
 }
 
 /** Web Request/Response adapter for App Router and other Fetch-compatible hosts. */
-export function createWebHandler(session: Session, options: WebHandlerOptions = {}): (request: Request) => Promise<Response> {
+export function createWebHandler(session: Session | Promise<Session>, options: WebHandlerOptions = {}): (request: Request) => Promise<Response> {
   const route = createRoute(session, options);
   return async request => {
     async function* body(): AsyncIterable<Uint8Array> {

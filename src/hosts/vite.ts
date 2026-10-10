@@ -11,7 +11,9 @@ const registry = globals[key] ??= new Map<string, Entry>();
 async function dispose(id: string, entry: Entry): Promise<void> {
   if (entry.owners.size || entry.restarting) return;
   if (registry.get(id) === entry) registry.delete(id);
-  await (await entry.session).close();
+  // A failed startup has no Session to close; its diagnostic is served by the handler.
+  const session = await entry.session.catch(() => undefined);
+  await session?.close();
 }
 
 /** Mount Plumb on Vite's dev server; process ownership survives server restarts. */
@@ -24,7 +26,7 @@ export function plumb(options: SessionOptions = {}): Plugin {
     resolveId(id) {
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
     },
-    async configureServer(server) {
+    configureServer(server) {
       const root = options.root === undefined ? server.config.root : resolve(server.config.root, options.root);
       const effective = { ...options, root };
       if (options.config !== undefined) effective.config = resolve(root, options.config);
@@ -33,14 +35,14 @@ export function plumb(options: SessionOptions = {}): Plugin {
       if (!entry) {
         entry = { session: Session.create(effective), owners: new Set(), restarting: 0 };
         registry.set(id, entry);
+        const starting = entry;
+        // Existing handlers keep the diagnostic; a later restart can retry.
+        void starting.session.catch(() => { if (registry.get(id) === starting) registry.delete(id); });
       }
       const owned = entry, owner = Symbol(); owned.owners.add(owner);
       const relinquish = async () => { owned.owners.delete(owner); await dispose(id, owned); };
-      await release?.();
+      void release?.();
       release = relinquish;
-      let current: Session;
-      try { current = await owned.session; }
-      catch (error) { owned.owners.delete(owner); if (registry.get(id) === owned) registry.delete(id); throw error; }
       // Vite 6/7 close before configuring the replacement; Vite 8 configures it first.
       // Track the public restart boundary so both orders retain the warm process entry.
       const restart = server.restart;
@@ -55,7 +57,7 @@ export function plumb(options: SessionOptions = {}): Plugin {
         }
       };
       server.httpServer?.once('close', () => { if (!owned.restarting) void relinquish(); });
-      server.middlewares.use(createHandler(current, { client: true }));
+      server.middlewares.use(createHandler(owned.session, { client: true }));
     },
     transformIndexHtml: { order: 'pre', handler() {
       return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' },

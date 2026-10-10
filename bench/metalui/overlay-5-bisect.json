@@ -1,0 +1,398 @@
+{
+  "snapshotCommit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "configCommit": "d91c102",
+  "method": "Each commit archived and built outside .git; identical pinned MetalUI snapshot, archived all-rule config, separate compiler caches; one cold and one warm fresh process per commit.",
+  "firstBadCommit": "3f83816",
+  "runs": [
+    {
+      "ref": "d91c102",
+      "runs": [
+        {
+          "wallMs": 4743.768958,
+          "timing": {
+            "totalMs": 4609.495417,
+            "phases": {
+              "discover": 11.169083,
+              "parse": 111.26354499999991,
+              "collect": 173.57861700000018,
+              "load": 178.10420799999997,
+              "compile": 143.5101249999999,
+              "stylesheets": 2266.903417,
+              "inline": 83.21158799999989,
+              "decisions": 139.9486670000001,
+              "provenance": 266.231084,
+              "habits": 90.08937499999956,
+              "ownership": 394.6680409999997
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 114.20296299999893,
+            "totalMs": 369.6467080000001
+          }
+        },
+        {
+          "wallMs": 1174.826333,
+          "timing": {
+            "totalMs": 1092.8006669999997,
+            "phases": {
+              "discover": 12.864582999999996,
+              "parse": 0,
+              "collect": 34.738084000000015,
+              "load": 52.66708399999999,
+              "compile": 0,
+              "stylesheets": 202.715542,
+              "inline": 0,
+              "decisions": 143.61341699999997,
+              "provenance": 273.22024999999996,
+              "habits": 73.75741600000003,
+              "ownership": 75.70974900000002
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 69.12354099999999
+          }
+        }
+      ]
+    },
+    {
+      "ref": "a274654",
+      "runs": [
+        {
+          "wallMs": 9874.263584000002,
+          "timing": {
+            "totalMs": 4684.715250000001,
+            "phases": {
+              "discover": 5.824832999999998,
+              "parse": 95.05199899999977,
+              "collect": 158.05654000000027,
+              "load": 162.99179099999998,
+              "compile": 135.83687499999996,
+              "stylesheets": 2131.7459580000004,
+              "inline": 82.27025199999994,
+              "decisions": 179.47841700000026,
+              "provenance": 410.3862079999999,
+              "habits": 120.39750000000004,
+              "ownership": 403.4835829999997
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 108.46426999999949,
+            "totalMs": 205.6539170000001
+          }
+        },
+        {
+          "wallMs": 6411.679583000001,
+          "timing": {
+            "totalMs": 1302.5555,
+            "phases": {
+              "discover": 6.230958000000001,
+              "parse": 0,
+              "collect": 36.07454099999998,
+              "load": 43.69395900000001,
+              "compile": 0,
+              "stylesheets": 220.04612500000002,
+              "inline": 0,
+              "decisions": 204.07437500000003,
+              "provenance": 389.8084580000001,
+              "habits": 117.79195800000002,
+              "ownership": 80.35858399999991
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 58.938334000000026
+          }
+        }
+      ]
+    },
+    {
+      "ref": "21c194d",
+      "runs": [
+        {
+          "wallMs": 9629.437749999997,
+          "timing": {
+            "totalMs": 4576.472084,
+            "phases": {
+              "discover": 5.932834,
+              "parse": 103.36991099999946,
+              "collect": 161.29104100000012,
+              "load": 188.67912499999994,
+              "compile": 129.559667,
+              "stylesheets": 2086.3755,
+              "inline": 83.43342300000037,
+              "decisions": 163.83887499999992,
+              "provenance": 392.20412499999975,
+              "habits": 111.26091699999961,
+              "ownership": 379.29020799999955
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 107.78385399999684,
+            "totalMs": 251.26366699999994
+          }
+        },
+        {
+          "wallMs": 6425.8815840000025,
+          "timing": {
+            "totalMs": 1275.3989589999999,
+            "phases": {
+              "discover": 10.736125000000001,
+              "parse": 0,
+              "collect": 33.87650000000002,
+              "load": 45.65545900000001,
+              "compile": 0,
+              "stylesheets": 178.126041,
+              "inline": 0,
+              "decisions": 172.677708,
+              "provenance": 439.13804099999993,
+              "habits": 112.23149999999987,
+              "ownership": 83.53645800000012
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 56.89904199999998
+          }
+        }
+      ]
+    },
+    {
+      "ref": "ab53b7e",
+      "runs": [
+        {
+          "wallMs": 9800.262792000001,
+          "timing": {
+            "totalMs": 4724.0517070000005,
+            "phases": {
+              "discover": 6.5973749999999995,
+              "parse": 91.3727530000001,
+              "collect": 182.44386700000007,
+              "load": 163.777333,
+              "compile": 138.94500000000005,
+              "stylesheets": 2252.663042,
+              "inline": 89.62996299999986,
+              "decisions": 169.76250000000027,
+              "provenance": 372.791291,
+              "habits": 112.34483399999954,
+              "ownership": 379.94499999999994
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 110.8380449999978,
+            "totalMs": 353.41816700000004
+          }
+        },
+        {
+          "wallMs": 6206.1581249999945,
+          "timing": {
+            "totalMs": 1209.643792,
+            "phases": {
+              "discover": 6.101875000000007,
+              "parse": 0,
+              "collect": 38.15420799999998,
+              "load": 46.317875000000015,
+              "compile": 0,
+              "stylesheets": 179.528833,
+              "inline": 0,
+              "decisions": 186.68175000000002,
+              "provenance": 380.78941599999996,
+              "habits": 104.405708,
+              "ownership": 76.49237400000007
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 57.11645800000002
+          }
+        }
+      ]
+    },
+    {
+      "ref": "3f83816^",
+      "runs": [
+        {
+          "wallMs": 7896.309374999999,
+          "timing": {
+            "totalMs": 7764.698459,
+            "phases": {
+              "discover": 13.906875,
+              "parse": 204.0068349999998,
+              "collect": 401.09862000000027,
+              "load": 329.8168750000002,
+              "compile": 432.63816599999996,
+              "stylesheets": 4097.351458,
+              "inline": 305.0769619999999,
+              "decisions": 192.70333300000038,
+              "provenance": 295.5582910000003,
+              "habits": 74.37387499999932,
+              "ownership": 433.77195800000015
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 249.18731800001683,
+            "totalMs": 759.285625
+          }
+        },
+        {
+          "wallMs": 1930.9237919999996,
+          "timing": {
+            "totalMs": 1803.9275,
+            "phases": {
+              "discover": 11.022125000000003,
+              "parse": 0,
+              "collect": 36.92175,
+              "load": 46.59520900000001,
+              "compile": 0,
+              "stylesheets": 196.702792,
+              "inline": 0,
+              "decisions": 186.22183299999995,
+              "provenance": 357.963042,
+              "habits": 337.50299999999993,
+              "ownership": 205.35858400000015
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 62.97274999999996
+          }
+        }
+      ]
+    },
+    {
+      "ref": "3f83816",
+      "runs": [
+        {
+          "wallMs": 13811.737791000001,
+          "timing": {
+            "totalMs": 6571.4317089999995,
+            "phases": {
+              "discover": 17.221292000000005,
+              "parse": 124.2150089999999,
+              "collect": 290.2143240000003,
+              "load": 415.136084,
+              "compile": 267.7508750000002,
+              "stylesheets": 3097.055042,
+              "inline": 124.90266699999978,
+              "decisions": 212.41712499999994,
+              "provenance": 302.9143749999994,
+              "habits": 100.02574999999979,
+              "ownership": 576.9711250000003
+            },
+            "cacheHits": 0,
+            "cacheMisses": 1302
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 0,
+            "cacheMisses": 1303,
+            "parseMs": 148.91648299999497,
+            "totalMs": 514.0232920000001
+          }
+        },
+        {
+          "wallMs": 8041.583625000003,
+          "timing": {
+            "totalMs": 1374.987333,
+            "phases": {
+              "discover": 15.857584000000003,
+              "parse": 0,
+              "collect": 46.33275000000003,
+              "load": 47.942499999999995,
+              "compile": 0,
+              "stylesheets": 263.73145800000003,
+              "inline": 0,
+              "decisions": 204.97754199999997,
+              "provenance": 297.9452080000001,
+              "habits": 89.42008299999998,
+              "ownership": 91.21899999999997
+            },
+            "cacheHits": 1302,
+            "cacheMisses": 0
+          },
+          "moduleGraph": {
+            "modules": 1560,
+            "followed": 1303,
+            "cssFiles": 4,
+            "cacheHits": 1303,
+            "cacheMisses": 0,
+            "parseMs": 0,
+            "totalMs": 76.54029099999997
+          }
+        }
+      ]
+    }
+  ]
+}

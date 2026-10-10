@@ -46,6 +46,7 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
 
   // Idle: nothing is drawn until Alt is held.
@@ -101,6 +102,7 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
   const page = await launched.newPage();
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
   await page.evaluate(() => window.__plumb.overlay.pin(document.getElementById('beta-chip')));
   const reading = overlay.getByRole('dialog', { name: 'Plumb reading for span in Chip' });

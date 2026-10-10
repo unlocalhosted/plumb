@@ -1,0 +1,478 @@
+{
+  "commit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+  "snapshot": "/Users/vijaysingh/unlocalhosted/plumb/bench/metalui/.cache/final-check/snapshot",
+  "config": "/Users/vijaysingh/unlocalhosted/plumb/bench/metalui/.cache/final-check/config/all.config.ts",
+  "runs": [
+    {
+      "wallMs": 13798.276290999998,
+      "timing": {
+        "totalMs": 8713.459291,
+        "phases": {
+          "discover": 6.156790999999998,
+          "parse": 0,
+          "collect": 39.246167000000014,
+          "load": 42.70483300000001,
+          "compile": 0,
+          "stylesheets": 233.00595800000002,
+          "inline": 0,
+          "decisions": 146.85341700000004,
+          "provenance": 7722.136750000001,
+          "habits": 108.27070900000035,
+          "ownership": 133.5520420000006
+        },
+        "cacheHits": 1302,
+        "cacheMisses": 0
+      },
+      "marks": []
+    },
+    {
+      "wallMs": 13499.397875000002,
+      "timing": {
+        "totalMs": 8274.436749999999,
+        "phases": {
+          "discover": 5.687250000000006,
+          "parse": 0,
+          "collect": 33.30654100000001,
+          "load": 31.69241600000001,
+          "compile": 0,
+          "stylesheets": 188.357917,
+          "inline": 0,
+          "decisions": 125.56283300000007,
+          "provenance": 7435.770875,
+          "habits": 110.93283299999985,
+          "ownership": 72.40549900000079
+        },
+        "cacheHits": 1302,
+        "cacheMisses": 0
+      },
+      "marks": []
+    },
+    {
+      "wallMs": 13424.978667000003,
+      "timing": {
+        "totalMs": 8416.670084,
+        "phases": {
+          "discover": 8.071375000000018,
+          "parse": 0,
+          "collect": 39.65212500000001,
+          "load": 34.787540999999976,
+          "compile": 0,
+          "stylesheets": 219.89929100000006,
+          "inline": 0,
+          "decisions": 147.10875,
+          "provenance": 7454.388374999999,
+          "habits": 107.5025829999995,
+          "ownership": 133.8601249999987
+        },
+        "cacheHits": 1302,
+        "cacheMisses": 0
+      },
+      "marks": []
+    }
+  ],
+  "profile": {
+    "wallMs": 14330.260125,
+    "timing": {
+      "totalMs": 8947.682292,
+      "phases": {
+        "discover": 6.672957999999994,
+        "parse": 0,
+        "collect": 38.091499999999996,
+        "load": 32.92762499999998,
+        "compile": 0,
+        "stylesheets": 206.21654100000006,
+        "inline": 0,
+        "decisions": 144.73116700000003,
+        "provenance": 8010.78825,
+        "habits": 135.7552910000013,
+        "ownership": 87.44670800000023
+      },
+      "cacheHits": 1302,
+      "cacheMisses": 0
+    },
+    "marks": [
+      {
+        "name": "plumb:phase:config",
+        "ms": 99.08970899999998
+      },
+      {
+        "name": "plumb:phase:source-files",
+        "ms": 1.6536660000000154
+      },
+      {
+        "name": "plumb:rule:existence/classes",
+        "ms": 50.97479099999998
+      },
+      {
+        "name": "plumb:phase:declarations",
+        "ms": 14.397083000000066
+      },
+      {
+        "name": "plumb:rule:existence/dead-var",
+        "ms": 15.217459000000076
+      },
+      {
+        "name": "plumb:rule:provenance/spacing",
+        "ms": 2931.134791
+      },
+      {
+        "name": "plumb:rule:provenance/color",
+        "ms": 2326.9145829999998
+      },
+      {
+        "name": "plumb:rule:provenance/radius",
+        "ms": 689.3343330000007
+      },
+      {
+        "name": "plumb:rule:provenance/type",
+        "ms": 998.6091670000005
+      },
+      {
+        "name": "plumb:rule:provenance/motion",
+        "ms": 573.6020420000004
+      },
+      {
+        "name": "plumb:rule:provenance/elevation",
+        "ms": 375.9695840000004
+      },
+      {
+        "name": "plumb:rule:provenance/z",
+        "ms": 53.04920800000036
+      },
+      {
+        "name": "plumb:rule:dead",
+        "ms": 30.581458999999086
+      },
+      {
+        "name": "plumb:phase:components",
+        "ms": 54.33662500000065
+      },
+      {
+        "name": "plumb:rule:ownership",
+        "ms": 33.096458999998504
+      },
+      {
+        "name": "plumb:rule:habits/hover-gate",
+        "ms": 8.023418999977366
+      },
+      {
+        "name": "plumb:rule:habits/focus-outline",
+        "ms": 8.649523999936719
+      },
+      {
+        "name": "plumb:rule:habits/transition-named",
+        "ms": 1.8071109999982582
+      },
+      {
+        "name": "plumb:rule:habits/no-ease-in",
+        "ms": 2.0879140000270127
+      },
+      {
+        "name": "plumb:rule:habits/logical-inline",
+        "ms": 40.35641100005341
+      },
+      {
+        "name": "plumb:rule:habits/viewport-dynamic",
+        "ms": 3.1694790000074136
+      },
+      {
+        "name": "plumb:rule:habits/safe-area-fallback",
+        "ms": 5.914462000038839
+      },
+      {
+        "name": "plumb:rule:habits/overflow-clip",
+        "ms": 6.803741999956401
+      },
+      {
+        "name": "plumb:rule:habits/overscroll-contain",
+        "ms": 4.396570000028078
+      },
+      {
+        "name": "plumb:rule:imitation",
+        "ms": 39.63829199999964
+      },
+      {
+        "name": "plumb:phase:discover",
+        "ms": 6.672957999999994
+      },
+      {
+        "name": "plumb:phase:parse",
+        "ms": 0
+      },
+      {
+        "name": "plumb:phase:collect",
+        "ms": 38.091499999999996
+      },
+      {
+        "name": "plumb:phase:load",
+        "ms": 32.92762499999998
+      },
+      {
+        "name": "plumb:phase:compile",
+        "ms": 0
+      },
+      {
+        "name": "plumb:phase:stylesheets",
+        "ms": 206.21654100000006
+      },
+      {
+        "name": "plumb:phase:inline",
+        "ms": 0
+      },
+      {
+        "name": "plumb:phase:decisions",
+        "ms": 144.73116700000003
+      },
+      {
+        "name": "plumb:phase:provenance",
+        "ms": 8010.78825
+      },
+      {
+        "name": "plumb:phase:habits",
+        "ms": 135.7552910000013
+      },
+      {
+        "name": "plumb:phase:ownership",
+        "ms": 87.44670800000023
+      },
+      {
+        "name": "plumb:phase:ledger",
+        "ms": 73.46550000000025
+      }
+    ]
+  },
+  "textWallMs": 13936.25791700001,
+  "totals": {
+    "existence/dead-class": {
+      "findings": 40,
+      "sites": 66
+    },
+    "existence/dynamic-class": {
+      "findings": 3,
+      "sites": 3
+    },
+    "existence/dead-var": {
+      "findings": 2,
+      "sites": 3
+    },
+    "provenance/spacing": {
+      "findings": 55,
+      "sites": 378
+    },
+    "provenance/arbitrary": {
+      "findings": 20,
+      "sites": 24
+    },
+    "provenance/color/framework": {
+      "findings": 2,
+      "sites": 2
+    },
+    "provenance/color": {
+      "findings": 55,
+      "sites": 76
+    },
+    "provenance/color/by-value": {
+      "findings": 1,
+      "sites": 45
+    },
+    "provenance/radius/framework": {
+      "findings": 1,
+      "sites": 2
+    },
+    "provenance/radius": {
+      "findings": 14,
+      "sites": 45
+    },
+    "provenance/type/framework": {
+      "findings": 3,
+      "sites": 5
+    },
+    "provenance/type": {
+      "findings": 59,
+      "sites": 275
+    },
+    "provenance/motion/framework": {
+      "findings": 2,
+      "sites": 43
+    },
+    "provenance/motion": {
+      "findings": 11,
+      "sites": 14
+    },
+    "provenance/motion/by-value": {
+      "findings": 1,
+      "sites": 49
+    },
+    "provenance/elevation": {
+      "findings": 82,
+      "sites": 125
+    },
+    "provenance/elevation/by-value": {
+      "findings": 1,
+      "sites": 10
+    },
+    "provenance/z": {
+      "findings": 15,
+      "sites": 58
+    },
+    "provenance/z/by-value": {
+      "findings": 1,
+      "sites": 2
+    },
+    "provenance/opaque-inline": {
+      "findings": 65,
+      "sites": 373
+    },
+    "dead/color": {
+      "findings": 1,
+      "sites": 497
+    },
+    "dead/elevation": {
+      "findings": 1,
+      "sites": 70
+    },
+    "dead/motion": {
+      "findings": 1,
+      "sites": 36
+    },
+    "dead/radius": {
+      "findings": 1,
+      "sites": 75
+    },
+    "dead/size": {
+      "findings": 1,
+      "sites": 2
+    },
+    "dead/spacing": {
+      "findings": 1,
+      "sites": 840
+    },
+    "dead/type": {
+      "findings": 1,
+      "sites": 82
+    },
+    "dead/z": {
+      "findings": 1,
+      "sites": 10
+    },
+    "ownership/Avatar": {
+      "findings": 1,
+      "sites": 2
+    },
+    "ownership/Button": {
+      "findings": 14,
+      "sites": 14
+    },
+    "ownership/Field.Input": {
+      "findings": 1,
+      "sites": 1
+    },
+    "ownership/FormField.Label": {
+      "findings": 4,
+      "sites": 4
+    },
+    "ownership/Icon": {
+      "findings": 2,
+      "sites": 5
+    },
+    "ownership/IconButton": {
+      "findings": 1,
+      "sites": 1
+    },
+    "ownership/Kbd": {
+      "findings": 1,
+      "sites": 1
+    },
+    "ownership/Link": {
+      "findings": 1,
+      "sites": 1
+    },
+    "ownership/MarkLine": {
+      "findings": 3,
+      "sites": 7
+    },
+    "ownership/Row": {
+      "findings": 2,
+      "sites": 2
+    },
+    "ownership/Row.Text": {
+      "findings": 3,
+      "sites": 3
+    },
+    "ownership/ScrollArea": {
+      "findings": 4,
+      "sites": 7
+    },
+    "ownership/Skeleton.Text": {
+      "findings": 1,
+      "sites": 1
+    },
+    "ownership/Surface": {
+      "findings": 1,
+      "sites": 1
+    },
+    "habits/logical-inline": {
+      "findings": 176,
+      "sites": 220
+    },
+    "habits/overflow-clip": {
+      "findings": 13,
+      "sites": 21
+    },
+    "habits/overscroll-contain": {
+      "findings": 15,
+      "sites": 19
+    },
+    "habits/focus-outline": {
+      "findings": 41,
+      "sites": 45
+    },
+    "habits/hover-gate": {
+      "findings": 121,
+      "sites": 161
+    },
+    "habits/viewport-dynamic": {
+      "findings": 7,
+      "sites": 7
+    },
+    "imitation/Field": {
+      "findings": 1,
+      "sites": 1
+    },
+    "imitation/Textarea": {
+      "findings": 2,
+      "sites": 9
+    }
+  },
+  "ledger": {
+    "exists": true,
+    "path": "/Users/vijaysingh/unlocalhosted/plumb/bench/metalui/.cache/final-check/snapshot/.plumb/ledger.jsonl",
+    "entries": 5640,
+    "new": 0,
+    "debt": 3804,
+    "exceptions": 0,
+    "outOfScope": 0,
+    "stale": 0,
+    "growth": 0,
+    "message": "0 new, 3804 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
+  },
+  "hashes": {
+    "findings": "9bdd3a53fbf4a3044fcf723b3c40b7e81db8b468a1c4d693a3b32c1d2b116f73",
+    "coverage": "f16d7359ec43e850ed1cf948f5e972faf5dd76ce07704500b0babe2f84b5b628",
+    "declarations": "7086fe6c8dd8eb144d00efcdf5e7abdfc359e0a5b5cbb0d3b8791c7ea43c3759",
+    "decisions": "c635c27416303cc11a3830fef07cbf852d3ecc838895cf5a6e7d5fffb9b4ad1c",
+    "ledgerKeys": "b5ea8d4b0517c5e1ab7800254803f639fb6918f240fef005ab34467e9581519b"
+  },
+  "baselineCheck": {
+    "commit": "faa2036e4634e4f6c8d49feaa2dac87a77559501",
+    "baseline": {
+      "exit": 0,
+      "wallMs": 6422.80325,
+      "text": "Baseline recorded 3269 debt entries (3354 sites).\n"
+    },
+    "check": {
+      "exit": 0,
+      "wallMs": 2762.8383749999994
+    }
+  }
+}

@@ -100,7 +100,22 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     const x = comparable(a, prop), y = comparable(b, prop);
     return x !== undefined && y !== undefined && (typeof x === 'number' && typeof y === 'number' ? Math.abs((family === 'spacing' ? Math.abs(x) : x)-y) < 1e-6 : x === y);
   };
-  const suggestible = (d: Decision) => source?.suggest === undefined || source.suggest.some(pattern => matchesGlob(d.name, pattern));
+  // Policy is immutable for this family pass. Match each name once, including
+  // candidates considered again for tier fixes and every authored declaration.
+  const suggestions = new Map<string, boolean>();
+  // Plain token names need no glob parser. Preserve Node's glob semantics for
+  // patterns and names with path/glob syntax rather than changing matchers.
+  const plainName = /^[\w-]+$/;
+  const exactSuggestions = new Set(source?.suggest?.filter(pattern => plainName.test(pattern)));
+  const suggestionPatterns = source?.suggest?.filter(pattern => !plainName.test(pattern));
+  const suggestible = (d: Decision): boolean => {
+    if (source?.suggest === undefined) return true;
+    if (!suggestions.has(d.name)) {
+      const patterns = plainName.test(d.name) ? suggestionPatterns! : source.suggest;
+      suggestions.set(d.name, exactSuggestions.has(d.name) || patterns.some(pattern => matchesGlob(d.name, pattern)));
+    }
+    return suggestions.get(d.name)!;
+  };
   const project = decisions.filter(decision => origins.includes(decision.origin) && decision.resolved !== undefined && suggestible(decision))
     .sort((a,b) => Number(a.tier === 'semantic') - Number(b.tier === 'semantic') || Number(a.origin !== 'project') - Number(b.origin !== 'project') || a.name.localeCompare(b.name));
   function distinctAmounts(pool: Decision[], prop: string): Decision[] {

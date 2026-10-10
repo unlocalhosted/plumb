@@ -140,6 +140,7 @@ export async function locate(element, options = {}) {
     if (source) return await resolveLocation({ source: source.fileName, line: source.lineNumber, column: source.columnNumber }, fiber, element, 'react-debugSource');
     refuse('runtime-only-frames', { step: 'missing-debug-source' });
   } catch (error) {
+    if (error?.starting) throw error; // the server has not finished its first read; that is not "unplaced"
     return options.explain ? { location: null, reason: error.reason ?? 'map', detail: error.detail ?? { error: error.message } } : null;
   }
 }

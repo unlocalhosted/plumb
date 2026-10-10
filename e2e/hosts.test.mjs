@@ -49,6 +49,16 @@ async function connection(t, root) {
   assert.fail(errors || 'overlay daemon did not start');
 }
 
+async function ready(url, headers = {}) {
+  for (let i = 0; i < 1500; i++) {
+    const response = await fetch(url + '/__plumb/health', { headers });
+    const health = await response.json();
+    if (health.status !== 'starting') { assert.equal(health.status, 'ready', JSON.stringify(health)); return health; }
+    await delay(20);
+  }
+  assert.fail('Session did not become ready');
+}
+
 // Execute the served module against the real API, with only the script DOM supplied by the host.
 async function connectClient(url, token, origin) {
   const response = await fetch(url, { headers: origin ? { Origin: origin } : {} });
@@ -78,6 +88,7 @@ test('Vite injects and serves the client, shares edits/apply and excludes Plumb 
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"><\/script>/);
+  await ready(url);
   const health = await connectClient(url + '/__plumb/client.js'); assert.equal(health.root, plumbRoot);
   assert.equal(health.pid, process.pid, 'adapter must stay in the host process');
   const site = await fetch(url + '/__plumb/site?file=src/App.tsx&line=1');
@@ -117,7 +128,7 @@ test('Vite defaults to its root and resolves explicit relative roots and configs
     const server = await createServer({ root, configFile: false, plugins: [plumb(options)], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
     servers.push(server); await server.listen();
     const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-    const health = await (await fetch(url + '/__plumb/health')).json(); assert.equal(health.root, expectedRoot);
+    const health = await ready(url); assert.equal(health.root, expectedRoot);
     assert.equal(health.status, 'ready');
     if (revision !== undefined) assert.equal(health.revision, revision, 'equivalent resolved options share a Session');
     const edits = await (await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1')).json();
@@ -164,7 +175,9 @@ async function main() {
   for (const token of [undefined, 'wrong']) {
     assert.equal((await route.POST(new Request(url + 'apply', { method: 'POST', body: '{}', headers: token ? { 'x-plumb-token': token } : {} }))).status, 401);
   }
-  const health = await send('health'); assert.equal(health.status, 200); assert.equal((await health.json()).root, root);
+  let health;
+  do { health = await (await send('health')).json(); if (health.status === 'starting') await new Promise(resolve => setTimeout(resolve, 20)); } while (health.status === 'starting');
+  assert.equal(health.status, 'ready'); assert.equal(health.root, root);
   const client = await route.GET(new Request(url + 'client.js')); assert.equal(client.status, 200);
   assert.ok(!(await client.text()).includes(token));
   // The API module reads the token from the server-rendered script tag; no served module embeds it.
@@ -296,8 +309,7 @@ test('overlay review 2–4: installed Next wiring serves dev and excludes Sessio
   assert.match(html, /src="\/__plumb\/client.js"/);
   const token = /data-plumb-token="([a-f0-9]{64})"/.exec(html)?.[1]; assert.ok(token);
   assert.equal((await fetch(url + '/__plumb/health')).status, 401);
-  const health = await fetch(url + '/__plumb/health', { headers: { 'x-plumb-token': token } });
-  assert.equal(health.status, 200, dev.output()); assert.equal((await health.json()).root, root);
+  assert.equal((await ready(url, { 'x-plumb-token': token })).root, root);
   assert.equal((await connectClient(url + '/__plumb/client.js', token)).root, root);
   const headers = { 'x-plumb-token': token, Origin: url, 'Content-Type': 'application/json' };
   const edits = await (await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1', { headers })).json();
@@ -334,6 +346,7 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
     const root = await project(t);
     const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { middlewareMode, host: '127.0.0.1', port: 0 } });
     t.after(() => server.close()); if (!middlewareMode) await server.listen();
+    await globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')].values().next().value.session;
     const session = created.at(-1), count = created.length, worker = session.worker;
     const edits = await session.edits('src/App.tsx', 1); await session.apply(selection(edits));
     const revision = (await session.health()).revision;
@@ -350,6 +363,7 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
     const shared = await createServer({ root, configFile: false, plugins: [plumb({ root: '.', watch: false })], logLevel: 'silent', server: { middlewareMode: true } });
     const different = await createServer({ root, configFile: false, plugins: [plumb({ watch: false, verbose: true })], logLevel: 'silent', server: { middlewareMode: true } });
     t.after(() => shared.close()); t.after(() => different.close());
+    await Promise.all([...globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')].values()].map(entry => entry.session));
     assert.equal(created.length, count + 1);
     const other = created.at(-1);
     await different.close(); await assert.rejects(other.health(), /closed/);
@@ -358,4 +372,91 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
   }
   const registry = globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')];
   assert.equal(registry.size, 0, 'final shutdown leaves no process Session entries');
+});
+
+// Hold config loading until the host has proved it can serve requests.
+async function holdStartup(root, fail = false) {
+  const config = await readFile(join(root, 'plumb.config.ts'), 'utf8');
+  await writeFile(join(root, 'plumb.config.ts'), `import { access } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
+const gate = new URL('./startup.release', import.meta.url);
+while (true) { try { await access(gate); break; } catch { await delay(20); } }
+${fail ? 'throw new Error("startup fixture failed");' : config}
+`);
+}
+
+test('Vite listens during startup, shares pending ownership across restarts and serves startup failures', { timeout: 30000 }, async t => {
+  for (const fail of [false, true]) {
+    const root = await project(t); await holdStartup(root, fail);
+    await writeFile(join(root, 'index.html'), '<html><body>Host starts immediately</body></html>');
+    const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    t.after(() => server.close()); await server.listen();
+    let url = `http://127.0.0.1:${server.httpServer.address().port}`;
+    assert.match(await (await fetch(url, { signal: AbortSignal.timeout(2000) })).text(), /Host starts immediately/);
+    for (const path of ['site', 'report', 'decisions', 'why', 'resolve', 'edits', 'try', 'apply', 'unknown']) {
+      const write = ['try', 'apply'].includes(path);
+      const response = await fetch(url + '/__plumb/' + path, { method: write ? 'POST' : 'GET', headers: { Origin: url }, body: write ? '{}' : undefined });
+      assert.equal(response.status, 503, path); assert.equal(response.headers.get('Retry-After'), '1');
+      assert.deepEqual(await response.json(), { status: 'starting' });
+    }
+    assert.deepEqual(await (await fetch(url + '/__plumb/health')).json(), { status: 'starting' });
+    assert.equal((await fetch(url + '/__plumb/client.js')).status, 200);
+    assert.equal((await fetch(url + '/__plumb/src/api.js')).status, 200);
+    assert.equal((await fetch(url + '/__plumb/site', { headers: { Origin: 'https://foreign.example' } })).status, 403);
+    const registry = globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')], pending = [...registry.values()][0].session;
+    await server.restart(); url = `http://127.0.0.1:${server.httpServer.address().port}`;
+    assert.equal([...registry.values()][0].session, pending);
+    assert.deepEqual(await (await fetch(url + '/__plumb/health')).json(), { status: 'starting' });
+    await writeFile(join(root, 'startup.release'), '');
+    if (fail) {
+      await assert.rejects(pending, /startup fixture failed/);
+      const response = await fetch(url + '/__plumb/site'); assert.equal(response.status, 503);
+      const state = await response.json(); assert.equal(state.status, 'failed'); assert.match(state.diagnostic, /startup fixture failed/);
+      assert.deepEqual(await (await fetch(url + '/__plumb/health')).json(), state);
+      assert.equal((await fetch(url)).status, 200);
+      await writeFile(join(root, 'plumb.config.ts'), await readFile(join(repo, 'fixtures/spacing/plumb.config.ts'), 'utf8'));
+      await server.restart(); url = `http://127.0.0.1:${server.httpServer.address().port}`;
+      await ready(url);
+      assert.equal((await fetch(url + '/__plumb/site?file=src/App.tsx&line=1')).status, 200);
+    } else {
+      await ready(url);
+      assert.equal((await fetch(url + '/__plumb/site?file=src/App.tsx&line=1')).status, 200);
+    }
+    await server.close(); assert.equal(registry.size, 0);
+  }
+});
+
+test('Next responds during startup and retains ready or failed Session across hot reloads', { timeout: 30000 }, async t => {
+  for (const fail of [false, true]) {
+    const root = await project(t); await holdStartup(root, fail);
+    const script = join(root, 'startup-next.mjs'), adapter = pathToFileURL(join(repo, 'dist/hosts/next.js')).href;
+    await writeFile(script, `
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
+import { createPlumbRoute, PlumbOverlay } from ${JSON.stringify(adapter)};
+const root = process.argv[2], headers = { 'x-plumb-token': PlumbOverlay().props['data-plumb-token'] };
+const route = createPlumbRoute({root, watch:false});
+const send = path => route.GET(new Request('http://localhost:3000/__plumb/' + path, {headers}));
+assert.equal((await send('client.js')).status,200);
+const starting = await send('site'); assert.equal(starting.status,503); assert.equal(starting.headers.get('Retry-After'),'1');
+assert.deepEqual(await starting.json(), {status:'starting'});
+assert.deepEqual(await (await send('health')).json(), {status:'starting'});
+assert.equal((await route.GET(new Request('http://localhost:3000/__plumb/site'))).status,401);
+const key = Symbol.for('@unlocalhosted/plumb/next'), pending = globalThis[key].handler;
+const reloaded = await import(${JSON.stringify(adapter + '?startup-reload')});
+const again = reloaded.createPlumbRoute({root:root+'/ignored'});
+assert.deepEqual(await (await again.GET(new Request('http://localhost:3000/__plumb/health',{headers}))).json(), {status:'starting'});
+assert.equal(globalThis[key].handler,pending);
+await writeFile(root+'/startup.release','');
+let state;
+for(let i=0;i<1000;i++) {state=await (await send('health')).json();if(state.status!=='starting')break;await delay(20);}
+assert.equal(state.status, ${JSON.stringify(fail ? 'failed' : 'ready')});
+${fail ? "assert.match(state.diagnostic, /startup fixture failed/); assert.equal((await send('site')).status,503);" : "assert.equal((await send('site?file=src/App.tsx&line=1')).status,200);"}
+process.exit(0);
+`);
+    // Keep the child isolated: Next owns its Session for the process lifetime.
+    const result = spawnSync(process.execPath, [script, root], { encoding: 'utf8', timeout: 30000 });
+    assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
+  }
 });

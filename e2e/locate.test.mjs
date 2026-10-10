@@ -69,8 +69,22 @@ async function project(t) {
   await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module', dependencies: { next: '^16.4.0', react: '^19.3.0', 'react-dom': '^19.3.0' } }));
   return root;
 }
+async function ready(url) {
+  for (let i = 0; i < 1500; i++) {
+    const health = await (await fetch(url + '/__plumb/health')).json();
+    if (health.status !== 'starting') { assert.equal(health.status, 'ready', JSON.stringify(health)); return; }
+    await delay(20);
+  }
+  assert.fail('Session did not become ready');
+}
 async function assertions(page, via) {
+  await page.waitForFunction(async () => {
+    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
+    const response = await fetch('/__plumb/health', { headers: token ? { 'x-plumb-token': token } : {} });
+    return (await response.json()).status === 'ready';
+  });
   await page.waitForFunction(() => window.__plumb && document.querySelector('#nested')?.[Object.keys(document.querySelector('#nested')).find(key => key.startsWith('__reactFiber$'))]);
+  await page.evaluate(() => window.__plumb.ready());
   for (const [id, [fragment, component, token]] of Object.entries(anchors)) {
     const location = await page.$eval('#' + id, element => window.__plumb.locate(element));
     const debug = await page.$eval('#' + id, element => {
@@ -249,6 +263,7 @@ test('resolve validates tracked source identity and site queries select only exa
   const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
+  await ready(new URL(url).origin);
   const html = await (await fetch(new URL('../', url))).text();
   const hotModule = /<script[^>]*src="([^"]*html-proxy[^"]*)"/.exec(html);
   assert.ok(hotModule, 'Vite transforms overlay HMR hook as a module');
@@ -323,6 +338,7 @@ test('script maps resolve through real HTTP: inline data, relative URLs, sourceR
   const server = await createServer({ root, configFile: false, plugins: [maps, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
+  await ready(url);
   for (const [name, line, column] of [['inline.js', 1, 1], ['percent.js', 1, 1], ['relative.js', 1, 1], ['index.js', 3, 8], ['index.js', 4, 1]]) {
     const mapped = await mapFrame(url + '/maps/' + name, line, column); assert.ok(mapped, name);
     const response = await fetch(url + '/__plumb/resolve?' + new URLSearchParams(mapped));
@@ -360,6 +376,7 @@ test('review 2: stable module/map URLs invalidate together and reject mismatched
   const server = await createServer({ root, configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
+  await ready(url);
   assert.equal(await mapFrame(url + '/version.js', 1, 1), null);
   available = true;
   const initial = await mapFrame(url + '/version.js', 1, 1);
@@ -410,6 +427,7 @@ test('Next stable chunks refresh eval indexes and maps through HTTP and compare 
   const server = await createServer({ root, configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`, store = new SourceMapStore();
+  await ready(url);
   const locate = () => store.mapFrame(moduleURL, 1, 1, [url + chunk]);
   const resolve = mapped => fetch(url + '/__plumb/resolve?' + new URLSearchParams({ ...mapped, tag: 'span' }));
   const initial = await locate(); assert.ok(initial?.hash);
