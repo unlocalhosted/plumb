@@ -1,4 +1,5 @@
 import type { Plugin } from 'vite';
+import { resolve } from 'node:path';
 import { Session } from '../session/index.js';
 import type { SessionOptions } from '../session/index.js';
 import { createHandler } from '../session/server.js';
@@ -24,7 +25,9 @@ export function plumb(options: SessionOptions = {}): Plugin {
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
     },
     async configureServer(server) {
-      const effective = { ...options, root: server.config.root };
+      const root = options.root === undefined ? server.config.root : resolve(server.config.root, options.root);
+      const effective = { ...options, root };
+      if (options.config !== undefined) effective.config = resolve(root, options.config);
       const id = JSON.stringify(Object.entries(effective).filter(([, value]) => value !== undefined).sort(([a], [b]) => a.localeCompare(b)));
       let entry = registry.get(id);
       if (!entry) {

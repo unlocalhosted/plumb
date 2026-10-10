@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { cp, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -71,18 +71,20 @@ async function connectClient(url, token, origin) {
 
 test('Vite injects and serves the client, shares edits/apply and excludes Plumb from builds', async t => {
   const root = await project(t, { vite: '^8.3.4' });
+  const plumbRoot = await project(t);
   await writeFile(join(root, 'index.html'), '<html><head></head><body><script type="module" src="/src/entry.js"></script></body></html>');
   await writeFile(join(root, 'src/entry.js'), 'document.body.dataset.ready = "yes";\n');
-  const server = await createServer({ root, configFile: false, plugins: [plumb({ root: join(root, 'ignored'), watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, configFile: false, plugins: [plumb({ root: plumbRoot, watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"><\/script>/);
-  const health = await connectClient(url + '/__plumb/client.js'); assert.equal(health.root, root);
+  const health = await connectClient(url + '/__plumb/client.js'); assert.equal(health.root, plumbRoot);
   assert.equal(health.pid, process.pid, 'adapter must stay in the host process');
   const site = await fetch(url + '/__plumb/site?file=src/App.tsx&line=1');
   assert.equal(site.status, 200); assert.ok((await site.json()).findings.length);
   const editsResponse = await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1');
   assert.equal(editsResponse.status, 200); const edits = await editsResponse.json(); assert.ok(edits.edits.length);
+  assert.equal(edits.file, join(plumbRoot, 'src/App.tsx'));
   const before = await readFile(edits.file, 'utf8');
   for (const path of ['health', 'client.js', 'edits?file=src/App.tsx&line=1']) {
     assert.equal((await fetch(url + '/__plumb/' + path, { headers: { Origin: 'https://foreign.example' } })).status, 403);
@@ -99,6 +101,32 @@ test('Vite injects and serves the client, shares edits/apply and excludes Plumb 
   await build({ root, configFile: false, plugins: [plumb({ root: join(root, 'does-not-exist') })], logLevel: 'silent' });
   for (const [, contents] of await snapshot(join(root, 'dist'))) assert.ok(!contents.includes('__plumb'), 'production assets must omit the overlay');
   await assert.rejects(readFile(join(root, '.plumb/serve.json')), { code: 'ENOENT' });
+});
+
+test('Vite defaults to its root and resolves explicit relative roots and configs for separate Sessions', async t => {
+  const root = await project(t), plumbRoot = await project(t);
+  await rename(join(plumbRoot, 'plumb.config.ts'), join(plumbRoot, 'custom.config.ts'));
+  const servers = [];
+  let revision;
+  t.after(() => Promise.all(servers.map(server => server.close())));
+  for (const [options, expectedRoot] of [
+    [{ watch: false }, root],
+    [{ root: relative(root, plumbRoot), config: 'custom.config.ts', watch: false }, plumbRoot],
+    [{ root: plumbRoot, config: join(plumbRoot, 'custom.config.ts'), watch: false }, plumbRoot],
+  ]) {
+    const server = await createServer({ root, configFile: false, plugins: [plumb(options)], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    servers.push(server); await server.listen();
+    const url = `http://127.0.0.1:${server.httpServer.address().port}`;
+    const health = await (await fetch(url + '/__plumb/health')).json(); assert.equal(health.root, expectedRoot);
+    assert.equal(health.status, 'ready');
+    if (revision !== undefined) assert.equal(health.revision, revision, 'equivalent resolved options share a Session');
+    const edits = await (await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1')).json();
+    assert.equal(edits.file, join(expectedRoot, 'src/App.tsx')); assert.ok(edits.edits.length);
+    if (options.root && revision === undefined) {
+      const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { Origin: url, 'Content-Type': 'application/json' }, body: JSON.stringify(selection(edits)) });
+      assert.equal(applied.status, 200); revision = (await applied.json()).revision; assert.ok(revision > health.revision);
+    }
+  }
 });
 
 test('Next App Router shares a process token/session across hot reloads and disables everything in production', async t => {
@@ -319,7 +347,7 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
       }
     }
     // Separate plugin instances share process ownership; options have separate entries.
-    const shared = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { middlewareMode: true } });
+    const shared = await createServer({ root, configFile: false, plugins: [plumb({ root: '.', watch: false })], logLevel: 'silent', server: { middlewareMode: true } });
     const different = await createServer({ root, configFile: false, plugins: [plumb({ watch: false, verbose: true })], logLevel: 'silent', server: { middlewareMode: true } });
     t.after(() => shared.close()); t.after(() => different.close());
     assert.equal(created.length, count + 1);
