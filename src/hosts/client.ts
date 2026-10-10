@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-export const overlayModules = ['client.js', 'src/api.js', 'src/locate.js', 'src/sourcemap.js', 'src/sourcemap-worker.js'];
+export const overlayModules = ['client.js', 'src/api.js', 'src/locate.js', 'src/sourcemap.js', 'src/sourcemap-worker.js', 'src/model.js', 'src/geometry.js', 'src/glyphs.js', 'src/widget.js', 'src/tokens.css'];
 
 /** Plain ES modules, served identically by every development host. */
 export async function overlayClient(module = 'client.js'): Promise<string> {

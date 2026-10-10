@@ -58,7 +58,9 @@ async function connectClient(url, token, origin) {
   const script = { src: url, dataset: token ? { plumbToken: token } : {} };
   let connected;
   // Browser module loading and locate/site are exercised by locate.test.mjs.
-  const execute = new Function('document', 'fetch', 'console', `const window = {}, locate = () => null; return (async () => {${client.replace(/^import .*;\n/, '').replaceAll('import.meta.url', JSON.stringify(url))}})();`);
+  const execute = new Function('document', 'fetch', 'console', `const window = {}, locate = () => null, mountOverlay = () => null, base = new URL('./', ${JSON.stringify(url)}).href, token = document.querySelectorAll()[0]?.dataset.plumbToken;
+    const request = async method => (await fetch(base + method, { headers: token ? { 'x-plumb-token': token } : {} })).json();
+    return (async () => {${client.replace(/^import .*;\n/gm, '').replaceAll('import.meta.url', JSON.stringify(url))}})();`);
   await execute({ querySelectorAll: () => [script] }, async (url, init) => {
     const response = await fetch(url, { ...init, headers: { ...init.headers, ...(origin ? { Origin: origin } : {}) } });
     assert.equal(response.status, 200); return response;
@@ -136,7 +138,10 @@ async function main() {
   }
   const health = await send('health'); assert.equal(health.status, 200); assert.equal((await health.json()).root, root);
   const client = await route.GET(new Request(url + 'client.js')); assert.equal(client.status, 200);
-  const module = await client.text(); assert.ok(!module.includes(token)); assert.match(module, /x-plumb-token/);
+  assert.ok(!(await client.text()).includes(token));
+  // The API module reads the token from the server-rendered script tag; no served module embeds it.
+  const api = await route.GET(new Request(url + 'src/api.js')); assert.equal(api.status, 200);
+  const module = await api.text(); assert.ok(!module.includes(token)); assert.match(module, /x-plumb-token/);
   const site = await send('site?file=src/App.tsx&line=1'); assert.equal(site.status, 200); assert.ok((await site.json()).findings.length);
   assert.equal((await send('apply')).status, 405);
   assert.equal((await send('apply', { method: 'POST', body: 'bad' })).status, 400);

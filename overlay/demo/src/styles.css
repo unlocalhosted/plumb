@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* why: icon to its label */
+  --spacing-s1: 4px;
+  /* why: compact related items */
+  --spacing-s2: 8px;
+  /* why: between label and control */
+  --spacing-s3: 12px;
+  /* why: breathing room for a group */
+  --spacing-s4: 16px;
+  /* why: between sections */
+  --spacing-s6: 24px;
+
+  /* why: chips and tags */
+  --radius-tag: 6px;
+  /* why: controls you press */
+  --radius-control: 8px;
+  /* why: rows and cards that hold controls */
+  --radius-card: 12px;
+
+  /* why: raised surfaces on the page */
+  --color-surface: #ffffff;
+  /* why: the page behind surfaces */
+  --color-ground: #f3f4f6;
+  /* why: body text */
+  --color-ink: #15181b;
+  /* why: secondary text */
+  --color-ink-muted: #5b6370;
+  /* why: hairlines between controls */
+  --color-rule: #d0d5db;
+  /* why: the one action on a row */
+  --color-accent: #2f5bd3;
+
+  /* why: secondary text */
+  --text-small: 12px;
+  /* why: row titles */
+  --text-body: 14px;
+
+  /* why: a surface resting on the page */
+  --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.04);
+}
+
+body { background: var(--color-ground); color: var(--color-ink); font-family: system-ui, sans-serif; }

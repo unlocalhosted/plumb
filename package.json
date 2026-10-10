@@ -29,6 +29,7 @@
     "dist",
     "overlay/client.js",
     "overlay/src/*.js",
+    "overlay/src/tokens.css",
     "overlay/dist",
     "schema",
     "action.yml",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@tailwindcss/node": "4.3",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.20.5",
     "@types/picomatch": "^4.0.3",
     "@types/react": "^19.3.0",

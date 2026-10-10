@@ -17,3 +17,11 @@ export async function request(method, params, options = {}) {
   }
   return response.json();
 }
+
+// Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
+export async function post(method, body) {
+  const response = await fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `Plumb refused ${method}.`), { status: response.status });
+  return result;
+}

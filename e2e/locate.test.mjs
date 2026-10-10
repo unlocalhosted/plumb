@@ -52,7 +52,7 @@ function position(fragment) {
 }
 async function browser(t) {
   try {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
     t.after(() => browser.close()); return browser;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;

@@ -146,7 +146,7 @@ function createRoute(session: Session, options: HandlerOptions) {
     try {
       if (!known) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
-      if (client) { headers['Content-Type'] = 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
+      if (client) { headers['Content-Type'] = method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
       let params: unknown = Object.fromEntries(url.searchParams);
       if (method === 'report' && object(params)) for (const key of ['changed', 'strictLedger', 'verbose', 'ledger']) if (params[key] !== undefined) {
         if (!['true', 'false'].includes(String(params[key]))) throw new UsageError(`${key} must be true or false.`);
