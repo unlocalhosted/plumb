@@ -1,0 +1,9 @@
+{
+  "name": "plumb-linked-library",
+  "type": "module",
+  "exports": "./dist/index.js",
+  "peerDependencies": {
+    "@base-ui/react": "^1.8.0",
+    "react": "^19.3.0"
+  }
+}

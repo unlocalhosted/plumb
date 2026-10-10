@@ -87,12 +87,19 @@ function frames(stack) {
   });
 }
 function refuse(reason, detail = {}) { throw Object.assign(new Error(reason), { reason, detail }); }
-async function resolveLocation(position, fiber, element, via, invalidate = true) {
+async function resolveLocation(position, fiber, element, via, context, { invalidate = true, mapped = false } = {}) {
   const version = sourceMapVersion();
+  const library = result => {
+    if (!result?.library) return false;
+    if (result.untracked && !context.unchecked) context.unchecked = { source: position.source, file: result.untracked };
+    return true;
+  };
   // Next stable virtual URLs use an authoritative module-version query; Vite
   // also invalidates on vite:afterUpdate. Both bind the map to server source.
-  if (position.hash) {
+  if (position.hash || mapped) {
     const snapshot = await request('resolve', { source: position.source, snapshot: '1' }, { explain: true });
+    if (library(snapshot)) return null;
+    if (!position.hash) refuse('map', { step: 'missing-sources-content', source: position.source });
     if (snapshot?.hash !== position.hash) {
       if (invalidate) invalidateSourceMaps();
       refuse('source-mismatch', { source: position.source, mapHash: position.hash, currentHash: snapshot?.hash ?? null, retained: !invalidate });
@@ -102,12 +109,13 @@ async function resolveLocation(position, fiber, element, via, invalidate = true)
   // but an owner site must still be component JSX, never a containing host tag.
   const result = await request('resolve', { ...position, ...(via === 'owner' ? { component: '1' } : { tag: element.localName }) }, { explain: true });
   if (version !== sourceMapVersion()) refuse('map', { step: 'invalidated-during-resolve', source: position.source });
+  if (library(result)) return null;
   if (!result || !Number.isSafeInteger(result.line) || !Number.isSafeInteger(result.column)) refuse('resolve-refusal', { source: position.source, result });
   return { ...result, component: via === 'owner' ? nameOf(fiber) : componentName(fiber), tag: element.localName, via,
     ...(via === 'owner' ? { rendered: element.localName } : {}) };
 }
 
-async function authoredLocation(fiber, element, via) {
+async function authoredLocation(fiber, element, via, context) {
   if (fiber._debugStack) {
     let version = sourceMapVersion();
     const previous = evidence.get(fiber._debugStack);
@@ -115,7 +123,7 @@ async function authoredLocation(fiber, element, via) {
     // Next Fast Refresh can retain stacks across a committed owner replacement.
     const refreshed = previous && ownerType && previous.ownerType && ownerType !== previous.ownerType;
     if (refreshed && previous.version === version) { invalidateSourceMaps(); version = sourceMapVersion(); }
-    if (previous && !refreshed && previous.version !== version) return resolveLocation(previous.position, fiber, element, via, false);
+    if (previous && !refreshed && previous.version !== version) return resolveLocation(previous.position, fiber, element, via, context, { invalidate: false, mapped: true });
     const creationFrames = frames(fiber._debugStack.stack);
     if (!creationFrames.length) refuse('owner-unproven', { step: 'missing-creation-frames' });
     for (const frame of creationFrames) {
@@ -125,11 +133,11 @@ async function authoredLocation(fiber, element, via) {
       if (!mapped) refuse(mappedResult.reason, { ...mappedResult.detail, frame });
       // Opaque chunks can mix library and authored modules. Use mapped paths.
       if (runtimeSource(mapped.source)) continue;
-      if (!mapped.hash) refuse('map', { step: 'missing-sources-content', source: mapped.source });
       if (refreshed && ['source', 'line', 'column'].some(key => mapped[key] !== previous.position[key]))
         refuse('map', { step: 'retained-stack-position-changed', previous: previous.position, current: mapped });
-      // A failed authored frame must never fall through to a caller or owner.
-      const result = await resolveLocation(mapped, fiber, element, via);
+      // Library classification may continue; failed tracked evidence must stop.
+      const result = await resolveLocation(mapped, fiber, element, via, context, { mapped: true });
+      if (!result) continue;
       if (version === sourceMapVersion()) evidence.set(fiber._debugStack, { version, position: mapped, ownerType });
       return result;
     }
@@ -137,23 +145,25 @@ async function authoredLocation(fiber, element, via) {
   }
   const source = fiber._debugSource;
   if (source && !runtimeSource(source.fileName))
-    return resolveLocation({ source: source.fileName, line: source.lineNumber, column: source.columnNumber }, fiber, element, via);
+    return resolveLocation({ source: source.fileName, line: source.lineNumber, column: source.columnNumber }, fiber, element, via, context);
   return null;
 }
 
 /** Locate only evidenced authored sites. All paths and JSX anchors are validated by the server. */
 export async function locate(element, options = {}) {
+  const context = {};
   try {
     if (!element || element.nodeType !== 1) refuse('no-fiber', { step: 'invalid-element' });
     const fiber = hostFiber(element);
     const explicit = /^(.*):([1-9]\d*):([1-9]\d*)$/.exec(element.getAttribute('data-plumb-source') ?? '');
     if (explicit) {
       try {
-        return await resolveLocation({ source: explicit[1], line: Number(explicit[2]), column: Number(explicit[3]) }, fiber, element, 'data-plumb-source');
+        const location = await resolveLocation({ source: explicit[1], line: Number(explicit[2]), column: Number(explicit[3]) }, fiber, element, 'data-plumb-source', context);
+        if (location) return location;
       } catch (error) { if (!fiber) throw error; }
     }
     if (!fiber) refuse('no-fiber');
-    const direct = await authoredLocation(fiber, element, fiber._debugStack ? 'react19' : 'react-debugSource');
+    const direct = await authoredLocation(fiber, element, fiber._debugStack ? 'react19' : 'react-debugSource', context);
     if (direct) return direct;
     const tree = boundary(fiber), seen = new Set([fiber]);
     let owner = fiber._debugOwner;
@@ -167,13 +177,15 @@ export async function locate(element, options = {}) {
       // library-created host. Never borrow <App /> (or another caller's JSX).
       if (!child._debugStack) refuse('owner-unproven', { step: 'missing-creation-stack', component: nameOf(owner) });
       seen.add(owner);
-      const location = await authoredLocation(owner, element, 'owner');
+      const location = await authoredLocation(owner, element, 'owner', context);
       if (location) return location;
       child = owner;
     }
     refuse('runtime-only-frames', { step: owner ? 'owner-depth-limit' : 'no-authored-owner' });
   } catch (error) {
-    if (error?.starting) throw error; // the server has not finished its first read; that is not "unplaced"
+    if (error?.starting || error?.failed) throw error; // the server has not finished its first read; that is not "unplaced"
+    if (context.unchecked && ['runtime-only-frames', 'owner-unproven', 'no-fiber'].includes(error.reason))
+      return options.explain ? { location: null, reason: 'resolve-refusal', detail: { ...context.unchecked, response: 'Source is not a tracked project source.' } } : null;
     return options.explain ? { location: null, reason: error.reason ?? 'map', detail: error.detail ?? { error: error.message } } : null;
   }
 }

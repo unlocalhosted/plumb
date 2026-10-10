@@ -126,7 +126,8 @@ async function resolves(fixture, host) {
   for (const spelling of ['src/Escape.ts', 'src/Alias.jsx', 'src/Untracked.jsx', 'src/Missing.jsx', 'node_modules/react/index.js',
     '/@fs/' + join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href,
     'webpack://_N_E/../../../src/index.ts', '%2e%2e/%2e%2e/%2e%2e/src/index.ts']) {
-    assert.equal((await resolve(spelling)).status, 400, spelling);
+    const response = await resolve(spelling); assert.equal(response.status, 200, spelling);
+    const result = await response.json(); assert.equal(result.library, true, spelling); assert.equal(result.file, undefined, spelling);
   }
   assert.equal((await resolve('/src/App.jsx', { ...at, tag: 'span' })).status, 400);
   assert.equal((await resolve('/src/App.jsx', { ...at, hash: 'stale' })).status, 400, 'never try repo namesake after failed served evidence');

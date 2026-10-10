@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, resolve, sep } from 'node:path';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
@@ -27,12 +27,7 @@ export function sourcePaths(root: string, source: string, servedRoot?: string): 
   else if (!fileURL && (browserPath || /^\/(?:src|app)\//.test(path) || servedRoot !== undefined && path.startsWith('/') && !path.startsWith(root + sep))) path = path.replace(/^\//, '');
   path = path.replace(/[?#].*$/, '');
   const roots = absolute || isAbsolute(path) || servedRoot === undefined ? [root] : [servedRoot, root];
-  return [...new Set(roots.map(base => {
-    const file = resolve(base, path), inside = relative(root, file);
-    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside) || inside.split(sep).includes('node_modules'))
-      throw new UsageError('Source must be inside the project root, outside node_modules.');
-    return file;
-  }))];
+  return [...new Set(roots.map(base => resolve(base, path)))];
 }
 
 export interface JSXLocation { line: number; column: number; start: number; end: number; tag: string }

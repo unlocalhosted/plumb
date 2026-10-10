@@ -117,11 +117,12 @@ async function assertions(page, via) {
   }), null);
   // The request goes through the host's auth/origin core, never a mocked resolver.
   for (const source of [join(repo, 'src/index.ts'), 'node_modules/react/index.js', 'untracked.jsx', 'webpack://_N_E/../../src/index.ts']) {
-    const status = await page.evaluate(async source => {
+    const result = await page.evaluate(async source => {
       const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
-      return (await fetch('/__plumb/resolve?' + new URLSearchParams({ source }), { headers: token ? { 'x-plumb-token': token } : {} })).status;
+      return (await fetch('/__plumb/resolve?' + new URLSearchParams({ source }), { headers: token ? { 'x-plumb-token': token } : {} })).json();
     }, source);
-    assert.equal(status, 400, source);
+    assert.equal(result.library, true, source);
+    assert.equal(result.file, undefined, source);
   }
   for (const source of ['webpack://_N_E/./src/App.jsx', '/src/App.jsx', 'src/App.jsx', '[project]/src/App.jsx [app-client] (ecmascript)']) {
     const resolved = await page.evaluate(async source => {
@@ -274,7 +275,10 @@ test('resolve validates tracked source identity and site queries select only exa
     assert.equal(atTag.status, 200); assert.deepEqual(await atTag.json(), { file: 'src/App.jsx', ...position('<span') });
   }
   assert.equal((await resolve('src/App.jsx', { ...position('<section'), tag: 'span' })).status, 400, 'span cannot resolve to caller section');
-  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), 'untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) assert.equal((await resolve(source)).status, 400, source);
+  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), 'untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
+    const response = await resolve(source); assert.equal(response.status, 200, source);
+    const result = await response.json(); assert.equal(result.library, true, source); assert.equal(result.file, undefined, source);
+  }
   for (const params of [{ line: 9999, column: 1 }, { line: 1, column: 1 }, { line: 4, column: 99999 }, { line: 4 }, { column: 10 }, { line: 0, column: 1 }]) assert.equal((await resolve('src/App.jsx', params)).status, 400, JSON.stringify(params));
   assert.equal((await resolve('src/App.jsx', {}, { headers: { Origin: 'https://foreign.example' } })).status, 403);
   assert.equal((await resolve('src/App.jsx', {}, { method: 'POST', headers: { Origin: new URL(url).origin } })).status, 405);
@@ -301,7 +305,7 @@ test('resolve validates tracked source identity and site queries select only exa
   assert.deepEqual(updated.declarations.map(d => d.site.text).sort(), ['gap-[33px]', 'padding: 10']);
   assert.equal((await resolve('src/App.jsx')).status, 200);
   await rm(join(root, 'src/App.jsx'));
-  assert.equal((await resolve('src/App.jsx')).status, 400, 'deleted source is no longer tracked');
+  assert.deepEqual(await (await resolve('src/App.jsx')).json(), { library: true, untracked: 'src/App.jsx' }, 'deleted source is no longer tracked');
 });
 
 test('script maps resolve through real HTTP: inline data, relative URLs, sourceRoot, nested index sections and unmapped spans', async t => {
@@ -483,7 +487,7 @@ test('review 5: target requests stat bounded dependencies without watchers; repo
   await writeFile(join(root, 'src/New.jsx'), 'export const New = () => <div className="gap-[37px]" />;');
   assert.deepEqual(await session.resolveSource('src/New.jsx', 1, 26), { file: 'src/New.jsx', line: 1, column: 26 });
   await rm(join(root, 'src/New.jsx'));
-  await assert.rejects(session.resolveSource('src/New.jsx'), /tracked/);
+  assert.deepEqual(await session.resolveSource('src/New.jsx'), { library: true, untracked: 'src/New.jsx' });
   stats = []; await session.decisions(); assert.ok(stats.some(path => path.endsWith('Unrelated239.jsx')));
   await writeFile(join(root, 'src/Unrelated239.jsx'), 'export const Other = () => <div className="gap-[71px]" />;');
   const report = await session.report(); assert.ok(report.declarations.some(d => d.site.text === 'gap-[71px]'));

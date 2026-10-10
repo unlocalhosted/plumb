@@ -20,6 +20,7 @@ export interface SiteResult { file: string; line: number; column?: number; decla
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
+export type SourceResolution = { file: string; line?: number; column?: number; hash?: string } | { library: true; untracked?: string };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
@@ -319,7 +320,7 @@ export class Session extends EventEmitter {
     } while (true);
   }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
-  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; servedRoot?: string } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; servedRoot?: string } = {}): Promise<SourceResolution> {
     return this.serialize(async () => {
       const candidates = sourcePaths(this.root, source, expected.servedRoot);
       // Fall back only when the served file is absent. Invalid or untracked
@@ -329,10 +330,18 @@ export class Session extends EventEmitter {
         try { await lstat(candidate); file = candidate; break; }
         catch (error) { if (!missing(error)) throw error; }
       }
-      await this.reconcile([file]);
-      if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Source is not a tracked project source.');
       const inside = relative(this.root, file).replaceAll('\\', '/');
-      if (await realpath(file) !== resolve(await realpath(this.root), inside)) throw new UsageError('Source must not alias a file outside the project root.');
+      if (!inside || inside === '..' || inside.startsWith('../') || isAbsolute(inside) || ignoredDirectory(inside) || !/\.[cm]?[jt]sx?$/.test(file)) return { library: true };
+      // Classify before reading source: linked packages and symlinked directories
+      // must never introduce external snapshots into this project's Session.
+      try {
+        if (await realpath(file) !== resolve(await realpath(this.root), inside)) return { library: true };
+      } catch (error) {
+        if (!missing(error)) throw error;
+        return { library: true, untracked: inside };
+      }
+      await this.reconcile([file]);
+      if (!this.sourceFiles.has(file)) return { library: true, untracked: inside };
       // Hash-bound browser evidence must compare with the file on disk, even
       // if a save races reconciliation or preserves the cached stat stamp.
       const text = expected.snapshot || expected.hash !== undefined ? await readFile(file, 'utf8') : this.sourceTexts.get(file) ?? await readFile(file, 'utf8');

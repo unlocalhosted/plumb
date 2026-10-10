@@ -1,0 +1,8 @@
+{
+  "name": "plumb-linked-app",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "plumb-linked-library": "file:../library"
+  }
+}

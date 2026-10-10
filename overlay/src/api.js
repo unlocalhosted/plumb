@@ -12,7 +12,12 @@ export async function request(method, params, options = {}) {
     throw error;
   }
   // The project is still being read for the first time: a state to show, not a refusal.
-  if (response.status === 503) throw Object.assign(new Error('Plumb is still reading your project.'), { starting: true });
+  if (response.status === 503) {
+    const body = await response.json().catch(() => ({}));
+    // A failed start is not "still reading": it needs the person, and says why.
+    if (body.status === 'failed') throw Object.assign(new Error(body.diagnostic ?? 'Plumb could not start.'), { failed: true });
+    throw Object.assign(new Error('Plumb is still reading your project.'), { starting: true });
+  }
   if (!response.ok) {
     if (options.explain) throw Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method, source: params.source, status: response.status, response: await response.text() } });
     return null;

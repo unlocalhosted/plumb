@@ -27,9 +27,9 @@ const RESUME = 'plumb:resume';
 function unplaced(found) {
   const detail = found?.detail ?? {}, response = String(detail.response ?? '');
   if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(response)) {
-    let file = String(detail.source ?? '');
-    try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
-    return { short: 'not checked', message: `This element is written in \`${file}\`, which Plumb doesn’t check. Add it to \`source\` in your Plumb config to read it here.` };
+    let file = String(detail.file ?? detail.source ?? '');
+    if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
+    return { short: `not checked: ${file}`, message: `This element is written in \`${file}\`, which Plumb doesn’t check. Add it to \`source\` in your Plumb config to read it here.` };
   }
   if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'This element wasn’t rendered by React (HTML written at runtime, or outside your app), so it has no line in your source.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
@@ -261,6 +261,7 @@ class PlumbOverlay extends HTMLElement {
       return { status: 'ready', ...reading(location, site, edits) };
     })().catch(error => error?.starting
       ? { status: 'starting', tag: element.localName, message: 'Plumb is still reading your project…' }
+      : error?.failed ? { status: 'error', tag: element.localName, short: 'Plumb couldn’t start', message: `Plumb couldn’t start: ${error.message}` }
       : { status: 'error', tag: element.localName, message: error?.message ?? "Plumb isn't answering." });
     this.#cache.set(element, promise);
     // A first read still in progress is not an answer; ask again next time.
@@ -335,7 +336,7 @@ class PlumbOverlay extends HTMLElement {
     if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
     if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
-    if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.message)}</span>`;
+    if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.short ?? state.message)}</span>`;
     const off = offCount(state);
     if (!state.marks.length && !state.declared) return `${name}${who}<span class="n quiet">computed here</span>`;
     return `${name}${who}<span class="n ${off ? '' : 'ok'}">${off ? `${off} off` : 'on system'}</span>`;
