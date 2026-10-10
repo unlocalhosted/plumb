@@ -8,6 +8,8 @@ import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
 import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
 import type { SourceText, SourceProgram } from '../collect/source.js';
+import { unreadable } from '../diagnostics.js';
+import type { Finding } from '../report.js';
 import { UsageError } from '../errors.js';
 
 export interface ComponentIdentity {
@@ -20,6 +22,7 @@ interface Binding { node: Node }
 interface Import { file: string; name: string }
 interface Module extends SourceText {
   ast: Program;
+  diagnostic?: Finding;
   bindings: Map<string, Binding>;
   types: Map<string, Node>;
   imports: Map<string, Import>;
@@ -33,6 +36,7 @@ interface Usage { start: number; end: number; component: ComponentIdentity; site
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
 export interface RootRange { file: string; start: number; end: number }
 export interface ComponentGraph {
+  diagnostics: Finding[];
   root: string;
   components: ComponentIdentity[];
   caller(declaration: Declaration): ComponentIdentity | undefined;
@@ -76,6 +80,7 @@ export function cachedComponents(root: string, files: string[], config: PlumbCon
 }
 
 export function discoverComponents(root: string, files: string[], config: PlumbConfig, overrides: ReadonlyMap<string, string> = new Map(), includeUnused = false, programs: ReadonlyMap<string, SourceProgram> = new Map(), readOnly = false, memory?: ComponentMemory): ComponentGraph {
+  const diagnostics: Finding[] = [];
   const rootRanges = new Map<ComponentIdentity, RootRange[]>();
   const fingerprintClasses = new Map<ComponentIdentity, string[]>();
   const resolver = new ResolverFactory(resolverOptions);
@@ -152,17 +157,23 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   function module(file: string): Module {
     const cached = modules.get(file); if (cached) return cached;
     const warm = overrides.has(file) ? undefined : memory?.modules.get(file);
-    if (warm) { modules.set(file, warm); return warm; }
+    if (warm) { modules.set(file, warm); if (warm.diagnostic) diagnostics.push(warm.diagnostic); return warm; }
     const shared = programs.get(file);
-    const text = overrides.get(file) ?? shared?.text ?? readFileSync(file, 'utf8');
-    if (cache) watchedFiles.set(file, fileHash(file));
-    let ast = shared?.text === text ? shared.ast : undefined;
-    if (!ast) {
-      const parsed = parseSync(file, text, parserOptions);
-      if (parsed.errors.length) throw new UsageError(`Read component ${file}: ${parsed.errors[0]?.message}`);
-      ast = parsed.program;
+    let text = '', ast: Program | undefined, diagnostic: Finding | undefined;
+    try {
+      text = overrides.get(file) ?? shared?.text ?? readFileSync(file, 'utf8');
+      if (cache) watchedFiles.set(file, fileHash(file));
+      ast = shared?.text === text ? shared.ast : undefined;
+      if (!ast) {
+        const parsed = parseSync(file, text, parserOptions);
+        if (parsed.errors.length) throw new Error(parsed.errors[0]?.message);
+        ast = parsed.program;
+      }
+    } catch (error) {
+      diagnostic = unreadable(file, file, error); diagnostics.push(diagnostic);
+      ast = parseSync(file, '', parserOptions).program;
     }
-    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ast, bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
+    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ast, ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
     modules.set(file, value);
     for (const statement of value.ast.body) {
       if (statement.type === 'ImportDeclaration') {
@@ -527,7 +538,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     sourceTokens.set(file, inventory);
   }
   const sourceLines = new Map([...modules].map(([file, value]) => [file, value.lineStarts]));
-  const graph: ComponentGraph = { root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
+  const graph: ComponentGraph = { diagnostics, root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
     element(site) {
       const lines = sourceLines.get(site.file); if (!lines) return;
       const offset = lines[site.line - 1]! + site.column - 1;
@@ -553,7 +564,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       return;
     },
   };
-  cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
+  if (!diagnostics.length) cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
   modules.clear();
   return graph;
 }

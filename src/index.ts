@@ -29,6 +29,7 @@ import { prepareSnippet } from './try.js';
 import type { TryOptions, Snippet } from './try.js';
 import { profileDuration } from './profile.js';
 import { suggestionCache } from './rules/suggestions.js';
+import { uniqueDiagnostics } from './diagnostics.js';
 import { finishMessages } from './messages.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
@@ -193,8 +194,13 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     tool,
     root,
     config: { path: config.path, inferred: config.path === null },
-    ...project,
-    findings,
+    tailwind: project.tailwind,
+    files: project.files,
+    findings: [...findings, ...uniqueDiagnostics([project.diagnostics, collected.diagnostics, modules.diagnostics, css.diagnostics, components.diagnostics,
+      lowered.diagnostics.map(finding => {
+        const site = collected.sites.find(site => site.token === finding.declaration.value);
+        return site ? { ...finding, sites: [location(site)], declaration: { ...finding.declaration, site: location(site) } } : finding;
+      })])],
     habits: habits.summaries,
     presets: config.presets ?? [],
     decisions: record.decisions,

@@ -22,5 +22,9 @@ export function prepareSnippet(root: string, config: PlumbConfig, snippet: Snipp
   if (config.css && file === resolve(root, config.css)) throw new UsageError('--as must name a new source file, not the Tailwind entry.');
   // --lang controls parsing even when a CSS snippet uses the default .tsx identity.
   if (lang === 'tsx' && !/\.[jt]sx?$/.test(file)) throw new UsageError('TSX snippets need a .tsx/.jsx/.ts/.js --as path.');
+  if (lang === 'tsx') {
+    const parsed = parseSync(file, snippet.text);
+    if (parsed.errors.length) throw new UsageError(`Fix source ${file}: ${parsed.errors[0]?.message}`);
+  }
   return { file, text: snippet.text, lang };
 }

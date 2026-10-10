@@ -29,7 +29,7 @@ export class RankingState {
   private rankings = new Map<string, string[]>();
   update(candidates: Map<string, CandidateCss>, theme: { token: string; prefix: string }[]) {
     const next = new Map<string, string | undefined>(theme.map(h => [h.token, h.prefix]));
-    for (const [token, result] of candidates) if (result.css?.trim() && !next.has(token)) next.set(token, undefined);
+    for (const [token, result] of candidates) if (!result.unreadable && result.css?.trim() && !next.has(token)) next.set(token, undefined);
     const changed = [...new Set([...next.keys(), ...this.hints.keys()])].filter(token => next.has(token) !== this.hints.has(token) || next.get(token) !== this.hints.get(token));
     for (const token of this.rankings.keys()) {
       const input = split(token);

@@ -45,7 +45,7 @@ export function finishMessages(report: Report): Report {
     const site = finding.sites[0]!;
     // A rule+site command remains valid for mixed-syntax groups and snippets, without
     // exposing a report hash as an authored ledger key. Shell quote paths with spaces.
-    finding.accept = ['ledger/no-why', 'decisions/unaccepted'].includes(finding.rule) ? clean(finding.action!) : `plumb accept --rule ${shell(finding.rule)} --site ${shell(`${path(site.file)}:${site.line}`)} --why "…"`;
+    finding.accept = finding.rule.startsWith('config/') ? '' : ['ledger/no-why', 'decisions/unaccepted'].includes(finding.rule) ? clean(finding.action!) : `plumb accept --rule ${shell(finding.rule)} --site ${shell(`${path(site.file)}:${site.line}`)} --why "…"`;
   }
   return report;
 }

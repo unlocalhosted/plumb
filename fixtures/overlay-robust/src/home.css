@@ -1,0 +1,5 @@
+@import "tailwindcss" source(none);
+
+@theme {
+  --color-landing: #654321;
+}

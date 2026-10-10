@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 import { ResolverFactory } from 'oxc-resolver';
 import { errorMessage, UsageError } from '../errors.js';
 import { tool } from '../report.js';
+import type { Finding } from '../report.js';
+import { unreadable } from '../diagnostics.js';
 import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
 import { hoverGated, positivePseudo, selector } from '../habits/css.js';
@@ -73,19 +75,28 @@ export interface TailwindMemory {
   hints?: Map<string, { token: string; prefix: string }[]>;
 }
 
-export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false, reportOnly = false, memory?: TailwindMemory): Promise<{
-  hoverVariants: string[]; theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
+export async function lowerTailwind(root: string, entry: string | null, version: string | null, candidates: string[], probeHover = false, readOnly = false, _reportOnly = false, memory?: TailwindMemory): Promise<{
+  diagnostics: Finding[]; hoverVariants: string[]; theme: ThemeValue[]; candidates: Map<string, CandidateCss>; suggestions: { token: string; prefix: string }[]; loadMs: number; compileMs: number; cacheHits: number; cacheMisses: number;
 }> {
   const results = new Map<string, CandidateCss>();
-  if (entry === null) return { hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
+  const diagnostics: Finding[] = [];
+  if (entry === null) return { diagnostics, hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
   const start = performance.now();
+  function skipped(error: unknown) {
+    const message = errorMessage(error);
+    diagnostics.push(unreadable(entry!, entry!, message));
+    for (const candidate of candidates) results.set(candidate, { css: null, declarations: [], notes: [], unreadable: message });
+    return { diagnostics, hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: performance.now() - start, compileMs: 0, cacheHits: 0, cacheMisses: candidates.length };
+  }
   try {
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
     if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
-    const cssGraph = memory?.graph ?? await tailwindGraph(entry);
+    let cssGraph: Awaited<ReturnType<typeof tailwindGraph>>;
+    try { cssGraph = memory?.graph ?? await tailwindGraph(entry); }
+    catch (error) { return skipped(error); }
     if (memory) memory.graph = cssGraph;
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v2`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v3-isolated`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -136,15 +147,37 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         const baseline = await compiler.__unstable__loadDesignSystem('', options);
         defaultVariants = new Set(baseline.variants?.keys() ?? []);
       }
-      system = await compiler.__unstable__loadDesignSystem(await readFile(entry, 'utf8'), options);
+      try { system = await compiler.__unstable__loadDesignSystem(await readFile(entry, 'utf8'), options); }
+      catch (error) { return skipped(error); }
+    }
+    const failures = new Map<string, string>();
+    let hoverFailed = false, hintsFailed = false;
+    // Keep the fast batch path. Retry individually only when the compiler throws.
+    function compileCandidates(names: string[]): (string | null)[] {
+      try { return system!.candidatesToCss(names); }
+      catch {
+        return names.map(name => {
+          try { return system!.candidatesToCss([name])[0] ?? null; }
+          catch (error) { failures.set(name, errorMessage(error)); return null; }
+        });
+      }
+    }
+    function parsedCandidates(name: string): ParsedCandidate[] {
+      try { return [...system!.parseCandidate(name)]; }
+      catch (error) { hintsFailed = true; diagnostics.push(unreadable(entry!, name, error)); return []; }
     }
     if (system && probeHover && hoverVariants === null) {
       const roots = [...new Set(['pointer-hover', ...cssGraph.variants, ...[...(system.variants?.keys() ?? [])].filter(name => system!.variants?.kind(name) === 'static' && !defaultVariants.has(name))])];
       const variants = [...roots, ...roots.flatMap(name => [`group-${name}`, `peer-${name}`, `${name}:hover`, `${name}:group-hover`, `${name}:peer-hover`])];
       const prefix = system.theme?.prefix ? `${system.theme.prefix}:` : '';
-      const probes = system.candidatesToCss(variants.map(name => `${prefix}${name}:[--plumb-hover-probe:1]`));
+      const probes = compileCandidates(variants.map(name => `${prefix}${name}:[--plumb-hover-probe:1]`));
       hoverVariants = variants.filter((_, i) => {
-        const declarations = lowerCss(probes[i] ?? null).declarations;
+        const name = `${prefix}${variants[i]}:[--plumb-hover-probe:1]`;
+        let declarations: CandidateCss['declarations'];
+        try {
+          if (failures.has(name)) throw new Error(failures.get(name));
+          declarations = lowerCss(probes[i] ?? null).declarations;
+        } catch (error) { hoverFailed = true; diagnostics.push(unreadable(entry!, name, error)); return false; }
         return declarations.length > 0 && declarations.every(d => positivePseudo(selector(d.when), 'hover') && hoverGated(d.when));
       });
     }
@@ -152,9 +185,10 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const loadMs = performance.now() - start;
     const compileStart = performance.now();
     if (system && misses.length) {
-      const css = system.candidatesToCss(misses);
+      const css = compileCandidates(misses);
       for (const [index, candidate] of misses.entries()) {
         try {
+          if (failures.has(candidate)) throw new Error(failures.get(candidate));
           // Parsing can return several interpretations (e.g. mt-auto is both
           // static and functional). Only a compiling value-bearing parse is
           // evidence that the author supplied a value, rather than a utility.
@@ -178,17 +212,15 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           cached[candidate] = { ...result, authoredValue }; cachedCount++;
         }
         catch (error) {
-          if (!reportOnly) throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`);
-          // Inference may retain the compiler text as inventory evidence. Failed
-          // declarations are never judged, nor cached as successfully lowered.
-          results.set(candidate, { css: css[index] ?? null, declarations: [], notes: [`Could not lower ${candidate}: ${errorMessage(error)}`] });
+          // Retain compiler text for existence proof; never judge failed CSS.
+          cached[candidate] = { css: css[index] ?? null, declarations: [], notes: [], unreadable: errorMessage(error) }; cachedCount++;
         }
       }
     }
     const compileMs = system && misses.length ? performance.now() - compileStart : 0;
-    const usedRoots = new Set(system ? candidates.filter(name => cached[name]?.css?.trim()).flatMap(name =>
-      [...(system!.parseCandidate?.(name) ?? [])].filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)) : []);
-    const requestedRoots = new Set(system ? candidates.flatMap(name => [...(system!.parseCandidate?.(name) ?? [])]
+    const usedRoots = new Set(system ? candidates.filter(name => !cached[name]?.unreadable && cached[name]?.css?.trim()).flatMap(name =>
+      parsedCandidates(name).filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)) : []);
+    const requestedRoots = new Set(system ? candidates.filter(name => !cached[name]?.unreadable).flatMap(name => parsedCandidates(name)
       .filter(candidate => candidate.kind === 'functional' && candidate.value != null).map(candidate => candidate.root)) : []);
     const hintKey = JSON.stringify([[...usedRoots].sort(), [...requestedRoots].sort()]);
     const warmHints = memory?.hints?.get(hintKey);
@@ -213,25 +245,30 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         // A static utility such as block is also a functional root in v4.
         // Do not invent value hints for that second meaning without usage proof.
         if (!usedRoots.has(root) && (!requestedRoots.has(root) || staticRoots.has(root))) continue;
-        for (const group of system.utilities!.getCompletions(root)) {
+        let completions: ReturnType<NonNullable<DesignSystem['utilities']>['getCompletions']>;
+        try { completions = system.utilities!.getCompletions(root); }
+        catch (error) { hintsFailed = true; diagnostics.push(unreadable(entry, root, error)); continue; }
+        for (const group of completions) {
           for (const value of group.values) if (value !== null && values.has(value)) own.set(`${root}-${value}`, `${root}-`);
         }
       }
       suggestions = [...own].map(([token, prefix]) => ({ token: system.theme?.prefix ? `${system.theme.prefix}:${token}` : token, prefix }));
-      if (memory) { const hints = memory.hints ??= new Map(); if (hints.size >= 2) hints.delete(hints.keys().next().value!); hints.set(hintKey, suggestions); }
+      if (memory && !hintsFailed) { const hints = memory.hints ??= new Map(); if (hints.size >= 2) hints.delete(hints.keys().next().value!); hints.set(hintKey, suggestions); }
     }
     if (!readOnly && (misses.length || system)) {
       await mkdir(directory, { recursive: true });
       const temporary = join(directory, `candidates-${process.pid}.json`);
       await writeFile(temporary, JSON.stringify(cached));
       await rename(temporary, join(directory, 'candidates.json'));
-      await writeFile(suggestionPath, JSON.stringify(suggestions));
+      if (!hintsFailed) await writeFile(suggestionPath, JSON.stringify(suggestions));
       await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
-      if (probeHover) await writeFile(hoverPath, JSON.stringify(hoverVariants));
+      if (probeHover && !hoverFailed) await writeFile(hoverPath, JSON.stringify(hoverVariants));
     }
-    if (memory) { memory.cached = cached; memory.cachedCount = cachedCount; if (system) memory.system = system; memory.theme = theme ?? []; memory.hoverVariants = hoverVariants ?? []; }
+    if (memory) { memory.cached = cached; memory.cachedCount = cachedCount; if (system) memory.system = system; memory.theme = theme ?? []; if (hoverFailed) delete memory.hoverVariants; else memory.hoverVariants = hoverVariants ?? []; }
     for (const candidate of candidates) if (!results.has(candidate)) results.set(candidate, cached[candidate]!);
-    return { hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
+    for (const [candidate, value] of results) if (value.unreadable) diagnostics.push(unreadable(entry, candidate, value.unreadable));
+    suggestions = suggestions?.filter(hint => !cached[hint.token]?.unreadable) ?? [];
+    return { diagnostics, hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
     throw new UsageError(`Load project Tailwind from ${dirname(entry)}: ${errorMessage(error)}`);
   }

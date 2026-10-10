@@ -10,13 +10,16 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export const componentFiles = (directory: string) => existsSync(directory) ? globSync('**/*.{tsx,jsx,ts,js,mts,mjs,cts,cjs}', {
   cwd: directory, absolute: true, ignore: ['**/node_modules/**', '**/*.d.ts'], followSymbolicLinks: false,
 }).sort() : [];
-export const fileHash = (file: string) => existsSync(file) ? statSync(file).isDirectory() ? '<directory>' : hash(readFileSync(file, 'utf8')) : null;
+export const fileHash = (file: string) => {
+  try { return existsSync(file) ? statSync(file).isDirectory() ? '<directory>' : hash(readFileSync(file, 'utf8')) : null; }
+  catch { return null; }
+};
 
 function serialize(graph: ComponentGraph, lines: Map<string, number[]>) {
   const ids = new Map(graph.components.map((component, index) => [component, index]));
   const id = (component: ComponentIdentity) => ids.get(component)!;
   return {
-    root: graph.root, components: graph.components, used: graph.used.map(id), lines: [...lines],
+    diagnostics: graph.diagnostics, root: graph.root, components: graph.components, used: graph.used.map(id), lines: [...lines],
     usages: [...graph.usages].map(([file, usages]) => [file, usages.map(usage => ({ ...usage, component: id(usage.component) }))] as const),
     mounts: graph.mounts.map(mount => ({ ...mount, component: id(mount.component) })),
     elements: graph.elements.map(({ component, ...element }) => ({ ...element, ...(component ? { component: id(component) } : {}) })),
@@ -35,7 +38,7 @@ function hydrate(data: GraphData): ComponentGraph {
   const lines = new Map(data.lines), elementSites = new Map<string, ReturnType<ComponentGraph['element']>>(), callerSites = new Map<string, ComponentIdentity | undefined>();
   const offset = (site: Site) => (lines.get(site.file)?.[site.line - 1] ?? NaN) + site.column - 1;
   return {
-    root: data.root, components: data.components, used: data.used.map(component), usages,
+    diagnostics: data.diagnostics, root: data.root, components: data.components, used: data.used.map(component), usages,
     mounts: data.mounts.map(mount => ({ ...mount, component: component(mount.component) })), elements,
     rootRanges: new Map(data.rootRanges.map(([id, ranges]) => [component(id), ranges])),
     fingerprintClasses: new Map(data.fingerprintClasses.map(([id, classes]) => [component(id), classes])),
@@ -59,7 +62,7 @@ function hydrate(data: GraphData): ComponentGraph {
 interface Receipt { graph: GraphData; files: [string, string | null][]; directories: [string, string[]][]; resolutions: [string, string | undefined][]; contexts: [string, string | undefined][] }
 export function componentCache(root: string, files: string[], config: PlumbConfig, includeUnused: boolean) {
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'components');
-  const path = join(directory, hash(JSON.stringify(['components-v2', root, files, config.components, Object.keys(config.imitation ?? {}), includeUnused])) + '.json');
+  const path = join(directory, hash(JSON.stringify(['components-v3-isolated', root, files, config.components, Object.keys(config.imitation ?? {}), includeUnused])) + '.json');
   return {
     read(resolveImport: (file: string, specifier: string) => string | undefined, resolveContext: (file: string, specifier: string) => string | undefined): ComponentGraph | undefined {
       let receipt: Receipt;

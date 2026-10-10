@@ -5,18 +5,20 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { Rule, Selector } from 'lightningcss';
 import type { DecodedSourceMap } from 'tailwindcss';
+import { unreadable, uniqueDiagnostics } from '../diagnostics.js';
+import type { Finding } from '../report.js';
 import type { Condition, Declaration, Site } from '../report.js';
 import { tool } from '../report.js';
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 import { cssCode, maskImports, packageName, resolveStylesheet } from '../collect/stylesheets.js';
 import type { EmbeddedStylesheet } from '../collect/inline.js';
 import { lineStarts, references, sourceSite } from '../collect/source.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { errorMessage } from '../errors.js';
 import { atRuleText, declarationStart, declaredClasses, parseCss, pseudos, selectorText } from './css.js';
 import { lowerTailwind, tailwindGraph } from './tailwind.js';
 
 interface RawDeclaration { prop: string; value: string; offset: number; text: string }
-interface LoweredStylesheets { declarations: Declaration[]; classes: string[]; notes: string[] }
+interface LoweredStylesheets { diagnostics: Finding[]; declarations: Declaration[]; classes: string[]; notes: string[] }
 const features = /@(?:apply|utility|custom-variant|variant|theme|reference|config|plugin|tailwind)\b|(?:--theme|theme)\s*\(/;
 const usesTailwind = (css: string) => features.test(cssCode(css));
 
@@ -81,7 +83,7 @@ function selectorConditions(selector: string): Condition[] {
   return [{ kind: 'selector', text: selector }, ...[...new Set(rule.value.selectors.flatMap(positive))].map(text => ({ kind: 'pseudo' as const, text }))];
 }
 
-export function lowerStylesheet(css: string, filename: string, locate?: (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string }, initial: Condition[] = []): Declaration[] {
+export function lowerStylesheet(css: string, filename: string, locate?: (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string }, initial: Condition[] = [], onError?: (error: unknown) => void): Declaration[] {
   const source = { file: filename, text: css, lineStarts: lineStarts(css) };
   const declarations: Declaration[] = [];
   const offset = (loc: { line: number; column: number }) => source.lineStarts[loc.line]! + loc.column - 1;
@@ -100,44 +102,46 @@ export function lowerStylesheet(css: string, filename: string, locate?: (offset:
   }
   function walk(rules: Rule[], when: Condition[], parent: string | null): void {
     for (const rule of rules) {
-      if (rule.type === 'style') {
-        for (const selector of rule.value.selectors) {
-          const authored = selectorText(selector);
-          const code = cssCode(authored);
-          let hasNesting = false;
-          const expanded = authored.replace(/\\.|&/g, (part, index: number) => {
-            if (part !== '&' || code[index] !== '&') return part;
-            hasNesting = true;
-            return parent ?? part;
-          });
-          const resolved = parent ? hasNesting ? expanded : `${parent} ${authored}` : authored;
-          const conditions = [...when.filter(item => item.kind !== 'selector' && item.kind !== 'pseudo'), ...selectorConditions(resolved)];
-          block(offset(rule.value.loc), false, conditions);
-          walk(rule.value.rules ?? [], conditions, resolved);
-        }
-      } else if (rule.type === 'nested-declarations') block(offset(rule.value.loc), true, when);
-      else if (rule.type === 'media' || rule.type === 'supports' || rule.type === 'container') walk(rule.value.rules, [...when, { kind: rule.type, text: atRuleText(rule) }], parent);
-      else if (rule.type === 'layer-block') walk(rule.value.rules, [...when, { kind: 'layer', text: rule.value.name?.join('.') ?? '(anonymous)' }], parent);
-      else if (rule.type === 'keyframes') {
-        // Lightning validates frames but provides no per-frame locations.
-        // Recover the already validated frames from their source block.
-        let start = delimiter(css, offset(rule.value.loc), '{') + 1;
-        for (let index = 0; index < rule.value.keyframes.length; index++) {
-          const open = delimiter(css, start, '{');
-          const close = delimiter(css, open + 1, '}');
-          const name = rule.value.name.value;
-          const selector = css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, '').trim();
-          block(open + 1, true, [...when, { kind: 'selector', text: `@keyframes ${name} ${selector}` }], 'keyframes');
-          start = close + 1;
-        }
-      } else if (rule.type === 'font-face' || rule.type === 'page') block(offset(rule.value.loc), false, [...when, { kind: 'selector', text: `@${rule.type}` }]);
-      else if (rule.type === 'starting-style' || rule.type === 'scope') walk(rule.value.rules, [...when, { kind: 'selector', text: `@${rule.type}` }], parent);
+      try {
+        if (rule.type === 'style') {
+          for (const selector of rule.value.selectors) {
+            const authored = selectorText(selector);
+            const code = cssCode(authored);
+            let hasNesting = false;
+            const expanded = authored.replace(/\\.|&/g, (part, index: number) => {
+              if (part !== '&' || code[index] !== '&') return part;
+              hasNesting = true;
+              return parent ?? part;
+            });
+            const resolved = parent ? hasNesting ? expanded : `${parent} ${authored}` : authored;
+            const conditions = [...when.filter(item => item.kind !== 'selector' && item.kind !== 'pseudo'), ...selectorConditions(resolved)];
+            block(offset(rule.value.loc), false, conditions);
+            walk(rule.value.rules ?? [], conditions, resolved);
+          }
+        } else if (rule.type === 'nested-declarations') block(offset(rule.value.loc), true, when);
+        else if (rule.type === 'media' || rule.type === 'supports' || rule.type === 'container') walk(rule.value.rules, [...when, { kind: rule.type, text: atRuleText(rule) }], parent);
+        else if (rule.type === 'layer-block') walk(rule.value.rules, [...when, { kind: 'layer', text: rule.value.name?.join('.') ?? '(anonymous)' }], parent);
+        else if (rule.type === 'keyframes') {
+          // Lightning validates frames but provides no per-frame locations.
+          // Recover the already validated frames from their source block.
+          let start = delimiter(css, offset(rule.value.loc), '{') + 1;
+          for (let index = 0; index < rule.value.keyframes.length; index++) {
+            const open = delimiter(css, start, '{');
+            const close = delimiter(css, open + 1, '}');
+            const name = rule.value.name.value;
+            const selector = css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, '').trim();
+            block(open + 1, true, [...when, { kind: 'selector', text: `@keyframes ${name} ${selector}` }], 'keyframes');
+            start = close + 1;
+          }
+        } else if (rule.type === 'font-face' || rule.type === 'page') block(offset(rule.value.loc), false, [...when, { kind: 'selector', text: `@${rule.type}` }]);
+        else if (rule.type === 'starting-style' || rule.type === 'scope') walk(rule.value.rules, [...when, { kind: 'selector', text: `@${rule.type}` }], parent);
+      } catch (error) { if (!onError) throw error; onError(error); }
     }
   }
   // Remote imports survive Tailwind compilation and may follow expanded local
   // imports. They have no declarations; mask them without moving positions.
   const parsable = maskImports(css);
-  walk(parseCss(parsable, filename).rules, initial, null);
+  walk(parseCss(parsable, filename, onError).rules, initial, null);
   return declarations;
 }
 
@@ -184,16 +188,29 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 }
 
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[], readOnly = false): Promise<LoweredStylesheets> {
-  const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(async file => (await tailwindGraph(file, graph.files.get(file)?.css)).hash));
-  const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(async sheet => (await tailwindGraph(sheet.source.file, sheet.css)).hash));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v2', version, entry, dependencies, embeddedDependencies,
+  const diagnostics: Finding[] = [...graph.diagnostics];
+  const failedGraphs = new Set<string>();
+  async function dependency(file: string, css?: string): Promise<string> {
+    try { return (await tailwindGraph(file, css)).hash; }
+    catch (error) { diagnostics.push(unreadable(file, file, error)); failedGraphs.add(file); return `unreadable:${errorMessage(error)}`; }
+  }
+  const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(file => dependency(file, graph.files.get(file)?.css)));
+  const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(sheet => dependency(sheet.source.file, sheet.css)));
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v3-isolated', version, entry, dependencies, embeddedDependencies, diagnostics,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');
   const path = join(directory, `${hash}.json`);
   try { return JSON.parse(await readFile(path, 'utf8')) as LoweredStylesheets; }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
-  const result: LoweredStylesheets = { declarations: [], classes: [], notes: [...graph.notes] };
+  const result: LoweredStylesheets = { diagnostics, declarations: [], classes: [], notes: [...graph.notes] };
+  function report(file: string, error: unknown): void {
+    const value = error as { message?: string; loc?: { line: number; column: number } };
+    const line = value?.loc?.line ?? 1, column = value?.loc?.column ?? 1;
+    const item = file;
+    diagnostics.push(unreadable(file, item, value?.message ?? error, line, column));
+  }
+  const lower = (css: string, file: string, locate?: Parameters<typeof lowerStylesheet>[2], when: Condition[] = []) => lowerStylesheet(css, file, locate, when, error => report(file, error));
   const classes = new Set<string>();
   const covered = new Set<string>();
   const processed = new Set<string>();
@@ -221,21 +238,32 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     // use these callbacks instead. Both receive the authored source path.
     const output = await api.compile(input, options);
     const lowered = output.build([]);
-    const baseDeclarations = lowerStylesheet(lowered, file, mapLocations(lowered, file, output.buildSourceMap(), jsx));
+    const baseDeclarations = lower(lowered, file, mapLocations(lowered, file, output.buildSourceMap(), jsx));
     result.declarations.push(...baseDeclarations);
     // Tailwind drops @utility definitions until requested. Materialize their
     // static names once at their source-mapped stylesheet definitions, including
     // unused utilities. Class uses must not re-judge compiler-owned values.
     const utilities = (await tailwindGraph(file, css)).utilities;
     if (utilities.length) {
-      const compiled = output.build(utilities);
       const identity = (declaration: Declaration) => JSON.stringify([declaration.site, declaration.prop, declaration.value, declaration.when]);
       const base = new Set(baseDeclarations.map(identity));
-      for (const declaration of lowerStylesheet(compiled, file, mapLocations(compiled, file, output.buildSourceMap(), jsx))) {
-        const key = identity(declaration);
-        if (base.has(key) || utilityDefinitions.has(key)) continue;
-        utilityDefinitions.add(key);
-        result.declarations.push(declaration);
+      function materialize(output: Awaited<ReturnType<typeof api.compile>>, names: string[]): void {
+        const compiled = output.build(names);
+        for (const declaration of lower(compiled, file, mapLocations(compiled, file, output.buildSourceMap(), jsx))) {
+          const key = identity(declaration);
+          if (base.has(key) || utilityDefinitions.has(key)) continue;
+          utilityDefinitions.add(key);
+          result.declarations.push(declaration);
+        }
+      }
+      try { materialize(output, utilities); }
+      catch {
+        // A failed build can retain compiler state. Retry each utility with a
+        // fresh compiler, preserving the base and every successful definition.
+        for (const utility of utilities) {
+          try { materialize(await api.compile(input, options), [utility]); }
+          catch (error) { diagnostics.push(unreadable(file, utility, error)); }
+        }
       }
     }
   }
@@ -243,8 +271,8 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     try {
       const registry = declaredClasses(sheet.css, sheet.file);
       for (const name of registry.classes) classes.add(name);
-      result.notes.push(...registry.warnings.map(warning => `CSS scan ${sheet.file}: ${warning}`));
-    } catch (error) { throw new UsageError(`Parse stylesheet ${sheet.file}: ${errorMessage(error)}`); }
+      for (const warning of registry.warnings) report(sheet.file, warning);
+    } catch (error) { report(sheet.file, error); }
   }
   // Entry first. Imported files are emitted in their import context, never again
   // as unconditioned source-glob roots. Cycles remain finite.
@@ -252,8 +280,10 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     if (covered.has(file) && !independent(file)) continue;
     const files = descendants(file);
     if ([...files].some(path => usesTailwind(graph.files.get(path)!.css))) {
-      try { await compile(graph.files.get(file)!.css, file); }
-      catch (error) { throw new UsageError(`Compile stylesheet ${file}: ${errorMessage(error)}`); }
+      try {
+        if (failedGraphs.has(file)) continue;
+        await compile(graph.files.get(file)!.css, file);
+      } catch (error) { report(file, error); continue; }
       for (const path of files) covered.add(path);
       processed.add(file);
     }
@@ -263,7 +293,8 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     const sheet = graph.files.get(file)!;
     covered.add(file);
     const next = new Set([...stack, file]);
-    result.declarations.push(...lowerStylesheet(maskImports(sheet.css, true), file, undefined, when));
+    try { result.declarations.push(...lower(maskImports(sheet.css, true), file, undefined, when)); }
+    catch (error) { report(file, error); }
     for (const item of sheet.imports) {
       if (item.reference) continue;
       const conditions: Condition[] = [...when];
@@ -282,13 +313,19 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   }
   for (const file of graph.roots) if (!processed.has(file) && (!covered.has(file) || independent(file))) {
     try { plain(file, [], new Set()); }
-    catch (error) { throw new UsageError(`Parse stylesheet ${file}: ${errorMessage(error)}`); }
+    catch (error) { report(file, error); }
   }
   for (const sheet of embedded) {
     const file = sheet.source.file;
-    for (const name of declaredClasses(sheet.css, file).classes) classes.add(name);
-    if (usesTailwind(sheet.css)) await compile(sheet.css, file, sheet);
-    else result.declarations.push(...lowerStylesheet(sheet.css, file, (offset, raw) => ({ site: sourceSite(sheet.source, sheet.offsets[offset] ?? 0, raw.text) })));
+    try {
+      const registry = declaredClasses(sheet.css, file);
+      for (const name of registry.classes) classes.add(name);
+      for (const warning of registry.warnings) report(file, warning);
+      if (usesTailwind(sheet.css)) {
+        try { if (!failedGraphs.has(file)) await compile(sheet.css, file, sheet); }
+        catch (error) { report(file, error); }
+      } else result.declarations.push(...lower(sheet.css, file, (offset, raw) => ({ site: sourceSite(sheet.source, sheet.offsets[offset] ?? 0, raw.text) })));
+    } catch (error) { report(file, error); }
   }
   result.classes = [...classes];
   for (const declaration of result.declarations) {
@@ -305,6 +342,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   const applied = [...new Set(applications.flatMap(tokens))];
   if (entry && applied.length) {
     const oracle = await lowerTailwind(root, entry, version, applied, false, readOnly);
+    diagnostics.push(...oracle.diagnostics);
     for (const declaration of applications) {
       const candidates = tokens(declaration).flatMap(token => {
         const candidate = oracle.candidates.get(token);
@@ -317,7 +355,8 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
       if (refs.length) declaration.decisionRefs = [...new Set(refs)];
     }
   }
-  if (!readOnly) {
+  result.diagnostics = uniqueDiagnostics([diagnostics]);
+  if (!readOnly && !result.diagnostics.length) {
     await mkdir(directory, { recursive: true });
     const temporary = join(directory, `${hash}-${process.pid}.json`);
     await writeFile(temporary, JSON.stringify(result));

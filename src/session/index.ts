@@ -8,7 +8,7 @@ import { glob, isDynamicPattern } from 'tinyglobby';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
-import { UsageError } from '../errors.js';
+import { errorMessage, UsageError } from '../errors.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
@@ -251,7 +251,12 @@ export class Session extends EventEmitter {
           else { const text = await readFile(path, 'utf8'); hash = sourceHash(text); if (/\.[cm]?[jt]sx?$/.test(path)) this.sourceTexts.set(path, text); }
           this.stamps.set(path, stamp);
         } else this.stamps.delete(path);
-      } catch (error) { if (!missing(error)) throw error; this.stamps.delete(path); }
+      } catch (error) {
+        // Keep unreadable files in the inventory so collection can diagnose
+        // them without aborting the Session's reconciliation.
+        if (!missing(error)) hash = `<unreadable:${errorMessage(error)}>`;
+        this.stamps.delete(path);
+      }
       if (hash === undefined) { this.hashes.delete(path); this.sourceTexts.delete(path); this.patternFiles.delete(path); } else this.hashes.set(path, hash);
       if (hash !== old) changed.push(path);
     }));

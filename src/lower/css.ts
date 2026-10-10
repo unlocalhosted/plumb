@@ -4,11 +4,12 @@ import type { Condition } from '../report.js';
 import { cssCode, maskImports } from '../collect/stylesheets.js';
 
 export interface LoweredDeclaration { prop: string; value: string; when: Condition[]; decisionRefs?: string[] }
-export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[]; authoredValue?: boolean }
+export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[]; authoredValue?: boolean; unreadable?: string }
 
-export function parseCss(css: string, filename: string): StyleSheet {
+export function parseCss(css: string, filename: string, onError?: (error: unknown) => void): StyleSheet {
   let ast: StyleSheet | undefined;
-  transform({ filename, code: Buffer.from(css), visitor: { StyleSheet(value) { ast = value; } } });
+  const result = transform({ filename, code: Buffer.from(css), errorRecovery: !!onError, visitor: { StyleSheet(value) { ast = value; } } });
+  for (const warning of result.warnings) if (!/^Unknown at rule: @(theme|utility|apply|reference|source|custom-variant|variant|config|plugin|tailwind)$/.test(warning.message)) onError?.(warning);
   return ast!;
 }
 function print(rules: Rule[]): string {

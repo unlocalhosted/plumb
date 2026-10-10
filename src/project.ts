@@ -1,6 +1,9 @@
 import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { appTailwindEntry } from './collect/entries.js';
+import { unreadable } from './diagnostics.js';
+import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
 import { errorMessage, UsageError } from './errors.js';
@@ -28,7 +31,7 @@ export async function matchProjectFiles(root: string, patterns: string | string[
   if (external.length) matches.push(...await glob(external, { cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false }));
   return [...new Set(matches)];
 }
-async function entryCss(root: string, css?: string, known?: readonly string[]): Promise<string | null> {
+async function entryCss(root: string, diagnostics: Finding[], inputs: string[], css?: string, known?: readonly string[]): Promise<string | null> {
   if (css !== undefined) {
     const path = resolve(root, css);
     try {
@@ -44,10 +47,15 @@ async function entryCss(root: string, css?: string, known?: readonly string[]): 
   const candidates: string[] = [];
   const files = await matchProjectFiles(root, '**/*.css', known);
   for (const file of files.sort()) {
-    const css = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
-    if (tailwindImport.test(css)) candidates.push(file);
+    try {
+      const css = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+      if (tailwindImport.test(css)) candidates.push(file);
+    } catch (error) { diagnostics.push(unreadable(file, file, error)); }
   }
   if (candidates.length > 1) {
+    inputs.push(...candidates);
+    const entry = await appTailwindEntry(root, candidates, diagnostics, inputs);
+    if (entry) return entry;
     throw new UsageError(`Multiple Tailwind entry files: ${candidates.join(', ')}; set css in plumb.config.ts to one of them.`);
   }
   return candidates[0] ?? null;
@@ -71,9 +79,10 @@ async function tailwindVersion(entry: string | null): Promise<string | null> {
 }
 
 export async function discoverProject(root: string, config: PlumbConfig, known?: readonly string[]): Promise<{
-  tailwind: Report['tailwind']; files: FileCounts;
+  diagnostics: Finding[]; inputs: string[]; tailwind: Report['tailwind']; files: FileCounts;
 }> {
-  const entry = await entryCss(root, config.css, known);
+  const diagnostics: Finding[] = [], inputs: string[] = [];
+  const entry = await entryCss(root, diagnostics, inputs, config.css, known);
   const files = await matchProjectFiles(root, config.source ?? defaultSource, known);
   const counts: FileCounts = { tsx: 0, jsx: 0, css: 0, other: 0 };
   for (const file of files) {
@@ -81,7 +90,7 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
     if (extension === 'tsx' || extension === 'jsx' || extension === 'css') counts[extension]++;
     else counts.other++;
   }
-  return { tailwind: { entry, version: await tailwindVersion(entry) }, files: counts };
+  return { diagnostics, inputs: [...new Set(inputs)], tailwind: { entry, version: await tailwindVersion(entry) }, files: counts };
 }
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {

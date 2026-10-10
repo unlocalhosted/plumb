@@ -2,8 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import { ResolverFactory } from 'oxc-resolver';
+import { unreadable } from '../diagnostics.js';
+import type { Finding } from '../report.js';
 import type { Report } from '../report.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { UsageError } from '../errors.js';
 import type { CssImport } from './modules.js';
 
 export type Reach = Report['stylesheets'][number]['reached'][number];
@@ -13,9 +15,9 @@ export interface Stylesheet {
   sourceOrigin: 'project' | 'framework';
   package?: string;
   reached: Reach[];
-  imports: { file: string; reference: boolean; tail: string }[];
+  imports: { file: string; specifier: string; reference: boolean; tail: string }[];
 }
-export interface StylesheetGraph { files: Map<string, Stylesheet>; roots: string[]; notes: string[] }
+export interface StylesheetGraph { diagnostics: Finding[]; files: Map<string, Stylesheet>; roots: string[]; notes: string[] }
 
 // Same CSS resolution options as @tailwindcss/node: style exports/main field,
 // .css extension, node_modules (including NODE_PATH). Never JS main fallbacks.
@@ -69,9 +71,12 @@ export function maskImports(css: string, references = false): string {
 }
 
 export async function collectStylesheets(entry: string | null, sources: string[], imports: CssImport[], overrides: ReadonlyMap<string, string> = new Map()): Promise<StylesheetGraph> {
-  const graph: StylesheetGraph = { files: new Map(), roots: [], notes: [] };
+  const graph: StylesheetGraph = { diagnostics: [], files: new Map(), roots: [], notes: [] };
   const isCss = (file: string) => file.endsWith('.css') || overrides.has(file);
-  const sourcePaths = new Map([...sources.filter(isCss), ...(entry ? [entry] : [])].map(file => [overrides.has(file) ? file : realpathSync.native(file), file]));
+  const sourcePaths = new Map([...sources.filter(isCss), ...(entry ? [entry] : [])].map(file => {
+    try { return [overrides.has(file) ? file : realpathSync.native(file), file]; }
+    catch (error) { graph.diagnostics.push(unreadable(file, file, error)); return [file, file]; }
+  }));
   const projectPath = (file: string) => sourcePaths.get(file) ?? file;
   function promote(file: string): void {
     const sheet = graph.files.get(file);
@@ -105,7 +110,7 @@ export async function collectStylesheets(entry: string | null, sources: string[]
     }
     let css: string;
     try { css = overrides.get(file) ?? await readFile(file, 'utf8'); }
-    catch (error) { throw new UsageError(`Read stylesheet ${file}: ${errorMessage(error)}`); }
+    catch (error) { graph.diagnostics.push(unreadable(file, file, error)); return; }
     const pkg = packageName(file) ?? (external ? await owner(dirname(file)) : undefined);
     const sheet: Stylesheet = { file, css, sourceOrigin: external || pkg ? 'framework' : 'project', ...(pkg ? { package: pkg } : {}), reached: [reach], imports: [] };
     graph.files.set(file, sheet); // Mark before recursing: CSS cycles terminate.
@@ -114,16 +119,18 @@ export async function collectStylesheets(entry: string | null, sources: string[]
         graph.notes.push(`Stylesheet ${file}: external import ${item.id} is not read.`);
         continue;
       }
-      const path = projectPath(resolveStylesheet(item.id, dirname(file)));
-      sheet.imports.push({ file: path, reference: item.reference, tail: item.tail });
-      await visit(path, { kind: item.reference ? 'reference' : 'import', from: file, specifier: item.id }, external);
+      try {
+        const path = projectPath(resolveStylesheet(item.id, dirname(file)));
+        await visit(path, { kind: item.reference ? 'reference' : 'import', from: file, specifier: item.id }, external);
+        if (graph.files.has(path)) sheet.imports.push({ file: path, specifier: item.id, reference: item.reference, tail: item.tail });
+      } catch (error) { graph.diagnostics.push(unreadable(file, item.id, error)); }
     }
   }
   if (entry) { graph.roots.push(entry); await visit(entry, { kind: 'entry' }); }
   for (const item of imports) {
     let file: string;
     try { file = projectPath(item.resolved ?? resolveStylesheet(item.specifier, dirname(item.file))); }
-    catch (error) { if (/\.css(?:[?#].*)?$/.test(item.specifier)) throw error; else continue; }
+    catch (error) { if (/\.css(?:[?#].*)?$/.test(item.specifier)) graph.diagnostics.push(unreadable(item.file, item.specifier, error)); continue; }
     if (!file.endsWith('.css')) continue;
     graph.roots.push(file);
     await visit(file, { kind: item.external ? 'module' : 'side-effect', from: item.file, specifier: item.specifier }, item.external);
@@ -132,6 +139,6 @@ export async function collectStylesheets(entry: string | null, sources: string[]
     graph.roots.push(file);
     await visit(file, { kind: 'source' });
   }
-  graph.roots = [...new Set(graph.roots)];
+  graph.roots = [...new Set(graph.roots)].filter(file => graph.files.has(file));
   return graph;
 }

@@ -69,7 +69,8 @@ export class WarmState implements AnalysisRuntime {
     for (const [file, ds] of this.cssFiles) this.setCss(file, ds);
   }
   private stylesheetShape(css: string, file: string): string {
-    return JSON.stringify([cssImports(css), [...declaredClasses(css, file).classes].sort(), lowerStylesheet(css, file).filter(d => d.prop.startsWith('--')).map(d => [d.prop, d.value, d.when])]);
+    try { return JSON.stringify([cssImports(css), [...declaredClasses(css, file).classes].sort(), lowerStylesheet(css, file).filter(d => d.prop.startsWith('--')).map(d => [d.prop, d.value, d.when])]); }
+    catch { return JSON.stringify(['unreadable', css]); }
   }
   embeddedShape(file: string): string[] {
     return (this.collection.slices.get(file)?.value.styles.stylesheets ?? []).map(sheet => this.stylesheetShape(sheet.css, file));
@@ -80,7 +81,8 @@ export class WarmState implements AnalysisRuntime {
     const project = this.shared<{ tailwind: { entry: string | null; version: string | null } }>('project');
     if (!graph || !project) return paths.some(file => file.endsWith('.css'));
     for (const file of paths.filter(file => file.endsWith('.css'))) {
-      const old = graph.files.get(file), text = readFileSync(file, 'utf8');
+      const old = graph.files.get(file);
+      let text: string; try { text = readFileSync(file, 'utf8'); } catch { structural = true; continue; }
       this.cssHashes.set(file, sourceHash(text));
       if (!old || this.stylesheetShape(old.css, file) !== this.stylesheetShape(text, file)) { structural = true; continue; }
       const local = await collectStylesheets(project.tailwind.entry, [file], []);
@@ -185,6 +187,7 @@ export class WarmState implements AnalysisRuntime {
     if (name === 'collect') { this.snippet = !!inputs[2]; return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2]) as T; }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);
+      if (name === 'project') for (const file of (value as { inputs: string[] }).inputs) { this.dependencies.add(file); this.configurationFiles.add(file); }
       // Snippets may extend the file list or change file counts. Never mutate
       // the warm project's identity through the cold pipeline's local view.
       return structuredClone(value);
@@ -231,7 +234,8 @@ export class WarmState implements AnalysisRuntime {
     if (!local) for (const file of this.shards.keys()) if (!wanted.has(file)) { this.shards.delete(file); this.componentHashes.delete(file); this.componentDependencies.delete(file); }
     for (const file of wanted) {
       if (this.shards.has(file)) continue;
-      const text = readFileSync(file, 'utf8'), hash = sourceHash(text);
+      let text = ''; try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
+      const hash = sourceHash(text);
       const dependencies = new Set<string>();
       const queue = [file];
       for (let i = 0; i < queue.length; i++) {
@@ -259,7 +263,7 @@ export class WarmState implements AnalysisRuntime {
     if (local) return graph;
     const key = signature([graph.components, graph.used, graph.mounts]);
     if (this.globalGraph?.key === key) {
-      Object.assign(this.globalGraph.graph, { usages: graph.usages, elements: graph.elements });
+      Object.assign(this.globalGraph.graph, { diagnostics: graph.diagnostics, usages: graph.usages, elements: graph.elements });
       return this.globalGraph.graph;
     }
     this.globalGraph = { key, graph }; return graph;
@@ -269,7 +273,7 @@ export class WarmState implements AnalysisRuntime {
     const identities = (key: 'components' | 'used') => [...new Map(graphs.flatMap(g => g[key]).map(c => [`${c.source.file}:${c.name}`, c])).values()];
     const components = identities('components'), canonical = new Map(components.map(c => [`${c.source.file}:${c.name}`, c]));
     const identity = (c: ComponentGraph['components'][number]) => canonical.get(`${c.source.file}:${c.name}`) ?? c;
-    const graph: ComponentGraph = { root: this.root, components, used: identities('used').map(identity),
+    const graph: ComponentGraph = { diagnostics: graphs.flatMap(g => g.diagnostics), root: this.root, components, used: identities('used').map(identity),
       usages: new Map(graphs.flatMap(g => [...g.usages])), mounts: graphs.flatMap(g => g.mounts.map(m => ({ ...m, component: identity(m.component) }))), elements: graphs.flatMap(g => g.elements),
       rootRanges: new Map(graphs.flatMap(g => [...g.rootRanges])), fingerprintClasses: new Map(graphs.flatMap(g => [...g.fingerprintClasses])), sourceTokens: new Map(),
       caller: d => shards.get(d.site.file)?.caller(d), element: s => shards.get(s.file)?.element(s) };
