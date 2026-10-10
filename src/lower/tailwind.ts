@@ -66,6 +66,7 @@ export async function tailwindGraph(entry: string, cssOverride?: string): Promis
 export interface TailwindMemory {
   graph?: Awaited<ReturnType<typeof tailwindGraph>>;
   cached?: Record<string, CandidateCss>;
+  cachedCount?: number;
   system?: DesignSystem;
   theme?: ThemeValue[];
   hoverVariants?: string[];
@@ -90,6 +91,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
     try { cached = memory?.cached ?? Object.assign(Object.create(null) as Record<string, CandidateCss>, JSON.parse(await readFile(join(directory, 'candidates.json'), 'utf8')) as Record<string, CandidateCss>); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
+    let cachedCount = memory?.cachedCount ?? Object.keys(cached).length;
     const misses = candidates.filter(candidate => !Object.hasOwn(cached, candidate));
     let system: DesignSystem | undefined = memory?.system;
     let defaultVariants = new Set<string>();
@@ -173,7 +175,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
               if (name && theme!.some(item => item.name === name)) declaration.decisionRefs = [name];
             }
           }
-          cached[candidate] = { ...result, authoredValue };
+          cached[candidate] = { ...result, authoredValue }; cachedCount++;
         }
         catch (error) {
           if (!reportOnly) throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`);
@@ -227,7 +229,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
       if (probeHover) await writeFile(hoverPath, JSON.stringify(hoverVariants));
     }
-    if (memory) { memory.cached = cached; if (system) memory.system = system; memory.theme = theme ?? []; memory.hoverVariants = hoverVariants ?? []; }
+    if (memory) { memory.cached = cached; memory.cachedCount = cachedCount; if (system) memory.system = system; memory.theme = theme ?? []; memory.hoverVariants = hoverVariants ?? []; }
     for (const candidate of candidates) if (!results.has(candidate)) results.set(candidate, cached[candidate]!);
     return { hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {

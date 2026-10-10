@@ -72,7 +72,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const discoverStart = performance.now();
   let project: Awaited<ReturnType<typeof discoverProject>>;
   try {
-    project = await phase('project', [root, config.value], () => discoverProject(root, config.value));
+    project = await phase('project', [root, config.value], () => discoverProject(root, config.value, runtime?.inventory));
   } catch (error) {
     if (error instanceof UsageError) throw error;
     throw new UsageError(`Fix project files under ${root}: ${errorMessage(error)}`);
@@ -81,7 +81,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   if (input?.file === project.tailwind.entry) throw new UsageError('--as must name a source file other than the Tailwind entry.');
   if (input) project.files = { tsx: input.lang === 'tsx' ? 1 : 0, jsx: 0, css: input.lang === 'css' ? 1 : 0, other: 0 };
   const filesStart = performance.now();
-  const files = await phase('files', [root, config.value], () => projectSourceFiles(root, config.value));
+  const files = await phase('files', [root, config.value], () => projectSourceFiles(root, config.value, runtime?.inventory));
   profileDuration('phase:source-files', performance.now() - filesStart);
   if (input && !files.includes(input.file)) files.push(input.file);
   const componentCacheStart = performance.now();
@@ -114,7 +114,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
   const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
   await ranking.save();
-  const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)));
+  const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value), runtime?.inventory));
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
     if (file) {

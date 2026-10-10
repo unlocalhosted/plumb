@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve, matchesGlob } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { planHooks, writeHooks } from '../surfaces/hooks.js';
 import { UsageError } from '../errors.js';
+import type { ServeInfo } from '../session/server.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -86,6 +87,48 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
     "      - uses: actions/setup-node@v4\n        with:\n          node-version: '22.18.0'\n" + dependencies +
     `      - uses: ${action}\n        with:\n          base: \${{ github.event.pull_request.base.sha }}\n          working-directory: ${JSON.stringify(workingDirectory)}\n` +
     `          ledger-approvers: ${JSON.stringify(owners.logins.join(', '))}\n` };
+}
+
+/** Print host wiring only. Overlay installation never changes consumer files. */
+export async function installOverlay(root: string): Promise<string> {
+  const metadata = JSON.parse(await content(join(root, 'package.json')) ?? '{}') as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+  const dependencies = { ...metadata.dependencies, ...metadata.devDependencies };
+  if (dependencies.next) return [
+    'Wrap your existing next.config.mjs export:',
+    "import { withPlumb } from '@unlocalhosted/plumb/next/config';",
+    'export default withPlumb(nextConfig);',
+    '// Keeps existing pageExtensions and serverExternalPackages; adds Plumb only in development.',
+    '',
+    'Add to app/%5F_plumb/[...path]/route.plumb.ts (or src/app/%5F_plumb/[...path]/route.plumb.ts):',
+    '// Serves /__plumb/*; a literal app/__plumb/ folder is private in Next.js.',
+    "import { createPlumbRoute } from '@unlocalhosted/plumb/next';",
+    "export const runtime = 'nodejs';",
+    'export const { GET, POST } = createPlumbRoute();',
+    '',
+    'Add to your root layout:',
+    "import { PlumbOverlay } from '@unlocalhosted/plumb/next';",
+    '// Inside <body>:',
+    '<PlumbOverlay />',
+    '',
+  ].join('\n');
+  if (dependencies.vite) return [
+    'Add to vite.config.ts:',
+    "import { plumb } from '@unlocalhosted/plumb/vite';",
+    '// Append to your existing plugins array:',
+    'plumb()',
+    '',
+  ].join('\n');
+  const discovery = await content(join(root, '.plumb/serve.json'));
+  const info = discovery === undefined ? undefined : JSON.parse(discovery) as ServeInfo;
+  const ready = info?.overlay === true && info.root === resolve(root) && Number.isSafeInteger(info.port) && info.port > 0 && info.port <= 65535 && /^[a-f\d]{64}$/.test(info.token);
+  return [
+    ...(ready ? [] : ['Start your overlay server (replace the origin with your development page origin):',
+      'plumb serve --overlay --port 7331 --origin http://localhost:5555',
+      'Run plumb install --overlay again for the exact port and process token, or replace TOKEN_FROM_SERVE_JSON with .plumb/serve.json token.', '']),
+    'Paste into your development page only:',
+    `<script type="module" src="http://127.0.0.1:${ready ? info!.port : 7331}/__plumb/client.js" data-plumb-token="${ready ? info!.token : 'TOKEN_FROM_SERVE_JSON'}"></script>`,
+    '',
+  ].join('\n');
 }
 
 interface InstallOptions { ci?: boolean; list?: boolean; agents?: AgentName[] }

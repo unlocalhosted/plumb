@@ -1,18 +1,17 @@
 import { isJudged, varUses } from './families.js';
 import { matchesGlob, relative } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { glob } from 'tinyglobby';
 import type { ClassSite } from '../collect/classes.js';
 import type { CandidateCss } from '../lower/css.js';
 import { declaredClasses } from '../lower/css.js';
 import type { Declaration, Finding, Site } from '../report.js';
 import { makeFinding } from '../messages.js';
-import { ignore } from '../project.js';
+import { matchProjectFiles } from '../project.js';
 
-export async function unreachableClasses(root: string, reachable: Set<string>, dead: string[]): Promise<Map<string, string>> {
+export async function unreachableClasses(root: string, reachable: Set<string>, dead: string[], known?: readonly string[]): Promise<Map<string, string>> {
   const classes = new Map<string, string>();
   if (!dead.length) return classes;
-  const files = await glob('**/*.css', { cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false });
+  const files = await matchProjectFiles(root, '**/*.css', known);
   for (const file of files.sort()) {
     if (reachable.has(file)) continue;
     try {

@@ -20,13 +20,13 @@ import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { formatDeadSummary } from './rules/dead.js';
 import { initProject } from './adoption/init.js';
-import { installProject, validateAgents } from './adoption/install.js';
+import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
 
 const help = `Plumb ${tool.version}: design decisions, habits and ledger
 Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb presets [--json] [--root <dir>] [--config <path>]
-       plumb serve [--port <number> | --stdio] [--root <dir>] [--config <path>]
+       plumb serve [--port <number> | --stdio] [--overlay --origin <url>] [--root <dir>] [--config <path>]
        plumb check --watch [--json|--agent] [--root <dir>]
        plumb habits [--json] [--root <dir>] [--config <path>]
        plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
@@ -46,6 +46,7 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb check [--sarif | --agent | --format github]
        plumb agent-docs
        plumb install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
+       plumb install --overlay [--root <dir>]  Print host wiring; never edit files
        plumb doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
@@ -68,6 +69,7 @@ async function main(): Promise<void> {
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
+          overlay: { type: 'boolean' }, origin: { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -102,6 +104,7 @@ async function main(): Promise<void> {
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'], port: ['serve'], stdio: ['serve'], watch: ['check'],
     markdown: ['report'], since: ['report'], strict: ['parity'],
+    overlay: ['serve', 'install'], origin: ['serve'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
   if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumb parity.' : '--format supports github.');
@@ -111,6 +114,7 @@ async function main(): Promise<void> {
   if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumb parity.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
   const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
+  if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay prints host wiring only; omit --hooks, --ci and --agent.');
   if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
@@ -133,6 +137,7 @@ async function main(): Promise<void> {
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
     return;
   }
+  if (command === 'install' && args.values.overlay) { process.stdout.write(await installOverlay(resolve(options.root ?? process.cwd()))); return; }
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
   if (command === 'doctor') {
@@ -178,10 +183,13 @@ async function main(): Promise<void> {
   }
   if (command === 'serve') {
     if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.');
+    if (args.values.stdio && (args.values.overlay || args.values.origin !== undefined)) throw new UsageError('Serve --overlay requires HTTP; omit --stdio.');
     if (args.values.json || args.values.verbose) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
     if (args.values.stdio) { await serveStdio(options); return; }
     if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.');
-    const daemon = await serve({ ...options, ...(args.values.port === undefined ? {} : { port: Number(args.values.port) }) });
+    const daemon = await serve({ ...options, overlay: args.values.overlay ?? false,
+      ...(args.values.origin === undefined ? {} : { origin: args.values.origin }),
+      ...(args.values.port === undefined ? {} : { port: Number(args.values.port) }) });
     process.stdout.write(`Plumb is listening on http://127.0.0.1:${daemon.info.port}. Connection details are in .plumb/serve.json.\n`);
     await new Promise<void>(done => {
       const stop = () => { process.off('SIGINT', stop); process.off('SIGTERM', stop); void daemon.close().then(done); };

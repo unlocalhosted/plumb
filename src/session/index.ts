@@ -1,15 +1,16 @@
 import { constants, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readFile, realpath, open } from 'node:fs/promises';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { stat, lstat, readdir, readFile, realpath, open } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
-import { glob } from 'tinyglobby';
+import { glob, isDynamicPattern } from 'tinyglobby';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
 import { UsageError } from '../errors.js';
 import { sourceHash } from '../collect/cache.js';
+import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
 
@@ -21,6 +22,8 @@ export interface ApplyResult { revision: number; file: string; hash: string; app
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
+const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file);
+const missing = (error: unknown) => ['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
 
 /** Owns one warm analysis worker and serializes changes with reads. */
 export class Session extends EventEmitter {
@@ -44,25 +47,48 @@ export class Session extends EventEmitter {
   private failure: Error | undefined;
   private failurePaths: string[] = [];
   private stamps = new Map<string, string>();
+  private directories = new Map<string, string | undefined>();
+  private directoryFiles = new Map<string, Set<string>>();
+  private directoryChildren = new Map<string, Set<string>>();
+  private patternRoots = new Map<string, number>();
+  private patternsDirty = true;
   private lastStats: unknown;
   private revision = 0;
   private native = false;
   private events = new Set<string>();
+  private inventoryDirty = false;
+  private patternFiles = new Set<string>();
   private constructor(private options: SessionOptions) { super(); this.root = resolve(options.root ?? process.cwd()); }
   static async create(options: SessionOptions = {}): Promise<Session> {
+    if (options.watch === undefined && process.env.PLUMB_WATCH === '0') options = { ...options, watch: false };
     const session = new Session(options);
     try {
       await session.start(); await session.scan(true);
+      await session.request('inventory', { files: session.retainedFiles() });
       if (options.watch !== false) session.observe();
       return session;
     } catch (error) { await session.close(); throw error; }
   }
+  private retainedFiles(): string[] {
+    const files = new Set(this.hashes.keys());
+    for (const entries of this.directoryFiles.values()) for (const file of entries) {
+      // A listing can precede a concurrent deletion. File stats are authoritative
+      // for tracked entries; never reintroduce a path they have already removed.
+      if (!tracked(relative(this.root, file)) && !this.patternMatch(file) && !this.dependencies.has(file)) files.add(file);
+    }
+    return [...files];
+  }
   private async start(): Promise<void> {
     if (this.closed) throw new UsageError('Session is closed. Start a new session.');
-    const worker = this.worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { ...this.options, root: this.root } });
+    const inventory = this.directories.size ? this.retainedFiles() : undefined;
+    const worker = this.worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { ...this.options, root: this.root, inventory } });
     await new Promise<void>((resolveReady, rejectReady) => {
       this.worker.on('message', message => {
-        if (message.ready) { this.dependencies = new Set(message.dependencies); this.patterns = message.patterns; this.sourceFiles = new Set(message.files); this.configurationFiles = new Set(message.configurationFiles); this.inputs = message.inputs; this.queryDependencies = new Map(message.queryDependencies); resolveReady(); return; }
+        if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
+          this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
+          this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
+          this.inputs = message.inputs; this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
+          resolveReady(); return; }
         if (message.startupError) { rejectReady(new UsageError(message.startupError)); return; }
         const pending = this.pending.get(message.id); if (!pending) return;
         this.pending.delete(message.id);
@@ -83,75 +109,185 @@ export class Session extends EventEmitter {
     const next = this.queue.then(run); this.queue = next.catch(() => {}); return next;
   }
   private async inventory(): Promise<string[]> {
-    return [...new Set([...(await glob('**/*.{tsx,jsx,ts,js,mjs,mts,cjs,cts,css,json,jsonl}', { cwd: this.root, absolute: true, dot: true, ignore: ignored, followSymbolicLinks: false })).filter(file => tracked(relative(this.root, file))),
-      ...(this.patterns.length ? await glob(this.patterns, { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false }) : []), ...this.dependencies])].sort();
+    const [sources, matches] = await Promise.all([
+      glob('**/*.{tsx,jsx,ts,js,mjs,mts,cjs,cts,css,json,jsonl}', { cwd: this.root, absolute: true, dot: true, ignore: ignored, followSymbolicLinks: false }),
+      this.patterns.length ? glob(this.patterns, { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false }) : [],
+    ]);
+    this.patternFiles.clear(); for (const file of matches) this.patternFiles.add(file);
+    return [...new Set([...sources.filter(file => tracked(relative(this.root, file))), ...matches, ...this.dependencies])].sort();
   }
-  private async scan(initial = false, query?: string[]): Promise<string[]> {
+  private patternMatch(file: string): boolean {
+    return this.patterns.some(pattern => matchesPath(file, pattern) || matchesPath(file, pattern + '/**'));
+  }
+  private recursiveDirectory(path: string): boolean {
+    const inside = relative(this.root, path).replaceAll('\\', '/');
+    if (!inside.startsWith('../') && inside !== '..' && !isAbsolute(inside) && !ignoredDirectory(inside)) return true;
+    for (const [root, depth] of this.patternRoots) {
+      const child = relative(root, path);
+      if (child !== '..' && !child.startsWith('..' + sep) && !isAbsolute(child) && (!child || child.split(sep).length <= depth)) return true;
+    }
+    return false;
+  }
+  private async retainDirectory(path: string, paths: Set<string>): Promise<void> {
+    if (this.directories.has(path)) return;
+    this.directories.set(path, undefined);
+    // Missing configured locations stay retained and are statted each read.
+    await this.scanDirectory(path, paths);
+  }
+  private async scanDirectory(path: string, paths: Set<string>): Promise<void> {
+    let info;
+    try { info = await lstat(path); }
+    catch (error) { if (!missing(error)) throw error; this.directories.set(path, undefined); this.directoryFiles.delete(path); this.directoryChildren.delete(path); return; }
+    if (!info.isDirectory()) { this.directories.set(path, undefined); this.directoryFiles.delete(path); this.directoryChildren.delete(path); return; }
+    const stamp = `${info.mtimeMs}:${info.ino}`;
+    if (this.directories.get(path) === stamp) return;
+    // Retain the stamp from BEFORE listing. A concurrent membership change
+    // must leave a different stamp for the next read, never be acknowledged unseen.
+    this.directories.set(path, stamp);
+    let entries;
+    try { entries = await readdir(path, { withFileTypes: true }); }
+    catch (error) { this.directories.set(path, undefined); if (!missing(error)) throw error; return; }
+    let files = this.directoryFiles.get(path);
+    if (!files) this.directoryFiles.set(path, files = new Set());
+    files.clear();
+    let children = this.directoryChildren.get(path);
+    if (!children) this.directoryChildren.set(path, children = new Set());
+    children.clear();
+    for (const entry of entries) {
+      const file = resolve(path, entry.name);
+      if (entry.isDirectory()) {
+        children.add(file);
+        if (this.recursiveDirectory(file)) await this.retainDirectory(file, paths);
+      } else if (entry.isFile()) {
+        files.add(file);
+        const inside = relative(this.root, file).replaceAll('\\', '/');
+        if (this.patternMatch(file)) { this.patternFiles.add(file); paths.add(file); }
+        if (this.dependencies.has(file) || inside !== '..' && !inside.startsWith('../') && !isAbsolute(inside) && tracked(inside)) paths.add(file);
+      }
+    }
+  }
+  private async retainLocations(paths: Set<string>): Promise<void> {
+    if (this.patternsDirty) {
+      this.patternRoots.clear();
+      for (const pattern of this.patterns) {
+        const parts = pattern.split(sep), dynamic = parts.findIndex(part => isDynamicPattern(part));
+        const root = dynamic < 0 ? dirname(pattern) : parts.slice(0, dynamic).join(sep) || sep;
+        const depth = dynamic < 0 ? 0 : parts.slice(dynamic).some(part => part.includes('**')) ? Infinity : parts.length - dynamic - 1;
+        this.patternRoots.set(root, Math.max(this.patternRoots.get(root) ?? 0, depth));
+        // Literal patterns can name a directory, including one not created yet.
+        if (dynamic < 0) this.patternRoots.set(pattern, Infinity);
+      }
+    }
+    const locations = new Set([this.root, resolve(this.root, '.plumb'), ...this.patternRoots.keys(),
+      ...[...this.dependencies, ...this.inputs, ...(this.options.config ? [resolve(this.root, this.options.config)] : [])].map(dirname)]);
+    for (const path of locations) {
+      await this.retainDirectory(path, paths);
+    }
+    // New configuration can match already-listed files without changing their
+    // directory stamp. Match the retained names, never re-glob those locations.
+    if (this.patternsDirty) {
+      for (const children of this.directoryChildren.values()) for (const child of children) {
+        if (this.recursiveDirectory(child)) await this.retainDirectory(child, paths);
+      }
+      for (const files of this.directoryFiles.values()) for (const file of files) {
+        if (this.patternMatch(file)) { this.patternFiles.add(file); paths.add(file); }
+      }
+      this.patternsDirty = false;
+    }
+  }
+  private async scan(initial = false, query: string[] = [], full = false): Promise<string[]> {
     if (this.closed) return [];
-    const partial = !initial && query !== undefined;
-    const paths = partial ? [...new Set([...query, ...query.flatMap(file => this.queryDependencies.get(file) ?? []), ...this.inputs, ...this.events])] : await this.inventory();
-    for (const path of paths) this.events.delete(path);
-    const next = partial ? this.hashes : new Map<string, string>();
-    const stamps = partial ? this.stamps : new Map<string, string>();
+    const paths = new Set([...this.events, ...query, ...this.hashes.keys(), ...this.dependencies, ...this.inputs, ...this.patternFiles]);
+    this.events.clear();
+    if (initial || full || this.inventoryDirty) {
+      for (const path of await this.inventory()) paths.add(path);
+      this.inventoryDirty = false;
+    }
+    await this.retainLocations(paths);
+    for (const path of this.directories.keys()) await this.scanDirectory(path, paths);
     const changed: string[] = [];
-    // Targeted scans mutate retained maps; never clone or enumerate the inventory.
-    await Promise.all(paths.map(async path => {
+    // Every known file is checked on every read. Events only prioritize paths;
+    // neither their arrival nor silence establishes filesystem correctness.
+    await Promise.all([...paths].map(async path => {
       const old = this.hashes.get(path), previousStamp = this.stamps.get(path);
       let hash: string | undefined;
       try {
-        const info = await stat(path);
+        // Event/query paths bypass Dirent classification. Match the startup
+        // inventory's followSymbolicLinks:false rule for source membership;
+        // explicitly discovered dependencies may still follow their targets.
+        const identity = await lstat(path);
+        const info = identity.isSymbolicLink() && (this.dependencies.has(path) || this.inputs.includes(path)) ? await stat(path) : identity;
         if (info.isFile()) {
           const stamp = `${info.mtimeMs}:${info.ctimeMs}:${info.ino}:${info.size}`;
           hash = previousStamp === stamp && old !== undefined ? old : sourceHash(await readFile(path, 'utf8'));
-          stamps.set(path, stamp);
-        } else stamps.delete(path);
-      } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; stamps.delete(path); }
-      if (hash === undefined) next.delete(path); else next.set(path, hash);
+          this.stamps.set(path, stamp);
+        } else this.stamps.delete(path);
+      } catch (error) { if (!missing(error)) throw error; this.stamps.delete(path); }
+      if (hash === undefined) { this.hashes.delete(path); this.patternFiles.delete(path); } else this.hashes.set(path, hash);
       if (hash !== old) changed.push(path);
     }));
-    if (!partial) for (const path of this.hashes.keys()) if (!next.has(path) && !changed.includes(path)) changed.push(path);
-    this.stamps = stamps;
-    if (initial) { this.hashes = next; return []; }
+    if (initial) return [];
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
-    const broad = changed.some(path => !path.endsWith('/.plumb/ledger.jsonl') && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !next.has(path)));
+    const broad = changed.some(path => !path.endsWith('/.plumb/ledger.jsonl') && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
       else {
-        const result = await this.request<{ dependencies: string[]; inputs: string[]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
-        this.dependencies = new Set(result.dependencies); this.inputs = result.inputs; this.queryDependencies = new Map(result.queryDependencies); this.lastStats = result;
+        const result = await this.request<{ dependencyDelta: string[]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
+        for (const path of result.dependencyDelta) this.dependencies.add(path);
+        for (const [file, paths] of result.queryDependencies) this.queryDependencies.set(file, paths);
+        this.lastStats = result;
       }
-      this.hashes = next; this.failure = undefined; this.failurePaths = [];
+      await this.retainLocations(new Set());
+      this.failure = undefined; this.failurePaths = [];
       this.revision++; this.emit('change', changed);
-    } catch (error) { this.hashes = next; this.failure = error as Error; this.failurePaths = changed; throw error; }
+    } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
     return changed;
   }
   private observe(): void {
-    if (!this.options.polling) {
+    if (!(this.options.polling ?? process.env.PLUMB_POLLING === '1')) {
       try {
         this.watchers.push(watch(this.root, { recursive: true }, (_event, file) => {
-          if (!file || tracked(String(file))) {
-            if (file) this.events.add(resolve(this.root, String(file))); else this.native = false;
+          const name = file === null ? undefined : String(file).replaceAll('\\', '/');
+          const path = name === undefined ? undefined : resolve(this.root, name);
+          if (name === undefined || path !== undefined && this.dependencies.has(path) || !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(name) && !/(?:^|\/)\.plumb\/serve\.json$/.test(name)) {
+            if (path && (tracked(name!) || this.dependencies.has(path) || this.directories.has(path))) this.events.add(path);
             if (this.debounce) clearTimeout(this.debounce);
-            this.debounce = setTimeout(() => { void this.serialize(() => this.scan(false, [])).catch(error => this.emit('diagnostic', error)); }, 5);
+            this.debounce = setTimeout(() => { void this.serialize(() => this.scan()).catch(error => this.emit('diagnostic', error)); }, 5);
           }
         }));
         this.native = true;
-        this.watchers[0]!.on('error', error => { this.native = false; this.watchers[0]?.close(); this.emit('diagnostic', error); });
+        this.watchers[0]!.on('error', error => { this.native = false; this.inventoryDirty = true; this.watchers[0]?.close(); this.emit('diagnostic', error); });
       } catch { /* Polling below works on platforms without recursive fs.watch. */ }
     }
-    this.timer = setInterval(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, this.options.pollInterval ?? 250);
+    this.timer = setInterval(() => { void this.serialize(() => this.scan()).catch(error => this.emit('diagnostic', error)); }, this.options.pollInterval ?? 250);
   }
-  refresh(): Promise<string[]> { if (!this.refreshing) this.refreshing = this.serialize(() => this.scan()).finally(() => { this.refreshing = undefined; }); return this.refreshing; }
-  private read<T>(method: string, params: object = {}): Promise<T> { return this.serialize(async () => {
-    try { await this.scan(false, method === 'site' ? [(params as { file: string }).file] : method === 'try' ? [] : undefined); }
-    catch (error) {
-      const as = (params as { as?: string }).as, target = resolve(this.root, as ?? 'src/__plumb_try__.tsx');
-      if (method !== 'try' || !this.sourceFiles.has(target) || !this.failurePaths.length || this.failurePaths.some(file => file !== target)) throw error;
-      // A valid overlay can repair the sole invalid source for this read.
-      // Keep the on-disk diagnostic and the retained project report unchanged.
-    }
-    return this.request<T>(method, params);
-  }); }
+  private async reconcile(query?: string[], full = false): Promise<string[]> {
+    const changed = new Set<string>();
+    do {
+      for (const path of await this.scan(false, query, full)) changed.add(path);
+      full = false;
+    } while (this.native && (this.inventoryDirty || this.events.size));
+    return [...changed];
+  }
+  /** Reconcile retained stats; opt into a full inventory only for explicit recovery. */
+  refresh(full = false): Promise<string[]> { if (!this.refreshing) this.refreshing = this.serialize(() => this.reconcile([], full)).finally(() => { this.refreshing = undefined; }); return this.refreshing; }
+  private read<T>(method: string, params: object = {}): Promise<T> { return this.serialize(() => this.settledRead<T>(method, params)); }
+  private async settledRead<T>(method: string, params: object): Promise<T> {
+    do {
+      const local = method === 'site' || method === 'why' || method === 'edits';
+      const query = local ? [(params as { file: string }).file] : [];
+      try { await this.reconcile(query); }
+      catch (error) {
+        const as = (params as { as?: string }).as, target = resolve(this.root, as ?? 'src/__plumb_try__.tsx');
+        if (method !== 'try' || !this.sourceFiles.has(target) || !this.failurePaths.length || this.failurePaths.some(file => file !== target)) throw error;
+        // A valid overlay can repair the sole invalid source for this read.
+        // Keep the on-disk diagnostic and the retained project report unchanged.
+      }
+      const result = await this.request<T>(method, params);
+      // Events received while the worker was answering belong to this read too.
+      if (!this.native || !this.inventoryDirty && !this.events.size) return result;
+    } while (true);
+  }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
   site(file: string, line: number, column?: number): Promise<SiteResult> {
     return this.read('site', { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) });
@@ -159,8 +295,7 @@ export class Session extends EventEmitter {
   edits(file: string, line: number, column?: number): Promise<EditsResult> {
     const params = { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) };
     return this.serialize(async () => {
-      await this.scan(false, [params.file]);
-      const result = await this.request<Omit<EditsResult, 'revision'>>('edits', params);
+      const result = await this.settledRead<Omit<EditsResult, 'revision'>>('edits', params);
       if (result.hash !== this.hashes.get(params.file)) throw new UsageError(staleFile);
       return { revision: this.revision, ...result };
     });
@@ -174,7 +309,7 @@ export class Session extends EventEmitter {
     return this.serialize(async () => {
       await this.editableFile(file);
       if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
-      await this.scan(false, [file]);
+      await this.reconcile([file]);
       // Re-derive every choice from the current source and decisions, never from client text.
       const current = await this.request<Omit<EditsResult, 'revision'>>('edits', { file });
       if (current.hash !== hash || this.hashes.get(file) !== hash) throw new UsageError(staleFile);
@@ -203,7 +338,7 @@ export class Session extends EventEmitter {
         await handle.truncate(Buffer.byteLength(next));
         await this.sameFile(file, identity);
       } finally { await handle.close(); }
-      await this.scan(false, [file]);
+      await this.reconcile([file]);
       // Earlier replacements can shift later columns. Query the resulting authored sites.
       const starts = lineStarts(next);
       let delta = 0;
@@ -220,18 +355,24 @@ export class Session extends EventEmitter {
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
-  async health(): Promise<{ status: string; root: string; revision: number; pid: number; rss: number; caches: object; diagnostic?: string }> {
-    const result = await this.request<{ status: string; root: string; revision: number; pid: number; rss: number; caches: object }>('health');
-    return { ...result, status: this.failure ? 'invalid' : result.status, revision: this.revision, ...(this.failure ? { diagnostic: this.failure.message } : {}) };
+  health(): Promise<{ status: string; root: string; revision: number; pid: number; rss: number; caches: object; diagnostic?: string }> {
+    // Membership reconciliation can replace the worker. Keep health requests
+    // in the same queue so they cannot race an intentional termination.
+    return this.serialize(async () => {
+      try { await this.reconcile(); } catch (error) { if (!this.failure) throw error; }
+      const result = await this.request<{ status: string; root: string; revision: number; pid: number; rss: number; caches: object }>('health');
+      return { ...result, status: this.failure ? 'invalid' : result.status, revision: this.revision, ...(this.failure ? { diagnostic: this.failure.message } : {}) };
+    });
   }
   get stats(): unknown { return this.lastStats; }
   private file(file: string): string {
     if (typeof file !== 'string' || !file.trim()) throw new UsageError('File must be a non-empty source path.');
     const path = resolve(this.root, file), inside = relative(this.root, path);
-    if (!inside || inside.startsWith('../') || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
+    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
     return path;
   }
   private async editableFile(file: string): Promise<{ dev: number; ino: number }> {
+    this.file(file);
     const inside = relative(this.root, file).replaceAll('\\', '/');
     if (/(?:^|\/)plumb\.config\.[^/]+$/.test(inside) || /(?:^|\/)\.plumb(?:\/|$)/.test(inside)) throw new UsageError('Apply cannot edit Plumb config or .plumb files.');
     const identity = await lstat(file);

@@ -1,21 +1,30 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { cp, mkdtemp, mkdir, readFile, rm, writeFile, rename, stat } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile, rename, stat, symlink, utimes } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
-import { test } from 'node:test';
+import { test as nodeTest } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Session } from '../dist/session/index.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
+const forcedPolling = process.env.PLUMB_POLLING === '1';
+const noWatch = process.env.PLUMB_WATCH === '0';
+const test = (name, ...args) => nodeTest(`${name} [${noWatch ? 'no-watch' : forcedPolling ? 'polling' : 'native'}]`, ...args);
+const createSession = Session.create.bind(Session);
+Session.create = async options => {
+  const session = await createSession(options);
+  if (noWatch) { assert.equal(session.watchers.length, 0); assert.equal(session.timer, undefined); }
+  return session;
+};
 function semantic(report) {
   const value = structuredClone(report); delete value.timing;
   for (const key of ['cacheHits', 'cacheMisses', 'parseMs', 'totalMs']) delete value.moduleGraph[key];
   return value;
 }
 async function project(t, fixture = 'spacing') {
-  const root = await mkdtemp(join(repo, 'fixtures/.serve-')); await cp(join(repo, 'fixtures', fixture), root, { recursive: true });
+  const root = await mkdtemp(join(repo, 'fixtures/.serve-')); await cp(join(repo, 'fixtures', fixture), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   t.after(() => rm(root, { recursive: true, force: true })); return root;
 }
 function run(root, args = [], input) {
@@ -39,6 +48,98 @@ async function daemon(t, root) {
   };
   return { child, info, request };
 }
+
+test('native watching cannot silently degrade to polling on macOS/Linux', { skip: noWatch || forcedPolling || !['darwin', 'linux'].includes(process.platform) }, async t => {
+  const { watch } = await import('node:fs');
+  const root = await project(t);
+  // Probe the OS independently: a constrained runner must report native support
+  // unavailable explicitly, rather than count polling parity as native coverage.
+  let watcher, observed;
+  try {
+    const event = new Promise((resolveEvent, reject) => {
+      watcher = watch(root, { recursive: true }, () => resolveEvent());
+      watcher.once('error', reject);
+    });
+    observed = Promise.race([event, delay(1500).then(() => { throw new Error('native fs.watch delivered no creation event'); })]);
+    await writeFile(join(root, 'src/NativeProbe.tsx'), '<div className="gap-[137px]" />;');
+    await observed;
+  } catch (error) {
+    if (['EPERM', 'EACCES', 'EMFILE', 'ENOSYS', 'ERR_FEATURE_UNAVAILABLE_ON_PLATFORM'].includes(error.code)) {
+      t.skip(`OS native recursive fs.watch unavailable: ${error.code}`); return;
+    }
+    throw error;
+  } finally { watcher?.close(); }
+  const session = await Session.create({ root, pollInterval: 60000 }); t.after(() => session.close());
+  assert.equal(session.native, true, 'supported OS must use native watching');
+  await writeFile(join(root, 'src/NativeAfterStart.tsx'), '<div className="gap-[139px]" />;');
+  assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
+  assert.equal(session.native, true, 'native parity must not pass through polling fallback');
+});
+
+test('PLUMB_POLLING forces session and daemon polling', { skip: !forcedPolling }, async t => {
+  const root = await project(t), session = await Session.create({ root, pollInterval: 60000 }); t.after(() => session.close());
+  assert.equal(session.native, false);
+  await writeFile(join(root, 'src/PollingProbe.tsx'), '<div className="gap-[137px]" />;');
+  assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
+  const { request } = await daemon(t, root);
+  await writeFile(join(root, 'src/DaemonPollingProbe.tsx'), '<div className="gap-[139px]" />;');
+  assert.deepEqual(semantic(await request('/report')), semantic(cold(root)));
+});
+
+test('watch-disabled reads preserve cold parity without callbacks or polling', async t => {
+  const root = await project(t, 'attribution');
+  await mkdir(join(root, 'src/empty/nested'), { recursive: true });
+  cold(root); // Create the cold CLI's cache directory before measuring listings.
+  const session = await Session.create({ root, watch: false }); t.after(() => session.close());
+  assert.equal(session.watchers.length, 0); assert.equal(session.timer, undefined);
+  session.inventory = () => { throw new Error('reads must not glob inventory'); };
+  const { default: filesystem } = await import('node:fs/promises');
+  const { syncBuiltinESMExports } = await import('node:module');
+  const original = filesystem.readdir, listings = [];
+  filesystem.readdir = (path, ...args) => { listings.push(String(path)); return original(path, ...args); };
+  syncBuiltinESMExports();
+  t.after(() => { filesystem.readdir = original; syncBuiltinESMExports(); });
+  const parity = async () => assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
+  await session.decisions(); await session.health(); await parity();
+  assert.deepEqual(listings, [], 'settled reads never re-list unchanged directories');
+  await writeFile(join(root, 'src/SessionProbe.tsx'), '<div className="gap-[137px]" style={{ gap: 137 }} />;');
+  await parity();
+  assert.deepEqual(listings.splice(0), [join(root, 'src')], 'creation only re-lists its changed parent');
+  await writeFile(join(root, 'src/SessionProbe.tsx'), '<div className="gap-[139px]" style={{ gap: 139 }} />;');
+  await parity();
+  const file = join(root, 'src/SessionProbe.tsx'), before = await stat(file);
+  await writeFile(file, '<div className="gap-[141px]" style={{ gap: 141 }} />;');
+  await utimes(file, before.atime, before.mtime);
+  assert.ok((await session.site('src/SessionProbe.tsx', 1)).declarations.some(d => d.value === '141px'), 'same-size write with restored mtime is detected');
+  await parity();
+  assert.deepEqual(listings, [], 'content edits stat files without listing directories');
+  await writeFile(join(root, 'src/empty/nested/New.tsx'), '<div className="gap-[143px]" />;'); await parity();
+  assert.deepEqual(listings.splice(0), [join(root, 'src/empty/nested')], 'pre-existing empty directories remain discoverable');
+  await rm(join(root, 'src/empty'), { recursive: true }); await parity();
+  await mkdir(join(root, 'src/empty/nested'), { recursive: true });
+  await writeFile(join(root, 'src/empty/nested/Recreated.tsx'), '<div className="gap-[145px]" />;'); await parity();
+  await mkdir(join(root, 'src/.hidden'));
+  await writeFile(join(root, 'src/.hidden/Probe.tsx'), '<div style={{ gap: 147 }} />;'); await parity();
+  await writeFile(join(root, 'src/.hidden/Probe.tsx'), '<div style={{ gap: 149 }} />;'); await parity();
+  const external = await mkdtemp(join(repo, 'fixtures/.serve-tokens-'));
+  t.after(() => rm(external, { recursive: true, force: true }));
+  await writeFile(join(root, 'plumb.config.ts'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/missing/**/{tokens,moved}.json`)} } } };`);
+  await parity();
+  const tokens = join(external, 'missing/deep/tokens.json');
+  await mkdir(join(external, 'missing/deep'), { recursive: true });
+  await writeFile(tokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 13, unit: 'px' } } })); await parity();
+  await rename(tokens, join(external, 'missing/deep/moved.json')); await parity();
+  await rm(join(external, 'missing'), { recursive: true }); await parity();
+  const preset = join(external, 'preset.mjs');
+  await writeFile(preset, 'export default { name: "external", decisions: { spacing: { from: "dtcg:preset-tokens/**/*.json" } } };');
+  await writeFile(join(root, 'plumb.config.ts'), `export default { presets: [${JSON.stringify(preset)}] };`); await parity();
+  await mkdir(join(external, 'preset-tokens/deep'), { recursive: true });
+  const presetTokens = join(external, 'preset-tokens/deep/tokens.json');
+  await writeFile(presetTokens, '{}'); await parity();
+  await writeFile(presetTokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 17, unit: 'px' } } })); await parity();
+  await writeFile(preset, 'export default { name: "renamed", decisions: { spacing: { from: "dtcg:preset-tokens/**/*.json" } } };');
+  await parity(); assert.equal((await session.report()).presets[0].name, 'renamed');
+});
 
 test('serve incrementally matches cold CLI through TSX, CSS, theme, config and ledger edits', async t => {
   const root = await project(t), { request } = await daemon(t, root);
@@ -285,4 +386,155 @@ test('Session retains autoloaded presets and their rules after source and preset
   const disabled = await session.report();
   assert.deepEqual(disabled.presets, []);
   assert.deepEqual(semantic(disabled), semantic(cold(root)));
+});
+
+test('startup inventory and reconciled directory listings agree on symlinks, ignored directories and dotfiles', async t => {
+  const root = await project(t), outside = await project(t);
+  const session = await Session.create({ root, watch: false }); t.after(() => session.close());
+  const source = '<div style={{ gap: 137 }} />;';
+  await mkdir(join(root, 'src/.hidden'), { recursive: true });
+  await writeFile(join(root, 'src/.hidden/Probe.tsx'), source);
+  await writeFile(join(root, 'src/.Probe.tsx'), source);
+  await writeFile(join(root, 'src/.metadata.json'), '{}');
+  await writeFile(join(root, 'src/untracked.txt'), source);
+  for (const directory of ['node_modules', '.git', 'dist', 'build', '.next', '.cache', '.plumb-cache']) {
+    await mkdir(join(root, 'src', directory, 'nested'), { recursive: true });
+    await writeFile(join(root, 'src', directory, 'nested/Invalid.tsx'), 'not valid TSX {');
+  }
+  await mkdir(join(root, '.plumb'), { recursive: true });
+  await writeFile(join(root, '.plumb/serve.json'), '{}');
+  const aliases = ['src/ThemeAlias.tsx', 'src/Outside.tsx', 'src/Linked', 'src/Dangling.tsx'];
+  await symlink(join(root, 'src/styles.css'), join(root, aliases[0]));
+  await symlink(join(outside, 'src/App.tsx'), join(root, aliases[1]));
+  await symlink(join(outside, 'src'), join(root, aliases[2]));
+  await symlink(join(outside, 'missing.tsx'), join(root, aliases[3]));
+  // Native callbacks can enqueue a filename before its parent is re-listed.
+  for (const alias of aliases) session.events.add(join(root, alias));
+  const inventory = session.inventory.bind(session);
+  // Inventory also retains optional input locations that do not exist yet.
+  const expected = (await Promise.all((await inventory()).map(async file => {
+    try { await stat(file); return file; }
+    catch (error) { assert.equal(error.code, 'ENOENT'); return undefined; }
+  }))).filter(Boolean);
+  assert.ok(expected.includes(join(root, 'src/.Probe.tsx')));
+  assert.ok(expected.includes(join(root, 'src/.hidden/Probe.tsx')));
+  assert.ok(expected.includes(join(root, 'src/.metadata.json')));
+  for (const alias of aliases) assert.ok(!expected.includes(join(root, alias)));
+  session.inventory = () => { throw new Error('directory reconciliation must not re-glob'); };
+  const report = await session.report();
+  assert.ok(report.declarations.some(d => d.site.file === join(root, 'src/.hidden/Probe.tsx')));
+  assert.ok(report.declarations.some(d => d.site.file === join(root, 'src/.Probe.tsx')));
+  assert.deepEqual([...session.hashes.keys()].sort(), expected, 're-listing retains exactly startup inventory membership');
+  assert.equal((await session.health()).status, 'ready');
+});
+
+test('overlay review 6: reads and background reconciliation avoid full inventories', async t => {
+  const root = await project(t);
+  const session = await Session.create({ root, pollInterval: 25 }); t.after(() => session.close());
+  let watcherErrors = 0; session.on('diagnostic', () => watcherErrors++);
+  let inventories = 0; const inventory = session.inventory.bind(session);
+  session.inventory = async () => { inventories++; return inventory(); };
+  const idleStart = inventories;
+  await session.decisions(); assert.equal(inventories, idleStart, 'decisions never inventory source files');
+  await delay(100);
+  assert.ok(inventories - idleStart <= watcherErrors, 'only actual watcher errors permit recovery inventories');
+  const before = (await session.health()).revision;
+  await writeFile(join(root, 'src/Watched.tsx'), 'export const Watched = () => <div className="gap-[77px]" />;');
+  for (let i = 0; i < 100 && (await session.health()).revision === before; i++) await delay(20);
+  assert.ok((await session.health()).revision > before);
+  assert.ok((await session.site('src/Watched.tsx', 1)).declarations.some(d => d.value === '77px'));
+  const decisions = await session.decisions();
+  const css = join(root, 'src/styles.css'); await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing-s2: 8px', '--spacing-s2: 9px'));
+  assert.notEqual((await session.decisions()).find(d => d.name === '--spacing-s2').value, decisions.find(d => d.name === '--spacing-s2').value, 'shared decision inputs reconciled immediately');
+});
+
+test('overlay review 6: native hints stay bounded and watcher failure requests recovery inventory', { skip: noWatch }, async t => {
+  // Inject native watcher events at the OS boundary; all scans/worker analysis use real files.
+  const { default: fs } = await import('node:fs');
+  const { EventEmitter } = await import('node:events');
+  const { syncBuiltinESMExports } = await import('node:module');
+  const root = await project(t), original = fs.watch;
+  let notify; const watcher = new EventEmitter(); watcher.close = () => {};
+  fs.watch = (path, options, callback) => { assert.equal(path, root); notify = callback; return watcher; };
+  syncBuiltinESMExports();
+  let session;
+  try { session = await Session.create({ root, polling: false, pollInterval: 20 }); }
+  finally { fs.watch = original; syncBuiltinESMExports(); }
+  t.after(() => session.close());
+  let inventories = 0; const inventory = session.inventory.bind(session);
+  session.inventory = async () => { inventories++; return inventory(); };
+  assert.equal(session.native, true);
+  await delay(90); await session.decisions(); assert.equal(inventories, 0);
+  const file = join(root, 'src/App.tsx');
+  await writeFile(file, 'export const App = () => <div className="gap-[79px]" />;');
+  notify('change', 'src/App.tsx');
+  for (let i = 0; i < 100 && !(await session.health()).revision; i++) await delay(20);
+  assert.ok((await session.site('src/App.tsx', 1)).declarations.some(d => d.value === '79px'));
+  assert.equal(inventories, 0, 'queued known file is reconciled without source inventory');
+  watcher.emit('error', new Error('watcher lost'));
+  await writeFile(file, 'export const App = () => <div className="gap-[81px]" />;');
+  for (let i = 0; i < 100 && !inventories; i++) await delay(20);
+  assert.ok(inventories > 0); assert.equal(session.native, false);
+  assert.ok((await session.site('src/App.tsx', 1)).declarations.some(d => d.value === '81px'));
+});
+
+test('reads reconcile directory changes, renames, deletions and external inputs with late or absent events', async t => {
+  const { default: fs } = await import('node:fs');
+  const { EventEmitter } = await import('node:events');
+  const { syncBuiltinESMExports } = await import('node:module');
+  const root = await project(t), original = fs.watch;
+  let notify = () => {}; const watcher = new EventEmitter(); watcher.close = () => {};
+  fs.watch = (_path, _options, callback) => { notify = callback; return watcher; };
+  syncBuiltinESMExports();
+  let session;
+  try { session = await Session.create({ root, polling: false, pollInterval: 60000, ...(noWatch ? { watch: false } : {}) }); }
+  finally { fs.watch = original; syncBuiltinESMExports(); }
+  t.after(() => session.close());
+  let inventories = 0; const inventory = session.inventory.bind(session);
+  session.inventory = async () => { inventories++; return inventory(); };
+  const parity = async () => assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
+  await parity(); assert.equal(inventories, 0);
+  const directory = join(root, 'src/new'), file = join(directory, 'SessionProbe.tsx');
+  await mkdir(directory);
+  await writeFile(file, 'export const SessionProbe = () => <div className="gap-[137px]" />;');
+  // The read starts before the OS callback; only its parent directory is reported.
+  setTimeout(() => notify('rename', 'src/new'), 0);
+  await parity(); assert.equal(inventories, 0, 'directory creation uses retained stats, never inventory');
+  const moved = join(root, 'src/Moved.tsx');
+  await rename(file, moved); notify('rename', 'src/new'); await parity();
+  await rm(moved); notify('change', 'src'); await parity();
+  await writeFile(join(root, 'src/Late.tsx'), '<div className="gap-[141px]" />;');
+  // The creation callback can arrive only after the worker answers the read.
+  session.worker.once('message', () => notify('rename', 'src/Late.tsx'));
+  await parity();
+  await writeFile(join(root, 'src/Unknown.tsx'), '<div className="gap-[139px]" />;');
+  notify('change', 'src/Unknown.tsx'); await parity();
+  await rm(join(root, 'plumb.config.ts'));
+  await writeFile(join(root, 'plumb.config.mjs'), 'export default { habits: ["logical-inline"] };');
+  notify('rename', null); await parity(); assert.equal(session.native, !noWatch);
+  assert.equal((await session.report()).config.path, join(root, 'plumb.config.mjs'));
+  // Autoload metadata is another newly matched shared input.
+  await writeFile(join(root, 'components.json'), JSON.stringify({ aliases: { ui: 'src/components/ui' } }));
+  notify('change', 'components.json'); await parity();
+  assert.equal((await session.report()).presets[0].name, 'shadcn');
+  // Token patterns outside the watched root start empty, gain empty files,
+  // gain tokens, then lose/rename those matches, without a root inventory.
+  const external = await mkdtemp(join(repo, 'fixtures/.serve-tokens-'));
+  t.after(() => rm(external, { recursive: true, force: true }));
+  await writeFile(join(root, 'plumb.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/*.json`)} } } };`);
+  notify('change', 'plumb.config.mjs'); await parity();
+  const tokens = join(external, 'tokens.json');
+  await writeFile(tokens, '{}'); await parity();
+  await rm(tokens); await parity();
+  await writeFile(tokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 13, unit: 'px' } } })); await parity();
+  await rename(tokens, join(external, 'moved.json')); await parity();
+  await rm(join(external, 'moved.json')); await parity();
+  await mkdir(join(external, 'nested'));
+  const nestedTokens = join(external, 'nested/tokens.json');
+  await writeFile(nestedTokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 17, unit: 'px' } } })); await parity();
+  await writeFile(join(root, 'plumb.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/**/*.json`)} } } };`);
+  await parity();
+  await writeFile(nestedTokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 19, unit: 'px' } } })); await parity();
+  const settled = inventories;
+  await session.decisions(); await parity(); assert.equal(inventories, settled, 'settled reads stay bounded');
 });

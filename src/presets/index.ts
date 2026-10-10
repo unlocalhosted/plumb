@@ -34,7 +34,7 @@ export interface PresetSummary {
   markers: string[];
 }
 interface LoadedPreset { preset: Preset; directory: string; scopes: string[]; package?: string; records: Decision[]; summary: PresetSummary }
-interface State { loaded: LoadedPreset[]; project: PlumbConfig }
+interface State { loaded: LoadedPreset[]; project: PlumbConfig; files: Set<string>; patterns: Set<string> }
 const states = new WeakMap<PlumbConfig, State>();
 const list = (value?: string | string[]) => value === undefined ? [] : Array.isArray(value) ? value : [value];
 const contains = (directory: string, file: string) => file === directory || file.startsWith(directory + sep);
@@ -103,7 +103,7 @@ function moduleTarget(manifest: Record<string, unknown>): string | undefined {
   const exports = manifest.exports as Record<string, unknown> | undefined;
   return condition(exports) ?? (exports && target(exports['./plumb']));
 }
-async function records(preset: Preset, directory: string, consumer: boolean): Promise<Decision[]> {
+async function records(preset: Preset, directory: string, consumer: boolean, patterns: Set<string>): Promise<Decision[]> {
   let inputs: DecisionInput[] = [];
   if (Array.isArray(preset.decisions)) inputs = preset.decisions;
   else if (typeof preset.decisions === 'function') inputs = await preset.decisions();
@@ -114,6 +114,7 @@ async function records(preset: Preset, directory: string, consumer: boolean): Pr
       inputs.push(...result);
     }
     else for (const pattern of list(source.from)) {
+      patterns.add(resolve(directory, pattern.replace(/^(?:dtcg|css):/, '')));
       if (pattern.startsWith('dtcg:')) inputs.push(...await readDtcg(directory, pattern.slice(5), family as Family));
       else {
         const files = await glob(pattern.replace(/^css:/, ''), { cwd: directory, absolute: true });
@@ -137,6 +138,7 @@ async function records(preset: Preset, directory: string, consumer: boolean): Pr
 }
 
 export async function loadPresets(root: string, project: PlumbConfig): Promise<{ value: PlumbConfig; presets: PresetSummary[] }> {
+  const files = new Set([join(root, 'components.json'), join(root, 'package.json')]), patterns = new Set<string>();
   const disabled = new Set<string>(), additions: (string | Preset)[] = [];
   for (const [key, value] of Object.entries(project.presets ?? {})) {
     if (Array.isArray(project.presets)) {
@@ -150,7 +152,7 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
   async function add(preset: Preset, directory: string, source: string, packageName?: string): Promise<void> {
     preset = definePreset(preset);
     if (disabled.has(preset.name ?? '') || packageName && disabled.has(packageName)) return;
-    const tokens = await records(preset, directory, directory !== root);
+    const tokens = await records(preset, directory, directory !== root, patterns);
     const name = preset.name ?? packageName ?? source;
     const from = list(preset.components?.from).map(item => item.startsWith('directory:') ? `directory:${resolve(directory, item.slice(10))}` : item);
     if (packageName && !from.includes(`package:${packageName}`)) from.push(`package:${packageName}`);
@@ -187,6 +189,7 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
   // A package's own preset publishes its tokens in its library analysis too.
   if (manifest && moduleTarget(manifest) && typeof manifest.name === 'string' && !dependencies.includes(manifest.name)) dependencies.push(manifest.name);
   async function loadModule(file: string, directory: string, packageName?: string): Promise<void> {
+    files.add(file);
     try { const module = await import(pathToFileURL(file).href); await add(module.default, directory, relative(root, file), packageName); }
     catch (error) { throw new UsageError(`Load preset ${relative(root, file)}: ${errorMessage(error)}`); }
   }
@@ -194,6 +197,7 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
     if (disabled.has(name)) continue;
     const directory = manifest?.name === name ? root : await packageDirectory(root, name);
     if (!directory) continue; // Optional or uninstalled dependency.
+    files.add(join(directory, 'package.json'));
     const metadata = await json(join(directory, 'package.json'));
     const path = metadata && moduleTarget(metadata);
     if (path) await loadModule(resolve(directory, path), directory, name);
@@ -206,6 +210,7 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
       const packageName = entry.startsWith('@') ? entry.split('/').slice(0, 2).join('/') : entry.split('/')[0]!;
       const directory = await packageDirectory(root, packageName);
       if (!directory) throw new UsageError(`Install ${packageName} or remove it from presets.`);
+      files.add(join(directory, 'package.json'));
       const metadata = await json(join(directory, 'package.json'));
       const path = entry === packageName && metadata ? moduleTarget(metadata) : undefined;
       const resolver = new ResolverFactory({ conditionNames: ['plumb', 'import', 'node', 'default'], extensions: ['.js', '.mjs', '.ts'] });
@@ -232,11 +237,12 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
   if (loaded.some(item => item.preset.markers)) value.markers = [...new Set([...loaded.flatMap(item => item.preset.markers ?? []), ...project.markers ?? []])];
   const imitation = Object.assign({}, ...loaded.map(item => item.preset.imitation), project.imitation);
   if (Object.keys(imitation).length) value.imitation = imitation; // Names used only for graph discovery; judging is scoped below.
-  states.set(value, { loaded, project });
+  states.set(value, { loaded, project, files, patterns });
   return { value, presets: loaded.map(item => item.summary) };
 }
 
 export function presetDecisions(config: PlumbConfig): Decision[] { return states.get(config)?.loaded.flatMap(item => item.records) ?? []; }
+export function presetInputs(config: PlumbConfig): { files: Set<string>; patterns: Set<string> } | undefined { return states.get(config); }
 export function componentConfigs(config: PlumbConfig, component: ComponentIdentity): PlumbConfig[] {
   const state = states.get(config);
   if (!state) return [config];

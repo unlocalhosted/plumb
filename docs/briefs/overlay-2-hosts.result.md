@@ -1,0 +1,61 @@
+# Overlay layer 2 result
+
+Implemented separate `@unlocalhosted/plumb/vite` and `@unlocalhosted/plumb/next` exports with optional Vite and React peers. Vite is imported only for types; core imports load neither adapter's optional dependencies.
+
+The Vite plugin mounts the existing handler on the host development server, uses `server.config.root`, serves `/__plumb/client.js`, and injects its module script through `transformIndexHtml`. It runs only for `serve`, closes the Session on HTTP-server close or `closeBundle` (including middleware mode), and leaves build output free of `__plumb` references.
+
+The Next adapter exports `runtime = 'nodejs'`, `createPlumbRoute()` GET/POST handlers, and the synchronous React server component `PlumbOverlay`. A lazy handler retains its Session and random token on `globalThis` across hot reloads. The component server-renders the same token in `data-plumb-token`; API routes require `x-plumb-token`. Production requests return 404, the component renders nothing, and production-only usage creates no overlay state or Session.
+
+Extended the existing shared transport core for public client delivery and exact-origin CORS, including unauthenticated browser preflight for the token header and JSON writes. API authentication, dispatch, method validation, body limits and edits/apply remain shared. The client loader prefers `overlay/dist/client.js` and falls back to the packaged `overlay/client.js` connection stub. The stub derives its API base from its module URL and sends the script's token header when present; public JavaScript never embeds the token.
+
+`plumb serve --overlay --origin <url>` enables these routes on the existing loopback server and records overlay metadata in the existing discovery file. Legacy API paths retain authentication and receive the same CORS policy. Overlay serving requires a valid HTTP(S) origin and rejects stdio. `plumb install --overlay` detects Next, Vite or generic hosts, prints wiring, and never changes files. Generic installation uses a running overlay server's actual port/token; before startup it prints a startup command and explicitly marked token template. README documents each host's wiring and lifecycle.
+
+One brief correction: Next.js ignores literal underscore-prefixed App Router folders. Installation therefore prints `app/%5F_plumb/[...path]/route.ts` (or its `src/app` equivalent), which exposes the requested `/__plumb/*` URL. This follows [Next.js's documented private-folder escape](https://nextjs.org/docs/app/getting-started/project-structure#private-folders).
+
+Validation:
+
+- `npm test`: all 237 integration tests passed, including five new host integration tests in `e2e/hosts.test.mjs`.
+- `npm run typecheck`: passed.
+- Real Vite dev-server requests verify HTML injection, served-client execution against health, site JSON, exact edits/apply source changes, foreign-Origin/write refusals, and clean production assets.
+- Real Web Requests and `react-dom/server` verify Next's matching token, missing/wrong-token refusals, edits/apply, production guards and retained Session/token across a re-import simulating hot reload. No Next installation required.
+- Real CLI daemon requests verify configured-origin-only CORS, module delivery, token authentication, preflight and source edits. Install snapshots verify no file writes for all host types; invalid CLI combinations/origins fail before starting a server.
+- `npm pack --dry-run --ignore-scripts`: adapter modules, declarations and client stub included.
+- Isolated consumer smoke check: core and Vite subpath imports succeed without Vite or React installed; Next subpath import succeeds with only React installed.
+
+No unit tests added. No commit created. Existing untracked brief left unchanged.
+
+## Astra review fixes
+
+These notes supersede the earlier Next setup and Session lifecycle/performance descriptions above.
+
+1. **Fixed:** Path containment rejects empty paths, bare `..`, `..` followed by the native separator, and absolute relative results. `editableFile` repeats containment before realpath/identity checks. Integration configures a legitimate sibling source, obtains its real worker edit IDs, and verifies public apply and the write boundary refuse traversal without changing the sibling. The same scenario uses backslashes on Windows; this run used macOS, not a Windows filesystem.
+
+2. **Fixed:** Exported `withPlumb(nextConfig)` from `@unlocalhosted/plumb/next/config`. Only development adds `plumb.ts`/`plumb.tsx` to existing/default page extensions and externalizes `@unlocalhosted/plumb`, preserving existing external packages. Added Next 16.4.0 as a devDependency. Installation output and README now include the wrapper. Real installed-package Next integration runs ordinary webpack development, verifies authenticated `/__plumb/health`, the page's matching script token, client delivery, and edits/apply. Its config assertions verify preservation, idempotence, and production pass-through.
+
+3. **Fixed:** Installation and README use `app/%5F_plumb/[...path]/route.plumb.ts` (or `src/app`), preserving the encoded underscore URL mapping. Production never adds the custom route extension. Real normal and `output: 'export'` builds succeed; both app-path manifests omit the overlay route, and exported output omits the overlay script/token.
+
+4. **Fixed:** Moved Session/transport imports into `next-dev.ts`, reached only through an explicit build-time development branch. `PlumbOverlay` has no runtime Session imports and returns nothing in production. A return guard alone was insufficient because webpack resolved the dynamic dependency before optimization; the build-time branch prevents resolution. Both real production builds check server/static output for Session code and check every server `.nft.json` deployment trace for any Plumb package files; none remain.
+
+5. **Fixed:** Refresh visits changed collection slices and their reverse-indexed import consumers, retaining per-file contributions. Dependency responses are deltas patched into retained Session maps. Local edits/remaining views and finding indexes update by file; stylesheet declarations and imitation candidates are retained/indexed by file/class, and compiler cache counts avoid whole-cache enumeration. Explicit reports retain full materialization and cold parity; changes to shared semantic inputs still invalidate the relevant project context. Integration adds 160 unrelated sources, verifies exactly the changed source and import consumer are visited, and verifies ordinary CSS and embedded JSX stylesheet applies do not increase whole-report or whole-index counters. Subsequent explicit report findings match cold CLI findings.
+
+6. **Fixed:** Decisions reconcile their bounded shared input set and known events rather than inventorying all sources. Healthy native watching reconciles queued paths/shared inputs; whole inventories remain for startup, explicit reconciliation, polling fallback, and watcher recovery. Integrations assert zero idle/native-event inventories, real file/decision changes, polling fallback, and recovery after watcher failure. Native events are injected at the `fs.watch` boundary for deterministic coverage; real recursive native watching is unavailable in this sandbox.
+
+7. **Fixed:** Vite uses a process-level `globalThis` Session registry keyed by root plus normalized Session options. Plugin/server ownership is separate from Session lifetime; restart handoff retains worker/revision, while final shutdown releases the last owner and removes the registry entry. Failed restart leaves the old server's ownership intact. Real Vite integrations cover repeated restarts, HTTP and middleware modes, separate plugin instances sharing identical options, distinct option entries, retained revision/worker, and closed Sessions/empty registry after final shutdown. README reflects this lifecycle.
+
+Validation: `npm test` passed all 243 integration tests; `npm run typecheck` passed. No unit tests added. No commit created.
+
+Regression redesign: The callback-yield approach did not fix real macOS FSEvents. Completed writes can precede event delivery by tens of milliseconds; watcher silence never proves filesystem stability. This design supersedes finding 6's earlier bounded-read description.
+
+Every read, including health, reconciles the filesystem by stat. Every known tracked file retains its content hash and `mtime/ctime/ino/size` stamp; reads stat those files and read/hash content only when the stamp changes. Retained directories include the source tree's empty directories and configured DTCG, preset, configuration, metadata and ledger input locations, including locations that do not exist yet. Each read stats their `mtime/ino` stamps and re-lists only changed directories, recursively discovering newly created subdirectories within the relevant input pattern's depth. File stats detect deletion and directory replacement; directory stats discover creates and renames.
+
+Directory listings retain file names so a changed configuration can match existing files without re-listing unchanged directories or re-globbing its token patterns. Preset inputs retain their module and package metadata locations as well as empty CSS/DTCG patterns. Hash, stamp, directory and dependency maps update in place. Known content changes retain the existing targeted worker refresh, collection contributions, reverse import dependencies and local edit views. Membership/shared configuration changes retain the existing semantic rebuild behavior; workers receive retained file names for project/source discovery and unreachable-stylesheet lookup instead of re-inventorying the root. Newly configured external source locations can perform bounded discovery before the worker publishes their locations. Session full inventories are limited to startup, explicit `refresh(true)` and actual watcher-error recovery.
+
+Watcher callbacks prioritize paths and schedule reconciliation; rename, directory, unknown-path and missing-filename events never trigger a full inventory. There are no sleeps to wait for watcher correctness. Health requests remain serialized with worker replacement and reconcile on demand so daemon revision clients also work without a background timer. `watch: false` installs neither watchers nor a polling interval.
+
+`npm test` runs the full integration suite with default watching, then the session suite with forced polling, then every session parity test with `PLUMB_WATCH=0`, inherited by daemon processes and translated to `watch: false`. Only watcher-specific guards are skipped in the no-watcher run. The independent macOS/Linux guard still probes real recursive `fs.watch`; this sandbox reports `EMFILE`, so it cannot establish real FSEvents coverage. Injected watcher tests cover late events and actual error recovery separately.
+
+Integration checks immediate writes before reads, complete cold CLI parity, same-size edits with restored mtime, initially empty and recreated directories, nested creates, renames/deletes, config/autoload changes, missing external token directories, empty token files, preset token discovery and preset-module edits. It also rejects Session inventories during watcher-disabled reads, checks that settled reads/content edits perform no directory listings, and checks that file creation re-lists only its changed parent. No unit tests added. No commit created.
+
+Retained-name matching uses tinyglobby's underlying picomatch engine with matching dot/brace/extglob options; integration includes hidden source directories. Worker snapshots never reintroduce tracked paths removed by file stats, even when a directory listing preceded a concurrent deletion. Fixture copies exclude disposable `.plumb-cache` directories to prevent unrelated concurrent CLI cache writes from racing test setup.
+
+Regression validation: `npm test` passed with zero failures (default suite: 245 passed, 2 skipped; forced-polling session suite: 24 passed, 1 skipped; watcher-disabled session suite: 22 passed, 3 watcher-specific guards skipped). All session parity tests passed with no watchers and no polling interval. `npm run typecheck` and `git diff --check` passed. The real-native OS probe remains unavailable in this sandbox (`EMFILE`); host FSEvents validation is not claimed. No commit created.

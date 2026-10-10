@@ -61,6 +61,50 @@ Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, a
 
 `--ci` additionally writes the existing GitHub Action workflow when absent. `install --hooks` keeps its explicit hooks-only behavior for Claude and Cursor; `install --hooks --list` previews those hooks.
 
+## Development overlay hosts
+
+`plumb install --overlay` reads `package.json` and prints the host wiring without changing files. Vite and React are optional peers, loaded only through their adapter subpaths. This layer serves a connection stub that logs Plumb health; the overlay UI comes in a later layer.
+
+For Vite, add the plugin to your existing configuration:
+
+```ts
+import { plumb } from '@unlocalhosted/plumb/vite'
+
+export default { plugins: [plumb()] }
+```
+
+The plugin shares Vite's development server, analyzes its configured root, serves `/__plumb/*`, and injects the module script into HTML. Vite builds omit the plugin and overlay script. A process registry keyed by root and Session options keeps the worker and revision warm across Vite restarts, including plugin reloads. Final server shutdown releases the Session, including middleware mode; concurrent hosts with identical options share ownership.
+
+For Next.js App Router, wrap your existing `next.config.mjs` export:
+
+```ts
+import { withPlumb } from '@unlocalhosted/plumb/next/config'
+
+export default withPlumb(nextConfig)
+```
+
+In development, this preserves your [page extensions](https://nextjs.org/docs/app/api-reference/config/next-config-js/pageExtensions), adds `plumb.ts` and `plumb.tsx`, and [externalizes Plumb's Node implementation](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages) alongside your existing `serverExternalPackages`. Production configuration receives neither addition.
+
+Add `app/%5F_plumb/[...path]/route.plumb.ts` (or the equivalent under `src/app`):
+
+```ts
+import { createPlumbRoute } from '@unlocalhosted/plumb/next'
+
+export const runtime = 'nodejs'
+export const { GET, POST } = createPlumbRoute()
+```
+
+The encoded folder serves `/__plumb/*`; [Next.js treats literal underscore-prefixed folders as private](https://nextjs.org/docs/app/getting-started/project-structure#private-folders). Import `PlumbOverlay` from `@unlocalhosted/plumb/next` and render `<PlumbOverlay />` inside your root layout's `<body>`. The component server-renders the process token, and the client sends it as `x-plumb-token`. Routes reuse one Session across hot reloads. Production and `output: 'export'` builds never discover `route.plumb.ts`; the component renders nothing and imports no Session implementation. Keep the `.plumb.ts` suffix: renaming it to `route.ts` defeats build exclusion. `createPlumbRoute` accepts Session options, including `root` and `config`; the first active route initializes the process Session.
+
+For other hosts, start a separate local server with your page's exact development origin:
+
+```sh
+plumb serve --overlay --origin http://localhost:5555
+plumb install --overlay
+```
+
+The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting Plumb, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumb serve` and stdio behavior are unchanged.
+
 ## Layer 9 surfaces
 
 ```sh

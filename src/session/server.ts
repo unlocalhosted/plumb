@@ -10,9 +10,15 @@ import type { SessionOptions } from './index.js';
 import type { CheckOptions } from '../index.js';
 import { errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
+import { overlayClient } from '../hosts/client.js';
 
-export interface ServeInfo { port: number; pid: number; token: string; root: string; config: string | null; protocol: 1 }
-export interface HandlerOptions { token?: string; prefix?: string; /** Additional trusted Host authorities, including port when present. */ allowedHosts?: string[] }
+export interface ServeInfo { port: number; pid: number; token: string; root: string; config: string | null; protocol: 1; overlay?: boolean; origin?: string }
+export interface HandlerOptions {
+  token?: string; prefix?: string;
+  /** Additional trusted Host authorities, including port when present. */ allowedHosts?: string[];
+  /** Serve the public overlay module alongside the authenticated API. */ client?: boolean;
+  /** Exact browser origin allowed to use token-authenticated routes and CORS. */ origin?: string;
+}
 export interface WebHandlerOptions extends HandlerOptions {
   /** Trusted socket peer from the hosting framework. Omit when using token authentication. */
   peerAddress?: string | ((request: Request) => string | undefined);
@@ -74,23 +80,53 @@ interface TransportRequest {
 }
 interface TransportResponse { status: number; headers: Record<string, string>; body: string }
 
+function trustedOrigin(value: string): string {
+  try {
+    const url = new URL(value);
+    if (['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && value === value.trim()) return url.origin;
+  } catch {}
+  throw new UsageError('Origin must be an http or https origin without credentials, path, query or fragment.');
+}
+
 /** One route/auth/body-validation core for both transports. Undefined belongs to the host app. */
 function createRoute(session: Session, options: HandlerOptions) {
   const token = options.token, prefix = options.prefix ?? '/__plumb/';
   if (!prefix.startsWith('/') || !prefix.endsWith('/') || /[?#]/.test(prefix)) throw new UsageError('Handler prefix must start and end with /.');
   if (token !== undefined && !token.trim()) throw new UsageError('Handler token must be non-empty.');
   const allowedHosts = new Set(options.allowedHosts?.map(host => host.toLowerCase()));
+  const origin = options.origin === undefined ? undefined : trustedOrigin(options.origin);
   return async (request: TransportRequest): Promise<TransportResponse | undefined> => {
     const url = request.url;
     if (!url.pathname.startsWith(prefix)) return;
     const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
     const refuse = (status: number, error: string) => respond(status, { error });
-    if (token !== undefined) {
+    const method = url.pathname.slice(prefix.length);
+    const client = options.client === true && method === 'client.js';
+    const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
+    if (origin !== undefined) {
+      headers.Vary = 'Origin';
+      const supplied = request.header('origin');
+      if (supplied !== undefined && supplied !== origin) return refuse(403, 'Origin is not allowed.');
+      if (supplied === origin) headers['Access-Control-Allow-Origin'] = origin;
+      if (request.method === 'OPTIONS') {
+        if (supplied !== origin) return refuse(403, 'Origin is not allowed.');
+        if (!known) return refuse(404, 'Endpoint not found.');
+        if (request.header('access-control-request-method') !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
+        const requested = request.header('access-control-request-headers')?.split(',').map(header => header.trim().toLowerCase()) ?? [];
+        if (requested.some(header => !['content-type', tokenHeader].includes(header))) return refuse(403, 'Request headers are not allowed.');
+        headers['Access-Control-Allow-Methods'] = expected;
+        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}`;
+        return { status: 204, headers, body: '' };
+      }
+    }
+    // Module script loads cannot supply a custom header. The module contains no secrets.
+    if (token !== undefined && !client) {
       const supplied = request.header(tokenHeader);
       if (supplied === undefined || Buffer.byteLength(supplied) !== Buffer.byteLength(token) || !timingSafeEqual(Buffer.from(supplied), Buffer.from(token)))
         return refuse(401, 'A valid x-plumb-token header is required.');
-    } else {
+    } else if (token === undefined) {
       const address = request.peerAddress ?? '', ipv4 = address.replace(/^::ffff:/i, '');
       const loopback = address === '::1' || isIP(ipv4) === 4 && ipv4.startsWith('127.');
       const host = request.header('host') ?? '';
@@ -107,10 +143,9 @@ function createRoute(session: Session, options: HandlerOptions) {
       if (!trusted) return refuse(403, 'A same-origin request from a trusted loopback host is required.');
     }
     try {
-      const method = url.pathname.slice(prefix.length);
-      const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
-      if (!['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method)) return refuse(404, 'Endpoint not found.');
+      if (!known) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
+      if (client) { headers['Content-Type'] = 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient() }; }
       let params: unknown = Object.fromEntries(url.searchParams);
       if (method === 'report' && object(params)) for (const key of ['changed', 'strictLedger', 'verbose', 'ledger']) if (params[key] !== undefined) {
         if (!['true', 'false'].includes(String(params[key]))) throw new UsageError(`${key} must be true or false.`);
@@ -162,13 +197,16 @@ export function createWebHandler(session: Session, options: WebHandlerOptions = 
       header: name => request.headers.get(name) ?? (name === 'host' ? url.host : undefined),
       peerAddress: typeof options.peerAddress === 'function' ? options.peerAddress(request) : options.peerAddress, body: body(),
     });
-    return result ? new Response(result.body, { status: result.status, headers: result.headers }) : new Response(null, { status: 404 });
+    return result ? new Response(result.status === 204 ? null : result.body, { status: result.status, headers: result.headers }) : new Response(null, { status: 404 });
   };
 }
 
-export async function serve(options: SessionOptions & { port?: number } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
+export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
   const port = options.port ?? 0;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new UsageError('Port must be an integer from 0 to 65535.');
+  if (options.overlay && options.origin === undefined) throw new UsageError('Serve --overlay requires --origin <url>.');
+  if (options.origin !== undefined && !options.overlay) throw new UsageError('--origin requires serve --overlay.');
+  const origin = options.origin === undefined ? undefined : trustedOrigin(options.origin);
   const root = resolve(options.root ?? process.cwd()), path = resolve(root, '.plumb/serve.json');
   // A live PID owns its discovery file. Never overwrite another daemon.
   try {
@@ -178,16 +216,19 @@ export async function serve(options: SessionOptions & { port?: number } = {}): P
     if (alive) throw new UsageError('A server is already running for this project. Use its .plumb/serve.json connection.');
     await rm(path);
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  const session = await Session.create({ ...options, root });
+  const { port: _port, overlay: _overlay, origin: _origin, ...sessionOptions } = options;
+  const session = await Session.create({ ...sessionOptions, root });
   const token = randomBytes(32).toString('hex');
-  const handler = createHandler(session, { token }), legacy = createHandler(session, { token, prefix: '/' });
+  const handlerOptions: HandlerOptions = { token, client: options.overlay ?? false, ...(origin === undefined ? {} : { origin }) };
+  const handler = createHandler(session, handlerOptions), legacy = createHandler(session, { ...handlerOptions, client: false, prefix: '/' });
   const server = createServer((request, response) => handler(request, response, () => legacy(request, response)));
   server.requestTimeout = 10_000; server.headersTimeout = 10_000;
   try {
     await new Promise<void>((ready, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { server.off('error', reject); ready(); }); });
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('Server has no TCP address.');
-    const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1 };
+    const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1,
+      ...(options.overlay ? { overlay: true, origin: origin! } : {}) };
     await mkdir(resolve(root, '.plumb'), { recursive: true, mode: 0o700 });
     await writeFile(path, JSON.stringify(info) + '\n', { flag: 'wx', mode: 0o600 });
     let closed = false;

@@ -23,6 +23,9 @@ export class CollectionState {
   readonly slices = new Map<string, Slice>();
   readonly dependencies = new Set<string>();
   parsedFiles: string[] = [];
+  readonly consumers = new Map<string, Set<string>>();
+  private definitions = new Map<string, SourceStyles['declarations']>();
+  visitedFiles: string[] = [];
   private dirty = new Set<string>();
   markChanged(paths: string[]): void { for (const path of paths) this.dirty.add(path); }
   constructor(private root: string) {}
@@ -39,34 +42,58 @@ export class CollectionState {
     }
     return dependencies;
   }
+  private async read(file: string, config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }): Promise<Collection> {
+    this.visitedFiles.push(file);
+    const old = this.slices.get(file);
+    const overlay = !!input && old?.dependencies.has(input.file);
+    if (file !== input?.file && !overlay && old && !this.dirty.has(file) && ![...old.dependencies.keys()].some(path => this.dirty.has(path))) return old.value;
+    const text = file === input?.file ? input.text : readFileSync(file, 'utf8');
+    const hash = sourceHash(text);
+    const valid = old?.hash === hash && [...old.dependencies].every(([path, previous]) => {
+      try { return sourceHash(path === input?.file ? input.text : readFileSync(path, 'utf8')) === previous; } catch { return false; }
+    });
+    if (valid) return old.value;
+    const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), [file, text]]));
+    if (old && file !== input?.file) {
+      const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
+      const sites = new Map(old.value.sites.map(site => [stable(site), site]));
+      value.sites = value.sites.map(site => sites.get(stable(site)) ?? site);
+      const ds = new Map(old.value.styles.declarations.map(d => [stable(d), d]));
+      const declarations = new Map(value.styles.declarations.map(d => [d, ds.get(stable(d)) ?? d]));
+      value.styles.declarations = [...declarations.values()];
+      for (const site of value.styles.sites) site.declarations = site.declarations.map(d => declarations.get(d)!);
+    }
+    this.parsedFiles.push(file);
+    if (!input) {
+      for (const path of old?.dependencies.keys() ?? []) { const users = this.consumers.get(path); users?.delete(file); if (!users?.size) this.consumers.delete(path); }
+      const dependencies = this.imports(file, text);
+      this.slices.set(file, { hash, dependencies, value });
+      for (const path of dependencies.keys()) { let users = this.consumers.get(path); if (!users) this.consumers.set(path, users = new Set()); users.add(file); }
+      const definitions = value.styles.declarations.filter(d => d.prop.startsWith('--'));
+      if (definitions.length) this.definitions.set(file, definitions); else this.definitions.delete(file);
+    }
+    return value;
+  }
+  async refresh(paths: string[], config: PlumbConfig): Promise<string[]> {
+    const affected = new Set(paths.filter(file => this.slices.has(file)));
+    for (const path of paths) for (const file of this.consumers.get(path) ?? []) affected.add(file);
+    this.parsedFiles = []; this.visitedFiles = [];
+    for (const file of affected) await this.read(file, config);
+    this.dirty.clear();
+    return [...affected];
+  }
+  local(file: string): Collection {
+    const value = this.slices.get(file)?.value ?? { sites: [], styles: { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] }, modules: new Map(), opaque: 0, parseMs: 0, collectMs: 0, inlineMs: 0 };
+    // Shared definitions are semantic inputs, retained by file across targeted refreshes.
+    return { ...value, styles: { ...value.styles, declarations: [...value.styles.declarations, ...[...this.definitions].flatMap(([source, ds]) => source === file ? [] : ds)] } };
+  }
   async collect(files: string[], config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }): Promise<Collection> {
     const current = new Set(files);
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
-    this.parsedFiles = [];
+    this.parsedFiles = []; this.visitedFiles = [];
     for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
-      const old = this.slices.get(file);
-      const overlay = !!input && old?.dependencies.has(input.file);
-      if (file !== input?.file && !overlay && old && !this.dirty.has(file) && ![...old.dependencies.keys()].some(path => this.dirty.has(path))) { values.push(old.value); continue; }
-      const text = file === input?.file ? input.text : readFileSync(file, 'utf8');
-      const hash = sourceHash(text);
-      const valid = old?.hash === hash && [...old.dependencies].every(([path, previous]) => {
-        try { return sourceHash(path === input?.file ? input.text : readFileSync(path, 'utf8')) === previous; } catch { return false; }
-      });
-      if (valid) { values.push(old.value); continue; }
-      const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), [file, text]]));
-      if (old && file !== input?.file) {
-        const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
-        const sites = new Map(old.value.sites.map(site => [stable(site), site]));
-        value.sites = value.sites.map(site => sites.get(stable(site)) ?? site);
-        const ds = new Map(old.value.styles.declarations.map(d => [stable(d), d]));
-        const declarations = new Map(value.styles.declarations.map(d => [d, ds.get(stable(d)) ?? d]));
-        value.styles.declarations = [...declarations.values()];
-        for (const site of value.styles.sites) site.declarations = site.declarations.map(d => declarations.get(d)!);
-      }
-      this.parsedFiles.push(file);
-      if (!input) this.slices.set(file, { hash, dependencies: this.imports(file, text), value });
-      values.push(value);
+      values.push(await this.read(file, config, input));
     }
     if (!input) this.dirty.clear();
     const sites = new Map<string, ClassSite>(), modules = new Map<string, ModuleImport[]>();

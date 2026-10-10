@@ -18,7 +18,7 @@ const protectedPaths = ['.plumb/ledger.jsonl', 'plumb.config.ts', 'src/styles.cs
 async function project(t, code = 'export const App = () => <div className="py-[10px] gap-[13px]" />;\n') {
   const root = await mkdtemp(join(repo, 'fixtures/.edits-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
+  await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   await writeFile(join(root, 'src/App.tsx'), code);
   await mkdir(join(root, '.plumb'), { recursive: true });
   await writeFile(join(root, '.plumb/ledger.jsonl'), '');
@@ -326,12 +326,11 @@ for (const extension of ['jsx', 'js', 'ts', 'css']) test(`finding 7: ${extension
   assert.deepEqual((await session.site(file, 1)).findings, cold(root).findings.filter(f => f.sites.some(site => site.file === file && site.line === 1)));
 });
 
-test('finding 8: unchanged warm edits touch only queried paths without cloning retained maps', async t => {
+test('finding 8: warm edits stat retained files without inventory or cloning retained maps', async t => {
   const root = await project(t), session = await transport(t, root, 'Session');
   let inventories = 0, enumerations = 0;
   session.inventory = async () => { inventories++; throw new Error('unexpected inventory'); };
   for (const map of [session.hashes, session.stamps]) {
-    map.keys = () => { enumerations++; throw new Error('unexpected project keys'); };
     map[Symbol.iterator] = () => { enumerations++; throw new Error('unexpected map copy'); };
   }
   const result = await session.edits('src/App.tsx', 1);
@@ -359,4 +358,60 @@ test('finding 9: Web adapter shares route validation and dispatch with Node midd
   assert.equal((await local(new Request(url + 'apply', { method: 'POST', body: '{}' }))).status, 403);
   assert.equal((await local(new Request(url + 'apply', { method: 'POST', headers: { Origin: 'https://localhost' }, body: '{}' }))).status, 403);
   assert.equal((await send('../host')).status, 404);
+});
+
+test('overlay review 1: configured sibling sources cannot be edited through native traversal paths', async t => {
+  // Runs with backslash traversal on Windows and slash traversal on POSIX.
+  const root = await project(t), sibling = await project(t), file = join(sibling, 'src/App.tsx');
+  const { relative, sep } = await import('node:path');
+  const outside = relative(root, file);
+  assert.ok(outside.startsWith('..' + sep));
+  await writeFile(join(root, 'plumb.config.ts'), `export default { source: ['src/**/*.tsx', ${JSON.stringify(relative(root, join(sibling, 'src')).replaceAll('\\', '/') + '/**/*.tsx')}] };`);
+  const session = await transport(t, root, 'Session');
+  const offered = await session.request('edits', { file, line: 1 });
+  assert.ok(offered.edits.length, 'configured sibling is analyzed and has legitimate edit ids');
+  const before = await readFile(file, 'utf8');
+  for (const target of [outside, file, '..', root]) {
+    await assert.rejects(session.apply({ ...selection(offered), file: target }), /inside the project root/);
+  }
+  // Guard is repeated at the write boundary, independent of public path parsing.
+  await assert.rejects(session.editableFile(file), /inside the project root/);
+  assert.equal(await readFile(file, 'utf8'), before);
+});
+
+test('overlay review 5: warm apply visits changed slices/consumers and updates local views without full materialization', async t => {
+  const root = await project(t);
+  await Promise.all(Array.from({ length: 160 }, (_, i) => writeFile(join(root, `src/Unrelated${i}.tsx`), `export const Unrelated${i} = () => <div className="gap-[19px]" />;`)));
+  const file = join(root, 'src/A.tsx'), consumer = join(root, 'src/B.tsx');
+  await writeFile(file, 'export const sizes = { a: "gap-[10px]" }; export const A = () => <div className={sizes.a} />;');
+  await writeFile(consumer, 'import { sizes } from "./A"; export const B = () => <div className={sizes.a} />;');
+  const css = join(root, 'src/local.css'); await writeFile(css, '.local { gap: 10px; padding: 13px; }\n');
+  const styled = join(root, 'src/Styled.tsx');
+  await writeFile(styled, 'export const Styled = () => <><style>{`.local { gap: 10px; }`}</style><div className="local gap-[19px]" /></>;');
+  const session = await transport(t, root, 'Session');
+  const initial = (await session.health()).work;
+  let refresh;
+  const request = session.request.bind(session);
+  session.request = async (method, params) => { const result = await request(method, params); if (method === 'refresh') refresh = result; return result; };
+  const edit = await session.edits(file, 1); assert.ok(edit.edits.length);
+  await session.apply(selection(edit));
+  assert.deepEqual(new Set(refresh.visited), new Set([file, consumer]));
+  assert.equal(refresh.queryDependencies.length, 2); assert.equal(refresh.dependencies, undefined);
+  assert.ok((await session.edits(consumer, 1)).edits.every(edit => edit.from !== 'gap-[10px]'));
+  const styleEdit = await session.edits(css, 1); assert.ok(styleEdit.edits.length);
+  const remaining = await session.apply(selection(styleEdit)); assert.ok(remaining.remaining.length);
+  assert.deepEqual(refresh.visited, []); assert.equal(refresh.queryDependencies.length, 1);
+  const embedded = await session.edits(styled, 1);
+  const embeddedChoice = embedded.edits.find(edit => edit.from === '10px'); assert.ok(embeddedChoice);
+  await session.apply(selection(embedded, [embeddedChoice]));
+  assert.deepEqual(refresh.visited, [styled]);
+  assert.equal(refresh.queryDependencies.length, 1);
+  const after = (await session.health()).work;
+  assert.equal(after.fullReports, initial.fullReports); assert.equal(after.fullIndexes, initial.fullIndexes);
+  assert.ok(after.localAnalyses > initial.localAnalyses);
+  assert.equal((await session.edits(css, 1)).hash, hash(await readFile(css, 'utf8')));
+  assert.deepEqual((await session.site(css, 1)).findings, cold(root).findings.filter(f => f.sites.some(s => s.file === css && s.line === 1)));
+  const full = await session.report();
+  assert.deepEqual(full.findings, cold(root).findings);
+  assert.ok((await session.health()).work.fullReports > after.fullReports, 'explicit report materializes whole-project aggregates');
 });
