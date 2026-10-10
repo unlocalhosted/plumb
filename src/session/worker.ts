@@ -213,7 +213,7 @@ parentPort!.on('message', ({ id, method, params }) => {
     try {
       const result = await dispatch(method, params);
       const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges) : undefined;
-      parentPort!.postMessage({ id, result, judged: state.judgement.judgedFiles,
+      parentPort!.postMessage({ id, result, health: await dispatch('health', {}), judged: state.judgement.judgedFiles,
         ...(analysis ? { analysis: { ...analysis, dependencies: metadataFull ? dependencies() :
           [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
@@ -226,5 +226,5 @@ try {
   raw = (await analyze({ ...options, ledger: false }, undefined, state)).report;
   index(await report());
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
-  parentPort!.postMessage({ ready: true, dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
+  parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error) }); }

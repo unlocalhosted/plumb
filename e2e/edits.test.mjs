@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { createHandler, formatAgent, Session } from '../dist/index.js';
+import { Session as EngineSession } from '../dist/session/engine.js';
 import { UsageError } from '../dist/errors.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
@@ -32,8 +33,8 @@ const cold = root => JSON.parse(run(root, ['check', '--json']));
 const snapshot = root => Promise.all(protectedPaths.map(path => readFile(join(root, path))));
 const selection = (result, edits = [result.edits[0]]) => ({ file: result.file, hash: result.hash, edits: edits.map(edit => ({ id: edit.id })) });
 async function transport(t, root, mode) {
-  if (mode === 'Session') {
-    const session = await Session.create({ root, watch: false }); t.after(() => session.close()); return session;
+  if (mode === 'Session' || mode === 'Engine') {
+    const session = await (mode === 'Engine' ? EngineSession : Session).create({ root, watch: false }); t.after(() => session.close()); return session;
   }
   const child = spawn(process.execPath, [cli, 'serve', '--port', '0', '--root', root], { stdio: ['ignore', 'pipe', 'pipe'] });
   let errors = ''; child.stderr.on('data', chunk => errors += chunk); child.stdout.resume();
@@ -259,7 +260,7 @@ async function injectOpen(t, run, probe) {
 }
 
 test('finding 2: parent symlink swap cannot write another project', async t => {
-  const root = await project(t), outside = await project(t), session = await transport(t, root, 'Session');
+  const root = await project(t), outside = await project(t), session = await transport(t, root, 'Engine');
   const result = await session.edits('src/App.tsx', 1), outsideFile = join(outside, 'src/App.tsx'), before = await readFile(outsideFile, 'utf8');
   const { rename } = await import('node:fs/promises'); let injected = false;
   await injectOpen(t, () => assert.rejects(session.apply(selection(result)), /changed|symbolic|identity/), async (open, args) => {
@@ -272,7 +273,7 @@ test('finding 2: parent symlink swap cannot write another project', async t => {
 });
 
 for (const race of ['atomic-save', 'concurrent-save']) test(`finding 3: ${race} cannot return success for discarded edits`, async t => {
-  const root = await project(t), session = await transport(t, root, 'Session'), result = await session.edits('src/App.tsx', 1);
+  const root = await project(t), session = await transport(t, root, 'Engine'), result = await session.edits('src/App.tsx', 1);
   const original = await readFile(result.file, 'utf8'), concurrent = original + '// concurrent editor\n';
   const { rename } = await import('node:fs/promises'); let injected = false;
   await injectOpen(t, () => assert.rejects(session.apply(selection(result)), /changed/), async (open, args) => {
@@ -317,7 +318,7 @@ for (const extension of ['jsx', 'js', 'ts', 'css']) test(`finding 7: ${extension
   const root = await project(t), file = join(root, `src/Other.${extension}`);
   const source = extension === 'css' ? '.local { gap: 10px; }' : extension === 'jsx' ? 'export const Other = () => <div className="py-[10px]" />;' : 'export const Other = cn("py-[10px]");';
   await writeFile(file, source);
-  const session = await transport(t, root, 'Session'), result = await session.edits(file, 1), worker = session.worker;
+  const session = await transport(t, root, 'Engine'), result = await session.edits(file, 1), worker = session.worker;
   let inventories = 0; const inventory = session.inventory.bind(session);
   session.inventory = async () => { inventories++; return inventory(); };
   await session.apply(selection(result));
@@ -327,7 +328,7 @@ for (const extension of ['jsx', 'js', 'ts', 'css']) test(`finding 7: ${extension
 });
 
 test('finding 8: warm edits stat retained files without inventory or cloning retained maps', async t => {
-  const root = await project(t), session = await transport(t, root, 'Session');
+  const root = await project(t), session = await transport(t, root, 'Engine');
   let inventories = 0, enumerations = 0;
   session.inventory = async () => { inventories++; throw new Error('unexpected inventory'); };
   for (const map of [session.hashes, session.stamps]) {
@@ -367,7 +368,7 @@ test('overlay review 1: configured sibling sources cannot be edited through nati
   const outside = relative(root, file);
   assert.ok(outside.startsWith('..' + sep));
   await writeFile(join(root, 'plumb.config.ts'), `export default { source: ['src/**/*.tsx', ${JSON.stringify(relative(root, join(sibling, 'src')).replaceAll('\\', '/') + '/**/*.tsx')}] };`);
-  const session = await transport(t, root, 'Session');
+  const session = await transport(t, root, 'Engine');
   const offered = await session.request('edits', { file, line: 1 });
   assert.ok(offered.edits.length, 'configured sibling is analyzed and has legitimate edit ids');
   const before = await readFile(file, 'utf8');
@@ -388,7 +389,7 @@ test('overlay review 5: warm apply visits changed slices/consumers and updates l
   const css = join(root, 'src/local.css'); await writeFile(css, '.local { gap: 10px; padding: 13px; }\n');
   const styled = join(root, 'src/Styled.tsx');
   await writeFile(styled, 'export const Styled = () => <><style>{`.local { gap: 10px; }`}</style><div className="local gap-[19px]" /></>;');
-  const session = await transport(t, root, 'Session');
+  const session = await transport(t, root, 'Engine');
   const initial = (await session.health()).work;
   let refresh;
   const request = session.request.bind(session);

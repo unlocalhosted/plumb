@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import { test as nodeTest } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Session } from '../dist/session/index.js';
+import { Session } from '../dist/session/engine.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
 const forcedPolling = process.env.PLUMB_POLLING === '1';
@@ -443,6 +443,7 @@ test('overlay review 6: reads and background reconciliation avoid full inventori
   assert.ok(inventories - idleStart <= watcherErrors, 'only actual watcher errors permit recovery inventories');
   const before = (await session.health()).revision;
   await writeFile(join(root, 'src/Watched.tsx'), 'export const Watched = () => <div className="gap-[77px]" />;');
+  if (noWatch) await session.refresh();
   for (let i = 0; i < 100 && (await session.health()).revision === before; i++) await delay(20);
   assert.ok((await session.health()).revision > before);
   assert.ok((await session.site('src/Watched.tsx', 1)).declarations.some(d => d.value === '77px'));

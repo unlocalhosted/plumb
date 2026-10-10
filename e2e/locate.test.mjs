@@ -1,3 +1,4 @@
+import { Session as EngineSession } from '../dist/session/engine.js';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -461,7 +462,7 @@ test('review 5: target requests stat bounded dependencies without watchers; repo
   await Promise.all(Array.from({ length: 240 }, (_, i) => writeFile(join(root, `src/Unrelated${i}.jsx`), `export const A${i} = () => <div className="gap-[17px]" />;`)));
   await writeFile(join(root, 'src/Producer.jsx'), 'export const size = "gap-[13px]";');
   await writeFile(join(root, 'src/Consumer.jsx'), 'import { size } from "./Producer"; export const C = () => <div className={size} />;');
-  const session = await Session.create({ root, watch: false }); t.after(() => session.close());
+  const session = await EngineSession.create({ root, watch: false }); t.after(() => session.close());
   const { default: fs } = await import('node:fs/promises');
   const { syncBuiltinESMExports } = await import('node:module');
   const original = fs.lstat, originalRead = fs.readFile; let stats = [], reads = [];
