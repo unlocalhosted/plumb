@@ -13,6 +13,7 @@ import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
+import { jsxLocation, sourcePath } from './source-location.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
@@ -32,11 +33,14 @@ export class Session extends EventEmitter {
   private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
   private id = 0;
   private hashes = new Map<string, string>();
+  private sourceTexts = new Map<string, string>();
   private dependencies = new Set<string>();
   private patterns: string[] = [];
   private sourceFiles = new Set<string>();
   private configurationFiles = new Set<string>();
   private inputs: string[] = [];
+  private inputPatterns: string[] = [];
+  private analysisInputs = new Set<string>();
   private queryDependencies = new Map<string, string[]>();
   private watchers: FSWatcher[] = [];
   private timer?: NodeJS.Timeout;
@@ -87,11 +91,19 @@ export class Session extends EventEmitter {
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
-          this.inputs = message.inputs; this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
+          this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
         if (message.startupError) { rejectReady(new UsageError(message.startupError)); return; }
         const pending = this.pending.get(message.id); if (!pending) return;
         this.pending.delete(message.id);
+        if (message.analysis) {
+          this.inputs = message.analysis.inputs;
+          if (JSON.stringify(this.inputPatterns) !== JSON.stringify(message.analysis.inputPatterns)) {
+            this.inputPatterns = message.analysis.inputPatterns; this.selectAnalysisInputs();
+          }
+          for (const path of message.analysis.dependencies) this.dependencies.add(path);
+          for (const [file, paths] of message.analysis.queryDependencies) this.queryDependencies.set(file, paths);
+        }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(new UsageError(message.error)); else pending.resolve(message.result);
       });
@@ -107,6 +119,10 @@ export class Session extends EventEmitter {
   }
   private serialize<T>(run: () => Promise<T>): Promise<T> {
     const next = this.queue.then(run); this.queue = next.catch(() => {}); return next;
+  }
+  private selectAnalysisInputs(): void {
+    this.analysisInputs = new Set(this.inputPatterns.filter(pattern => !isDynamicPattern(pattern)));
+    for (const file of this.patternFiles) if (this.inputPatterns.some(pattern => matchesPath(file, pattern))) this.analysisInputs.add(file);
   }
   private async inventory(): Promise<string[]> {
     const [sources, matches] = await Promise.all([
@@ -195,19 +211,31 @@ export class Session extends EventEmitter {
       this.patternsDirty = false;
     }
   }
-  private async scan(initial = false, query: string[] = [], full = false): Promise<string[]> {
+  private async scan(initial = false, query?: string[], full = false): Promise<string[]> {
     if (this.closed) return [];
-    const paths = new Set([...this.events, ...query, ...this.hashes.keys(), ...this.dependencies, ...this.inputs, ...this.patternFiles]);
-    this.events.clear();
-    if (initial || full || this.inventoryDirty) {
+    const local = query !== undefined && !initial && !full;
+    const paths = new Set(local ? [...query, ...this.inputs, ...(this.options.config ? [resolve(this.root, this.options.config)] :
+      ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'].map(name => resolve(this.root, name))), resolve(this.root, '.plumb/ledger.jsonl'),
+      ...this.analysisInputs, ...query.flatMap(file => this.queryDependencies.get(file) ?? [])] :
+      [...this.events, ...query ?? [], ...this.hashes.keys(), ...this.dependencies, ...this.inputs, ...this.patternFiles]);
+    if (!local) this.events.clear();
+    if (initial || full || !local && this.inventoryDirty) {
       for (const path of await this.inventory()) paths.add(path);
       this.inventoryDirty = false;
     }
-    await this.retainLocations(paths);
-    for (const path of this.directories.keys()) await this.scanDirectory(path, paths);
+    if (local) {
+      // Check only target membership. Do not acknowledge directory changes that
+      // a later full report still needs to enumerate. Events are never evidence.
+      for (const directory of new Set(query.map(dirname))) {
+        try { await lstat(directory); } catch (error) { if (!missing(error)) throw error; }
+      }
+    } else {
+      await this.retainLocations(paths);
+      for (const path of this.directories.keys()) await this.scanDirectory(path, paths);
+    }
     const changed: string[] = [];
-    // Every known file is checked on every read. Events only prioritize paths;
-    // neither their arrival nor silence establishes filesystem correctness.
+    // Full reports reconcile the inventory; targeted reads always stat their
+    // known analysis inputs, equally with native, polling or disabled watchers.
     await Promise.all([...paths].map(async path => {
       const old = this.hashes.get(path), previousStamp = this.stamps.get(path);
       let hash: string | undefined;
@@ -219,25 +247,27 @@ export class Session extends EventEmitter {
         const info = identity.isSymbolicLink() && (this.dependencies.has(path) || this.inputs.includes(path)) ? await stat(path) : identity;
         if (info.isFile()) {
           const stamp = `${info.mtimeMs}:${info.ctimeMs}:${info.ino}:${info.size}`;
-          hash = previousStamp === stamp && old !== undefined ? old : sourceHash(await readFile(path, 'utf8'));
+          if (previousStamp === stamp && old !== undefined) hash = old;
+          else { const text = await readFile(path, 'utf8'); hash = sourceHash(text); if (/\.[cm]?[jt]sx?$/.test(path)) this.sourceTexts.set(path, text); }
           this.stamps.set(path, stamp);
         } else this.stamps.delete(path);
       } catch (error) { if (!missing(error)) throw error; this.stamps.delete(path); }
-      if (hash === undefined) { this.hashes.delete(path); this.patternFiles.delete(path); } else this.hashes.set(path, hash);
+      if (hash === undefined) { this.hashes.delete(path); this.sourceTexts.delete(path); this.patternFiles.delete(path); } else this.hashes.set(path, hash);
       if (hash !== old) changed.push(path);
     }));
+    if (!local) this.selectAnalysisInputs();
     if (initial) return [];
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
     const broad = changed.some(path => !path.endsWith('/.plumb/ledger.jsonl') && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
       else {
-        const result = await this.request<{ dependencyDelta: string[]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
+        const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
-        for (const [file, paths] of result.queryDependencies) this.queryDependencies.set(file, paths);
+        for (const [file, paths] of result.dependencyQueries) this.queryDependencies.set(file, paths);
         this.lastStats = result;
       }
-      await this.retainLocations(new Set());
+      if (!local) await this.retainLocations(new Set());
       this.failure = undefined; this.failurePaths = [];
       this.revision++; this.emit('change', changed);
     } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
@@ -266,16 +296,16 @@ export class Session extends EventEmitter {
     do {
       for (const path of await this.scan(false, query, full)) changed.add(path);
       full = false;
-    } while (this.native && (this.inventoryDirty || this.events.size));
+    } while (query === undefined && this.native && (this.inventoryDirty || this.events.size));
     return [...changed];
   }
   /** Reconcile retained stats; opt into a full inventory only for explicit recovery. */
-  refresh(full = false): Promise<string[]> { if (!this.refreshing) this.refreshing = this.serialize(() => this.reconcile([], full)).finally(() => { this.refreshing = undefined; }); return this.refreshing; }
+  refresh(full = false): Promise<string[]> { if (!this.refreshing) this.refreshing = this.serialize(() => this.reconcile(undefined, full)).finally(() => { this.refreshing = undefined; }); return this.refreshing; }
   private read<T>(method: string, params: object = {}): Promise<T> { return this.serialize(() => this.settledRead<T>(method, params)); }
   private async settledRead<T>(method: string, params: object): Promise<T> {
     do {
       const local = method === 'site' || method === 'why' || method === 'edits';
-      const query = local ? [(params as { file: string }).file] : [];
+      const query = local ? [(params as { file: string }).file] : undefined;
       try { await this.reconcile(query); }
       catch (error) {
         const as = (params as { as?: string }).as, target = resolve(this.root, as ?? 'src/__plumb_try__.tsx');
@@ -285,10 +315,29 @@ export class Session extends EventEmitter {
       }
       const result = await this.request<T>(method, params);
       // Events received while the worker was answering belong to this read too.
-      if (!this.native || !this.inventoryDirty && !this.events.size) return result;
+      if (local || !this.native || !this.inventoryDirty && !this.events.size) return result;
     } while (true);
   }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; hash?: string; snapshot?: boolean } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
+    return this.serialize(async () => {
+      const file = sourcePath(this.root, source);
+      await this.reconcile([file]);
+      if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Source is not a tracked project source.');
+      const inside = relative(this.root, file).replaceAll('\\', '/');
+      if (await realpath(file) !== resolve(await realpath(this.root), inside)) throw new UsageError('Source must not alias a file outside the project root.');
+      // Hash-bound browser evidence must compare with the file on disk, even
+      // if a save races reconciliation or preserves the cached stat stamp.
+      const text = expected.snapshot || expected.hash !== undefined ? await readFile(file, 'utf8') : this.sourceTexts.get(file) ?? await readFile(file, 'utf8');
+      const hash = expected.snapshot || expected.hash !== undefined ? sourceHash(text) : this.hashes.get(file);
+      if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
+      if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
+      if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
+      const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag);
+      if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
+      return { file: inside, line: location.line, column: location.column };
+    });
+  }
   site(file: string, line: number, column?: number): Promise<SiteResult> {
     return this.read('site', { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) });
   }

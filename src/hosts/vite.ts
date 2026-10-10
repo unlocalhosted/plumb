@@ -20,6 +20,9 @@ export function plumb(options: SessionOptions = {}): Plugin {
   return {
     name: 'plumb',
     apply: 'serve',
+    resolveId(id) {
+      if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
+    },
     async configureServer(server) {
       const effective = { ...options, root: server.config.root };
       const id = JSON.stringify(Object.entries(effective).filter(([, value]) => value !== undefined).sort(([a], [b]) => a.localeCompare(b)));
@@ -51,9 +54,11 @@ export function plumb(options: SessionOptions = {}): Plugin {
       server.httpServer?.once('close', () => { if (!owned.restarting) void relinquish(); });
       server.middlewares.use(createHandler(current, { client: true }));
     },
-    transformIndexHtml() {
-      return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' }];
-    },
+    transformIndexHtml: { order: 'pre', handler() {
+      return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' },
+        { tag: 'script', attrs: { type: 'module' }, children: `import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
+if (import.meta.hot) import.meta.hot.on('vite:afterUpdate', invalidateSourceMaps);`, injectTo: 'head' }];
+    } },
     async closeBundle() { if (!restarts) { await release?.(); release = undefined; } },
   };
 }

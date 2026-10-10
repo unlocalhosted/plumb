@@ -57,7 +57,8 @@ async function connectClient(url, token, origin) {
   if (token) assert.ok(!client.includes(token), 'public module must not contain the process token');
   const script = { src: url, dataset: token ? { plumbToken: token } : {} };
   let connected;
-  const execute = new Function('document', 'fetch', 'console', `return (async () => {${client.replaceAll('import.meta.url', JSON.stringify(url))}})();`);
+  // Browser module loading and locate/site are exercised by locate.test.mjs.
+  const execute = new Function('document', 'fetch', 'console', `const window = {}, locate = () => null; return (async () => {${client.replace(/^import .*;\n/, '').replaceAll('import.meta.url', JSON.stringify(url))}})();`);
   await execute({ querySelectorAll: () => [script] }, async (url, init) => {
     const response = await fetch(url, { ...init, headers: { ...init.headers, ...(origin ? { Origin: origin } : {}) } });
     assert.equal(response.status, 200); return response;

@@ -10,7 +10,7 @@ import type { SessionOptions } from './index.js';
 import type { CheckOptions } from '../index.js';
 import { errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
-import { overlayClient } from '../hosts/client.js';
+import { overlayClient, overlayModules } from '../hosts/client.js';
 
 export interface ServeInfo { port: number; pid: number; token: string; root: string; config: string | null; protocol: 1; overlay?: boolean; origin?: string }
 export interface HandlerOptions {
@@ -52,6 +52,7 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
     return session.report(options);
   }
   if (method === 'site') return session.site(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
+  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
   if (method === 'edits') return session.edits(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
@@ -102,9 +103,9 @@ function createRoute(session: Session, options: HandlerOptions) {
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
     const refuse = (status: number, error: string) => respond(status, { error });
     const method = url.pathname.slice(prefix.length);
-    const client = options.client === true && method === 'client.js';
+    const client = options.client === true && overlayModules.includes(method);
     const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
+    const known = client || ['report', 'site', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -145,7 +146,7 @@ function createRoute(session: Session, options: HandlerOptions) {
     try {
       if (!known) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
-      if (client) { headers['Content-Type'] = 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient() }; }
+      if (client) { headers['Content-Type'] = 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
       let params: unknown = Object.fromEntries(url.searchParams);
       if (method === 'report' && object(params)) for (const key of ['changed', 'strictLedger', 'verbose', 'ledger']) if (params[key] !== undefined) {
         if (!['true', 'false'].includes(String(params[key]))) throw new UsageError(`${key} must be true or false.`);

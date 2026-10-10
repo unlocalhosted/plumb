@@ -35,6 +35,7 @@ export class WarmState implements AnalysisRuntime {
   readonly dependencies = new Set<string>();
   readonly configurationFiles = new Set<string>();
   readonly patterns = new Set<string>();
+  readonly inputPatterns = new Set<string>();
   private componentConsumers = new Map<string, Set<string>>();
   private componentDependencies = new Map<string, Set<string>>();
   private dependencyEdges = new Map<string, string[]>();
@@ -108,6 +109,11 @@ export class WarmState implements AnalysisRuntime {
   private snippet = false;
   private config: PlumbConfig = {};
   constructor(readonly root: string, public inventory?: readonly string[]) { this.collection = new CollectionState(root); }
+  queryDependencies(file: string): string[] {
+    return [...new Set([...this.collection.slices.get(file)?.dependencies.keys() ?? [],
+      ...this.collection.consumers.get(file) ?? [], ...this.componentDependencies.get(file) ?? [],
+      ...this.componentConsumers.get(file) ?? []])];
+  }
   get compilerFiles(): string[] { return this.compiler.graph?.files ?? []; }
   sourceHash(file: string): string | undefined {
     if (this.cssHashes.has(file)) return this.cssHashes.get(file);
@@ -156,11 +162,11 @@ export class WarmState implements AnalysisRuntime {
       }
       const presets = presetInputs(this.config);
       for (const file of presets?.files ?? []) { this.dependencies.add(file); this.configurationFiles.add(file); }
-      for (const pattern of presets?.patterns ?? []) this.patterns.add(pattern);
+      for (const pattern of presets?.patterns ?? []) { this.patterns.add(pattern); this.inputPatterns.add(pattern); }
       for (const source of Object.values(this.config.decisions ?? {})) {
         const from = source.from;
         if (typeof from !== 'function') for (const pattern of Array.isArray(from) ? from : from === undefined ? [] : [from])
-          if (pattern.startsWith('dtcg:')) this.patterns.add(resolve(this.root, pattern.slice(5)));
+          if (pattern.startsWith('dtcg:')) { const path = resolve(this.root, pattern.slice(5)); this.patterns.add(path); this.inputPatterns.add(path); }
       }
       if (loaded.path || presets) {
         const resolver = new ResolverFactory({ extensions: ['.ts', '.mts', '.mjs', '.js', '.cjs', '.json'], conditionNames: ['import', 'node', 'default'] });
