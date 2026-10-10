@@ -20,7 +20,7 @@ export interface SiteResult { file: string; line: number; column?: number; decla
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
-export type SourceResolution = { file: string; line?: number; column?: number; hash?: string } | { library: true; untracked?: string };
+export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string } | { library: true; untracked?: string };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
@@ -351,7 +351,7 @@ export class Session extends EventEmitter {
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
       const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag, expected.component);
       if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
-      return { file: inside, line: location.line, column: location.column };
+      return { file: inside, line: location.line, column: location.column, ...(expected.component ? { component: location.tag } : {}) };
     });
   }
   site(file: string, line: number, column?: number): Promise<SiteResult> {

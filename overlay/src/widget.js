@@ -256,10 +256,10 @@ class PlumbOverlay extends HTMLElement {
 
   // ── reading an element ────────────────────────────────────
   // One read per element until something is written; the hover tag and the pinned reading share it.
-  read(element, fresh = false) {
-    if (!fresh && this.#cache.has(element)) return this.#cache.get(element);
+  read(element, fresh = false, signal) {
+    if (!signal && !fresh && this.#cache.has(element)) return this.#cache.get(element);
     const promise = (async () => {
-      const found = await locate(element, { explain: true });
+      const found = await locate(element, { explain: true, signal });
       if (!found?.file) return { status: 'unplaced', tag: element.localName, ...unplaced(found) };
       const location = found;
       const params = { file: location.file, line: location.line, column: location.column };
@@ -270,9 +270,11 @@ class PlumbOverlay extends HTMLElement {
       ? { status: 'starting', tag: element.localName, message: 'Plumb is still reading your project…' }
       : error?.failed ? { status: 'error', tag: element.localName, short: 'Plumb couldn’t start', message: `Plumb couldn’t start: ${error.message}` }
       : { status: 'error', tag: element.localName, message: error?.message ?? "Plumb isn't answering." });
-    this.#cache.set(element, promise);
-    // A first read still in progress is not an answer; ask again next time.
-    promise.then(state => { if (state.status === 'starting' && this.#cache.get(element) === promise) this.#cache.delete(element); });
+    // A pin must not inherit cancellation from an in-flight hover reading.
+    if (!signal) this.#cache.set(element, promise);
+    // Only a reading is worth keeping. A refusal can be transient (a dev server still pre-bundling, a map mid-reload),
+    // so anything else is asked again on the next hover instead of sticking to the element.
+    promise.then(state => { if (state.status !== 'ready' && this.#cache.get(element) === promise) this.#cache.delete(element); });
     return promise;
   }
 
@@ -294,6 +296,7 @@ class PlumbOverlay extends HTMLElement {
   #disarm = () => {
     if (!this.#armed) return;
     this.#armed = false; clearTimeout(this.#hoverTimer);
+    this.#hover?.controller.abort();
     removeEventListener('pointermove', this.#onMove, true);
     removeEventListener('click', this.#onClick, true);
     removeEventListener('pointerdown', this.#swallow, true);
@@ -309,13 +312,18 @@ class PlumbOverlay extends HTMLElement {
   #onMove = event => {
     if (this.#ours(event)) return;
     const element = document.elementFromPoint(event.clientX, event.clientY);
-    if (!element || element === this.#hover?.element || element === document.documentElement || element === document.body) return;
-    this.#hover = { element, state: null };
+    if (element !== this.#hover?.element) this.#hover?.controller.abort();
+    if (element === this.#hover?.element) return;
+    if (!element || element === document.documentElement || element === document.body) {
+      clearTimeout(this.#hoverTimer); this.#hover = null; return;
+    }
+    const controller = new AbortController();
+    this.#hover = { element, state: null, controller };
     this.#showReticle(element);
     this.#renderTag(element, null);
     clearTimeout(this.#hoverTimer);
     this.#hoverTimer = setTimeout(async () => {
-      const state = await this.read(element);
+      const state = await this.read(element, false, controller.signal);
       if (this.#hover?.element === element) { this.#hover.state = state; this.#renderTag(element, state); }
     }, TIMING.hoverRead);
     this.#follow();

@@ -103,11 +103,12 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
   return async (request: TransportRequest): Promise<TransportResponse | undefined> => {
     const url = request.url;
     if (!url.pathname.startsWith(prefix)) return;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
     const refuse = (status: number, error: string) => respond(status, { error });
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
+    if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
     const known = client || ['report', 'site', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
     if (origin !== undefined) {

@@ -12,11 +12,11 @@ import { plumb } from '@unlocalhosted/plumb/vite';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 export const source = `import React from 'react';
 import { createPortal } from 'react-dom';
-import { Button as MetalButton } from '@base-ui/react/button';
+import { Button as MetalButton, Button as Btn } from '@base-ui/react/button';
 import { Popover } from '@base-ui/react/popover';
 import { Slot } from '@radix-ui/react-slot';
 import { Primitive } from '@radix-ui/react-primitive';
-import { RuntimeSlot, RuntimePortal, Deep, Orphan, makeNoJSX } from 'plumb-owner-runtime';
+import { RuntimeSlot, RuntimePortal, Deep, Orphan, makeNoJSX, Icon } from 'plumb-owner-runtime';
 function Forward({ className }) {
   return <MetalButton id="forward" className={className} style={{ padding: 14 }}>Forward</MetalButton>;
 }
@@ -44,6 +44,9 @@ export default function App() {
     <Primitive.div className="gap-[67px]" children={makeNoJSX({ id: 'no-jsx-component' })} />
     {React.createElement('button', { id: 'authored-no-jsx' }, 'No JSX')}
     <AuthoredFactory />
+    <Btn id="aliased" className="gap-[14px]">Alias</Btn>
+    <Icon id="icon" className="gap-[15px]" />
+    <svg id="injected" className="gap-[10px]" dangerouslySetInnerHTML={{ __html: '<g><path d="M0 0h10" /><circle r="2" /></g>' }} />
   </main>;
 }
 `;
@@ -65,6 +68,10 @@ export const Deep = Nested;
 const orphan = React.createElement(Button, { id: 'orphan' }, 'Orphan');
 export function Orphan() { return orphan; }
 export function makeNoJSX(props) { return React.createElement(RuntimeSlot, props); }
+function Icon2(props) {
+  return <svg {...props} dangerouslySetInnerHTML={{ __html: '<g><path d="M0 0h10" /><circle r="2" /></g>' }} />;
+}
+export { Icon2 as Icon };
 `;
 function position(text, fragment) {
   const offset = text.indexOf(fragment); assert.ok(offset >= 0, fragment);
@@ -122,14 +129,16 @@ async function browser(t) {
   }
 }
 const anchors = {
-  base: ['<MetalButton id="base"', 'Button', 'gap-[13px]'],
-  trigger: ['<Popover.Trigger id=', 'PopoverTrigger', 'gap-[17px]'],
-  forward: ['<MetalButton id="forward"', 'Button', null],
-  nested: ['<MetalButton id="nested"', 'Button', 'gap-[23px]'],
+  base: ['<MetalButton id="base"', 'MetalButton', 'gap-[13px]'],
+  trigger: ['<Popover.Trigger id=', 'Popover.Trigger', 'gap-[17px]'],
+  forward: ['<MetalButton id="forward"', 'MetalButton', null],
+  nested: ['<MetalButton id="nested"', 'MetalButton', 'gap-[23px]'],
   'runtime-slot': ['<RuntimeSlot id=', 'RuntimeSlot', 'gap-[29px]'],
   primitive: ['<Primitive.button id=', 'Primitive.button', 'gap-[31px]'],
-  'as-child': ['<MetalButton id="as-child"', 'Button', 'gap-[37px]'],
-  'inside-portal': ['<MetalButton id="inside-portal"', 'Button', 'gap-[47px]'],
+  'as-child': ['<MetalButton id="as-child"', 'MetalButton', 'gap-[37px]'],
+  'inside-portal': ['<MetalButton id="inside-portal"', 'MetalButton', 'gap-[47px]'],
+  aliased: ['<Btn id=', 'Btn', 'gap-[14px]'],
+  icon: ['<Icon id=', 'Icon', 'gap-[15px]', 'svg'],
 };
 for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc']]) {
   test(`Vite React ${version} ${transform}: library owners locate, read and edit authored JSX`, { timeout: 90000 }, async t => {
@@ -147,7 +156,7 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
     assert.equal(await page.evaluate(() => window.ownerReadyDone === true), false);
     await releaseStartup();
     assert.equal((await page.evaluate(() => window.ownerReady)).status, 'ready');
-    for (const [id, [fragment, component, token]] of Object.entries(anchors)) {
+    for (const [id, [fragment, component, token, tag = 'button']] of Object.entries(anchors)) {
       const result = await page.$eval('#' + id, async element => ({ location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) }));
       if (version === 18) {
         assert.equal(result.location.location, null, id);
@@ -155,12 +164,36 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
         assert.equal(result.site, null, id + ': no unproven owner declarations');
         continue;
       }
-      assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag: 'button', via: 'owner', rendered: 'button' }, JSON.stringify({ id, result }));
+      assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag, via: 'owner', rendered: tag }, JSON.stringify({ id, result }));
       assert.deepEqual(result.site?.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id + ': only attributes authored at this JSX');
     }
     const direct = await page.$eval('#direct', async element => ({ location: await window.__plumb.locate(element), site: await window.__plumb.site(element) }));
     assert.deepEqual(direct.location, { file: 'src/App.jsx', ...position(source, '<button id="direct"'), component: 'Slot.Slot', tag: 'button', via: version === 19 ? 'react19' : 'react-debugSource' });
     assert.deepEqual(direct.site.declarations.map(d => d.site.text), ['gap-[11px]']);
+    for (const [id, fragment, component, token] of [
+      ['icon', '<Icon id=', 'Icon', 'gap-[15px]'],
+      ['injected', '<svg id="injected"', 'App', 'gap-[10px]'],
+    ]) {
+      for (const tag of ['g', 'path', 'circle']) {
+        const result = await page.$eval('#' + id + ' ' + tag, async element => ({
+          fiberless: !Object.keys(element).some(key => key.startsWith('__reactFiber$')),
+          location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element),
+        }));
+        assert.equal(result.fiberless, true);
+        if (version === 18 && id === 'icon') {
+          assert.equal(result.location.location, null);
+          assert.equal(result.location.reason, 'owner-unproven');
+          assert.equal(result.site, null);
+          continue;
+        }
+        assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag, via: 'inner-html', rendered: tag });
+        assert.deepEqual(result.site.declarations.map(d => d.site.text), [token]);
+      }
+    }
+    assert.equal(await page.evaluate(async () => {
+      const element = document.createElement('span'); document.getElementById('direct').append(element);
+      return window.__plumb.locate(element);
+    }), null, 'imperative child cannot borrow parent fiber');
     for (const id of ['cross-portal', 'deep', 'orphan', 'no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
       assert.equal(await page.$eval('#' + id, element => window.__plumb.locate(element)), null, id + ': never guess');
       assert.equal(await page.$eval('#' + id, element => window.__plumb.site(element)), null, id + ': no borrowed declarations');
@@ -173,19 +206,23 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
     }
     // Opening-tag attribution must also be usable by the existing edit flow.
     // React 18 still reads and writes evidenced direct host JSX.
-    const editTarget = version === 18 ? 'direct' : 'base';
-    const editToken = version === 18 ? 'gap-[11px]' : 'gap-[13px]';
-    const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
     // Locate in the page; edit and apply from here. The write reloads the page, which must not cut the request short.
-    const location = await page.$eval('#' + editTarget, element => window.__plumb.locate(element));
+    const targets = version === 18 ? [['#direct', 'gap-[11px]'], ['#injected path', 'gap-[10px]']]
+      : [['#base', 'gap-[13px]'], ['#aliased', 'gap-[14px]'], ['#icon path', 'gap-[15px]'], ['#injected path', 'gap-[10px]']];
+    const locations = await page.evaluate(targets => Promise.all(targets.map(async ([selector]) => window.__plumb.locate(document.querySelector(selector)))), targets);
     const origin = new URL(page.url()).origin, headers = { 'Content-Type': 'application/json', Origin: origin };
-    const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
-    const choices = await (await fetch(origin + '/__plumb/edits?' + query, { headers: { Origin: origin } })).json();
-    const edit = choices.edits.find(edit => edit.from === editToken);
-    const response = edit && await fetch(origin + '/__plumb/apply', { method: 'POST', headers, body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
-    const edited = edit ? { status: response.status, edit } : { choices };
-    assert.equal(edited.status, 200, JSON.stringify(edited));
-    assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), before.replace(editToken, edited.edit.to));
+    for (let i = 0; i < targets.length; i++) {
+      const location = locations[i], [selector, editToken] = targets[i];
+      assert.ok(location, selector);
+      const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
+      const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
+      const choices = await (await fetch(origin + '/__plumb/edits?' + query, { headers: { Origin: origin } })).json();
+      const edit = choices.edits.find(edit => edit.from === editToken);
+      assert.ok(edit, JSON.stringify({ selector, choices }));
+      const response = await fetch(origin + '/__plumb/apply', { method: 'POST', headers, body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
+      assert.equal(response.status, 200, await response.text());
+      assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), before.replace(editToken, edit.to));
+    }
     assert.deepEqual(errors, []);
   });
 }
@@ -205,11 +242,11 @@ test('authored library JSX resolves, isolates nested declarations and writes thr
   assert.equal(health.status, 'ready', JSON.stringify(health));
   const resolve = params => fetch(url + '/__plumb/resolve?' + new URLSearchParams({ source: 'src/App.jsx', ...params }));
   const snapshot = await (await resolve({ snapshot: '1' })).json();
-  for (const [id, [fragment, , token]] of Object.entries(anchors)) {
+  for (const [id, [fragment, component, token]] of Object.entries(anchors)) {
     const at = position(source, fragment);
     const response = await resolve({ ...at, column: at.column + 1, hash: snapshot.hash, component: '1' });
     assert.equal(response.status, 200, id);
-    assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at });
+    assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at, component });
     const site = await (await fetch(url + '/__plumb/site?' + new URLSearchParams({ file: 'src/App.jsx', ...at }))).json();
     assert.deepEqual(site.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id);
   }
@@ -221,11 +258,22 @@ test('authored library JSX resolves, isolates nested declarations and writes thr
   const factory = position(source, '<section className="gap-[61px]"');
   assert.equal((await resolve({ ...factory, component: '1' })).status, 400, 'runtime factory cannot borrow containing intrinsic JSX');
   assert.equal((await resolve({ ...position(source, "makeNoJSX({ id: 'no-jsx-component'"), component: '1' })).status, 400, 'runtime factory cannot borrow containing component JSX');
-  const choices = await (await fetch(url + '/__plumb/edits?' + new URLSearchParams({ file: 'src/App.jsx', ...at }))).json();
-  const edit = choices.edits.find(edit => edit.from === 'gap-[13px]'); assert.ok(edit);
-  const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: url },
-    body: JSON.stringify({ file: 'src/App.jsx', hash: choices.hash, edits: [{ id: edit.id }] }) });
-  assert.equal(applied.status, 200, await applied.text());
-  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source.replace('gap-[13px]', edit.to));
+  const injected = position(source, '<svg id="injected"');
+  assert.deepEqual(await (await resolve({ ...injected, tag: 'svg' })).json(), { file: 'src/App.jsx', ...injected }, 'direct host resolution keeps its existing shape');
+  const site = await (await fetch(url + '/__plumb/site?' + new URLSearchParams({ file: 'src/App.jsx', ...injected }))).json();
+  assert.deepEqual(site.declarations.map(d => d.site.text), ['gap-[10px]'], 'HTML string contents do not create JSX sites');
+  for (const [fragment, token] of [
+    ['<MetalButton id="base"', 'gap-[13px]'], ['<Btn id=', 'gap-[14px]'],
+    ['<Icon id=', 'gap-[15px]'], ['<svg id="injected"', 'gap-[10px]'],
+  ]) {
+    const location = { file: 'src/App.jsx', ...position(source, fragment) };
+    const before = await readFile(join(root, location.file), 'utf8');
+    const choices = await (await fetch(url + '/__plumb/edits?' + new URLSearchParams(location))).json();
+    const edit = choices.edits.find(edit => edit.from === token); assert.ok(edit, JSON.stringify({ fragment, choices }));
+    const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: url },
+      body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
+    assert.equal(applied.status, 200, await applied.text());
+    assert.equal(await readFile(join(root, location.file), 'utf8'), before.replace(token, edit.to));
+  }
   assert.equal((await resolve({ ...at, hash: snapshot.hash })).status, 400, 'old owner evidence cannot adopt changed source');
 });

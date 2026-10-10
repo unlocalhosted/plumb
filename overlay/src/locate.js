@@ -50,9 +50,14 @@ function hostFiber(element) {
   for (let node = element; node; node = node.parentElement) {
     const key = Object.keys(node).find(key => key.startsWith('__reactFiber$'));
     for (let fiber = key && node[key]; fiber; fiber = fiber.return) {
-      // An imperative child has no authored JSX site. Never borrow its parent's location.
-      if (typeof fiber.type === 'string' && fiber.stateNode === element) return currentFiber(fiber);
+      if (typeof fiber.type !== 'string' || fiber.stateNode !== node) continue;
+      const current = currentFiber(fiber);
+      // Only the nearest React ancestor can prove ownership of injected HTML.
+      // Ordinary imperative children still have no authored JSX site.
+      return current && (node === element || current.memoizedProps?.dangerouslySetInnerHTML)
+        ? { fiber: current, element: node } : null;
     }
+    if (key) return null;
   }
   return null;
 }
@@ -88,6 +93,7 @@ function frames(stack) {
 }
 function refuse(reason, detail = {}) { throw Object.assign(new Error(reason), { reason, detail }); }
 async function resolveLocation(position, fiber, element, via, context, { invalidate = true, mapped = false } = {}) {
+  if (context.signal?.aborted) refuse('map', { step: 'cancelled' });
   const version = sourceMapVersion();
   const library = result => {
     if (!result?.library) return false;
@@ -108,10 +114,12 @@ async function resolveLocation(position, fiber, element, via, context, { invalid
   // Aliases and member expressions need not match the component's displayName,
   // but an owner site must still be component JSX, never a containing host tag.
   const result = await request('resolve', { ...position, ...(via === 'owner' ? { component: '1' } : { tag: element.localName }) }, { explain: true });
+  if (context.signal?.aborted) refuse('map', { step: 'cancelled' });
   if (version !== sourceMapVersion()) refuse('map', { step: 'invalidated-during-resolve', source: position.source });
   if (library(result)) return null;
   if (!result || !Number.isSafeInteger(result.line) || !Number.isSafeInteger(result.column)) refuse('resolve-refusal', { source: position.source, result });
-  return { ...result, component: via === 'owner' ? nameOf(fiber) : componentName(fiber), tag: element.localName, via,
+  return { ...result, component: via === 'owner' ? result.component : componentName(fiber), tag: element.localName, via,
+    ...(context.fallback ? { detail: { fallback: context.fallback } } : {}),
     ...(via === 'owner' ? { rendered: element.localName } : {}) };
 }
 
@@ -128,7 +136,8 @@ async function authoredLocation(fiber, element, via, context) {
     if (!creationFrames.length) refuse('owner-unproven', { step: 'missing-creation-frames' });
     for (const frame of creationFrames) {
       if (runtimeSource(frame.source)) continue;
-      const mappedResult = await mapFrame(frame.source, frame.line, frame.column, { explain: true });
+      const mappedResult = await mapFrame(frame.source, frame.line, frame.column, { explain: true, signal: context.signal });
+      if (context.explain && mappedResult.detail?.fallback) context.fallback ??= mappedResult.detail.fallback;
       const mapped = mappedResult.location;
       if (!mapped) refuse(mappedResult.reason, { ...mappedResult.detail, frame });
       // Opaque chunks can mix library and authored modules. Use mapped paths.
@@ -151,10 +160,11 @@ async function authoredLocation(fiber, element, via, context) {
 
 /** Locate only evidenced authored sites. All paths and JSX anchors are validated by the server. */
 export async function locate(element, options = {}) {
-  const context = {};
+  const context = { signal: options.signal, explain: options.explain };
   try {
+    if (context.signal?.aborted) refuse('map', { step: 'cancelled' });
     if (!element || element.nodeType !== 1) refuse('no-fiber', { step: 'invalid-element' });
-    const fiber = hostFiber(element);
+    const host = hostFiber(element), fiber = host?.fiber;
     const explicit = /^(.*):([1-9]\d*):([1-9]\d*)$/.exec(element.getAttribute('data-plumb-source') ?? '');
     if (explicit) {
       try {
@@ -163,6 +173,11 @@ export async function locate(element, options = {}) {
       } catch (error) { if (!fiber) throw error; }
     }
     if (!fiber) refuse('no-fiber');
+    if (host.element !== element) {
+      const location = await locate(host.element, options);
+      return location && location.location !== null
+        ? { ...location, tag: element.localName, via: 'inner-html', rendered: element.localName } : location;
+    }
     const direct = await authoredLocation(fiber, element, fiber._debugStack ? 'react19' : 'react-debugSource', context);
     if (direct) return direct;
     const tree = boundary(fiber), seen = new Set([fiber]);
@@ -186,6 +201,6 @@ export async function locate(element, options = {}) {
     if (error?.starting || error?.failed) throw error; // the server has not finished its first read; that is not "unplaced"
     if (context.unchecked && ['runtime-only-frames', 'owner-unproven', 'no-fiber'].includes(error.reason))
       return options.explain ? { location: null, reason: 'resolve-refusal', detail: { ...context.unchecked, response: 'Source is not a tracked project source.' } } : null;
-    return options.explain ? { location: null, reason: error.reason ?? 'map', detail: error.detail ?? { error: error.message } } : null;
+    return options.explain ? { location: null, reason: error.reason ?? 'map', detail: { ...(error.detail ?? { error: error.message }), ...(context.fallback ? { fallback: context.fallback } : {}) } } : null;
   }
 }

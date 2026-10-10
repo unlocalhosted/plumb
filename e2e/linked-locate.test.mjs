@@ -103,7 +103,7 @@ for (const workspace of [false, true]) {
     const mapped = await new SourceMapStore().mapFrame(scriptURL, generated.line, generated.column);
     assert.ok(mapped?.hash, JSON.stringify({ mapped, script }));
     const response = await resolve(mapped.source, { ...mapped, component: '1' }); assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), workspace ? { file: 'library/src/Button.jsx', ...libraryAt } : { library: true });
+    assert.deepEqual(await response.json(), workspace ? { file: 'library/src/Button.jsx', ...libraryAt, component: 'Button' } : { library: true });
     const location = await (await resolve(workspace ? libraryPath : 'src/App.jsx', { ...(workspace ? libraryAt : appAt), component: '1' })).json();
     await edit(fixture, location, workspace ? 'gap-[17px]' : 'gap-[13px]');
     // Library classification never grants writes, even for a source-selected external file.

@@ -24,10 +24,11 @@ function directive(text, name) {
 function refused(reason, detail) { throw Object.assign(new Error(reason), { reason, detail }); }
 function failure(reason, detail) { return { location: null, reason, detail }; }
 
-/** Runs in a module worker in browsers. Node HTTP integration uses the same store. */
+/** Shared by the worker, yielding main-thread fallback and Node HTTP integration. */
 export class SourceMapStore {
   scripts = new Map(); maps = new Map(); modules = new Map(); decoded = new Map(); generation = 0;
   refresh = '';
+  queue = Promise.resolve();
   invalidate() { this.generation++; this.refresh = Date.now() + '-' + this.generation; for (const cache of [this.scripts, this.maps, this.modules, this.decoded]) cache.clear(); }
   async cached(cache, key, run) {
     const now = Date.now(), old = cache.get(key);
@@ -123,6 +124,7 @@ export class SourceMapStore {
     let row = Math.min(wanted, decoded.checkpoints.length - 1);
     let state = { ...decoded.checkpoints[row] }, slice = performance.now(), result;
     for (; row <= wanted; row++) {
+      if (cancelled()) return null;
       let generated = 0; const segments = row === wanted ? [] : null;
       const text = decoded.rows[row];
       const pattern = /[^,]+/g;
@@ -136,6 +138,7 @@ export class SourceMapStore {
       }
       decoded.checkpoints[row + 1] = { ...state };
       if (segments) result = segments;
+      if (performance.now() - slice > 4) { await pause(); slice = performance.now(); }
     }
     if (decoded.decodedRows.size >= limit) decoded.decodedRows.delete(decoded.decodedRows.keys().next().value);
     decoded.decodedRows.set(wanted, result); return result;
@@ -166,40 +169,95 @@ export class SourceMapStore {
     const generation = this.generation;
     const obsolete = () => generation !== this.generation || cancelled();
     try {
-      const mapped = await this.original(await this.cached(this.decoded, url, () => this.forScript(url, chunks, obsolete)), line - 1, column - 1, obsolete);
+      // Cached fetch/index work belongs to the generation, not its first caller.
+      const decoded = await this.cached(this.decoded, url, () => this.forScript(url, chunks, () => generation !== this.generation));
+      // A yielded row must finish before another request advances its checkpoints.
+      const work = this.queue.then(() => this.original(decoded, line - 1, column - 1, obsolete));
+      this.queue = work.catch(() => {});
+      const mapped = await work;
+      if (obsolete()) return options.explain ? failure('map', { step: 'cancelled', url, line, column }) : null;
       return options.explain ? mapped ? { location: mapped } : failure('map', { step: obsolete() ? 'cancelled' : 'unmapped-position', url, line, column }) : mapped;
     } catch (error) { return options.explain ? failure(error.reason ?? 'map', error.detail ?? { url, line, column, error: error.message }) : null; }
   }
 }
-let version = 0, worker, next = 0;
-const pending = new Map(), fallback = new SourceMapStore();
+let version = 0, worker, next = 0, fallbackDetail, startupTimer;
+const pending = new Map(), flights = new Map(), fallback = new SourceMapStore();
 export const sourceMapVersion = () => version;
 export function invalidateSourceMaps() {
-  version++; fallback.invalidate(); worker?.postMessage({ invalidate: true });
-  for (const resolve of pending.values()) resolve(failure('map', { step: 'invalidated' })); pending.clear();
+  version++; fallback.invalidate();
+  for (const entry of [...pending.values()]) finish(entry, failure('map', { step: 'invalidated' }));
+  try { worker?.postMessage({ invalidate: true }); }
+  catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
 }
-/** Cancel obsolete pointer work; all large parsing/indexing stays off the main thread. */
-export async function mapFrame(url, line, column, options = {}) {
-  if (typeof document === 'undefined') return fallback.mapFrame(url, line, column, [], () => false, options);
-  if (typeof Worker === 'undefined') return options.explain ? failure('map', { step: 'worker-unavailable' }) : null;
-  if (!worker) {
+function finish(entry, result) {
+  if (pending.get(entry.id) !== entry) return;
+  pending.delete(entry.id);
+  if (flights.get(entry.key) === entry) flights.delete(entry.key);
+  entry.cancelled = true;
+  for (const resolve of entry.callers) resolve(result);
+  entry.callers.clear();
+}
+function decode(entry) {
+  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true })
+    .then(result => finish(entry, fallbackDetail ? { ...result, detail: { ...result.detail, fallback: fallbackDetail } } : result));
+}
+function useFallback(detail) {
+  if (fallbackDetail) return;
+  // Sticky for this page: CSP/startup errors must not spawn a worker per hover.
+  fallbackDetail = detail;
+  clearTimeout(startupTimer);
+  worker?.terminate(); worker = undefined;
+  for (const entry of pending.values()) decode(entry);
+}
+function startWorker() {
+  if (worker || fallbackDetail) return;
+  if (typeof Worker === 'undefined') { useFallback({ step: 'worker-unavailable' }); return; }
+  try {
     worker = new Worker(new URL('./sourcemap-worker.js', import.meta.url), { type: 'module' });
-    worker.onmessage = ({ data }) => { pending.get(data.id)?.(data.result); pending.delete(data.id); };
-    worker.onerror = event => {
-      for (const resolve of pending.values()) resolve(failure('map', { step: 'worker-error', error: event.message })); pending.clear();
-      invalidateSourceMaps(); worker.terminate(); worker = undefined;
+    worker.onmessage = ({ data }) => {
+      if (data.ready) { clearTimeout(startupTimer); return; }
+      const entry = pending.get(data.id);
+      if (entry) finish(entry, data.result);
     };
-    if (version) worker.postMessage({ invalidate: true });
-  }
-  const id = ++next;
-  for (const resolve of pending.values()) resolve(failure('map', { step: 'superseded' })); pending.clear();
-  const result = new Promise(resolve => pending.set(id, resolve));
+    worker.onerror = event => { event.preventDefault(); useFallback({ step: 'worker-error', error: event.message }); };
+    worker.onmessageerror = () => useFallback({ step: 'worker-error', error: 'Unreadable worker response.' });
+    startupTimer = setTimeout(() => useFallback({ step: 'worker-startup-timeout' }), 5000);
+  } catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
+}
+/** Each caller owns its abort; identical in-flight frames share one decoding. */
+export async function mapFrame(url, line, column, options = {}) {
+  const { signal } = options;
+  const cancelled = () => failure('map', { step: 'cancelled' });
+  if (signal?.aborted) return options.explain ? cancelled() : null;
+  if (typeof document !== 'undefined') startWorker();
   // Prefer freshly fetched base chunks over historical updates. Webpack removes
-  // hot-update script elements after loading; resource timing supplies a fallback
-  // for modules introduced by HMR that are absent from the page's script list.
-  const updates = performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\/_next\/static\/.*\.hot-update\.js(?:\?|$)/.test(name)).reverse();
-  const chunks = [...new Set([...[...document.querySelectorAll('script[src]')].map(script => script.src), ...updates])];
-  worker.postMessage({ id, url, line, column, chunks, explain: true });
+  // hot-update script elements after loading; resource timing supplies a fallback.
+  const updates = typeof document === 'undefined' ? [] : performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\/_next\/static\/.*\.hot-update\.js(?:\?|$)/.test(name)).reverse();
+  const chunks = typeof document === 'undefined' ? [] : [...new Set([...[...document.querySelectorAll('script[src]')].map(script => script.src), ...updates])];
+  const key = JSON.stringify([version, url, line, column, chunks]);
+  let entry = flights.get(key), fresh = !entry;
+  if (!entry) {
+    entry = { id: ++next, key, url, line, column, chunks, callers: new Set(), cancelled: false };
+    pending.set(entry.id, entry); flights.set(key, entry);
+  }
+  const result = new Promise(resolve => {
+    const settle = value => { signal?.removeEventListener('abort', abort); entry.callers.delete(settle); resolve(value); };
+    const abort = () => {
+      settle(cancelled());
+      if (!entry.callers.size && pending.has(entry.id)) {
+        finish(entry, cancelled());
+        try { worker?.postMessage({ cancel: entry.id }); }
+        catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
+      }
+    };
+    entry.callers.add(settle); signal?.addEventListener('abort', abort, { once: true });
+  });
+  if (fresh) {
+    if (worker) {
+      try { worker.postMessage({ id: entry.id, url, line, column, chunks, explain: true }); }
+      catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
+    } else decode(entry);
+  }
   const resolved = await result;
   return options.explain ? resolved : resolved.location;
 }
