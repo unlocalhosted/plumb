@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { BusyError, errorMessage, UsageError } from '../errors.js';
 import { Session } from './index.js';
 import { tokenHeader } from './server.js';
 import type { ServeInfo } from './server.js';
@@ -31,6 +31,7 @@ export async function serverRequest<T>(method: string, params: Record<string, un
   } catch { return; }
   if (response.status === 401 || response.status === 404) return;
   const value: unknown = await response.json();
+  if (response.status === 503 && (value as { status?: string }).status === 'busy') throw new BusyError();
   if (!response.ok) throw new UsageError((value as { error: string }).error);
   return value as T;
 }
@@ -45,6 +46,9 @@ export async function watchReports(options: CheckOptions, emit: (report: Report)
   try {
     while (!signal.aborted) {
       try {
+        // Health is an immediate snapshot; watch clients explicitly reconcile
+        // even when the daemon has native watching and polling disabled.
+        await serverRequest('refresh', {}, options);
         const health = await serverRequest<{ revision: number; pid: number; diagnostic?: string }>('health', {}, options);
         if (health) {
           if (health.diagnostic) throw new UsageError(health.diagnostic);

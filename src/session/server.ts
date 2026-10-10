@@ -8,7 +8,7 @@ import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
 import type { SessionOptions } from './index.js';
 import type { CheckOptions } from '../index.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { BusyError, errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
 import { overlayClient, overlayModules } from '../hosts/client.js';
 
@@ -62,6 +62,7 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
   if (method === 'why') return session.why(text(params, 'file')!, position(params, 'line')!);
   if (method === 'decisions') return session.decisions();
   if (method === 'health') return session.health();
+  if (method === 'refresh') return session.refresh();
   if (method === 'try') {
     if (typeof params.code !== 'string') throw new UsageError('code must be a string.');
     const lang = text(params, 'lang', true), as = text(params, 'as', true);
@@ -110,7 +111,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
+    const known = client || ['report', 'site', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -172,7 +173,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
       return respond(200, await dispatch(current, method, params, options));
-    } catch (error) { return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
+    } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
   };
 }
 
@@ -268,7 +269,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method)) {
+        if (!['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});
