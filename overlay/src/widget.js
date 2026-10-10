@@ -23,6 +23,13 @@ import { GLYPH_CSS, glyph } from './glyphs.js';
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 const RESUME = 'plumb:resume';
 
+// One status line for a ready reading, shared by the hover tag and the pinned header.
+function status(state) {
+  const off = offCount(state);
+  if (!state.marks.length && !state.declared) return { text: state.via === 'owner' ? `styled by ${state.component ?? 'a component'}` : 'computed here', tone: 'quiet' };
+  return off ? { text: `${off} off`, tone: '' } : { text: 'on system', tone: 'ok' };
+}
+
 // Why an element has no source line, in the person's terms. Plumb never guesses one.
 function unplaced(found) {
   const detail = found?.detail ?? {}, response = String(detail.response ?? '');
@@ -337,9 +344,8 @@ class PlumbOverlay extends HTMLElement {
     if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.short ?? state.message)}</span>`;
-    const off = offCount(state);
-    if (!state.marks.length && !state.declared) return `${name}${who}<span class="n quiet">computed here</span>`;
-    return `${name}${who}<span class="n ${off ? '' : 'ok'}">${off ? `${off} off` : 'on system'}</span>`;
+    const st = status(state);
+    return `${name}${who}<span class="n ${st.tone}">${esc(st.text)}</span>`;
   }
 
   // ── geometry that follows the page ───────────────────────
@@ -594,8 +600,11 @@ class PlumbOverlay extends HTMLElement {
     const p = this.#pinned, s = p.state, read = this.#$('.read');
     const nav = this.#root.querySelectorAll('.nav');
     if (!s.marks.length && !s.declared) {
-      read.innerHTML = `<div class="t">${glyph('existence', 'quiet')}<span>Nothing is written literally at this line.</span></div>
-        <div class="because">The classes here are built in code (a variable, a function or a template), so Plumb reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
+      read.innerHTML = s.via === 'owner'
+        ? `<div class="t">${glyph('ownership', 'quiet')}<span>This line uses ${esc(s.component ?? 'a component')} and sets no class or style of its own.</span></div>
+          <div class="because">Its look comes from ${esc(s.component ?? 'the component')} and the props passed here. Plumb checks that component where its styles are written.</div>`
+        : `<div class="t">${glyph('existence', 'quiet')}<span>Nothing is written literally at this line.</span></div>
+          <div class="because">The classes here are built in code (a variable, a function or a template), so Plumb reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
       this.#$('.count').textContent = 'computed'; nav.forEach(b => b.disabled = true);
       this.#$('.sync').disabled = true;
       return;
@@ -724,8 +733,8 @@ class PlumbOverlay extends HTMLElement {
     const p = this.#pinned, s = p.state, w = this.#$('.w');
     const previewed = s.marks.filter(m => m.synced), waiting = s.marks.filter(m => m.ledger === 'new' && !m.synced && m.choices.length > 1 && m.pick === null);
     const stuck = s.marks.filter(m => m.ledger === 'new' && !m.choices.length), writable = this.#writable();
-    const top = this.#root.querySelector('.top .n'), off = offCount(s);
-    if (top) { top.textContent = off ? `${off} off` : 'on system'; top.className = `n ${off ? '' : 'ok'}`; }
+    const top = this.#root.querySelector('.top .n'), st = status(s);
+    if (top) { top.textContent = st.text; top.className = `n ${st.tone}`; }
     const ready = s.marks.filter(m => m.ledger === 'new' && m.pick !== null && !m.synced).length;
     const sync = this.#$('.sync'); sync.disabled = !ready && !previewed.length; sync.textContent = ready ? `Sync ${ready} to system` : 'Sync to system';
     const strip = this.#$('.synced');
