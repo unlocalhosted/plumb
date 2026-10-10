@@ -74,7 +74,9 @@ export function reading(location, site, edits) {
   marks.sort((a, b) => (a.ledger === 'new' ? 0 : 1) - (b.ledger === 'new' ? 0 : 1) || a.line - b.line || a.column - b.column);
   // No declarations at all means nothing is written literally here (classes computed in code), not "on the system".
   return { location, file: location.file, line: location.line, column: location.column, tag: location.tag, component: location.component, via: location.via,
-    hash: edits?.hash, marks, notes, declared: site.declarations.length };
+    hash: edits?.hash, marks, notes, declared: site.declarations.length,
+    // The chain of authored JSX from this element up through its owners, innermost first, and which link is read.
+    chain: location.chain ?? [], index: location.index ?? 0 };
 }
 
 export const offCount = r => r.marks.filter(m => m.ledger === 'new' && !m.synced).length;

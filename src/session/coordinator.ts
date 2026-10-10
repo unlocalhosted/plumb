@@ -1,9 +1,10 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { Session } from './engine.js';
-import { errorMessage } from '../errors.js';
+import { errorMessage, UsageError } from '../errors.js';
 
 interface Call { id: number; method: string; args: unknown[]; deadline: number }
 const port = parentPort!;
+const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
 const queue: Call[] = [];
 let running = false;
 const read = (call: Call) => !['apply', 'refresh', 'try'].includes(call.method);
@@ -19,7 +20,7 @@ try {
       const method = session[call.method as keyof Session] as (...args: unknown[]) => Promise<unknown>;
       const result = await method.apply(session, call.args);
       port.postMessage({ id: call.id, result, ...await snapshot() });
-    } catch (error) { port.postMessage({ id: call.id, error: errorMessage(error), ...await snapshot() }); }
+    } catch (error) { port.postMessage({ id: call.id, error: errorMessage(error), ...errorDetails(error), ...await snapshot() }); }
   }
   async function drain() {
     if (running) return; running = true;
@@ -37,7 +38,7 @@ try {
         for (let i = active.length - 1; i >= 0; i--) {
           const call = active[i]!;
           try { queries.set(call.id, await session.readQuery(call.method, call.args)); }
-          catch (error) { active.splice(i, 1); port.postMessage({ id: call.id, error: errorMessage(error) }); }
+          catch (error) { active.splice(i, 1); port.postMessage({ id: call.id, error: errorMessage(error), ...errorDetails(error) }); }
         }
         if (!active.length) continue;
         const query = [...queries.values()].some(paths => paths === undefined) ? undefined : [...new Set([...queries.values()].flatMap(paths => paths!))];
@@ -47,14 +48,14 @@ try {
               const call = queue[0]!;
               let paths;
               try { paths = await session.readQuery(call.method, call.args); }
-              catch (error) { queue.shift(); port.postMessage({ id: call.id, error: errorMessage(error) }); continue; }
+              catch (error) { queue.shift(); port.postMessage({ id: call.id, error: errorMessage(error), ...errorDetails(error) }); continue; }
               if (query !== undefined && (paths === undefined || !paths.every(path => query.includes(path)))) break;
               active.push(queue.shift()!);
             }
             await execute(active[i]!);
           }
         }); }
-        catch (error) { for (const call of active) port.postMessage({ id: call.id, error: errorMessage(error), ...await snapshot() }); }
+        catch (error) { for (const call of active) port.postMessage({ id: call.id, error: errorMessage(error), ...errorDetails(error), ...await snapshot() }); }
       }
     } finally { running = false; }
   }
@@ -63,4 +64,4 @@ try {
     queue.push(call); setImmediate(() => { void drain(); });
   });
   port.postMessage({ ready: true, ...await snapshot() });
-} catch (error) { port.postMessage({ startupError: errorMessage(error) }); }
+} catch (error) { port.postMessage({ startupError: errorMessage(error), ...errorDetails(error) }); }

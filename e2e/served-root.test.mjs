@@ -106,7 +106,8 @@ async function resolves(fixture, host) {
   const snapshot = await (await resolve('src/App.jsx', { snapshot: '1' })).json();
   assert.equal(snapshot.file, file); assert.ok(snapshot.hash);
   for (const spelling of ['/src/App.jsx', 'src/App.jsx', url + '/src/App.jsx?t=123',
-    'webpack://_N_E/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/./src/App.jsx', '[project]/src/App.jsx [app-client] (ecmascript)',
+    'webpack://_N_E/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/src/App.jsx',
+    'webpack-internal:///(custom-layer)/src/App.jsx', 'webpack-internal:///(custom-layer)/./src/App.jsx', '[project]/src/App.jsx [app-client] (ecmascript)',
     '/@fs/' + join(servedRoot, 'src/App.jsx'), pathToFileURL(join(servedRoot, 'src/App.jsx')).href, join(servedRoot, 'src/App.jsx'), file]) {
     const response = await resolve(spelling, { ...at, tag: 'button', hash: snapshot.hash });
     assert.equal(response.status, 200, spelling + ': ' + JSON.stringify(await response.clone().json()));
@@ -206,7 +207,8 @@ for (const [name, start] of [['Vite apps/web', vite], ['Next apps/site webpack',
     await page.waitForFunction(() => window.__plumb && document.getElementById('served'));
     assert.equal((await page.evaluate(() => window.__plumb.ready())).status, 'ready');
     const result = await page.$eval('#served', async element => ({ location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) }));
-    assert.deepEqual(result.location, { file: fixture.file, ...at, component: 'App', tag: 'button', via: 'react19' }, JSON.stringify(result));
+    const link = { file: fixture.file, ...at, component: 'App' };
+    assert.deepEqual(result.location, { ...link, tag: 'button', via: 'owner-stack', chain: [link], index: 0 }, JSON.stringify(result));
     assert.deepEqual(result.site.declarations.map(d => d.site.text), ['gap-[13px]']);
     await edit(fixture, host, { file: result.location.file, line: result.location.line, column: result.location.column });
   });

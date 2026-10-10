@@ -1,0 +1,532 @@
+✔ real sparse destructuring, arrays, null helper arguments and empty returns survive check and classes (6382.312208ms)
+✔ shared helper shapes cover config, mixed, legacy and imported aliases without attributing metadata (6400.572875ms)
+✔ unexpected startup failures preserve worker frames in Session, CLI and health diagnostic (2787.7635ms)
+✔ AlgoRecall malformed arbitrary selector leaves a diagnostic while valid classes remain judgeable (4006.121125ms)
+✔ MetalUI button own template follows helper, shared templates, maps, callback and nested conditionals (1897.357208ms)
+✔ cva maps each rendered token to its feeding literal; Node apply changes only selected literal (666.877333ms)
+✔ tv maps each rendered token to its feeding literal; Node apply changes only selected literal (597.760959ms)
+✔ cn maps each rendered token to its feeding literal; Node apply changes only selected literal (492.159083ms)
+✔ imported maps each rendered token to its feeding literal; Node apply changes only selected literal (433.831333ms)
+✔ callback maps each rendered token to its feeding literal; Node apply changes only selected literal (712.160042ms)
+✔ ambiguous candidates all survive; dynamic concatenation never gets attributed; fallback stays within module graph (754.508041ms)
+✔ warm lookups stay cached, imported helper changes reconcile without watchers, stale edits refused (574.115042ms)
+✔ classes HTTP and Fetch routes validate parameters, auth, CORS and methods (485.166375ms)
+✔ real Chromium rendered classes resolve through GET classes; Node apply updates only helper literal and browser CSS (1463.145959ms)
+✔ imported helper outside source glob remains authored and editable, with transitive invalidation (557.5445ms)
+✔ lexical scopes, imported namespaces, constant map keys and conditional joins preserve exact literals (495.616959ms)
+✔ recursive helpers and deep import chains stop with explicit limits, without guessed fallback (974.059458ms)
+✔ export-star barrels and helper defaults preserve literal attribution and apply (1271.993584ms)
+✔ isolation credentialless: Vite and Fetch transports serve compatible overlay headers (3155.657083ms)
+✔ isolation require-corp: Vite and Fetch transports serve compatible overlay headers (1841.124041ms)
+✔ concurrent map callers share HTTP evidence; abort and invalidation leave independent callers intact (3814.100042ms)
+✔ isolation credentialless: concurrent locates preserve authored evidence (4043.597042ms)
+✔ isolation require-corp: concurrent locates preserve authored evidence (2708.01475ms)
+✖ isolation credentialless csp: concurrent locates preserve authored evidence (2326.751917ms)
+✖ isolation require-corp error: concurrent locates preserve authored evidence (2780.530875ms)
+✖ isolation credentialless throw: concurrent locates preserve authored evidence (1327.202875ms)
+✖ isolation credentialless unavailable: concurrent locates preserve authored evidence (753.787625ms)
+✔ file-linked sibling library: maps, classification, refusals and exact writes through HTTP (4359.900084ms)
+✖ file-linked sibling library: real Base UI owners locate and Node applies the authored edit (2796.918375ms)
+✔ tracked workspace library: maps, classification, refusals and exact writes through HTTP (4011.032042ms)
+✖ tracked workspace library: real Base UI owners locate and Node applies the authored edit (2968.124833ms)
+✖ Vite React 19: real fibers locate exact JSX sites (4474.022333ms)
+✖ Vite React 18: real fibers locate exact JSX sites (4377.169833ms)
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (17653.467833ms)
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (5221.348459ms)
+✔ resolve validates tracked source identity and site queries select only exact JSX attributes (474.43325ms)
+✔ script maps resolve through real HTTP: inline data, relative URLs, sourceRoot, nested index sections and unmapped spans (363.175959ms)
+✔ review 2: stable module/map URLs invalidate together and reject mismatched source snapshots (385.354708ms)
+✔ Next stable chunks refresh eval indexes and maps through HTTP and compare current disk hashes (347.246625ms)
+✔ review 5: target requests stat bounded dependencies without watchers; report/decisions retain full reconciliation (5755.077041ms)
+✔ review 5: watch-disabled target judgement refreshes theme, config imports, preset and empty DTCG inputs (2774.365708ms)
+✔ Alt-hover reads an element, a click pins it, a pick previews it, Write puts it in source (6657.506458ms)
+✖ Undo lifts every preview; closing never leaves a preview behind; unplaced elements say so (34009.534833ms)
+✖ Vite React 19 plugin-react: library owners locate, read and edit authored JSX (5991.957334ms)
+✖ Vite React 19 oxc: library owners locate, read and edit authored JSX (5278.145917ms)
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (3894.402667ms)
+✔ authored library JSX resolves, isolates nested declarations and writes through real HTTP (4081.178ms)
+✔ Vite apps/web: monorepo resolve and writes use served root through real HTTP (5468.102416ms)
+✔ Next apps/site webpack: monorepo resolve and writes use served root through real HTTP (20187.279167ms)
+✔ Vite handlers sharing a repository Session retain their own served roots (899.461125ms)
+✔ serve --overlay --served-root resolves relative to CLI cwd while --root owns source writes (547.715459ms)
+✖ Vite apps/web: browser fibers locate served JSX and Node applies exact edit (646.844458ms)
+✖ Next apps/site webpack: browser fibers locate served JSX and Node applies exact edit (6764.821584ms)
+ℹ tests 53
+ℹ suites 0
+ℹ pass 37
+ℹ fail 16
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 43610.361083
+
+✖ failing tests:
+
+test at e2e/isolation.test.mjs:124:3
+✖ isolation credentialless csp: concurrent locates preserve authored evidence (2326.751917ms)
+  AssertionError [ERR_ASSERTION]: {"file":"src/App.jsx","line":3,"column":16,"component":"App","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":3,"column":16,"component":"App"}],"index":0}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/isolation.test.mjs:152:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/isolation.test.mjs:124:3
+✖ isolation require-corp error: concurrent locates preserve authored evidence (2780.530875ms)
+  AssertionError [ERR_ASSERTION]: {"file":"src/App.jsx","line":3,"column":16,"component":"App","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":3,"column":16,"component":"App"}],"index":0}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/isolation.test.mjs:152:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/isolation.test.mjs:124:3
+✖ isolation credentialless throw: concurrent locates preserve authored evidence (1327.202875ms)
+  AssertionError [ERR_ASSERTION]: {"file":"src/App.jsx","line":3,"column":16,"component":"App","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":3,"column":16,"component":"App"}],"index":0}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/isolation.test.mjs:152:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/isolation.test.mjs:124:3
+✖ isolation credentialless unavailable: concurrent locates preserve authored evidence (753.787625ms)
+  AssertionError [ERR_ASSERTION]: {"file":"src/App.jsx","line":3,"column":16,"component":"App","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":3,"column":16,"component":"App"}],"index":0}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/isolation.test.mjs:152:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/linked-locate.test.mjs:114:3
+✖ file-linked sibling library: real Base UI owners locate and Node applies the authored edit (2796.918375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 5,
+  +       component: 'LibButton',
+  +       file: 'src/App.jsx',
+  +       line: 6
+  +     }
+  +   ],
+      column: 5,
+      component: 'LibButton',
+      file: 'src/App.jsx',
+  +   index: 0,
+      line: 6,
+  -   rendered: 'button',
+      tag: 'button',
+  +   via: 'owner-stack'
+  -   via: 'owner'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/linked-locate.test.mjs:128:12)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 6, column: 5, component: 'LibButton', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: { file: 'src/App.jsx', line: 6, column: 5, component: 'LibButton', tag: 'button', via: 'owner', rendered: 'button' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/linked-locate.test.mjs:114:3
+✖ tracked workspace library: real Base UI owners locate and Node applies the authored edit (2968.124833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'Button',
+  +       file: 'library/src/Button.jsx',
+  +       line: 5
+  +     },
+  +     {
+  +       column: 5,
+  +       component: 'LibButton',
+  +       file: 'app/src/App.jsx',
+  +       line: 6
+  +     }
+  +   ],
+      column: 10,
+      component: 'Button',
+      file: 'library/src/Button.jsx',
+  +   index: 0,
+      line: 5,
+  -   rendered: 'button',
+      tag: 'button',
+  +   via: 'owner-stack'
+  -   via: 'owner'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/linked-locate.test.mjs:128:12)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'library/src/Button.jsx', line: 5, column: 10, component: 'Button', tag: 'button', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    expected: { file: 'library/src/Button.jsx', line: 5, column: 10, component: 'Button', tag: 'button', via: 'owner', rendered: 'button' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/locate.test.mjs:208:33
+✖ Vite React 19: real fibers locate exact JSX sites (4474.022333ms)
+  AssertionError [ERR_ASSERTION]: {"id":"nested","debug":{"stack":"Error: react-stack-top-frame\n    at exports.jsxDEV (http://127.0.0.1:63153/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=97ddde40:197:25)\n    at Inner (http://127.0.0.1:63153/src/App.jsx:6:25)\n    at Object.react_stack_bottom_frame (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:14335:12)\n    at renderWithHooks (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:4593:19)\n    at updateFunctionComponent (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:5968:16)\n    at beginWork (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:6584:20)\n    at runWithFiberInDEV (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:1137:66)\n    at performUnitOfWork (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:9341:92)\n    at workLoopSync (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:9237:37)\n    at renderRootSync (http://127.0.0.1:63153/node_modules/.vite/deps/react-dom_client.js?v=ec02050b:9221:6)"}}
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 4
+  +     },
+  +     {
+  +       column: 48,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 11
+  +     }
+  +   ],
+      column: 10,
+      component: 'Inner',
+      file: 'src/App.jsx',
+  +   index: 0,
+      line: 4,
+      tag: 'span',
+  +   via: 'owner-stack'
+  -   via: 'react19'
+    }
+  
+      at assertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:95:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:220:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'react19' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/locate.test.mjs:208:33
+✖ Vite React 18: real fibers locate exact JSX sites (4377.169833ms)
+  AssertionError [ERR_ASSERTION]: {"id":"nested","debug":{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-xAjgyy/src/App.jsx","lineNumber":4,"columnNumber":10}}}
+  + actual - expected
+  
+  + null
+  - {
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'react-debugSource'
+  - }
+  
+      at assertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:95:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:220:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'react-debugSource' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/locate.test.mjs:225:49
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (17653.467833ms)
+  AssertionError [ERR_ASSERTION]: {"id":"nested","debug":{"stack":"Error: react-stack-top-frame\n    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n    at Inner (webpack-internal:///(app-pages-browser)/./src/App.jsx:12:87)\n    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12206:18)\n    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)"}}
+  + actual - expected
+  
+  + null
+  - {
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'react19'
+  - }
+  
+      at assertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:95:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:253:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'react19' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/locate.test.mjs:225:49
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (5221.348459ms)
+  AssertionError [ERR_ASSERTION]: {"id":"nested","debug":{"stack":"Error: react-stack-top-frame\n    at exports.jsxDEV (http://127.0.0.1:63739/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n    at Inner (http://127.0.0.1:63739/_next/static/chunks/fixtures__locate-oznNPZ_src_1-_jcoch47p3m._.js:16:214)\n    at Object.react_stack_bottom_frame (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n    at renderWithHooksAgain (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n    at renderWithHooks (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n    at updateFunctionComponent (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n    at beginWork (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n    at runWithFiberInDEV (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n    at performUnitOfWork (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n    at workLoopConcurrentByScheduler (http://127.0.0.1:63739/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)"}}
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 4
+  +     },
+  +     {
+  +       column: 48,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 11
+  +     }
+  +   ],
+      column: 10,
+      component: 'Inner',
+      file: 'src/App.jsx',
+  +   index: 0,
+      line: 4,
+      tag: 'span',
+  +   via: 'owner-stack'
+  -   via: 'react19'
+    }
+  
+      at assertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:95:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:253:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'react19' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/overlay.test.mjs:100:1
+✖ Undo lifts every preview; closing never leaves a preview behind; unplaced elements say so (34009.534833ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+    - waiting for locator('plumb-overlay').getByRole('dialog').filter({ hasText: 'wasn’t rendered by React' }) to be visible
+  
+      at TestContext.<anonymous> (/Users/vijaysingh/unlocalhosted/plumb/e2e/overlay.test.mjs:128:85) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for locator('plumb-overlay').getByRole('dialog').filter({ hasText: 'wasn’t rendered by React' }) to be visible" ]
+  }
+
+test at e2e/owner-locate.test.mjs:144:3
+✖ Vite React 19 plugin-react: library owners locate, read and edit authored JSX (5991.957334ms)
+  AssertionError [ERR_ASSERTION]: {"id":"base","result":{"location":{"file":"src/App.jsx","line":19,"column":5,"component":"MetalButton","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":19,"column":5,"component":"MetalButton"}],"index":0},"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":5,"declarations":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"findings":[{"key":"888ffbfcca9212facde2dd9ce5592cafcfa9f85ee79fd477d218b54a3ee46cc1","rule":"provenance/arbitrary","family":"spacing","severity":"error","sites":[{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App","ledger":{"key":"provenance/arbitrary:MetalButton:gap:gap-[13px]@src/App.jsx#App","status":"new"}}],"occurrences":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"declaration":{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"},"decisions":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"title":"`gap-[13px]` hardcodes 13px","because":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","edits":[{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"}],"choices":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-iDxeF7/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"accept":"plumb accept --rule provenance/arbitrary --site src/App.jsx:19 --why \"…\"","why":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","fix":"12px --spacing-s3 gap-s3 gap: var(--spacing-s3) \"between label and control\"; 16px --spacing-s4 gap-s4 gap: var(--spacing-s4) \"breathing room for a group\"","ledgerKeys":["provenance/arbitrary:MetalButton:gap:gap-[13px]@src/App.jsx#App"],"status":"new"}]}}}
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 5,
+  +       component: 'MetalButton',
+  +       file: 'src/App.jsx',
+  +       line: 19
+  +     }
+  +   ],
+      column: 5,
+      component: 'MetalButton',
+      file: 'src/App.jsx',
+  +   index: 0,
+      line: 19,
+  -   rendered: 'button',
+      tag: 'button',
+  +   via: 'owner-stack'
+  -   via: 'owner'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/owner-locate.test.mjs:167:14)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 19, column: 5, component: 'MetalButton', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: { file: 'src/App.jsx', line: 19, column: 5, component: 'MetalButton', tag: 'button', via: 'owner', rendered: 'button' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/owner-locate.test.mjs:144:3
+✖ Vite React 19 oxc: library owners locate, read and edit authored JSX (5278.145917ms)
+  AssertionError [ERR_ASSERTION]: {"id":"base","result":{"location":{"file":"src/App.jsx","line":19,"column":5,"component":"MetalButton","tag":"button","via":"owner-stack","chain":[{"file":"src/App.jsx","line":19,"column":5,"component":"MetalButton"}],"index":0},"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":5,"declarations":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"findings":[{"key":"888ffbfcca9212facde2dd9ce5592cafcfa9f85ee79fd477d218b54a3ee46cc1","rule":"provenance/arbitrary","family":"spacing","severity":"error","sites":[{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App","ledger":{"key":"provenance/arbitrary:MetalButton:gap:gap-[13px]@src/App.jsx#App","status":"new"}}],"occurrences":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"declaration":{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"component","name":"MetalButton"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"},"decisions":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"title":"`gap-[13px]` hardcodes 13px","because":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","edits":[{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/App.jsx","line":19,"column":39,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"}],"choices":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-6esVkh/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"accept":"plumb accept --rule provenance/arbitrary --site src/App.jsx:19 --why \"…\"","why":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","fix":"12px --spacing-s3 gap-s3 gap: var(--spacing-s3) \"between label and control\"; 16px --spacing-s4 gap-s4 gap: var(--spacing-s4) \"breathing room for a group\"","ledgerKeys":["provenance/arbitrary:MetalButton:gap:gap-[13px]@src/App.jsx#App"],"status":"new"}]}}}
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 5,
+  +       component: 'MetalButton',
+  +       file: 'src/App.jsx',
+  +       line: 19
+  +     }
+  +   ],
+      column: 5,
+      component: 'MetalButton',
+      file: 'src/App.jsx',
+  +   index: 0,
+      line: 19,
+  -   rendered: 'button',
+      tag: 'button',
+  +   via: 'owner-stack'
+  -   via: 'owner'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/owner-locate.test.mjs:167:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 19, column: 5, component: 'MetalButton', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: { file: 'src/App.jsx', line: 19, column: 5, component: 'MetalButton', tag: 'button', via: 'owner', rendered: 'button' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/owner-locate.test.mjs:144:3
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (3894.402667ms)
+  AssertionError [ERR_ASSERTION]: {"id":"base","result":{"location":{"location":null,"reason":"runtime-only-frames","detail":{"frames":["../../../../../node_modules/@base-ui/react/button/Button.mjs"]}},"site":null}}
+  + actual - expected
+  
+  + 'runtime-only-frames'
+  - 'owner-unproven'
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/owner-locate.test.mjs:163:16)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'runtime-only-frames',
+    expected: 'owner-unproven',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/served-root.test.mjs:201:3
+✖ Vite apps/web: browser fibers locate served JSX and Node applies exact edit (646.844458ms)
+  AssertionError [ERR_ASSERTION]: {"location":{"file":"apps/web/src/App.jsx","line":4,"column":10,"component":"App","tag":"button","via":"owner-stack","chain":[{"file":"apps/web/src/App.jsx","line":4,"column":10,"component":"App"}],"index":0},"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":10,"declarations":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"element","name":"button"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"findings":[{"key":"888ffbfcca9212facde2dd9ce5592cafcfa9f85ee79fd477d218b54a3ee46cc1","rule":"provenance/arbitrary","family":"spacing","severity":"error","sites":[{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App","ledger":{"key":"provenance/arbitrary:button:gap:gap-[13px]@apps/web/src/App.jsx#App","status":"new"}}],"occurrences":[{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"element","name":"button"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"}],"declaration":{"prop":"gap","value":"13px","when":[{"kind":"selector","text":".gap-\\[13px\\]"}],"refs":[],"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"owner":{"kind":"element","name":"button"},"origin":"arbitrary","sourceOrigin":"project","authoredValue":true,"resolved":"13px"},"decisions":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"title":"`gap-[13px]` hardcodes 13px","because":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","edits":[{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/apps/web/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Alias.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Alias.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/App.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Fallback.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Fallback.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Untracked.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s3`.","token":"--spacing-s3"},{"site":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/Untracked.jsx","line":4,"column":41,"text":"gap-[13px]","anchor":"App"},"text":"Replace `gap-[13px]` with `gap-s4`.","token":"--spacing-s4"}],"choices":[{"origin":"project","tier":"primitive","refs":["var(--spacing-s3)"],"why":"between label and control","family":"spacing","name":"--spacing-s3","value":"12px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/styles.css","line":7},"resolved":"12px","use":{"class":"gap-s3","css":"gap: var(--spacing-s3)"}},{"origin":"project","tier":"primitive","refs":["var(--spacing-s4)"],"why":"breathing room for a group","family":"spacing","name":"--spacing-s4","value":"16px","source":{"file":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.served-root-6MdEXQ/src/styles.css","line":9},"resolved":"16px","use":{"class":"gap-s4","css":"gap: var(--spacing-s4)"}}],"accept":"plumb accept --rule provenance/arbitrary --site apps/web/src/App.jsx:4 --why \"…\"","why":"Off-scale spacing makes layouts drift apart and can't be changed from the theme.","fix":"12px --spacing-s3 gap-s3 gap: var(--spacing-s3) \"between label and control\"; 16px --spacing-s4 gap-s4 gap: var(--spacing-s4) \"breathing room for a group\"","ledgerKeys":["provenance/arbitrary:button:gap:gap-[13px]@apps/web/src/App.jsx#App","provenance/arbitrary:button:gap:gap-[13px]@src/Alias.jsx#App","provenance/arbitrary:button:gap:gap-[13px]@src/App.jsx#App","provenance/arbitrary:button:gap:gap-[13px]@src/Fallback.jsx#App","provenance/arbitrary:button:gap:gap-[13px]@src/Untracked.jsx#App"],"status":"new"}]}}
+  + actual - expected
+  
+    {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'App',
+  +       file: 'apps/web/src/App.jsx',
+  +       line: 4
+  +     }
+  +   ],
+      column: 10,
+      component: 'App',
+      file: 'apps/web/src/App.jsx',
+  +   index: 0,
+      line: 4,
+      tag: 'button',
+  +   via: 'owner-stack'
+  -   via: 'react19'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/served-root.test.mjs:209:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'apps/web/src/App.jsx', line: 4, column: 10, component: 'App', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: { file: 'apps/web/src/App.jsx', line: 4, column: 10, component: 'App', tag: 'button', via: 'react19' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/served-root.test.mjs:201:3
+✖ Next apps/site webpack: browser fibers locate served JSX and Node applies exact edit (6764.821584ms)
+  AssertionError [ERR_ASSERTION]: {"location":{"location":null,"reason":"resolve-refusal","detail":{"source":"about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3","file":"apps/site/about:/React/Server/webpack-internal:/(rsc)/app/page.jsx","response":"Source is not a tracked project source."}},"site":null}
+  + actual - expected
+  
+    {
+  +   detail: {
+  +     file: 'apps/site/about:/React/Server/webpack-internal:/(rsc)/app/page.jsx',
+  +     response: 'Source is not a tracked project source.',
+  +     source: 'about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3'
+  +   },
+  +   location: null,
+  +   reason: 'resolve-refusal'
+  -   column: 10,
+  -   component: 'App',
+  -   file: 'apps/site/src/App.jsx',
+  -   line: 4,
+  -   tag: 'button',
+  -   via: 'react19'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/served-root.test.mjs:209:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { location: null, reason: 'resolve-refusal', detail: { source: 'about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3', file: 'apps/site/about:/React/Server/webpack-internal:/(rsc)/app/page.jsx', response: 'Source is not a tracked project source.' } },
+    expected: { file: 'apps/site/src/App.jsx', line: 4, column: 10, component: 'App', tag: 'button', via: 'react19' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

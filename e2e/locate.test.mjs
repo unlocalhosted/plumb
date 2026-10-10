@@ -41,8 +41,8 @@ import { renderLeaf } from './react-dom-helper.jsx';
 `;
 const anchors = {
   nested: ['<span', 'Inner', 'gap-[13px]'], sibling: ['<b id=', 'App', 'gap-[17px]'],
-  parent: ['<section', 'App', 'py-[10px]'], 'item-1': ['<i key=', 'App', 'gap-[19px]'],
-  'item-2': ['<i key=', 'App', 'gap-[19px]'], fragment: ['<em', 'App', 'gap-[23px]'],
+  parent: ['<section', 'App', 'py-[10px]'], 'item-1': ['<i key=', null, 'gap-[19px]'],
+  'item-2': ['<i key=', null, 'gap-[19px]'], fragment: ['<em', 'App', 'gap-[23px]'],
   forward: ['<button', 'Forward', null], multiline: ['<div id="multiline"', 'App', 'gap-[31px]'],
   'prop-parent': ['<div id="prop-parent"', 'App', 'py-[10px]'], 'prop-child': ['<span id="prop-child"', 'App', 'gap-[43px]'],
   child: ['<small', 'App', 'gap-[37px]'], explicit: ['<aside', 'App', 'gap-[41px]'],
@@ -78,7 +78,17 @@ async function ready(url) {
   }
   assert.fail('Session did not become ready');
 }
-async function assertions(page, via) {
+function expectedLocation(id, fragment, component, tag, version = 19) {
+  if (version === 18 && id.startsWith('item-')) component = 'App';
+  const chain = [{ file: 'src/App.jsx', ...position(fragment), component }];
+  if (id === 'nested' || id === 'forward') chain.push({
+    file: 'src/App.jsx', ...position(id === 'nested' ? '<Inner />' : '<Forward className='),
+    component: id === 'nested' ? 'Inner' : 'Forward',
+  });
+  if (version === 18) chain.push({ file: 'src/entry.jsx', line: 4, column: 71, component: 'App' });
+  return { ...chain[0], tag, via: 'owner-stack', chain, index: 0 };
+}
+async function assertions(page, version = 19) {
   await page.waitForFunction(async () => {
     const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
     const response = await fetch('/__plumb/health', { headers: token ? { 'x-plumb-token': token } : {} });
@@ -92,7 +102,7 @@ async function assertions(page, via) {
       const fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];
       return { stack: fiber?._debugStack?.stack, source: fiber?._debugSource };
     });
-    assert.deepEqual(location, { file: 'src/App.jsx', ...position(fragment), component, tag: await page.$eval('#' + id, element => element.localName), via: id === 'explicit' ? 'data-plumb-source' : via }, JSON.stringify({ id, debug }));
+    assert.deepEqual(location, expectedLocation(id, fragment, component, await page.$eval('#' + id, element => element.localName), version), JSON.stringify({ id, debug }));
     const site = await page.$eval('#' + id, element => window.__plumb.site(element));
     assert.ok(site, id);
     if (token) {
@@ -102,14 +112,17 @@ async function assertions(page, via) {
     } else { assert.ok(site.findings.length, id); assert.deepEqual(site.declarations.map(d => d.site.text), ['padding: 14']); }
   }
   const leaf = await page.$eval('#helper-leaf', element => window.__plumb.locate(element));
-  assert.equal(leaf?.file, 'src/react-dom-helper.jsx', 'authored react-dom filename is not runtime');
-  assert.equal(leaf?.column, 39);
+  const leafLink = { file: 'src/react-dom-helper.jsx', line: 1, column: 39, component: version === 18 ? 'App' : 'renderLeaf' };
+  const leafChain = [leafLink, ...(version === 18 ? [{ file: 'src/entry.jsx', line: 4, column: 71, component: 'App' }] : [])];
+  assert.deepEqual(leaf, { ...leafLink, tag: 'span', via: 'owner-stack', chain: leafChain, index: 0 }, 'authored react-dom filename is not runtime');
   const leafSite = await page.$eval('#helper-leaf', element => window.__plumb.site(element));
   assert.deepEqual(leafSite.declarations.map(d => d.site.text), ['gap-[13px]']);
-  assert.equal(await page.evaluate(async () => {
+  const imperative = await page.evaluate(async () => {
     const element = document.createElement('div'); document.querySelector('#parent').append(element);
-    return window.__plumb.locate(element);
-  }), null, 'imperative child cannot borrow parent fiber');
+    return { location: await window.__plumb.locate(element), site: await window.__plumb.site(element) };
+  });
+  assert.deepEqual(imperative.location, expectedLocation('parent', '<section', 'App', 'div', version), 'imperative child resolves to nearest rendered ancestor');
+  assert.deepEqual(imperative.site?.declarations.map(d => d.site.text), ['py-[10px]']);
   assert.equal(await page.evaluate(() => window.__plumb.locate(null)), null);
   assert.deepEqual(await page.evaluate(() => window.__plumb.locate(null, { explain: true })), { location: null, reason: 'no-fiber', detail: { step: 'invalid-element' } });
   assert.equal(await page.evaluate(async () => {
@@ -151,6 +164,11 @@ async function editSlice(page, root) {
 }
 async function hmrAssertions(page, root, vite) {
   const before = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
+  const snapshot = () => page.evaluate(async () => {
+    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
+    return (await fetch('/__plumb/resolve?source=src/App.jsx&snapshot=1', { headers: token ? { 'x-plumb-token': token } : {} })).json();
+  });
+  const oldSnapshot = await snapshot();
   await page.$eval('#nested', element => {
     window.oldPlumbElement = element;
     const fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];
@@ -170,6 +188,7 @@ async function hmrAssertions(page, root, vite) {
     assert.equal(stale.location, null, 'source mismatch never corrects an old location: ' + JSON.stringify(stale.explain));
     assert.equal(stale.explain.reason, 'source-mismatch', JSON.stringify(stale.explain));
     assert.notEqual(stale.explain.detail.mapHash, stale.explain.detail.currentHash);
+    assert.notEqual(oldSnapshot.hash, (await snapshot()).hash, 'stale and current source snapshots differ');
   }
   await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Updated');
   if (vite) {
@@ -181,12 +200,12 @@ async function hmrAssertions(page, root, vite) {
   let fresh = await page.$eval('#nested', element => window.__plumb.locate(element));
   if (!fresh) fresh = await page.$eval('#nested', element => window.__plumb.locate(element));
   const explain = fresh ? undefined : await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
-  assert.deepEqual(fresh && { file: fresh.file, line: fresh.line, column: fresh.column }, { file: 'src/App.jsx', ...position('<span') }, JSON.stringify({ explain }));
+  assert.deepEqual(fresh, expectedLocation('nested', '<span', 'Inner', 'span'), JSON.stringify({ explain }));
   // Also refresh without a save-race lookup to invalidate caches beforehand.
   await writeFile(join(root, 'src/App.jsx'), source.replace('Nested</span>', 'Again</span>'));
   await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Again');
   const committed = await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
-  assert.deepEqual(committed && { file: committed.file, line: committed.line, column: committed.column }, { file: 'src/App.jsx', ...position('<span') }, JSON.stringify(committed));
+  assert.deepEqual(committed, expectedLocation('nested', '<span', 'Inner', 'span'), JSON.stringify(committed));
 }
 async function warmBudget(page, t) {
   // CDP measures CPU on the renderer main thread, excluding fetch/worker waits.
@@ -217,7 +236,7 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
-  await assertions(page, version === 19 ? 'react19' : 'react-debugSource');
+  await assertions(page, version);
   if (version === 19) await hmrAssertions(page, root, true);
   await editSlice(page, root);
 });
@@ -250,7 +269,7 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   const page = await launched.newPage();
   page.on('pageerror', error => output += '\n' + error.message);
   await page.goto(url, { timeout: 60000 });
-  try { await assertions(page, 'react19'); await warmBudget(page, t); await hmrAssertions(page, root, false); await editSlice(page, root); } catch (error) { error.message += '\n' + output; throw error; }
+  try { await assertions(page); await warmBudget(page, t); await hmrAssertions(page, root, false); await editSlice(page, root); } catch (error) { error.message += '\n' + output; throw error; }
 });
 
 test('resolve validates tracked source identity and site queries select only exact JSX attributes', async t => {
@@ -270,17 +289,28 @@ test('resolve validates tracked source identity and site queries select only exa
   const hotCode = await (await fetch(new URL(hotModule[1].replaceAll('&amp;', '&'), url))).text();
   assert.match(hotCode, /createHotContext/); assert.match(hotCode, /vite:afterUpdate/);
   const resolve = (source, params = {}, init) => fetch(url + 'resolve?' + new URLSearchParams({ source, ...params }), init);
-  for (const source of [join(root, 'src/App.jsx'), pathToFileURL(join(root, 'src/App.jsx')).href, '/@fs/' + join(root, 'src/App.jsx'), 'webpack://_N_E/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/./src/App.jsx', '/src/App.jsx', 'src/App.jsx']) {
+  for (const source of [join(root, 'src/App.jsx'), pathToFileURL(join(root, 'src/App.jsx')).href, '/@fs/' + join(root, 'src/App.jsx'), 'webpack://_N_E/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/src/App.jsx', 'webpack-internal:///(custom-layer)/src/App.jsx', 'webpack-internal:///(custom-layer)/./src/App.jsx', '/src/App.jsx', 'src/App.jsx']) {
     const response = await resolve(source); assert.equal(response.status, 200, source); assert.deepEqual(await response.json(), { file: 'src/App.jsx' });
     const atTag = await resolve(source, { ...position('<span'), column: position('<span').column + 1 });
     assert.equal(atTag.status, 200); assert.deepEqual(await atTag.json(), { file: 'src/App.jsx', ...position('<span') });
+  }
+  for (const component of ['Inner', 'Forward']) {
+    const at = position('<' + component);
+    const response = await resolve('src/App.jsx', { ...at, column: at.column + 1 });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at, component });
   }
   assert.equal((await resolve('src/App.jsx', { ...position('<section'), tag: 'span' })).status, 400, 'span cannot resolve to caller section');
   for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), 'untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
     const response = await resolve(source); assert.equal(response.status, 200, source);
     const result = await response.json(); assert.equal(result.library, true, source); assert.equal(result.file, undefined, source);
   }
-  for (const params of [{ line: 9999, column: 1 }, { line: 1, column: 1 }, { line: 4, column: 99999 }, { line: 4 }, { column: 10 }, { line: 0, column: 1 }]) assert.equal((await resolve('src/App.jsx', params)).status, 400, JSON.stringify(params));
+  for (const params of [{ line: 9999, column: 1 }, { line: 1, column: 1 }, { line: 4, column: 99999 }, position('</span>'), position('renderLeaf()}')]) {
+    const response = await resolve('src/App.jsx', params);
+    assert.equal(response.status, 200, JSON.stringify(params));
+    assert.deepEqual(await response.json(), { refused: 'not-jsx' });
+  }
+  for (const params of [{ line: 4 }, { column: 10 }, { line: 0, column: 1 }]) assert.equal((await resolve('src/App.jsx', params)).status, 400, JSON.stringify(params));
   assert.equal((await resolve('src/App.jsx', {}, { headers: { Origin: 'https://foreign.example' } })).status, 403);
   assert.equal((await resolve('src/App.jsx', {}, { method: 'POST', headers: { Origin: new URL(url).origin } })).status, 405);
   for (const [id, [fragment, , token]] of Object.entries(anchors)) {

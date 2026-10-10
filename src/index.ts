@@ -41,7 +41,7 @@ export type { Preset, PresetSelection, PresetSummary } from './presets/index.js'
 export { defineConfig } from './config.js';
 export type { HabitPredicate, ConditionPredicates, HabitSeverity } from './habits/predicates.js';
 export type { HabitSummary, BuiltinHabit } from './habits/index.js';
-export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit } from './config.js';
+export type { PlumbConfig, DecisionSource, ComponentContract, CustomHabit, ClassHelper, ClassHelperInput } from './config.js';
 export type { Report, Finding, Declaration, Decision, Site, Condition, Family, FamilyCoverage, JudgedFamily, ProvenanceCoverage } from './report.js';
 
 export interface CheckOptions extends LedgerOptions {
@@ -133,9 +133,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
       authoredValue: candidate?.authoredValue ?? false,
     })), notes: candidate?.notes ?? [] }));
   });
-  // Import-graph files outside source globs prove existence; only source sites
-  // enter the shared declaration set for provenance and later judging rules.
-  const sourceFiles = new Set(input ? [input.file] : files);
+  // Imported helpers on a proven className path are authored styling inputs too.
+  // Other import-graph files outside source globs still only prove existence.
+  const sourceFiles = new Set(input ? [input.file] : [...files, ...collected.computedClassFiles ?? []]);
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file));
@@ -253,6 +253,6 @@ export type { StructuredEdit } from './surfaces/edits.js';
 export { agentDocs } from './surfaces/docs.js';
 
 export { Session, createSession } from './session/index.js';
-export type { SessionOptions, SiteResult, EditsResult, ApplyOptions, ApplyResult } from './session/index.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyResult } from './session/index.js';
 export { serve, serveStdio, createHandler, createWebHandler } from './session/server.js';
 export type { HandlerOptions, WebHandlerOptions, ServeInfo } from './session/server.js';

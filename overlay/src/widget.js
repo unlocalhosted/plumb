@@ -101,6 +101,14 @@ const css = `
   .top .close svg { width: 10px; height: 10px; }
   .top button:focus-visible, .top .file:focus-visible { outline: 1px solid var(--pl-instrument); }
 
+  /* the chain: where this element comes from, outermost usage first; the read link is marked */
+  .chain { display: flex; align-items: center; gap: 2px; padding: 0 8px 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior: contain; }
+  .chain .link { all: unset; flex: none; font: var(--pl-text-reading); color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: var(--pl-radius-mark); cursor: pointer; white-space: nowrap; }
+  .chain .link[aria-current="true"] { color: var(--pl-ink); background: var(--pl-paper-2); }
+  .chain .link:focus-visible { outline: 1px solid var(--pl-instrument); }
+  @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-ink); } }
+  .chain .sep { color: var(--pl-ink-3); font: var(--pl-text-reading); }
+
   /* the skeleton: the element at its real proportions, marks set into its outline */
   .diagram { position: relative; margin: 10px 12px 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .diagram.swapping { opacity: 0; }
@@ -182,12 +190,15 @@ const css = `
   .read .edit { display: flex; align-items: center; gap: 8px; font: var(--pl-text-reading); flex-wrap: wrap; }
   .read .edit s { color: var(--pl-ink-2); text-decoration-color: var(--pl-off); }
   .read .edit b { font-weight: 600; }
-  .read .edit .hint { font: var(--pl-text-row); color: var(--pl-ink-2); }
+  .read .edit .hint { font: var(--pl-text-row); color: var(--pl-ink-2); min-width: 0; flex: 1 1 100%; }
+  .read .edit .hint code, .notes code { overflow-wrap: anywhere; }
+  .read .edit .ledger { flex: none; }
   .read .edit .ledger { margin-inline-start: auto; font: var(--pl-text-label); color: var(--pl-ink-2); }
   .read .edit .ledger.new { color: var(--pl-ink); }
 
   .notes { margin: 0 12px 10px; display: grid; gap: 4px; }
-  .notes p { margin: 0; font: var(--pl-text-label); color: var(--pl-ink-2); display: flex; gap: 6px; align-items: baseline; }
+  .notes p { margin: 0; font: var(--pl-text-label); color: var(--pl-ink-2); display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+  .notes p > * { min-width: 0; }
   .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); transform: translateY(-2px); }
 
   .foot, .synced { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 12px; box-shadow: 0 -1px 0 var(--pl-rule); }
@@ -261,11 +272,7 @@ class PlumbOverlay extends HTMLElement {
     const promise = (async () => {
       const found = await locate(element, { explain: true, signal });
       if (!found?.file) return { status: 'unplaced', tag: element.localName, ...unplaced(found) };
-      const location = found;
-      const params = { file: location.file, line: location.line, column: location.column };
-      const [site, edits] = await Promise.all([request('site', params), request('edits', params)]);
-      if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
-      return { status: 'ready', ...reading(location, site, edits) };
+      return this.#readAt(found, element);
     })().catch(error => error?.starting
       ? { status: 'starting', tag: element.localName, message: 'Plumb is still reading your project…' }
       : error?.failed ? { status: 'error', tag: element.localName, short: 'Plumb couldn’t start', message: `Plumb couldn’t start: ${error.message}` }
@@ -278,8 +285,68 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
 
+  // The reading of one link in the chain: the JSX at that position, its declarations, findings and edits.
+  async #readAt(location, element = this.#pinned?.element) {
+    const params = { file: location.file, line: location.line, column: location.column };
+    const [site, edits] = await Promise.all([request('site', params), request('edits', params)]);
+    if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
+    const rendered = element?.getAttribute('class')?.trim();
+    // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
+    if (!site.declarations.length && rendered) {
+      const traced = await request('classes', { ...params, classes: rendered }).catch(() => null);
+      if (traced?.classes) return { status: 'ready', ...this.#computedReading(location, traced) };
+    }
+    return { status: 'ready', ...reading(location, site, edits) };
+  }
+
+  // Classes traced to one literal in this level's file become ordinary marks (their edits write to that file). A class
+  // that could come from several literals (a branch Plumb cannot decide) is counted, never guessed; classes from other
+  // files, or passed in by the code that uses this component, are pointed at.
+  #computedReading(location, traced) {
+    const same = site => site.file === location.file || site.file?.endsWith('/' + location.file);
+    const findings = new Map(), declarations = [], edits = [];
+    let hash, ambiguous = 0;
+    const elsewhere = new Set();
+    for (const entry of traced.classes) {
+      if (entry.ambiguous) { ambiguous++; continue; }
+      for (const site of entry.sites) {
+        if (!same(site)) { elsewhere.add(site.file.split('/').pop() + ':' + site.line); continue; }
+        hash ??= site.hash;
+        for (const finding of site.findings ?? []) findings.set(finding.key + '@' + site.line + ':' + site.column, finding);
+        declarations.push(...(site.declarations ?? []));
+        edits.push(...(site.edits ?? []));
+      }
+    }
+    const r = reading(location, { findings: [...findings.values()], declarations }, { hash, edits });
+    const notes = [...r.notes];
+    const unattributed = traced.unattributed ?? [];
+    if (unattributed.length) notes.push({ title: `\`${unattributed.join(' ')}\` ${unattributed.length === 1 ? 'is' : 'are'} passed in by the code that uses this component. Alt+↑ reads it there.` });
+    if (ambiguous) notes.push({ title: `${ambiguous} class${ambiguous === 1 ? '' : 'es'} could come from more than one line, depending on props; Plumb won’t guess which.` });
+    if (elsewhere.size) notes.push({ title: `Some classes are written in ${[...elsewhere].slice(0, 3).join(', ')}${elsewhere.size > 3 ? '…' : ''}.` });
+    return { ...r, notes, declared: declarations.length || traced.classes.length, traced: { attributed: traced.classes.length, unattributed: unattributed.length, ambiguous } };
+  }
+
+  // Step through the chain with the element still pinned: Alt+↑ goes out to the code that uses this component, Alt+↓
+  // back in toward the design system's own JSX. Any unwritten preview belongs to the level it was made on, so it lifts.
+  async #step(to) {
+    const p = this.#pinned, s = p?.state;
+    if (!s?.chain?.length || to < 0 || to >= s.chain.length || to === s.index) return;
+    this.#restore(p); p.original.clear(); p.before = false; p.status = null;
+    const link = s.chain[to];
+    const next = await this.#readAt({ ...link, tag: s.tag, via: s.via, chain: s.chain, index: to }, p.element);
+    if (this.#pinned !== p) return;
+    p.state = structuredClone(next); p.active = 0;
+    this.#renderWidget();
+  }
+
   // ── armed: Alt held ──────────────────────────────────────
   #onKeyDown = event => {
+    if (this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      event.preventDefault(); event.stopPropagation();
+      const s = this.#pinned.state;
+      if (s?.chain) this.#step(s.index + (event.key === 'ArrowUp' ? 1 : -1));
+      return;
+    }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
   };
@@ -450,6 +517,9 @@ class PlumbOverlay extends HTMLElement {
         ${s.status === 'ready' ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column} · click to copy">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
         ${s.status === 'ready' ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}
         <button class="close" aria-label="Close the reading">${ICON.close}</button></div>
+      ${s.status === 'ready' && s.chain?.length > 1 ? `<nav class="chain" aria-label="Where this element comes from, Alt+↑ and Alt+↓ to step">${s.chain.map((link, i) => i).reverse().map(i => {
+        const link = s.chain[i];
+        return `<button class="link" data-step="${i}" aria-current="${i === s.index}" title="${esc(link.file)}:${link.line}">${esc(link.component ?? link.file.split('/').pop())}</button>`; }).join('<span class="sep" aria-hidden="true">›</span>')}</nav>` : ''}
       ${s.status === 'ready' ? `<div class="diagram"></div><div class="read" aria-live="polite"></div>${this.#notes(s)}
         <div class="foot"><span class="count"></span>
           <button class="nav prev" aria-label="Previous mark">${ICON.prev}</button><button class="nav next" aria-label="Next mark">${ICON.next}</button>
@@ -467,12 +537,13 @@ class PlumbOverlay extends HTMLElement {
 
   #notes(s) {
     if (!s.notes.length) return '';
-    return `<div class="notes">${s.notes.map(n => `<p title="${esc(n.because)}">${code(n.title)}</p>`).join('')}</div>`;
+    return `<div class="notes">${s.notes.map(n => `<p title="${esc(n.because)}"><span>${code(n.title)}</span></p>`).join('')}</div>`;
   }
 
   #bindWidget() {
     const w = this.#$('.w'), on = (sel, fn) => w.querySelector(sel)?.addEventListener('click', e => { e.stopPropagation(); fn(e); });
     on('.close', () => this.close());
+    w.querySelectorAll('.chain .link').forEach(link => link.addEventListener('click', e => { e.stopPropagation(); this.#step(Number(link.dataset.step)); }));
     on('.prev', () => this.#go(this.#pinned.active - 1));
     on('.next', () => this.#go(this.#pinned.active + 1));
     on('.sync', () => this.#sync());

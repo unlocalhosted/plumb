@@ -1,0 +1,184 @@
+✔ real sparse destructuring, arrays, null helper arguments and empty returns survive check and classes (3621.027084ms)
+✔ shared helper shapes cover config, mixed, legacy and imported aliases without attributing metadata (3198.909291ms)
+✔ unexpected startup failures preserve worker frames in Session, CLI and health diagnostic (2920.304167ms)
+✔ AlgoRecall malformed arbitrary selector leaves a diagnostic while valid classes remain judgeable (1892.570458ms)
+✔ MetalUI button own template follows helper, shared templates, maps, callback and nested conditionals (1767.337958ms)
+✔ cva maps each rendered token to its feeding literal; Node apply changes only selected literal (1602.931833ms)
+✔ tv maps each rendered token to its feeding literal; Node apply changes only selected literal (1861.630208ms)
+✔ cn maps each rendered token to its feeding literal; Node apply changes only selected literal (711.547833ms)
+✔ imported maps each rendered token to its feeding literal; Node apply changes only selected literal (715.478958ms)
+✔ callback maps each rendered token to its feeding literal; Node apply changes only selected literal (871.9815ms)
+✔ ambiguous candidates all survive; dynamic concatenation never gets attributed; fallback stays within module graph (600.235459ms)
+✔ warm lookups stay cached, imported helper changes reconcile without watchers, stale edits refused (1313.469958ms)
+✔ classes HTTP and Fetch routes validate parameters, auth, CORS and methods (1168.843125ms)
+✔ real Chromium rendered classes resolve through GET classes; Node apply updates only helper literal and browser CSS (2554.568542ms)
+✔ imported helper outside source glob remains authored and editable, with transitive invalidation (779.878833ms)
+✔ lexical scopes, imported namespaces, constant map keys and conditional joins preserve exact literals (661.234792ms)
+✔ recursive helpers and deep import chains stop with explicit limits, without guessed fallback (1902.190875ms)
+✔ export-star barrels and helper defaults preserve literal attribution and apply (2011.511083ms)
+✔ isolation credentialless: Vite and Fetch transports serve compatible overlay headers (1795.701625ms)
+✔ isolation require-corp: Vite and Fetch transports serve compatible overlay headers (1059.755041ms)
+✔ concurrent map callers share HTTP evidence; abort and invalidation leave independent callers intact (1659.131167ms)
+✔ isolation credentialless: concurrent locates preserve authored evidence (2067.819541ms)
+✔ isolation require-corp: concurrent locates preserve authored evidence (1900.962208ms)
+✔ isolation credentialless csp: concurrent locates preserve authored evidence (2237.403875ms)
+✔ isolation require-corp error: concurrent locates preserve authored evidence (2047.673375ms)
+✔ isolation credentialless throw: concurrent locates preserve authored evidence (2120.482917ms)
+✔ isolation credentialless unavailable: concurrent locates preserve authored evidence (2227.79275ms)
+✔ file-linked sibling library: maps, classification, refusals and exact writes through HTTP (2659.436209ms)
+✔ file-linked sibling library: real Base UI owners locate and Node applies the authored edit (2072.531208ms)
+✔ tracked workspace library: maps, classification, refusals and exact writes through HTTP (1864.303042ms)
+✔ tracked workspace library: real Base UI owners locate and Node applies the authored edit (1756.592708ms)
+✔ Vite React 19: real fibers locate exact JSX sites (4087.978458ms)
+✔ Vite React 18: real fibers locate exact JSX sites (3465.642ms)
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (27280.3155ms)
+ℹ warm Next locate main-thread ms: 4.46, 4.43, 4.51, 4.49, 3.20
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (7550.2375ms)
+ℹ warm Next locate main-thread ms: 3.33, 3.32, 2.99, 2.63, 2.56
+✔ resolve validates tracked source identity and site queries select only exact JSX attributes (438.937875ms)
+✔ script maps resolve through real HTTP: inline data, relative URLs, sourceRoot, nested index sections and unmapped spans (351.603667ms)
+✔ review 2: stable module/map URLs invalidate together and reject mismatched source snapshots (325.832167ms)
+✔ Next stable chunks refresh eval indexes and maps through HTTP and compare current disk hashes (362.873375ms)
+✔ review 5: target requests stat bounded dependencies without watchers; report/decisions retain full reconciliation (5692.206333ms)
+✔ review 5: watch-disabled target judgement refreshes theme, config imports, preset and empty DTCG inputs (2870.714084ms)
+✔ Alt-hover reads an element, a click pins it, a pick previews it, Write puts it in source (4730.212209ms)
+✔ Undo lifts every preview; closing never leaves a preview behind; unplaced elements say so (2161.336292ms)
+✔ Vite React 19 plugin-react: library owners locate, read and edit authored JSX (6460.091625ms)
+✔ Vite React 19 oxc: library owners locate, read and edit authored JSX (6243.661834ms)
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (4948.183333ms)
+✔ authored library JSX resolves, isolates nested declarations and writes through real HTTP (1602.166875ms)
+✔ Vite apps/web: monorepo resolve and writes use served root through real HTTP (3785.731625ms)
+✔ Next apps/site webpack: monorepo resolve and writes use served root through real HTTP (20339.328833ms)
+✔ Vite handlers sharing a repository Session retain their own served roots (1471.348458ms)
+✔ serve --overlay --served-root resolves relative to CLI cwd while --root owns source writes (729.637458ms)
+✔ Vite apps/web: browser fibers locate served JSX and Node applies exact edit (1170.381333ms)
+✔ Next apps/site webpack: browser fibers locate served JSX and Node applies exact edit (9198.23475ms)
+ℹ tests 53
+ℹ suites 0
+ℹ pass 50
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 53032.419458
+
+✖ failing tests:
+
+test at e2e/locate.test.mjs:244:49
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (27280.3155ms)
+  AssertionError [ERR_ASSERTION]: {"explain":{"location":null,"reason":"source-mismatch","detail":{"source":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-E2vNkF/src/App.jsx","mapHash":"585cc3fdb0e14d1e496fd7f6302ddfbd665160664c9755459b3553b41a6f95ab","currentHash":"4ab5b7e84dbcdedcce33f5c6ccf839385729d4ce6a7e369db5d4e895383f2f84"}}}
+  + actual - expected
+  
+  + null
+  - {
+  -   chain: [
+  -     {
+  -       column: 10,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 4
+  -     },
+  -     {
+  -       column: 48,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 11
+  -     }
+  -   ],
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   index: 0,
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'owner-stack'
+  - }
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:203:10)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:272:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/locate.test.mjs:244:49
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (7550.2375ms)
+  AssertionError [ERR_ASSERTION]: source mismatch never corrects an old location: {"file":"src/App.jsx","line":4,"column":10,"component":"Inner","tag":"span","via":"owner-stack","chain":[{"file":"src/App.jsx","line":4,"column":10,"component":"Inner"},{"file":"src/App.jsx","line":11,"column":48,"component":"Inner"}],"index":0}
+  + actual - expected
+  
+  + {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 4
+  +     },
+  +     {
+  +       column: 48,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 11
+  +     }
+  +   ],
+  +   column: 10,
+  +   component: 'Inner',
+  +   file: 'src/App.jsx',
+  +   index: 0,
+  +   line: 4,
+  +   tag: 'span',
+  +   via: 'owner-stack'
+  + }
+  - null
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:188:12)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:272:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/owner-locate.test.mjs:171:3
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (4948.183333ms)
+  AssertionError [ERR_ASSERTION]: no-jsx: never guess
+  + actual - expected
+  
+  + {
+  +   chain: [
+  +     {
+  +       column: 52,
+  +       component: 'App',
+  +       file: 'src/entry.jsx',
+  +       line: 4
+  +     }
+  +   ],
+  +   column: 52,
+  +   component: 'App',
+  +   file: 'src/entry.jsx',
+  +   index: 0,
+  +   line: 4,
+  +   tag: 'button',
+  +   via: 'owner-stack'
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/owner-locate.test.mjs:226:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/entry.jsx', line: 4, column: 52, component: 'App', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

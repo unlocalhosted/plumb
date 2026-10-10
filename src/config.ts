@@ -8,6 +8,8 @@ import type { Decision, Family } from './report.js';
 import { validateHabits } from './habits/index.js';
 import type { CustomHabit } from './habits/predicates.js';
 export type { CustomHabit } from './habits/predicates.js';
+import type { ClassHelperInput } from './collect/class-helpers.js';
+export type { ClassHelper, ClassHelperInput } from './collect/class-helpers.js';
 
 export interface DecisionSource {
   inferred?: boolean;
@@ -33,7 +35,7 @@ export interface PlumbConfig {
   css?: string;
   source?: string[];
   markers?: string[];
-  classHelpers?: string[];
+  classHelpers?: ClassHelperInput[];
   /** Published decision names or source-file globs; consumers may live outside source. */
   exported?: string[];
   decisions?: Partial<Record<Family, DecisionSource>>;
@@ -105,7 +107,18 @@ export function validateConfig(value: unknown): PlumbConfig {
   if ('css' in config) string(config.css, 'css');
   if ('source' in config) strings(config.source, 'source');
   if ('markers' in config) strings(config.markers, 'markers');
-  if ('classHelpers' in config) strings(config.classHelpers, 'classHelpers');
+  if ('classHelpers' in config) {
+    if (!Array.isArray(config.classHelpers)) invalid('classHelpers', 'an array of helper names or argument-shape objects');
+    for (const [index, item] of config.classHelpers.entries()) {
+      if (item === null || typeof item !== 'object') { string(item, 'classHelpers'); continue; }
+      const path = `classHelpers[${index}]`, helper = object(item, path);
+      keys(helper, ['name', 'args', 'configKeys', 'configFrom'], path);
+      string(helper.name, `${path}.name`);
+      if (helper.args !== 'classes' && helper.args !== 'config') invalid(`${path}.args`, '"classes" or "config"');
+      if ('configKeys' in helper) strings(helper.configKeys, `${path}.configKeys`);
+      if ('configFrom' in helper && (typeof helper.configFrom !== 'number' || !Number.isSafeInteger(helper.configFrom) || helper.configFrom < 0)) invalid(`${path}.configFrom`, 'a non-negative integer');
+    }
+  }
   if ('exported' in config) strings(config.exported, 'exported');
   if ('decisions' in config) {
     const decisions = object(config.decisions, 'decisions');

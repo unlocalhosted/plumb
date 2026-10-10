@@ -123,7 +123,9 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
   assert.equal(await page.locator('#beta-chip').getAttribute('style'), null, 'closing lifts an unwritten preview');
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written without Write');
 
-  // HTML written at runtime has no source line; the overlay says so instead of guessing one.
-  await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.querySelector('main').append(d); return window.__plumb.overlay.pin(d); });
+  // Runtime DOM outside React's rendered tree has no authored ancestor to read.
+  await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.body.append(d); return window.__plumb.overlay.pin(d); });
+  assert.equal(await page.$eval('#runtime', element => window.__plumb.locate(element)), null);
+  assert.deepEqual(await page.$eval('#runtime', element => window.__plumb.locate(element, { explain: true })), { location: null, reason: 'no-fiber', detail: {} });
   await overlay.getByRole('dialog').filter({ hasText: 'wasn’t rendered by React' }).waitFor();
 });

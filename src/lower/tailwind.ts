@@ -96,7 +96,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     try { cssGraph = memory?.graph ?? await tailwindGraph(entry); }
     catch (error) { return skipped(error); }
     if (memory) memory.graph = cssGraph;
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v3-isolated`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v4-isolated-selectors`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -212,8 +212,14 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           cached[candidate] = { ...result, authoredValue }; cachedCount++;
         }
         catch (error) {
-          // Retain compiler text for existence proof; never judge failed CSS.
-          cached[candidate] = { css: css[index] ?? null, declarations: [], notes: [], unreadable: errorMessage(error) }; cachedCount++;
+          if (error instanceof SyntaxError) {
+            // Invalid authored selectors remain diagnostic-only and are retried
+            // on later reads rather than cached as successfully lowered.
+            results.set(candidate, { css: css[index] ?? null, declarations: [], notes: [`Could not lower ${candidate}: ${errorMessage(error)}`], unreadable: errorMessage(error) });
+          } else {
+            // Retain compiler text for existence proof; never judge failed CSS.
+            cached[candidate] = { css: css[index] ?? null, declarations: [], notes: [], unreadable: errorMessage(error) }; cachedCount++;
+          }
         }
       }
     }

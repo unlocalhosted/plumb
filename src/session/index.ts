@@ -1,11 +1,11 @@
 import { EventEmitter } from 'node:events';
-import { resolve } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
-export type { SessionOptions, SiteResult, EditsResult, ApplyOptions, ApplyResult, SourceResolution } from './engine.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'apply' | 'decisions' | 'why' | 'try' | 'refresh';
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'classes' | 'apply' | 'decisions' | 'why' | 'try' | 'refresh';
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
 export class Session extends EventEmitter {
@@ -31,13 +31,18 @@ export class Session extends EventEmitter {
           if (message.health) session.snapshot = message.health;
           if (message.stats !== undefined) session.lastStats = message.stats;
           if (message.ready) { ready(); return; }
-          if (message.startupError) { reject(new UsageError(message.startupError)); return; }
+          const failure = (text: string): Error => {
+            const error = message.usageError ? new UsageError(text) : new Error(text);
+            if (message.errorStack) error.stack = message.errorStack;
+            return error;
+          };
+          if (message.startupError) { reject(failure(message.startupError)); return; }
           if (message.event) { session.emit(message.event, message.value); return; }
           const pending = session.pending.get(message.id); if (!pending) return;
           if (message.started) { clearTimeout(pending.timer); return; }
           session.pending.delete(message.id); clearTimeout(pending.timer);
           if (message.busy) pending.reject(new BusyError());
-          else if (message.error) pending.reject(new UsageError(message.error));
+          else if (message.error) pending.reject(failure(message.error));
           else pending.resolve(message.result);
         });
         session.worker.on('error', error => { session.fail(error); reject(error); });
@@ -70,6 +75,16 @@ export class Session extends EventEmitter {
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   edits(...args: Parameters<Engine['edits']>) { return this.call('edits', args); }
+  classes(...args: Parameters<Engine['classes']>) {
+    // Preserve synchronous argument errors without filesystem or analysis work.
+    const [file, line, column, classes] = args;
+    if (typeof classes !== 'string' || classes.length > 65536) throw new UsageError('classes must be a string of at most 65536 characters.');
+    if (typeof file !== 'string' || !file.trim()) throw new UsageError('File must be a non-empty source path.');
+    const inside = relative(this.root, resolve(this.root, file));
+    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
+    for (const value of [line, column]) if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.');
+    return this.call('classes', args);
+  }
   apply(...args: Parameters<Engine['apply']>) { return this.call('apply', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }

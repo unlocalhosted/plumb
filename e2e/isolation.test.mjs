@@ -145,11 +145,11 @@ for (const [policy, blocked] of [['credentialless', ''], ['require-corp', ''], [
       controller.abort();
       return Promise.all([abandoned, retained, independent]);
     });
-    assert.equal(locations[0].detail.step, 'cancelled');
-    for (const location of locations.slice(1)) {
-      assert.equal(location.file, 'src/App.jsx', JSON.stringify(location));
-      assert.equal(location.line, 3); assert.equal(location.tag, 'button');
-      assert.equal(Boolean(location.detail?.fallback), Boolean(blocked), JSON.stringify(location));
+    assert.deepEqual(locations[0], { location: null, reason: 'map', detail: { step: 'cancelled' } });
+    for (const [i, location] of locations.slice(1).entries()) {
+      const offset = source.indexOf('<button id="' + ['first', 'second'][i] + '"');
+      const link = { file: 'src/App.jsx', line: 3, column: offset - source.lastIndexOf('\n', offset), component: 'App' };
+      assert.deepEqual(location, { ...link, tag: 'button', via: 'owner-stack', chain: [link], index: 0 });
     }
     assert.notEqual(locations[1].column, locations[2].column);
     const decoded = await page.evaluate(async () => {
@@ -166,7 +166,7 @@ for (const [policy, blocked] of [['credentialless', ''], ['require-corp', ''], [
     assert.equal(requests.get('/maps/shared.js'), 1); assert.equal(requests.get('/maps/shared.map'), 1);
     assert.equal(requests.get('/maps/unselected.map'), undefined);
     const repeated = await page.$eval('#first', element => window.__plumb.locate(element, { explain: true }));
-    assert.deepEqual(repeated.detail?.fallback, locations[1].detail?.fallback, 'fallback diagnostic remains stable');
+    assert.deepEqual(repeated, locations[1], 'owner chain remains stable when workers are blocked');
     // Keep every source write in Node: HMR can replace the document immediately.
     const query = new URLSearchParams({ file: locations[1].file, line: locations[1].line, column: locations[1].column });
     const edits = await (await fetch(url + '/__plumb/edits?' + query)).json();

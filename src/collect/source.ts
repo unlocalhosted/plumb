@@ -14,7 +14,7 @@ export function namedAnchors(ast: Program): NamedAnchor[] {
       anchors.push({ start: node.start, end: node.end, name: node.id.name });
     } else if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' && node.init) {
       const init = unwrap(node.init);
-      if (['ArrowFunctionExpression', 'FunctionExpression'].includes(init.type) || init.type === 'CallExpression' && init.arguments.some(arg => ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(arg).type))) {
+      if (['ArrowFunctionExpression', 'FunctionExpression'].includes(init.type) || init.type === 'CallExpression' && init.arguments.some(arg => arg && ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(arg).type))) {
         anchors.push({ start: node.start, end: node.end, name: node.id.name });
       }
     } else if (node.type === 'MethodDefinition' || node.type === 'Property' && node.method) {

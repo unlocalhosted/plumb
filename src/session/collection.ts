@@ -69,6 +69,10 @@ export class CollectionState {
     if (!input) {
       for (const path of old?.dependencies.keys() ?? []) { const users = this.consumers.get(path); users?.delete(file); if (!users?.size) this.consumers.delete(path); }
       const dependencies = this.imports(file, text ?? '');
+      for (const path of value.computedDependencies ?? []) if (path !== file) {
+        this.dependencies.add(path);
+        try { dependencies.set(path, sourceHash(readFileSync(path, 'utf8'))); } catch { /* Collection reports unreadable computed imports. */ }
+      }
       this.slices.set(file, { hash, dependencies, value });
       for (const path of dependencies.keys()) { let users = this.consumers.get(path); if (!users) this.consumers.set(path, users = new Set()); users.add(file); }
       const definitions = value.styles.declarations.filter(d => d.prop.startsWith('--'));
@@ -105,7 +109,7 @@ export class CollectionState {
       for (const [file, imports] of value.modules) modules.set(file, imports);
       for (const key of ['declarations', 'sites', 'stylesheets', 'imports', 'definedVariables'] as const) (styles[key] as unknown[]).push(...value.styles[key]);
     }
-    return { diagnostics: values.flatMap(value => value.diagnostics), sites: [...sites.values()], styles, modules, opaque: values.reduce((sum, v) => sum + v.opaque, 0),
+    return { diagnostics: values.flatMap(value => value.diagnostics), sites: [...sites.values()], styles, modules, computedClassFiles: [...new Set(values.flatMap(value => value.computedClassFiles ?? []))], opaque: values.reduce((sum, v) => sum + v.opaque, 0),
       parseMs: 0, collectMs: 0, inlineMs: 0 };
   }
 }

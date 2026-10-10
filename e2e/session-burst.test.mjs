@@ -24,11 +24,12 @@ test('1000-file Session: 300 overlapping reads share reconciliation and leave he
   t.after(() => { server.closeAllConnections(); server.close(); });
   const health = `http://127.0.0.1:${server.address().port}/__plumb/health`;
   await fetch(health).then(r => r.json());
-  const calls = Array.from({ length: 30 }, (_, i) => {
-    const file = `src/bulk/File${Math.floor(i / 3)}.tsx`;
-    if (i % 3 === 0) return () => session.site(file, 2, 1);
-    if (i % 3 === 1) return () => session.resolveSource(file, 2, 1, { tag: 'div', snapshot: true });
-    return () => session.edits(file, 2, 1);
+  const calls = Array.from({ length: 40 }, (_, i) => {
+    const file = `src/bulk/File${Math.floor(i / 4)}.tsx`;
+    if (i % 4 === 0) return () => session.site(file, 2, 1);
+    if (i % 4 === 1) return () => session.resolveSource(file, 2, 1, { tag: 'div', snapshot: true });
+    if (i % 4 === 2) return () => session.edits(file, 2, 1);
+    return () => session.classes(file, 2, 1, 'gap-[13px]');
   });
   const sequential = [];
   for (const call of calls) sequential.push(await call());
@@ -64,6 +65,11 @@ test('expired read admission returns busy on Node and Web routes, while health b
   const web = createWebHandler(session, { peerAddress: '127.0.0.1' });
   const expired = await web(new Request(base + 'resolve?source=src/App.tsx'));
   assert.equal(expired.status, 503); assert.deepEqual(await expired.json(), { status: 'busy' });
+  for (const classes of [await fetch(base + 'classes?file=src/App.tsx&line=1&column=1&classes=gap-[13px]'),
+    await web(new Request(base + 'classes?file=src/App.tsx&line=1&column=1&classes=gap-[13px]'))]) {
+    assert.equal(classes.status, 503); assert.equal(classes.headers.get('Retry-After'), '1');
+    assert.deepEqual(await classes.json(), { status: 'busy' });
+  }
   assert.equal((await fetch(base + 'health')).status, 200);
   assert.equal((await web(new Request(base + 'health'))).status, 200);
 });

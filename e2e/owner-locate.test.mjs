@@ -139,7 +139,34 @@ const anchors = {
   'inside-portal': ['<MetalButton id="inside-portal"', 'MetalButton', 'gap-[47px]'],
   aliased: ['<Btn id=', 'Btn', 'gap-[14px]'],
   icon: ['<Icon id=', 'Icon', 'gap-[15px]', 'svg'],
+  'cross-portal': ['<RuntimePortal id=', 'RuntimePortal', 'gap-[53px]'],
+  deep: ['<Deep id=', 'Deep', 'gap-[59px]'],
 };
+const owners = {
+  forward: [['<Forward className=', 'Forward']],
+  nested: [['<Popover.Trigger render=', 'Popover.Trigger']],
+  'as-child': [['<Primitive.button asChild>', 'Primitive.button']],
+  'inside-portal': [['<InsidePortal />', 'InsidePortal']],
+  direct: [['<Slot className=', 'Slot']],
+};
+function ownerLocation(id, fragment, component, tag, version = 19) {
+  const chain = [[fragment, component], ...(owners[id] ?? [])].map(([fragment, component]) => ({
+    file: 'src/App.jsx', ...position(source, fragment), component,
+  }));
+  if (version === 18) chain.push({ file: 'src/entry.jsx', line: 4, column: 52, component: 'App' });
+  return { ...chain[0], tag, via: 'owner-stack', chain, index: 0 };
+}
+async function verifiedLocation(result, expected, version, url, id) {
+  assert.deepEqual(result.location, expected, JSON.stringify({ id, result }));
+  // React 18 may only succeed with coordinates verified against authored JSX by the server.
+  if (version === 18) for (const { file, line, column } of result.location.chain) {
+    const response = await fetch(url + '/__plumb/resolve?' + new URLSearchParams({ source: file, line, column }));
+    assert.equal(response.status, 200, id);
+    const resolved = await response.json();
+    assert.deepEqual({ file: resolved.file, line: resolved.line, column: resolved.column }, { file, line, column }, id + ': server-verified JSX');
+  }
+  return true;
+}
 for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc']]) {
   test(`Vite React ${version} ${transform}: library owners locate, read and edit authored JSX`, { timeout: 90000 }, async t => {
     const launched = await browser(t); if (!launched) return;
@@ -156,20 +183,24 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
     assert.equal(await page.evaluate(() => window.ownerReadyDone === true), false);
     await releaseStartup();
     assert.equal((await page.evaluate(() => window.ownerReady)).status, 'ready');
+    const consoleErrors = [], resolutions = [];
+    const onConsole = entry => { if (entry.type() === 'error') consoleErrors.push(entry.text()); };
+    const onResponse = response => {
+      const url = new URL(response.url());
+      if (url.pathname !== '/__plumb/resolve' || !url.searchParams.has('line')) return;
+      resolutions.push(response.json().then(body => ({ status: response.status(), body,
+        flagged: url.searchParams.has('component') || url.searchParams.has('tag') })));
+    };
+    page.on('console', onConsole); page.on('response', onResponse);
     for (const [id, [fragment, component, token, tag = 'button']] of Object.entries(anchors)) {
       const result = await page.$eval('#' + id, async element => ({ location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) }));
-      if (version === 18) {
-        assert.equal(result.location.location, null, id);
-        assert.equal(result.location.reason, 'owner-unproven', JSON.stringify({ id, result }));
-        assert.equal(result.site, null, id + ': no unproven owner declarations');
-        continue;
-      }
-      assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag, via: 'owner', rendered: tag }, JSON.stringify({ id, result }));
+      if (!await verifiedLocation(result, ownerLocation(id, fragment, component, tag, version), version, url, id)) continue;
       assert.deepEqual(result.site?.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id + ': only attributes authored at this JSX');
     }
-    const direct = await page.$eval('#direct', async element => ({ location: await window.__plumb.locate(element), site: await window.__plumb.site(element) }));
-    assert.deepEqual(direct.location, { file: 'src/App.jsx', ...position(source, '<button id="direct"'), component: 'Slot.Slot', tag: 'button', via: version === 19 ? 'react19' : 'react-debugSource' });
-    assert.deepEqual(direct.site.declarations.map(d => d.site.text), ['gap-[11px]']);
+    const direct = await page.$eval('#direct', async element => ({ location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) }));
+    if (await verifiedLocation(direct, ownerLocation('direct', '<button id="direct"', version === 18 ? 'Slot.Slot' : 'App', 'button', version), version, url, 'direct')) {
+      assert.deepEqual(direct.site.declarations.map(d => d.site.text), ['gap-[11px]']);
+    }
     for (const [id, fragment, component, token] of [
       ['icon', '<Icon id=', 'Icon', 'gap-[15px]'],
       ['injected', '<svg id="injected"', 'App', 'gap-[10px]'],
@@ -180,39 +211,45 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
           location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element),
         }));
         assert.equal(result.fiberless, true);
-        if (version === 18 && id === 'icon') {
-          assert.equal(result.location.location, null);
-          assert.equal(result.location.reason, 'owner-unproven');
-          assert.equal(result.site, null);
-          continue;
-        }
-        assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag, via: 'inner-html', rendered: tag });
+        if (!await verifiedLocation(result, ownerLocation(id, fragment, component, tag, version), version, url, id + ' ' + tag)) continue;
         assert.deepEqual(result.site.declarations.map(d => d.site.text), [token]);
       }
     }
-    assert.equal(await page.evaluate(async () => {
+    const imperative = await page.evaluate(async () => {
       const element = document.createElement('span'); document.getElementById('direct').append(element);
-      return window.__plumb.locate(element);
-    }), null, 'imperative child cannot borrow parent fiber');
-    for (const id of ['cross-portal', 'deep', 'orphan', 'no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
+      return { location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) };
+    });
+    if (await verifiedLocation(imperative, ownerLocation('direct', '<button id="direct"', version === 18 ? 'Slot.Slot' : 'App', 'span', version), version, url, 'imperative')) {
+      assert.deepEqual(imperative.site.declarations.map(d => d.site.text), ['gap-[11px]'], 'imperative child reads nearest rendered ancestor');
+    }
+    for (const id of ['orphan', 'no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
       assert.equal(await page.$eval('#' + id, element => window.__plumb.locate(element)), null, id + ': never guess');
       assert.equal(await page.$eval('#' + id, element => window.__plumb.site(element)), null, id + ': no borrowed declarations');
+      const refusal = await page.$eval('#' + id, element => window.__plumb.locate(element, { explain: true }));
+      assert.equal(refusal.location, null, id);
+      assert.equal(refusal.reason, id === 'orphan' ? 'runtime-only-frames' : 'no-jsx', JSON.stringify({ id, refusal }));
+      if (id === 'orphan') assert.ok(Array.isArray(refusal.detail.frames), id);
+      else { assert.ok(refusal.detail.source, id); assert.ok(refusal.detail.line > 0 && refusal.detail.column > 0, id); }
     }
-    if (version === 18) {
-      for (const id of ['no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
-        const refusal = await page.$eval('#' + id, element => window.__plumb.locate(element, { explain: true }));
-        assert.equal(refusal.reason, 'owner-unproven', JSON.stringify({ id, refusal }));
-      }
+    const responses = await Promise.all(resolutions);
+    page.off('console', onConsole); page.off('response', onResponse);
+    assert.deepEqual(consoleErrors, [], 'browser locate emits zero console errors');
+    assert.ok(responses.length, 'locate exercised HTTP resolver');
+    assert.ok(responses.every(response => !response.flagged), 'locate resolves without component/tag flags');
+    assert.ok(responses.every(response => response.status === 200), 'frame refusals stay HTTP 200');
+    if (version === 19) {
+      assert.ok(responses.some(({ body }) => body.refused === 'not-jsx'), 'non-JSX frame resolved without HTTP error');
+      assert.ok(responses.some(({ body }) => body.file && !body.component), 'host frame verified');
+      assert.ok(responses.some(({ body }) => body.component === 'MetalButton'), 'component frame verified');
     }
     // Opening-tag attribution must also be usable by the existing edit flow.
-    // React 18 still reads and writes evidenced direct host JSX.
     // Locate in the page; edit and apply from here. The write reloads the page, which must not cut the request short.
-    const targets = version === 18 ? [['#direct', 'gap-[11px]'], ['#injected path', 'gap-[10px]']]
-      : [['#base', 'gap-[13px]'], ['#aliased', 'gap-[14px]'], ['#icon path', 'gap-[15px]'], ['#injected path', 'gap-[10px]']];
+    const targets = [['#base', 'gap-[13px]'], ['#aliased', 'gap-[14px]'], ['#icon path', 'gap-[15px]'], ['#injected path', 'gap-[10px]']];
     const locations = await page.evaluate(targets => Promise.all(targets.map(async ([selector]) => window.__plumb.locate(document.querySelector(selector)))), targets);
     const origin = new URL(page.url()).origin, headers = { 'Content-Type': 'application/json', Origin: origin };
     for (let i = 0; i < targets.length; i++) {
-      const location = locations[i], [selector, editToken] = targets[i];
+      const location = locations[i];
+      const [selector, editToken] = targets[i];
       assert.ok(location, selector);
       const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
       const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
@@ -247,6 +284,9 @@ test('authored library JSX resolves, isolates nested declarations and writes thr
     const response = await resolve({ ...at, column: at.column + 1, hash: snapshot.hash, component: '1' });
     assert.equal(response.status, 200, id);
     assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at, component });
+    const anyOpening = await resolve({ ...at, column: at.column + 1 });
+    assert.equal(anyOpening.status, 200, id + ': no flags');
+    assert.deepEqual(await anyOpening.json(), { file: 'src/App.jsx', ...at, component });
     const site = await (await fetch(url + '/__plumb/site?' + new URLSearchParams({ file: 'src/App.jsx', ...at }))).json();
     assert.deepEqual(site.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id);
   }

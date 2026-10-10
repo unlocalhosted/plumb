@@ -13,7 +13,7 @@ import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
-import { jsxLocation, sourcePaths } from './source-location.js';
+import { isComponentJSX, jsxLocation, jsxAuthoredOwner, sourcePaths } from './source-location.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean;
   /** Maximum wait before read execution, in milliseconds (default 5000). */
@@ -21,9 +21,16 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
+export interface ClassesResult {
+  revision: number; file: string; line: number; column: number;
+  classes: { token: string; ambiguous: boolean; sites: (SiteResult & { column: number; hash: string; edits: StructuredEdit[] })[] }[];
+  unattributed: string[];
+  /** A safety limit stopped traversal; unproven tokens remain unattributed. */
+  limited: boolean;
+}
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
-export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string } | { library: true; untracked?: string };
+export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean } | { library: true; untracked?: string } | { refused: 'not-jsx' };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
@@ -100,7 +107,12 @@ export class Session extends EventEmitter {
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
           this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
-        if (message.startupError) { rejectReady(new UsageError(message.startupError)); return; }
+        const failure = (text: string): Error => {
+          const error = message.usageError ? new UsageError(text) : new Error(text);
+          if (message.errorStack) error.stack = message.errorStack;
+          return error;
+        };
+        if (message.startupError) { rejectReady(failure(message.startupError)); return; }
         const pending = this.pending.get(message.id); if (!pending) return;
         this.pending.delete(message.id);
         if (message.analysis) {
@@ -112,7 +124,7 @@ export class Session extends EventEmitter {
           for (const [file, paths] of message.analysis.queryDependencies) this.queryDependencies.set(file, paths);
         }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
-        if (message.error) pending.reject(new UsageError(message.error)); else pending.resolve(message.result);
+        if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
       });
       this.worker.on('error', error => { rejectReady(error); this.rejectPending(error); });
       worker.on('exit', code => { if (this.worker === worker && code !== 0) { const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error); if (!this.closed) this.rejectPending(error); } });
@@ -326,7 +338,7 @@ export class Session extends EventEmitter {
   private read<T>(method: string, params: object = {}): Promise<T> { return this.serializeRead(() => this.settledRead<T>(method, params)); }
   private async settledRead<T>(method: string, params: object): Promise<T> {
     do {
-      const local = method === 'site' || method === 'why' || method === 'edits';
+      const local = method === 'site' || method === 'why' || method === 'edits' || method === 'classes';
       const query = local ? [(params as { file: string }).file] : undefined;
       try { if (!this.batchRead) await this.reconcile(query); }
       catch (error) {
@@ -368,14 +380,15 @@ export class Session extends EventEmitter {
       const file = await this.resolveFile(args[0] as string, (args[3] as { servedRoot?: string } | undefined)?.servedRoot);
       return typeof file === 'string' ? [file] : [];
     }
-    if (['site', 'edits', 'why'].includes(method)) {
+    if (['site', 'edits', 'why', 'classes'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
-      if (args[2] !== undefined) this.position(args[2] as number);
+      if (method === 'classes') this.validateClasses(args[3]);
+      if (method === 'classes' || args[2] !== undefined) this.position(args[2] as number);
       return [file];
     }
     return undefined;
   }
-  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; servedRoot?: string } = {}): Promise<SourceResolution> {
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; owner?: boolean; servedRoot?: string } = {}): Promise<SourceResolution> {
     return this.serializeRead(async () => {
       const classified = await this.resolveFile(source, expected.servedRoot);
       if (typeof classified !== 'string') return classified;
@@ -389,9 +402,15 @@ export class Session extends EventEmitter {
       if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
       if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
-      const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag, expected.component);
-      if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
-      return { file: inside, line: location.line, column: location.column, ...(expected.component ? { component: location.tag } : {}) };
+      const anyOpening = !expected.component && expected.tag === undefined;
+      const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag, anyOpening ? 'any' : expected.component);
+      if (!location) {
+        if (anyOpening) return { refused: 'not-jsx' };
+        throw new UsageError('Source position does not identify an authored JSX element.');
+      }
+      return { file: inside, line: location.line, column: location.column,
+        ...(expected.owner ? { authoredOwner: jsxAuthoredOwner(file, text, location) } : {}),
+        ...(expected.component || anyOpening && isComponentJSX(location.tag) ? { component: location.tag } : {}) };
     });
   }
   site(file: string, line: number, column?: number): Promise<SiteResult> {
@@ -402,6 +421,21 @@ export class Session extends EventEmitter {
     return this.serializeRead(async () => {
       const result = await this.settledRead<Omit<EditsResult, 'revision'>>('edits', params);
       if (result.hash !== this.hashes.get(params.file)) throw new UsageError(staleFile);
+      return { revision: this.revision, ...result };
+    });
+  }
+  private validateClasses(classes: unknown): void {
+    if (typeof classes !== 'string' || classes.length > 65536) throw new UsageError('classes must be a string of at most 65536 characters.');
+  }
+  classes(file: string, line: number, column: number, classes: string): Promise<ClassesResult> {
+    this.validateClasses(classes);
+    const params = { file: this.file(file), line: this.position(line), column: this.position(column), classes };
+    return this.serializeRead(async () => {
+      const result = await this.settledRead<Omit<ClassesResult, 'revision'>>('classes', params);
+      // Reconcile newly discovered helper paths too. Known cohort inputs were
+      // already reconciled by batch, including their retained dependencies.
+      const paths = [...new Set(result.classes.flatMap(item => item.sites.map(site => site.file)))].filter(path => !this.batchRead || !this.hashes.has(path));
+      if (paths.length && (await this.reconcile(paths)).length) return { revision: this.revision, ...await this.settledRead<Omit<ClassesResult, 'revision'>>('classes', params) };
       return { revision: this.revision, ...result };
     });
   }

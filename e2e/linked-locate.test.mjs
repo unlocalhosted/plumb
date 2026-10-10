@@ -125,14 +125,15 @@ for (const workspace of [false, true]) {
     await page.waitForFunction(() => window.__plumb && document.getElementById('linked'));
     assert.equal((await page.evaluate(() => window.__plumb.ready())).status, 'ready');
     const location = await page.$eval('#linked', element => window.__plumb.locate(element, { explain: true }));
-    assert.deepEqual(location, { file: workspace ? 'library/src/Button.jsx' : 'src/App.jsx',
-      ...position(workspace ? librarySource : appSource, workspace ? '<Button' : '<LibButton'),
-      component: workspace ? 'Button' : 'LibButton', tag: 'button', via: 'owner', rendered: 'button' });
+    const owner = { file: workspace ? 'app/src/App.jsx' : 'src/App.jsx', ...position(appSource, '<LibButton'), component: 'LibButton' };
+    const chain = workspace ? [{ file: 'library/src/Button.jsx', ...position(librarySource, '<Button'), component: 'Button' }, owner] : [owner];
+    assert.deepEqual(location, { ...chain[0], tag: 'button', via: 'owner-stack', chain, index: 0 });
     const site = await page.$eval('#linked', element => window.__plumb.site(element));
     assert.deepEqual(site.declarations.map(d => d.site.text), [workspace ? 'gap-[17px]' : 'gap-[13px]']);
     if (!workspace) {
       const wrapped = await page.$eval('#unchecked-owner', element => window.__plumb.locate(element, { explain: true }));
-      assert.equal(wrapped.file, 'src/App.jsx'); assert.deepEqual({ line: wrapped.line, column: wrapped.column }, position(appSource, '<Unchecked'));
+      const unchecked = { file: 'src/App.jsx', ...position(appSource, '<Unchecked'), component: 'Unchecked' };
+      assert.deepEqual(wrapped, { ...unchecked, tag: 'button', via: 'owner-stack', chain: [unchecked], index: 0 });
       const unowned = await page.$eval('#unchecked-only', element => window.__plumb.locate(element, { explain: true }));
       assert.equal(unowned.location, null); assert.equal(unowned.reason, 'resolve-refusal');
       assert.equal(unowned.detail.file, 'src/Unchecked.jsx'); assert.match(unowned.detail.response, /not a tracked project source/);
