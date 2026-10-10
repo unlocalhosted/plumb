@@ -178,8 +178,9 @@ export async function lowerTailwind(root: string, entry: string | null, version:
           cached[candidate] = { ...result, authoredValue }; cachedCount++;
         }
         catch (error) {
-          if (!reportOnly) throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`);
-          // Inference may retain the compiler text as inventory evidence. Failed
+          if (!reportOnly && !(error instanceof SyntaxError)) throw new Error(`Parse compiled candidate ${candidate}: ${errorMessage(error)}`, { cause: error });
+          // Malformed authored selectors may compile to invalid CSS. Preserve
+          // their diagnostic without aborting the other candidates. Failed
           // declarations are never judged, nor cached as successfully lowered.
           results.set(candidate, { css: css[index] ?? null, declarations: [], notes: [`Could not lower ${candidate}: ${errorMessage(error)}`] });
         }

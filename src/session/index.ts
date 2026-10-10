@@ -18,6 +18,13 @@ import { jsxLocation, sourcePaths } from './source-location.js';
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
+export interface ClassesResult {
+  revision: number; file: string; line: number; column: number;
+  classes: { token: string; ambiguous: boolean; sites: (SiteResult & { column: number; hash: string; edits: StructuredEdit[] })[] }[];
+  unattributed: string[];
+  /** A safety limit stopped traversal; unproven tokens remain unattributed. */
+  limited: boolean;
+}
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string } | { library: true; untracked?: string };
@@ -94,7 +101,12 @@ export class Session extends EventEmitter {
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
           this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
-        if (message.startupError) { rejectReady(new UsageError(message.startupError)); return; }
+        const failure = (text: string): Error => {
+          const error = message.usageError ? new UsageError(text) : new Error(text);
+          if (message.errorStack) error.stack = message.errorStack;
+          return error;
+        };
+        if (message.startupError) { rejectReady(failure(message.startupError)); return; }
         const pending = this.pending.get(message.id); if (!pending) return;
         this.pending.delete(message.id);
         if (message.analysis) {
@@ -106,7 +118,7 @@ export class Session extends EventEmitter {
           for (const [file, paths] of message.analysis.queryDependencies) this.queryDependencies.set(file, paths);
         }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
-        if (message.error) pending.reject(new UsageError(message.error)); else pending.resolve(message.result);
+        if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
       });
       this.worker.on('error', error => { rejectReady(error); this.rejectPending(error); });
       worker.on('exit', code => { if (this.worker === worker && code !== 0) { const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error); if (!this.closed) this.rejectPending(error); } });
@@ -305,7 +317,7 @@ export class Session extends EventEmitter {
   private read<T>(method: string, params: object = {}): Promise<T> { return this.serialize(() => this.settledRead<T>(method, params)); }
   private async settledRead<T>(method: string, params: object): Promise<T> {
     do {
-      const local = method === 'site' || method === 'why' || method === 'edits';
+      const local = method === 'site' || method === 'why' || method === 'edits' || method === 'classes';
       const query = local ? [(params as { file: string }).file] : undefined;
       try { await this.reconcile(query); }
       catch (error) {
@@ -362,6 +374,17 @@ export class Session extends EventEmitter {
     return this.serialize(async () => {
       const result = await this.settledRead<Omit<EditsResult, 'revision'>>('edits', params);
       if (result.hash !== this.hashes.get(params.file)) throw new UsageError(staleFile);
+      return { revision: this.revision, ...result };
+    });
+  }
+  classes(file: string, line: number, column: number, classes: string): Promise<ClassesResult> {
+    if (typeof classes !== 'string' || classes.length > 65536) throw new UsageError('classes must be a string of at most 65536 characters.');
+    const params = { file: this.file(file), line: this.position(line), column: this.position(column), classes };
+    return this.serialize(async () => {
+      const result = await this.settledRead<Omit<ClassesResult, 'revision'>>('classes', params);
+      // Reconcile newly discovered helper paths too, including watcher-free reads.
+      const paths = [...new Set(result.classes.flatMap(item => item.sites.map(site => site.file)))];
+      if ((await this.reconcile(paths)).length) return { revision: this.revision, ...await this.settledRead<Omit<ClassesResult, 'revision'>>('classes', params) };
       return { revision: this.revision, ...result };
     });
   }

@@ -15,7 +15,7 @@ import { changedLines } from './surfaces/changed-lines.js';
 import { readTrend, recordTrend, trendMarkdown, trendSince } from './surfaces/trend.js';
 import { formatParity, parity } from './parity.js';
 import { check, explain, trySnippet } from './index.js';
-import { errorMessage, UsageError } from './errors.js';
+import { errorDiagnostic, errorMessage, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { formatDeadSummary } from './rules/dead.js';
@@ -286,6 +286,6 @@ async function main(): Promise<void> {
 try {
   await main();
 } catch (error) {
-  process.stderr.write(`plumb: ${errorMessage(error)}\n`);
+  process.stderr.write(`plumb: ${errorDiagnostic(error)}\n`);
   process.exitCode = 2;
 }

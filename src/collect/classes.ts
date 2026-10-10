@@ -14,6 +14,9 @@ import type { SourceProgram } from './source.js';
 import { moduleImports } from './modules.js';
 import type { ModuleImport } from './modules.js';
 import { collectionCache, sourceHash } from './cache.js';
+import { ComputedClasses, classSiteKey } from './computed.js';
+import { argumentMode, classHelperRegistry, configKeyMode } from './class-helpers.js';
+import type { ClassHelper, ClassHelperInput } from './class-helpers.js';
 
 export interface ClassSite extends Site {
   token: string;
@@ -39,7 +42,6 @@ type Scope = Map<string, Binding | LazyBinding | null>;
 // Fall back to JSON transfer on platforms that cannot allocate raw-transfer buffers.
 const parserOptions = { preserveParens: false, experimentalRawTransfer: rawTransferSupported() };
 const typeOnlyKeys = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeArguments', 'implements']);
-const builtins = ['cn', 'clsx', 'cx', 'classNames', 'twMerge', 'twJoin', 'cva', 'tv'];
 
 function children(node: Node): Node[] {
   const record = node as unknown as Record<string, unknown>;
@@ -59,7 +61,8 @@ function unwrap(node: Node): Node {
     default: return node;
   }
 }
-function literalMap(node: Node): boolean {
+function literalMap(node: Node | null | undefined): boolean {
+  if (!node) return false;
   node = unwrap(node);
   if (node.type === 'Literal') return typeof node.value === 'string';
   if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
@@ -85,8 +88,8 @@ function site(source: Source, offset: number, text: string): Site {
   return sourceSite(source, offset, text);
 }
 
-export async function collectClasses(files: string[], classHelpers: string[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string): Promise<{
-  sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>;
+export async function collectClasses(files: string[], classHelpers: ClassHelperInput[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string): Promise<{
+  sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>; computedDependencies?: string[]; computedClassFiles?: string[];
 }> {
   const start = performance.now();
   let parseMs = 0;
@@ -96,8 +99,8 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
   const sources = new Map<string, Source>();
   const modules = new Map<string, ModuleImport[]>();
   const texts = new Map(await Promise.all(files.map(async file => [file, overrides.get(file) ?? await readFile(file, 'utf8')] as const)));
-  const helpers = new Set([...builtins, ...classHelpers]);
-  const helperNames = [...helpers];
+  const helpers = classHelperRegistry(classHelpers);
+  const helperNames = [...helpers.keys()];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
   const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   const dependencies = new Map<string, string>(), resolutions = new Map<string, string | undefined>();
@@ -175,11 +178,12 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     }
   }
 
-  function evaluate(node: Node, src: Source, scopes: Scope[], owner: Declaration['owner'], conditions: Condition[] = [], usage?: Site, follow = true, mode: 'classes' | 'values' | 'config' = 'classes'): void {
+  function evaluate(node: Node | null | undefined, src: Source, scopes: Scope[], owner: Declaration['owner'], conditions: Condition[] = [], usage?: Site, follow = true, mode: 'classes' | 'values' | 'config' = 'classes', shape?: ClassHelper): void {
+    if (!node) return;
     node = unwrap(node);
     const text = (value: Node) => src.text.slice(value.start, value.end);
     const branch = (value: string) => [...conditions, { kind: 'branch' as const, text: value }];
-    const recur = (value: Node, when = conditions, nextMode = mode) => evaluate(value, src, scopes, owner, when, usage, follow, nextMode);
+    const recur = (value: Node | null | undefined, when = conditions, nextMode = mode, nextShape = shape) => evaluate(value, src, scopes, owner, when, usage, follow, nextMode, nextShape);
     switch (node.type) {
       case 'JSXExpressionContainer': recur(node.expression); return;
       case 'Literal':
@@ -235,7 +239,9 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
           if (property.type !== 'Property') { opaque++; continue; }
           const key = name(property.key);
           if (mode === 'config') {
-            if (['base', 'slots'].includes(key)) recur(property.value, conditions, 'values');
+            const nextMode = configKeyMode(shape, key);
+            if (!nextMode) continue;
+            if (!['variants', 'compoundVariants'].includes(key)) recur(property.value, conditions, nextMode);
             if (key === 'variants') {
               const variants = unwrap(property.value);
               if (variants.type !== 'ObjectExpression') recur(variants, conditions, 'values');
@@ -266,7 +272,8 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
           recur(node.callee.object); return;
         }
         const helper = name(node.callee);
-        if (!helpers.has(helper)) {
+        const shape = helpers.get(helper);
+        if (!shape) {
           opaque++;
           function nested(value: Node): void {
             if (value.type === 'CallExpression' && helpers.has(name(value.callee))) recur(value);
@@ -276,8 +283,7 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
           return;
         }
         for (const [index, arg] of node.arguments.entries()) {
-          const config = helper === 'tv' || (helper === 'cva' && index > 0);
-          recur(arg, conditions, config ? 'config' : 'classes');
+          recur(arg, conditions, argumentMode(shape, index), shape);
         }
         return;
       }
@@ -367,12 +373,12 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
         if (node.id) owner = { kind: 'component', name: node.id.name };
         const scope: Scope = new Map();
         for (const param of node.params) {
-          function block(value: Node): void { if (value.type === 'Identifier') scope.set(value.name, null); else for (const child of children(value)) block(child); }
+          function block(value: Node | null | undefined): void { if (!value) return; if (value.type === 'Identifier') scope.set(value.name, null); else for (const child of children(value)) block(child); }
           block(param);
         }
         next = [...next, scope];
       }
-      if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' && node.init && (['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(node.init).type) || (node.init.type === 'CallExpression' && node.init.arguments.some(arg => ['ArrowFunctionExpression', 'FunctionExpression'].includes(arg.type))))) owner = { kind: 'component', name: node.id.name };
+      if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' && node.init && (['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(node.init).type) || (node.init.type === 'CallExpression' && node.init.arguments.some(arg => arg && ['ArrowFunctionExpression', 'FunctionExpression'].includes(arg.type))))) owner = { kind: 'component', name: node.id.name };
       if (node.type === 'JSXOpeningElement') {
         const element = name(node.name);
         owner = { kind: /^[A-Z]/.test(element) ? 'component' : 'element', name: element };
@@ -404,7 +410,24 @@ export async function collectClasses(files: string[], classHelpers: string[] = [
     exports(src);
     src.ast = null;
   }
-  const result = { sites: [...sites.values()], opaque, styles, modules: [...modules] };
+  // Computed expressions retain their authored literals, never synthetic usage
+  // locations. The same evidence feeds ordinary edits and apply revalidation.
+  const authored = new Set([...sites.values()].map(classSiteKey));
+  const computed = new ComputedClasses(file => overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8'), classHelpers);
+  const computedClassFiles = new Set<string>();
+  for (const file of files) {
+    if (onlyFile && file !== onlyFile) continue;
+    for (const location of computed.trace(file).sites) {
+      computedClassFiles.add(location.file);
+      const key = classSiteKey(location);
+      if (authored.has(key)) continue;
+      authored.add(key);
+      sites.set(key, { ...location, token: location.text, owner: { kind: 'component', name: '<computed>' }, conditions: [] });
+    }
+  }
+  for (const file of computed.dependencies) dependencies.set(file, sourceHash(overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8')));
+  for (const [key, path] of computed.resolutions) resolutions.set(key, path);
+  const result = { sites: [...sites.values()], opaque, styles, modules: [...modules], computedDependencies: [...computed.dependencies], computedClassFiles: [...computedClassFiles] };
   await cache?.write(result, dependencies, resolutions);
   return { ...result, modules, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs };
 }

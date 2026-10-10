@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@theme {
+  --spacing: 1px;
+  /* why: compact related items */
+  --spacing-s2: 8px;
+  /* why: between label and control */
+  --spacing-s3: 12px;
+}
+@utility h-button-height { height: 10px; }
+@utility gap-button-gap { gap: 10px; }

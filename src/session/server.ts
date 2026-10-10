@@ -8,7 +8,7 @@ import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
 import type { SessionOptions } from './index.js';
 import type { CheckOptions } from '../index.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
 import { overlayClient, overlayModules } from '../hosts/client.js';
 
@@ -53,6 +53,10 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
     return session.report(options);
   }
   if (method === 'site') return session.site(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
+  if (method === 'classes') {
+    if (typeof params.classes !== 'string') throw new UsageError('classes must be a string.');
+    return session.classes(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes);
+  }
   if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
   if (method === 'edits') return session.edits(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
   if (method === 'apply') {
@@ -93,7 +97,7 @@ function trustedOrigin(value: string): string {
 /** One route/auth/body-validation core for both transports. Undefined belongs to the host app. */
 function createRoute(session: Session | Promise<Session>, options: HandlerOptions) {
   let current: Session | undefined, diagnostic: string | undefined;
-  if ('then' in session) void session.then(value => { current = value; }, error => { diagnostic = errorMessage(error); });
+  if ('then' in session) void session.then(value => { current = value; }, error => { diagnostic = errorDiagnostic(error); });
   else current = session;
   const token = options.token, prefix = options.prefix ?? '/__plumb/';
   if (!prefix.startsWith('/') || !prefix.endsWith('/') || /[?#]/.test(prefix)) throw new UsageError('Handler prefix must start and end with /.');
@@ -109,7 +113,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
+    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -267,7 +271,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'apply', 'try', 'decisions', 'why', 'health'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

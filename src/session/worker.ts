@@ -1,12 +1,13 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { analyze } from '../index.js';
 import type { CheckOptions } from '../index.js';
+import type { LoadedConfig } from '../config.js';
 import type { Report } from '../report.js';
 import { finishMessages } from '../messages.js';
 import { applyLedger } from '../ledger/check.js';
 import { inspectLedger } from '../ledger/commands.js';
 import { WarmState } from './state.js';
-import { errorMessage } from '../errors.js';
+import { errorMessage, UsageError } from '../errors.js';
 import { performance } from 'node:perf_hooks';
 import { Focus } from './focus.js';
 import { readLedger } from '../ledger/store.js';
@@ -15,7 +16,13 @@ import { readFile } from 'node:fs/promises';
 import { structuredEdits } from '../surfaces/edits.js';
 import { sourceHash } from '../collect/cache.js';
 import { cssCode } from '../collect/stylesheets.js';
-import { jsxSiteMatcher } from './source-location.js';
+import { jsxSiteMatcher, jsxLocation } from './source-location.js';
+import { ComputedClasses, classSiteKey } from '../collect/computed.js';
+import type { ClassesResult } from './index.js';
+import type { Site } from '../report.js';
+import { readFileSync } from 'node:fs';
+import { lineStarts } from '../collect/source.js';
+import { isAbsolute, relative, sep } from 'node:path';
 
 const options = workerData as CheckOptions;
 const state = new WarmState(options.root!, workerData.inventory as string[] | undefined);
@@ -28,6 +35,23 @@ const localReports = new Map<string, Report>();
 let fullReports = 1, fullIndexes = 0, localAnalyses = 0;
 let sharedInputs = new Set<string>();
 let metadataDirty = false, metadataFull = false;
+const computed = new ComputedClasses();
+const classTables = new WeakMap<object, Map<string, Site[]>>();
+function authoredClasses(file: string): Map<string, Site[]> {
+  const collection = state.collection.slices.get(file)?.value;
+  if (!collection) return new Map();
+  const old = classTables.get(collection); if (old) return old;
+  const sources = new Map<string, { text: string; starts: number[] }>();
+  const sites = new Map<string, Site>();
+  for (const site of collection.sites) {
+    if (site.opaque) continue;
+    let source = sources.get(site.file);
+    if (!source) { const text = readFileSync(site.file, 'utf8'); source = { text, starts: lineStarts(text) }; sources.set(site.file, source); }
+    const start = (source.starts[site.line - 1] ?? -Infinity) + site.column - 1;
+    if (source.text.slice(start, start + site.token.length) === site.token && computed.authored(site)) sites.set(classSiteKey(site), { file: site.file, line: site.line, column: site.column, text: site.token });
+  }
+  const result = group([...sites.values()], site => site.text); classTables.set(collection, result); return result;
+}
 const queryChanges = new Set<string>();
 function changedQueries(files: Iterable<string>): void {
   for (const file of files) { queryChanges.add(file); for (const dependency of state.queryDependencies(file)) queryChanges.add(dependency); }
@@ -46,6 +70,7 @@ async function update(paths: string[]): Promise<string[]> {
     const before = new Map([...candidates].map(file => [file, signature(file)]));
     sharedDirty ||= paths.some(file => sharedInputs.has(file));
     state.changed(paths);
+    computed.invalidate();
     const start = performance.now(); affected = await state.prepare(paths); profileDuration('phase:refresh-collect', performance.now() - start); dirty = true;
     changedQueries([...paths, ...affected]); metadataDirty = true;
     const changedSharedStyles = await state.refreshStyles([...new Set([...paths, ...affected])]);
@@ -88,6 +113,12 @@ let lineFindings = new Map<string, Map<number, Report['findings']>>();
 let columnFindings = new Map<string, Map<number, Map<number, Report['findings']>>>();
 let decisionNames = new Set<string>();
 let editable = new Set<string>(), protectedFiles = new Set<string>();
+const declarationTables = new WeakMap<Report, Map<string, Report['declarations']>>();
+function classDeclarations(view: Report, site: Site): Report['declarations'] {
+  let table = declarationTables.get(view);
+  if (!table) { table = group(view.declarations, d => classSiteKey(d.site)); declarationTables.set(view, table); }
+  return table.get(classSiteKey(site)) ?? [];
+}
 function group<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   const groups = new Map<K, T[]>();
   for (const item of items) { const value = key(item); let list = groups.get(value); if (!list) groups.set(value, list = []); list.push(item); }
@@ -102,6 +133,10 @@ function index(view: Report, only?: string): void {
   else { fullIndexes++; indexedReport = view; indexedFiles.clear(); fileFindings = new Map(); lineFindings = new Map(); columnFindings = new Map();
     decisionNames = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name));
     editable = new Set(state.collection.slices.keys());
+    for (const slice of state.collection.slices.values()) for (const file of slice.value.computedClassFiles ?? []) {
+      const path = relative(options.root!, file);
+      if (path && path !== '..' && !path.startsWith('..' + sep) && !isAbsolute(path)) editable.add(file);
+    }
     for (const sheet of view.stylesheets) if (sheet.reached.some(reach => reach.kind === 'source')) editable.add(sheet.file);
     protectedFiles = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.source.file));
     if (view.config.path) protectedFiles.add(view.config.path);
@@ -134,7 +169,7 @@ function scoped(view: Report, file: string, line?: number, column?: number, text
   return { ...view, findings };
 }
 async function localReport(file: string): Promise<Report> {
-  if (!dirty || sharedDirty) return report();
+  if (!dirty || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
   let view = localReports.get(file);
   if (!view) {
     localAnalyses++;
@@ -165,6 +200,45 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
       ...(process.env.PLUMB_PROFILE === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   }
   if (method === 'report') return report(params as CheckOptions);
+  if (method === 'classes') {
+    const file = params.file as string, line = params.line as number, column = params.column as number;
+    if (!state.collection.slices.has(file)) throw new UsageError('Classes requires a tracked project source file.');
+    const text = await readFile(file, 'utf8');
+    const location = jsxLocation(file, text, line, column);
+    if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
+    computed.configure(state.shared<LoadedConfig>('config')?.value.classHelpers);
+    const trace = computed.trace(file, location.start);
+    const tokens = [...new Set((params.classes as string).split(/\s+/).filter(Boolean))];
+    const byToken = (sites: Site[]) => group(sites, s => s.text);
+    const direct = byToken(trace.sites);
+    // Fallback uses collected class evidence, never arbitrary matching strings.
+    const fallback = authoredClasses(file);
+    const result: Omit<ClassesResult, 'revision'> = { file, line, column, classes: [], unattributed: [], limited: trace.limited };
+    for (const token of tokens) {
+      let sites = direct.get(token) ?? [];
+      if (!sites.length && !trace.limited) sites = (fallback.get(token) ?? []).filter(site => site.file === file);
+      if (!sites.length && !trace.limited) {
+        const imported = trace.imports.flatMap(path => authoredClasses(path).get(token) ?? []);
+        sites = [...new Map([...fallback.get(token) ?? [], ...imported].filter(site => trace.imports.includes(site.file)).map(site => [classSiteKey(site), site])).values()];
+      }
+      if (!sites.length) { result.unattributed.push(token); continue; }
+      const candidates: ClassesResult['classes'][number]['sites'] = [];
+      for (const candidate of sites) {
+        const view = await localReport(candidate.file);
+        const source = await readFile(candidate.file, 'utf8');
+        const hash = state.sourceHash(candidate.file);
+        if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.');
+        index(view, localReports.get(candidate.file) === view ? candidate.file : undefined);
+        const at = { file: candidate.file, line: candidate.line, column: candidate.column,
+          declarations: classDeclarations(view, candidate), findings: columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column) ?? [] };
+        const edits = editable.has(candidate.file) && !protectedFiles.has(candidate.file)
+          ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames) : [];
+        candidates.push({ ...at, column: candidate.column, hash, edits });
+      }
+      result.classes.push({ token, ambiguous: trace.limited || candidates.length > 1, sites: candidates });
+    }
+    return result;
+  }
   if (method === 'edits') {
     const file = params.file as string, view = await localReport(file);
     index(view, localReports.get(file) === view ? file : undefined);
@@ -218,7 +292,7 @@ parentPort!.on('message', ({ id, method, params }) => {
           [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }
-    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error) }); }
+    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }
   });
 });
 try {
@@ -227,4 +301,4 @@ try {
   index(await report());
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
   parentPort!.postMessage({ ready: true, dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
-} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error) }); }
+} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }

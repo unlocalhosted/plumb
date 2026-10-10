@@ -119,6 +119,9 @@ export class WarmState implements AnalysisRuntime {
     if (this.cssHashes.has(file)) return this.cssHashes.get(file);
     const slice = this.collection.slices.get(file);
     if (slice) return slice.hash;
+    for (const slice of this.collection.slices.values()) {
+      const hash = slice.dependencies.get(file); if (hash) return hash;
+    }
     const graph = this.shared<StylesheetGraph>('graph');
     const sheet = graph?.files.get(file);
     return sheet ? sourceHash(sheet.css) : undefined;
