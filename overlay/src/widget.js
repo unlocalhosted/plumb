@@ -313,12 +313,13 @@ class PlumbOverlay extends HTMLElement {
 
   #label(element, state) {
     const name = `<span class="el">${esc(state?.tag ?? element.localName)}</span>`;
-    const who = state?.component ? `<span class="who">${esc(state.component)}</span>` : '';
+    const who = state?.component ? `<span class="who" title="${state.via === 'owner' ? 'Rendered by a library inside this component' : ''}">${esc(state.component)}</span>` : '';
     if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
     if (state.status === 'unplaced') return `${name}<span class="n quiet">not from your source</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.message)}</span>`;
     const off = offCount(state);
+    if (!state.marks.length && !state.declared) return `${name}${who}<span class="n quiet">computed here</span>`;
     return `${name}${who}<span class="n ${off ? '' : 'ok'}">${off ? `${off} off` : 'on system'}</span>`;
   }
 
@@ -571,6 +572,13 @@ class PlumbOverlay extends HTMLElement {
   #render() {
     const p = this.#pinned, s = p.state, read = this.#$('.read');
     const nav = this.#root.querySelectorAll('.nav');
+    if (!s.marks.length && !s.declared) {
+      read.innerHTML = `<div class="t">${glyph('existence', 'quiet')}<span>Nothing is written literally at this line.</span></div>
+        <div class="because">The classes here are built in code (a variable, a function or a template), so Plumb reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
+      this.#$('.count').textContent = 'computed'; nav.forEach(b => b.disabled = true);
+      this.#$('.sync').disabled = true;
+      return;
+    }
     if (!s.marks.length) {
       read.innerHTML = `<div class="t">${glyph('habit', 'ok')}<span>Everything this element sets uses your tokens.</span></div>`;
       this.#$('.count').textContent = 'on system'; nav.forEach(b => b.disabled = true);

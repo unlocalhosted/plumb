@@ -52,7 +52,7 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
     return session.report(options);
   }
   if (method === 'site') return session.site(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
-  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
+  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1' });
   if (method === 'edits') return session.edits(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');

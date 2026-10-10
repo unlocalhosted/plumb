@@ -66,7 +66,9 @@ export function reading(location, site, edits) {
   }
   // Reading order: new problems first, then by where they sit in the source.
   marks.sort((a, b) => (a.ledger === 'new' ? 0 : 1) - (b.ledger === 'new' ? 0 : 1) || a.line - b.line || a.column - b.column);
-  return { location, file: location.file, line: location.line, column: location.column, tag: location.tag, component: location.component, hash: edits?.hash, marks, notes };
+  // No declarations at all means nothing is written literally here (classes computed in code), not "on the system".
+  return { location, file: location.file, line: location.line, column: location.column, tag: location.tag, component: location.component, via: location.via,
+    hash: edits?.hash, marks, notes, declared: site.declarations.length };
 }
 
 export const offCount = r => r.marks.filter(m => m.ledger === 'new' && !m.synced).length;

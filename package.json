@@ -47,11 +47,15 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
+    "@base-ui/react": "^1.8.0",
+    "@radix-ui/react-primitive": "^2.1.11",
+    "@radix-ui/react-slot": "^1.4.0",
     "@tailwindcss/node": "4.3",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.20.5",
     "@types/picomatch": "^4.0.3",
     "@types/react": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "next": "^16.4.0",
     "playwright": "^1.64.0",
     "plumb-react18-fixture": "file:fixtures/react18",

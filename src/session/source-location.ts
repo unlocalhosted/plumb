@@ -29,7 +29,7 @@ export function sourcePath(root: string, source: string): string {
 }
 
 export interface JSXLocation { line: number; column: number; start: number; end: number; tag: string }
-interface Anchor extends JSXLocation { closing?: { start: number; end: number } }
+interface Anchor extends JSXLocation { nameEnd: number; closing?: { start: number; end: number } }
 const snapshots = new Map<string, { text: string; starts: number[]; anchors: Anchor[] }>();
 /** One ownership table per source snapshot; retained independently in server and worker. */
 function snapshot(file: string, text: string) {
@@ -42,7 +42,7 @@ function snapshot(file: string, text: string) {
       const opening = node.openingElement;
       const site = sourceSite({ file, text, lineStarts: starts }, opening.start, '');
       anchors.push({ line: site.line, column: site.column, start: opening.start, end: opening.end,
-        tag: text.slice(opening.name.start, opening.name.end),
+        tag: text.slice(opening.name.start, opening.name.end), nameEnd: opening.name.end,
         ...(node.closingElement ? { closing: { start: node.closingElement.start, end: node.closingElement.end } } : {}) });
     }
     const record = node as unknown as Record<string, unknown>;
@@ -61,14 +61,15 @@ function owner(anchors: Anchor[], offset: number): Anchor | undefined {
   // The last containing opening owns the text, including JSX nested in props.
   return anchors.findLast(a => a.start <= offset && offset < a.end);
 }
-/** Correct only within an evidenced element and validate its expected host tag. */
-export function jsxLocation(file: string, text: string, line: number, column: number, tag?: string): JSXLocation | undefined {
+/** Correct within evidenced JSX; owners must point at its component name, not a prop factory. */
+export function jsxLocation(file: string, text: string, line: number, column: number, tag?: string, component = false): JSXLocation | undefined {
   const { starts, anchors } = snapshot(file, text), start = starts[line - 1];
   if (start === undefined) return;
   const offset = start + column - 1;
   if (offset >= (starts[line] ?? text.length + 1)) return;
   const found = owner(anchors, offset) ?? anchors.find(a => a.closing && a.closing.start <= offset && offset < a.closing.end);
   if (!found || tag !== undefined && found.tag !== tag) return;
+  if (component && (offset >= found.nameEnd || !/^[A-Z_$]/.test(found.tag) && !found.tag.includes('.'))) return;
   return found;
 }
 

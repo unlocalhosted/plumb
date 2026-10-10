@@ -1,0 +1,231 @@
+// Real library DOM, authored JSX, site declarations and writes through Vite.
+import assert from 'node:assert/strict';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+import react from '@vitejs/plugin-react';
+import { plumb } from '@unlocalhosted/plumb/vite';
+
+const repo = fileURLToPath(new URL('../', import.meta.url));
+export const source = `import React from 'react';
+import { createPortal } from 'react-dom';
+import { Button as MetalButton } from '@base-ui/react/button';
+import { Popover } from '@base-ui/react/popover';
+import { Slot } from '@radix-ui/react-slot';
+import { Primitive } from '@radix-ui/react-primitive';
+import { RuntimeSlot, RuntimePortal, Deep, Orphan, makeNoJSX } from 'plumb-owner-runtime';
+function Forward({ className }) {
+  return <MetalButton id="forward" className={className} style={{ padding: 14 }}>Forward</MetalButton>;
+}
+function InsidePortal() {
+  return <MetalButton id="inside-portal" className="gap-[47px]">Inside</MetalButton>;
+}
+function AuthoredFactory() {
+  return React.createElement('button', { id: 'authored-factory' }, 'Factory');
+}
+export default function App() {
+  return <main>
+    <MetalButton id="base" className="gap-[13px]">Copy page</MetalButton>
+    <Popover.Root><Popover.Trigger id="trigger" className="gap-[17px]">Open</Popover.Trigger></Popover.Root>
+    <Forward className="gap-[19px]" />
+    <Popover.Root><Popover.Trigger render={<MetalButton id="nested" className="gap-[23px]" />} className="py-[10px]">Nested</Popover.Trigger></Popover.Root>
+    <RuntimeSlot id="runtime-slot" className="gap-[29px]" />
+    <Primitive.button id="primitive" className="gap-[31px]">Primitive</Primitive.button>
+    <Primitive.button asChild><MetalButton id="as-child" className="gap-[37px]">Child</MetalButton></Primitive.button>
+    <Slot className="gap-[41px]"><button id="direct" className="gap-[11px]">Direct</button></Slot>
+    <RuntimePortal id="cross-portal" className="gap-[53px]" />
+    {createPortal(<InsidePortal />, document.body)}
+    <Deep id="deep" className="gap-[59px]" />
+    <Orphan />
+    <section className="gap-[61px]" children={makeNoJSX({ id: 'no-jsx' })} />
+    <Primitive.div className="gap-[67px]" children={makeNoJSX({ id: 'no-jsx-component' })} />
+    {React.createElement('button', { id: 'authored-no-jsx' }, 'No JSX')}
+    <AuthoredFactory />
+  </main>;
+}
+`;
+const library = `import React from 'react';
+import { createPortal } from 'react-dom';
+import { Button } from '@base-ui/react/button';
+import { Slot } from '@radix-ui/react-slot';
+import { Primitive } from '@radix-ui/react-primitive';
+export function RuntimeSlot(props) {
+  return <Primitive.button asChild><Slot><Button {...props}>Slot</Button></Slot></Primitive.button>;
+}
+export function RuntimePortal(props) { return createPortal(<Button {...props}>Portal</Button>, document.body); }
+let Nested = Button;
+for (let depth = 0; depth < 16; depth++) {
+  const Child = Nested;
+  Nested = function Layer(props) { return <Child {...props} />; };
+}
+export const Deep = Nested;
+const orphan = React.createElement(Button, { id: 'orphan' }, 'Orphan');
+export function Orphan() { return orphan; }
+export function makeNoJSX(props) { return React.createElement(RuntimeSlot, props); }
+`;
+function position(text, fragment) {
+  const offset = text.indexOf(fragment); assert.ok(offset >= 0, fragment);
+  const before = text.slice(0, offset);
+  return { line: before.split('\n').length, column: offset - before.lastIndexOf('\n') };
+}
+export async function project(t, version, transform, { holdStartup = false } = {}) {
+  const root = await mkdtemp(join(repo, 'fixtures/.owner-'));
+  let server;
+  const releaseStartup = () => writeFile(join(root, 'startup.release'), '');
+  t.after(async () => {
+    // Release a pending Session even if navigation or an assertion failed.
+    try { if (holdStartup) await releaseStartup(); await server?.close(); }
+    finally { await rm(root, { recursive: true, force: true }); }
+  });
+  await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
+  await rm(join(root, 'src/App.tsx'));
+  await writeFile(join(root, 'src/App.jsx'), source);
+  await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
+  if (holdStartup) {
+    const config = await readFile(join(root, 'plumb.config.ts'), 'utf8');
+    await writeFile(join(root, 'plumb.config.ts'), `import { access } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
+while (true) { try { await access(${JSON.stringify(join(root, 'startup.release'))}); break; } catch { await delay(20); } }
+${config}`);
+  }
+  const runtime = join(root, 'node_modules/plumb-owner-runtime');
+  await mkdir(runtime, { recursive: true });
+  await writeFile(join(runtime, 'package.json'), JSON.stringify({ name: 'plumb-owner-runtime', type: 'module', exports: './index.jsx' }));
+  await writeFile(join(runtime, 'index.jsx'), library);
+  await writeFile(join(root, 'index.html'), '<html><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
+  await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+createRoot(document.getElementById('root')).render(<App />);
+`);
+  const aliases = version === 18 ? ['react', 'react-dom'].map(name => ({ find: new RegExp('^' + name + '(/.*)?$'), replacement: join(repo, 'fixtures/react18/node_modules', name) + '$1' })) : [];
+  server = await createServer({ root, configFile: false, plugins: [...(transform === 'plugin-react' ? [react()] : []), plumb({ watch: false })],
+    resolve: { alias: aliases }, oxc: { jsx: { runtime: 'automatic', development: true } },
+    // Late discovery can rebuild common chunks and reload the document while
+    // locate's worker is fetching a creation-stack map. Fix the dependency set.
+    optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime',
+      '@base-ui/react/button', '@base-ui/react/popover', '@radix-ui/react-slot', '@radix-ui/react-primitive', 'plumb-owner-runtime'] },
+    logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  await server.listen();
+  return { root, url: `http://127.0.0.1:${server.httpServer.address().port}`, releaseStartup };
+}
+async function browser(t) {
+  try {
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    t.after(() => browser.close()); return browser;
+  } catch (error) {
+    if (!/Executable doesn't exist/.test(error.message)) throw error;
+    t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return null;
+  }
+}
+const anchors = {
+  base: ['<MetalButton id="base"', 'Button', 'gap-[13px]'],
+  trigger: ['<Popover.Trigger id=', 'PopoverTrigger', 'gap-[17px]'],
+  forward: ['<MetalButton id="forward"', 'Button', null],
+  nested: ['<MetalButton id="nested"', 'Button', 'gap-[23px]'],
+  'runtime-slot': ['<RuntimeSlot id=', 'RuntimeSlot', 'gap-[29px]'],
+  primitive: ['<Primitive.button id=', 'Primitive.button', 'gap-[31px]'],
+  'as-child': ['<MetalButton id="as-child"', 'Button', 'gap-[37px]'],
+  'inside-portal': ['<MetalButton id="inside-portal"', 'Button', 'gap-[47px]'],
+};
+for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc']]) {
+  test(`Vite React ${version} ${transform}: library owners locate, read and edit authored JSX`, { timeout: 90000 }, async t => {
+    const launched = await browser(t); if (!launched) return;
+    const { root, url, releaseStartup } = await project(t, version, transform, { holdStartup: true });
+    const page = await launched.newPage();
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    await page.goto(url);
+    await page.waitForFunction(() => window.__plumb && document.getElementById('base'));
+    // Exercise slow startup on every run instead of depending on machine load.
+    assert.equal(await page.evaluate(async () => {
+      window.ownerReady = window.__plumb.ready().then(health => { window.ownerReadyDone = true; return health; });
+      return (await (await fetch('/__plumb/health')).json()).status;
+    }), 'starting');
+    assert.equal(await page.evaluate(() => window.ownerReadyDone === true), false);
+    await releaseStartup();
+    assert.equal((await page.evaluate(() => window.ownerReady)).status, 'ready');
+    for (const [id, [fragment, component, token]] of Object.entries(anchors)) {
+      const result = await page.$eval('#' + id, async element => ({ location: await window.__plumb.locate(element, { explain: true }), site: await window.__plumb.site(element) }));
+      if (version === 18) {
+        assert.equal(result.location.location, null, id);
+        assert.equal(result.location.reason, 'owner-unproven', JSON.stringify({ id, result }));
+        assert.equal(result.site, null, id + ': no unproven owner declarations');
+        continue;
+      }
+      assert.deepEqual(result.location, { file: 'src/App.jsx', ...position(source, fragment), component, tag: 'button', via: 'owner', rendered: 'button' }, JSON.stringify({ id, result }));
+      assert.deepEqual(result.site?.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id + ': only attributes authored at this JSX');
+    }
+    const direct = await page.$eval('#direct', async element => ({ location: await window.__plumb.locate(element), site: await window.__plumb.site(element) }));
+    assert.deepEqual(direct.location, { file: 'src/App.jsx', ...position(source, '<button id="direct"'), component: 'Slot.Slot', tag: 'button', via: version === 19 ? 'react19' : 'react-debugSource' });
+    assert.deepEqual(direct.site.declarations.map(d => d.site.text), ['gap-[11px]']);
+    for (const id of ['cross-portal', 'deep', 'orphan', 'no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
+      assert.equal(await page.$eval('#' + id, element => window.__plumb.locate(element)), null, id + ': never guess');
+      assert.equal(await page.$eval('#' + id, element => window.__plumb.site(element)), null, id + ': no borrowed declarations');
+    }
+    if (version === 18) {
+      for (const id of ['no-jsx', 'no-jsx-component', 'authored-no-jsx', 'authored-factory']) {
+        const refusal = await page.$eval('#' + id, element => window.__plumb.locate(element, { explain: true }));
+        assert.equal(refusal.reason, 'owner-unproven', JSON.stringify({ id, refusal }));
+      }
+    }
+    // Opening-tag attribution must also be usable by the existing edit flow.
+    // React 18 still reads and writes evidenced direct host JSX.
+    const editTarget = version === 18 ? 'direct' : 'base';
+    const editToken = version === 18 ? 'gap-[11px]' : 'gap-[13px]';
+    const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
+    // Locate in the page; edit and apply from here. The write reloads the page, which must not cut the request short.
+    const location = await page.$eval('#' + editTarget, element => window.__plumb.locate(element));
+    const origin = new URL(page.url()).origin, headers = { 'Content-Type': 'application/json', Origin: origin };
+    const query = new URLSearchParams({ file: location.file, line: location.line, column: location.column });
+    const choices = await (await fetch(origin + '/__plumb/edits?' + query, { headers: { Origin: origin } })).json();
+    const edit = choices.edits.find(edit => edit.from === editToken);
+    const response = edit && await fetch(origin + '/__plumb/apply', { method: 'POST', headers, body: JSON.stringify({ file: location.file, hash: choices.hash, edits: [{ id: edit.id }] }) });
+    const edited = edit ? { status: response.status, edit } : { choices };
+    assert.equal(edited.status, 200, JSON.stringify(edited));
+    assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), before.replace(editToken, edited.edit.to));
+    assert.deepEqual(errors, []);
+  });
+}
+
+test('authored library JSX resolves, isolates nested declarations and writes through real HTTP', { timeout: 90000 }, async t => {
+  const { root, url, releaseStartup } = await project(t, 19, 'plugin-react', { holdStartup: true });
+  assert.equal((await (await fetch(url + '/__plumb/health')).json()).status, 'starting');
+  assert.equal((await fetch(url + '/__plumb/resolve?source=src/App.jsx')).status, 503);
+  await releaseStartup();
+  const { setTimeout: delay } = await import('node:timers/promises');
+  let health;
+  for (let i = 0; i < 1500; i++) {
+    health = await (await fetch(url + '/__plumb/health')).json();
+    if (health.status !== 'starting') break;
+    await delay(20);
+  }
+  assert.equal(health.status, 'ready', JSON.stringify(health));
+  const resolve = params => fetch(url + '/__plumb/resolve?' + new URLSearchParams({ source: 'src/App.jsx', ...params }));
+  const snapshot = await (await resolve({ snapshot: '1' })).json();
+  for (const [id, [fragment, , token]] of Object.entries(anchors)) {
+    const at = position(source, fragment);
+    const response = await resolve({ ...at, column: at.column + 1, hash: snapshot.hash, component: '1' });
+    assert.equal(response.status, 200, id);
+    assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at });
+    const site = await (await fetch(url + '/__plumb/site?' + new URLSearchParams({ file: 'src/App.jsx', ...at }))).json();
+    assert.deepEqual(site.declarations.map(d => d.site.text), [token ?? 'padding: 14'], id);
+  }
+  const trigger = position(source, '<Popover.Trigger render=');
+  const outer = await (await fetch(url + '/__plumb/site?' + new URLSearchParams({ file: 'src/App.jsx', ...trigger }))).json();
+  assert.deepEqual(outer.declarations.map(d => d.site.text), ['py-[10px]'], 'render JSX belongs to the nested Button');
+  const at = position(source, '<MetalButton id="base"');
+  assert.equal((await resolve({ ...at, tag: 'button' })).status, 400, 'owner component is not its rendered host tag');
+  const factory = position(source, '<section className="gap-[61px]"');
+  assert.equal((await resolve({ ...factory, component: '1' })).status, 400, 'runtime factory cannot borrow containing intrinsic JSX');
+  assert.equal((await resolve({ ...position(source, "makeNoJSX({ id: 'no-jsx-component'"), component: '1' })).status, 400, 'runtime factory cannot borrow containing component JSX');
+  const choices = await (await fetch(url + '/__plumb/edits?' + new URLSearchParams({ file: 'src/App.jsx', ...at }))).json();
+  const edit = choices.edits.find(edit => edit.from === 'gap-[13px]'); assert.ok(edit);
+  const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: url },
+    body: JSON.stringify({ file: 'src/App.jsx', hash: choices.hash, edits: [{ id: edit.id }] }) });
+  assert.equal(applied.status, 200, await applied.text());
+  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source.replace('gap-[13px]', edit.to));
+  assert.equal((await resolve({ ...at, hash: snapshot.hash })).status, 400, 'old owner evidence cannot adopt changed source');
+});

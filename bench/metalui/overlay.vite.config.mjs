@@ -10,6 +10,6 @@ const docs = await vite.loadConfigFromFile({ command: 'serve', mode: 'developmen
 
 export default vite.mergeConfig(docs.config, {
   root: metalui + '/apps/docs',
-  plugins: [plumb({ root: metalui, config: new URL('./plumb.config.ts', import.meta.url).pathname })],
+  plugins: [plumb({ root: metalui, config: new URL('./overlay.plumb.config.ts', import.meta.url).pathname })],
   server: { host: '127.0.0.1', port: 4320, strictPort: true },
 });

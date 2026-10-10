@@ -319,7 +319,7 @@ export class Session extends EventEmitter {
     } while (true);
   }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
-  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; hash?: string; snapshot?: boolean } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean } = {}): Promise<{ file: string; line?: number; column?: number; hash?: string }> {
     return this.serialize(async () => {
       const file = sourcePath(this.root, source);
       await this.reconcile([file]);
@@ -333,7 +333,7 @@ export class Session extends EventEmitter {
       if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
       if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
-      const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag);
+      const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag, expected.component);
       if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
       return { file: inside, line: location.line, column: location.column };
     });
