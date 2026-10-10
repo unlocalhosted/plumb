@@ -66,6 +66,7 @@
     "vite": "^8.3.4"
   },
   "dependencies": {
+    "bippy": "^0.7.3",
     "lightningcss": "^1.33.0",
     "oxc-parser": "^0.153.0",
     "oxc-resolver": "^11.24.2",
