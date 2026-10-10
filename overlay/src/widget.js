@@ -62,7 +62,8 @@ const css = `
          background: var(--pl-paper); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label);
          transition: transform var(--pl-dur-travel) var(--pl-spring), opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .tag .el, .top .el { font-weight: 600; color: var(--pl-ink); }
-  .tag .who, .top .who { color: var(--pl-ink-2); font-weight: 500; }
+  .tag .who, .top .who { color: var(--pl-ink-2); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tag .n, .top .n, .top .el, .top .zoom, .top .close { flex: none; }
   .tag .n, .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
   .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-ink-2); }
 
@@ -82,7 +83,7 @@ const css = `
   .card:focus { outline: none; } /* the dialog takes focus so keys reach it; its controls show focus, the card does not */
 
   .top { height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; font: var(--pl-text-label); white-space: nowrap; background: var(--pl-paper); }
-  .top .file { all: unset; font: var(--pl-text-reading); color: var(--pl-ink-2); margin-inline-start: auto; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-text-reading); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-ink); } }
   .top .zoom { display: flex; gap: 1px; margin-inline-start: 6px; }
   .top button.z, .top .close { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 16px; line-height: 16px; border-radius: 2px; cursor: pointer; }
@@ -429,7 +430,7 @@ class PlumbOverlay extends HTMLElement {
     w.style.width = width + 'px';
     w.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Plumb reading for ${esc(label)}">
       <div class="top">${this.#label(p.element, s)}
-        ${s.status === 'ready' ? `<button class="file" title="Copy the source location">${esc(s.file)}:${s.line}</button>` : ''}
+        ${s.status === 'ready' ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column} · click to copy">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
         ${s.status === 'ready' ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}
         <button class="close" aria-label="Close the reading">${ICON.close}</button></div>
       ${s.status === 'ready' ? `<div class="diagram"></div><div class="read" aria-live="polite"></div>${this.#notes(s)}

@@ -23,7 +23,13 @@ const soft = finding => /framework|tier|by-value|matches/.test(finding.rule);
 const at = s => `${s.line}:${s.column}`;
 const number = value => { const n = parseFloat(value); return Number.isFinite(n) && /^-?[\d.]+(px|rem|em)?$/.test(String(value).trim()) ? n : undefined; };
 // Token names come back as custom properties; the family prefix is noise inside a family's own comparison.
-const short = name => name.replace(/^--/, '');
+// Inside a family's own comparison the family prefix is noise: --spacing-mu-space-16 reads as mu-space-16.
+const PREFIX = { spacing: ['spacing'], color: ['color'], radius: ['radius'], type: ['text', 'font', 'leading', 'tracking'], elevation: ['shadow', 'drop-shadow'], z: ['z'], motion: ['ease', 'duration', 'animate'] };
+const short = (name, family) => {
+  const bare = name.replace(/^--/, '');
+  const prefix = (PREFIX[family] ?? []).find(p => bare.startsWith(p + '-') && bare.length > p.length + 1);
+  return prefix ? bare.slice(prefix.length + 1) : bare;
+};
 
 export function reading(location, site, edits) {
   const marks = [], notes = [], byKey = new Map();
@@ -48,7 +54,7 @@ export function reading(location, site, edits) {
       const here = editsAt.get(key) ?? [];
       const choices = (finding.choices ?? []).map(c => {
         const edit = here.find(e => e.token === c.name);
-        return { name: c.name, label: short(c.name), value: c.resolved ?? c.value, n: number(c.resolved ?? c.value), why: c.why, edit: edit && { id: edit.id, from: edit.from, to: edit.to } };
+        return { name: c.name, label: short(c.name, finding.family), value: c.resolved ?? c.value, n: number(c.resolved ?? c.value), why: c.why, edit: edit && { id: edit.id, from: edit.from, to: edit.to } };
       });
       const mark = {
         key, text: s.text, line: s.line, column: s.column, props, value, n: number(value),

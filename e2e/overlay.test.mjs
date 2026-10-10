@@ -63,13 +63,14 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   await page.keyboard.up('Alt');
   const reading = overlay.getByRole('dialog', { name: 'Plumb reading for div in SyncRow' });
   await reading.waitFor();
-  assert.match(await reading.locator('.top').innerText(), /src\/App\.jsx:4/);
+  assert.match(await reading.locator('.top').innerText(), /App\.jsx:4/);
+  assert.match(await reading.locator('.top .file').getAttribute('title'), /^src\/App\.jsx:4:/);
   assert.match(await reading.locator('.read .t').innerText(), /gap-\[10px\] hardcodes 10px/);
   // Two tokens fit 10px equally; nothing is picked for the person, so nothing can be synced or written yet.
   assert.match(await reading.locator('.read .edit').innerText(), /2 tokens fit/);
 
   // Preview: picking a token row changes the page at once, and only inline styles carry it.
-  await reading.getByRole('button', { name: /spacing-s2/ }).click();
+  await reading.locator('.opt[data-pick]').filter({ hasText: 'compact related items' }).click();
   assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
   await reading.locator('.read .edit').filter({ hasText: /gap-\[10px\]\s*→\s*gap-s2/ }).waitFor();
   await reading.locator('.synced .state').filter({ hasText: 'Preview: 1 on system' }).waitFor();
