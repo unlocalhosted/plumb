@@ -12,7 +12,7 @@
  *  starting    while Plumb reads the project for the first time, the tag and reading say so and ask again each second
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
-const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000 };
+const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160 };
 
 import { locate } from './locate.js';
 import { request, post } from './api.js';
@@ -73,6 +73,7 @@ const css = `
   .lit.soft { background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--pl-soft) 55%, transparent) 0 1px, transparent 1px 4px); box-shadow: inset 0 0 0 1px var(--pl-soft); }
   .lit.ok { background: none; box-shadow: inset 0 0 0 1px var(--pl-on); }
   .lit.on { opacity: 1; }
+  .lit.frame { background: none; }
   .lit.ring { background: none; border-radius: 50%; }
 
   /* the reading: one card, positioned by transform; the inner card carries the open motion */
@@ -389,7 +390,8 @@ class PlumbOverlay extends HTMLElement {
     this.#focusBack = document.activeElement;
     this.#$('.tag').hidden = true;
     // 1:1 by default; a tiny element opens magnified so its marks have room to sit apart.
-    const width = element.getBoundingClientRect().width, fit = (Math.min(480, Math.max(360, width + 24)) - 24) / Math.max(1, width);
+    const { width, height } = element.getBoundingClientRect();
+    const fit = Math.min((Math.min(480, Math.max(360, width + 24)) - 24) / Math.max(1, width), TIMING.maxDrawing / Math.max(1, height));
     const steps = [1, 2, 4].filter(z => z === 1 || z <= fit);
     const zoom = steps.find(z => width * z >= 160) ?? steps.at(-1);
     const p = this.#pinned = { element, state: null, active: 0, zoom, original: new Map(), styleAttr: element.getAttribute('style'), before: false, status: null };
@@ -477,7 +479,8 @@ class PlumbOverlay extends HTMLElement {
   #drawDiagram() {
     const p = this.#pinned, s = p.state, el = p.element, diagram = this.#$('.diagram');
     const o = outlineOf(el), width = this.#$('.w').offsetWidth || 360;
-    const fit = (width - 24) / Math.max(1, o.w);
+    // Fit the drawing to the card's width and to a drawing height, so a page-sized element stays a glance.
+    const fit = Math.min((width - 24) / Math.max(1, o.w), TIMING.maxDrawing / Math.max(1, o.h));
     const k = Math.min(fit, p.zoom), pad = 12;
     this.#root.querySelectorAll('.z').forEach(z => { const n = Number(z.dataset.z); z.disabled = n > 1 && n > fit; });
     const toD = r => ({ x: (r.x - o.x) * k, y: (r.y - o.y) * k + pad, w: r.w * k, h: r.h * k });
@@ -562,7 +565,9 @@ class PlumbOverlay extends HTMLElement {
     const mark = p?.state?.marks?.[i];
     if (!mark || !p.regions?.[i]) { lit.classList.remove('on'); return; }
     const reg = regionFor(p.element, mark.props), r = reg.rects[0];
-    lit.className = `lit on ${reg.kind === 'corner' ? 'ring' : ''} ${this.#tone(mark)}`;
+    // A region that is most of the screen is outlined, not hatched: the page stays readable under the reading.
+    const large = reg.kind === 'box' || r.w * r.h > innerWidth * innerHeight / 3;
+    lit.className = `lit on ${reg.kind === 'corner' ? 'ring' : ''} ${large ? 'frame' : ''} ${this.#tone(mark)}`;
     lit.style.width = Math.max(2, r.w) + 'px'; lit.style.height = Math.max(2, r.h) + 'px';
     lit.style.transform = `translate(${r.x}px, ${r.y}px)`;
   }
@@ -611,6 +616,9 @@ class PlumbOverlay extends HTMLElement {
   }
 
   #editLine(m) {
+    // Value families can be fixed with a token; every other rule (a dead or runtime-built class, an override) says its own fix.
+    const valued = ['spacing', 'radius', 'type', 'color', 'shadow', 'z', 'motion'].includes(m.glyph);
+    if (!m.choices.length && !valued) return `<span class="hint">${code(m.action ?? '')}${m.accept ? ` If it is intended: <code>${esc(m.accept)}</code>` : ''}</span>`;
     if (!m.choices.length) return `<span class="hint">No token is close. Add one to your theme, or accept it: <code>${esc(m.accept ?? '')}</code></span>`;
     if (m.pick === null) return `<span class="hint">${m.choices.length} tokens fit. Pick the one whose reason matches.</span>`;
     const c = m.choices[m.pick];
