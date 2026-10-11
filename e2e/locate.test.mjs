@@ -162,7 +162,16 @@ async function editSlice(page, root) {
   const text = await readFile(join(root, 'src/App.jsx'), 'utf8');
   assert.ok(text.includes(edit.to)); assert.ok(!text.includes('gap-[31px]'));
 }
-async function hmrAssertions(page, root, vite) {
+// Turbopack's inline map for a hot-updated module is a line off; Plumb refuses it rather than name the wrong line, and
+// a reload, which runs the rebuilt chunk, locates exactly.
+async function current(page, bundler) {
+  const explain = await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
+  if (explain.location !== null || bundler !== 'turbopack') return explain;
+  assert.deepEqual([explain.reason, explain.detail.step], ['map', 'hot-update-map'], JSON.stringify(explain));
+  await page.reload(); await page.waitForFunction(() => window.__plumb?.locate);
+  return page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
+}
+async function hmrAssertions(page, root, vite, bundler) {
   const before = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
   const snapshot = () => page.evaluate(async () => {
     const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
@@ -198,13 +207,14 @@ async function hmrAssertions(page, root, vite) {
   // First Next module-version query may invalidate old stable-URL evidence;
   // retry uses the fresh module snapshot, not the obsolete coordinate.
   let fresh = await page.$eval('#nested', element => window.__plumb.locate(element));
-  if (!fresh) fresh = await page.$eval('#nested', element => window.__plumb.locate(element));
+  if (!fresh) fresh = await current(page, bundler);
+  if (fresh?.location === null) fresh = null;
   const explain = fresh ? undefined : await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
   assert.deepEqual(fresh, expectedLocation('nested', '<span', 'Inner', 'span'), JSON.stringify({ explain }));
   // Also refresh without a save-race lookup to invalidate caches beforehand.
   await writeFile(join(root, 'src/App.jsx'), source.replace('Nested</span>', 'Again</span>'));
   await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Again');
-  const committed = await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
+  const committed = await current(page, bundler);
   assert.deepEqual(committed, expectedLocation('nested', '<span', 'Inner', 'span'), JSON.stringify(committed));
 }
 async function warmBudget(page, t) {
@@ -232,7 +242,7 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
   }
   await writeFile(join(root, 'index.html'), '<html><head></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
   await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';\nimport { createRoot } from 'react-dom/client';\nimport App from './App.jsx';\nconst root = createRoot(document.getElementById('root')); root.render(<App />);\nif (import.meta.hot) import.meta.hot.accept('./App.jsx', module => root.render(React.createElement(module.default)));\n`);
-  const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
@@ -269,7 +279,7 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   const page = await launched.newPage();
   page.on('pageerror', error => output += '\n' + error.message);
   await page.goto(url, { timeout: 60000 });
-  try { await assertions(page); await warmBudget(page, t); await hmrAssertions(page, root, false); await editSlice(page, root); } catch (error) { error.message += '\n' + output; throw error; }
+  try { await assertions(page); await warmBudget(page, t); await hmrAssertions(page, root, false, bundler); await editSlice(page, root); } catch (error) { error.message += '\n' + output; throw error; }
 });
 
 test('resolve validates tracked source identity and site queries select only exact JSX attributes', async t => {
@@ -279,7 +289,7 @@ test('resolve validates tracked source identity and site queries select only exa
   await symlink(join(repo, 'src/index.ts'), join(root, 'src/escape.ts'));
   await mkdir(join(root, 'node_modules/local'), { recursive: true });
   await writeFile(join(root, 'node_modules/local/index.jsx'), 'export default () => <div />;');
-  const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
   await ready(new URL(url).origin);
@@ -368,7 +378,7 @@ test('script maps resolve through real HTTP: inline data, relative URLs, sourceR
       response.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : 'application/json'); response.end(assets.get(name));
     });
   } };
-  const server = await createServer({ root, configFile: false, plugins: [maps, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   await ready(url);
@@ -406,7 +416,7 @@ test('review 2: stable module/map URLs invalidate together and reject mismatched
       res.end(req.url.endsWith('.js') ? '//# sourceMappingURL=version.map' : JSON.stringify({ version: 3, sources: ['/src/Version.jsx'], sourcesContent: [content], names: [], mappings }));
     });
   } };
-  const server = await createServer({ root, configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   await ready(url);
@@ -457,7 +467,7 @@ test('Next stable chunks refresh eval indexes and maps through HTTP and compare 
       res.statusCode = 404; res.end('Missing script');
     });
   } };
-  const server = await createServer({ root, configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`, store = new SourceMapStore();
   await ready(url);
