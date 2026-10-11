@@ -61,6 +61,9 @@ test('native watching cannot silently degrade to polling on macOS/Linux', { skip
       watcher.once('error', reject);
     });
     observed = Promise.race([event, delay(1500).then(() => { throw new Error('native fs.watch delivered no creation event'); })]);
+    // Native errors can arrive while the probe write is pending. Handle the
+    // rejection immediately; await below still reports it or skips OS limits.
+    observed.catch(() => {});
     await writeFile(join(root, 'src/NativeProbe.tsx'), '<div className="gap-[137px]" />;');
     await observed;
   } catch (error) {

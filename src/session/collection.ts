@@ -2,6 +2,7 @@ import { parseSync } from 'oxc-parser';
 import { readFileSync } from 'node:fs';
 import { ResolverFactory } from 'oxc-resolver';
 import { collectClasses } from '../collect/classes.js';
+import type { CollectionMemory } from '../collect/classes.js';
 import type { ClassSite } from '../collect/classes.js';
 import type { SourceStyles } from '../collect/inline.js';
 import type { ModuleImport } from '../collect/modules.js';
@@ -28,6 +29,9 @@ export class CollectionState {
   private definitions = new Map<string, SourceStyles['declarations']>();
   visitedFiles: string[] = [];
   private dirty = new Set<string>();
+  private memory: CollectionMemory | undefined;
+  programs: CollectionMemory['programs'] = new Map();
+  specifiers: CollectionMemory['specifiers'] = new Map();
   markChanged(paths: string[]): void { for (const path of paths) this.dirty.add(path); }
   constructor(private root: string) {}
   private resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
@@ -36,7 +40,7 @@ export class CollectionState {
   // including types, conservatively; resolver changes rebuild the session.
   private imports(file: string, text: string): Map<string, string> {
     const dependencies = new Map<string, string>();
-    for (const specifier of dependencySpecifiers(file, text)) {
+    for (const specifier of this.memory?.specifiers.get(file) ?? dependencySpecifiers(file, text)) {
       const target = this.resolver.resolveFileSync(file, specifier).path;
       if (!target || !/\.[cm]?[jt]sx?$/.test(target)) continue;
       try { dependencies.set(target, sourceHash(readFileSync(target, 'utf8'))); this.dependencies.add(target); } catch { /* The collector reports unreadable imports that it uses. */ }
@@ -55,7 +59,7 @@ export class CollectionState {
       try { return sourceHash(path === input?.file ? input.text : readFileSync(path, 'utf8')) === previous; } catch { return false; }
     });
     if (valid) return old.value;
-    const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]));
+    const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
     if (old && file !== input?.file) {
       const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
       const sites = new Map(old.value.sites.map(site => [stable(site), site]));
@@ -97,10 +101,14 @@ export class CollectionState {
     const current = new Set(files);
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
+    this.memory = { programs: new Map(), imports: new Map(), specifiers: new Map(), texts: new Map() };
     this.parsedFiles = []; this.visitedFiles = [];
     for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
       values.push(await this.read(file, config, input));
     }
+    this.programs = this.memory.programs;
+    this.specifiers = this.memory.specifiers;
+    this.memory = undefined;
     if (!input) this.dirty.clear();
     const sites = new Map<string, ClassSite>(), modules = new Map<string, ModuleImport[]>();
     const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };

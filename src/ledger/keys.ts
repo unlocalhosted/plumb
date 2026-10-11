@@ -3,7 +3,12 @@ import type { Decision, Declaration, Report } from '../report.js';
 import type { FindingGroup, LedgerEntry } from './types.js';
 
 export const normalizeAuthored = (text: string) => text.replace(/["'`]/g, '').replace(/\s+/g, ' ').trim();
-export const siteLocation = (site: Declaration['site']) => JSON.stringify([site.file, site.line, site.column, site.text]);
+const locationsBySite = new WeakMap<Declaration['site'], string>();
+export function siteLocation(site: Declaration['site']): string {
+  let key = locationsBySite.get(site);
+  if (key === undefined) { key = JSON.stringify([site.file, site.line, site.column, site.text]); locationsBySite.set(site, key); }
+  return key;
+}
 export const decisionKey = (decision: Pick<Decision, 'family' | 'name'>) => `decision:${decision.family}:${decision.name}`;
 export function currentDecisions(report: Report): Decision[] {
   // Framework defaults are remembered for diagnostics, never implicitly accepted.

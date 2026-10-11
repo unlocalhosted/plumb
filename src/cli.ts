@@ -1,9 +1,12 @@
 #!/usr/bin/env node
+import { CheckCache } from './check-cache.js';
+import { createReadStream } from 'node:fs';
+import { performance } from 'node:perf_hooks';
 import { serve, serveStdio } from './session/server.js';
 import { clientTry, watchReports } from './session/client.js';
 import { parseArgs } from 'node:util';
 import { relative, resolve } from 'node:path';
-import { appendFile } from 'node:fs/promises';
+import { appendFile, readFile } from 'node:fs/promises';
 import { loadConfig } from './config.js';
 import { sarif } from './surfaces/sarif.js';
 import { githubCommands, githubSummary, renderSummary } from './surfaces/github.js';
@@ -166,7 +169,7 @@ async function main(): Promise<void> {
       const commands = githubCommands(report, scope);
       process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
       if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
-    } else process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
+    } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
       Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
       (!report.config.path && !report.ledger?.exists ? '\nNext: run plumb init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
@@ -208,7 +211,7 @@ async function main(): Promise<void> {
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
       ...(args.values.as === undefined ? {} : { as: args.values.as }) };
     const report = await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions);
-    process.stdout.write(args.values.json ? `${JSON.stringify(report, null, 2)}\n` : args.values.agent ? formatAgent(report) : formatText(report, args.values.verbose));
+    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? formatAgent(report) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
   }
@@ -221,6 +224,17 @@ async function main(): Promise<void> {
     const other = result.declarations.filter(declaration => !['class', 'arbitrary'].includes(declaration.origin)).map(declaration => `${relative(result.root, declaration.site.file)}:${declaration.site.line}:${declaration.site.column}  ${declaration.origin}  <${declaration.owner.name}>\n  ${declaration.prop}: ${declaration.value}${declaration.opaque ? ` (${declaration.opaque})` : ''}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('\n');
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
     return;
+  }
+  if (command === 'check' && args.values.json && !args.values.agent && !args.values.sarif && !args.values.format && !args.values.watch && args.values.base === undefined && !args.values.changed && !args.values['strict-ledger']) {
+    const started = performance.now(), cache = await CheckCache.create(options);
+    if (cache && await cache.hit()) {
+      for await (const chunk of createReadStream(cache.jsonPath, { highWaterMark: 1024 * 1024 })) {
+        if (!process.stdout.write(chunk)) await new Promise<void>(done => process.stdout.once('drain', done));
+      }
+      const metadata = JSON.parse(await readFile(cache.jsonPath.replace(/\.json$/, '.status.json'), 'utf8')) as { exit: number; timing: import('./report.js').Report['timing'] };
+      process.stdout.write(`,"timing":${JSON.stringify({ ...metadata.timing, totalMs: performance.now() - started })}}\n`);
+      process.exitCode = metadata.exit; return;
+    }
   }
   const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits && !suggesting && !comparingTokens,
     ...(listingHabits ? { listHabits: true } : {}),

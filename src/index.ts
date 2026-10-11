@@ -30,6 +30,7 @@ import type { TryOptions, Snippet } from './try.js';
 import { profileDuration } from './profile.js';
 import { suggestionCache } from './rules/suggestions.js';
 import { uniqueDiagnostics } from './diagnostics.js';
+import { CheckCache } from './check-cache.js';
 import { finishMessages } from './messages.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
@@ -228,8 +229,18 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
 
 export interface ExplainedClassSite extends ClassSite { declarations: import('./report.js').Declaration[]; notes: string[] }
 export async function check(options: CheckOptions = {}): Promise<Report> {
+  const start = performance.now(), cache = await CheckCache.create(options);
+  if (cache && await cache.hit()) {
+    const report = await cache.report();
+    report.timing = { ...report.timing, totalMs: performance.now() - start, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])) as Report['timing']['phases'], cacheHits: report.classes.unique, cacheMisses: 0 };
+    report.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
+    return report;
+  }
+  const before = await cache?.snapshot();
   const { report } = await analyze(options);
-  return options.ledger === false ? report : finishMessages(await applyLedger(report, options));
+  const result = options.ledger === false ? report : finishMessages(await applyLedger(report, options));
+  if (cache && before) await cache.save(result, before);
+  return result;
 }
 /** Judge stdin as an in-memory source; bypass ledger allowances and whole-project dead checks. */
 export async function trySnippet(text: string, options: TryOptions = {}): Promise<Report> {

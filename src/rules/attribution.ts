@@ -36,14 +36,23 @@ export function indexDefinitions(declarations: Declaration[], record: DecisionRe
   }
   return { definitions, scopedVariables };
 }
+const registries = new WeakMap<ReturnType<typeof indexDefinitions>, Map<string, { nondecisions: Set<string>; protectedRefs: Set<string> }>>();
 
 // Keep recipe references intact until their authored owner is known. Family
 // parsing can otherwise expand a variable into color/time parts and lose its site.
 export function attribution(family: JudgedFamily, index: ReturnType<typeof indexDefinitions>,
   sourceFiles: ReadonlySet<string>, decisionRefs: ReadonlySet<string>) {
   const { definitions, scopedVariables } = index;
-  const nondecisions = new Set([...definitions.keys()].filter(name => !decisionRefs.has(`var(${name})`)));
-  const protectedRefs = new Set([...decisionRefs, ...[...nondecisions].map(name => `var(${name})`)]);
+  let registriesForIndex = registries.get(index);
+  if (!registriesForIndex) registries.set(index, registriesForIndex = new Map());
+  const registryKey = JSON.stringify([...decisionRefs]);
+  let registry = registriesForIndex.get(registryKey);
+  if (!registry) {
+    const nondecisions = new Set([...definitions.keys()].filter(name => !decisionRefs.has(`var(${name})`)));
+    registry = { nondecisions, protectedRefs: new Set([...decisionRefs, ...[...nondecisions].map(name => `var(${name})`)]) };
+    registriesForIndex.set(registryKey, registry);
+  }
+  const { nondecisions, protectedRefs } = registry;
   const attributed = new Map<string, AttributedDeclaration>();
   const resolutions = new WeakMap<ReadonlyMap<string, Variable>, Map<string, string | undefined>>();
   const variableMaps = new WeakMap<ReadonlyMap<string, Variable>, Map<string, Variable>>();

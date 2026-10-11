@@ -1,3 +1,4 @@
+import { serialize as serializeReceipt, deserialize } from 'node:v8';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -62,12 +63,12 @@ function hydrate(data: GraphData): ComponentGraph {
 interface Receipt { graph: GraphData; files: [string, string | null][]; directories: [string, string[]][]; resolutions: [string, string | undefined][]; contexts: [string, string | undefined][] }
 export function componentCache(root: string, files: string[], config: PlumbConfig, includeUnused: boolean) {
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'components');
-  const path = join(directory, hash(JSON.stringify(['components-v3-isolated', root, files, config.components, Object.keys(config.imitation ?? {}), includeUnused])) + '.json');
+  const path = join(directory, hash(JSON.stringify(['components-v3-isolated', root, files, config.components, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
   return {
     read(resolveImport: (file: string, specifier: string) => string | undefined, resolveContext: (file: string, specifier: string) => string | undefined): ComponentGraph | undefined {
       let receipt: Receipt;
-      try { receipt = JSON.parse(readFileSync(path, 'utf8')) as Receipt; }
-      catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) return; throw error; }
+      try { receipt = deserialize(readFileSync(path)) as Receipt; }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError || error instanceof Error && error.message.startsWith('Unable to deserialize')) return; throw error; }
       if (receipt.files.some(([file, previous]) => fileHash(file) !== previous)) return;
       if (receipt.directories.some(([directory, previous]) => JSON.stringify(componentFiles(directory)) !== JSON.stringify(previous))) return;
       // Fresh resolution revalidates tsconfig, exports and symlink changes. Never
@@ -80,7 +81,7 @@ export function componentCache(root: string, files: string[], config: PlumbConfi
       const receipt: Receipt = { graph: serialize(graph, lines), files: [...files], directories: [...directories], resolutions: [...resolutions], contexts: [...contexts] };
       mkdirSync(dirname(path), { recursive: true });
       const temporary = `${path}.${process.pid}.tmp`;
-      writeFileSync(temporary, JSON.stringify(receipt)); renameSync(temporary, path);
+      writeFileSync(temporary, serializeReceipt(receipt)); renameSync(temporary, path);
     },
   };
 }

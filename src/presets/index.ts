@@ -103,6 +103,33 @@ function moduleTarget(manifest: Record<string, unknown>): string | undefined {
   const exports = manifest.exports as Record<string, unknown> | undefined;
   return condition(exports) ?? (exports && target(exports['./plumb']));
 }
+function dependenciesFor(manifest: Record<string, unknown> | undefined): string[] {
+  const dependencies = [...new Set(['dependencies', 'devDependencies', 'peerDependencies'].flatMap(key => Object.keys(manifest?.[key] as object ?? {})))].sort();
+  if (manifest && moduleTarget(manifest) && typeof manifest.name === 'string' && !dependencies.includes(manifest.name)) dependencies.push(manifest.name);
+  return dependencies;
+}
+/** Cache admission inspects metadata only. Evaluating a preset here would run
+ * its decision functions twice and change the normal analysis result. */
+export async function hasUntrackedPresetInputs(root: string): Promise<boolean> {
+  const shadcn = await json(join(root, 'components.json'));
+  if (shadcn) {
+    const aliases = shadcn.aliases as { ui?: string; components?: string } | undefined;
+    const alias = aliases?.ui ?? aliases?.components ?? 'src/components/ui';
+    const resolver = new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+    const directory = resolver.resolveFileSync(join(root, 'src/App.tsx'), alias).path ?? resolve(root, alias);
+    const path = relative(await realpath(root), await realpath(directory).catch(() => directory)).replaceAll('\\', '/');
+    // Root-local shadcn contracts are deterministic source analysis; the check
+    // receipt already validates all their bytes and directory membership.
+    if (path === '..' || path.startsWith('../') || isAbsolute(path) || /(?:^|\/)(?:node_modules|dist|build|\.next|\.git|\.cache|\.plumb-cache)(?:\/|$)/.test(path)) return true;
+  }
+  const manifest = await json(join(root, 'package.json'));
+  if (manifest && moduleTarget(manifest)) return true;
+  const metadata = await Promise.all(dependenciesFor(manifest).map(async name => {
+    const directory = await packageDirectory(root, name);
+    return directory ? json(join(directory, 'package.json')) : undefined;
+  }));
+  return metadata.some(item => item && moduleTarget(item));
+}
 async function records(preset: Preset, directory: string, consumer: boolean, patterns: Set<string>): Promise<Decision[]> {
   let inputs: DecisionInput[] = [];
   if (Array.isArray(preset.decisions)) inputs = preset.decisions;
@@ -185,9 +212,8 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
     await add({ name: 'shadcn', components: { ...components, contracts } }, root, 'components.json');
   }
   const manifest = await json(join(root, 'package.json'));
-  const dependencies = [...new Set(['dependencies', 'devDependencies', 'peerDependencies'].flatMap(key => Object.keys(manifest?.[key] as object ?? {})))].sort();
   // A package's own preset publishes its tokens in its library analysis too.
-  if (manifest && moduleTarget(manifest) && typeof manifest.name === 'string' && !dependencies.includes(manifest.name)) dependencies.push(manifest.name);
+  const dependencies = dependenciesFor(manifest);
   async function loadModule(file: string, directory: string, packageName?: string): Promise<void> {
     files.add(file);
     try { const module = await import(pathToFileURL(file).href); await add(module.default, directory, relative(root, file), packageName); }

@@ -30,9 +30,11 @@ export function finishMessages(report: Report): Report {
   // Absolute source paths can occur inside selectors, custom messages and ledger keys.
   const files = new Set([...report.declarations.map(d => d.site.file), ...report.findings.flatMap(f => [f.declaration.owner.name, ...f.sites.map(s => s.file), ...(f.component ? [f.component.source.file] : [])]), ...report.decisions.map(d => d.source.file)]);
   const replacements = [...files].filter(file => file.startsWith('/')).sort((a, b) => b.length - a.length).map(file => [file, path(file)] as const);
+  const replacementsByPath = new Map(replacements);
+  const pattern = replacements.length ? new RegExp(replacements.map(([file]) => file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g') : undefined;
   const cleaned = new Map<string, string>();
   const clean = (value: string): string => {
-    if (!cleaned.has(value)) cleaned.set(value, replacements.reduce((text, [file, replacement]) => text.includes(file) ? text.replaceAll(file, replacement) : text, value).replaceAll(`${report.root}/`, ''));
+    if (!cleaned.has(value)) cleaned.set(value, (pattern && value.includes('/') ? value.replace(pattern, file => replacementsByPath.get(file)!) : value).replaceAll(`${report.root}/`, ''));
     return cleaned.get(value)!;
   };
   for (const finding of report.findings) {
