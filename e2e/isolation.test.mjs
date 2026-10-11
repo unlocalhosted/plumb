@@ -52,10 +52,12 @@ createRoot(document.getElementById('root')).render(<App />);
       setTimeout(() => response.end(body), 30);
     });
   } };
-  server = await createServer({ root, configFile: false, plugins: [maps, plumb({ watch: false })],
+  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, plumb({ watch: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } },
     optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'] },
-    logLevel: 'silent', server: { host: '127.0.0.1', port: 0, headers: {
+    // These tests never edit source. Without a watcher, macOS's late report of the fixture's own writes (fs.watch
+    // delivers a modification made just before a file is watched) cannot reload the page mid-test.
+    logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0, headers: {
       'Cross-Origin-Embedder-Policy': policy, 'Cross-Origin-Opener-Policy': 'same-origin',
       ...(blocked === 'csp' ? { 'Content-Security-Policy': "worker-src 'none'" } : {}),
     } } });

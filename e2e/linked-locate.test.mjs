@@ -39,11 +39,13 @@ async function project(t, workspace) {
 };\n`);
   await symlink(join(library, 'src'), join(app, 'src/linked-source'));
   await writeFile(join(app, 'src/NotSource.txt'), 'not JSX');
-  server = await createServer({ root: app, configFile: false, plugins: [plumb({ root, watch: false })],
+  server = await createServer({ root: app, cacheDir: join(app, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } }, resolve: { dedupe: ['react', 'react-dom'] },
     optimizeDeps: { noDiscovery: true, exclude: ['plumb-linked-library'],
       include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@base-ui/react/button'] },
-    logLevel: 'silent', server: { host: '127.0.0.1', port: 0, fs: { allow: [parent, repo] } } });
+    // No hot reload here. Without a watcher, macOS's late report of the fixture's own writes (fs.watch delivers a
+    // modification made just before a file is watched) cannot reload the page mid-test.
+    logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0, fs: { allow: [parent, repo] } } });
   await server.listen();
   return { root, app, library, url: `http://127.0.0.1:${server.httpServer.address().port}`,
     appSource: await readFile(join(app, 'src/App.jsx'), 'utf8'), librarySource: await readFile(join(library, 'src/Button.jsx'), 'utf8') };
