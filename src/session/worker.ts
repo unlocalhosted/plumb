@@ -210,14 +210,17 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const trace = computed.trace(file, location.start);
     const tokens = [...new Set((params.classes as string).split(/\s+/).filter(Boolean))];
     const byToken = (sites: Site[]) => group(sites, s => s.text);
+    const result: Omit<ClassesResult, 'revision'> = { file, line, column, classes: [], unattributed: [], limited: trace.limited ? tokens : [], limits: trace.limits };
+    // Incomplete evidence cannot prove either attribution or absence. Keep all
+    // affected rendered tokens in the explicit limited bucket, without fallback.
+    if (trace.limited) return result;
     const direct = byToken(trace.sites);
     // Fallback uses collected class evidence, never arbitrary matching strings.
     const fallback = authoredClasses(file);
-    const result: Omit<ClassesResult, 'revision'> = { file, line, column, classes: [], unattributed: [], limited: trace.limited };
     for (const token of tokens) {
       let sites = direct.get(token) ?? [];
-      if (!sites.length && !trace.limited) sites = (fallback.get(token) ?? []).filter(site => site.file === file);
-      if (!sites.length && !trace.limited) {
+      if (!sites.length) sites = (fallback.get(token) ?? []).filter(site => site.file === file);
+      if (!sites.length) {
         const imported = trace.imports.flatMap(path => authoredClasses(path).get(token) ?? []);
         sites = [...new Map([...fallback.get(token) ?? [], ...imported].filter(site => trace.imports.includes(site.file)).map(site => [classSiteKey(site), site])).values()];
       }
@@ -226,7 +229,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
       for (const candidate of sites) {
         const view = await localReport(candidate.file);
         const source = await readFile(candidate.file, 'utf8');
-        const hash = state.sourceHash(candidate.file);
+        const hash = state.sourceHash(candidate.file) ?? sourceHash(source);
         if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.');
         index(view, localReports.get(candidate.file) === view ? candidate.file : undefined);
         const at = { file: candidate.file, line: candidate.line, column: candidate.column,
@@ -235,7 +238,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
           ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames) : [];
         candidates.push({ ...at, column: candidate.column, hash, edits });
       }
-      result.classes.push({ token, ambiguous: trace.limited || candidates.length > 1, sites: candidates });
+      result.classes.push({ token, ambiguous: candidates.length > 1, sites: candidates });
     }
     return result;
   }
@@ -243,7 +246,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const file = params.file as string, view = await localReport(file);
     index(view, localReports.get(file) === view ? file : undefined);
     if (!editable.has(file)) throw new Error('Apply requires a tracked project source file.');
-    const text = await readFile(file, 'utf8'), hash = state.sourceHash(file);
+    const text = await readFile(file, 'utf8'), hash = state.sourceHash(file) ?? sourceHash(text);
     if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
     if (protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
     const edits = structuredEdits(scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), new Map([[file, text]]), decisionNames);

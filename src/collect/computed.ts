@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { performance } from 'node:perf_hooks';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
@@ -9,6 +8,8 @@ import type { SourceProgram } from './source.js';
 import type { Site } from '../report.js';
 import { argumentMode, classHelperRegistry, configKeyMode } from './class-helpers.js';
 import type { ClassHelper, ClassHelperInput } from './class-helpers.js';
+
+export type ClassTraceLimit = 'operations' | 'depth' | 'function-depth' | 'import-hops';
 
 interface Binding { node?: Node; source: Module; import?: { specifier: string; name: string }; }
 interface Scope { parent?: Scope; bindings: Map<string, Binding> }
@@ -30,20 +31,22 @@ export class ComputedClasses {
   private resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   readonly dependencies = new Set<string>();
   readonly resolutions = new Map<string, string | undefined>();
-  private deadline = 0;
   private steps = 0;
   private importDepths = new Map<string, number>();
-  limited = false;
+  private limits = new Set<ClassTraceLimit>();
+  get limited(): boolean { return this.limits.size > 0; }
   private helpers: ReadonlyMap<string, ClassHelper>;
   constructor(private read: (file: string) => string = file => readFileSync(file, 'utf8'), helpers: ClassHelperInput[] = []) { this.helpers = classHelperRegistry(helpers); }
   configure(helpers: ClassHelperInput[] = []): void { this.helpers = classHelperRegistry(helpers); }
   invalidate(): void { this.modules.clear(); this.resolutions.clear(); this.resolver.clearCache(); }
   private tick(depth = 0): boolean {
-    if (++this.steps > 20000 || depth > 16 || performance.now() > this.deadline) { this.limited = true; return false; }
+    if (++this.steps > 20000) { this.limits.add('operations'); return false; }
+    if (depth > 16) { this.limits.add('depth'); return false; }
     return true;
   }
   private module(file: string): Module | undefined {
-    if (!this.tick()) return;
+    // Parsing and lexical indexing are revision work, not trace operations.
+    // Always cache a complete module, irrespective of previous trace limits.
     this.dependencies.add(file);
     const text = this.read(file), old = this.modules.get(file);
     if (old?.text === text) return old;
@@ -59,7 +62,6 @@ export class ComputedClasses {
       if (statement?.type === 'FunctionDeclaration' && statement.id) scope.bindings.set(statement.id.name, { source, node: statement });
     };
     const walk = (node: Node, parent: Scope): void => {
-      if (!this.tick()) return;
       let scope = parent;
       if (node.type === 'Program' || node.type === 'BlockStatement') {
         scope = node.type === 'Program' ? root : { parent, bindings: new Map() };
@@ -102,12 +104,13 @@ export class ComputedClasses {
       if (statement.type === 'ExportDefaultDeclaration') source.exports.set('default', { source, node: statement.declaration });
     }
     if (this.modules.size >= 128) this.modules.delete(this.modules.keys().next().value!);
-    if (!this.limited) this.modules.set(file, source);
+    this.modules.set(file, source);
     return source;
   }
   private imported(source: Module, specifier: string, depth: number): Module | undefined {
     const hops = (this.importDepths.get(source.file) ?? 0) + 1;
-    if (hops > 6 || !this.tick()) { this.limited = true; return; }
+    if (hops > 6) { this.limits.add('import-hops'); return; }
+    if (!this.tick(depth)) return;
     const key = `${source.file}\0${specifier}`;
     if (!this.resolutions.has(key)) this.resolutions.set(key, this.resolver.resolveFileSync(source.file, specifier).path);
     const file = this.resolutions.get(key);
@@ -258,7 +261,7 @@ export class ComputedClasses {
             else if (binding && param.type === 'AssignmentPattern') args.set(binding, { ...target, node: param.right });
           }
           this.returns({ ...target, args }, sites, depth + 1);
-        } else if (functions.has(target.node.type)) this.limited = true;
+        } else if (functions.has(target.node.type)) this.limits.add('function-depth');
         break;
       }
       case 'ArrowFunctionExpression': case 'FunctionExpression': case 'FunctionDeclaration': this.returns(value, sites, depth + 1); break;
@@ -281,8 +284,9 @@ export class ComputedClasses {
     };
     walk(fn.body);
   }
-  trace(file: string, start?: number, budgetMs = 50): { sites: Site[]; imports: string[]; limited: boolean } {
-    this.deadline = performance.now() + budgetMs; this.steps = 0; this.limited = false;
+  trace(file: string, start?: number): { sites: Site[]; imports: string[]; limited: boolean; limits: ClassTraceLimit[] } {
+    // Complete the bounded evaluation; elapsed time must never alter evidence.
+    this.steps = 0; this.limits.clear();
     this.importDepths = new Map([[file, 0]]);
     const source = this.module(file), sites = new Map<string, Site>();
     if (source) for (const element of source.elements) {
@@ -298,11 +302,11 @@ export class ComputedClasses {
       }
     };
     if (source && start !== undefined) visit(source, 1);
-    return { sites: [...sites.values()], imports, limited: this.limited };
+    return { sites: [...sites.values()], imports, limited: this.limited, limits: [...this.limits].sort() };
   }
   /** Distinguish literal spelling from collector usage aliases with equal text. */
   authored(site: Site): boolean {
-    const source = this.modules.get(site.file);
+    const source = this.modules.get(site.file) ?? this.module(site.file);
     if (!source) return false;
     const offset = (source.lineStarts[site.line - 1] ?? -Infinity) + site.column - 1;
     return source.literals.some(range => range.start <= offset && offset + site.text.length <= range.end);

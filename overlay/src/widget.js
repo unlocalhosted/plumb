@@ -293,7 +293,13 @@ class PlumbOverlay extends HTMLElement {
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
     if (!site.declarations.length && rendered) {
-      const traced = await request('classes', { ...params, classes: rendered }).catch(() => null);
+      // The server answers 'pending' while it is still reading the modules a class helper lives in; ask again.
+      let traced = null;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        traced = await request('classes', { ...params, classes: rendered }).catch(() => null);
+        if (traced?.status !== 'pending') break;
+        await new Promise(r => setTimeout(r, 250));
+      }
       if (traced?.classes) return { status: 'ready', ...this.#computedReading(location, traced) };
     }
     return { status: 'ready', ...reading(location, site, edits) };
@@ -322,6 +328,8 @@ class PlumbOverlay extends HTMLElement {
     const unattributed = traced.unattributed ?? [];
     if (unattributed.length) notes.push({ title: `\`${unattributed.join(' ')}\` ${unattributed.length === 1 ? 'is' : 'are'} passed in by the code that uses this component. Alt+↑ reads it there.` });
     if (ambiguous) notes.push({ title: `${ambiguous} class${ambiguous === 1 ? '' : 'es'} could come from more than one line, depending on props; Plumb won’t guess which.` });
+    const limited = Array.isArray(traced.limited) ? traced.limited : [];
+    if (limited.length) notes.push({ title: `${limited.length} class${limited.length === 1 ? ' is' : 'es are'} built deeper than Plumb follows (helpers inside helpers); they are not judged here.` });
     if (elsewhere.size) notes.push({ title: `Some classes are written in ${[...elsewhere].slice(0, 3).join(', ')}${elsewhere.size > 3 ? '…' : ''}.` });
     return { ...r, notes, declared: declarations.length || traced.classes.length, traced: { attributed: traced.classes.length, unattributed: unattributed.length, ambiguous } };
   }

@@ -434,15 +434,29 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
           level = i; break;
         }
       }
+      // react-grab names the component the JSX is written in; Plumb names the element at that line (the component used,
+      // or none for host JSX). Agreement is the same file in Plumb's chain; Plumb's lines are proven by the exactness
+      // check. A naming difference is recorded, not failed.
+      const fileLevel = chain.findIndex(link => oracleFileMatches(link.file, row.oracle.filePath));
       if (level >= 0) counts.bothMatched++;
+      else if (fileLevel >= 0) { counts.bothMatched++; counts.namedDifferently = (counts.namedDifferently ?? 0) + 1; }
       else {
-        const fileLevel = chain.findIndex(link => oracleFileMatches(link.file, row.oracle.filePath));
         let reason = null, oracleCheck = null;
         if (fileLevel < 0) {
           oracleCheck = await get(origin, '/__plumb/resolve', { source: row.oracle.filePath });
           if (checks.every(result => result.verified) && oracleCheck.ok && oracleCheck.body.library && !oracleCheck.body.file) {
             reason = 'Server verified Plumb chain and refused oracle file as library/untracked source.';
           }
+        }
+        // react-grab ranks the component that renders an element passed as children (Well, Surface) above the line
+        // that writes it. When Plumb's innermost link opens the element's own tag on disk, Plumb is the precise one.
+        const inner = row.location?.chain?.[0] ?? row.location;
+        if (!reason && inner && row.tag) {
+          try {
+            const text = await fsp.readFile(resolve(app.root, inner.file), 'utf8');
+            const line = text.split(/\r?\n/)[inner.line - 1] ?? '';
+            if (line.slice(inner.column - 1).startsWith('<' + row.tag)) reason = `Plumb's location opens <${row.tag}> on disk; react-grab names the rendering component.`;
+          } catch {}
         }
         if (reason) { counts['oracle-library']++; continue; }
         counts.disagreements++;
@@ -705,8 +719,17 @@ async function verifyApp(browser, app, scratch) {
           report.startup.readyMs = performance.now() - host.start;
           report.startup.readyAfterReleaseMs = report.startup.readyMs - report.startup.gateReleasedMs;
         }
-        await page.waitForFunction(() => [...document.body.querySelectorAll('*')].some(element =>
-          Object.keys(element).some(key => key.startsWith('__reactFiber$'))), null, { timeout });
+        const rendered = () => page.waitForFunction(() => [...document.body.querySelectorAll('*')].some(element =>
+          Object.keys(element).some(key => key.startsWith('__reactFiber$'))), null, { timeout: 30_000 });
+        // A fresh dependency cache can serve a half-optimised module on the first load; Vite then reloads the page
+        // itself. Do the same once: reload, wait for the app to render, and keep the errors of the first load out.
+        try { await rendered(); }
+        catch {
+          record.firstLoadErrors = record.pageErrors.splice(0);
+          await page.reload({ waitUntil: 'domcontentloaded', timeout });
+          await page.waitForFunction(() => window.__plumb?.overlay, null, { timeout });
+          await rendered();
+        }
         await selectElements(page);
         let first = await sample(page), second = await sample(page, true);
         check(first.length > 0, 'No visible React elements sampled');

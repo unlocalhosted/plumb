@@ -437,7 +437,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     if (onlyFile && file !== onlyFile) continue;
     // Collection runs off the UI thread. Bound work by steps/depth, not wall
     // time: a descheduled worker must retain the same declaration evidence.
-    for (const location of computed.trace(file, undefined, Infinity).sites) {
+    for (const location of computed.trace(file).sites) {
       computedClassFiles.add(location.file);
       const key = classSiteKey(location);
       if (authored.has(key)) continue;
