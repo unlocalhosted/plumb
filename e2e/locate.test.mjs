@@ -315,10 +315,12 @@ test('resolve validates tracked source identity and site queries select only exa
     const response = await resolve(source); assert.equal(response.status, 200, source);
     const result = await response.json(); assert.equal(result.library, true, source); assert.equal(result.file, undefined, source);
   }
-  for (const params of [{ line: 9999, column: 1 }, { line: 1, column: 1 }, { line: 4, column: 99999 }, position('</span>'), position('renderLeaf()}')]) {
+  // Not JSX, and what is there instead: a caller's call can have rendered an element; past the text or on no call it can't.
+  for (const [params, at] of [[{ line: 9999, column: 1 }, 'outside'], [{ line: 1, column: 1 }, 'other'], [{ line: 4, column: 99999 }, 'outside'],
+    [position('</span>'), 'other'], [position('renderLeaf()}'), 'call']]) {
     const response = await resolve('src/App.jsx', params);
     assert.equal(response.status, 200, JSON.stringify(params));
-    assert.deepEqual(await response.json(), { refused: 'not-jsx' });
+    assert.deepEqual(await response.json(), { refused: 'not-jsx', at }, JSON.stringify(params));
   }
   for (const params of [{ line: 4 }, { column: 10 }, { line: 0, column: 1 }]) assert.equal((await resolve('src/App.jsx', params)).status, 400, JSON.stringify(params));
   assert.equal((await resolve('src/App.jsx', {}, { headers: { Origin: 'https://foreign.example' } })).status, 403);

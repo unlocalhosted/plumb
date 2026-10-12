@@ -32,14 +32,18 @@ export function sourcePaths(root: string, source: string, servedRoot?: string): 
 
 export interface JSXLocation { line: number; column: number; start: number; end: number; tag: string }
 interface Anchor extends JSXLocation { nameEnd: number; closing?: { start: number; end: number } }
-const snapshots = new Map<string, { text: string; starts: number[]; anchors: Anchor[]; program: Node | null }>();
+const snapshots = new Map<string, { text: string; starts: number[]; anchors: Anchor[]; calls: Call[]; program: Node | null }>();
 /** One ownership table per source snapshot; retained independently in server and worker. */
 function snapshot(file: string, text: string) {
   const old = snapshots.get(file);
   if (old?.text === text) return old;
-  const starts = lineStarts(text), anchors: Anchor[] = [];
+  const starts = lineStarts(text), anchors: Anchor[] = [], calls: Call[] = [];
   const parsed = parseSync(file, text);
   function walk(node: Node): void {
+    if (node.type === 'CallExpression') {
+      const callee = node.callee as Node & { name?: string; property?: { name?: string } };
+      calls.push({ start: node.start, end: node.end, name: callee.type === 'Identifier' ? callee.name : callee.property?.name });
+    }
     if (node.type === 'JSXElement') {
       const opening = node.openingElement;
       const site = sourceSite({ file, text, lineStarts: starts }, opening.start, '');
@@ -57,11 +61,23 @@ function snapshot(file: string, text: string) {
   if (!parsed.errors.length) walk(parsed.program);
   anchors.sort((a, b) => a.start - b.start);
   if (snapshots.size >= 64) snapshots.delete(snapshots.keys().next().value!);
-  const value = { text, starts, anchors, program: parsed.errors.length ? null : parsed.program }; snapshots.set(file, value); return value;
+  const value = { text, starts, anchors, calls, program: parsed.errors.length ? null : parsed.program }; snapshots.set(file, value); return value;
 }
 function owner(anchors: Anchor[], offset: number): Anchor | undefined {
   // The last containing opening owns the text, including JSX nested in props.
   return anchors.findLast(a => a.start <= offset && offset < a.end);
+}
+interface Call { start: number; end: number; name: string | undefined }
+/** What a position that is not JSX holds. A caller frame in an owner stack sits on a call that renders (items.map(...));
+ * a position past the text, on a hook call, or on no call at all cannot have created an element, so its map is wrong. */
+export type PositionKind = 'outside' | 'hook' | 'call' | 'other';
+export function positionKind(file: string, text: string, line: number, column: number): PositionKind {
+  const { starts, calls } = snapshot(file, text), start = starts[line - 1];
+  if (start === undefined || start + column - 1 >= (starts[line] ?? text.length + 1)) return 'outside';
+  const offset = start + column - 1;
+  const call = calls.filter(c => c.start <= offset && offset < c.end).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+  if (!call) return 'other';
+  return call.name && /^use[A-Z0-9]/.test(call.name) ? 'hook' : 'call';
 }
 export const isComponentJSX = (tag: string): boolean => /^[A-Z_$]/.test(tag) || tag.includes('.');
 /** 'any' accepts host/component opening names; true restricts to components. Neither borrows prop factories. */

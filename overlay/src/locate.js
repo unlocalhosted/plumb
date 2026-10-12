@@ -184,8 +184,11 @@ export async function locate(element, options = {}) {
       if (snapshot?.refused) return { reason: 'resolve-refusal', detail: { source: at.source, response: snapshot.refused } };
     }
     const result = await ask({ ...at, ...(frame.hash ? { hash: frame.hash } : {}) });
-    if (options.explain) considered.push({ ...at, answer: result?.file ? 'jsx' : result?.refused ?? (result?.untracked ? 'untracked' : result?.library ? 'library' : 'none') });
-    if (result?.refused === 'not-jsx') return { reason: 'no-jsx', detail: at };
+    if (options.explain) considered.push({ ...at, answer: result?.file ? 'jsx' : result?.refused ? result.refused + (result.at ? ':' + result.at : '') : (result?.untracked ? 'untracked' : result?.library ? 'library' : 'none') });
+    // A frame that is not JSX is a call that rendered something (items.map(...), createElement). One past the file, on a
+    // hook call or on no call at all cannot have created an element: the module's map is wrong, never skipped past.
+    if (result?.refused === 'not-jsx') return !result.at || result.at === 'call' ? { reason: 'no-jsx', detail: at }
+      : { reason: 'map', detail: { ...at, step: 'position-not-a-call', at: result.at } };
     if (result?.refused) {
       if (frame.hash) {
         const snapshot = await ask({ source: at.source, snapshot: '1' });
@@ -253,7 +256,7 @@ export async function locate(element, options = {}) {
       const failure = await tryFrame(own);
       // A module Turbopack hot-updated runs from eval with its own inline map, which Next traces a line off. That
       // position is the map's, not evidence the element was made without JSX; refuse it as unreadable until a reload.
-      if (failure?.reason === 'no-jsx' && !own.hash && /[?&]id=/.test(own.raw ?? '')) return refuse('map', { ...failure.detail, step: 'hot-update-map' });
+      if ((failure?.reason === 'no-jsx' || failure?.reason === 'map') && !own.hash && /[?&]id=/.test(own.raw ?? '')) return refuse('map', { ...failure.detail, step: 'hot-update-map' });
       if (failure?.reason) return refuse(failure.reason, failure.detail);
     }
     const candidates = frames.filter(frame => frame.fileName && frame.lineNumber && !frame.fileName.startsWith('about:') && isSourceFile(frame.fileName));

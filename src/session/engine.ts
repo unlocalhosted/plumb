@@ -14,7 +14,8 @@ import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
-import { isComponentJSX, jsxLocation, jsxAuthoredOwner, sourcePaths } from './source-location.js';
+import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
+import type { PositionKind } from './source-location.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean;
   /** Maximum wait before read execution, in milliseconds (default 5000). */
@@ -33,7 +34,7 @@ export interface ClassesResult {
 }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
-export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean } | { library: true; untracked?: string } | { refused: 'not-jsx' };
+export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
@@ -412,7 +413,7 @@ export class Session extends EventEmitter {
       const anyOpening = !expected.component && expected.tag === undefined;
       const location = jsxLocation(file, text, this.position(line), this.position(column), expected.tag, anyOpening ? 'any' : expected.component);
       if (!location) {
-        if (anyOpening) return { refused: 'not-jsx' };
+        if (anyOpening) return { refused: 'not-jsx', at: positionKind(file, text, this.position(line), this.position(column)) };
         throw new UsageError('Source position does not identify an authored JSX element.');
       }
       return { file: inside, line: location.line, column: location.column,
