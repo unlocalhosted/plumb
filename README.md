@@ -1,20 +1,63 @@
 # Plumb
 
-Plumb is a CLI for Tailwind v4, CSS and React projects. Its planned checks compare the CSS declarations produced by UI code with a team's tokens, component contracts and written styling rules. The [design](docs/DESIGN.md) describes those checks and their build layers.
+Plumb finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
 
-Status: **all ten layers built, not yet published (0.0.0)**. Plumb lowers classes, stylesheets, `@apply` and inline styles to the CSS they produce with the project's own Tailwind v4, and judges them for dead classes and variables, provenance in seven families (spacing, colour, radius, type, motion, elevation, z-index), team habits, component ownership and hand-built copies of components. A ledger records accepted debt and reasoned exceptions so CI fails only on new drift. Output comes as text, JSON, SARIF, GitHub annotations and per-site agent instructions. Layer notes are in [docs/layers](docs/layers) and measurements against MetalUI in the [benchmark](BENCHMARK.md). Node 22.18 or newer is required.
+It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
 
-From this checkout, install dependencies and run:
+## Quick start
+
+### 1. Find the drift
+
+```sh
+npm install -D @unlocalhosted/plumb
+npx plumb                 # report drift; exits 0 with no config
+npx plumb init            # write plumb.config.ts and a baseline of today's findings
+npx plumb check           # green: only new drift fails from here
+npx plumb install --ci    # add the GitHub Action
+```
+
+`init` infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumb doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
+
+### 2. Fix it from the page
+
+```sh
+npx plumb install --overlay           # print the wiring for Vite or Next.js
+npx plumb install --overlay --write   # make the change, and show the diff
+```
+
+For Vite, the overlay is one plugin, listed **before** `react()`:
+
+```ts
+import { plumb } from '@unlocalhosted/plumb/vite'
+import react from '@vitejs/plugin-react'
+
+export default { plugins: [plumb(), react()] }
+```
+
+Start your dev server as usual. Then:
+
+| Gesture | What happens |
+| --- | --- |
+| Hold **Alt** and hover | The element under the pointer is outlined, with its component and how many values are off the scale. |
+| **Click** while holding Alt | Pins a reading: the exact JSX that made the element, and each off-scale value with the tokens that fit. |
+| **Alt+↑ / Alt+↓** | Steps between the element's JSX and the components above it. |
+| Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
+| **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
+
+If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; Plumb then finds positions through React's owner chain instead.
+
+Plumb writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. Plumb then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+
+### From a checkout
 
 ```sh
 npm install
 npm run build
 node dist/cli.js --root ./fixtures/tailwind-min
-node dist/cli.js check --json --root ./fixtures/plain-css
-node dist/cli.js explain src/Button.tsx --root ./fixtures/tailwind-min --json
-node dist/cli.js explain src/page.css --root ./fixtures/stylesheets-inline --json
 npm test
 ```
+
+## Configuration
 
 The package is named `@unlocalhosted/plumb` and exposes the `plumb` binary when installed. Config is optional. Place `plumb.config.ts`, `.mts`, `.mjs` or `.js` in the project root, or pass `--config <path>`. Relative config and CSS paths resolve from `--root`; the default root is the current directory.
 
@@ -31,7 +74,7 @@ export default defineConfig({
 
 Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumb --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumb init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
-Adopt with `plumb`, `plumb init`, then `plumb install --ci`. Init writes inferred token sources, enables hover-gate, focus-outline, viewport-dynamic and overscroll-contain, lists other habits with break counts, and records the baseline and accepted tokens. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first. `plumb doctor` checks Node, Tailwind, CSS entry, config, ledger and cache, with a fix on each line.
+Init enables the hover-gate, focus-outline, viewport-dynamic and overscroll-contain habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
 
 ## Agent installation
 
@@ -63,7 +106,7 @@ Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, a
 
 ## Development overlay hosts
 
-`plumb install --overlay` reads `package.json` and prints the host wiring without changing files. Vite and React are optional peers, loaded only through their adapter subpaths. This layer serves a connection stub that logs Plumb health; the overlay UI comes in a later layer.
+`plumb install --overlay` reads `package.json` and prints the host wiring without changing files; `--write` makes the change and prints the diff. Vite and React are optional peers, loaded only through their adapter subpaths.
 
 For Vite, add the plugin to your existing configuration:
 

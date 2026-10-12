@@ -243,7 +243,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
         const at = { file: candidate.file, line: candidate.line, column: candidate.column,
           declarations: classDeclarations(view, candidate), findings: columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column) ?? [] };
         const edits = editable.has(candidate.file) && !protectedFiles.has(candidate.file)
-          ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames) : [];
+          ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames, true) : [];
         candidates.push({ ...at, column: candidate.column, hash, edits });
       }
       result.classes.push({ token, ambiguous: candidates.length > 1, sites: candidates });
@@ -257,7 +257,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const text = await readFile(file, 'utf8'), hash = state.sourceHash(file) ?? sourceHash(text);
     if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
     if (protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
-    const edits = structuredEdits(scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), new Map([[file, text]]), decisionNames);
+    const edits = structuredEdits(scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), new Map([[file, text]]), decisionNames, true);
     return { file, hash, edits };
   }
   if (method === 'remaining') {

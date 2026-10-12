@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { planHooks, writeHooks } from '../surfaces/hooks.js';
 import { UsageError } from '../errors.js';
 import type { ServeInfo } from '../session/server.js';
+import { writeOverlay } from './overlay.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -89,10 +90,17 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
     `          ledger-approvers: ${JSON.stringify(owners.logins.join(', '))}\n` };
 }
 
-/** Print host wiring only. Overlay installation never changes consumer files. */
-export async function installOverlay(root: string): Promise<string> {
+/** Print host wiring by default; source edits require explicit --write. */
+export async function installOverlay(root: string, write = false): Promise<string> {
   const metadata = JSON.parse(await content(join(root, 'package.json')) ?? '{}') as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
   const dependencies = { ...metadata.dependencies, ...metadata.devDependencies };
+  if (write) {
+    try { return await writeOverlay(root, dependencies.next ? 'next' : dependencies.vite ? 'vite' : undefined); }
+    catch (error) {
+      if (!(error instanceof UsageError)) throw error;
+      throw new UsageError(`${error.message}\nNo install files changed. Add this wiring manually:\n${await installOverlay(root)}`);
+    }
+  }
   if (dependencies.next) return [
     'Wrap your existing next.config.mjs export:',
     "import { withPlumb } from '@unlocalhosted/plumb/next/config';",
@@ -114,7 +122,7 @@ export async function installOverlay(root: string): Promise<string> {
   if (dependencies.vite) return [
     'Add to vite.config.ts:',
     "import { plumb } from '@unlocalhosted/plumb/vite';",
-    '// Append to your existing plugins array:',
+    '// Put first in your existing plugins array, before react():',
     'plumb()',
     '',
   ].join('\n');

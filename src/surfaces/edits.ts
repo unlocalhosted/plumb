@@ -48,12 +48,15 @@ export function replacement(finding: Finding, site: Site, decision: Decision, re
 export const editChoices = (finding: Finding) => (finding.choices ?? finding.decisions).filter(d => !(finding.rule.endsWith('/framework') && d.origin === 'framework'));
 
 /** Only offer replacements whose authored text exists at the reported UTF-16 location. */
-export function structuredEdits(report: Report, sources: ReadonlyMap<string, string>, decisionNames?: Set<string>): StructuredEdit[] {
+export function structuredEdits(report: Report, sources: ReadonlyMap<string, string>, decisionNames?: Set<string>, includeDebt = false): StructuredEdit[] {
   const edits = new Map<string, StructuredEdit>();
   const starts = new Map([...sources].map(([file, text]) => [file, lineStarts(text)]));
   for (const finding of report.findings) {
     if (['ledger', 'decisions'].includes(finding.family)) continue;
-    for (const site of newSites(finding)) {
+    // A person's explicit source write can pay down baseline debt. Accepted
+    // exceptions stay excluded; automatic agent suggestions remain new-only.
+    const sites = includeDebt ? finding.sites.filter(site => site.inScope !== false && (!site.ledger || site.ledger.status === 'new' || site.ledger.status === 'debt')) : newSites(finding);
+    for (const site of sites) {
       const source = sources.get(site.file), line = starts.get(site.file)?.[site.line - 1];
       if (source === undefined || line === undefined) continue;
       for (const decision of editChoices(finding)) {

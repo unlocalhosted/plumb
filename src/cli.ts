@@ -49,7 +49,7 @@ Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumb check [--sarif | --agent | --format github]
        plumb agent-docs
        plumb install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
-       plumb install --overlay [--root <dir>]  Print host wiring; never edit files
+       plumb install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
        plumb doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
-          overlay: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -107,7 +107,7 @@ async function main(): Promise<void> {
     rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
     lang: ['try'], as: ['try'], port: ['serve'], stdio: ['serve'], watch: ['check'],
     markdown: ['report'], since: ['report'], strict: ['parity'],
-    overlay: ['serve', 'install'], origin: ['serve'], 'served-root': ['serve'],
+    overlay: ['serve', 'install'], write: ['install'], origin: ['serve'], 'served-root': ['serve'],
   };
   for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
   if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumb parity.' : '--format supports github.');
@@ -117,7 +117,8 @@ async function main(): Promise<void> {
   if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumb parity.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
   const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
-  if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay prints host wiring only; omit --hooks, --ci and --agent.');
+  if (args.values.write && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.');
+  if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.');
   if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
@@ -140,7 +141,15 @@ async function main(): Promise<void> {
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
     return;
   }
-  if (command === 'install' && args.values.overlay) { process.stdout.write(await installOverlay(resolve(options.root ?? process.cwd()))); return; }
+  if (command === 'install' && args.values.overlay) {
+    try { process.stdout.write(await installOverlay(resolve(options.root ?? process.cwd()), args.values.write)); }
+    catch (error) {
+      if (!(error instanceof UsageError)) throw error;
+      // Manual host wiring is copyable code: retain its line breaks.
+      process.stderr.write(`plumb: ${error.message}\n`); process.exitCode = 2;
+    }
+    return;
+  }
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
   if (command === 'doctor') {
