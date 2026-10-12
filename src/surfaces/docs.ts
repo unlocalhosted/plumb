@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { Report } from '../report.js';
 import { renderLoop } from './agent.js';
+import { callerPolicy } from '../decisions/callers.js';
 
 /** Optional future ownership/habit records stay data; absent layers are explicit. */
 export function agentDocs(report: Report, config: PlumbConfig): string {
@@ -13,9 +14,12 @@ export function agentDocs(report: Report, config: PlumbConfig): string {
     const decisions = report.decisions.filter(d => d.family === family && (policy?.origins ?? ['project', 'inferred']).includes(d.origin));
     if (!decisions.length) continue;
     const identity = policy?.identity ?? (['color', 'motion'].includes(family) ? 'reference' : 'value');
-    const callers = policy?.callers ?? (decisions.some(d => d.tier === 'semantic') ? ['semantic'] : ['primitive', 'semantic']);
-    sections.push(`## ${family}\n\nIdentity: ${identity}. Caller tiers: ${callers.join(', ')}.\n\n` +
+    const callers = callerPolicy(decisions, policy?.callers);
+    const tiers = policy?.callers ? policy.callers.join(', ') : 'primitive, semantic; primitives with semantic aliases require those aliases (font/default wiring excluded)';
+    sections.push(`## ${family}\n\nIdentity: ${identity}. Caller tiers: ${tiers}.\n\n` +
       decisions.map(d => `- ${d.name}: ${d.value}${d.resolved && d.resolved !== d.value ? ` (${d.resolved})` : ''}; ${d.origin}, ${d.tier}.\n  References: ${d.refs.join(', ')}.\n  Why: ${d.why || '(no reason recorded)'}`).join('\n'));
+    const restricted = decisions.filter(d => !callers.allows(d));
+    if (policy?.callers === undefined && restricted.length) sections.push('Caller aliases:\n' + restricted.map(d => `- ${d.name}: use ${callers.semanticsFor(d).map(alias => alias.name).join(', ')}.`).join('\n'));
   }
   // Ownership's report schema is supplied by Layer 7; do not substitute guessed contracts.
   const ownership = (report as Report & { components?: unknown; ownership?: unknown }).components ?? (report as Report & { ownership?: unknown }).ownership;

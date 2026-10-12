@@ -37,3 +37,9 @@ Two engine changes, made in this order. Each is checked with quick sanity checks
 - Only modify files inside `/Users/vijaysingh/unlocalhosted/plumb`. Never write inside `metalui`, `kamui`, `craftingattention` or `algorecall`.
 - Other jobs are editing `bench/apps/verify.mjs`, `bench/apps/frozen*.mjs`, `src/adoption/`, `e2e/setup.test.mjs`, `overlay/` and `README.md`. Don't touch those.
 - No commits, pushes, worktrees or global installs.
+
+## Resume notes (2026-10-12, after the first run stopped on a model capacity error)
+
+- **Part 1 is in the tree, uncommitted:** `src/decisions/spacing.ts`, `src/decisions/index.ts`, `src/rules/provenance.ts`, `e2e/numeric-spacing.test.mjs` and test edits. AlgoRecall's spacing findings went from 38,058 to 1,024 sites. MetalUI is identical before and after: 1,383 findings, `provenance/spacing` 522, `dead/spacing` 616, coverage 2,204/2,932. Keep that.
+- **Part 1 regression to fix first:** 17 tests fail in `e2e/computed.test.mjs`, plus `e2e/locate.test.mjs` "review 5". Example: in the computed fixture (`--spacing: 1px`), the finding for `p-[10px]` says "Replace `p-[10px]` with `p-10`", but `/__plumb/edits` returns `edits: []` for that site, so the overlay can't offer the fix. The new numeric-step decisions (`--spacing-10`) likely aren't accepted by the structured edit builder (`structuredEdits` and `decisionNames`). Make numeric steps produce structured edits, keep the existing assertions where they still describe correct behaviour, and update only those that described the old, wrong scale.
+- **Part 2 work in progress was set aside**, because it failed its own checks: health blocked 214 ms in `e2e/session-burst.test.mjs`, and the cache test failed a deep-equality check. The patch is at `bench/reading/wip/reading-cache-wip.patch` and its test at `bench/reading/wip/reading-cache.test.mjs`. `src/session/worker.ts` is back at HEAD. Reuse what's sound in it; the health and burst behaviour must stay as it was.

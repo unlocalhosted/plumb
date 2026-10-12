@@ -8,12 +8,21 @@ export interface CssVariable {
   value: string;
   theme: boolean;
   root: boolean;
+  themeScope: boolean;
   dynamic: boolean;
   origin: Origin;
   why: string;
+  trailingWhy: string;
   tier?: Tier;
   source: { file: string; line: number };
   site: Site;
+}
+
+// Theme selectors share one scope model. Conditional/layer wrappers retain it;
+// a nested selector must itself be a theme selector or refer to its parent.
+function themeScopeFor(selector: string, parent: boolean): boolean {
+  if (selector.startsWith('@')) return /^@(media|supports|container|layer)\b/.test(selector) && parent;
+  return parent && selector.includes('&') || /(?:^|[\s,>+~])(?::root\b|html\b|\.[\w-]+|\[\s*data-theme\b)/.test(selector);
 }
 
 // Read declaration/source metadata before compilation drops comments and unused
@@ -28,7 +37,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
     active.add(file);
     const css = sheet.css, imports = cssImports(css);
     const source = { file, text: css, lineStarts: lineStarts(css) };
-    function walk(start: number, theme: boolean, root: boolean, dynamic: boolean): number {
+    function walk(start: number, theme: boolean, root: boolean, dynamic: boolean, themeScope: boolean): number {
       let index = start;
       while (index < css.length) {
         let comment = '';
@@ -54,7 +63,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
         if (delimiter === '{') {
           const isTheme = /^@theme\b/.test(text);
           const isRoot = !text.startsWith('@') && /(?:^|,)\s*(?::root|html)\s*(?:,|$)/.test(text);
-          index = walk(index + 1, theme || isTheme, isRoot || (root && text === '&'), dynamic || /^@(media|container|supports)\b/.test(text));
+          index = walk(index + 1, theme || isTheme, isRoot || (root && text === '&'), dynamic || /^@(media|container|supports)\b/.test(text), themeScopeFor(text, themeScope));
           continue;
         }
         if (/^@(import|reference)\b/.test(text)) {
@@ -68,7 +77,8 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
         const match = /^(--[\w*-]+)\s*:\s*([\s\S]+)$/.exec(text);
         if (match) {
           const tier = /\btier:\s*(primitive|semantic)\b/.exec(comment)?.[1] as Tier | undefined;
-          result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic,
+          const trailingWhy = delimiter === ';' ? /^[\t ]*\/\*([^\r\n]*?)\*\//.exec(css.slice(index + 1))?.[1]?.trim() ?? '' : '';
+          result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic, themeScope, trailingWhy,
             origin: sheet.sourceOrigin, why: comment.startsWith('why:') ? comment.slice(4).replace(/\s*tier:\s*(primitive|semantic)\b/, '').trim() : '',
             ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offset, '').line }, site: sourceSite(source, offset, text) });
         }
@@ -77,7 +87,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
       }
       return index;
     }
-    walk(0, false, false, false);
+    walk(0, false, false, false, false);
     active.delete(file); visited.add(file);
   }
   for (const file of graph.roots) visit(file);

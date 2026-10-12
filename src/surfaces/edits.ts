@@ -3,6 +3,7 @@ import { sourceHash } from '../collect/cache.js';
 import { lineStarts } from '../collect/source.js';
 import { cssCode } from '../collect/stylesheets.js';
 import { useFor } from '../rules/provenance.js';
+import { numericUse } from '../decisions/spacing.js';
 import { atSite, newSites } from './sites.js';
 
 export interface StructuredEdit {
@@ -40,7 +41,7 @@ export function replacement(finding: Finding, site: Site, decision: Decision, re
   const property = site.text.slice(0, colon).trim().replace(/["']/g, '');
   if (property.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`) !== d.prop) return undefined;
   const value = use.css.slice(d.prop.length + 2);
-  if (!value.startsWith('var(')) return undefined;
+  if (!value.startsWith('var(') && !numericUse(decision)) return undefined;
   const to = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${JSON.stringify(value)}` : use.css;
   return { from: site.text, to, token: decision.name };
 }

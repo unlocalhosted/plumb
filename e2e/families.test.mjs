@@ -73,7 +73,7 @@ test('dead vars group names, rank close names, warn on fallback and accept every
  const r=run(dir), dead=r.findings.filter(f=>f.rule==='existence/dead-var');
  assert.deepEqual(dead.map(f=>f.declaration.refs[0]),['--colr-brand','--missing']);
  assert.match(dead[0].fix,/--color-brand/); assert.equal(dead[0].severity,'error'); assert.equal(dead[1].severity,'warn'); assert.equal(dead[1].sites.length,2);
- assert.ok(finding(r,'padding: var(--missing, 4px)','config/no-tokens')); assert.equal(r.coverage.existence.deadVars,3);
+ assert.ok(finding(r,'padding: var(--missing, 4px)','provenance/spacing')); assert.equal(r.coverage.existence.deadVars,3);
  await writeFile(join(dir,'src/extra.ts'),'node.style.setProperty("--missing", 4);');
  assert.ok(!run(dir).findings.some(f=>f.rule==='existence/dead-var' && f.declaration.refs.includes('--missing')));
 });

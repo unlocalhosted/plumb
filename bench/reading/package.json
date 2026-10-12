@@ -1,0 +1,112 @@
+{
+  "name": "@unlocalhosted/plumb",
+  "version": "0.1.0",
+  "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "plumb": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/hosts/vite.d.ts",
+      "default": "./dist/hosts/vite.js"
+    },
+    "./next": {
+      "types": "./dist/hosts/next.d.ts",
+      "default": "./dist/hosts/next.js"
+    },
+    "./next/config": {
+      "types": "./dist/hosts/next-config.d.ts",
+      "default": "./dist/hosts/next-config.js"
+    }
+  },
+  "files": [
+    "dist",
+    "overlay/client.js",
+    "overlay/src/*.js",
+    "overlay/src/tokens.css",
+    "overlay/dist",
+    "schema",
+    "action.yml",
+    "LICENSE",
+    "README.md",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && PLUMB_WATCH=1 PLUMB_POLLING=0 node --test --test-concurrency=1 e2e/*.test.mjs && PLUMB_WATCH=1 PLUMB_POLLING=1 node --test e2e/serve.test.mjs && PLUMB_WATCH=0 PLUMB_POLLING=0 node --test e2e/serve.test.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@base-ui/react": "^1.8.0",
+    "@radix-ui/react-primitive": "^2.1.11",
+    "@radix-ui/react-slot": "^1.4.0",
+    "@tailwindcss/node": "4.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/picomatch": "^4.0.3",
+    "@types/react": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "next": "^16.4.0",
+    "playwright": "^1.64.0",
+    "plumb-react18-fixture": "file:fixtures/react18",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.1",
+    "typescript": "5.9",
+    "vite": "^8.3.4"
+  },
+  "dependencies": {
+    "bippy": "^0.7.3",
+    "lightningcss": "^1.33.0",
+    "magic-string": "^0.30.21",
+    "oxc-parser": "^0.153.0",
+    "oxc-resolver": "^11.24.2",
+    "picomatch": "^4.0.7",
+    "tinyglobby": "^0.2.17"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0",
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unlocalhosted/plumb.git"
+  },
+  "homepage": "https://github.com/unlocalhosted/plumb#readme",
+  "bugs": {
+    "url": "https://github.com/unlocalhosted/plumb/issues"
+  },
+  "author": "Vijay Singh",
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "design-system",
+    "design-tokens",
+    "lint",
+    "css",
+    "react",
+    "drift",
+    "ai-agents"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -232,34 +232,27 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
         }
         return;
       case 'TemplateLiteral': {
-        opaque += node.expressions.length;
         // Tokenize the whole template: a hole glued to text is one opaque class,
         // never a spurious dead finding for its static prefix or suffix.
         const raw = src.text.slice(node.start + 1, node.end - 1);
+        // Oxc's TS template spans include delimiters; JS spans exclude them.
+        const delimiters = node.quasis[0]!.start === node.start;
         const holes = node.expressions.map((expression, index) => ({
-          start: node.quasis[index]!.end - node.start - 3,
-          end: node.quasis[index + 1]!.start - node.start,
+          start: node.quasis[index]!.end - node.start - (delimiters ? 3 : 1),
+          end: node.quasis[index + 1]!.start - node.start - (delimiters ? 0 : 1),
           expression,
         }));
-        function complete(value: Node): boolean {
-          if (literalMap(value)) return true;
-          if (value.type !== 'Identifier') return false;
-          for (const scope of scopes.toReversed()) {
-            if (!scope.has(value.name)) continue;
-            const binding = scope.get(value.name);
-            return !!binding && typeof binding !== 'function' && literalMap(binding.node);
-          }
-          return false;
-        }
         let masked = raw;
         for (const hole of holes.toReversed()) {
-          const boundary = (startsBoundary(hole.expression) || complete(hole.expression) && (hole.start === 0 || /\s$/.test(raw.slice(0, hole.start)))) && (hole.end === raw.length || /^\s/.test(raw.slice(hole.end)));
+          const boundary = (startsBoundary(hole.expression) || hole.start === 0 || /\s$/.test(raw.slice(0, hole.start))) && (hole.end === raw.length || /^\s/.test(raw.slice(hole.end)));
           masked = masked.slice(0, hole.start) + (boundary ? ' ' : '\u0000').repeat(hole.end - hole.start) + masked.slice(hole.end);
+          const before = opaque;
           if (boundary) recur(hole.expression);
+          opaque = Math.max(opaque, before + 1);
         }
         for (const match of masked.matchAll(/\S+/g)) {
           if (!match[0].includes('\u0000')) emit(match[0], src, node.start + 1 + match.index, owner, conditions, usage);
-          else if (/[^\u0000]+\u0000/.test(match[0])) {
+          else if (/[^\u0000]/.test(match[0])) {
             emit(raw.slice(match.index, match.index + match[0].length).replace(/\s+/g, ''), src, node.start + 1 + match.index, owner, conditions, usage, true);
           }
         }

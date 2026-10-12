@@ -13,6 +13,7 @@ export function familiesFor(prop: string): JudgedFamily[] {
   const result: JudgedFamily[] = [];
   if (isSpacing(prop)) result.push('spacing');
   if (/^(?:color|background(?:-color|-image)?|border(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-color)?|outline(?:-color)?|text-decoration(?:-color)?|fill|stroke|caret-color|accent-color|column-rule(?:-color)?|box-shadow|text-shadow)$/.test(prop)) result.push('color');
+  if (/^--tw-(?:inset-)?ring-color$/.test(prop)) result.push('color');
   if (/^border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius$/.test(prop)) result.push('radius');
   if (/^(?:font|font-size|line-height|font-weight|letter-spacing|font-family)$/.test(prop)) result.push('type');
   if (/^(?:transition|animation)(?:-(?:duration|delay|timing-function))?$/.test(prop)) result.push('motion');

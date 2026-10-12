@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #2563eb;
+  --color-rule: #d1d5db;
+  --color-line: #1c2130;
+  --radius-plate: 12px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.08em;
+  --shadow-lift: 0 0 0 1px var(--color-rule), 0 1px 1px rgb(28 33 48 / 0.05);
+}
+
+@utility draw-line { fill: none; stroke: var(--color-line); }
+
+.missing-variable { color: var(--color-brnad); }
+.missing-shadow { box-shadow: var(--t-shadow); }
+.token-shadow { box-shadow: var(--shadow-lift); }
+.mixed-shadow { box-shadow: var(--shadow-lift), 0 1px 1px rgb(4 5 6); }

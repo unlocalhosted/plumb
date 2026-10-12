@@ -157,7 +157,7 @@ test('numeric spacing coverage includes JSX props, joined arrays and bounded tem
 test('bounded static resolution and per-property fixes keep nondecision units separate from ladder identity', async t => {
   const directory = await copy(t, 'spacing');
   const aliases = Array.from({ length: 10 }, (_, index) => `--alias-${index}: ${index === 9 ? '12px' : `var(--alias-${index + 1})`};`).join('\n');
-  await writeFile(join(directory, 'src/styles.css'), `@import "tailwindcss"; @theme { --spacing: 1px; --spacing-small: 12px; --spacing-large: 16px; }
+  await writeFile(join(directory, 'src/styles.css'), `@import "tailwindcss"; @theme { --spacing: 1px; --spacing-small: 12px; --spacing-large: 16px; --spacing-roomy: 24px; }
     :root { ${aliases} --tw-measure: 12px; }
     .resolved { padding: calc((var(--alias-8) + 4px) * 1); margin: var(--tw-measure); }
     .bounded { padding: var(--alias-0); margin: calc(12px + 1rem); }
@@ -177,7 +177,7 @@ test('bounded static resolution and per-property fixes keep nondecision units se
 test('spacing judges authored candidate values and utility definitions, never static utility uses', async t => {
   const directory = await copy(t, 'spacing');
   await writeFile(join(directory, 'src/styles.css'), `@import "tailwindcss";
-    @theme { --spacing: 1px; --spacing-small: 12px; --spacing-large: 16px; }
+    @theme { --spacing: 1px; --spacing-small: 12px; --spacing-large: 16px; --spacing-roomy: 24px; }
     @utility custom-spacing { margin: 13px; }
     @utility unused-spacing { padding: 15px; }`);
   await writeFile(join(directory, 'src/App.tsx'), `import './styles.css';

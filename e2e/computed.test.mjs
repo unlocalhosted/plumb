@@ -214,7 +214,8 @@ test('real Chromium rendered classes resolve through GET classes; Node apply upd
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return; }
   t.after(() => browser.close());
   const root = await fixture(t);
-  const server = await createServer({ root, cacheDir: join(root, '.cache/vite'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0, watch: { usePolling: true, interval: 50 } } });
+  // Deliberately unstamped host: exercise owner-stack fallback; stamp.test.mjs covers dev stamps.
+  const server = await createServer({ root, cacheDir: join(root, '.cache/vite'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false, stamp: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0, watch: { usePolling: true, interval: 50 } } });
   t.after(() => server.close()); await server.listen();
   const page = await browser.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/`);

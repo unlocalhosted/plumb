@@ -1,0 +1,401 @@
+{
+  "counts": {
+    "grouped": 337,
+    "sites": 4019,
+    "coverage": {
+      "fromDecisions": 39179,
+      "total": 40203,
+      "findings": 1024
+    }
+  },
+  "target": {
+    "file": "src/pages/problems/ProblemList.tsx",
+    "line": 238,
+    "column": 7
+  },
+  "cold": {
+    "ms": 57.08245800000441,
+    "siteMs": 56.38766700000269,
+    "editsMs": 53.0234169999967,
+    "declarations": 13,
+    "findings": 1,
+    "edits": 0
+  },
+  "warm": [
+    {
+      "ms": 24.902665999994497,
+      "siteMs": 24.59625000000233,
+      "editsMs": 24.520333999993454,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 32.16162500000064,
+      "siteMs": 31.29170800000429,
+      "editsMs": 31.850666999998793,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 25.929833000001963,
+      "siteMs": 25.678791999998793,
+      "editsMs": 25.685124999996333,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 26.115042000004905,
+      "siteMs": 25.875958000004175,
+      "editsMs": 25.82958399999916,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 20.837916999997105,
+      "siteMs": 20.615874999995867,
+      "editsMs": 20.650291999998444,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 22.919541999996,
+      "siteMs": 22.750040999999328,
+      "editsMs": 22.74141700000473,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 19.775916999999026,
+      "siteMs": 19.60766699999658,
+      "editsMs": 19.602124999997613,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 24.312167000003683,
+      "siteMs": 24.098791999997047,
+      "editsMs": 24.125833999998576,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 20.468125000006694,
+      "siteMs": 20.34287499999482,
+      "editsMs": 20.234999999993306,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    },
+    {
+      "ms": 24.037749999995867,
+      "siteMs": 23.885499999996682,
+      "editsMs": 23.88904200000252,
+      "declarations": 13,
+      "findings": 1,
+      "edits": 0
+    }
+  ],
+  "classesMs": 407.0659999999989,
+  "health": {
+    "status": "ready",
+    "root": "/Users/vijaysingh/unlocalhosted/algorecall",
+    "revision": 0,
+    "pid": 69195,
+    "rss": 2850406400,
+    "caches": {
+      "files": 3527,
+      "candidates": 3185,
+      "modules": 3696,
+      "components": 3527,
+      "localViews": 0
+    },
+    "work": {
+      "fullReports": 1,
+      "fullIndexes": 1,
+      "localAnalyses": 0,
+      "reconciliations": 12
+    },
+    "profile": [
+      [
+        "plumb:phase:config",
+        415.32837500000096
+      ],
+      [
+        "plumb:phase:source-files",
+        11.296125000000757
+      ],
+      [
+        "plumb:rule:existence/classes",
+        139.09866600000169
+      ],
+      [
+        "plumb:phase:declarations",
+        420.0768330000028
+      ],
+      [
+        "plumb:rule:existence/dead-var",
+        455.79229199999827
+      ],
+      [
+        "plumb:rule:dead",
+        581.5342500000042
+      ],
+      [
+        "plumb:phase:components",
+        6497.412750000003
+      ],
+      [
+        "plumb:rule:ownership",
+        114.4541659999959
+      ],
+      [
+        "plumb:rule:imitation",
+        0.10870799999975134
+      ],
+      [
+        "plumb:phase:discover",
+        16.63370799999757
+      ],
+      [
+        "plumb:phase:parse",
+        0
+      ],
+      [
+        "plumb:phase:collect",
+        0
+      ],
+      [
+        "plumb:phase:load",
+        179.140542000001
+      ],
+      [
+        "plumb:phase:compile",
+        0.9721669999998994
+      ],
+      [
+        "plumb:phase:stylesheets",
+        449.1497080000008
+      ],
+      [
+        "plumb:phase:inline",
+        0
+      ],
+      [
+        "plumb:phase:decisions",
+        43.24458299999969
+      ],
+      [
+        "plumb:phase:provenance",
+        5381.396583999998
+      ],
+      [
+        "plumb:phase:habits",
+        89.41325000000506
+      ],
+      [
+        "plumb:phase:ownership",
+        6611.931959000001
+      ],
+      [
+        "plumb:phase:ledger",
+        1068.4343339999978
+      ],
+      [
+        "plumb:read:inventory",
+        0.0045839999947929755
+      ],
+      [
+        "plumb:read:queryDependencies",
+        2.0239999999976135
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.005750000003899913
+      ],
+      [
+        "plumb:read:site",
+        5.488040999996883
+      ],
+      [
+        "plumb:read:edits",
+        0.7785000000003492
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.35187500000029104
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.006041000000550412
+      ],
+      [
+        "plumb:read:site",
+        0.4135000000023865
+      ],
+      [
+        "plumb:read:edits",
+        0.3499590000064927
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.37349999999423744
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.005084000003989786
+      ],
+      [
+        "plumb:read:site",
+        0.6503750000047148
+      ],
+      [
+        "plumb:read:edits",
+        0.7687079999959678
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.25120800000149757
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.005500000006577466
+      ],
+      [
+        "plumb:read:site",
+        0.36037499999656575
+      ],
+      [
+        "plumb:read:edits",
+        0.3375000000014552
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.22620800000004238
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.04254200000286801
+      ],
+      [
+        "plumb:read:site",
+        0.3699999999953434
+      ],
+      [
+        "plumb:read:edits",
+        0.2197920000035083
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.2210830000040005
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.005375000000640284
+      ],
+      [
+        "plumb:read:site",
+        0.41199999999662396
+      ],
+      [
+        "plumb:read:edits",
+        0.2779999999984284
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.31212500000401633
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.004457999995793216
+      ],
+      [
+        "plumb:read:site",
+        0.3927499999990687
+      ],
+      [
+        "plumb:read:edits",
+        0.31054199999925913
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.297459000001254
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.004999999997380655
+      ],
+      [
+        "plumb:read:site",
+        0.3272910000014235
+      ],
+      [
+        "plumb:read:edits",
+        0.38154100000247126
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.21766599999682512
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.004916999998386018
+      ],
+      [
+        "plumb:read:site",
+        0.34170799999992596
+      ],
+      [
+        "plumb:read:edits",
+        0.3742920000004233
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.2406669999982114
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.004709000000730157
+      ],
+      [
+        "plumb:read:site",
+        0.35274999999819556
+      ],
+      [
+        "plumb:read:edits",
+        0.33800000000337604
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.226583000003302
+      ],
+      [
+        "plumb:phase:site-analysis",
+        0.005249999994703103
+      ],
+      [
+        "plumb:read:site",
+        0.5275830000027781
+      ],
+      [
+        "plumb:read:edits",
+        0.31199999999807915
+      ],
+      [
+        "plumb:read:queryDependencies",
+        0.2938339999964228
+      ],
+      [
+        "plumb:read:classes",
+        386.87054199999693
+      ]
+    ]
+  }
+}

@@ -9,6 +9,8 @@ import type { DecisionRecord } from '../decisions/index.js';
 import { pixels, resolveValue } from '../decisions/resolve.js';
 import type { Variable } from '../decisions/resolve.js';
 import { references } from '../collect/source.js';
+import { numericStep, numericUse } from '../decisions/spacing.js';
+import { callerPolicy } from '../decisions/callers.js';
 import { attribution, indexDefinitions } from './attribution.js';
 
 import { isJudged, judgedFamilies, oklab, colorDistance, colorNeutral, typeDeclarations } from './families.js';
@@ -33,9 +35,10 @@ export function useFor(decision: Decision, prop: string, theme: ReadonlySet<stri
     decision.family === 'type' ? ({ 'font-size': 'text', 'line-height': 'leading', 'font-family': 'font', 'font-weight': 'font', 'letter-spacing': 'tracking' } as Record<string, string>)[prop] :
     decision.family === 'motion' ? /timing-function/.test(prop) || decision.name.startsWith('--ease-') ? 'ease' : /delay/.test(prop) ? 'delay' : 'duration' : decision.family === 'elevation' ? 'shadow' : decision.family === 'z' ? 'z' : undefined;
   const namespace = decision.family === 'spacing' ? '--spacing-' : decision.family === 'color' ? '--color-' : decision.family === 'radius' ? '--radius-' : decision.family === 'type' ? prop === 'font-size' ? '--text-' : prop === 'line-height' ? '--leading-' : prop === 'letter-spacing' ? '--tracking-' : prop === 'font-weight' ? '--font-weight-' : '--font-' : decision.family === 'motion' ? /timing-function/.test(prop) || decision.name.startsWith('--ease-') ? '--ease-' : '--duration-' : decision.family === 'elevation' ? '--shadow-' : decision.name.startsWith('--z-index-') ? '--z-index-' : '--z-';
-  const utility = prefix && theme.has(decision.name) && decision.name.startsWith(namespace) ? `${prefix}-${decision.name.slice(namespace.length)}` : undefined;
+  const numeric = numericUse(decision);
+  const utility = prefix && (theme.has(decision.name) || numeric) && decision.name.startsWith(namespace) ? `${prefix}-${decision.name.slice(namespace.length)}` : undefined;
   const ref = decision.refs.find(ref => ref.startsWith('var('));
-  const css = ref ? `${prop}: ${ref}` : `token ${decision.refs[0] ?? decision.name}`;
+  const css = numeric ? `${prop}: ${numeric}` : ref ? `${prop}: ${ref}` : `token ${decision.refs[0] ?? decision.name}`;
   return utility ? { class: utility, css } : { css };
 }
 // One immutable variable context per emitted scope, shared across families.
@@ -62,7 +65,18 @@ export function resolutionContext(declarations: Declaration[], record: DecisionR
     decisionIndex(family: JudgedFamily): Map<string, Decision> {
       let index = indexes.get(family);
       if (!index) {
-        index = new Map(record.decisions.filter(d => d.family === family).flatMap(d => d.refs.map(ref => [ref, d] as const)));
+        // Project shadows own their colour literals; preserve that decision
+        // boundary when the same declaration is judged for colour provenance.
+        index = new Map(record.decisions.filter(d => d.family === family || family === 'color' && d.family === 'elevation' && d.origin === 'project').flatMap(d => d.refs.map(ref => [ref, d] as const)));
+        // Inline theme compilation can leave only a direct alias's backing var.
+        // Mentions in expressions, fallbacks or keyframes do not confer ownership.
+        // Keep explicit decision refs; prefer project aliases for unclaimed vars.
+        const themeDecisions = [...new Set(index.values())].filter(decision => record.theme.has(decision.name))
+          .sort((a, b) => Number(a.origin !== 'project') - Number(b.origin !== 'project'));
+        for (const decision of themeDecisions) {
+          const alias = /^var\(\s*(--[\w-]+)\s*\)$/.exec(decision.value.trim());
+          if (alias && !index.has(`var(${alias[1]})`)) index.set(`var(${alias[1]})`, decision);
+        }
         for (const [name, variable] of record.frameworkVariables) {
           if (index.has(`var(${name})`)) continue;
           const value = this.resolve(variable.value, record.variables);
@@ -93,9 +107,10 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   findings: Finding[]; entries: ProvenanceEntry[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {
   const decisions = record.decisions.filter(decision => decision.family === family);
+  const numeric = family === 'spacing' && !record.numericSpacing?.replaced ? record.numericSpacing : undefined;
   const source = config.decisions?.[family];
   const origins = source?.origins ?? ['project'];
-  const callers = source?.callers ?? (decisions.some(decision => decision.tier === 'semantic') ? ['semantic'] : ['primitive', 'semantic']);
+  const callers = callerPolicy(decisions.filter(decision => origins.includes(decision.origin)), source?.callers);
   const identityFor = (prop: string) => source?.identity ?? (family === 'spacing' || family === 'radius' || family === 'type' && prop !== 'font-family' ? 'value' : 'reference');
   const refIndex = resolution.decisionIndex(family);
   const decisionRefs = new Set(refIndex.keys());
@@ -148,7 +163,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   const choicePools = new Map<string, Decision[]>();
   const choiceLadders = new Map<string, Decision[]>();
   function closest(value: string, prop: string): Decision[] {
-    if (!choicePools.has(prop)) choicePools.set(prop, distinctAmounts(project.filter(d => callers.includes(d.tier)), prop));
+    if (!choicePools.has(prop)) choicePools.set(prop, distinctAmounts(project.filter(d => callers.allows(d)), prop));
     const pool = choicePools.get(prop)!;
     if (family === 'color') {
       const lab = oklab(value);
@@ -158,6 +173,10 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     }
     const n = comparable(value, prop);
     if (typeof n !== 'number') return [];
+    if (numeric) {
+      const step = Math.abs(n) / pixels(numeric.unit.resolved!)!;
+      return [...new Set([Math.floor(step * 2) / 2, Math.ceil(step * 2) / 2])].map(n => numericStep(numeric, n));
+    }
     const close = (d: Decision) => {
       const amount = comparable(d.resolved!, prop);
       return typeof amount === 'number' && Math.abs(amount - (family === 'spacing' ? Math.abs(n) : n)) <= Math.max(family === 'motion' ? 10 : family === 'z' ? 1 : 4, Math.abs(n) * .5);
@@ -175,7 +194,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   const coverage = { fromDecisions: 0, total: 0, findings: 0 };
   const judgedDeclarations = family === 'type' ? declarations.flatMap(d => typeDeclarations(d, decisionRefs)) : declarations;
   const variablesFor = resolution.variablesFor;
-  const owners = attribution(family, definitions, sourceFiles, new Set(decisions.flatMap(d => d.refs)));
+  const owners = attribution(family, definitions, sourceFiles, new Set(record.decisions.filter(d => d.family === family || family === 'color' && d.family === 'elevation' && d.origin === 'project').flatMap(d => d.refs)));
   const consumers = judgedDeclarations.filter(d => isJudged(d, family)).flatMap(declaration => {
     const item = owners.consume(declaration, variablesFor(declaration), declaration.decisionRefs?.filter(name => refIndex.has(`var(${name})`)) ?? []);
     return item ? [item] : [];
@@ -191,14 +210,17 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
       rule = 'provenance/opaque-inline'; severity = 'info'; title = `This ${declaration.prop} is computed at runtime, so it can't be checked`; because = 'Plumb reads source, not running values.';
     } else {
       for (const part of parts) {
+        // Tailwind draws focus/stroke rings through box-shadow, not elevation.
+        if (family === 'elevation' && /^var\(\s*--tw-(?:inset-ring|ring(?:-offset)?)-shadow\s*(?:,[\s\S]*)?\)$/.test(part)) continue;
         const refs = references(part).map(name => refIndex.get(`var(${name})`)).filter((decision): decision is Decision => decision !== undefined);
         if (refs.length && (family !== 'elevation' || /^var\(--[\w-]+\)$/.test(part))) {
           const wrongOrigin = refs.find(decision => !origins.includes(decision.origin));
-          const wrongTier = refs.find(decision => !callers.includes(decision.tier));
+          const wrongTier = refs.find(decision => decision.family === family && !callers.allows(decision));
           if (wrongOrigin) { rule = `provenance/${family}/framework`; title = `\`${declaration.site.text}\` uses Tailwind's default ${frameworkThing(family, declaration.prop)} (\`${wrongOrigin.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = wrongOrigin.resolved === undefined ? [] : closest(wrongOrigin.resolved, declaration.prop); break; }
           if (wrongTier) {
             rule = `provenance/${family}/tier`; title = `\`${wrongTier.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't.";
-            nearest = decisions.filter(decision => origins.includes(decision.origin) && callers.includes(decision.tier) && suggestible(decision) && (references(decision.value).some(name => wrongTier.refs.includes(`var(${name})`)) || decision.resolved !== undefined && wrongTier.resolved !== undefined && equal(decision.resolved, wrongTier.resolved, declaration.prop))); break;
+            nearest = (source?.callers === undefined ? callers.semanticsFor(wrongTier) : decisions.filter(decision => references(decision.value).some(name => wrongTier.refs.includes(`var(${name})`)) || decision.resolved !== undefined && wrongTier.resolved !== undefined && equal(decision.resolved, wrongTier.resolved, declaration.prop)))
+              .filter(decision => origins.includes(decision.origin) && callers.allows(decision) && suggestible(decision)); break;
           }
           continue;
         }
@@ -217,12 +239,15 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         if (family === 'type' && /^(?:normal|inherit|initial|unset)$/.test(part)) continue;
         if (family === 'spacing' && value !== undefined && /^(?:auto|inherit|initial|unset|revert|revert-layer|normal|[-+]?(?:\d*\.)?\d+%)$/.test(value)) continue;
         const length = value === undefined ? undefined : pixels(value);
+        // Preserve the authored unit expression; do not accept unrelated arithmetic
+        // merely because it mentions --spacing somewhere.
+        if (numeric && length !== undefined && /^(?:calc\(\s*(?:var\(--spacing\)\s*\*\s*[-+]?(?:\d*\.)?\d+|[-+]?(?:\d*\.)?\d+\s*\*\s*var\(--spacing\))\s*\)|var\(--spacing\))$/.test(part)) continue;
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
         if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
         const match = value === undefined ? undefined : matching(value, declaration.prop);
         if (match) {
-          if (!callers.includes(match.tier)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = project.filter(decision => callers.includes(decision.tier) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
+          if (!callers.allows(match)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = source?.callers === undefined ? callers.semanticsFor(match).filter(suggestible) : project.filter(decision => callers.allows(decision) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
           continue;
         }
@@ -241,7 +266,8 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     const amount = judgedValue || resolved || declaration.value.replace(/\s+/g, ' ').trim();
     const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
     const fixProp = definition?.prop ?? declaration.prop;
-    const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.includes(d.tier) && suggestible(d)), fixProp);
+    const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.allows(d) && suggestible(d) &&
+      (!fixProp.startsWith('--') || [d.name, ...references(useFor(d, fixProp, record.theme).css)].every(name => name !== fixProp && !definitions.themeSources.sources(name).has(fixProp)))), fixProp);
     const message = (rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
           ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) });
     entries.push({ declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message });
@@ -303,7 +329,7 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
     if (!locations.get(key)!.has(location)) { finding.sites.push(declaration.site); locations.get(key)!.add(location); }
   }
   const findings = [...grouped.values()];
-  if (!decisions.some(d => d.origin !== 'framework')) {
+  if (!decisions.some(d => d.origin !== 'framework') && !(family === 'spacing' && record.numericSpacing && !record.numericSpacing.replaced && entries.some(entry => !entry.rule.endsWith('/framework')))) {
     const unchecked = findings.filter(f => f.rule !== 'provenance/opaque-inline');
     if (unchecked.length) {
       const occurrences = unchecked.flatMap(f => f.occurrences ?? [f.declaration]);

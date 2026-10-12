@@ -88,11 +88,14 @@ test('definition attribution covers every judged family, compiled classes, inlin
     <div style={{ boxShadow: 'var(--local-shadow)', '--inline-ink': '#fedcba' }} />;
     <style>{'.embedded { --embedded-ink: #abcdef; }'}</style>;`);
   const report = run(dir);
-  for (const [name, family] of [['--gap', 'spacing'], ['--round', 'radius'], ['--text', 'type'], ['--time', 'motion'], ['--depth', 'z']]) {
+  for (const [name, family] of [['--gap', 'spacing'], ['--round', 'radius'], ['--text', 'type'], ['--depth', 'z']]) {
     const fs = report.findings.filter(f => f.variable?.name === name && f.family === family);
     assert.equal(fs.length, 1, name); assert.equal(fs[0].sites.length, 1); assert.equal(fs[0].variable.useCount, 2);
     assert.equal(fs[0].declaration.prop, name); assert.ok(!fs[0].rule.startsWith('provenance/arbitrary'));
   }
+  assert.ok(report.decisions.some(d => d.name === '--time' && d.family === 'motion' && d.origin === 'project'));
+  assert.ok(!report.findings.some(f => f.family === 'motion' && f.rule.startsWith('provenance/')));
+  assert.deepEqual(report.coverage.motion, { fromDecisions: 2, total: 2, findings: 0 });
   for (const family of ['color', 'elevation']) {
     const f = report.findings.find(f => f.variable?.name === '--local-shadow' && f.family === family);
     assert.ok(f, family); assert.equal(f.variable.useCount, 2); assert.equal(f.sites.length, 1);

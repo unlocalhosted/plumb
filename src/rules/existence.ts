@@ -125,7 +125,7 @@ export function deadVariables(declarations: Declaration[], defined: ReadonlySet<
   for (const declaration of declarations) {
     if (!isJudged(declaration) || declaration.opaque) continue;
     for (const use of varUses(declaration.value)) {
-      if (defined.has(use.name)) continue;
+      if (use.name.startsWith('--tw-') || defined.has(use.name)) continue;
       const previous = groups.get(use.name);
       const severity = use.fallback === undefined ? 'error' : 'warn';
       if (previous) {
@@ -137,7 +137,7 @@ export function deadVariables(declarations: Declaration[], defined: ReadonlySet<
       // Reuse dead-class ranking: namespace, theme, shared prefix, edit distance,
       // and two alternatives. A fake class site is only a ranking adapter.
       const site: ClassSite = { token: use.name, file: declaration.site.file, line: declaration.site.line, column: declaration.site.column, text: declaration.site.text, conditions: declaration.when, owner: declaration.owner };
-      const ranked = existence([site], new Map([...defined].map(name => [name, { css: 'defined', declarations: [], notes: [] }])), new Set(), [], [...theme].map(token => ({ token, prefix: token.lastIndexOf('-') > 1 ? token.slice(0, token.lastIndexOf('-') + 1) : token })))[0];
+      const ranked = existence([site], new Map([...defined].filter(name => !name.startsWith('--tw-')).map(name => [name, { css: 'defined', declarations: [], notes: [] }])), new Set(), [], [...theme].filter(token => !token.startsWith('--tw-')).map(token => ({ token, prefix: token.lastIndexOf('-') > 1 ? token.slice(0, token.lastIndexOf('-') + 1) : token })))[0];
       groups.set(use.name, makeFinding({ key: `existence/dead-var:${use.name}`, rule: 'existence/dead-var', family: 'existence', severity, sites: [declaration.site], declaration, occurrences: [declaration], decisions: [],
         title: `\`var(${use.name})\` is never defined${use.fallback === undefined ? '' : `, so it always uses \`${use.fallback}\``}`,
         because: `The browser drops a declaration whose variable is undefined, so this ${declaration.prop} is not applied.`,

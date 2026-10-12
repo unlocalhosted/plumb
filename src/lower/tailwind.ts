@@ -96,7 +96,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     try { cssGraph = memory?.graph ?? await tailwindGraph(entry); }
     catch (error) { return skipped(error); }
     if (memory) memory.graph = cssGraph;
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v4-isolated-selectors`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v7-elevation-ring-layer-refs`);
     const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
     const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
@@ -196,6 +196,19 @@ export async function lowerTailwind(root: string, entry: string | null, version:
             (parsed.kind === 'arbitrary' || parsed.kind === 'functional' && parsed.value != null && !(parsed.value.kind === 'named' && ['full', 'none', 'px'].includes(parsed.value.value))) && system.compileAstNodes(parsed).length > 0);
           const result = lowerCss(css[index] ?? null);
           for (const parsed of system.parseCandidate(candidate)) {
+            // @theme inline erases these names from transition utility output.
+            // Preserve the compiler's default-key identity, as for named values.
+            if (parsed.root === 'transition' && system.compileAstNodes(parsed).length) {
+              for (const declaration of result.declarations) {
+                const name = declaration.prop === 'transition-duration' ? '--default-transition-duration' :
+                  declaration.prop === 'transition-timing-function' ? '--default-transition-timing-function' : undefined;
+                const token = name && theme!.find(item => item.name === name);
+                const fallback = /^var\(--tw-(?:duration|ease),\s*([\s\S]+)\)$/.exec(declaration.value)?.[1];
+                if (token && fallback && [token.value, `var(${token.name})`].some(value => value.replace(/\s/g, '') === fallback.replace(/\s/g, ''))) {
+                  declaration.decisionRefs = [token.name];
+                }
+              }
+            }
             if (parsed.kind !== 'functional' || parsed.value?.kind !== 'named' || !system.compileAstNodes(parsed).length) continue;
             for (const declaration of result.declarations) {
               const prop = declaration.prop;

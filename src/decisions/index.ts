@@ -12,6 +12,10 @@ import { readDtcg } from './dtcg.js';
 import type { CssVariable } from './css.js';
 import { readCssVariables } from './css.js';
 import { resolveValue } from './resolve.js';
+import { themeSourceGraph } from './theme-sources.js';
+import { motionDefinitions } from './motion.js';
+import { numericSpacing } from './spacing.js';
+import type { NumericSpacing } from './spacing.js';
 import type { Variable } from './resolve.js';
 
 export { defineDecisions } from './record.js';
@@ -33,7 +37,7 @@ export function matches(value: string, pattern: string): boolean {
   return new RegExp(`^${pattern.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
 }
 
-export interface DecisionRecord { inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
+export interface DecisionRecord { numericSpacing?: NumericSpacing | undefined; inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
 export async function readDecisions(root: string, config: PlumbConfig, graph: StylesheetGraph, theme: ThemeValue[]): Promise<DecisionRecord> {
   const raw = readCssVariables(graph), variables = new Map<string, Variable>();
   const metadata = new Map<string, typeof raw[number]>();
@@ -59,9 +63,9 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     if (explicit) overrides.add(`${record.family}:${record.name}`);
   }
   for (const record of presetDecisions(config)) add(record, true);
-  function selected(name: string, family: Family, file: string, isTheme: boolean): boolean {
+  function selected(name: string, family: Family, file: string, isTheme: boolean, inferredFamily?: Family): boolean {
     const source = config.decisions?.[family]?.from;
-    if (source === undefined) return familyFor(name) === family;
+    if (source === undefined) return (familyFor(name) ?? inferredFamily) === family;
     if (familyFor(name) !== undefined && familyFor(name) !== family) return false;
     if (typeof source === 'function') return false;
     return (Array.isArray(source) ? source : [source]).some(pattern => {
@@ -102,6 +106,21 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   // DTCG references share the resolver with CSS variables.
   const cssValue = (value: string) => value.replace(/\{([\w.-]+)\}/g, 'var($1)');
   for (const [name, variable] of variables) variables.set(name, { ...variable, value: cssValue(variable.value) });
+  // Theme backing values can change outside :root too. Never resolve an alias
+  // to just its light value when another scope supplies a different definition.
+  const themeSources = themeSourceGraph({ definitions: raw, theme: new Set(theme.map(item => item.name)), variables, decisions: [...decisions.values()] });
+  const motionNames = new Set<string>();
+  for (const item of motionDefinitions(raw, graph)) {
+    // Backing definitions already belong to their theme decision (Layer 1).
+    if (themeSources.names.has(item.name) || !selected(item.name, 'motion', item.source.file, false, 'motion')) continue;
+    add(defineDecisions([{ family: 'motion', name: item.name, value: item.value, why: item.why || item.trailingWhy, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
+    variables.set(item.name, variables.get(item.name) ?? { value: item.value });
+    motionNames.add(item.name);
+  }
+  for (const item of raw) if (!item.theme && (themeSources.names.has(item.name) || motionNames.has(item.name))) {
+    const variable = variables.get(item.name);
+    if (variable && (item.dynamic || item.value !== variable.value)) variable.dynamic = true;
+  }
   const refIndex = new Map([...decisions.values()].flatMap(record => record.refs.map(ref => [ref, record] as const)));
   for (const record of decisions.values()) {
     if (!overrides.has(`${record.family}:${record.name}`)) {
@@ -131,5 +150,5 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     return [record];
   });
   tokenReasons([...decisions.values(), ...inventory]);
-  return { inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
+  return { numericSpacing: numericSpacing(raw, [...decisions.values()], variables, themeNames), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }

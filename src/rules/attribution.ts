@@ -3,6 +3,7 @@ import { resolveValue } from '../decisions/resolve.js';
 import type { Variable } from '../decisions/resolve.js';
 import type { Declaration } from '../report.js';
 import { references } from '../collect/source.js';
+import { themeSourceGraph } from '../decisions/theme-sources.js';
 import { partsFor, varUses } from './families.js';
 import type { JudgedFamily } from './families.js';
 
@@ -34,7 +35,7 @@ export function indexDefinitions(declarations: Declaration[], record: DecisionRe
     scopedVariables.set(name, { value: values[0]!.value,
       dynamic: values.some(d => d.opaque || d.when.some(c => ['media', 'supports', 'container'].includes(c.kind)) || d.value !== values[0]!.value) });
   }
-  return { definitions, scopedVariables };
+  return { definitions, scopedVariables, themeSources: themeSourceGraph(record) };
 }
 const registries = new WeakMap<ReturnType<typeof indexDefinitions>, Map<string, { nondecisions: Set<string>; protectedRefs: Set<string> }>>();
 
@@ -48,8 +49,8 @@ export function attribution(family: JudgedFamily, index: ReturnType<typeof index
   const registryKey = JSON.stringify([...decisionRefs]);
   let registry = registriesForIndex.get(registryKey);
   if (!registry) {
-    const nondecisions = new Set([...definitions.keys()].filter(name => !decisionRefs.has(`var(${name})`)));
-    registry = { nondecisions, protectedRefs: new Set([...decisionRefs, ...[...nondecisions].map(name => `var(${name})`)]) };
+    const nondecisions = new Set([...definitions.keys()].filter(name => !decisionRefs.has(`var(${name})`) && !index.themeSources.names.has(name)));
+    registry = { nondecisions, protectedRefs: new Set([...decisionRefs, ...[...index.themeSources.names, ...nondecisions].map(name => `var(${name})`)]) };
     registriesForIndex.set(registryKey, registry);
   }
   const { nondecisions, protectedRefs } = registry;
@@ -111,7 +112,7 @@ export function attribution(family: JudgedFamily, index: ReturnType<typeof index
   }
   return {
     consume(declaration: Declaration, variables: ReadonlyMap<string, Variable>, selectedRefs: string[]): AttributedDeclaration | undefined {
-      const authored = family === 'spacing' ? declaration.value : declaration.authoredCss ?? declaration.value;
+      const authored = family === 'spacing' ? declaration.value : family === 'elevation' ? declaration.elevationValue ?? declaration.authoredCss ?? declaration.value : declaration.authoredCss ?? declaration.value;
       const values = selectedRefs.length ? selectedRefs.map(name => `var(${name})`) : parts(declaration.prop, authored, variables);
       const own = visit(declaration, values, variables, declaration);
       return own.length || declaration.opaque || !values.length ? { declaration, parts: own, uses: new Set() } : undefined;

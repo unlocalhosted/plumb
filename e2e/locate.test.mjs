@@ -559,7 +559,7 @@ test('review 5: watch-disabled target judgement refreshes theme, config imports,
     return actual;
   };
   await parity();
-  await writeFile(tokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 12, unit: 'px' } } }));
+  await writeFile(tokens, JSON.stringify(Object.fromEntries([['small', 8], ['step', 12], ['large', 16]].map(([name, value]) => [name, { $type: 'dimension', $value: { value, unit: 'px' } }]))));
   const dtcg = await parity();
   assert.ok(dtcg.findings.some(f => [...f.decisions, ...f.choices ?? []].some(d => d.name === 'step')), 'previously empty glob input is statted without events: ' + JSON.stringify(dtcg.findings));
   await writeFile(rules, config('reference')); await parity();

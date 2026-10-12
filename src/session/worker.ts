@@ -87,9 +87,10 @@ async function current(): Promise<Report> {
   if (dirty) { fullReports++; raw = (await analyze({ ...options, ledger: false }, undefined, state)).report; dirty = false; sharedDirty = false; localReports.clear(); metadataDirty = true; metadataFull = true; }
   return raw;
 }
-async function report(extra: CheckOptions = {}): Promise<Report> {
+async function report(extra: CheckOptions = {}, ordinaryLedger = false): Promise<Report> {
   await current();
   const effective = { ...options, ...extra };
+  if (ordinaryLedger) { delete effective.base; effective.ledger = true; effective.changed = false; effective.strictLedger = false; }
   if ((effective.verbose ?? false) !== (options.verbose ?? false)) {
     const view = (await analyze({ ...effective, ledger: false }, undefined, state)).report;
     return effective.ledger === false ? view : finishMessages(await applyLedger(view, effective, ledger));
@@ -105,6 +106,34 @@ function ledgerView(report: Report): Report {
   return { ...report, findings: report.findings.map(finding => ({ ...finding,
     ...(finding.edits ? { edits: finding.edits.map(edit => ({ ...edit })) } : {}) })),
     coverage: structuredClone(report.coverage), notes: [...report.notes], timing: { ...report.timing } };
+}
+// Immutable report identity binds these projections to source/dependency evidence.
+// Ledger refreshes discard classified reports, so allowances cannot outlive a save.
+const fileDeclarations = new WeakMap<Report, Map<string, Report['declarations']>>();
+const readingViews = new WeakMap<Report, Map<string, Report>>();
+function declarationsFor(view: Report, file: string): Report['declarations'] {
+  let files = fileDeclarations.get(view);
+  if (!files) { files = group(view.declarations, d => d.site.file); fileDeclarations.set(view, files); }
+  return files.get(file) ?? [];
+}
+function readingView(view: Report, file: string): Report {
+  let files = readingViews.get(view);
+  if (!files) { files = new Map(); readingViews.set(view, files); }
+  let local = files.get(file);
+  if (!local) {
+    index(view, localReports.get(file) === view ? file : undefined);
+    local = ledgerView({ ...view, declarations: declarationsFor(view, file), findings: fileFindings.get(file) ?? [] });
+    for (const finding of local.findings) {
+      if (finding.status === undefined) continue;
+      finding.status = finding.sites.some(s => s.ledger?.status === 'new') ? 'new'
+        : finding.sites.some(s => s.ledger?.status === 'debt') ? 'debt' : 'exception';
+      if (finding.status !== 'new') finding.severity = 'info';
+    }
+    // Accept commands address the first site in this file, as before projection.
+    if (files.size >= 64) files.delete(files.keys().next().value!);
+    files.set(file, finishMessages(local));
+  }
+  return local;
 }
 function site(r: Report, file: string, line: number, column: number | undefined, text: string) {
   const matches = jsxSiteMatcher(file, text, line, column);
@@ -149,6 +178,7 @@ function index(view: Report, only?: string): void {
     if (view.config.path) protectedFiles.add(view.config.path);
     if (view.tailwind.entry) protectedFiles.add(view.tailwind.entry);
   }
+  declarationsFor(view, only ?? '');
   for (const finding of view.findings) {
     const occurrences = group(finding.occurrences ?? [], d => d.site.file);
     for (const [file, sites] of group(finding.sites, s => s.file)) {
@@ -170,13 +200,16 @@ function index(view: Report, only?: string): void {
   }
 }
 function scoped(view: Report, file: string, line?: number, column?: number, text?: string): Report {
-  if (line !== undefined && column !== undefined && text !== undefined) return { ...view, ...site(view, file, line, column, text) };
+  if (line !== undefined && column !== undefined && text !== undefined) return { ...view, ...site(readingView(view, file), file, line, column, text) };
   index(view, localReports.get(file) === view ? file : undefined);
   const findings = (line === undefined ? fileFindings.get(file) : column === undefined ? lineFindings.get(file)?.get(line) : columnFindings.get(file)?.get(line)?.get(column)) ?? [];
   return { ...view, findings };
 }
 async function localReport(file: string): Promise<Report> {
   if (!dirty || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
+  // Imported class literals can be lowered only in their consumer's JSX context.
+  // An empty helper slice cannot replace that retained evidence with an empty view.
+  if (state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)) return report();
   let view = localReports.get(file);
   if (!view) {
     localAnalyses++;
@@ -274,13 +307,13 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const definitions = state.collection.slices.get(file)?.value.styles.declarations.some(d => d.prop.startsWith('--')) || raw.decisions.some(d => d.source.file === file);
     const start = performance.now();
     const localQuery = dirty && !sharedDirty && !definitions;
-    if (localQuery) changedQueries([file]);
-    const view = localQuery ? (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file, params.column === undefined ? line : undefined))).report : await current();
-    if (localQuery) { changedQueries([file]); metadataDirty = true; }
+    // Site has always applied the ordinary ledger, even when report()/edits()
+    // were configured for raw or changed-scope inspection.
+    const scopedOptions = options.ledger === false || options.base !== undefined || options.changed || options.strictLedger;
+    const view = scopedOptions ? await report({}, true)
+      : localQuery ? await localReport(file) : await report();
     profileDuration('phase:site-analysis', performance.now() - start);
-    const local = { ...view, findings: structuredClone(view.findings.filter(f => f.sites.some(s => s.file === file))),
-      declarations: structuredClone(view.declarations.filter(d => d.site.file === file)), coverage: structuredClone(view.coverage), timing: { ...view.timing }, notes: [...view.notes] };
-    return site(finishMessages(await applyLedger(local, {}, ledger)), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
+    return site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
   }
   if (method === 'decisions') return (sharedDirty ? await current() : raw).decisions;
   if (method === 'why') return inspectLedger('why', `${params.file}:${params.line}`, await report());
@@ -296,7 +329,9 @@ let queue = Promise.resolve();
 parentPort!.on('message', ({ id, method, params }) => {
   queue = queue.then(async () => {
     try {
+      const start = performance.now();
       const result = await dispatch(method, params);
+      profileDuration(`read:${method}`, performance.now() - start);
       const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges) : undefined;
       parentPort!.postMessage({ id, result, health: await dispatch('health', {}), judged: state.judgement.judgedFiles,
         ...(analysis ? { analysis: { ...analysis, dependencies: metadataFull ? dependencies() :

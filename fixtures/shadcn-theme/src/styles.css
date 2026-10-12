@@ -1,0 +1,289 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Plumb's homepage primitives, in shadcn's vocabulary. The page is a technical manual: drafting paper, one blue
+   ink for every line and callout, tints of that ink as fills, a book serif for reading and a mono for callouts.
+   shadcn's semantic names (background, primary, muted…) carry our values, so its components draw in our hand;
+   the drawing tokens shadcn has no word for (tints, grid, faint, verdicts) are added beside them.
+   Raw values live in :root and .dark; @theme inline turns them into utilities. Plumb judges the page against
+   this file. */
+
+:root {
+  /* ── paper and ink ── */
+  /* why: the page, a drafting sheet with a cool cast */
+  --background: #f7f8fc;
+  /* why: reading text, 15.4:1 on the page */
+  --foreground: #1c2130;
+  /* why: a figure plate or card, one step off the page so it reads as a held thing */
+  --card: #fbfcfe;
+  --card-foreground: #1c2130;
+  --popover: #fbfcfe;
+  --popover-foreground: #1c2130;
+
+  /* ── the blue ink: every line, callout, link and primary action ── */
+  /* why: 5.9:1 on the page, so callout labels in it read as text */
+  --primary: #2c50e8;
+  --primary-foreground: #f7f8fc;
+
+  /* ── quiet surfaces ── */
+  /* why: a quiet control, a chip; the lightest tint of the ink */
+  --secondary: #eef2fe;
+  --secondary-foreground: #2c50e8;
+  /* why: a subdued band behind code and captions */
+  --muted: #eff1f7;
+  /* why: secondary text and captions, 7.5:1 on the page */
+  --muted-foreground: #4b5468;
+  /* why: the hovered or highlighted row */
+  --accent: #d4defc;
+  --accent-foreground: #1c2130;
+
+  /* ── lines ── */
+  /* why: hairline edge of a plate, divider between sections */
+  --border: #e2e7f2;
+  /* why: a field's edge, one step stronger than a divider */
+  --input: #cfd7ea;
+  /* why: focus ring, in the ink */
+  --ring: #2c50e8;
+
+  /* ── verdicts, the marks Plumb gives, always paired with a shape ── */
+  /* why: off the scale, broken, destructive */
+  --destructive: #c63f4e;
+  /* why: uses a decision */
+  --success: #2c8660;
+  /* why: near a decision, a framework default */
+  --warning: #a8722a;
+
+  /* ── drawing: what a manual needs and shadcn has no word for ── */
+  /* why: figure numbers and plate marks, 3.6:1, large or decorative only */
+  --faint: #848da2;
+  /* why: the dot grid figures are drawn on; marks only */
+  --grid: #d7deef;
+  /* why: a face of an object turned away */
+  --tint-1: #eef2fe;
+  /* why: a face in half light, the hovered part */
+  --tint-2: #d4defc;
+  /* why: a lit face, the selected part */
+  --tint-3: #a7b9f8;
+  /* why: the one part a figure is about */
+  --tint-4: #7190f3;
+
+  /* ── corners: drawings are square, held things barely rounded ── */
+  --radius: 4px;
+
+  /* ── drawing geometry, read by SVG figures and the plate ── */
+  --stroke-hair: 1px;     /* grid, hidden edges, leaders */
+  --stroke-line: 1.25px;  /* object outlines */
+  --stroke-bold: 2px;     /* the one part a figure is about */
+  --dash-leader: 5 5;     /* callout leaders, explode axes */
+  --dash-hidden: 2 4;     /* edges behind a face */
+  --grid-step: 12px;      /* dot grid pitch */
+  --explode: 56px;        /* distance between parts when a figure comes apart */
+
+  /* ── durations ── */
+  --dur-quick: 140ms;     /* hover, press */
+  --dur-move: 240ms;      /* a callout travels, a label swaps */
+  --dur-explode: 620ms;   /* a figure comes apart or back together */
+  --stagger: 60ms;        /* between successive parts */
+}
+
+/* Night: graphite. A neutral grey with no cast, so the blue ink stays the only colour on the page. The ink is
+   lifted to keep its contrast, and the tints are mixed from ink and paper so they belong to this grey. */
+.dark {
+  --background: #121314;
+  --foreground: #e8e9eb;
+  --card: #17181a;
+  --card-foreground: #e8e9eb;
+  --popover: #17181a;
+  --popover-foreground: #e8e9eb;
+  --primary: #8ba3ff;
+  --primary-foreground: #121314;
+  --secondary: color-mix(in oklab, var(--primary) 10%, var(--background));
+  --secondary-foreground: #8ba3ff;
+  --muted: #1c1d20;
+  --muted-foreground: #a0a3a9;
+  --accent: color-mix(in oklab, var(--primary) 22%, var(--background));
+  --accent-foreground: #e8e9eb;
+  --border: #26282c;
+  --input: #33363b;
+  --ring: #8ba3ff;
+  --destructive: #ec8592;
+  --success: #6fc39a;
+  --warning: #d9ab69;
+  --faint: #6c7078;
+  --grid: #2a2c31;
+  --tint-1: color-mix(in oklab, var(--primary) 10%, var(--background));
+  --tint-2: color-mix(in oklab, var(--primary) 22%, var(--background));
+  --tint-3: color-mix(in oklab, var(--primary) 42%, var(--background));
+  --tint-4: color-mix(in oklab, var(--primary) 68%, var(--background));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-move: 0ms;
+    --dur-explode: 0ms;
+    --stagger: 0ms;
+  }
+}
+
+@theme inline {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --shadow-*: initial;
+  --ease-*: initial;
+  --radius-*: initial;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-faint: var(--faint);
+  --color-grid: var(--grid);
+  --color-tint-1: var(--tint-1);
+  --color-tint-2: var(--tint-2);
+  --color-tint-3: var(--tint-3);
+  --color-tint-4: var(--tint-4);
+
+  /* why: small marks, chips, keys */
+  --radius-sm: calc(var(--radius) - 2px);
+  /* why: controls and plates */
+  --radius-md: var(--radius);
+  /* why: a card held over the page */
+  --radius-lg: calc(var(--radius) + 2px);
+  /* why: the bob, a switch, round things that are round */
+  --radius-full: 9999px;
+
+  /* why: reading text; a book serif because the page is read like a manual */
+  --font-serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
+  /* why: callouts, figure numbers, code: the drafting hand */
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  /* why: headings are set in the reading face; size carries hierarchy */
+  --font-heading: var(--font-serif);
+  --font-sans: var(--font-serif);
+
+  /* why: reading text and labels */
+  --font-weight-normal: 400;
+  /* why: titles and the headline; one step of weight is enough beside size */
+  --font-weight-medium: 500;
+
+  /* why: callout labels, uppercase and tracked */
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-xs--letter-spacing: 0.08em;
+  /* why: captions, controls, code in running text */
+  --text-sm: 14px;
+  --text-sm--line-height: 22px;
+  /* why: reading text, a long measure set loose */
+  --text-base: 18px;
+  --text-base--line-height: 30px;
+  /* why: the paragraph that opens a section */
+  --text-lg: 22px;
+  --text-lg--line-height: 34px;
+  /* why: section titles */
+  --text-2xl: 34px;
+  --text-2xl--line-height: 40px;
+  --text-2xl--letter-spacing: -0.01em;
+  /* why: the one headline */
+  --text-5xl: 60px;
+  --text-5xl--line-height: 62px;
+  --text-5xl--letter-spacing: -0.025em;
+
+  /* why: a plate's hairline edge, drawn inside so plates tile without doubling */
+  --shadow-plate: inset 0 0 0 1px var(--border);
+  /* why: a card held over the page, tinted with the ink so it belongs to the drawing */
+  --shadow-lift: 0 0 0 1px var(--border), 0 14px 30px -14px color-mix(in oklab, var(--primary) 35%, transparent);
+
+  /* why: things arriving and parts separating: fast start, long settle */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* why: parts settling back together, under 2% overshoot */
+  --ease-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1);
+  /* why: hover and press, the default for every transition- utility */
+  --default-transition-duration: 140ms;
+  /* why: hover and press use the same settling curve */
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background font-serif text-base text-foreground;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    @apply bg-accent;
+  }
+}
+
+/* A figure plate: the dot grid the figures are drawn on. */
+@utility plate {
+  background-color: var(--card);
+  background-image: radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 1.2px);
+  background-size: var(--grid-step) var(--grid-step);
+  box-shadow: var(--shadow-plate);
+}
+
+/* SVG drawing classes: every figure draws with these, never with literal colours. */
+@utility draw-line { fill: none; stroke: var(--primary); stroke-width: var(--stroke-line); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+@utility draw-bold { fill: none; stroke: var(--primary); stroke-width: var(--stroke-bold); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+@utility draw-hair { fill: none; stroke: var(--primary); stroke-width: var(--stroke-hair); vector-effect: non-scaling-stroke; }
+@utility draw-leader { fill: none; stroke: var(--primary); stroke-width: var(--stroke-hair); stroke-dasharray: var(--dash-leader); vector-effect: non-scaling-stroke; }
+@utility draw-hidden { fill: none; stroke: var(--primary); stroke-width: var(--stroke-hair); stroke-dasharray: var(--dash-hidden); vector-effect: non-scaling-stroke; opacity: 0.6; }
+
+/* Layer 1 probes: definitions retain scope, ordinary recipes retain findings. */
+:root {
+  --source-alias: var(--source-ink);
+  --source-ink: #2468ac;
+  --orphan-ink: #ff0000;
+  --scope-ink: #13579b;
+  --source-time: 180ms;
+}
+.dark { --source-ink: #abcdef; }
+[data-theme="night"] { --scope-ink: #345678; }
+:root[data-theme="dusk"] { --scope-ink: #456789; }
+html.dark { --scope-ink: #56789a; }
+.theme-panel { --scope-ink: #6789ab; }
+@media (prefers-color-scheme: dark) { :root { --scope-ink: #789abc; } }
+@media (prefers-reduced-motion: reduce) { :root { --source-time: 0ms; } }
+@supports (display: grid) { .theme-panel { --scope-ink: #89abcd; } }
+@layer base { [data-theme="layer"] { --scope-ink: #9abcde; } }
+@theme inline {
+  --color-source: var(--source-alias);
+  --duration-source: var(--source-time);
+}
+@theme { --color-scoped: var(--scope-ink); }
+.fixture-use {
+  @apply bg-primary text-muted-foreground;
+  color: var(--color-scoped);
+  border-color: var(--color-source);
+  outline-color: var(--orphan-ink);
+  transition: opacity var(--dur-explode) var(--ease-out);
+}
+.fixture-raw-motion { transition: opacity 333ms; }

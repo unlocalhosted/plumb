@@ -40,6 +40,8 @@ export interface Declaration {
   sourceOrigin?: 'project' | 'framework';
   /** Class candidate supplied a value; false for compiler-defined utilities. */
   authoredValue?: boolean;
+  /** Box-shadow with Tailwind ring-layer references preserved for elevation. */
+  elevationValue?: string;
   /** Theme keys selected by the compiler before it inlines their values. */
   decisionRefs?: string[];
   /** Authored CSS before compiler-generated compatibility fallbacks. */

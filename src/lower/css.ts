@@ -3,7 +3,7 @@ import type { Rule, Selector, StyleSheet, DeclarationBlock } from 'lightningcss'
 import type { Condition } from '../report.js';
 import { cssCode, maskImports } from '../collect/stylesheets.js';
 
-export interface LoweredDeclaration { prop: string; value: string; when: Condition[]; decisionRefs?: string[] }
+export interface LoweredDeclaration { prop: string; value: string; when: Condition[]; decisionRefs?: string[]; elevationValue?: string }
 export interface CandidateCss { css: string | null; declarations: LoweredDeclaration[]; notes: string[]; authoredValue?: boolean; unreadable?: string }
 
 export function parseCss(css: string, filename: string, onError?: (error: unknown) => void): StyleSheet {
@@ -121,13 +121,20 @@ export function lowerCss(css: string | null): CandidateCss {
     const raw = declarationText(value, css!, loc, nested);
     const variables = new Map([...defaults, ...raw.filter(item => item.prop.startsWith('--tw-')).map(item => [item.prop, item.value.replace(/\s*!important$/, '')] as const)]);
     const lowered = raw.filter(item => !item.prop.startsWith('--tw-')).map(item => {
-      let value = item.value;
-      for (let hop = 0; hop < variables.size + 1; hop++) {
-        const next = value.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|var\((--tw-[\w-]+)(?:,\s*([^()]*))?\)/g, (raw: string, key: string | undefined) => key ? variables.get(key) ?? raw : raw);
-        if (next === value) break;
-        value = next;
+      function fold(keepRings = false): string {
+        let value = item.value;
+        for (let hop = 0; hop < variables.size + 1; hop++) {
+          const next = value.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|var\((--tw-[\w-]+)(?:,\s*([^()]*))?\)/g, (text: string, key: string | undefined) => key && !(keepRings && /^--tw-(?:inset-ring|ring(?:-offset)?)-shadow$/.test(key) && raw.some(item => item.prop === key)) ? variables.get(key) ?? text : text);
+          if (next === value) break;
+          value = next;
+        }
+        return value;
       }
-      return { ...item, value, when };
+      const value = fold();
+      // Preserve ring-layer identity only for elevation. Other consumers need
+      // the folded geometry (focus visibility) and colours as before.
+      const elevationValue = item.prop === 'box-shadow' ? fold(true) : value;
+      return { ...item, value, when, ...(elevationValue === value ? {} : { elevationValue }) };
     });
     const rawNeeded = raw.some(item => item.prop.startsWith('--tw-')) && (lowered.length === 0 || lowered.some(item => /var\(--tw-/.test(item.value)));
     if (rawNeeded) {

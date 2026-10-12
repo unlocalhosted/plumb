@@ -1,0 +1,9 @@
+{
+  "grouped": 337,
+  "sites": 4019,
+  "coverage": {
+    "fromDecisions": 39179,
+    "total": 40203,
+    "findings": 1024
+  }
+}
