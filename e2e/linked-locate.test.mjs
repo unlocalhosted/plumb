@@ -39,7 +39,8 @@ async function project(t, workspace) {
 };\n`);
   await symlink(join(library, 'src'), join(app, 'src/linked-source'));
   await writeFile(join(app, 'src/NotSource.txt'), 'not JSX');
-  server = await createServer({ root: app, cacheDir: join(app, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false })],
+  // Deliberately unstamped host: exercise owner-stack fallback; stamp.test.mjs covers dev stamps.
+  server = await createServer({ root: app, cacheDir: join(app, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false, stamp: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } }, resolve: { dedupe: ['react', 'react-dom'] },
     optimizeDeps: { noDiscovery: true, exclude: ['plumb-linked-library'],
       include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@base-ui/react/button'] },

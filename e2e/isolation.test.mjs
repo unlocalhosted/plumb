@@ -52,7 +52,8 @@ createRoot(document.getElementById('root')).render(<App />);
       setTimeout(() => response.end(body), 30);
     });
   } };
-  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, plumb({ watch: false })],
+  // Deliberately unstamped host: exercise owner-stack fallback; stamp.test.mjs covers dev stamps.
+  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, plumb({ watch: false, stamp: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } },
     optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'] },
     // These tests never edit source. Without a watcher, macOS's late report of the fixture's own writes (fs.watch

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
+import { freezeApp, freezeTool, fingerprint, ignoredInputs } from './frozen.mjs';
 // Run: PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [app ...]
-// Requires an existing Plumb build. Never builds, installs, writes app sources, or invokes git.
+// Requires an existing Plumb build. Reads git inputs; never writes original app repositories.
 // The owner's output restriction overrides the brief's bench/apps/verify.<app>.json paths:
 // all reports live in docs/verification/. Each app server runs in its own process/cwd.
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import { fork } from 'node:child_process';
-import { createRequire, syncBuiltinESMExports } from 'node:module';
+import { createRequire } from 'node:module';
 import { dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
@@ -19,13 +19,18 @@ const workspace = dirname(repo);
 const output = join(repo, 'docs/verification');
 const grabFile = join(workspace, 'algorecall/node_modules/react-grab/dist/index.global.js');
 const timeout = 60_000;
+const overrides = JSON.parse(process.env.PLUMB_VERIFY_APP_ROOTS ?? '{}');
+for (const root of Object.values(overrides)) check(resolve(root).startsWith(repo + sep), 'Proof roots must be inside Plumb');
 const apps = [
   { name: 'metalui', app: join(workspace, 'metalui/apps/docs'), root: join(workspace, 'metalui'),
     config: join(repo, 'bench/metalui/overlay.plumb.config.ts'), pages: ['/components/button', '/foundations/motion', '/'] },
   { name: 'kamui', app: join(workspace, 'kamui/web/apps/kamui'), pages: ['/'] },
   { name: 'craftingattention', app: join(workspace, 'craftingattention/app'), pages: ['/'] },
   { name: 'algorecall', app: join(workspace, 'algorecall'), config: join(repo, 'bench/apps/algorecall.plumb.config.ts'), pages: ['/'], depsInProject: true },
-].map(app => ({ ...app, root: app.root ?? app.app }));
+].map(app => ({ ...app, root: app.root ?? app.app, ignoredInputs: ignoredInputs[app.name] })).map(app => {
+  const original = app.root;
+  return overrides[app.name] ? { ...app, root: resolve(overrides[app.name], '.'), app: resolve(overrides[app.name], relative(original, app.app)) } : app;
+});
 
 function message(error) {
   const detail = error?.stack || error?.message || (error?.name ? error.name + ' (no message)' : String(error));
@@ -67,8 +72,8 @@ function oracleLibrary(file, scratch) {
   if (/(^|\/)(node_modules|dist)(\/|$)/.test(path) || /(^|\/)\.vite\/deps(\/|$)/.test(path)) return true;
   // macOS may spell the same scratch directory /tmp or /private/tmp.
   const canonical = value => normalizePath(value).replace(/^\/private\/tmp(?=\/|$)/, '/tmp');
-  const root = canonical(dirname(scratch)), source = canonical(path);
-  return /\/@fs\//.test(String(file)) && (source === root || source.startsWith(root + '/'));
+  const root = canonical(repo), source = canonical(path);
+  return /\/@fs\//.test(String(file)) && !source.includes('/source/') && !source.includes('/linked/') && (source === root || source.startsWith(root + '/'));
 }
 function chainOf(location) { return location?.chain?.length ? location.chain : location ? [location] : []; }
 async function get(origin, route, params = {}) {
@@ -79,72 +84,23 @@ async function get(origin, route, params = {}) {
   const text = await response.text();
   let body;
   try { body = JSON.parse(text); } catch { body = text; }
-  return { status: response.status, ok: response.ok, ms: performance.now() - start, body };
+  return { status: response.status, ok: response.ok, ms: performance.now() - start, body, retryAfter: response.headers.get('retry-after') };
 }
 
-// Vite's cache and plugin scratch directories are redirected, including Cloudflare deploy metadata.
-// Source generators are disabled below; remaining app writes fail closed, even through named fs imports.
-// This is an accidental-write guard, not a security boundary for third-party native code.
-function protectApps(scratch) {
-  const roots = [...new Set([repo, ...apps.map(app => app.root)])];
-  const redirects = apps.flatMap(app => ['.wrangler', '.tanstack', 'node_modules/.vite-temp'].map(name => ({
-    from: join(app.app, name), to: join(scratch, app.name, name),
-  })));
-  const inside = (path, root) => path === root || path.startsWith(root + sep);
-  const pathname = value => value instanceof URL ? fileURLToPath(value) : Buffer.isBuffer(value) ? value.toString() : value;
-  function pathFor(value, writing = false) {
-    const input = pathname(value);
-    if (typeof input !== 'string') return value;
-    const path = resolve(input);
-    const redirect = redirects.find(entry => inside(path, entry.from));
-    if (redirect) return resolve(redirect.to, relative(redirect.from, path));
-    if (writing && roots.some(root => inside(path, root))) throw new Error(`Read-only app/repo write blocked: ${path}`);
-    return value;
+let retryEvidence = [];
+async function readCheck(origin, route, params) {
+  let result = await get(origin, route, params);
+  if (result.status !== 503 || result.body?.status !== 'busy') return result;
+  const evidence = { route, params, attempts: [result], health: [] };
+  retryEvidence.push(evidence);
+  for (let attempt = 0; attempt < 2 && result.status === 503 && result.body?.status === 'busy'; attempt++) {
+    const health = await get(origin, '/__plumb/health'); evidence.health.push(health);
+    if (!health.ok || health.body?.status !== 'ready' || health.ms >= 100) break;
+    await delay(Math.min(5000, Math.max(1000, Number(result.retryAfter ?? 1) * 1000)));
+    result = await get(origin, route, params); evidence.attempts.push(result);
   }
-  const writes = new Map([
-    ['writeFile', [0]], ['appendFile', [0]], ['mkdir', [0]], ['mkdtemp', [0]], ['rm', [0]], ['rmdir', [0]],
-    ['unlink', [0]], ['rename', [0, 1]], ['copyFile', [1]], ['cp', [1]], ['truncate', [0]], ['chmod', [0]],
-    ['chown', [0]], ['utimes', [0]], ['link', [1]], ['symlink', [1]],
-  ]);
-  const reads = ['readFile', 'stat', 'lstat', 'access', 'readdir', 'realpath', 'readlink', 'opendir'];
-  function wrap(object, name, positions, writing) {
-    const original = object[name];
-    if (!original) return;
-    object[name] = function (...args) {
-      try { for (const index of positions) args[index] = pathFor(args[index], writing); }
-      catch (error) {
-        const callback = args.at(-1);
-        if (typeof callback === 'function') { queueMicrotask(() => callback(error)); return; }
-        if (object === fsp) return Promise.reject(error);
-        throw error;
-      }
-      return original.apply(this, args);
-    };
-  }
-  for (const [name, positions] of writes) {
-    wrap(fs, name, positions, true); wrap(fs, name + 'Sync', positions, true); wrap(fsp, name, positions, true);
-  }
-  for (const name of reads) {
-    wrap(fs, name, [0], false); wrap(fs, name + 'Sync', [0], false); wrap(fsp, name, [0], false);
-  }
-  wrap(fs, 'existsSync', [0], false);
-  wrap(fs, 'createReadStream', [0], false); wrap(fs, 'createWriteStream', [0], true);
-  for (const object of [fs, fsp]) for (const name of object === fs ? ['open', 'openSync'] : ['open']) {
-    const original = object[name];
-    object[name] = function (path, flags, ...args) {
-      const writing = typeof flags === 'number'
-        ? (flags & (fs.constants.O_WRONLY | fs.constants.O_RDWR | fs.constants.O_CREAT | fs.constants.O_TRUNC | fs.constants.O_APPEND)) !== 0
-        : /[wa+]/.test(flags ?? 'r');
-      try { path = pathFor(path, writing); }
-      catch (error) {
-        if (object === fsp) return Promise.reject(error);
-        if (typeof args.at(-1) === 'function') { queueMicrotask(() => args.at(-1)(error)); return; }
-        throw error;
-      }
-      return original.call(this, path, flags, ...args);
-    };
-  }
-  syncBuiltinESMExports();
+  evidence.recovered = result.ok;
+  return result;
 }
 
 async function flattenPlugins(options) {
@@ -161,7 +117,7 @@ async function flattenPlugins(options) {
 // already-loaded plugin instances: require.resolve() uses CommonJS export conditions.
 async function freshRouteTree(app, scratch, require) {
   const tree = join(app.app, 'src/routeTree.gen.ts');
-  try { execFileSync('git', ['-C', app.app, 'ls-files', '--error-unmatch', tree], { stdio: 'ignore' }); return null; } catch {}
+  if (app.trackedRouteTree) return null;
   const generatorPath = createRequire(require.resolve('@tanstack/router-plugin/vite')).resolve('@tanstack/router-generator');
   const { Generator, getConfig } = await import(pathToFileURL(generatorPath).href);
   const out = join(scratch, 'routeTree.gen.ts');
@@ -180,6 +136,10 @@ export async function withVerification(own, app, scratch, configFile) {
     generator = true;
     return false;
   }) };
+  if ('test' in own) {
+    delete own.test;
+    adaptations.push('Removed Vitest-only test configuration from the dev host so Plumb applies; application plugins are retained.');
+  }
   // TanStack's generator would rewrite the app's route tree. A tracked tree is the app's source: serve it as is. An
   // untracked one is a build output that goes stale as routes change (Kamui), so generate a current one in scratch with
   // the app's own generator and point the app's import there; the app's file is never written.
@@ -189,12 +149,14 @@ export async function withVerification(own, app, scratch, configFile) {
     : 'Disabled TanStack route generation; uses the tracked route tree, retains route transforms.');
   if (routeTree) own.plugins.unshift({ name: 'verification:route-tree', enforce: 'pre', async resolveId(source, importer, options) {
     if (!importer || !/routeTree\.gen/.test(source)) return null;
+    // The ignored tree is absent from a fresh copy, so handle its relative import before Vite checks existence.
+    if (source.startsWith('.') && resolve(dirname(importer.split('?')[0]), source).replace(/\.tsx?$/, '') === routeTree.tree.replace(/\.tsx?$/, '')) return routeTree.out;
     const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
     return resolved?.id.split('?')[0] === routeTree.tree ? routeTree.out : null;
   } });
   if (app.depsInProject) adaptations.push('Vite dependency cache inside the project (node_modules/.vite-plumb-verify): a cache outside breaks its CommonJS interop.');
-  const grab = await fsp.readFile(grabFile, 'utf8');
-  const { Session } = await import(pathToFileURL(join(repo, 'dist/session/index.js')).href);
+  const grab = process.env.PLUMB_VERIFY_BASELINE === '1' ? '' : await fsp.readFile(app.toolRoot ? join(app.toolRoot, 'react-grab.js') : grabFile, 'utf8');
+  const { Session } = await import(pathToFileURL(join(app.toolRoot ?? repo, 'dist/session/index.js')).href);
   let release;
   const gate = new Promise(resolveGate => { release = resolveGate; });
   const original = Session.create;
@@ -203,7 +165,7 @@ export async function withVerification(own, app, scratch, configFile) {
     intercepted++;
     return Promise.all([original.apply(this, args), gate]).then(([session]) => session);
   };
-  const { plumb } = await import(pathToFileURL(join(repo, 'dist/hosts/vite.js')).href);
+  const { plumb } = await import(pathToFileURL(join(app.toolRoot ?? repo, 'dist/hosts/vite.js')).href);
   const baseline = process.env.PLUMB_VERIFY_BASELINE === '1';
   const oracle = { name: 'verification:react-grab', transformIndexHtml: { order: 'pre', handler: () => [
     { tag: 'script', attrs: { 'data-verification-react-grab': '' }, children: grab.replaceAll('</script', '<\\/script'), injectTo: 'head-prepend' },
@@ -230,11 +192,16 @@ export async function withVerification(own, app, scratch, configFile) {
       process.send?.({ type: 'listening', origin: `http://127.0.0.1:${address.port}`, configFile, adaptations });
     });
   } };
+  if (!baseline) {
+    own.plugins.unshift(plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }));
+    adaptations.push('Plumb source stamping runs before application React transforms.');
+  }
+  adaptations.push("Vite serves installed dependency directories read-only through the copy's symlinks.");
   return vite.mergeConfig(own, {
     configFile: false, root: own.root ?? app.app, cacheDir: depsCache(app, scratch), logLevel: 'warn',
-    plugins: baseline ? [bridge] : [oracle, plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }), bridge],
+    plugins: baseline ? [bridge] : [oracle, bridge],
     server: { host: '127.0.0.1', port: 0, strictPort: false, open: false,
-      ...(routeTree ? { fs: { allow: [vite.searchForWorkspaceRoot(app.app), scratch, ...(own.server?.fs?.allow ?? [])] } } : {}) },
+      fs: { allow: [vite.searchForWorkspaceRoot(app.app), scratch, ...(app.dependencyRoots ?? []), ...(own.server?.fs?.allow ?? [])] } },
   });
 }
 
@@ -267,7 +234,7 @@ async function startServer(app, scratch, { baseline = false } = {}) {
   let logs = '';
   async function launch(file, args) {
     const child = fork(file, args, {
-      cwd: app.app, env: { ...process.env, PLUMB_CACHE_DIR: join(scratch, 'plumb'), ...(baseline ? { PLUMB_VERIFY_BASELINE: '1' } : {}),
+      cwd: app.app, execArgv: ['--import', join(repo, 'bench/apps/readonly.mjs')], env: { ...process.env, PLUMB_VERIFY_APP: JSON.stringify(app), PLUMB_VERIFY_SCRATCH: scratch, TMPDIR: scratch, XDG_CACHE_HOME: join(scratch, 'xdg-cache'), XDG_CONFIG_HOME: join(scratch, 'xdg-config'), PLUMB_CACHE_DIR: join(scratch, 'plumb'), ...(baseline ? { PLUMB_VERIFY_BASELINE: '1' } : {}),
         WRANGLER_LOG_PATH: join(scratch, 'wrangler.log'), WRANGLER_SEND_METRICS: 'false' },
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     });
@@ -290,18 +257,21 @@ async function startServer(app, scratch, { baseline = false } = {}) {
     try { return { ...await bounded(ready, 'Vite startup'), child, start, stop, logs: () => logs }; }
     catch (error) { await stop(); throw error; }
   }
-  try { return await launch(here, ['--serve', app.name, scratch]); }
+  try { return await launch(here, ['--serve', JSON.stringify(app), scratch]); }
   catch (error) {
     if (!/ERR_PACKAGE_PATH_NOT_EXPORTED|ERR_MODULE_NOT_FOUND|Cannot find (?:module|package)|failed to load config|Failed to resolve/i.test(message(error))) throw error;
-    const configFile = appConfigFile(app), generated = join(scratch, 'verification.vite.config.mjs');
+    const configFile = appConfigFile(app), generated = join(app.app, 'node_modules/.vite-temp/verification.vite.config.mjs');
     // Vite bundles this import with the app's normal ESM export conditions, from cwd=app.
+    await fsp.mkdir(dirname(generated), { recursive: true });
     await fsp.writeFile(generated, [
       configFile ? `import own from ${JSON.stringify(configFile)};` : 'const own = {};',
       `const harness = ${JSON.stringify(pathToFileURL(here).href)};`,
       'const { withVerification } = await import(harness);',
       `export default async env => withVerification(await (typeof own === 'function' ? own(env) : own), ${JSON.stringify(app)}, ${JSON.stringify(scratch)}, ${JSON.stringify(configFile ?? null)});`,
     ].join('\n'));
-    const host = await launch(join(app.app, 'node_modules/vite/bin/vite.js'), ['--config', generated]);
+    const require = createRequire(join(app.app, 'package.json'));
+    const cli = resolve(dirname(require.resolve('vite')), '../../bin/vite.js');
+    const host = await launch(cli, ['--config', generated]);
     host.adaptations.push(`Used app Vite CLI after harness config/plugin loading failed: ${message(error)}`);
     return host;
   }
@@ -398,7 +368,7 @@ async function sample(page, fresh = false, ids = null, mode = 'full') {
 }
 
 async function verifyLocation(origin, location) {
-  const response = await get(origin, '/__plumb/resolve', {
+  const response = await readCheck(origin, '/__plumb/resolve', {
     source: location.file, line: location.line, column: location.column,
   });
   return { ...response, verified: response.ok && sameFile(response.body?.file, location.file)
@@ -410,7 +380,16 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
     reading: { placed: 0, ready: 0, computed: 0, withMarks: 0, writable: 0 },
     classes: { levels: 0, attributed: 0, unattributed: 0, ambiguous: 0 } };
   const misses = [], disagreements = [], verifications = [], computed = [];
-  const verified = new Map();
+  const verified = new Map(), sites = new Map(), classesByInput = new Map();
+  // Frozen files and config cannot change: identical validation queries have identical answers.
+  // Sampling, fresh readings, source-map invalidation and the 300-read burst remain uncached.
+  async function cached(cache, route, params) {
+    const key = JSON.stringify(params);
+    if (cache.has(key)) return cache.get(key);
+    const response = await readCheck(origin, route, params);
+    if (response.ok) cache.set(key, response);
+    return response;
+  }
   for (const row of rows) {
     if (row.status === 'detached') { counts.detached++; continue; }
     if (row.error) { failures.push(`sample ${row.i}: ${row.error}`); continue; }
@@ -445,10 +424,10 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
       // Inspect every computed-here chain level, not only the default reading.
       for (let level = 0; level < chain.length; level++) {
         const link = chain[level];
-        const site = await get(origin, '/__plumb/site', { file: link.file, line: link.line, column: link.column });
+        const site = await cached(sites, '/__plumb/site', { file: link.file, line: link.line, column: link.column });
         if (!site.ok) { failures.push(`sample ${row.i} level ${level}: site returned ${site.status}`); continue; }
         if (site.body.declarations?.length) continue;
-        const classes = await get(origin, '/__plumb/classes', { file: link.file, line: link.line, column: link.column, classes: row.classes });
+        const classes = await cached(classesByInput, '/__plumb/classes', { file: link.file, line: link.line, column: link.column, classes: row.classes });
         if (!classes.ok) { failures.push(`sample ${row.i} level ${level}: classes returned ${classes.status}`); continue; }
         const attributed = classes.body.classes?.filter(entry => !entry.ambiguous && entry.sites?.length).length ?? 0;
         const ambiguous = classes.body.classes?.filter(entry => entry.ambiguous).length ?? 0;
@@ -478,7 +457,7 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
       else {
         let reason = null, oracleCheck = null;
         if (fileLevel < 0) {
-          oracleCheck = await get(origin, '/__plumb/resolve', { source: row.oracle.filePath });
+          oracleCheck = await readCheck(origin, '/__plumb/resolve', { source: row.oracle.filePath });
           if (checks.every(result => result.verified) && oracleCheck.ok && oracleCheck.body.library && !oracleCheck.body.file) {
             reason = 'Server verified Plumb chain and refused oracle file as library/untracked source.';
           }
@@ -496,7 +475,7 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
         // A react-grab answer that is not JSX on disk (a hook line, a data object: a module whose map is off) cannot be
         // the element's site; Plumb's server-verified chain stands. Recorded with what the server found there.
         if (!reason && checks.every(result => result.verified) && row.oracle.lineNumber) {
-          const at = await get(origin, '/__plumb/resolve', { source: row.oracle.filePath, line: row.oracle.lineNumber, column: row.oracle.columnNumber ?? 1 });
+          const at = await readCheck(origin, '/__plumb/resolve', { source: row.oracle.filePath, line: row.oracle.lineNumber, column: row.oracle.columnNumber ?? 1 });
           oracleCheck = at;
           if (at.ok && at.body.refused === 'not-jsx') { counts.oracleNotJsx = (counts.oracleNotJsx ?? 0) + 1; continue; }
         }
@@ -526,56 +505,66 @@ async function measureReads(origin, rows, page) {
   }
   check(readings.length > 0, 'No placed elements: cannot exercise read performance');
   // Node HTTP requests avoid Chromium's six-connection queue starving the health probe.
-  let settled = 0;
-  const started = performance.now();
-  const requests = Array.from({ length: 300 }, (_, i) => {
-    const { location } = readings[i % readings.length];
-    return { i, route: i % 2 ? '/__plumb/edits' : '/__plumb/site',
-      params: { file: location.file, line: location.line, column: location.column } };
+  const child = fork(join(repo, 'bench/apps/probe.mjs'), [], { cwd: repo,
+    execArgv: [], env: { ...process.env }, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const pending = new Map(); let id = 0;
+  child.on('message', event => { if (event.result) { pending.get(event.id)?.(event.result); pending.delete(event.id); } });
+  const ready = new Promise((resolveReady, reject) => {
+    child.on('message', event => { if (event.type === 'ready') resolveReady(); });
+    child.on('error', reject); child.once('exit', () => reject(new Error('Health probe exited before readiness')));
   });
-  const burst = Promise.allSettled(requests.map(request => get(origin, request.route, request.params)
-    .finally(() => { settled++; })));
-  const health = [], serving = [];
-  // Health is probed from the page, as the overlay polls it: a probe from this process would also time this process
-  // dispatching its own 300 requests ahead of it, which says nothing about the server.
-  const probe = route => page.evaluate(async route => {
-    const start = performance.now();
-    try {
-      const response = await fetch(route, { cache: 'no-store' }), text = await response.text();
-      let body; try { body = JSON.parse(text); } catch { body = text; }
-      return { status: response.status, ok: response.ok, ms: performance.now() - start, body: route === '/' ? null : body };
-    } catch (error) { return { ok: false, status: null, body: null, ms: performance.now() - start, error: String(error) }; }
-  }, route);
-  // Probe immediately after dispatch, then twice more; retain observed overlap rather than assuming it.
-  for (let i = 0; i < 3; i++) {
-    const outstanding = 300 - settled;
-    const [healthProbe, page] = await Promise.all([probe('/__plumb/health'), probe('/')]);
-    health.push({ ...healthProbe, outstanding });
-    serving.push({ status: page.status, ok: page.ok, ms: page.ms, outstanding,
-      ...(!page.ok ? { body: page.body, error: page.error } : {}) });
-    if (i < 2 && settled < 300) await delay(5);
-  }
-  const results = await burst, burstMs = performance.now() - started;
-  const errors = results.flatMap((result, i) => result.status === 'rejected'
-    ? [{ ...requests[i], status: null, body: null, error: message(result.reason) }]
-    : !result.value.ok ? [{ ...requests[i], ...result.value }] : []);
-  const healthy = health.some(probe => probe.outstanding > 0)
-    && health.every(probe => probe.ok && probe.body.status === 'ready' && probe.ms < 100);
-  // Retry each busy read once, sequentially, after the original burst drains. Preserve both answers.
-  for (const error of errors) {
-    error.busy = error.status === 503 && (error.body?.status === 'busy' || error.body === 'busy');
-    if (error.busy) {
-      try { error.retry = await get(origin, error.route, error.params); }
-      catch (cause) { error.retry = { ok: false, status: null, body: null, error: message(cause) }; }
+  const probe = route => bounded(new Promise(resolveProbe => { const key = ++id; pending.set(key, resolveProbe); child.send({ id: key, origin, route }); }), 'Independent network probe');
+  try {
+    await bounded(ready, 'Health probe startup');
+    const warmup = await Promise.all([probe('/__plumb/health'), probe('/')]);
+    check(warmup.every(response => response.ok), 'Probe connection warmup failed');
+    let settled = 0;
+    const started = performance.now();
+    const requests = Array.from({ length: 300 }, (_, i) => {
+      const { location } = readings[i % readings.length];
+      return { i, route: i % 2 ? '/__plumb/edits' : '/__plumb/site',
+        params: { file: location.file, line: location.line, column: location.column } };
+    });
+    const burst = Promise.allSettled(requests.map(request => get(origin, request.route, request.params)
+      .finally(() => { settled++; })));
+    const health = [], serving = [];
+    // Probe immediately after dispatch, then twice more; retain observed overlap rather than assuming it.
+    for (let i = 0; i < 3; i++) {
+      const outstanding = 300 - settled;
+      const [healthProbe, page] = await Promise.all([probe('/__plumb/health'), probe('/')]);
+      health.push({ ...healthProbe, outstanding });
+      serving.push({ status: page.status, ok: page.ok, ms: page.ms, outstanding,
+        ...(!page.ok ? { body: page.body, error: page.error } : {}) });
+      if (i < 2 && settled < 300) await delay(5);
     }
-    error.acceptable = error.busy && healthy && error.retry.ok;
+    const results = await burst, burstMs = performance.now() - started;
+    const errors = results.flatMap((result, i) => result.status === 'rejected'
+      ? [{ ...requests[i], status: null, body: null, error: message(result.reason) }]
+      : !result.value.ok ? [{ ...requests[i], ...result.value }] : []);
+    const healthy = health.some(probe => probe.outstanding > 0)
+      && health.every(probe => probe.ok && probe.body.status === 'ready' && probe.ms < 100);
+    // Retry each busy read once, sequentially, after the original burst drains. Preserve both answers.
+    for (const error of errors) {
+      error.busy = error.status === 503 && (error.body?.status === 'busy' || error.body === 'busy');
+      if (error.busy) {
+        try { error.retry = await get(origin, error.route, error.params); }
+        catch (cause) { error.retry = { ok: false, status: null, body: null, error: message(cause) }; }
+      }
+      error.acceptable = error.busy && healthy && error.retry.ok;
+    }
+    return { siteEditsMs: distribution(latency), burst: { reads: 300, ms: burstMs, probeLane: 'independent Node process', warmup,
+      retryMs: performance.now() - started - burstMs, errors,
+      busyRecovered: errors.filter(error => error.busy && error.retry.ok).length,
+      busyRetriesSucceeded: errors.filter(error => error.busy).every(error => error.retry.ok),
+      failed: errors.filter(error => !error.acceptable).length,
+      health, page: serving, overlapped: health.some(probe => probe.outstanding > 0) } };
+  } finally {
+    if (child.connected) child.disconnect();
+    await new Promise(resolveExit => {
+      if (child.exitCode !== null || child.signalCode !== null) resolveExit();
+      else child.once('exit', resolveExit);
+    });
   }
-  return { siteEditsMs: distribution(latency), burst: { reads: 300, ms: burstMs,
-    retryMs: performance.now() - started - burstMs, errors,
-    busyRecovered: errors.filter(error => error.busy && error.retry.ok).length,
-    busyRetriesSucceeded: errors.filter(error => error.busy).every(error => error.retry.ok),
-    failed: errors.filter(error => !error.acceptable).length,
-    health, page: serving, overlapped: health.some(probe => probe.outstanding > 0) } };
 }
 
 async function interaction(page, rows, { preview = true, chain: testChain = true } = {}) {
@@ -744,6 +733,7 @@ async function appOwnErrors(browser, app, scratch) {
 async function verifyApp(browser, app, scratch) {
   const report = { app: app.name, appDirectory: app.app, plumbRoot: app.root, config: app.config ?? null,
     startedAt: new Date().toISOString(), startup: {}, pages: [], failures: [], exactness: [] };
+  retryEvidence = report.readRetries = [];
   let host, context;
   try {
     report.appOwnErrors = [...await appOwnErrors(browser, app, scratch)];
@@ -793,9 +783,15 @@ async function verifyApp(browser, app, scratch) {
         if (report.startup.readyMs === undefined) {
           report.startup.readyMs = performance.now() - host.start;
           report.startup.readyAfterReleaseMs = report.startup.readyMs - report.startup.gateReleasedMs;
+          console.log(app.name + ': ready in ' + Math.round(report.startup.readyMs) + ' ms');
         }
-        const rendered = () => page.waitForFunction(() => [...document.body.querySelectorAll('*')].some(element =>
-          Object.keys(element).some(key => key.startsWith('__reactFiber$'))), null, { timeout: 30_000 });
+        const rendered = () => page.waitForFunction(() => [...document.body.querySelectorAll('*')].some(element => {
+          if (element.closest('plumb-overlay, [data-react-grab], [data-react-grab-ignore], [data-react-grab-root]')) return false;
+          const rect = element.getBoundingClientRect(), css = getComputedStyle(element);
+          return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight
+            && css.display !== 'none' && css.visibility !== 'hidden' && css.opacity !== '0'
+            && Object.keys(element).some(key => key.startsWith('__reactFiber' + '$'));
+        }), null, { timeout: 30_000 });
         // A fresh dependency cache can serve a half-optimised module on the first load: a dependency found late (the
         // React Compiler's runtime) is re-bundled after the page imported the old one. Vite reloads the page itself,
         // unless the app turns HMR off (AlgoRecall). Do what Vite would: reload until the app renders, keeping the
@@ -885,6 +881,7 @@ async function verifyApp(browser, app, scratch) {
         if (record.pageErrors.length) record.failures.push(`${record.pageErrors.length} page errors`);
         if (record.plumbConsoleErrors.length) record.failures.push(`${record.plumbConsoleErrors.length} Plumb console errors`);
         report.failures.push(...record.failures.map(failure => `${path}: ${failure}`));
+        console.log(app.name + ' ' + path + ': ' + (record.counts?.sampled ?? 0) + ' samples; ' + record.failures.length + ' failures');
       }
     }
     if (report.interaction.preview?.status === 'info') report.notes.push(report.interaction.preview.note);
@@ -916,10 +913,10 @@ async function writeReports(reports, fatal = null) {
   for (const report of reports) await fsp.writeFile(join(output, `verify.${report.app}.json`), JSON.stringify(report, null, 2) + '\n');
   const lines = ['# Plumb overlay end-to-end verification', '', `Run: ${new Date().toISOString()}`, '',
     'Command: `PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [app ...]`', '',
-    'Reports use docs/verification/ to honor the allowed output scope. App servers run sequentially with their own Vite configuration and dependency, plus Plumb and a head-prepended react-grab oracle. No source edits or git operations.', '',
+    'Reports use docs/verification/. App servers run sequentially against frozen git-visible working-tree copies, including uncommitted edits and explicit ignored runtime inputs. Git reads original HEAD and file lists; originals remain read-only.', '',
     'Startup is measured from child launch to the first successful HTML response. Plumb initialization is held until that response and a starting health response are observed. Ready time includes the gate and browser loading; it is not an ungated startup benchmark.', '',
     'Up to 150 visible React elements per page are sampled twice using the same DOM references and fresh overlay readings on the second pass. Detached or re-rendered samples are excluded; a page with >30% of its sampled nodes detached across the two passes is resampled once after up to 10 seconds waiting for 500 ms without DOM mutations and two quiet frames. Dependency oracle answers are counted as oracle-library. Exactness checks cover up to 20 placed elements per app.', '',
-    'Burst failures retain request, status, body, and retry evidence. Only 503 busy answers recovered on retry with health <100 ms throughout are accepted. Interaction search covers every sampled page and up to 400 extra rendered elements per app; no choices is informational. Chain stepping and no-preview Undo are tested independently. Unexplained disagreements, failed server checks, unstable results, errors, failed interactions, and health >=100 ms fail the run.', '',
+    'Busy responses in server checks and bursts retain request, status, body, and retry evidence. Only 503 busy answers recovered on retry with health <100 ms throughout are accepted. Interaction search covers every sampled page and up to 400 extra rendered elements per app; no choices is informational. Chain stepping and no-preview Undo are tested independently. Unexplained disagreements, failed server checks, unstable results, errors, failed interactions, and health >=100 ms fail the run.', '',
     '| App | Result | Page ms | Ready ms | Sample | Detached | Oracle library | Match | Plumb only | Grab only | Disagree | JSX exact | Locate p95 ms | Health max ms |',
     '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |'];
   for (const report of reports) {
@@ -929,6 +926,7 @@ async function writeReports(reports, fatal = null) {
   if (fatal) lines.push('', '## Harness failure', '', '```text', fatal, '```');
   for (const report of reports) {
     lines.push('', `## ${report.app}`, '', `[Full evidence](verify.${report.app}.json)`, '');
+    if (report.snapshot) lines.push('Snapshot: ' + report.snapshot.original + '; HEAD ' + report.snapshot.head + '; ' + report.snapshot.fileCount + ' files; ' + report.snapshot.method + '; ' + report.snapshot.ms + ' ms; unchanged ' + report.snapshot.unchanged + '; removed ' + report.snapshot.removed + '.', '');
     for (const adaptation of report.adaptations ?? []) lines.push(`- ${adaptation}`);
     for (const note of report.notes ?? []) lines.push(`- INFO: ${note}`);
     for (const failure of report.failures) lines.push(`- FAIL: ${failure.replaceAll('\n', '\n  ')}`);
@@ -947,34 +945,53 @@ async function writeReports(reports, fatal = null) {
 async function main() {
   const selected = process.argv.slice(2);
   if (selected.includes('--help')) {
-    console.log('PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [metalui kamui craftingattention algorecall]\nUses existing dist build; writes only docs/verification/ and temporary caches.');
+    console.log('PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [metalui kamui craftingattention algorecall]\nUses existing dist build; frozen inputs on by default; writes only docs/verification/ and Plumb-local temporary caches.');
     return;
   }
   check(selected.every(name => apps.some(app => app.name === name)), `Unknown app: ${selected.filter(name => !apps.some(app => app.name === name)).join(', ')}`);
   const targets = selected.length ? apps.filter(app => selected.includes(app.name)) : apps;
   const reports = [];
-  let browser, scratch, fatal;
+  let browser, scratch, tool, fatal;
   try {
     const { chromium } = await import('playwright');
     // Launch before starting any app. Failure produces a nonzero report, never a successful skip.
+    await fsp.mkdir(join(repo, 'fixtures/.verify-frozen'), { recursive: true });
+    scratch = await fsp.mkdtemp(join(repo, 'fixtures/.verify-frozen/plumb-verify-'));
+    const toolSource = resolve(process.env.PLUMB_VERIFY_TOOL_ROOT ?? repo);
+    check(toolSource === repo || toolSource.startsWith(repo + sep), 'Tool snapshot source must be inside Plumb');
+    tool = await freezeTool(toolSource, join(scratch, 'tool'), grabFile);
+    process.env.TMPDIR = scratch;
     browser = await chromium.launch({ executablePath: process.env.PLUMB_CHROMIUM });
-    scratch = await fsp.mkdtemp('/private/tmp/plumb-verify-');
     for (const app of targets) {
       const directory = join(scratch, app.name); await fsp.mkdir(directory, { recursive: true });
-      const snapshot = () => execFileSync('git', ['-C', app.root, 'status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-      const before = snapshot();
-      if (app.depsInProject) await fsp.rm(depsCache(app, directory), { recursive: true, force: true });
-      const report = await verifyApp(browser, app, directory); reports.push(report);
-      if (app.depsInProject) await fsp.rm(depsCache(app, directory), { recursive: true, force: true });
-      // Nothing may change in the app's working tree: not a tracked file, not a new untracked one.
-      if (snapshot() !== before) { report.failures.push('The app working tree changed during verification'); report.status = 'failed'; }
+      const frozen = await freezeApp({ ...app, toolRoot: tool.directory }, directory);
+      console.log(app.name + ': frozen ' + frozen.snapshot.fileCount + ' files in ' + frozen.snapshot.ms + ' ms');
+      // The proof process waits for this marker before changing its scratch original.
+      if (process.send) process.send({ type: 'snapshot', app: app.name, snapshot: frozen.snapshot });
+      const report = await verifyApp(browser, frozen.app, directory); reports.push(report);
+      report.snapshot = frozen.snapshot; report.tool = tool; report.runId = scratch.slice(scratch.lastIndexOf(sep) + 1);
+      report.adaptations = [...frozen.adaptations, ...(report.adaptations ?? [])];
+      if (!await frozen.finish()) { report.failures.push('The frozen app working tree changed during verification'); report.status = 'failed'; }
+      if (frozen.snapshot.ms >= 30_000) { report.failures.push('Snapshot exceeded 30 seconds'); report.status = 'failed'; }
+      for (const input of frozen.snapshot.repositories) if (input.originalMoved) {
+        (report.notes ??= []).push('The original moved on during the run; the result is for ' + input.head + ' (' + input.original + '; now ' + input.headAfter + ').');
+      }
+      // No cache cleanup can traverse dependency symlinks into an original.
+      await fsp.rm(directory, { recursive: true, force: true });
+      report.snapshot.removed = true;
+      console.log(app.name + ': ' + report.status + '; frozen inputs unchanged ' + frozen.snapshot.unchanged);
       await writeReports(reports);
     }
   } catch (error) { fatal = message(error); }
   finally {
     if (browser) await browser.close().catch(error => { fatal ??= message(error); });
+    if (tool) {
+      tool.unchanged = tool.sha256 === await fingerprint([tool.directory]);
+      if (!tool.unchanged) fatal ??= 'Frozen Plumb runtime changed during verification';
+    }
     if (scratch) await fsp.rm(scratch, { recursive: true, force: true }).catch(error => { fatal ??= message(error); });
   }
+  if (tool) tool.removed = !fs.existsSync(tool.directory);
   await writeReports(reports, fatal);
   console.table(reports.map(summary));
   if (fatal) console.error(fatal);
@@ -982,7 +999,7 @@ async function main() {
 }
 
 if (process.argv[2] === '--serve') {
-  const app = apps.find(app => app.name === process.argv[3]);
+  const app = JSON.parse(process.argv[3]);
   try { check(app, 'Unknown server app'); await serve(app, process.argv[4]); }
   catch (error) {
     if (process.connected) process.send({ type: 'error', error: message(error) });

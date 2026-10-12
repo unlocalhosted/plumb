@@ -55,7 +55,8 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 createRoot(document.getElementById('root')).render(<App />);
 `);
-  const server = await createServer({ root: servedRoot, cacheDir: join(servedRoot, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false })],
+  // Deliberately unstamped host: exercise owner-stack fallback; stamp.test.mjs covers dev stamps.
+  const server = await createServer({ root: servedRoot, cacheDir: join(servedRoot, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false, stamp: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } },
     optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'] },
     // No hot reload here. Without a watcher, macOS's late report of the fixture's own writes (fs.watch delivers a
