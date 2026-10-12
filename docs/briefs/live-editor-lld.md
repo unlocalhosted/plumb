@@ -14,6 +14,18 @@ Read the code before designing, and cite files and functions.
 - **The interaction model to bring over:** MetalUI's editing layer, `/Users/vijaysingh/unlocalhosted/metalui/docs/EDITING_LAYER.md` and `apps/docs/src/ui/edit`, read-only. No sliders, handle the real component, steps snap, highlight only what's pointed at.
 - **Prior art to learn from, never copy:** Bret Victor's *Inventing on Principle* and *Learnable Programming*; React DevTools (how it reads props, state and hooks); Storybook (states and controls); Onlook, Builder.io, Plasmic and Webflow (visual editing of code), and where they break the "source is the truth" rule; and Figma's direct manipulation. Use the web. Cite sources. Say what each does well and where it fails our invariants.
 
+## Be ambitious: time, motion and the talk's demos
+
+The owner wants the ambitious parts designed seriously, not deferred with one line. Design these as real mechanisms, with the same rigour as layers 0–3, and say plainly what is sound now and what is research:
+
+- **Time travel across state.** In *Inventing on Principle*, Victor scrubs back and forth through a game's timeline and edits code while the result updates at every moment. Design the React equivalent. Record a session's state transitions: props, state, hooks and context per commit, read through React's internals as DevTools does or through an instrumented store. Scrub a timeline of commits and see the UI at each one. Edit a value at commit *n* and see every later commit replayed. Fork the timeline. Cover what makes replay deterministic (effects, timers, network, randomness, dates), what has to be stubbed or recorded, and where determinism can't be guaranteed and Plumb must say so.
+- **Seeing every frame at once.** Victor shows a trajectory of all positions over time, not one frame. Design onion-skinning and trails for a component's motion: every frame of a transition laid out at once, so the shape of the motion shows. Also show a component's states as a strip you can scrub.
+- **Motion editing.** Scrub an animation's progress. Edit spring parameters (stiffness, damping, mass) or durations and see the change while scrubbing. Show the curve and where the current frame sits on it. Write the change to source as the project's own motion tokens. Cover CSS transitions and animations, the Web Animations API, View Transitions, and libraries such as Motion (framer-motion), which Crafting Attention and AlgoRecall use. Cover reduced motion.
+- **Live values in code.** Victor's other demo: every number in the code is directly draggable, and the effect shows immediately. Design the link from a literal in source, shown in the overlay or in the editor, to its live effect on the page, in both directions: point at the page and get the value; drag the value and the page follows.
+- **Causality.** Click a pixel and see the chain of code and state that drew it: JSX, props, the state that fed them, the event that changed that state.
+
+For each, give the data model, the instrumentation it needs, the cost, the fixed rules it touches (preview before write, source as truth), and a smallest first slice that proves it on a real app.
+
 ## What the LLD must contain
 
 For layers 0–3 in full detail, and 4–7 in enough depth to show the architecture holds:
