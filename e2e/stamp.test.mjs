@@ -197,6 +197,9 @@ test('React first warns and serves no stamps; Vitest is skipped', { timeout: 300
     assert.match(warnings.join('\n'), /Source stamping is off: plumb\(\) runs after vite:react-babel/);
     assert.ok(!(await late.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source'));
   } finally { await late.close(); }
+  // stamp: false keeps the overlay and serves no stamps, for apps that hydrate HTML prerendered elsewhere.
+  const off = await createServer({ ...settings(root), plugins: [plumb({ watch: false, stamp: false }), react()] });
+  try { assert.ok(!(await off.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source')); } finally { await off.close(); }
   const server = await createServer({ ...settings(root), test: {}, plugins: [react(), plumb({ watch: false })] });
   try {
     assert.ok(!server.config.plugins.some(plugin => plugin.name === 'plumb'));

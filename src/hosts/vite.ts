@@ -18,11 +18,17 @@ async function dispose(id: string, entry: Entry): Promise<void> {
 }
 
 /** Mount Plumb on Vite's dev server; process ownership survives server restarts. */
-export function plumb(options: SessionOptions = {}): Plugin {
+export interface PlumbViteOptions extends SessionOptions {
+  /** Stamp JSX with its source position in dev (default true). Turn it off for an app that hydrates HTML prerendered
+   * outside the dev server: that HTML carries no stamps, so React reports a mismatch and renders the page again. */
+  stamp?: boolean;
+}
+
+export function plumb({ stamp = true, ...options }: PlumbViteOptions = {}): Plugin {
   let restarts = 0;
   let release: (() => Promise<void>) | undefined;
   return {
-    ...sourceStamping(options),
+    ...(stamp ? sourceStamping(options) : { name: 'plumb', apply: 'serve' as const }),
     resolveId(id) {
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
     },
