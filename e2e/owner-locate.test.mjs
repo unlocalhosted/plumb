@@ -109,13 +109,16 @@ import App from './App.jsx';
 createRoot(document.getElementById('root')).render(<App />);
 `);
   const aliases = version === 18 ? ['react', 'react-dom'].map(name => ({ find: new RegExp('^' + name + '(/.*)?$'), replacement: join(repo, 'fixtures/react18/node_modules', name) + '$1' })) : [];
-  server = await createServer({ root, configFile: false, plugins: [...(transform === 'plugin-react' ? [react()] : []), plumb({ watch: false })],
+  // Each fixture keeps its own dependency cache instead of sharing the repo's node_modules/.vite with every other.
+  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [...(transform === 'plugin-react' ? [react()] : []), plumb({ watch: false })],
     resolve: { alias: aliases }, oxc: { jsx: { runtime: 'automatic', development: true } },
     // Late discovery can rebuild common chunks and reload the document while
     // locate's worker is fetching a creation-stack map. Fix the dependency set.
     optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime',
       '@base-ui/react/button', '@base-ui/react/popover', '@radix-ui/react-slot', '@radix-ui/react-primitive', 'plumb-owner-runtime'] },
-    logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    // Edits are checked on disk, not through a reload. Without a watcher, macOS's late report of the fixture's own
+    // writes (fs.watch delivers a modification made just before a file is watched) cannot reload the page mid-test.
+    logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0 } });
   await server.listen();
   return { root, url: `http://127.0.0.1:${server.httpServer.address().port}`, releaseStartup };
 }

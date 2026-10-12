@@ -84,7 +84,7 @@ test('Vite injects and serves the client, shares edits/apply and excludes Plumb 
   const plumbRoot = await project(t);
   await writeFile(join(root, 'index.html'), '<html><head></head><body><script type="module" src="/src/entry.js"></script></body></html>');
   await writeFile(join(root, 'src/entry.js'), 'document.body.dataset.ready = "yes";\n');
-  const server = await createServer({ root, configFile: false, plugins: [plumb({ root: plumbRoot, watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ root: plumbRoot, watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"><\/script>/);
@@ -125,7 +125,7 @@ test('Vite defaults to its root and resolves explicit relative roots and configs
     [{ root: relative(root, plumbRoot), config: 'custom.config.ts', watch: false }, plumbRoot],
     [{ root: plumbRoot, config: join(plumbRoot, 'custom.config.ts'), watch: false }, plumbRoot],
   ]) {
-    const server = await createServer({ root, configFile: false, plugins: [plumb(options)], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb(options)], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
     servers.push(server); await server.listen();
     const url = `http://127.0.0.1:${server.httpServer.address().port}`;
     const health = await ready(url); assert.equal(health.root, expectedRoot);
@@ -346,7 +346,7 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
   t.after(() => { Session.create = original; });
   for (const middlewareMode of [false, true]) {
     const root = await project(t);
-    const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { middlewareMode, host: '127.0.0.1', port: 0 } });
+    const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { middlewareMode, host: '127.0.0.1', port: 0 } });
     t.after(() => server.close()); if (!middlewareMode) await server.listen();
     await globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')].values().next().value.session;
     const session = created.at(-1), count = created.length, worker = session.worker;
@@ -362,8 +362,8 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
       }
     }
     // Separate plugin instances share process ownership; options have separate entries.
-    const shared = await createServer({ root, configFile: false, plugins: [plumb({ root: '.', watch: false })], logLevel: 'silent', server: { middlewareMode: true } });
-    const different = await createServer({ root, configFile: false, plugins: [plumb({ watch: false, verbose: true })], logLevel: 'silent', server: { middlewareMode: true } });
+    const shared = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ root: '.', watch: false })], logLevel: 'silent', server: { middlewareMode: true } });
+    const different = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false, verbose: true })], logLevel: 'silent', server: { middlewareMode: true } });
     t.after(() => shared.close()); t.after(() => different.close());
     await Promise.all([...globalThis[Symbol.for('@unlocalhosted/plumb/vite/sessions')].values()].map(entry => entry.session));
     assert.equal(created.length, count + 1);
@@ -391,7 +391,7 @@ test('Vite listens during startup, shares pending ownership across restarts and 
   for (const fail of [false, true]) {
     const root = await project(t); await holdStartup(root, fail);
     await writeFile(join(root, 'index.html'), '<html><body>Host starts immediately</body></html>');
-    const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
     t.after(() => server.close()); await server.listen();
     let url = `http://127.0.0.1:${server.httpServer.address().port}`;
     assert.match(await (await fetch(url, { signal: AbortSignal.timeout(2000) })).text(), /Host starts immediately/);

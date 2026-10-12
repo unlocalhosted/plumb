@@ -1,4 +1,6 @@
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { createElement } from 'react';
 import type { ReactElement } from 'react';
 import type { SessionOptions } from '../session/index.js';
@@ -25,8 +27,14 @@ export function createPlumbRoute(options: SessionOptions = {}): { GET(request: R
   return { GET: handle, POST: handle };
 }
 
+// Where this dev server writes the chunks the browser runs. Next 16 keeps development output in <distDir>/dev.
+function distDir(): string {
+  const root = resolve(process.cwd(), process.env.PLUMB_NEXT_DIST_DIR ?? '.next');
+  return existsSync(join(root, 'dev', 'static')) ? join(root, 'dev') : root;
+}
+
 /** Server-render the process token; never expose it in the public client module. */
 export function PlumbOverlay(): ReactElement | null {
   if (process.env.NODE_ENV === 'production') return null;
-  return createElement('script', { type: 'module', src: '/__plumb/client.js', 'data-plumb-token': state().token });
+  return createElement('script', { type: 'module', src: '/__plumb/client.js', 'data-plumb-token': state().token, 'data-plumb-next-dist': distDir() });
 }

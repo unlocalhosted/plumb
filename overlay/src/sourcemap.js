@@ -180,11 +180,11 @@ export class SourceMapStore {
         const mapped = await this.cached(this.decoded, JSON.stringify([url, line, column]), async () => {
           const response = await fetch(new URL('/__nextjs_original-stack-frames', moduleURL.origin), {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ frames: [{ file: url, line1: line, column1: column }], isServer: false, isEdgeServer: false, isAppDirectory: true }),
+            body: JSON.stringify({ frames: [{ file: options.traceFile ?? url, line1: line, column1: column }], isServer: false, isEdgeServer: false, isAppDirectory: true }),
           });
           if (!response.ok) refused('map', { step: 'next-module-frame', url, status: response.status });
           const frame = (await response.json())?.[0]?.value?.originalStackFrame;
-          return frame?.file && frame.line1 && frame.column1 && frame.file !== url ? { source: frame.file, line: frame.line1, column: frame.column1 } : null;
+          return frame?.file && frame.line1 && frame.column1 && frame.file !== url && !frame.file.startsWith('/_next/') ? { source: frame.file, line: frame.line1, column: frame.column1 } : null;
         });
         return obsolete() ? options.explain ? failure('map', { step: 'cancelled', url }) : null :
           options.explain ? mapped ? { location: mapped } : failure('map', { step: 'unmapped-position', url, line, column }) : mapped;
@@ -218,7 +218,7 @@ function finish(entry, result) {
   entry.callers.clear();
 }
 function decode(entry) {
-  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true })
+  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true, traceFile: entry.traceFile })
     .then(result => finish(entry, fallbackDetail ? { ...result, detail: { ...result.detail, fallback: fallbackDetail } } : result));
 }
 function useFallback(detail) {
@@ -244,6 +244,15 @@ function startWorker() {
     startupTimer = setTimeout(() => useFallback({ step: 'worker-startup-timeout' }), 5000);
   } catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
 }
+// Next traces a browser chunk by its file in the dist directory, never by its http URL; its own overlay rewrites
+// /_next/static/... the same way. The Next host renders that directory on the client script.
+function traceFile(url) {
+  const dist = typeof document === 'undefined' ? undefined : document.querySelector('script[data-plumb-next-dist]')?.dataset.plumbNextDist;
+  try {
+    const at = new URL(url), m = /\/_next(\/static\/.+)/.exec(at.pathname);
+    return dist && m ? 'file://' + dist.replace(/\\/g, '/').replace(/\/$/, '') + m[1] + at.search : undefined;
+  } catch { return undefined; }
+}
 /** Each caller owns its abort; identical in-flight frames share one decoding. */
 export async function mapFrame(url, line, column, options = {}) {
   const { signal } = options;
@@ -258,7 +267,7 @@ export async function mapFrame(url, line, column, options = {}) {
   const key = JSON.stringify([version, url, line, column, chunks]);
   let entry = flights.get(key), fresh = !entry;
   if (!entry) {
-    entry = { id: ++next, key, url, line, column, chunks, callers: new Set(), cancelled: false };
+    entry = { id: ++next, key, url, line, column, chunks, traceFile: traceFile(url), callers: new Set(), cancelled: false };
     pending.set(entry.id, entry); flights.set(key, entry);
   }
   const result = new Promise(resolve => {
@@ -275,7 +284,7 @@ export async function mapFrame(url, line, column, options = {}) {
   });
   if (fresh) {
     if (worker) {
-      try { worker.postMessage({ id: entry.id, url, line, column, chunks, explain: true }); }
+      try { worker.postMessage({ id: entry.id, url, line, column, chunks, traceFile: entry.traceFile, explain: true }); }
       catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
     } else decode(entry);
   }

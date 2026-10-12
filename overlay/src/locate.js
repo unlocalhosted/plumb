@@ -64,7 +64,7 @@ async function readCreationFrame(fiber) {
     // the mapped source too, before treating a React runtime call as creation.
     if (runtime(at.source)) continue;
     const name = /at\s+([^\s(]+)\s+\(/.exec(line)?.[1];
-    return { fileName: at.source, lineNumber: at.line, columnNumber: at.column - 1, functionName: name, ...(at.hash ? { hash: at.hash } : {}) };
+    return { fileName: at.source, lineNumber: at.line, columnNumber: at.column - 1, functionName: name, raw: m[1] + ':' + m[2] + ':' + m[3], ...(at.hash ? { hash: at.hash } : {}) };
   }
   return null;
 }
@@ -128,7 +128,8 @@ async function readFrames(fiber) {
   // bippy may prepend a component definition inferred from an owned child.
   // Keep the raw React creation records, never that synthetic definition.
   const records = raw.length ? mapped.slice(-raw.length) : mapped;
-  return records.filter(frame => frame.fileName && (!/^webpack(?:-internal)?:/.test(frame.fileName) || frame.isSymbolicated)).map((frame, i) => {
+  // Each mapped frame keeps the raw frame it was read from, so another reading of the same frame can be matched to it.
+  return records.map((frame, i) => ({ ...frame, raw: raw[i] && raw[i].fileName + ':' + raw[i].lineNumber + ':' + raw[i].columnNumber, i })).filter(frame => frame.fileName && (!/^webpack(?:-internal)?:/.test(frame.fileName) || frame.isSymbolicated)).map(({ i, ...frame }) => {
     let fileName = frame.fileName;
     if (!/^[a-z]+:/i.test(fileName) && !fileName.startsWith('/')) {
       // The module this name came from: the raw frame whose URL ends in the same path (positions need not line up).
@@ -153,8 +154,14 @@ export async function locate(element, options = {}) {
   const stack = stackOf(fiber);
   if (stack && previous && previous !== stack && !creationEvidence.has(stack)) invalidateSourceMaps();
   if (stack && fiber.stateNode) committedStacks.set(fiber.stateNode, stack);
-  const ask = params => request('resolve', params, { explain: true })
-    .catch(error => { if (error?.starting || error?.failed) throw error; return { refused: error?.detail ?? error?.message }; });
+  // One answer per question within a locate: frames are asked about together, then read in order.
+  const asked = new Map();
+  const ask = params => {
+    const key = JSON.stringify(params);
+    if (!asked.has(key)) asked.set(key, request('resolve', params, { explain: true })
+      .catch(error => { if (error?.starting || error?.failed) throw error; return { refused: error?.detail ?? error?.message }; }));
+    return asked.get(key);
+  };
   const chain = [], seen = new Map();
   let last = [], unchecked;
   const tryFrame = async frame => {
@@ -236,22 +243,29 @@ export async function locate(element, options = {}) {
     let frames;
     try { frames = await framesOf(owner); }
     catch (error) { return refuse('map', { step: 'owner-stack', error: String(error?.message ?? error) }); }
-    // Plumb's reader maps to the nearest preceding segment and can land a few columns before the JSX; bippy's
-    // symbolication of the same frame is exact. Keep Plumb's content hash, take bippy's position.
-    const same = own && frames.find(frame => frame.lineNumber === own.lineNumber && frame.fileName && own.fileName && (frame.fileName === own.fileName || own.fileName.endsWith('/' + frame.fileName.split('/').pop())));
-    if (same) own.columnNumber = same.columnNumber;
-    if (own) {
+    // Plumb's reader maps to the nearest preceding segment, which can land before the JSX (even on the line above,
+    // the component's name); bippy's symbolication of the same raw frame is exact. Keep Plumb's hash, take bippy's position.
+    const same = own?.raw && frames.find(frame => frame.raw === own.raw && frame.lineNumber);
+    if (same) Object.assign(own, { lineNumber: same.lineNumber, columnNumber: same.columnNumber });
+    // When Plumb's reader cannot map the element's own frame (a Turbopack chunk), bippy's first frame is that frame.
+    const unmapped = own?.failure?.reason === 'map' && frames.some(frame => frame.fileName && frame.lineNumber);
+    if (own && !unmapped) {
       const failure = await tryFrame(own);
+      // A module Turbopack hot-updated runs from eval with its own inline map, which Next traces a line off. That
+      // position is the map's, not evidence the element was made without JSX; refuse it as unreadable until a reload.
+      if (failure?.reason === 'no-jsx' && !own.hash && /[?&]id=/.test(own.raw ?? '')) return refuse('map', { ...failure.detail, step: 'hot-update-map' });
       if (failure?.reason) return refuse(failure.reason, failure.detail);
     }
     const candidates = frames.filter(frame => frame.fileName && frame.lineNumber && !frame.fileName.startsWith('about:') && isSourceFile(frame.fileName));
     if (candidates.length) last = candidates;
+    // Start every frame's question at once; the loop below still decides in stack order.
+    for (const frame of candidates) ask({ source: frame.fileName, line: frame.lineNumber, column: (frame.columnNumber ?? 0) + 1 }).catch(() => {});
     let ownerStackProven = false;
-    for (const frame of candidates) {
+    for (const [i, frame] of candidates.entries()) {
       const result = await tryFrame(frame);
-      // Only an element's own creation frame draws the no-JSX boundary (checked above). Later frames in a stack are
-      // the code that called it, such as App calling items.map(...): not JSX, and not a reason to refuse.
-      if (result?.reason === 'no-jsx') continue;
+      // Only an element's own creation frame draws the no-JSX boundary. Later frames in a stack are the code that
+      // called it, such as App calling items.map(...): not JSX, and not a reason to refuse.
+      if (result?.reason === 'no-jsx' && !(unmapped && i === 0)) continue;
       if (result?.reason) return refuse(result.reason, result.detail);
       ownerStackProven ||= result?.proven === true;
     }

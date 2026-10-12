@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer as httpServer } from 'node:http';
@@ -36,7 +37,7 @@ test('real sparse destructuring, arrays, null helper arguments and empty returns
   const api = await session(t, root), source = await readFile(join(root, 'src/Nullable.tsx'), 'utf8');
   for (const [id, tokens] of [['nullable', ['inline-flex', 'px-[10px]', 'gap-[10px]']], ['nullable-helper', ['py-[10px]']], ['nullable-recipe', ['m-[10px]', 'p-[10px]']], ['nullable-return', []]]) {
     const at = location(source, id), result = await api.classes('src/Nullable.tsx', at.line, at.column, tokens.join(' '));
-    assert.equal(result.limited, false); assert.deepEqual(result.unattributed, []);
+    assert.deepEqual(result.limited, []); assert.deepEqual(result.unattributed, []);
     for (const token of tokens) assert.equal(entry(result, token).ambiguous, false);
     if (id === 'nullable') await onlyLiteral(api, root, entry(result, 'px-[10px]').sites[0], 'px-[10px]');
   }
@@ -53,7 +54,7 @@ test('shared helper shapes cover config, mixed, legacy and imported aliases with
     ['alias-cva', ['flex', 'mb-[10px]']], ['alias-tv', ['grid', 'mx-[10px]']],
   ]) {
     const at = location(source, id), result = await api.classes('src/HelperShapes.tsx', at.line, at.column, tokens.join(' ') + ' metadata-ignored metadata-default');
-    assert.equal(result.limited, false); assert.deepEqual(result.unattributed, ['metadata-ignored', 'metadata-default']);
+    assert.deepEqual(result.limited, []); assert.deepEqual(result.unattributed, ['metadata-ignored', 'metadata-default']);
     for (const token of tokens) {
       const item = entry(result, token); assert.equal(item.ambiguous, false);
       assert.ok(item.sites.every(site => site.declarations.length && site.file === join(root, 'src/HelperShapes.tsx')));
@@ -114,7 +115,7 @@ test('MetalUI button own template follows helper, shared templates, maps, callba
   const line = lines.length, column = lines.at(-1).length + 1;
   const tokens = ['mu-button', 'inline-flex', 'focus-visible:outline-2', 'gap-button-gap', 'h-button-height', 'px-[10px]', 'recipe-button', 'data-holding:recipe-button-destructive-pressed'];
   const result = await api.classes('src/Button.tsx', line, column, tokens.join(' '));
-  assert.deepEqual(result.unattributed, []); assert.equal(result.limited, false);
+  assert.deepEqual(result.unattributed, []); assert.deepEqual(result.limited, []);
   for (const token of tokens) for (const site of entry(result, token).sites) {
     assert.equal(site.file, join(root, 'src/Button.tsx'));
     const offset = source.split('\n').slice(0, site.line - 1).reduce((n, row) => n + row.length + 1, 0) + site.column - 1;
@@ -135,7 +136,7 @@ for (const [id, tokens, editable] of [
 ]) test(`${id} maps each rendered token to its feeding literal; Node apply changes only selected literal`, async t => {
   const root = await fixture(t), api = await session(t, root), source = await readFile(join(root, 'src/App.tsx'), 'utf8');
   const at = location(source, id), result = await api.classes('src/App.tsx', at.line, at.column, tokens.join(' '));
-  assert.deepEqual(result.unattributed, []); assert.equal(result.limited, false);
+  assert.deepEqual(result.unattributed, []); assert.deepEqual(result.limited, []);
   for (const token of tokens) {
     const item = entry(result, token); assert.equal(item.ambiguous, false, `${id} ${token} has one feeding site`);
     const site = item.sites[0]; assert.ok(site.declarations.length); if (token.includes('[10px]')) assert.ok(site.findings.length);
@@ -164,9 +165,8 @@ test('ambiguous candidates all survive; dynamic concatenation never gets attribu
 
 test('warm lookups stay cached, imported helper changes reconcile without watchers, stale edits refused', async t => {
   const root = await fixture(t), api = await session(t, root), source = await readFile(join(root, 'src/App.tsx'), 'utf8'), at = location(source, 'imported');
-  let first;
-  for (let i = 0; i < 4; i++) { first = await api.classes('src/App.tsx', at.line, at.column, 'px-[10px]'); if (!first.limited) break; }
-  assert.equal(first.limited, false);
+  const first = await api.classes('src/App.tsx', at.line, at.column, 'px-[10px]');
+  assert.deepEqual(first.limited, []);
   const before = await api.health(), start = performance.now();
   for (let i = 0; i < 12; i++) assert.deepEqual(await api.classes('src/App.tsx', at.line, at.column, 'px-[10px]'), first);
   assert.ok(performance.now() - start < 2000, 'warm reads bounded');
@@ -273,14 +273,18 @@ export function Other() { return <div className="p-[10px]"/>; }
 `);
   const api = await session(t, root), source = await readFile(join(root, 'src/App.tsx'), 'utf8'), at = location(source, 'recursive');
   const start = performance.now(), result = await api.classes('src/App.tsx', at.line, at.column, 'p-[10px]');
-  assert.equal(result.limited, true); assert.deepEqual(result.unattributed, ['p-[10px]']);
+  assert.deepEqual(result.limited, ['p-[10px]']); assert.deepEqual(result.unattributed, []);
+  assert.ok(result.limits.includes('depth') || result.limits.includes('function-depth'));
+  assert.deepEqual(await api.classes('src/App.tsx', at.line, at.column, 'p-[10px]'), result);
   assert.ok(performance.now() - start < 1000);
   await api.close();
   for (let i = 0; i < 9; i++) await writeFile(join(root, `src/depth${i}.ts`), i === 8 ? "export function deep() { return 'p-[10px]'; }" : `export { deep } from './depth${i + 1}';`);
   await writeFile(join(root, 'src/App.tsx'), `import { deep } from './depth0'; export function App() { return <div id="deep" className={deep()}/>; }`);
   const deepApi = await session(t, root), deepSource = await readFile(join(root, 'src/App.tsx'), 'utf8'), deepAt = location(deepSource, 'deep');
   const deepResult = await deepApi.classes('src/App.tsx', deepAt.line, deepAt.column, 'p-[10px]');
-  assert.equal(deepResult.limited, true); assert.deepEqual(deepResult.unattributed, ['p-[10px]']);
+  assert.deepEqual(deepResult.limited, ['p-[10px]']); assert.deepEqual(deepResult.unattributed, []);
+  assert.ok(deepResult.limits.includes('import-hops'));
+  assert.deepEqual(await deepApi.classes('src/App.tsx', deepAt.line, deepAt.column, 'p-[10px]'), deepResult);
 });
 
 test('export-star barrels and helper defaults preserve literal attribution and apply', async t => {
@@ -302,4 +306,61 @@ export function App() { return <div id="defaults" className={dimensions()}/>; }`
   const selected = entry(await defaultsApi.classes('src/App.tsx', defaultAt.line, defaultAt.column, 'p-[10px]'), 'p-[10px]');
   assert.equal(selected.ambiguous, false); assert.equal(selected.sites.length, 1);
   await onlyLiteral(defaultsApi, root, selected.sites[0], 'p-[10px]');
+});
+
+test('cold first and warm tenth HTTP classes reads agree through three large imported modules', async t => {
+  const root = await fixture(t);
+  await writeFile(join(root, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], decisions: { spacing: { callers: ["primitive", "semantic"] } } };');
+  const padding = Array.from({ length: 6000 }, (_, i) => `const unused${i} = ${i};`).join('\n');
+  for (let i = 0; i < 3; i++) await writeFile(join(root, `src/large${i}.ts`), padding + '\n' + (i === 2
+    ? "export function classes(active) { return ['px-[10px]', active ? 'gap-[10px]' : 'gap-[10px]'].join(' '); }"
+    : `export { classes } from './large${i + 1}';`));
+  const source = `import { classes } from './large0'; export function App({ active }) { return <div id="cold" className={classes(active)}/>; }`;
+  await writeFile(join(root, 'src/App.tsx'), source);
+  const api = await session(t, root), at = location(source, 'cold');
+  const token = 'determinism-test', handler = createWebHandler(api, { token });
+  const query = new URLSearchParams({ file: 'src/App.tsx', line: String(at.line), column: String(at.column), classes: 'px-[10px] gap-[10px] external-only' });
+  const read = async () => {
+    const response = await handler(new Request(`http://localhost/__plumb/classes?${query}`, { headers: { 'x-plumb-token': token } }));
+    assert.equal(response.status, 200); return response.json();
+  };
+  const initialEdits = await handler(new Request('http://localhost/__plumb/edits?file=src/App.tsx&line=1&column=1', { headers: { 'x-plumb-token': token } }));
+  assert.equal(initialEdits.status, 200);
+  assert.equal((await initialEdits.json()).hash, createHash('sha256').update(source).digest('hex'));
+  const first = await read();
+  assert.deepEqual(first.limited, []); assert.deepEqual(first.limits, []);
+  assert.deepEqual(first.unattributed, ['external-only']);
+  assert.equal(entry(first, 'px-[10px]').ambiguous, false);
+  assert.equal(entry(first, 'gap-[10px]').ambiguous, true);
+  const helperHash = createHash('sha256').update(await readFile(join(root, 'src/large2.ts'), 'utf8')).digest('hex');
+  for (const item of first.classes) for (const site of item.sites) assert.equal(site.hash, helperHash);
+  for (let i = 1; i < 10; i++) assert.deepEqual(await read(), first, `read ${i + 1} matches cold first read`);
+  for (const file of ['src/App.tsx', 'src/large2.ts']) {
+    const text = await readFile(join(root, file), 'utf8');
+    const expected = createHash('sha256').update(text).digest('hex');
+    const result = await api.edits(file, 1, 1);
+    assert.equal(result.hash, expected, 'tracked site carries hash even when it has no edits');
+    assert.deepEqual(await api.edits(file, 1, 1), result);
+  }
+  const literal = entry(first, 'px-[10px]').sites[0];
+  await onlyLiteral(api, root, literal, 'px-[10px]');
+});
+
+test('operation limit places affected HTTP classes in limited, identically on cold and warm reads', async t => {
+  const root = await fixture(t);
+  const values = ["'gap-[10px]'", ...Array(21000).fill('false'), "'p-[10px]'"].join(',');
+  const source = `export function App() { return <div id="operations" className={[${values}].join(' ')}/>; }`;
+  await writeFile(join(root, 'src/App.tsx'), source);
+  const api = await session(t, root), at = location(source, 'operations'), token = 'limits-test';
+  const handler = createWebHandler(api, { token });
+  const query = new URLSearchParams({ file: 'src/App.tsx', line: String(at.line), column: String(at.column), classes: 'gap-[10px] p-[10px] external-only' });
+  const read = async () => {
+    const response = await handler(new Request(`http://localhost/__plumb/classes?${query}`, { headers: { 'x-plumb-token': token } }));
+    assert.equal(response.status, 200); return response.json();
+  };
+  const first = await read();
+  assert.deepEqual(first.limits, ['operations']);
+  assert.deepEqual(first.limited, ['gap-[10px]', 'p-[10px]', 'external-only']);
+  assert.deepEqual(first.classes, []); assert.deepEqual(first.unattributed, []);
+  assert.deepEqual(await read(), first);
 });

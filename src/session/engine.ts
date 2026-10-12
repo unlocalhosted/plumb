@@ -12,6 +12,7 @@ import { errorMessage, UsageError } from '../errors.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
+import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, sourcePaths } from './source-location.js';
 
@@ -25,8 +26,10 @@ export interface ClassesResult {
   revision: number; file: string; line: number; column: number;
   classes: { token: string; ambiguous: boolean; sites: (SiteResult & { column: number; hash: string; edits: StructuredEdit[] })[] }[];
   unattributed: string[];
-  /** A safety limit stopped traversal; unproven tokens remain unattributed. */
-  limited: boolean;
+  /** Rendered tokens whose attribution is incomplete because a hard limit stopped tracing. */
+  limited: string[];
+  /** Hard limits encountered during this trace; never includes elapsed time. */
+  limits: ClassTraceLimit[];
 }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }

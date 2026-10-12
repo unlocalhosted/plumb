@@ -55,10 +55,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 createRoot(document.getElementById('root')).render(<App />);
 `);
-  const server = await createServer({ root: servedRoot, configFile: false, plugins: [plumb({ root, watch: false })],
+  const server = await createServer({ root: servedRoot, cacheDir: join(servedRoot, '.vite-cache'), configFile: false, plugins: [plumb({ root, watch: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } },
     optimizeDeps: { noDiscovery: true, include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'] },
-    logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    // No hot reload here. Without a watcher, macOS's late report of the fixture's own writes (fs.watch delivers a
+    // modification made just before a file is watched) cannot reload the page mid-test.
+    logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   return { url: `http://127.0.0.1:${server.httpServer.address().port}`, headers: {} };
 }
