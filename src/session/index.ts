@@ -6,6 +6,8 @@ import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyResult, SourceResolution } from './engine.js';
 
 type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'classes' | 'apply' | 'decisions' | 'why' | 'try' | 'refresh';
+export type ReadMethod = Exclude<Method, 'apply' | 'try' | 'refresh'>;
+export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
 export class Session extends EventEmitter {
@@ -58,24 +60,31 @@ export class Session extends EventEmitter {
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(error); }
     this.pending.clear();
   }
-  private call<M extends Method>(method: M, args: Parameters<Engine[M]>): ReturnType<Engine[M]> {
-    if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.')) as ReturnType<Engine[M]>;
+  private call<M extends Method>(method: M, args: Parameters<Engine[M]>): ReturnType<Engine[M]>;
+  private call<M extends ReadMethod>(method: M, args: Parameters<Engine[M]>, json: true): Promise<string>;
+  private call<M extends Method>(method: M, args: Parameters<Engine[M]>, json = false): Promise<unknown> {
+    if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
-    if (this.pending.size >= 512) return Promise.reject(new BusyError()) as ReturnType<Engine[M]>;
+    if (this.pending.size >= 512) return Promise.reject(new BusyError());
     const id = ++this.id, deadline = ['apply', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
-      this.worker.postMessage({ id, method, args, deadline });
+      this.worker.postMessage({ id, method, args, deadline, json });
     });
-    return promise as ReturnType<Engine[M]>;
+    return promise;
+  }
+  /** HTTP bodies are serialized in the coordinator, never cloned as object graphs onto the host. */
+  readJSON<M extends ReadMethod>(method: M, args: Parameters<Engine[M]>): Promise<string> {
+    if (method === 'classes') this.validateClasses(args as Parameters<Engine['classes']>);
+    return this.call(method, args, true);
   }
   private optionsBudget: number | undefined;
   report(...args: Parameters<Engine['report']>) { return this.call('report', args); }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   edits(...args: Parameters<Engine['edits']>) { return this.call('edits', args); }
-  classes(...args: Parameters<Engine['classes']>) {
+  private validateClasses(args: Parameters<Engine['classes']>): void {
     // Preserve synchronous argument errors without filesystem or analysis work.
     const [file, line, column, classes] = args;
     if (typeof classes !== 'string' || classes.length > 65536) throw new UsageError('classes must be a string of at most 65536 characters.');
@@ -83,8 +92,8 @@ export class Session extends EventEmitter {
     const inside = relative(this.root, resolve(this.root, file));
     if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
     for (const value of [line, column]) if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.');
-    return this.call('classes', args);
   }
+  classes(...args: Parameters<Engine['classes']>) { this.validateClasses(args); return this.call('classes', args); }
   apply(...args: Parameters<Engine['apply']>) { return this.call('apply', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }

@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import { cp, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
+import { fork } from 'node:child_process';
+import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Session } from '../dist/session/index.js';
 import { createHandler, createWebHandler } from '../dist/session/server.js';
@@ -50,6 +52,81 @@ test('1000-file Session: 300 overlapping reads share reconciliation and leave he
   assert.ok((await session.health()).work.reconciliations - reconciliations <= 2, 'burst uses at most two overlapping cohorts, not 300 reconciliations');
   assert.ok(performance.now() - start < 5000, `burst took ${performance.now() - start}ms`);
   assert.ok((await session.site('src/bulk/File999.tsx', 1)).declarations.some(d => d.value === '17px'));
+});
+
+test('HTTP: health stays under 100ms during 300 large site/edits reads, preserving Node/Web JSON bytes', { timeout: 60000 }, async t => {
+  const root = await fixture(t);
+  const classes = Array.from({ length: 128 }, (_, i) => `gap-[${(13 + i / 1000).toFixed(3)}px]`).join(' ');
+  await writeFile(join(root, 'src/bulk/Large.tsx'), `export const Large = () => (\n<div className="${classes}" />\n);`);
+  const child = fork(new URL('./helpers/session-http-host.mjs', import.meta.url), [root], { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  let errors = '', id = 0;
+  child.stderr.on('data', chunk => { errors += chunk; });
+  const pending = new Map();
+  const ready = new Promise((resolve, reject) => {
+    child.on('message', message => {
+      if (message.ready) resolve(message.origin);
+      else {
+        const call = pending.get(message.id); pending.delete(message.id);
+        if (message.error) call?.reject(new Error(message.error)); else call?.resolve(message.result);
+      }
+    });
+    child.on('error', reject);
+    child.on('exit', code => {
+      const error = new Error(`HTTP host exited (${code}): ${errors}`);
+      reject(error); for (const call of pending.values()) call.reject(error); pending.clear();
+    });
+  });
+  const command = (type, values = {}) => new Promise((resolve, reject) => {
+    const request = ++id; pending.set(request, { resolve, reject }); child.send({ id: request, type, ...values });
+  });
+  t.after(async () => {
+    if (child.exitCode === null && child.signalCode === null) { const exited = once(child, 'exit'); child.send({ type: 'close' }); await exited; }
+    assert.equal(errors, '');
+  });
+  const origin = await ready;
+  const queries = ['site', 'edits'].map(method => ({ method, args: ['src/bulk/Large.tsx', 2, 1],
+    route: `/__plumb/${method}?file=src/bulk/Large.tsx&line=2&column=1` }));
+  queries.push(
+    { method: 'classes', args: ['src/bulk/Large.tsx', 2, 1, 'gap-[13.000px]'], route: '/__plumb/classes?file=src/bulk/Large.tsx&line=2&column=1&classes=gap-[13.000px]' },
+    { method: 'resolveSource', args: ['src/bulk/Large.tsx', 2, 1], route: '/__plumb/resolve?source=src/bulk/Large.tsx&line=2&column=1' },
+    { method: 'report', args: [], route: '/__plumb/report' },
+    { method: 'decisions', args: [], route: '/__plumb/decisions' },
+    { method: 'why', args: ['src/bulk/Large.tsx', 2], route: '/__plumb/why?file=src/bulk/Large.tsx&line=2' },
+  );
+  const baseline = await command('baseline', { queries });
+  for (const [i, result] of baseline.entries()) {
+    if (i < 2) {
+      assert.equal(result.object, true, 'programmatic Session reads still return objects');
+      assert.ok(Buffer.byteLength(result.body) > 65536, 'each burst read carries at least 64 KiB');
+    }
+    assert.equal(result.web, result.body, 'Web response matches programmatic JSON byte for byte');
+    const response = await fetch(origin + queries[i].route);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), result.body, 'Node response matches programmatic JSON byte for byte');
+  }
+  await fetch(origin + '/__plumb/health').then(response => response.text());
+  if (process.env.PLUMB_BURST_PROFILE) await command('profile-start');
+  let settled = 0;
+  const burst = Promise.all(Array.from({ length: 300 }, (_, i) => fetch(origin + queries[i % 2].route)
+    .then(async response => {
+      assert.equal(response.status, 200);
+      assert.equal(await response.text(), baseline[i % 2].body);
+    }).finally(() => { settled++; })));
+  // Attach rejection handler while probes run; still await the complete burst below.
+  burst.catch(() => {});
+  const probes = [];
+  for (let i = 0; i < 3; i++) {
+    const outstanding = 300 - settled, start = performance.now();
+    const response = await fetch(origin + '/__plumb/health'), body = await response.json();
+    assert.equal(response.status, 200); assert.equal(body.status, 'ready');
+    probes.push({ ms: performance.now() - start, outstanding });
+    if (i < 2) await delay(5);
+  }
+  await burst;
+  if (process.env.PLUMB_BURST_PROFILE) await command('profile-stop', { path: process.env.PLUMB_BURST_PROFILE });
+  t.diagnostic(JSON.stringify({ bytes: baseline.slice(0, 2).map(result => Buffer.byteLength(result.body)), probes }));
+  assert.ok(probes.every(probe => probe.outstanding > 0), 'all health probes overlap reads');
+  for (const probe of probes) assert.ok(probe.ms < 100, `health blocked ${probe.ms.toFixed(2)}ms with ${probe.outstanding} reads outstanding`);
 });
 
 test('expired read admission returns busy on Node and Web routes, while health bypasses admission', async t => {
