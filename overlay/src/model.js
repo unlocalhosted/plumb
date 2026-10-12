@@ -31,6 +31,14 @@ const short = (name, family) => {
   return prefix ? bare.slice(prefix.length + 1) : bare;
 };
 
+// A grouped finding's accept command names its first site anywhere in the project; a mark's command names the mark,
+// by the project-relative path the reading was located at.
+const ownAccept = (text, s, location) => {
+  if (typeof text !== 'string' || !s.file) return text;
+  const file = location?.file && (s.file === location.file || s.file.endsWith('/' + location.file)) ? location.file : s.file;
+  return text.replace(/--site \S+:\d+/, `--site ${file}:${s.line}`);
+};
+
 export function reading(location, site, edits) {
   const marks = [], notes = [], byKey = new Map();
   const editsAt = new Map();
@@ -61,7 +69,7 @@ export function reading(location, site, edits) {
         glyph: glyphFor(finding), family: finding.family, rule: finding.rule, soft: soft(finding),
         // A grouped finding's title names its first site; each mark names its own.
         title: s === first ? finding.title : finding.title.replace('`' + first.text + '`', '`' + s.text + '`'),
-        because: finding.because, action: finding.action ?? finding.fix, accept: finding.accept,
+        because: finding.because, action: finding.action ?? finding.fix, accept: ownAccept(finding.accept, s, location),
         ledger: s.ledger?.status ?? 'new',
         choices,
         // The engine never picks between two tokens that fit equally; neither does the overlay.

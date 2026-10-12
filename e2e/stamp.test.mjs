@@ -95,7 +95,11 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
   await t.test('host stamp overrides spreads; fiber props prove location despite DOM tampering', async () => {
     assert.equal(await page.getAttribute('#host', 'data-plumb-source'), stampAt('<button id="host"'));
     const expected = { file, ...position(source, '<button id="host"') };
-    const first = await page.$eval('#host', element => window.__plumb.locate(element));
+    // The stamp answers at once; the chain above it, for Alt+↑/↓, is asked for separately.
+    const quick = await page.$eval('#host', element => window.__plumb.locate(element));
+    assert.deepEqual({ file: quick.file, line: quick.line, column: quick.column }, expected);
+    assert.equal(quick.via, 'stamp'); assert.equal(quick.partial, true); assert.equal(quick.component, 'App');
+    const first = await page.$eval('#host', element => window.__plumb.locate(element, { chain: true }));
     assert.deepEqual({ file: first.file, line: first.line, column: first.column }, expected);
     assert.equal(first.via, 'stamp'); assert.equal(first.index, 0);
     const fallback = await page.$eval('#host', async element => {
@@ -105,7 +109,7 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
     });
     assert.deepEqual(first.chain, fallback.chain, 'owner chain retained for navigation');
     await page.$eval('#host', element => element.setAttribute('data-plumb-source', 'forged'));
-    assert.deepEqual(await page.$eval('#host', element => window.__plumb.locate(element)), first);
+    assert.deepEqual(await page.$eval('#host', element => window.__plumb.locate(element, { chain: true })), first);
     assert.deepEqual(await resolve(proof), { ...expected, hash: hash(source) });
     const noMaps = await page.$eval('#host', async element => {
       const fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];

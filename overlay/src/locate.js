@@ -154,6 +154,13 @@ export async function locate(element, options = {}) {
   }
   // Owner-stack behavior remains the fallback and the navigation chain. A
   // forwarded component stamp describes usage, never a new default target.
+  // A confirmed host stamp is the answer. The chain above it (for Alt+↑/↓) comes from the owner stack, which costs a few
+  // hundred milliseconds; the overlay asks for it after the reading is up, with { chain: true }.
+  if (confirmed && !confirmed.usage && !options.chain && !options.signal?.aborted) {
+    // The component whose JSX this is: the host's owner, read from React, no stack needed.
+    const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: nameOf(fiber._debugOwner) };
+    return { ...at, tag: element.localName, via: 'stamp', chain: [at], index: 0, partial: true };
+  }
   const owner = await locateOwner(element, options);
   if (!confirmed && !match && fiber && (!owner || owner.location === null) && !options.signal?.aborted) {
     // A host a library drew (an icon's <path>, a primitive's inner <div>) carries no stamp of its own. The component that

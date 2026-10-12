@@ -10,9 +10,14 @@
  *  Write       edits go to source; the preview is lifted as the dev server reloads the real classes
  *  Esc         the reading closes; any unwritten preview is lifted
  *  starting    while Plumb reads the project for the first time, the tag and reading say so and ask again each second
+ *  dock        bottom right, always: the mark and one line say what Plumb is doing; Select arms the reticle without Alt
+ *    enter     fades up 4px over the card duration once the page has drawn
+ *    starting  the mark breathes (opacity only); after 3s the line counts the seconds
+ *    ready     "Plumb · Alt to inspect", said once to assistive tech; after 4s the line folds away, back on hover or focus
+ *    select    Select pressed or Alt held: the mark takes the instrument colour and the line says how to leave
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
-const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160 };
+const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000 };
 
 import { locate } from './locate.js';
 import { request, post } from './api.js';
@@ -58,6 +63,33 @@ const css = `
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   code { font: var(--pl-text-reading); }
+
+  /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
+  .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
+          display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
+          background: var(--pl-paper); color: var(--pl-ink-2); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
+          font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
+          transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
+  .dock[data-enter] { opacity: 0; transform: translateY(4px); }
+  .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-ink-2); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
+  .dock .bob svg { width: 12px; height: 14px; }
+  .dock .say { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
+  .dock .say .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-3); }
+  .dock[data-fold] .say { display: none; }
+  @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
+  .dock[data-fold]:focus-within .say { display: inline; }
+  .dock .pick { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock .pick svg { width: 12px; height: 12px; }
+  .dock .pick:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .dock .pick:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .dock .pick[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .dock .pick:disabled { color: var(--pl-ink-3); cursor: default; }
+  .dock[data-state="starting"] .bob { animation: pl-breathe 1.6s ease-in-out infinite; }
+  .dock[data-state="select"] .bob { color: var(--pl-instrument); }
+  .dock[data-state="failed"] .bob, .dock[data-state="failed"] .say { color: var(--pl-off); }
+  .dock[data-state="lost"] { opacity: 0.72; }
+  @keyframes pl-breathe { 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .dock[data-state="starting"] .bob { animation: none; } }
 
   /* the reticle: four corner arms that travel to the element under the pointer */
   .tick { position: fixed; left: 0; top: 0; width: var(--pl-tick); height: var(--pl-tick); transition: transform var(--pl-dur-travel) var(--pl-spring); }
@@ -224,11 +256,13 @@ const css = `
 const ICON = {
   prev: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
   next: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6 4.5 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
+  bob: '<svg viewBox="0 0 12 14" aria-hidden="true"><path d="M6 .5v4" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5 9.25 8.75 6 13.5 2.75 8.75Z" fill="currentColor"/></svg>',
+  pick: '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.25" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 .5v2.25M6 9.25v2.25M.5 6h2.25M9.25 6h2.25" stroke="currentColor" stroke-width="1.2"/></svg>',
   close: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>',
 };
 
 class PlumbOverlay extends HTMLElement {
-  #root; #cache = new WeakMap(); #armed = false; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null;
+  #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null;
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
@@ -236,7 +270,14 @@ class PlumbOverlay extends HTMLElement {
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
-      <section class="w" hidden></section>`;
+      <section class="w" hidden></section>
+      <div class="dock" role="toolbar" aria-label="Plumb" data-state="starting" data-enter>
+        <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
+        <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
+      </div>`;
+    this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
+    requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
+    this.#poll();
     addEventListener('keydown', this.#onKeyDown, true);
     addEventListener('keyup', this.#onKeyUp, true);
     addEventListener('blur', this.#disarm);
@@ -263,7 +304,44 @@ class PlumbOverlay extends HTMLElement {
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
     removeEventListener('blur', this.#disarm);
+    clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
   }
+
+  // ── the dock: what Plumb is doing ─────────────────────────
+  // Health never queues behind reads, so asking is cheap: every second while starting or unreachable, then every ten.
+  async #poll() {
+    let next = this.#health;
+    try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
+    catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
+    if (!this.isConnected) return;
+    this.#health = next; this.#dock();
+    this.#healthTimer = setTimeout(() => this.#poll(), next === 'ready' || next === 'failed' ? TIMING.healthReady : TIMING.healthStarting);
+  }
+  #reason = '';
+  #dock() {
+    const dock = this.#$('.dock'); if (!dock) return;
+    const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
+    const selecting = this.#armed && this.#health !== 'failed';
+    const state = selecting ? 'select' : this.#health;
+    const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
+    const text = {
+      select: 'Pick an element · Esc',
+      starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
+      failed: 'Plumb couldn’t start',
+      lost: 'Reconnecting…',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : 'Plumb · Alt to inspect',
+    }[state];
+    if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
+    dock.title = state === 'failed' ? this.#reason : '';
+    pick.disabled = state === 'failed' || state === 'lost';
+    pick.setAttribute('aria-pressed', String(selecting));
+    // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
+    // reading keeps its file on show.
+    if (state === 'ready' && !this.#readyAt) { this.#readyAt = performance.now(); this.#foldTimer = setTimeout(() => this.#dock(), TIMING.dockFold); }
+    dock.toggleAttribute('data-fold', state === 'ready' && !this.#pinned && performance.now() - this.#readyAt >= TIMING.dockFold);
+    if (state === 'starting') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
+  }
+  #countTimer = 0;
 
   // ── reading an element ────────────────────────────────────
   // One read per element until something is written; the hover tag and the pinned reading share it.
@@ -356,21 +434,24 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
+    else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
   };
-  #onKeyUp = event => { if (event.key === 'Alt') this.#disarm(); };
+  // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
+  #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
 
-  #arm() {
-    if (this.#armed) return;
-    this.#armed = true;
+  #arm(sticky = false) {
+    if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
+    this.#armed = true; this.#sticky = sticky;
     addEventListener('pointermove', this.#onMove, true);
     addEventListener('click', this.#onClick, true);
     addEventListener('pointerdown', this.#swallow, true);
     document.documentElement.style.setProperty('cursor', 'crosshair', 'important');
+    this.#dock();
   }
   #disarm = () => {
     if (!this.#armed) return;
-    this.#armed = false; clearTimeout(this.#hoverTimer);
+    this.#armed = false; this.#sticky = false; clearTimeout(this.#hoverTimer);
     this.#hover?.controller.abort();
     removeEventListener('pointermove', this.#onMove, true);
     removeEventListener('click', this.#onClick, true);
@@ -380,6 +461,7 @@ class PlumbOverlay extends HTMLElement {
     this.#showReticle(this.#pinned?.element ?? null);
     this.#$('.tag').hidden = true;
     this.#follow();
+    this.#dock();
   };
   #swallow = event => { if (this.#armed && !this.#ours(event)) { event.preventDefault(); event.stopPropagation(); } };
   #ours = event => event.composedPath().includes(this);
@@ -409,7 +491,11 @@ class PlumbOverlay extends HTMLElement {
     event.preventDefault(); event.stopPropagation();
     // The click's own point decides, not the last hover: a pointer can arrive without moving first.
     const element = document.elementFromPoint(event.clientX, event.clientY) ?? this.#hover?.element;
-    if (element && element !== document.documentElement && element !== document.body) this.pin(element);
+    if (element && element !== document.documentElement && element !== document.body) {
+      // Select picks one element: the pick ends it, as letting go of Alt would.
+      if (this.#sticky) this.#disarm();
+      this.pin(element).then(() => this.#dock());
+    }
   };
 
   #renderTag(element, state) {
@@ -492,6 +578,14 @@ class PlumbOverlay extends HTMLElement {
     if (this.#pinned !== p) return;
     this.#renderWidget(true);
     this.#follow();
+    // The reading opened on its stamp alone; the components above it arrive after, for the chain row and Alt+↑/↓.
+    if (p.state.location?.partial) locate(element, { chain: true }).then(full => {
+      if (this.#pinned !== p || !full?.chain || p.state.index !== 0) return;
+      const at = full.chain.findIndex(link => link.file === p.state.file && link.line === p.state.line && link.column === p.state.column);
+      if (at < 0) return;
+      p.state.chain = full.chain; p.state.index = at; p.state.location = { ...p.state.location, partial: false };
+      this.#renderWidget();
+    }).catch(() => {});
     // Pinned during Plumb's first read: say so, and fill the reading in as soon as the project is read.
     while (this.#pinned === p && p.state.status === 'starting') {
       await new Promise(r => setTimeout(r, TIMING.starting));
@@ -509,6 +603,7 @@ class PlumbOverlay extends HTMLElement {
     this.#pinned = null;
     this.#$('.w').hidden = true;
     this.#$('.lit').classList.remove('on');
+    this.#dock();
     if (!this.#armed) this.#showReticle(null);
     if (this.#focusBack?.isConnected) this.#focusBack.focus?.({ preventScroll: true });
   }
