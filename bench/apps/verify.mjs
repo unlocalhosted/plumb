@@ -353,6 +353,9 @@ async function waitForIdle(page) {
   }));
 }
 
+// Sampling is serial: per element a locate, react-grab's lookup and a read. The budget scales with the sample (2 s an
+// element, at least 240 s for a full one) so a slower app is measured, not cut off; locate speed has its own limit.
+const samplingBudget = count => Math.max(240_000, 2_000 * (count ?? 150) + 60_000);
 async function sample(page, fresh = false, ids = null, mode = 'full') {
   // Keep node references. A replaced node or changed rendered subtree invalidates the paired reads.
   return bounded(page.evaluate(async ({ fresh, ids, mode }) => {
@@ -391,7 +394,7 @@ async function sample(page, fresh = false, ids = null, mode = 'full') {
       } finally { observer.disconnect(); }
     }
     return rows;
-  }, { fresh, ids, mode }), 'Element sampling', 240_000);
+  }, { fresh, ids, mode }), 'Element sampling', samplingBudget(ids?.length ?? null));
 }
 
 async function verifyLocation(origin, location) {
@@ -512,7 +515,7 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
   return { counts, grabOnly: misses, disagreements, serverChecks: verifications, computedLevels: computed };
 }
 
-async function measureReads(origin, rows) {
+async function measureReads(origin, rows, page) {
   const latency = [], readings = rows.filter(row => row.location);
   for (const row of readings) {
     const params = { file: row.location.file, line: row.location.line, column: row.location.column };
@@ -533,7 +536,16 @@ async function measureReads(origin, rows) {
   const burst = Promise.allSettled(requests.map(request => get(origin, request.route, request.params)
     .finally(() => { settled++; })));
   const health = [], serving = [];
-  const probe = route => get(origin, route).catch(error => ({ ok: false, status: null, body: null, error: message(error) }));
+  // Health is probed from the page, as the overlay polls it: a probe from this process would also time this process
+  // dispatching its own 300 requests ahead of it, which says nothing about the server.
+  const probe = route => page.evaluate(async route => {
+    const start = performance.now();
+    try {
+      const response = await fetch(route, { cache: 'no-store' }), text = await response.text();
+      let body; try { body = JSON.parse(text); } catch { body = text; }
+      return { status: response.status, ok: response.ok, ms: performance.now() - start, body: route === '/' ? null : body };
+    } catch (error) { return { ok: false, status: null, body: null, ms: performance.now() - start, error: String(error) }; }
+  }, route);
   // Probe immediately after dispatch, then twice more; retain observed overlap rather than assuming it.
   for (let i = 0; i < 3; i++) {
     const outstanding = 300 - settled;
@@ -837,7 +849,9 @@ async function verifyApp(browser, app, scratch) {
           if (!verified.verified) record.failures.push(`Invalidated location failed server check: ${link.file}:${link.line}`);
         }
         record.performance = { locateMs: distribution([...first, ...second].map(row => row.locateMs)),
-          overlayReadMs: distribution([...first, ...second].map(row => row.readMs)), ...await measureReads(host.origin, first) };
+          overlayReadMs: distribution([...first, ...second].map(row => row.readMs)), ...await measureReads(host.origin, first, page) };
+        // Pointing at an element must answer within a second for most elements.
+        if (record.performance.locateMs.p95 >= 1000) record.failures.push(`Locate p95 ${Math.round(record.performance.locateMs.p95)} ms >= 1000 ms`);
         const burst = record.performance.burst;
         if (!burst.overlapped) record.failures.push('Health probe did not overlap read burst');
         if (burst.health.some(probe => !probe.ok || probe.body.status !== 'ready' || probe.ms >= 100)) record.failures.push('Health under burst failed or took >= 100 ms');
