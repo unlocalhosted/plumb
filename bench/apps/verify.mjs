@@ -159,15 +159,39 @@ async function flattenPlugins(options) {
 
 // Shared by the programmatic host and the generated CLI config. Keep the app's
 // already-loaded plugin instances: require.resolve() uses CommonJS export conditions.
+async function freshRouteTree(app, scratch, require) {
+  const tree = join(app.app, 'src/routeTree.gen.ts');
+  try { execFileSync('git', ['-C', app.app, 'ls-files', '--error-unmatch', tree], { stdio: 'ignore' }); return null; } catch {}
+  const generatorPath = createRequire(require.resolve('@tanstack/router-plugin/vite')).resolve('@tanstack/router-generator');
+  const { Generator, getConfig } = await import(pathToFileURL(generatorPath).href);
+  const out = join(scratch, 'routeTree.gen.ts');
+  const config = getConfig({ target: 'react', routesDirectory: join(app.app, 'src/routes'), generatedRouteTree: out }, app.app);
+  await new Generator({ config, root: app.app }).run();
+  return { tree, out };
+}
+
 export async function withVerification(own, app, scratch, configFile) {
   const require = createRequire(join(app.app, 'package.json'));
   const vite = await import(pathToFileURL(require.resolve('vite')).href);
   const adaptations = [];
+  let generator = false;
   own = { ...own, plugins: (await flattenPlugins(own.plugins)).filter(plugin => {
     if (plugin.name !== 'tanstack:router-generator') return true;
-    adaptations.push('Disabled TanStack route generation; uses existing route tree, retains route transforms.');
+    generator = true;
     return false;
   }) };
+  // TanStack's generator would rewrite the app's route tree. A tracked tree is the app's source: serve it as is. An
+  // untracked one is a build output that goes stale as routes change (Kamui), so generate a current one in scratch with
+  // the app's own generator and point the app's import there; the app's file is never written.
+  const routeTree = generator ? await freshRouteTree(app, scratch, require) : null;
+  if (generator) adaptations.push(routeTree
+    ? 'TanStack route tree generated into scratch (the app\'s is untracked and stale); route transforms retained.'
+    : 'Disabled TanStack route generation; uses the tracked route tree, retains route transforms.');
+  if (routeTree) own.plugins.unshift({ name: 'verification:route-tree', enforce: 'pre', async resolveId(source, importer, options) {
+    if (!importer || !/routeTree\.gen/.test(source)) return null;
+    const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+    return resolved?.id.split('?')[0] === routeTree.tree ? routeTree.out : null;
+  } });
   if (app.depsInProject) adaptations.push('Vite dependency cache inside the project (node_modules/.vite-plumb-verify): a cache outside breaks its CommonJS interop.');
   const grab = await fsp.readFile(grabFile, 'utf8');
   const { Session } = await import(pathToFileURL(join(repo, 'dist/session/index.js')).href);
@@ -209,7 +233,8 @@ export async function withVerification(own, app, scratch, configFile) {
   return vite.mergeConfig(own, {
     configFile: false, root: own.root ?? app.app, cacheDir: depsCache(app, scratch), logLevel: 'warn',
     plugins: baseline ? [bridge] : [oracle, plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }), bridge],
-    server: { host: '127.0.0.1', port: 0, strictPort: false, open: false },
+    server: { host: '127.0.0.1', port: 0, strictPort: false, open: false,
+      ...(routeTree ? { fs: { allow: [vite.searchForWorkspaceRoot(app.app), scratch, ...(own.server?.fs?.allow ?? [])] } } : {}) },
   });
 }
 
