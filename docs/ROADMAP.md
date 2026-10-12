@@ -178,7 +178,7 @@ A dev-only overlay, installed like react-grab (`@unlocalhosted/plumb/vite` plugi
 4. the computed value for each judged property, so the cascade Plumb cannot compute statically is visible here ("computed gap 10px, declared by `.library-row` at library.css:120");
 5. one button: Copy for agent. And, when the MCP server is running, an element reference the agent can fetch itself.
 
-It is not a style editor and not a visual-regression tool. It shows the judgement at the place where the person noticed the problem.
+It is not a visual-regression tool. It shows the judgement at the place where the person noticed the problem. (Superseded in part, 2026-10-12: the overlay becomes a live editor, layer by layer. See [VISION.md](VISION.md).)
 
 ### 3.2 Mapping a DOM element back to Plumb's sites
 
