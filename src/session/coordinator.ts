@@ -2,7 +2,7 @@ import { parentPort, workerData } from 'node:worker_threads';
 import { Session } from './engine.js';
 import { errorMessage, UsageError } from '../errors.js';
 
-interface Call { id: number; method: string; args: unknown[]; deadline: number }
+interface Call { id: number; method: string; args: unknown[]; deadline: number; json?: boolean }
 const port = parentPort!;
 const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
 const queue: Call[] = [];
@@ -19,7 +19,7 @@ try {
     try {
       const method = session[call.method as keyof Session] as (...args: unknown[]) => Promise<unknown>;
       const result = await method.apply(session, call.args);
-      port.postMessage({ id: call.id, result, ...await snapshot() });
+      port.postMessage({ id: call.id, result: call.json ? JSON.stringify(result) : result, ...await snapshot() });
     } catch (error) { port.postMessage({ id: call.id, error: errorMessage(error), ...errorDetails(error), ...await snapshot() }); }
   }
   async function drain() {

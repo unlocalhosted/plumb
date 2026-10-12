@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
-import type { SessionOptions } from './index.js';
+import type { ReadArgs, ReadMethod, SessionOptions } from './index.js';
 import type { CheckOptions } from '../index.js';
 import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
@@ -40,8 +40,13 @@ function position(params: Record<string, unknown>, name: string, optional = fals
   return n;
 }
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot'> = {}): Promise<unknown> {
+  return dispatchRequest(session, method, raw, options, false);
+}
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
+  const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
+    json ? session.readJSON(method, args) : Reflect.apply(session[method], session, args);
   if (method === 'report') {
     const options: Pick<CheckOptions, 'base' | 'changed' | 'strictLedger' | 'verbose' | 'ledger'> = {};
     if (params.base !== undefined) options.base = text(params, 'base')!;
@@ -50,21 +55,21 @@ export async function dispatch(session: Session, method: string, raw: unknown = 
       if (typeof value !== 'boolean') throw new UsageError(`${key} must be a boolean.`);
       options[key] = value;
     }
-    return session.report(options);
+    return read('report', [options]);
   }
-  if (method === 'site') return session.site(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
+  if (method === 'site') return read('site', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'classes') {
     if (typeof params.classes !== 'string') throw new UsageError('classes must be a string.');
-    return session.classes(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes);
+    return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
-  if (method === 'resolve') return session.resolveSource(text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1' });
-  if (method === 'edits') return session.edits(text(params, 'file')!, position(params, 'line')!, position(params, 'column', true));
+  if (method === 'resolve') return read('resolveSource', [text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1' }]);
+  if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
     return session.apply({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: params.edits.map(edit => ({ id: edit.id as string })) });
   }
-  if (method === 'why') return session.why(text(params, 'file')!, position(params, 'line')!);
-  if (method === 'decisions') return session.decisions();
+  if (method === 'why') return read('why', [text(params, 'file')!, position(params, 'line')!]);
+  if (method === 'decisions') return read('decisions', []);
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
   if (method === 'try') {
@@ -176,7 +181,9 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      return respond(200, await dispatch(current, method, params, options));
+      const json = !['apply', 'try', 'health', 'refresh'].includes(method);
+      const result = await dispatchRequest(current, method, params, options, json);
+      return json ? { status: 200, headers, body: result as string } : respond(200, result);
     } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
   };
 }
