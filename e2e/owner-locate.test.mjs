@@ -9,6 +9,13 @@ import { createServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { plumb } from '@unlocalhosted/plumb/vite';
 
+// These regressions deliberately exercise owner-stack locate without stamps.
+function unstamped(options) {
+  const plugin = plumb(options);
+  delete plugin.transform;
+  return plugin;
+}
+
 const repo = fileURLToPath(new URL('../', import.meta.url));
 export const source = `import React from 'react';
 import { createPortal } from 'react-dom';
@@ -110,7 +117,7 @@ createRoot(document.getElementById('root')).render(<App />);
 `);
   const aliases = version === 18 ? ['react', 'react-dom'].map(name => ({ find: new RegExp('^' + name + '(/.*)?$'), replacement: join(repo, 'fixtures/react18/node_modules', name) + '$1' })) : [];
   // Each fixture keeps its own dependency cache instead of sharing the repo's node_modules/.vite with every other.
-  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [...(transform === 'plugin-react' ? [react()] : []), plumb({ watch: false })],
+  server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false }), ...(transform === 'plugin-react' ? [react()] : [])],
     resolve: { alias: aliases }, oxc: { jsx: { runtime: 'automatic', development: true } },
     // Late discovery can rebuild common chunks and reload the document while
     // locate's worker is fetching a creation-stack map. Fix the dependency set.

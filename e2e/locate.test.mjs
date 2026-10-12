@@ -13,6 +13,13 @@ import { createServer } from 'vite';
 import { Session } from '../dist/session/index.js';
 import { plumb } from '@unlocalhosted/plumb/vite';
 
+// These regressions deliberately exercise owner-stack locate without stamps.
+function unstamped(options) {
+  const plugin = plumb(options);
+  delete plugin.transform;
+  return plugin;
+}
+
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const source = `"use client";
 import React from 'react';
@@ -242,7 +249,7 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
   }
   await writeFile(join(root, 'index.html'), '<html><head></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
   await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';\nimport { createRoot } from 'react-dom/client';\nimport App from './App.jsx';\nconst root = createRoot(document.getElementById('root')); root.render(<App />);\nif (import.meta.hot) import.meta.hot.accept('./App.jsx', module => root.render(React.createElement(module.default)));\n`);
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
@@ -289,7 +296,7 @@ test('resolve validates tracked source identity and site queries select only exa
   await symlink(join(repo, 'src/index.ts'), join(root, 'src/escape.ts'));
   await mkdir(join(root, 'node_modules/local'), { recursive: true });
   await writeFile(join(root, 'node_modules/local/index.jsx'), 'export default () => <div />;');
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
   await ready(new URL(url).origin);
@@ -380,7 +387,7 @@ test('script maps resolve through real HTTP: inline data, relative URLs, sourceR
       response.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : 'application/json'); response.end(assets.get(name));
     });
   } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   await ready(url);
@@ -418,7 +425,7 @@ test('review 2: stable module/map URLs invalidate together and reject mismatched
       res.end(req.url.endsWith('.js') ? '//# sourceMappingURL=version.map' : JSON.stringify({ version: 3, sources: ['/src/Version.jsx'], sourcesContent: [content], names: [], mappings }));
     });
   } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   await ready(url);
@@ -469,7 +476,7 @@ test('Next stable chunks refresh eval indexes and maps through HTTP and compare 
       res.statusCode = 404; res.end('Missing script');
     });
   } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, plumb({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`, store = new SourceMapStore();
   await ready(url);

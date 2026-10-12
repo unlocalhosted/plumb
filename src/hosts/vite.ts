@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { Session } from '../session/index.js';
 import type { SessionOptions } from '../session/index.js';
 import { createHandler } from '../session/server.js';
+import { sourceStamping } from './source-stamping.js';
 
 interface Entry { session: Promise<Session>; owners: Set<symbol>; restarting: number }
 const key = Symbol.for('@unlocalhosted/plumb/vite/sessions');
@@ -21,8 +22,7 @@ export function plumb(options: SessionOptions = {}): Plugin {
   let restarts = 0;
   let release: (() => Promise<void>) | undefined;
   return {
-    name: 'plumb',
-    apply: 'serve',
+    ...sourceStamping(options),
     resolveId(id) {
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
     },

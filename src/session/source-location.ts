@@ -6,7 +6,13 @@ import { UsageError } from '../errors.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 
 /** Decode host spellings only. Membership and real-path checks belong to Session. */
-export function sourcePaths(root: string, source: string, servedRoot?: string): string[] {
+export function sourcePaths(root: string, source: string, servedRoot?: string, stamped = false): string[] {
+  // A stamp is an encoded project-relative path, not a bundler URL. Decode
+  // once, preserving literal colons, query/hash delimiters and percent signs.
+  if (stamped) {
+    try { return [resolve(root, decodeURIComponent(source))]; }
+    catch { throw new UsageError('Source must have valid URL encoding.'); }
+  }
   let path = source;
   const fileURL = path.startsWith('file://');
   let browserPath = false;

@@ -142,6 +142,35 @@ async function readFrames(fiber) {
 }
 
 export async function locate(element, options = {}) {
+  const fiber = element?.nodeType === 1 ? hostOf(element) : null;
+  const stamp = fiber?.memoizedProps?.['data-plumb-source'];
+  const match = typeof stamp === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(stamp);
+  let confirmed;
+  if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
+    try {
+      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true });
+      if (answer?.file && answer.line && answer.column) confirmed = answer;
+    } catch (error) { if (error?.starting || error?.failed) throw error; }
+  }
+  // Owner-stack behavior remains the fallback and the navigation chain. A
+  // forwarded component stamp describes usage, never a new default target.
+  const owner = await locateOwner(element, options);
+  if (!confirmed || options.signal?.aborted) return owner;
+  const chain = [...(owner?.chain ?? [])];
+  const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);
+  if (confirmed.usage) {
+    if (!owner?.chain) return owner;
+    if (index >= 0) chain[index] = { ...chain[index], usage: true };
+    else chain.push({ file: confirmed.file, line: confirmed.line, column: confirmed.column, component: confirmed.component, usage: true });
+    return { ...owner, chain };
+  }
+  const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: index >= 0 ? chain[index].component : null };
+  if (index >= 0) chain.splice(index, 1);
+  chain.unshift(at);
+  return { ...at, tag: element.localName, via: 'stamp', chain, index: 0 };
+}
+
+async function locateOwner(element, options = {}) {
   const considered = []; // explain: every frame asked about and the server's answer, attached to refusals
   const refuse = (reason, detail = {}) => options.explain ? { location: null, reason, detail: considered.length ? { ...detail, considered } : detail } : null;
   if (!element || element.nodeType !== 1) return refuse('no-fiber', { step: 'invalid-element' });

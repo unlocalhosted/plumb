@@ -62,7 +62,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     if (typeof params.classes !== 'string') throw new UsageError('classes must be a string.');
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
-  if (method === 'resolve') return read('resolveSource', [text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1' }]);
+  if (method === 'resolve') return read('resolveSource', [text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1', stamp: params.stamp === '1' }]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');

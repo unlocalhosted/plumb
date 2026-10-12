@@ -11,3 +11,5 @@ dist/
 /bench/metalui/layer4.decisions.json
 /fixtures/.cache-direct/
 *.tgz
+
+/fixtures/.verify-frozen/

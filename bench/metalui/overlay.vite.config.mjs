@@ -8,8 +8,9 @@ const metalui = '/Users/vijaysingh/unlocalhosted/metalui';
 const vite = await import(pathToFileURL(createRequire(metalui + '/package.json').resolve('vite')).href);
 const docs = await vite.loadConfigFromFile({ command: 'serve', mode: 'development' }, metalui + '/apps/docs/vite.config.ts', metalui + '/apps/docs');
 
-export default vite.mergeConfig(docs.config, {
+// plumb() goes first: it stamps JSX with its source position, so it must see the JSX before React's transform does.
+const own = { ...docs.config, plugins: [plumb({ root: metalui, config: new URL('./overlay.plumb.config.ts', import.meta.url).pathname }), ...(docs.config.plugins ?? [])] };
+export default vite.mergeConfig(own, {
   root: metalui + '/apps/docs',
-  plugins: [plumb({ root: metalui, config: new URL('./overlay.plumb.config.ts', import.meta.url).pathname })],
   server: { host: '127.0.0.1', port: 4320, strictPort: true },
 });

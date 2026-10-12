@@ -34,7 +34,7 @@ export interface ClassesResult {
 }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
-export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind };
+export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
@@ -361,8 +361,8 @@ export class Session extends EventEmitter {
     } while (true);
   }
   report(options: Pick<CheckOptions, 'ledger' | 'base' | 'changed' | 'strictLedger' | 'verbose'> = {}): Promise<Report> { return this.read('report', options); }
-  private async resolveFile(source: string, servedRoot?: string): Promise<string | SourceResolution> {
-    const candidates = sourcePaths(this.root, source, servedRoot);
+  private async resolveFile(source: string, servedRoot?: string, stamped = false): Promise<string | SourceResolution> {
+    const candidates = sourcePaths(this.root, source, servedRoot, stamped);
     // Fall back only when the served file is absent. Invalid or untracked
     // served evidence must never adopt a same-named repository file.
     let file = candidates[0]!;
@@ -385,7 +385,8 @@ export class Session extends EventEmitter {
   /** Validate before reconciliation; untrusted source spellings cannot add disk snapshots. */
   async readQuery(method: string, args: unknown[]): Promise<string[] | undefined> {
     if (method === 'resolveSource') {
-      const file = await this.resolveFile(args[0] as string, (args[3] as { servedRoot?: string } | undefined)?.servedRoot);
+      const expected = args[3] as { servedRoot?: string; stamp?: boolean } | undefined;
+      const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
     }
     if (['site', 'edits', 'why', 'classes'].includes(method)) {
@@ -396,9 +397,9 @@ export class Session extends EventEmitter {
     }
     return undefined;
   }
-  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; owner?: boolean; servedRoot?: string } = {}): Promise<SourceResolution> {
+  resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; owner?: boolean; servedRoot?: string; stamp?: boolean } = {}): Promise<SourceResolution> {
     return this.serializeRead(async () => {
-      const classified = await this.resolveFile(source, expected.servedRoot);
+      const classified = await this.resolveFile(source, expected.servedRoot, expected.stamp);
       if (typeof classified !== 'string') return classified;
       const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
       if (!this.batchRead) await this.reconcile([file]);
@@ -407,6 +408,15 @@ export class Session extends EventEmitter {
       // if a save races reconciliation or preserves the cached stat stamp.
       const text = expected.snapshot || expected.hash !== undefined ? await readFile(file, 'utf8') : this.sourceTexts.get(file) ?? await readFile(file, 'utf8');
       const hash = expected.snapshot || expected.hash !== undefined ? sourceHash(text) : this.hashes.get(file);
+      if (expected.stamp) {
+        const location = line === undefined || column === undefined ? undefined : jsxLocation(file, text, this.position(line), this.position(column), undefined, 'any');
+        if (!location || location.line !== line || location.column !== column || !expected.tag ||
+          !/^[a-f0-9]{12}$/.test(expected.hash ?? '') || !hash?.startsWith(expected.hash!) ||
+          !isComponentJSX(location.tag) && location.tag !== expected.tag) return { refused: 'source-mismatch' };
+        const usage = isComponentJSX(location.tag);
+        if (location.tag === 'Fragment' || location.tag.endsWith('.Fragment')) return { refused: 'source-mismatch' };
+        return { file: inside, line, column, hash, ...(usage ? { component: location.tag, usage: true as const } : {}) };
+      }
       if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
       if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
