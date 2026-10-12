@@ -155,11 +155,33 @@ export async function locate(element, options = {}) {
   // Owner-stack behavior remains the fallback and the navigation chain. A
   // forwarded component stamp describes usage, never a new default target.
   const owner = await locateOwner(element, options);
+  if (!confirmed && !match && fiber && (!owner || owner.location === null) && !options.signal?.aborted) {
+    // A host a library drew (an icon's <path>, a primitive's inner <div>) carries no stamp of its own. The component that
+    // drew it was stamped where it is used, in its props, so the nearest stamped owner is the usage site: exact, and no
+    // source map involved. Only a component stamp can stand in; a host stamp further up describes a different element.
+    for (let up = fiber._debugOwner, n = 0; up && n < 32; up = up._debugOwner, n++) {
+      const found = typeof up.memoizedProps?.['data-plumb-source'] === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(up.memoizedProps['data-plumb-source']);
+      if (!found) continue;
+      try {
+        const answer = await request('resolve', { source: found[1], line: found[2], column: found[3], hash: found[4], tag: '*', stamp: '1' }, { explain: true });
+        if (answer?.usage && answer.file) {
+          const at = { file: answer.file, line: answer.line, column: answer.column, component: answer.component, usage: true };
+          return { ...at, tag: element.localName, via: 'stamp-owner', chain: [at], index: 0 };
+        }
+      } catch (error) { if (error?.starting || error?.failed) throw error; }
+      break;
+    }
+  }
   if (!confirmed || options.signal?.aborted) return owner;
   const chain = [...(owner?.chain ?? [])];
   const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);
   if (confirmed.usage) {
-    if (!owner?.chain) return owner;
+    // A component's stamp forwarded onto the host it renders (<Link> onto its <a>, <motion.span> onto its <span>) is the
+    // exact usage site. When the owner chain cannot answer, that link is the answer.
+    if (!owner?.chain) {
+      const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: confirmed.component, usage: true };
+      return { ...at, tag: element.localName, via: 'stamp-usage', chain: [at], index: 0 };
+    }
     if (index >= 0) chain[index] = { ...chain[index], usage: true };
     else chain.push({ file: confirmed.file, line: confirmed.line, column: confirmed.column, component: confirmed.component, usage: true });
     return { ...owner, chain };
