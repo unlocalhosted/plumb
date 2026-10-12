@@ -236,9 +236,13 @@ export class Session extends EventEmitter {
   private async scan(initial = false, query?: string[], full = false): Promise<string[]> {
     if (this.closed) return [];
     const local = query !== undefined && !initial && !full;
+    // Dependency closures are query inputs, not startup inventory. Expanding
+    // and transferring every file's closure duplicates large shared graphs.
+    // Ask the analysis worker for only the paths this reconciliation needs.
+    const queryPaths = local ? await this.request<string[]>('queryDependencies', { files: query }) : [];
     const paths = new Set(local ? [...query, ...this.inputs, ...(this.options.config ? [resolve(this.root, this.options.config)] :
       ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'].map(name => resolve(this.root, name))), resolve(this.root, '.plumb/ledger.jsonl'),
-      ...this.analysisInputs, ...query.flatMap(file => this.queryDependencies.get(file) ?? [])] :
+      ...this.analysisInputs, ...queryPaths] :
       [...this.events, ...query ?? [], ...this.hashes.keys(), ...this.dependencies, ...this.inputs, ...this.patternFiles]);
     if (!local) this.events.clear();
     if (initial || full || !local && this.inventoryDirty) {

@@ -95,9 +95,16 @@ async function report(extra: CheckOptions = {}): Promise<Report> {
     return effective.ledger === false ? view : finishMessages(await applyLedger(view, effective, ledger));
   }
   if (effective.ledger === false) return raw;
-  if (effective.base !== undefined || effective.changed || effective.strictLedger) return finishMessages(await applyLedger(structuredClone(raw), effective, ledger));
-  if (!classified) classified = finishMessages(await applyLedger(structuredClone(raw), effective, ledger));
+  if (effective.base !== undefined || effective.changed || effective.strictLedger) return finishMessages(await applyLedger(ledgerView(raw), effective, ledger));
+  if (!classified) classified = finishMessages(await applyLedger(ledgerView(raw), effective, ledger));
   return classified;
+}
+/** Ledger presentation writes findings, coverage, notes and timing. Authored
+ * declarations and occurrence evidence stay shared with the immutable view. */
+function ledgerView(report: Report): Report {
+  return { ...report, findings: report.findings.map(finding => ({ ...finding,
+    ...(finding.edits ? { edits: finding.edits.map(edit => ({ ...edit })) } : {}) })),
+    coverage: structuredClone(report.coverage), notes: [...report.notes], timing: { ...report.timing } };
 }
 function site(r: Report, file: string, line: number, column: number | undefined, text: string) {
   const matches = jsxSiteMatcher(file, text, line, column);
@@ -183,11 +190,12 @@ async function localReport(file: string): Promise<Report> {
   return view;
 }
 const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...raw.stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
-function queryInputs(files: Iterable<string> = state.collection.slices.keys()) {
+function queryInputs(files: Iterable<string> = []) {
   return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.stylesheets.map(s => s.file), ...raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file), ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
     queryDependencies: [...files].map(file => [file, state.queryDependencies(file)]) };
 }
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
+  if (method === 'queryDependencies') return [...new Set((params.files as string[]).flatMap(file => state.queryDependencies(file)))];
   if (method === 'inventory') { state.inventory = params.files as string[]; return null; }
   if (method === 'refresh') {
     performance.clearMeasures();

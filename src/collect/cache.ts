@@ -1,3 +1,4 @@
+import { serialize, deserialize } from 'node:v8';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
@@ -18,12 +19,12 @@ interface Receipt { data: SerializedData; dependencies: [string, string][]; reso
 export function collectionCache(root: string, helpers: ClassHelperInput[], texts: Map<string, string>) {
   const key = sourceHash(JSON.stringify(['classes-inline-v8-deterministic-computed', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
   const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'sources');
-  const path = join(directory, `${key}.json`);
+  const path = join(directory, `${key}.v8`);
   return {
     async read(resolveImport: (file: string, specifier: string) => string | undefined): Promise<Data | undefined> {
       let receipt: Receipt;
-      try { receipt = JSON.parse(await readFile(path, 'utf8')) as Receipt; }
-      catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) return; throw error; }
+      try { receipt = deserialize(await readFile(path)) as Receipt; }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError || error instanceof Error && error.message.startsWith('Unable to deserialize')) return; throw error; }
       for (const [file, hash] of receipt.dependencies) {
         try { if (sourceHash(texts.get(file) ?? await readFile(file, 'utf8')) !== hash) return; }
         catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
@@ -43,7 +44,7 @@ export function collectionCache(root: string, helpers: ClassHelperInput[], texts
       const receipt: Receipt = { data: stored, dependencies: [...dependencies], resolutions: [...resolutions].map(([key, path]) => [key, path ?? null]) };
       await mkdir(directory, { recursive: true });
       const temporary = `${path}.${process.pid}.tmp`;
-      await writeFile(temporary, JSON.stringify(receipt)); await rename(temporary, path);
+      await writeFile(temporary, serialize(receipt)); await rename(temporary, path);
     },
   };
 }

@@ -103,14 +103,19 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
       }
     }
   }
+  const locations = new Map<string, Set<string>>();
+  const siteKey = (s: Declaration['site']) => JSON.stringify([s.file, s.line, s.column, s.text]);
   const coverage: OwnershipCoverage = { callerDeclarations: 0, findings: 0, heuristicFindings: 0, byFamily: {} };
   function finding(declaration: Declaration, component: ComponentIdentity, family: string, heuristic: boolean): void {
     const key = `ownership:${component.name}:${createHash('sha256').update(JSON.stringify([relative(graph.root, component.source.file), declaration.prop, declaration.value, heuristic])).digest('hex').slice(0, 16)}`;
     const previous = groups.get(key);
     if (previous) {
-      if (!previous.sites.some(site => site.file === declaration.site.file && site.line === declaration.site.line && site.column === declaration.site.column && site.text === declaration.site.text)) previous.sites.push(declaration.site);
+      const seen = locations.get(key)!;
+      const location = siteKey(declaration.site);
+      if (!seen.has(location)) { seen.add(location); previous.sites.push(declaration.site); }
       return;
     }
+    locations.set(key, new Set([siteKey(declaration.site)]));
     const variants = Object.entries(component.variants).map(([axis, values]) => `${axis} = ${values.join(' | ')}`).join('; ');
     const source = `${relative(graph.root, component.source.file)}:${component.source.line}`;
     const stylesheet = ['stylesheet', 'apply'].includes(declaration.origin);

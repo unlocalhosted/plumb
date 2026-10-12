@@ -40,7 +40,7 @@ export function useFor(decision: Decision, prop: string, theme: ReadonlySet<stri
 }
 // One immutable variable context per emitted scope, shared across families.
 // Cache complete resolutions only; recursive cycle/depth guards stay intact.
-function resolutionContext(declarations: Declaration[], record: DecisionRecord) {
+export function resolutionContext(declarations: Declaration[], record: DecisionRecord) {
   const locals = new Map<string, Map<string, Variable>>();
   const contexts = new WeakMap<Declaration, string>();
   const context = (declaration: Declaration) => {
@@ -57,8 +57,23 @@ function resolutionContext(declarations: Declaration[], record: DecisionRecord) 
   }
   const scopes = new Map<string, ReadonlyMap<string, Variable>>();
   const resolved = new WeakMap<ReadonlyMap<string, Variable>, Map<string, string | undefined>>();
+  const indexes = new Map<JudgedFamily, Map<string, Decision>>();
   return {
+    decisionIndex(family: JudgedFamily): Map<string, Decision> {
+      let index = indexes.get(family);
+      if (!index) {
+        index = new Map(record.decisions.filter(d => d.family === family).flatMap(d => d.refs.map(ref => [ref, d] as const)));
+        for (const [name, variable] of record.frameworkVariables) {
+          if (index.has(`var(${name})`)) continue;
+          const value = this.resolve(variable.value, record.variables);
+          index.set(`var(${name})`, { family, name, value: variable.value, ...(value === undefined ? {} : { resolved: value }), refs: [`var(${name})`], origin: 'framework', tier: variable.tier ?? 'primitive', why: variable.why, source: variable.source });
+        }
+        indexes.set(family, index);
+      }
+      return index;
+    },
     variablesFor(declaration: Declaration): ReadonlyMap<string, Variable> {
+      if (!locals.size) return record.variables;
       const key = context(declaration), local = locals.get(key);
       if (!local) return record.variables;
       if (!scopes.has(key)) scopes.set(key, new Map([...record.variables, ...local]));
@@ -82,12 +97,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   const origins = source?.origins ?? ['project'];
   const callers = source?.callers ?? (decisions.some(decision => decision.tier === 'semantic') ? ['semantic'] : ['primitive', 'semantic']);
   const identityFor = (prop: string) => source?.identity ?? (family === 'spacing' || family === 'radius' || family === 'type' && prop !== 'font-family' ? 'value' : 'reference');
-  const refIndex = new Map(decisions.flatMap(decision => decision.refs.map(ref => [ref, decision] as const)));
-  for (const [name, variable] of record.frameworkVariables) {
-    if (refIndex.has(`var(${name})`)) continue;
-    const resolved = resolution.resolve(variable.value, record.variables);
-    refIndex.set(`var(${name})`, { family, name, value: variable.value, ...(resolved === undefined ? {} : { resolved }), refs: [`var(${name})`], origin: 'framework', tier: variable.tier ?? 'primitive', why: variable.why, source: variable.source });
-  }
+  const refIndex = resolution.decisionIndex(family);
   const decisionRefs = new Set(refIndex.keys());
   const comparable = (value: string, prop: string): string | number | undefined => {
     if (family === 'spacing') return pixels(value);
@@ -260,6 +270,7 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
   const decisions = record.decisions.filter(d => d.family === family);
   const grouped = new Map<string, Finding>(), locations = new Map<string, Set<string>>();
   const fixProperties = new Map<string, Set<string>>();
+  const editLocations = new Map<string, Set<string>>();
   for (const { declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message } of entries) {
     let finding = grouped.get(key);
     if (!finding) {
@@ -272,13 +283,15 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
         finding.action = `Use ${use.class ? `\`${use.class}\` or ` : ''}\`var(${alternatives[0].name})\`.`;
         finding.fix = finding.action;
       }
-      grouped.set(key, finding); locations.set(key, new Set()); fixProperties.set(key, new Set());
+      grouped.set(key, finding); locations.set(key, new Set()); fixProperties.set(key, new Set()); editLocations.set(key, new Set());
     }
     finding.occurrences!.push(definition ? finding.declaration : declaration);
     for (const decision of alternatives) {
       const edited = definition ? finding.declaration : declaration;
       const text = sourceEdit(edited, useFor(decision, fixProp, record.theme));
-      if (!finding.edits!.some(edit => edit.token === decision.name && edit.site.file === edited.site.file && edit.site.line === edited.site.line && edit.site.column === edited.site.column && edit.text === text)) finding.edits!.push({ site: edited.site, text, token: decision.name });
+      const location = JSON.stringify([decision.name, edited.site.file, edited.site.line, edited.site.column, text]);
+      const seen = editLocations.get(key)!;
+      if (!seen.has(location)) { seen.add(location); finding.edits!.push({ site: edited.site, text, token: decision.name }); }
     }
     const properties = fixProperties.get(key)!;
     if (!properties.has(fixProp)) {
@@ -324,13 +337,16 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
 /** Shared final presentation for cold and incremental rule results. */
 export function presentProvenance(findings: Finding[]): Finding[] {
   const opaque = new Map<string, Finding>();
+  const locations = new Map<string, Set<string>>();
+  const siteKey = (s: Declaration['site']) => JSON.stringify([s.file, s.line, s.column, s.text]);
   const grouped = findings.filter(f => {
     if (f.rule !== 'provenance/opaque-inline') return true;
     const file = f.sites[0]!.file, previous = opaque.get(file);
-    if (!previous) { f.key = createHash('sha256').update(`opaque:${file}`).digest('hex'); opaque.set(file, f); }
+    if (!previous) { f.key = createHash('sha256').update(`opaque:${file}`).digest('hex'); opaque.set(file, f); locations.set(file, new Set(f.sites.map(siteKey))); }
     else {
       previous.occurrences!.push(...f.occurrences ?? []);
-      for (const site of f.sites) if (!previous.sites.some(s => s.file === site.file && s.line === site.line && s.column === site.column && s.text === site.text)) previous.sites.push(site);
+      const seen = locations.get(file)!;
+      for (const site of f.sites) { const key = siteKey(site); if (!seen.has(key)) { seen.add(key); previous.sites.push(site); } }
     }
     return false;
   });

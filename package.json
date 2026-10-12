@@ -43,7 +43,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && PLUMB_WATCH=1 PLUMB_POLLING=0 node --test e2e/*.test.mjs && PLUMB_WATCH=1 PLUMB_POLLING=1 node --test e2e/serve.test.mjs && PLUMB_WATCH=0 PLUMB_POLLING=0 node --test e2e/serve.test.mjs",
+    "test": "npm run build && PLUMB_WATCH=1 PLUMB_POLLING=0 node --test --test-concurrency=1 e2e/*.test.mjs && PLUMB_WATCH=1 PLUMB_POLLING=1 node --test e2e/serve.test.mjs && PLUMB_WATCH=0 PLUMB_POLLING=0 node --test e2e/serve.test.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {

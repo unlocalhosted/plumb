@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { parseSync, visitorKeys } from 'oxc-parser';
+import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
 import { embedded } from './inline.js';
@@ -16,6 +16,7 @@ interface Scope { parent?: Scope; bindings: Map<string, Binding> }
 interface Module extends SourceProgram { scopes: WeakMap<Node, Scope>; exports: Map<string, Binding>; stars: string[]; elements: Node[]; imports: string[]; literals: { start: number; end: number }[] }
 interface Ref { node: Node; source: Module; args: Map<Binding, Ref> }
 export const classSiteKey = (site: Site) => `${site.file}\0${site.line}:${site.column}\0${site.text}`;
+const parserOptions = { preserveParens: false, experimentalRawTransfer: rawTransferSupported() };
 const functions = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
 const ignored = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeArguments', 'implements']);
 function children(node: Node): Node[] {
@@ -36,7 +37,7 @@ export class ComputedClasses {
   private limits = new Set<ClassTraceLimit>();
   get limited(): boolean { return this.limits.size > 0; }
   private helpers: ReadonlyMap<string, ClassHelper>;
-  constructor(private read: (file: string) => string = file => readFileSync(file, 'utf8'), helpers: ClassHelperInput[] = []) { this.helpers = classHelperRegistry(helpers); }
+  constructor(private read: (file: string) => string = file => readFileSync(file, 'utf8'), helpers: ClassHelperInput[] = [], private programs?: ReadonlyMap<string, SourceProgram>) { this.helpers = classHelperRegistry(helpers); }
   configure(helpers: ClassHelperInput[] = []): void { this.helpers = classHelperRegistry(helpers); }
   invalidate(): void { this.modules.clear(); this.resolutions.clear(); this.resolver.clearCache(); }
   private tick(depth = 0): boolean {
@@ -50,9 +51,10 @@ export class ComputedClasses {
     this.dependencies.add(file);
     const text = this.read(file), old = this.modules.get(file);
     if (old?.text === text) return old;
-    const parsed = parseSync(file, text);
-    if (parsed.errors.length) return;
-    const source: Module = { file, text, ast: parsed.program, lineStarts: lineStarts(text), scopes: new WeakMap(), exports: new Map(), stars: [], elements: [], imports: [], literals: [] };
+    const previous = this.programs?.get(file);
+    const parsed = previous?.text === text ? undefined : parseSync(file, text, parserOptions);
+    if (parsed?.errors.length) return;
+    const source: Module = { file, text, ast: parsed?.program ?? previous!.ast, lineStarts: lineStarts(text), scopes: new WeakMap(), exports: new Map(), stars: [], elements: [], imports: [], literals: [] };
     const root: Scope = { bindings: new Map() };
     const declare = (node: Node, scope: Scope): void => {
       const statement = node.type === 'ExportNamedDeclaration' ? node.declaration : node;

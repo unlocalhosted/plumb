@@ -109,12 +109,29 @@ export class WarmState implements AnalysisRuntime {
   private snippetRanking = new RankingState();
   private dead: { refs: string; record: unknown; config: unknown; value: unknown } | undefined;
   private snippet = false;
+  private initializedRules = new Set<string>();
+  private reachability = new WeakMap<object, Map<string, Set<string>>>();
   private config: PlumbConfig = {};
   constructor(readonly root: string, public inventory?: readonly string[]) { this.collection = new CollectionState(root); }
+  private reachable(file: string, edges: ReadonlyMap<string, Iterable<string>>): Set<string> {
+    let cache = this.reachability.get(edges);
+    if (!cache) this.reachability.set(edges, cache = new Map());
+    const old = cache.get(file); if (old) return old;
+    const found = new Set<string>(), queue = [file];
+    for (let i = 0; i < queue.length; i++) for (const next of edges.get(queue[i]!) ?? []) {
+      if (next === file || found.has(next)) continue;
+      found.add(next);
+      const known = cache.get(next);
+      if (known) for (const target of known) { if (target !== file) found.add(target); }
+      else queue.push(next);
+    }
+    cache.set(file, found);
+    return found;
+  }
   queryDependencies(file: string): string[] {
     return [...new Set([...this.collection.slices.get(file)?.dependencies.keys() ?? [],
-      ...this.collection.consumers.get(file) ?? [], ...this.componentDependencies.get(file) ?? [],
-      ...this.componentConsumers.get(file) ?? []])];
+      ...this.collection.consumers.get(file) ?? [], ...this.reachable(file, this.componentDependencies),
+      ...this.reachable(file, this.componentConsumers)])];
   }
   get compilerFiles(): string[] { return this.compiler.graph?.files ?? []; }
   sourceHash(file: string): string | undefined {
@@ -140,8 +157,10 @@ export class WarmState implements AnalysisRuntime {
     this.snippetGraph = undefined;
     for (const path of paths) { this.componentMemory.modules.delete(path); this.dependencyEdges.delete(path); }
     const affected = new Set(paths);
-    for (const path of paths) for (const file of this.componentConsumers.get(path) ?? []) affected.add(file);
+    for (const path of paths) for (const file of this.reachable(path, this.componentConsumers)) affected.add(file);
     for (const file of affected) { this.componentHashes.delete(file); this.shards.delete(file); }
+    this.reachability = new WeakMap();
+    this.componentMemory.identities?.clear(); this.componentMemory.rootRanges?.clear(); this.componentMemory.fingerprintClasses?.clear();
     this.phases.delete('collect');
     if (paths.some(path => path.endsWith('.css'))) {
       for (const phase of ['graph', 'css', 'unreachable']) this.phases.delete(phase);
@@ -228,41 +247,51 @@ export class WarmState implements AnalysisRuntime {
       const overrides = new Map([[snippet.file, snippet.text]]), shards = new Map(this.shards);
       for (const file of files.filter(file => /\.[jt]sx?$/.test(file))) {
         if (file === snippet.file && snippet.lang === 'css') { shards.delete(file); continue; }
-        if (file === snippet.file || this.componentDependencies.get(file)?.has(snippet.file) || !shards.has(file))
-          shards.set(file, discoverComponents(this.root, [file], config, overrides, false, undefined, true, this.componentMemory));
+        if (file === snippet.file || this.reachable(file, this.componentDependencies).has(snippet.file) || !shards.has(file))
+          shards.set(file, discoverComponents(this.root, [file], config, overrides, false, undefined, true, { modules: this.componentMemory.modules }));
       }
       const value = this.mergeGraph(files, shards); this.snippetGraph = { key, value }; return value;
     }
     const wanted = new Set(files.filter(file => /\.[jt]sx?$/.test(file)));
+    if ([...wanted].some(file => !this.shards.has(file))) this.reachability = new WeakMap();
     if (!local) for (const file of this.shards.keys()) if (!wanted.has(file)) { this.shards.delete(file); this.componentHashes.delete(file); this.componentDependencies.delete(file); }
     for (const file of wanted) {
       if (this.shards.has(file)) continue;
       let text = ''; try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
       const hash = sourceHash(text);
       const dependencies = new Set<string>();
-      const queue = [file];
+      const queue = [file], visited = new Set<string>();
       for (let i = 0; i < queue.length; i++) {
         const source = queue[i]!;
-        let edges = this.dependencyEdges.get(source);
-        if (!edges) {
-          let text: string; try { text = readFileSync(source, 'utf8'); } catch { continue; }
-          edges = dependencySpecifiers(source, text).flatMap(id => {
-            const target = this.componentResolver.resolveFileSync(source, id).path;
-            return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
-          }); this.dependencyEdges.set(source, edges);
-        }
+        if (visited.has(source)) continue;
+        visited.add(source);
+        if (this.dependencyEdges.has(source)) continue;
+        let text: string; try { text = readFileSync(source, 'utf8'); } catch { continue; }
+        const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
+          const target = this.componentResolver.resolveFileSync(source, id).path;
+          return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
+        });
+        this.dependencyEdges.set(source, edges);
+        for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
+        this.componentDependencies.set(source, new Set(edges));
         for (const target of edges) {
-          if (dependencies.has(target) || queue.length > 20_000) continue;
-          dependencies.add(target); queue.push(target); this.dependencies.add(target);
+          this.dependencies.add(target);
+          let users = this.componentConsumers.get(target);
+          if (!users) this.componentConsumers.set(target, users = new Set());
+          users.add(source);
+          if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
         }
       }
-      const shard = discoverComponents(this.root, [file], config, undefined, false, undefined, true, this.componentMemory);
+      for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
+      const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
       for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }
       for (const path of this.componentDependencies.get(file) ?? []) this.componentConsumers.get(path)?.delete(file);
       for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
       this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
     }
     const graph = this.mergeGraph(files, this.shards);
+    this.collection.programs.clear();
+    this.collection.specifiers.clear();
     if (local) return graph;
     const key = signature([graph.components, graph.used, graph.mounts]);
     if (this.globalGraph?.key === key) {
@@ -287,6 +316,9 @@ export class WarmState implements AnalysisRuntime {
       const site = inputs[0] as object, old = this.siteCache.get(site);
       if (old && old.candidate === inputs[1]) return old.value as T;
       const value = compute(); this.siteCache.set(site, { candidate: inputs[1], value }); return value;
+    }
+    if (['deadVariables', 'ownership', 'habits', 'imitation'].includes(name) && !this.initializedRules.has(name)) {
+      this.initializedRules.add(name); return compute();
     }
     if (name === 'deadVariables') return this.judgement.deadVariables(...inputs as Parameters<JudgementState['deadVariables']>) as T;
     if (name === 'deadDecisions') {

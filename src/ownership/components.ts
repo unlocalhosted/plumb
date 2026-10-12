@@ -30,7 +30,12 @@ interface Module extends SourceText {
   stars: string[];
 }
 /** Parsed imports shared by one Session; changing a file removes its entry. */
-export interface ComponentMemory { modules: Map<string, Module> }
+export interface ComponentMemory {
+  modules: Map<string, Module>;
+  identities?: Map<string, ComponentIdentity | null>;
+  rootRanges?: Map<ComponentIdentity, RootRange[]>;
+  fingerprintClasses?: Map<ComponentIdentity, string[]>;
+}
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
 interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[] }
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
@@ -396,7 +401,16 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   function local(value: Module, name: string, seen: Set<string>): ComponentIdentity | undefined {
     const key = `${value.file}:${name}`;
     if (seen.has(key)) return;
-    const cached = identities.get(key); if (cached !== undefined) return cached ?? undefined;
+    const cached = identities.has(key) ? identities.get(key) : memory?.identities?.get(key);
+    if (cached !== undefined) {
+      identities.set(key, cached);
+      if (cached) {
+        const ranges = memory?.rootRanges?.get(cached), classes = memory?.fingerprintClasses?.get(cached);
+        if (ranges) rootRanges.set(cached, ranges);
+        if (classes) fingerprintClasses.set(cached, classes);
+      }
+      return cached ?? undefined;
+    }
     seen = new Set([...seen, key]);
     const [base, ...parts] = name.split('.'), edge = value.imports.get(base!);
     if (edge) {
@@ -565,6 +579,12 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     },
   };
   if (!diagnostics.length) cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
+  if (memory && !overrides.size) {
+    memory.identities ??= new Map(); memory.rootRanges ??= new Map(); memory.fingerprintClasses ??= new Map();
+    for (const [key, identity] of identities) memory.identities.set(key, identity);
+    for (const [identity, ranges] of rootRanges) memory.rootRanges.set(identity, ranges);
+    for (const [identity, classes] of fingerprintClasses) memory.fingerprintClasses.set(identity, classes);
+  }
   modules.clear();
   return graph;
 }

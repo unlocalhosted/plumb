@@ -89,7 +89,15 @@ function site(source: Source, offset: number, text: string): Site {
   return sourceSite(source, offset, text);
 }
 
-export async function collectClasses(files: string[], classHelpers: ClassHelperInput[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string): Promise<{
+export interface CollectionMemory {
+  programs: Map<string, SourceProgram>;
+  imports: Map<string, ModuleImport[]>;
+  specifiers: Map<string, string[]>;
+  texts: Map<string, string>;
+  resolver?: ResolverFactory;
+}
+
+export async function collectClasses(files: string[], classHelpers: ClassHelperInput[] = [], overrides: ReadonlyMap<string, string> = new Map(), onlyFile?: string, programs?: Map<string, SourceProgram>, cacheRoot?: string, memory?: CollectionMemory): Promise<{
   diagnostics: Finding[]; sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>; computedDependencies?: string[]; computedClassFiles?: string[];
 }> {
   const start = performance.now();
@@ -99,15 +107,23 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
   const diagnostics: Finding[] = [];
   const sources = new Map<string, Source>();
+  const shared = memory ?? { programs: new Map<string, SourceProgram>(), imports: new Map<string, ModuleImport[]>(), specifiers: new Map<string, string[]>(), texts: new Map<string, string>() };
+  const readText = (file: string) => {
+    if (overrides.has(file)) return overrides.get(file)!;
+    let text = shared.texts.get(file);
+    if (text === undefined) { text = readFileSync(file, 'utf8'); shared.texts.set(file, text); }
+    return text;
+  };
   const modules = new Map<string, ModuleImport[]>();
   const texts = new Map(await Promise.all(files.map(async file => {
-    try { return [file, overrides.get(file) ?? await readFile(file, 'utf8')] as const; }
+    try { return [file, overrides.get(file) ?? shared.texts.get(file) ?? await readFile(file, 'utf8')] as const; }
     catch (error) { diagnostics.push(unreadable(file, file, error)); return [file, ''] as const; }
   })));
+  for (const [file, text] of texts) shared.texts.set(file, text);
   const helpers = classHelperRegistry(classHelpers);
   const helperNames = [...helpers.keys()];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
-  const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
+  const resolver = shared.resolver ??= new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   const dependencies = new Map<string, string>(), resolutions = new Map<string, string | undefined>();
   const resolveImport = (file: string, specifier: string) => {
     const key = `${file}\0${specifier}`;
@@ -126,16 +142,23 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     const cached = sources.get(file);
     if (cached && (!fullAst || cached.ast)) return cached;
     let text: string;
-    try { text = overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8'); }
+    try { text = readText(file); }
     catch (error) { diagnostics.push(unreadable(file, file, error)); text = ''; }
     dependencies.set(file, sourceHash(text));
     const parseStart = performance.now();
     let result: ReturnType<typeof parseSync>, ast: Program;
     try {
-      result = parseSync(file, text, parserOptions);
-      if (result.errors.length) throw new Error(result.errors[0]?.message);
-      ast = result.program;
-      if (texts.has(file)) modules.set(file, moduleImports(result.module, text));
+      const previous = shared.programs.get(file);
+      if (previous?.text === text) ast = previous.ast;
+      else {
+        result = parseSync(file, text, parserOptions);
+        if (result.errors.length) throw new Error(result.errors[0]?.message);
+        ast = result.program;
+        shared.imports.set(file, moduleImports(result.module, text));
+        shared.specifiers.set(file, [...new Set([...result.module.staticImports.map(edge => edge.moduleRequest.value),
+          ...result.module.staticExports.flatMap(edge => edge.entries.flatMap(entry => entry.moduleRequest ? [entry.moduleRequest.value] : []))])]);
+      }
+      if (texts.has(file)) modules.set(file, shared.imports.get(file) ?? []);
     } catch (error) {
       diagnostics.push(unreadable(file, file, error));
       ast = parseSync(file, '', parserOptions).program;
@@ -145,7 +168,9 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     const lineStarts = [0];
     for (let index = text.indexOf('\n'); index !== -1; index = text.indexOf('\n', index + 1)) lineStarts.push(index + 1);
     const value: Source = { file, text, ast, lineStarts, exports: null, anchors: namedAnchors(ast) };
-    programs?.set(file, { file, text, ast, lineStarts });
+    const program = { file, text, ast, lineStarts };
+    if (!diagnostics.some(d => d.sites.some(s => s.file === file))) shared.programs.set(file, program);
+    programs?.set(file, program);
     sources.set(file, value);
     return value;
   }
@@ -428,10 +453,10 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   // locations. The same evidence feeds ordinary edits and apply revalidation.
   const authored = new Set([...sites.values()].map(classSiteKey));
   const computedText = (file: string): string => {
-    try { return overrides.get(file) ?? texts.get(file) ?? readFileSync(file, 'utf8'); }
+    try { return readText(file); }
     catch (error) { diagnostics.push(unreadable(file, file, error)); return ''; }
   };
-  const computed = new ComputedClasses(computedText, classHelpers);
+  const computed = new ComputedClasses(computedText, classHelpers, shared.programs);
   const computedClassFiles = new Set<string>();
   for (const file of files) {
     if (onlyFile && file !== onlyFile) continue;

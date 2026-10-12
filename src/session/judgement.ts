@@ -2,7 +2,7 @@ import type { Declaration, Finding, ProvenanceCoverage } from '../report.js';
 import type { ProvenanceEntry } from '../rules/provenance.js';
 import type { PlumbConfig } from '../config.js';
 import type { DecisionRecord } from '../decisions/index.js';
-import { familyProvenance, findingsForFamily, groupByValue, presentProvenance } from '../rules/provenance.js';
+import { familyProvenance, findingsForFamily, groupByValue, presentProvenance, resolutionContext } from '../rules/provenance.js';
 import { judgedFamilies, isJudged, familiesFor, varUses } from '../rules/families.js';
 import { judgeOwnership } from '../ownership/judge.js';
 import { judgeHabits } from '../habits/index.js';
@@ -101,6 +101,7 @@ export class JudgementState {
   provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false) {
     const positions = orders(declarations).declarations;
     const files = byFile(declarations), definitions = indexDefinitions(declarations, record);
+    const resolution = resolutionContext(declarations, record);
     const custom = declarations.filter(d => d.origin === 'custom-property');
     const familyFiles = new Map(judgedFamilies.map(f => [f, new Map<string, Declaration[]>()]));
     for (const d of declarations) {
@@ -117,7 +118,11 @@ export class JudgementState {
       const decisionRefs = new Set(record.decisions.filter(d => d.family === family).flatMap(d => d.refs));
       const parent = new Map([...files.keys()].map(file => [file, file]));
       const reachedCache = new Map<string, Declaration[]>();
-      const find = (file: string): string => { let current = file; while (parent.get(current) !== current) current = parent.get(current)!; return current; };
+      const find = (file: string): string => {
+        let root = file; while (parent.get(root) !== root) root = parent.get(root)!;
+        while (file !== root) { const next = parent.get(file)!; parent.set(file, root); file = next; }
+        return root;
+      };
       const join = (a: string, b: string) => { if (parent.has(a) && parent.has(b)) parent.set(find(b), find(a)); };
       function reached(name: string, seen = new Set<string>()): Declaration[] {
         if (!seen.size && reachedCache.has(name)) return reachedCache.get(name)!;
@@ -138,12 +143,13 @@ export class JudgementState {
       for (const file of files.keys()) { const root = find(file), group = clusters.get(root) ?? []; group.push(file); clusters.set(root, group); }
       for (const cluster of clusters.values()) {
         const ds = cluster.flatMap(file => relevant.get(file) ?? []).sort((a, b) => positions.get(a)! - positions.get(b)!);
+        if (!ds.length) continue;
         const refs = new Set(ds.flatMap(d => this.contributions.get(d)!.refs));
         for (const name of refs) for (const definition of reached(name)) for (const ref of definition.refs) refs.add(ref);
         const dependencies = custom.filter(d => refs.has(d.prop));
         const key = `${family}:${JSON.stringify(cluster)}`; keys.add(key);
         const result = this.provenanceCache.get(key, [record, config, ...ds, '|definitions', ...dependencies], () => {
-          return familyProvenance(family, ds, record, config, sourceFiles, definitions);
+          return familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
         });
         parts.get(family)!.push(...result.entries);
         for (const key of ['fromDecisions', 'total', 'findings'] as const) coverage[family][key] += result.coverage[key];
