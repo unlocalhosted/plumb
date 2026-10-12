@@ -24,11 +24,11 @@ const apps = [
     config: join(repo, 'bench/metalui/overlay.plumb.config.ts'), pages: ['/components/button', '/foundations/motion', '/'] },
   { name: 'kamui', app: join(workspace, 'kamui/web/apps/kamui'), pages: ['/'] },
   { name: 'craftingattention', app: join(workspace, 'craftingattention/app'), pages: ['/'] },
-  { name: 'algorecall', app: join(workspace, 'algorecall'), config: join(repo, 'bench/apps/algorecall.plumb.config.ts'), pages: ['/'] },
+  { name: 'algorecall', app: join(workspace, 'algorecall'), config: join(repo, 'bench/apps/algorecall.plumb.config.ts'), pages: ['/'], depsInProject: true },
 ].map(app => ({ ...app, root: app.root ?? app.app }));
 
 function message(error) {
-  const detail = error?.stack ?? String(error);
+  const detail = error?.stack || error?.message || (error?.name ? error.name + ' (no message)' : String(error));
   return error?.code && !detail.includes(error.code) ? `${error.code}: ${detail}` : detail;
 }
 function check(condition, text) { if (!condition) throw new Error(text); }
@@ -168,6 +168,7 @@ export async function withVerification(own, app, scratch, configFile) {
     adaptations.push('Disabled TanStack route generation; uses existing route tree, retains route transforms.');
     return false;
   }) };
+  if (app.depsInProject) adaptations.push('Vite dependency cache inside the project (node_modules/.vite-plumb-verify): a cache outside breaks its CommonJS interop.');
   const grab = await fsp.readFile(grabFile, 'utf8');
   const { Session } = await import(pathToFileURL(join(repo, 'dist/session/index.js')).href);
   let release;
@@ -179,6 +180,7 @@ export async function withVerification(own, app, scratch, configFile) {
     return Promise.all([original.apply(this, args), gate]).then(([session]) => session);
   };
   const { plumb } = await import(pathToFileURL(join(repo, 'dist/hosts/vite.js')).href);
+  const baseline = process.env.PLUMB_VERIFY_BASELINE === '1';
   const oracle = { name: 'verification:react-grab', transformIndexHtml: { order: 'pre', handler: () => [
     { tag: 'script', attrs: { 'data-verification-react-grab': '' }, children: grab.replaceAll('</script', '<\\/script'), injectTo: 'head-prepend' },
   ] } };
@@ -197,7 +199,7 @@ export async function withVerification(own, app, scratch, configFile) {
     check(server.httpServer, 'Vite did not expose an HTTP server');
     server.httpServer.once('listening', () => {
       const address = server.httpServer.address();
-      if (!address || typeof address !== 'object' || !intercepted) {
+      if (!address || typeof address !== 'object' || !intercepted && !baseline) {
         process.send?.({ type: 'error', error: 'Vite port or Plumb startup gate missing' });
         return;
       }
@@ -205,12 +207,17 @@ export async function withVerification(own, app, scratch, configFile) {
     });
   } };
   return vite.mergeConfig(own, {
-    configFile: false, root: own.root ?? app.app, cacheDir: join(scratch, 'vite'), logLevel: 'warn',
-    plugins: [oracle, plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }), bridge],
+    configFile: false, root: own.root ?? app.app, cacheDir: depsCache(app, scratch), logLevel: 'warn',
+    plugins: baseline ? [bridge] : [oracle, plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }), bridge],
     server: { host: '127.0.0.1', port: 0, strictPort: false, open: false },
   });
 }
 
+// Each run gets a fresh Vite dependency cache. It lives in the scratch directory unless the app needs it inside the
+// project: there, a cache outside serves pre-bundled CommonJS without the import interop (AlgoRecall's React Compiler
+// runtime then has no export \`c\`, with or without Plumb). Inside, it sits in node_modules under its own name, so the
+// app's own .vite cache is untouched; it is removed after. Kamui (pnpm) renders only with it outside.
+const depsCache = (app, scratch) => app.depsInProject ? join(app.app, 'node_modules/.vite-plumb-verify') : join(scratch, 'vite');
 function appConfigFile(app) {
   return ['vite.config.js', 'vite.config.mjs', 'vite.config.ts', 'vite.config.cjs', 'vite.config.mts', 'vite.config.cts']
     .map(file => join(app.app, file)).find(fs.existsSync);
@@ -230,12 +237,12 @@ async function serve(app, scratch) {
   await server.listen();
 }
 
-async function startServer(app, scratch) {
+async function startServer(app, scratch, { baseline = false } = {}) {
   const start = performance.now();
   let logs = '';
   async function launch(file, args) {
     const child = fork(file, args, {
-      cwd: app.app, env: { ...process.env, PLUMB_CACHE_DIR: join(scratch, 'plumb'),
+      cwd: app.app, env: { ...process.env, PLUMB_CACHE_DIR: join(scratch, 'plumb'), ...(baseline ? { PLUMB_VERIFY_BASELINE: '1' } : {}),
         WRANGLER_LOG_PATH: join(scratch, 'wrangler.log'), WRANGLER_SEND_METRICS: 'false' },
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     });
@@ -458,6 +465,13 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
             if (line.slice(inner.column - 1).startsWith('<' + row.tag)) reason = `Plumb's location opens <${row.tag}> on disk; react-grab names the rendering component.`;
           } catch {}
         }
+        // A react-grab answer that is not JSX on disk (a hook line, a data object: a module whose map is off) cannot be
+        // the element's site; Plumb's server-verified chain stands. Recorded with what the server found there.
+        if (!reason && checks.every(result => result.verified) && row.oracle.lineNumber) {
+          const at = await get(origin, '/__plumb/resolve', { source: row.oracle.filePath, line: row.oracle.lineNumber, column: row.oracle.columnNumber ?? 1 });
+          oracleCheck = at;
+          if (at.ok && at.body.refused === 'not-jsx') { counts.oracleNotJsx = (counts.oracleNotJsx ?? 0) + 1; continue; }
+        }
         if (reason) { counts['oracle-library']++; continue; }
         counts.disagreements++;
         failures.push(`sample ${row.i}: unexplained react-grab disagreement`);
@@ -608,9 +622,14 @@ async function interaction(page, rows, { preview = true, chain: testChain = true
     }
     finally { await page.evaluate(() => window.__plumb.overlay.close()); }
   }
-  if (result.preview?.status === 'untested') result.preview = candidates.length
+  // A choice that resolves to the value already shown (duration-150 → quick, both 150ms) renames the value; the page
+  // cannot change. Only a choice with a different value must change what is drawn.
+  const same = (mark, choice) => choice.value === mark.value || (choice.n !== undefined && choice.n === mark.n);
+  const differing = candidates.filter(row => row.reading.marks.some(mark => mark.choices?.some(choice => !same(mark, choice))));
+  if (result.preview?.status === 'untested') result.preview = differing.length
     ? { status: 'failed', error: 'No marked element had a visibly changing choice.' }
-    : { status: 'info', note: 'interaction: no element with choices on these pages' };
+    : candidates.length ? { status: 'info', note: 'interaction: every choice resolves to the value already shown' }
+      : { status: 'info', note: 'interaction: no element with choices on these pages' };
   if (!testChain) return result;
   const chainRows = rows.filter(row => row.status !== 'detached' && chainOf(row.location).length > 1);
   if (!chainRows.length) result.chain = { status: 'info', note: 'interaction: no multi-level element on these pages' };
@@ -667,11 +686,30 @@ function stable(row) {
   return JSON.stringify(value);
 }
 
+// The app's own page errors, with neither Plumb nor react-grab loaded (AlgoRecall's server render does not match its
+// client). Only an error the app does not throw alone is charged to Plumb.
+const errorKey = text => String(text).split('\n')[0].replace(/https?:\/\/[^\s)]+/g, '<url>').replace(/\?v=[0-9a-f]+/g, '');
+async function appOwnErrors(browser, app, scratch) {
+  const host = await startServer(app, scratch, { baseline: true });
+  const context = await browser.newContext({ serviceWorkers: 'block' }), errors = new Set();
+  try {
+    for (const path of app.pages) {
+      const page = await context.newPage();
+      page.on('pageerror', error => errors.add(errorKey(message(error))));
+      await page.goto(new URL(path, host.origin).href, { waitUntil: 'load', timeout }).catch(() => {});
+      await delay(8_000);
+      await page.close();
+    }
+  } finally { await context.close().catch(() => {}); await host.stop(); }
+  return errors;
+}
+
 async function verifyApp(browser, app, scratch) {
   const report = { app: app.name, appDirectory: app.app, plumbRoot: app.root, config: app.config ?? null,
     startedAt: new Date().toISOString(), startup: {}, pages: [], failures: [], exactness: [] };
   let host, context;
   try {
+    report.appOwnErrors = [...await appOwnErrors(browser, app, scratch)];
     host = await startServer(app, scratch);
     report.serverConfig = host.configFile; report.adaptations = host.adaptations;
     report.origin = host.origin;
@@ -721,14 +759,19 @@ async function verifyApp(browser, app, scratch) {
         }
         const rendered = () => page.waitForFunction(() => [...document.body.querySelectorAll('*')].some(element =>
           Object.keys(element).some(key => key.startsWith('__reactFiber$'))), null, { timeout: 30_000 });
-        // A fresh dependency cache can serve a half-optimised module on the first load; Vite then reloads the page
-        // itself. Do the same once: reload, wait for the app to render, and keep the errors of the first load out.
-        try { await rendered(); }
-        catch {
-          record.firstLoadErrors = record.pageErrors.splice(0);
-          await page.reload({ waitUntil: 'domcontentloaded', timeout });
-          await page.waitForFunction(() => window.__plumb?.overlay, null, { timeout });
-          await rendered();
+        // A fresh dependency cache can serve a half-optimised module on the first load: a dependency found late (the
+        // React Compiler's runtime) is re-bundled after the page imported the old one. Vite reloads the page itself,
+        // unless the app turns HMR off (AlgoRecall). Do what Vite would: reload until the app renders, keeping the
+        // errors of those first loads out of the page's record.
+        for (let attempt = 0; ; attempt++) {
+          try { await rendered(); break; }
+          catch (error) {
+            if (attempt === 3) throw error;
+            record.firstLoadErrors = [...(record.firstLoadErrors ?? []), ...record.pageErrors.splice(0)];
+            await delay(2000 * (attempt + 1));
+            await page.reload({ waitUntil: 'domcontentloaded', timeout });
+            await page.waitForFunction(() => window.__plumb?.overlay, null, { timeout });
+          }
         }
         await selectElements(page);
         let first = await sample(page), second = await sample(page, true);
@@ -798,6 +841,8 @@ async function verifyApp(browser, app, scratch) {
       } catch (error) { record.failures.push(message(error)); }
       finally {
         await page.close();
+        record.appErrors = record.pageErrors.filter(error => report.appOwnErrors?.includes(errorKey(error)));
+        record.pageErrors = record.pageErrors.filter(error => !report.appOwnErrors?.includes(errorKey(error)));
         if (record.pageErrors.length) record.failures.push(`${record.pageErrors.length} page errors`);
         if (record.plumbConsoleErrors.length) record.failures.push(`${record.plumbConsoleErrors.length} Plumb console errors`);
         report.failures.push(...record.failures.map(failure => `${path}: ${failure}`));
@@ -879,7 +924,9 @@ async function main() {
       const directory = join(scratch, app.name); await fsp.mkdir(directory, { recursive: true });
       const snapshot = () => execFileSync('git', ['-C', app.root, 'status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
       const before = snapshot();
+      if (app.depsInProject) await fsp.rm(depsCache(app, directory), { recursive: true, force: true });
       const report = await verifyApp(browser, app, directory); reports.push(report);
+      if (app.depsInProject) await fsp.rm(depsCache(app, directory), { recursive: true, force: true });
       // Nothing may change in the app's working tree: not a tracked file, not a new untracked one.
       if (snapshot() !== before) { report.failures.push('The app working tree changed during verification'); report.status = 'failed'; }
       await writeReports(reports);
