@@ -34,6 +34,15 @@ export function Docs() {
     setSlug(to);
     scrollTo({ top: 0 });
   };
+  // links inside a page to another docs page move the same way
+  useEffect(() => {
+    const click = (e) => {
+      const a = e.target.closest?.('article a[href^="/docs/"]');
+      if (a) go(e, a.getAttribute('href').replace(/^\/docs\//, ''));
+    };
+    document.addEventListener('click', click);
+    return () => document.removeEventListener('click', click);
+  }, []);
   const Page = useMemo(() => lazy(page.load), [page.slug]);
   useEffect(() => {
     document.title = `${page.title} · Plumb docs`;

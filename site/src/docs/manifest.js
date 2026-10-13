@@ -5,7 +5,7 @@ export const SECTIONS = [
     title: 'Start',
     pages: [
       { slug: 'quick-start', title: 'Quick start', load: () => import('./pages/quick-start.mdx') },
-      { slug: 'what-plumb-is', title: 'What Plumb is' },
+      { slug: 'what-plumb-is', title: 'What Plumb is', load: () => import('./pages/what-plumb-is.mdx') },
     ],
   },
   {

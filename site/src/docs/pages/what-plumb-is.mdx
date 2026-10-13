@@ -1,0 +1,43 @@
+import { JudgePipeline } from '../figures/JudgePipeline.jsx'
+
+Plumb finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and lets you fix each drift from the page. It doesn't judge how a value was written. It compiles your classes, stylesheets, `@apply` and inline styles with your own Tailwind, then judges the CSS that comes out against your tokens.
+
+Pick how the value is written and watch it go through:
+
+<JudgePipeline />
+
+## What it judges
+
+Every value in seven families:
+
+| Family | For example |
+| --- | --- |
+| Spacing | `gap`, `padding`, `margin`, `inset` |
+| Colour | text, backgrounds, borders, fills |
+| Radius | corner rounding |
+| Type | size, weight, line height, letter spacing |
+| Motion | durations and easing |
+| Elevation | shadows |
+| Z-index | stacking |
+
+Beyond values, it also checks **habits** your team writes down (such as "every hover has a focus style"), **overrides** that restyle a design-system component from outside, and **imitations**: hand-built copies of a component you already have.
+
+## Against what
+
+Against **your** decisions: the tokens in your theme and the reasons written beside them. A value that matches a token is on the scale. One that doesn't is drift, and Plumb names the tokens that fit with their reasons, so you choose by meaning rather than by the nearest number.
+
+<Callout kind="note" title="Tailwind's defaults aren't your decisions">
+If your theme defines its own scale, Tailwind's built-in steps sit outside it. Plumb treats them as drift too, because nobody on your team chose them.
+</Callout>
+
+## What happens next
+
+- **In your terminal**, `npx plumb` reports every drift with what's wrong, why it matters and what to do. With no config it changes nothing.
+- **On your page**, the overlay shows the reading for any element and writes the fix you pick to the source file.
+- **In CI**, a ledger records the drift you already have and any exceptions you accept with a reason, so only new drift fails a pull request.
+
+<Callout kind="why" title="Plumb judges compiled CSS, not class names.">
+A rule about class names would miss the same value written in a stylesheet, through `@apply` or as an inline style, and would trip over class names that compile to something else. Compiling first means every way of writing a value gets the same answer, and the answer is about what actually reaches the page.
+</Callout>
+
+Ready to try it? Start with the [Quick start](/docs/quick-start).
