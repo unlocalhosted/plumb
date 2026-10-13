@@ -70,9 +70,11 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   assert.match(await reading.locator('.read .edit').innerText(), /2 tokens fit/);
 
   // Preview: picking a token row changes the page at once, and only inline styles carry it.
-  await reading.locator('.opt[data-pick]').filter({ hasText: 'compact related items' }).click();
+  // the card lays the choices out as a list or as the scale's ladder; either way the token is named s2
+  await reading.locator('.opt[data-pick]').filter({ hasText: /s2/ }).first().click();
   assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
-  await reading.locator('.read .edit').filter({ hasText: /gap-\[10px\]\s*→\s*gap-s2/ }).waitFor();
+  // the card names the chosen token (in its edit row, or in the ladder's line once the scale is loaded)
+  await reading.filter({ hasText: /gap-s2/ }).waitFor();
   await reading.locator('.synced .state').filter({ hasText: 'Previewing 1 fix on the page' }).waitFor();
 
   // Before shows the page as it is in source; After puts the preview back.

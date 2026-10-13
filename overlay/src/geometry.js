@@ -152,3 +152,38 @@ export function hostGround(node) {
   }
   return getComputedStyle(document.body).backgroundColor || '#ffffff';
 }
+
+// A mark's measurement as blueprint mode draws it, built on regionFor so the blueprint and the Alt card agree on where
+// every property lives: a dimension across the band or gap the property names, an arc on its corner, a bracket at its
+// words, a tag for what has no length (colour, shadow, motion), a box for what's about the whole element.
+export function dimensionsFor(element, props) {
+  const b = element.getBoundingClientRect();
+  if (props.some(p => /^(width|min-width|max-width|inline-size)$/.test(p))) return { kind: 'h', x1: b.left, x2: b.right, y: b.top - 7 };
+  if (props.some(p => /^(height|min-height|max-height|block-size)$/.test(p))) return { kind: 'v', x: b.left - 7, y1: b.top, y2: b.bottom };
+  if (!props.length) return { kind: 'box', x: b.left, y: b.top, w: b.width, h: b.height };
+  const region = regionFor(element, props);
+  const r = region.rects[0];
+  if (!r) return { kind: 'tag', x: b.left, y: b.top };
+  switch (region.kind) {
+    case 'pad':
+      return region.axis === 'x'
+        ? { kind: 'h', x1: r.x, x2: r.x + r.w, y: r.y + r.h / 2, under: b.height < 48 ? b.bottom + 12 : null }
+        : { kind: 'v', x: r.x + Math.min(16, r.w / 2), y1: r.y, y2: r.y + r.h };
+    case 'gap':
+      if (!r.w && !r.h) return { kind: 'tag', x: b.left, y: b.top };
+      return region.axis === 'x' ? { kind: 'h', x1: r.x, x2: r.x + r.w, y: r.y + Math.min(r.h / 2, 14) } : { kind: 'v', x: r.x + Math.min(16, r.w / 2), y1: r.y, y2: r.y + r.h };
+    case 'margin':
+      return { kind: 'v', x: r.x + 12, y1: r.y, y2: r.y + r.h };
+    case 'corner': {
+      // the corner point, and which way the box runs from it
+      const dx = region.corner[1] === 'l' ? 1 : -1, dy = region.corner[0] === 't' ? 1 : -1;
+      return { kind: 'arc', cx: dx > 0 ? r.x : r.x + r.w, cy: dy > 0 ? r.y : r.y + r.h, dx, dy, rad: r.w / 2 };
+    }
+    case 'text':
+      return { kind: 'type', x: r.x + r.w + 4, y1: r.y + 2, y2: r.y + r.h - 2 };
+    case 'box':
+      return { kind: 'box', x: b.left, y: b.top, w: b.width, h: b.height };
+    default:
+      return { kind: 'tag', x: b.left, y: b.top };
+  }
+}

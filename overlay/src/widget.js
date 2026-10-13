@@ -91,12 +91,12 @@ const css = `
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock .pick { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  .dock .pick svg { width: 12px; height: 12px; }
-  .dock .pick:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock .pick:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock .pick[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock .pick:disabled { color: var(--pl-ink-3); cursor: default; }
+  .dock :is(.pick, .bp-toggle) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle) svg { width: 12px; height: 12px; }
+  .dock :is(.pick, .bp-toggle):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .dock :is(.pick, .bp-toggle)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .dock :is(.pick, .bp-toggle):disabled { color: var(--pl-ink-3); cursor: default; }
   .dock[data-state="starting"] .bob { animation: pl-breathe 1.6s ease-in-out infinite; }
   .dock[data-state="select"] .bob { color: var(--pl-instrument); }
   .dock[data-state="failed"] .bob, .dock[data-state="failed"] .say { color: var(--pl-off); }
@@ -358,7 +358,7 @@ const ICON = {
 };
 
 class PlumbOverlay extends HTMLElement {
-  #blueprint; #drifts = null;
+  #blueprint; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap();
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map();
 
   connectedCallback() {
@@ -370,11 +370,15 @@ class PlumbOverlay extends HTMLElement {
       <section class="w" hidden></section>
       <div class="dock" role="toolbar" aria-label="Plumb" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
-        <button class="pick bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
+        <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
         <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
-      </div>`;
-    this.#$('.pick:not(.bp-toggle)').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
-    this.#blueprint = new Blueprint(this, this.#root, n => { if (n !== this.#drifts) { this.#drifts = n; this.#dock(); } });
+      </div>
+      <span class="announce" aria-live="polite" style="position:fixed;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></span>`;
+    this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
+    this.#blueprint = new Blueprint(this, this.#root, {
+      onState: state => this.#blueprintState(state),
+      onProgress: progress => { this.#bp.progress = progress; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(progress.drift ? `${progress.drift} off in view` : 'All true in view'); },
+    });
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
@@ -392,6 +396,7 @@ class PlumbOverlay extends HTMLElement {
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
+    if (saved.blueprint) this.#blueprint?.enter({ instant: true });
     const element = document.querySelector(saved.path);
     if (!element) return;
     const location = await locate(element);
@@ -401,6 +406,7 @@ class PlumbOverlay extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this.#blueprint?.destroy();
     this.close(); this.#disarm();
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
@@ -409,10 +415,48 @@ class PlumbOverlay extends HTMLElement {
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
   }
 
-  #toggleBlueprint() {
-    this.#blueprint.toggle();
-    this.#$('.bp-toggle').setAttribute('aria-pressed', String(this.#blueprint.active));
+  #toggleBlueprint(options) {
+    this.#blueprint.toggle(options);
+  }
+
+  // What blueprint mode needs from the widget: Plumb's findings for an element (not the card's edits and text, and
+  // never in the card's cache), the server's health, the pinned element, and where the card and dock sit.
+  readMarks(element, fresh = false) {
+    if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
+    const promise = (async () => {
+      const found = await locate(element, { explain: true });
+      if (!found?.file) return { status: 'unplaced' };
+      return this.#readAt(found, element, { want: 'marks' });
+    })().catch(error => ({ status: error?.starting ? 'starting' : 'error' }));
+    this.#marksCache.set(element, promise);
+    promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
+    return promise;
+  }
+  get health() { return this.#health; }
+  get pinnedElement() { return this.#pinned?.element ?? null; }
+  occluders() {
+    return ['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect());
+  }
+
+  #blueprintState(state) {
+    if (state === 'refused') return this.#announce('Blueprint waits until Plumb is running.');
+    this.#bp.state = state;
+    if (state === 'entering') this.#bp.progress = null;
+    const on = state === 'entering' || state === 'on';
+    this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
+    // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
+    this.#$('.say').setAttribute('aria-live', on ? 'off' : 'polite');
+    if (state === 'entering') this.#announce('Blueprint on. Reading this view.');
+    if (state === 'off') this.#announce('Blueprint off.'), this.#tidyHtml(), requestAnimationFrame(() => this.#tidyHtml());
     this.#dock();
+  }
+
+  #announced = '';
+  #announce(text) {
+    if (text === this.#announced) return;
+    this.#announced = text;
+    const live = this.#$('.announce');
+    if (live) live.textContent = text;
   }
 
   // ── the dock: what Plumb is doing ─────────────────────────
@@ -422,13 +466,20 @@ class PlumbOverlay extends HTMLElement {
     try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
+    if (next !== this.#health) this.#blueprint?.healthChanged(next);
     this.#health = next; this.#dock();
     this.#healthTimer = setTimeout(() => this.#poll(), next === 'ready' || next === 'failed' ? TIMING.healthReady : TIMING.healthStarting);
   }
   #reason = '';
+  #blueprintSays() {
+    const p = this.#bp.progress;
+    if (!p || !p.total) return 'reading…';
+    if (p.read < p.total) return `reading ${p.read} of ${p.total}…`;
+    return p.drift ? `${p.drift} off in view` : 'all true in view';
+  }
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
-    const say = dock.querySelector('.say'), pick = dock.querySelector('.pick:not(.bp-toggle)');
+    const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
     const selecting = this.#armed && this.#health !== 'failed';
     const state = selecting ? 'select' : this.#health;
     const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
@@ -437,7 +488,7 @@ class PlumbOverlay extends HTMLElement {
       starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
       failed: 'Plumb couldn’t start',
       lost: 'Reconnecting…',
-      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#drifts === null ? 'reading…' : this.#drifts ? `${this.#drifts} off in view` : 'all true in view'} · Alt+B` : 'Plumb · Alt to inspect',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#blueprintSays()} · Alt+B` : 'Plumb · Alt to inspect',
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
     dock.title = state === 'failed' ? this.#reason : '';
@@ -472,11 +523,13 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // The reading of one link in the chain: the JSX at that position, its declarations, findings and edits.
-  async #readAt(location, element = this.#pinned?.element) {
+  async #readAt(location, element = this.#pinned?.element, { want = 'full' } = {}) {
     const params = { file: location.file, line: location.line, column: location.column };
     // Its text is read alongside: which runs are plain literals Plumb can write, or why it can't (an older server
-    // without the endpoint answers nothing, and the card simply has no text row).
-    const [site, edits, text] = await Promise.all([request('site', params), request('edits', params), request('text', params).catch(() => null)]);
+    // without the endpoint answers nothing, and the card simply has no text row). Blueprint mode wants the findings
+    // only; the edits and text are fetched when a reading is opened.
+    const marksOnly = want === 'marks';
+    const [site, edits, text] = await Promise.all([request('site', params), marksOnly ? null : request('edits', params), marksOnly ? null : request('text', params).catch(() => null)]);
     if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
@@ -548,6 +601,7 @@ class PlumbOverlay extends HTMLElement {
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
+    else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
   // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
   #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
@@ -558,8 +612,14 @@ class PlumbOverlay extends HTMLElement {
     addEventListener('pointermove', this.#onMove, true);
     addEventListener('click', this.#onClick, true);
     addEventListener('pointerdown', this.#swallow, true);
+    this.#htmlStyled = !!document.documentElement.getAttribute('style')?.trim(); // an empty style attribute is no style
     document.documentElement.style.setProperty('cursor', 'crosshair', 'important');
     this.#dock();
+  }
+  #htmlStyled = false;
+  #tidyHtml() {
+    const html = document.documentElement;
+    if (!this.#htmlStyled && !this.#armed && html.hasAttribute('style') && !html.style.length) html.removeAttribute('style');
   }
   #disarm = () => {
     if (!this.#armed) return;
@@ -569,6 +629,9 @@ class PlumbOverlay extends HTMLElement {
     removeEventListener('click', this.#onClick, true);
     removeEventListener('pointerdown', this.#swallow, true);
     document.documentElement.style.removeProperty('cursor');
+    // leave no residue: a page whose <html> had no style attribute gets none back, now and once events settle
+    this.#tidyHtml();
+    requestAnimationFrame(() => this.#tidyHtml());
     this.#hover = null;
     this.#showReticle(this.#pinned?.element ?? null);
     this.#$('.tag').hidden = true;
@@ -1337,7 +1400,7 @@ class PlumbOverlay extends HTMLElement {
     const classes = p.element.getAttribute('class');
     const n = ids.length + texts.length;
     const text = `Wrote ${n} edit${n === 1 ? '' : 's'} to ${s.file}`;
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(p.element), file: s.file, tag: s.tag, text, at: Date.now() })); } catch {}
+    try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(p.element), file: s.file, tag: s.tag, text, at: Date.now(), blueprint: !!this.#blueprint?.active })); } catch {}
     try {
       if (ids.length) await post('apply', { file: s.file, hash: s.hash, edits: ids });
       // Each text change is written against the file as it is now: read the runs again, find the one that still says
@@ -1366,6 +1429,8 @@ class PlumbOverlay extends HTMLElement {
   async #reread(p, classesBefore, wrote, wroteText = false) {
     const afterWrite = classesBefore !== undefined;
     this.#cache = new WeakMap();
+    this.#marksCache = new WeakMap();
+    if (afterWrite && p.state?.file) this.#blueprint?.invalidate({ file: p.state.file });
     for (const [n, wait] of (afterWrite ? TIMING.reread : [0]).entries()) {
       await new Promise(r => setTimeout(r, wait));
       if (this.#pinned !== p) return;
