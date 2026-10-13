@@ -90,6 +90,22 @@
   /* why: syntax: comments and prompts recede, readable but quiet */
   --code-comment: #8a96ad;
 
+  /* ── the seven families: one hue each, only on a family's mark (docs tables, family icons); the page stays blue ── */
+  /* why: the spacing family's mark: teal, the colour of a measured gap */
+  --family-spacing: #0f8f9c;
+  /* why: the colour family's mark: pink, for colour itself */
+  --family-colour: #d1407f;
+  /* why: the radius family's mark: violet, for corners */
+  --family-radius: #7650d4;
+  /* why: the type family's mark: the ink blue, for the words */
+  --family-type: #2f62d6;
+  /* why: the motion family's mark: amber, for time */
+  --family-motion: #b87806;
+  /* why: the elevation family's mark: green, for what lifts */
+  --family-elevation: #2a9160;
+  /* why: the z family's mark: orange, for what stacks */
+  --family-z: #d4572a;
+
   /* ── corners: drawings are square, held things barely rounded ── */
   --radius: 8px;
 
@@ -142,6 +158,14 @@
   --stage-foreground: #ffffff;
   --code: #0b0c0e;
   --code-foreground: #e9edf5;
+  /* the family marks, lifted to read on graphite */
+  --family-spacing: #5fd0da;
+  --family-colour: #f28bbd;
+  --family-radius: #b49cf5;
+  --family-type: #8fb0ff;
+  --family-motion: #f2c25e;
+  --family-elevation: #79d6a1;
+  --family-z: #f59a72;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -195,6 +219,20 @@
   --color-code-string: var(--code-string);
   --color-code-flag: var(--code-flag);
   --color-code-comment: var(--code-comment);
+  /* why: the spacing family's mark in the docs, teal; never a surface or text colour */
+  --color-family-spacing: var(--family-spacing);
+  /* why: the colour family's mark in the docs, pink; never a surface or text colour */
+  --color-family-colour: var(--family-colour);
+  /* why: the radius family's mark in the docs, violet; never a surface or text colour */
+  --color-family-radius: var(--family-radius);
+  /* why: the type family's mark in the docs, ink blue; never a surface or text colour */
+  --color-family-type: var(--family-type);
+  /* why: the motion family's mark in the docs, amber; never a surface or text colour */
+  --color-family-motion: var(--family-motion);
+  /* why: the elevation family's mark in the docs, green; never a surface or text colour */
+  --color-family-elevation: var(--family-elevation);
+  /* why: the z family's mark in the docs, orange; never a surface or text colour */
+  --color-family-z: var(--family-z);
 
   /* why: chips, keys, small controls */
   --radius-sm: calc(var(--radius) - 3px);
@@ -307,3 +345,13 @@
 @utility draw-leader { fill: none; stroke: var(--primary); stroke-width: var(--stroke-hair); stroke-dasharray: var(--dash-leader); vector-effect: non-scaling-stroke; }
 @utility draw-hidden { fill: none; stroke: var(--primary); stroke-width: var(--stroke-hair); stroke-dasharray: var(--dash-hidden); vector-effect: non-scaling-stroke; opacity: 0.6; }
 
+
+/* the radius family's mark: its corner drawn again from the straight end (docs/family.jsx) */
+@keyframes family-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

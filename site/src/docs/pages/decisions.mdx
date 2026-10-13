@@ -28,13 +28,13 @@ Seven families are judged, each from its own namespaces:
 
 | Family | Tokens |
 | --- | --- |
-| Spacing | `--spacing-*` |
-| Colour | `--color-*` |
-| Radius | `--radius-*` |
-| Type | `--text-*`, `--font-*`, `--leading-*`, `--tracking-*` |
-| Motion | `--duration-*`, `--ease-*`, `--animate-*` |
-| Elevation | `--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*` |
-| Z-index | `--z-*` |
+| <Family id="spacing">Spacing</Family> | `--spacing-*` |
+| <Family id="colour">Colour</Family> | `--color-*` |
+| <Family id="radius">Radius</Family> | `--radius-*` |
+| <Family id="type">Type</Family> | `--text-*`, `--font-*`, `--leading-*`, `--tracking-*` |
+| <Family id="motion">Motion</Family> | `--duration-*`, `--ease-*`, `--animate-*` |
+| <Family id="elevation">Elevation</Family> | `--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*` |
+| <Family id="z">Z-index</Family> | `--z-*` |
 
 <Callout kind="careful" title="Tailwind's defaults stay unless you reset them">
 Adding your own `--radius-lg` doesn't remove Tailwind's other radii. Reset a namespace in your theme with `--radius-*: initial;` so only your steps remain. Defaults that survive count as Tailwind's, not yours, and Plumb flags their use.

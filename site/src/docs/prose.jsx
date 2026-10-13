@@ -10,6 +10,7 @@
 import { Children, isValidElement, useState } from 'react';
 import { CodeBlock, InlineCode } from './code.jsx';
 import { Callout } from './callout.jsx';
+import { Family } from './family.jsx';
 
 const slugOf = (children) =>
   Children.toArray(children)
@@ -63,4 +64,5 @@ export const prose = {
   th: (p) => <th className="border-b border-border bg-muted px-4 py-2 font-semibold" {...p} />,
   td: (p) => <td className="border-b border-border px-4 py-3 align-top [tr:last-child_&]:border-0" {...p} />,
   Callout,
+  Family,
 };
