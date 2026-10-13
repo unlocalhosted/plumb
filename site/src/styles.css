@@ -81,6 +81,14 @@
   /* why: commands and code blocks, dark in both themes so a command always looks like a command */
   --code: #161d2b;
   --code-foreground: #e9edf5;
+  /* why: syntax on the dark code ground: the brand's light blue for the language's own words */
+  --code-keyword: #9fb4ff;
+  /* why: syntax: strings in a soft green, so values read apart from structure */
+  --code-string: #9fe3b8;
+  /* why: syntax: flags and numbers in the field's warm accent, the parts you change */
+  --code-flag: #ffcf8a;
+  /* why: syntax: comments and prompts recede, readable but quiet */
+  --code-comment: #8a96ad;
 
   /* ── corners: drawings are square, held things barely rounded ── */
   --radius: 8px;
@@ -183,6 +191,10 @@
   --color-stage-foreground: var(--stage-foreground);
   --color-code: var(--code);
   --color-code-foreground: var(--code-foreground);
+  --color-code-keyword: var(--code-keyword);
+  --color-code-string: var(--code-string);
+  --color-code-flag: var(--code-flag);
+  --color-code-comment: var(--code-comment);
 
   /* why: chips, keys, small controls */
   --radius-sm: calc(var(--radius) - 3px);
