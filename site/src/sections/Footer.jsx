@@ -14,8 +14,7 @@ import { Badge } from '../system/Sticker.jsx';
 const REPO = 'https://github.com/unlocalhosted/plumb';
 const COLUMNS = [
   { title: 'Product', links: [['Overlay', '#hero'], ['CLI', '#install'], ['CI', '#kept-true'], ['Agents', '#install']] },
-  // README sections until the docs site exists; never a page that doesn't
-  { title: 'Docs', links: [['Quick start', `${REPO}#quick-start`], ['Configuration', `${REPO}#configuration`], ['Agent installation', `${REPO}#agent-installation`], ['GitHub Action', `${REPO}#github-action`]] },
+  { title: 'Docs', links: [['Quick start', '/docs/quick-start'], ['Configuration', '/docs/configuration'], ['Agents', '/docs/agents'], ['CI and pull requests', '/docs/ci']] },
   { title: 'Project', links: [['GitHub', REPO], ['npm', 'https://www.npmjs.com/package/@unlocalhosted/plumb'], ['Issues', `${REPO}/issues`], ['License (MIT)', `${REPO}/blob/main/LICENSE`]] },
 ];
 
