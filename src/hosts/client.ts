@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 const vendor: Record<string, string> = { 'vendor/bippy/source.js': 'source.js', 'vendor/bippy/core.js': 'core.js', 'vendor/bippy/rdt-hook.js': 'rdt-hook.js' };
 const bippy = () => dirname(createRequire(import.meta.url).resolve('bippy/source'));
 
-export const overlayModules = [...Object.keys(vendor), 'client.js', 'src/api.js', 'src/locate.js', 'src/sourcemap.js', 'src/sourcemap-worker.js', 'src/model.js', 'src/geometry.js', 'src/glyphs.js', 'src/choices.js', 'src/blueprint.js', 'src/blueprint-reader.js', 'src/blueprint-marks.js', 'src/widget.js', 'src/tokens.css'];
+export const overlayModules = [...Object.keys(vendor), 'client.js', 'src/api.js', 'src/locate.js', 'src/sourcemap.js', 'src/sourcemap-worker.js', 'src/model.js', 'src/geometry.js', 'src/glyphs.js', 'src/choices.js', 'src/blueprint.js', 'src/blueprint-fix.js', 'src/blueprint-reader.js', 'src/blueprint-marks.js', 'src/widget.js', 'src/tokens.css'];
 
 /** Plain ES modules, served identically by every development host. */
 export async function overlayClient(module = 'client.js'): Promise<string> {

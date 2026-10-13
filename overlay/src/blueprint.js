@@ -8,7 +8,8 @@
  *
  *  entering  a scan line crosses the view left to right (SPAN); a deep blue field is laid under the page behind it
  *            (html::before), and each element re-inks to white line as the line reaches its column (DEVELOP each)
- *  on        the Reader reads what's in view through Plumb; the MarkLayer draws each finding where it lives
+ *  on        the Reader reads what's in view through Plumb; the MarkLayer draws each finding where it lives; a mark
+ *            opens the chooser (blueprint-fix.js), which picks, previews and writes
  *  leaving   the line runs right to left and takes the blueprint with it
  *  reverse   toggling mid-sweep turns the same line around from where it is; there is never more than one sweep
  *  restore   leaving removes everything it added: the stylesheet, the attributes on <html> and on elements. It
@@ -71,12 +72,15 @@ export class Blueprint {
     this.#scan = Object.assign(document.createElement('i'), { className: 'scan', hidden: true });
     this.#layer.append(this.#scan);
     root.appendChild(this.#layer);
-    this.#marks = new MarkLayer(this.#layer, { onPick: (el) => host.pin(el), occluders: () => host.occluders?.() ?? [] });
+    this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null });
     this.#reader = new Reader(host, { onChange: (items) => this.#marks.set(items), onProgress: (p) => this.#onProgress?.(p) });
   }
 
   get state() {
     return this.#state;
+  }
+  get marks() {
+    return this.#marks;
   }
   get active() {
     return this.#state === 'entering' || this.#state === 'on';

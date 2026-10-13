@@ -7,13 +7,15 @@
  *
  *  retained   one <g> per mark, keyed by a stable id; a mark is redrawn only when its geometry changes
  *  measure    one batch per frame, only when invalidated (scroll, resize, a reading arriving, the reader's changes)
- *  ink        new drift in amber, heavier, with solid ticks; recorded debt in dashed white; exceptions never drawn
- *  act        every mark's hit area is a button in document order: Tab reaches it, Enter or a click pins its reading
- *  occlusion  a mark under the reading card or the dock is not clickable there
+ *  ink        new drift in amber, heavier, with solid ticks; recorded debt in dashed white; exceptions never drawn;
+ *             the mark being chosen for is white; a picked mark is mint and its label says what it becomes
+ *  act        every mark's hit area is a button in document order: Tab reaches it, Enter or a click opens its chooser
+ *  resolve    a mark whose fix was written leaves with a short fade once the re-read drops it
+ *  occlusion  a mark under the chooser, the reading card or the dock is not clickable there
  * ───────────────────────────────────────────────────────── */
 import { dimensionsFor } from './geometry.js';
 
-const INK = { drift: '#ffb347', debt: 'rgb(255 255 255 / 0.7)' };
+const INK = { drift: '#ffb347', debt: 'rgb(255 255 255 / 0.7)', current: '#ffffff', picked: '#a8f0c6' };
 const TICK = 3;
 const CH = 6.6; // px per character of the 11px label
 
@@ -24,6 +26,9 @@ export const MARKS_CSS = `
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   .bp .hit:focus-visible { stroke: #fff; stroke-width: 2px; }
   .bp .hit[data-under] { pointer-events: none; }
+  .bp g { transition: opacity 240ms ease-out; }
+  .bp g.gone { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .bp g { transition: none; } }
   .bp .scan { position: fixed; inset-block: 0; width: 1px; background: #fff; box-shadow: 0 0 24px 4px rgb(255 255 255 / 0.6); }
 `;
 
@@ -31,19 +36,18 @@ const NS = 'http://www.w3.org/2000/svg';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const SHORT = { 'border-radius': 'r', 'font-size': 'text', 'line-height': 'leading', 'letter-spacing': 'tracking', 'padding-left': 'pl', 'padding-right': 'pr', 'padding-top': 'pt', 'padding-bottom': 'pb', 'padding-inline': 'px', 'padding-block': 'py', 'column-gap': 'gap', 'row-gap': 'gap-y', 'background-color': 'bg', 'border-color': 'border', 'box-shadow': 'shadow', 'z-index': 'z' };
 
-export function labelOf(mark) {
+export function labelOf(mark, fix) {
   const prop = mark.props[0];
-  if (!prop) return mark.rule.split('/').pop();
-  const v = mark.n !== undefined ? Math.round(mark.n * 10) / 10 : String(mark.value ?? '').slice(0, 18);
-  return `${/radius/.test(prop) ? 'r' : (SHORT[prop] ?? prop)} ${v}`;
+  const base = !prop ? mark.rule.split('/').pop() : `${/radius/.test(prop) ? 'r' : (SHORT[prop] ?? prop)} ${mark.n !== undefined ? Math.round(mark.n * 10) / 10 : String(mark.value ?? '').slice(0, 18)}`;
+  return fix?.to ? `${base} → ${fix.to}` : base;
 }
 
 // A mark's drawing and its hit box, as markup and a rect, from its geometry. `nudge` steps the label (and its box)
 // away from labels already placed: up for a label above its mark, down for one under or beside it.
-function draw(g, mark, nudge = 0) {
-  const ink = mark.ledger === 'new' ? INK.drift : INK.debt;
-  const heavy = mark.ledger === 'new';
-  const text = labelOf(mark);
+function draw(g, mark, nudge = 0, fix = null) {
+  const ink = fix?.kind === 'picked' || fix?.kind === 'written' ? INK.picked : fix?.kind === 'current' ? INK.current : mark.ledger === 'new' ? INK.drift : INK.debt;
+  const heavy = mark.ledger === 'new' || !!fix;
+  const text = labelOf(mark, fix);
   const wide = text.length * CH + 6;
   const step = (g.under || g.kind === 'v' || g.kind === 'type' ? 1 : -1) * 14 * nudge;
   const label = (x, y, anchor = 'start') => `<text x="${x}" y="${y + step}" text-anchor="${anchor}" fill="${ink}" stroke-width="3">${esc(text)}</text>`;
@@ -80,27 +84,29 @@ function draw(g, mark, nudge = 0) {
     box = [g.x - 3, g.y - 15, wide + 10, 19];
   }
   box = [box[0], box[1] + step, box[2], box[3]];
-  return { markup: `<g stroke="${ink}" stroke-width="1"${heavy ? '' : ' stroke-dasharray="3 3"'} aria-hidden="true">${body}</g>`, box };
+  return { markup: `<g stroke="${ink}" stroke-width="${fix ? 1.5 : 1}"${heavy ? '' : ' stroke-dasharray="3 3"'} aria-hidden="true">${body}</g>`, box };
 }
 
 export class MarkLayer {
-  #svg; #nodes = new Map(); #items = []; #scheduled = 0; #onPick; #occluders;
+  #svg; #nodes = new Map(); #items = []; #order = []; #scheduled = 0; #onPick; #occluders; #state;
 
-  // root: the overlay's shadow root; onPick(element) pins a reading; occluders() → rects that marks must not sit under
-  constructor(layer, { onPick, occluders }) {
+  // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
+  // state(element, mark) → null | { kind: 'current' | 'picked' | 'written', to } says how the mark is drawn
+  constructor(layer, { onPick, occluders, state }) {
     this.#svg = document.createElementNS(NS, 'svg');
     this.#svg.setAttribute('role', 'group');
     this.#svg.setAttribute('aria-label', 'Drift on this view');
     layer.prepend(this.#svg);
     this.#onPick = onPick;
     this.#occluders = occluders;
+    this.#state = state;
     const pick = (e) => {
       const hit = e.target.closest?.('.hit');
       const node = hit && this.#nodes.get(hit.dataset.id);
       if (!node) return;
       e.preventDefault();
       e.stopPropagation();
-      this.#onPick(node.el);
+      this.#onPick(node.el, node.mark, hit.dataset.id);
     };
     this.#svg.addEventListener('click', pick);
     this.#svg.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && pick(e));
@@ -111,14 +117,42 @@ export class MarkLayer {
     this.#items = items;
     const want = new Set();
     for (const item of items) item.marks.forEach((m, k) => want.add(`${item.id}:${k}:${m.key}`));
-    for (const [id, node] of this.#nodes) if (!want.has(id)) node.g.remove(), node.hit.remove(), this.#nodes.delete(id);
+    for (const [id, node] of this.#nodes) if (!want.has(id)) this.#drop(id, node);
     this.invalidate();
+  }
+
+  // Marks in document order, as last drawn: [{ id, el, mark }].
+  order() {
+    return this.#order;
+  }
+  boxOf(id) {
+    const node = this.#nodes.get(id);
+    if (!node || !node.hit.isConnected) return null;
+    return node.hit.getBoundingClientRect();
+  }
+  idOf(el, mark) {
+    for (const [id, node] of this.#nodes) if (node.el === el && node.mark?.key === mark.key) return id;
+    return null;
+  }
+  focus(id) {
+    this.#nodes.get(id)?.hit.focus({ preventScroll: true });
+  }
+
+  // A written mark resolves: it fades before its group leaves; anything else leaves at once.
+  #drop(id, node) {
+    this.#nodes.delete(id);
+    node.hit.remove();
+    if (node.fix?.kind === 'written') {
+      node.g.classList.add('gone');
+      setTimeout(() => node.g.remove(), 260);
+    } else node.g.remove();
   }
 
   clear() {
     this.#items = [];
     for (const node of this.#nodes.values()) node.g.remove(), node.hit.remove();
     this.#nodes.clear();
+    this.#order = [];
   }
 
   invalidate() {
@@ -141,16 +175,17 @@ export class MarkLayer {
       item.marks.forEach((mark, k) => plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g: shown ? dimensionsFor(item.el, mark.props) : null }));
     }
     let after = null; // keeps hit rects in document order for Tab
-    const placed = [];
+    const placed = [], order = [];
     const overlaps = ([x, y, w, h]) => placed.some(([a, b, c, d]) => x < a + c && a < x + w && y < b + d && b < y + h);
     for (const { id, item, mark, g } of plan) {
       let node = this.#nodes.get(id);
       if (!g) {
-        if (node) node.g.remove(), node.hit.remove(), this.#nodes.delete(id);
+        if (node) this.#drop(id, node);
         continue;
       }
-      let drawn = draw(g, mark);
-      for (let n = 1; n <= 4 && overlaps(drawn.box); n++) drawn = draw(g, mark, n);
+      const fix = this.#state?.(item.el, mark) ?? null;
+      let drawn = draw(g, mark, 0, fix);
+      for (let n = 1; n <= 4 && overlaps(drawn.box); n++) drawn = draw(g, mark, n, fix);
       const { markup, box } = drawn;
       placed.push(box);
       if (!node) {
@@ -160,11 +195,15 @@ export class MarkLayer {
         hit.setAttribute('tabindex', '0');
         hit.setAttribute('role', 'button');
         hit.dataset.id = id;
-        node = { g: group, hit, el: item.el, markup: '' };
+        node = { g: group, hit, el: item.el, mark, fix: null, markup: '' };
         this.#nodes.set(id, node);
       }
+      node.mark = mark;
+      node.fix = fix;
       if (node.markup !== markup) (node.g.innerHTML = markup), (node.markup = markup);
-      node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? 'Drift' : 'Recorded'}: ${mark.title}. Open the reading.`);
+      node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? 'Drift' : 'Recorded'}: ${mark.title}.${fix?.to ? ` Picked ${fix.to}.` : ''} Choose a token.`);
+      node.hit.toggleAttribute('aria-current', fix?.kind === 'current');
+      order.push({ id, el: item.el, mark });
       const [x, y, w, h] = box;
       node.hit.setAttribute('x', x);
       node.hit.setAttribute('y', y);
@@ -177,5 +216,6 @@ export class MarkLayer {
       if (node.hit !== node.g.nextSibling) this.#svg.insertBefore(node.hit, node.g.nextSibling);
       after = node.hit;
     }
+    this.#order = order;
   }
 }
