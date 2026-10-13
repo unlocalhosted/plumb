@@ -20,12 +20,10 @@ const LABEL = { ts: 'TypeScript', tsx: 'TSX', js: 'JavaScript', jsx: 'JSX', json
  *  rest      one sheet with two lines on it: this block
  *  copy      0ms    a duplicate peels off the sheet and settles up and to the right, behind it, on `pop`:
  *                   the icon becomes the copy glyph because a copy now exists. The original never moves.
- *            0ms    in the block, a green line draws under exactly the text that went to the clipboard, left to
- *                   right (240ms); on a terminal block that's the commands, not the "$" or the comments
  *            40ms   "Copy" → "Copied", crossfaded in a slot as wide as the longer word
- *            1.6s   the line fades and the duplicate fades out where it is (the clipboard still holds the copy)
+ *            1.6s   the duplicate fades out where it is (the clipboard still holds the copy)
  *  failed    the duplicate starts to peel and snaps back to the sheet; the label reads "Not copied"
- *  reduced motion: the duplicate and the line appear and go without travel
+ *  reduced motion: the duplicate appears and goes without travel
  */
 export function CopyButton({ text, onCopied, className = '' }) {
   const [state, setState] = useState('rest'); // rest | copied | failed
@@ -83,23 +81,6 @@ export function CopyButton({ text, onCopied, className = '' }) {
   );
 }
 
-// A line drawn under exactly the text that was copied: draws in left to right, holds, fades. No box over the code.
-function Copied({ on, block = false, children }) {
-  const reduce = useReducedMotion();
-  return (
-    <span className={`relative ${block ? 'block' : ''}`}>
-      {children}
-      <motion.span
-        aria-hidden="true"
-        className="absolute inset-x-0 -bottom-0.5 h-px origin-left rounded-full bg-code-string"
-        initial={false}
-        animate={on ? { scaleX: 1, opacity: 1 } : { scaleX: reduce ? 1 : 0, opacity: 0 }}
-        transition={on ? (reduce ? { duration: 0 } : { scaleX: { duration: 0.24, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.05 } }) : { duration: reduce ? 0 : 0.3 }}
-      />
-    </span>
-  );
-}
-
 // The block MDX hands us: <pre><code className="language-x">text</code></pre>
 export function CodeBlock({ children }) {
   const code = isValidElement(children) ? children : null;
@@ -108,16 +89,11 @@ export function CodeBlock({ children }) {
   const shell = SHELL.includes(lang);
   const rows = shell ? text.split('\n').filter((l) => l.trim()).map(splitComment) : null;
   const copy = shell ? rows.map((r) => r.cmd).join('\n') : text;
-  const [flash, setFlash] = useState(false);
-  const copied = () => {
-    setFlash(true);
-    setTimeout(() => setFlash(false), 1600);
-  };
   return (
     <figure className="my-6 overflow-hidden rounded-md bg-code text-code-foreground shadow-plate">
       <figcaption className="flex h-10 items-center justify-between border-b border-code-foreground/10 pr-2 pl-4">
         <span className="text-xs font-semibold text-code-comment">{shell ? 'Terminal' : (LABEL[lang] ?? lang.toUpperCase())}</span>
-        <CopyButton text={copy} onCopied={copied} />
+        <CopyButton text={copy} />
       </figcaption>
       {shell ? (
         <div className="flex flex-col gap-3 overflow-x-auto px-4 py-4 font-mono text-sm">
@@ -128,18 +104,14 @@ export function CodeBlock({ children }) {
                 <span className="text-code-comment select-none" aria-hidden="true">
                   ${' '}
                 </span>
-                <Copied on={flash}>{paint(shellTokens(r.cmd))}</Copied>
+                {paint(shellTokens(r.cmd))}
               </span>
             </div>
           ))}
         </div>
       ) : (
         <pre className="overflow-x-auto px-4 py-4 font-mono text-sm">
-          <code>
-            <Copied on={flash} block>
-              {paint(sourceTokens(text))}
-            </Copied>
-          </code>
+          <code>{paint(sourceTokens(text))}</code>
         </pre>
       )}
     </figure>
