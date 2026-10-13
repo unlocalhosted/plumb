@@ -55,7 +55,11 @@ A token listed with `why: (none)` has no reason yet.
 Once your project has a ledger, a new token, or a changed value, is an error in `plumb check` until someone accepts it:
 
 ```sh
-npx plumb accept-decisions --why "Added a 20px step for dense tables"
+npx plumb accept-decisions
 ```
 
 That records the current decisions in the ledger, so a change to your scale is reviewed like any other change. Editing only a reason doesn't need it. A token that disappears is a warning; after reviewing the removal, `npx plumb ledger --prune` clears it.
+
+<Callout kind="careful" title="--why applies to every decision, not just the new ones">
+`accept-decisions` records all of your current decisions at once, and `--why` replaces the accepted reason on each of them. To add one token without rewriting the others' history, leave `--why` off: each token's own `why:` comment is used instead.
+</Callout>
