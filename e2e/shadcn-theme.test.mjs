@@ -324,3 +324,18 @@ test('configured motion sources and caller tiers still control inferred root val
   assert.ok(strict.decisions.some(d => d.name === '--dur-explode' && d.family === 'motion'));
   assert.ok(strict.findings.some(f => f.rule === 'provenance/motion/tier' && f.sites.some(s => s.text.includes('var(--dur-explode)'))));
 });
+
+test("a component's own timing variable is not a motion decision; a theme override of a root value is", async t => {
+  const directory = await copy(t);
+  const css = join(directory, 'src/styles.css');
+  await writeFile(css, (await readFile(css, 'utf8')) + `
+.card { --card-speed: 333ms; transition-duration: var(--card-speed); }
+:root { --page-speed: 180ms; }
+.dark { --page-speed: 240ms; }
+`);
+  const report = run(directory);
+  assert.ok(!report.decisions.some(d => d.name === '--card-speed'), 'a class-local variable is not a decision');
+  assert.ok(report.findings.some(f => f.rule === 'provenance/motion' && f.sites.some(s => s.text === '--card-speed: 333ms')), 'its literal is judged');
+  const page = report.decisions.find(d => d.name === '--page-speed');
+  assert.ok(page); assert.equal(page.family, 'motion'); assert.equal(page.origin, 'project');
+});

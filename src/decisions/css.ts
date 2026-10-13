@@ -9,6 +9,8 @@ export interface CssVariable {
   theme: boolean;
   root: boolean;
   themeScope: boolean;
+  /** Declared in a block that also styles something: a component's variable, not a theme token. */
+  styled?: boolean;
   dynamic: boolean;
   origin: Origin;
   why: string;
@@ -39,6 +41,9 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
     const source = { file, text: css, lineStarts: lineStarts(css) };
     function walk(start: number, theme: boolean, root: boolean, dynamic: boolean, themeScope: boolean): number {
       let index = start;
+      // Variables declared directly in this block, and whether the block also styles anything.
+      const own: CssVariable[] = []; let styles = false;
+      const close = (at: number) => { if (styles) for (const item of own) item.styled = true; return at; };
       while (index < css.length) {
         let comment = '';
         while (index < css.length) {
@@ -46,7 +51,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
           if (css.startsWith('/*', index)) { const end = css.indexOf('*/', index + 2); if (end < 0) return css.length; comment = css.slice(index + 2, end).trim(); index = end + 2; continue; }
           break;
         }
-        if (css[index] === '}') return index + 1;
+        if (css[index] === '}') return close(index + 1);
         const offset = index; let depth = 0, quote = '';
         while (index < css.length) {
           const char = css[index]!;
@@ -81,11 +86,12 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
           result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic, themeScope, trailingWhy,
             origin: sheet.sourceOrigin, why: comment.startsWith('why:') ? comment.slice(4).replace(/\s*tier:\s*(primitive|semantic)\b/, '').trim() : '',
             ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offset, '').line }, site: sourceSite(source, offset, text) });
-        }
-        if (delimiter === '}') return index + 1;
+          own.push(result.at(-1)!);
+        } else if (/^[a-z][\w-]*\s*:/i.test(text)) styles = true;
+        if (delimiter === '}') return close(index + 1);
         index++;
       }
-      return index;
+      return close(index);
     }
     walk(0, false, false, false, false);
     active.delete(file); visited.add(file);
