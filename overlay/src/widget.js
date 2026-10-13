@@ -24,6 +24,7 @@ import { request, post } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
+import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 const RESUME = 'plumb:resume';
@@ -352,24 +353,29 @@ const ICON = {
   bob: '<svg viewBox="0 0 12 14" aria-hidden="true"><path d="M6 .5v4" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5 9.25 8.75 6 13.5 2.75 8.75Z" fill="currentColor"/></svg>',
   pick: '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.25" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 .5v2.25M6 9.25v2.25M.5 6h2.25M9.25 6h2.25" stroke="currentColor" stroke-width="1.2"/></svg>',
   check: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.1 7.3 8 2.9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  blueprint: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M1 4.5h10M1 7.5h10M4.5 1v10M7.5 1v10" stroke="currentColor" stroke-width="0.8" opacity="0.7"/></svg>',
   close: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>',
 };
 
 class PlumbOverlay extends HTMLElement {
+  #blueprint; #drifts = null;
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map();
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${css}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${css}${BLUEPRINT_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
       <section class="w" hidden></section>
       <div class="dock" role="toolbar" aria-label="Plumb" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
+        <button class="pick bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
         <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
       </div>`;
-    this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
+    this.#$('.pick:not(.bp-toggle)').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
+    this.#blueprint = new Blueprint(this, this.#root, n => { if (n !== this.#drifts) { this.#drifts = n; this.#dock(); } });
+    this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
     addEventListener('keydown', this.#onKeyDown, true);
@@ -403,6 +409,12 @@ class PlumbOverlay extends HTMLElement {
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
   }
 
+  #toggleBlueprint() {
+    this.#blueprint.toggle();
+    this.#$('.bp-toggle').setAttribute('aria-pressed', String(this.#blueprint.active));
+    this.#dock();
+  }
+
   // ── the dock: what Plumb is doing ─────────────────────────
   // Health never queues behind reads, so asking is cheap: every second while starting or unreachable, then every ten.
   async #poll() {
@@ -416,7 +428,7 @@ class PlumbOverlay extends HTMLElement {
   #reason = '';
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
-    const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
+    const say = dock.querySelector('.say'), pick = dock.querySelector('.pick:not(.bp-toggle)');
     const selecting = this.#armed && this.#health !== 'failed';
     const state = selecting ? 'select' : this.#health;
     const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
@@ -425,7 +437,7 @@ class PlumbOverlay extends HTMLElement {
       starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
       failed: 'Plumb couldn’t start',
       lost: 'Reconnecting…',
-      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : 'Plumb · Alt to inspect',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#drifts === null ? 'reading…' : this.#drifts ? `${this.#drifts} off in view` : 'all true in view'} · Alt+B` : 'Plumb · Alt to inspect',
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
     dock.title = state === 'failed' ? this.#reason : '';
@@ -434,7 +446,7 @@ class PlumbOverlay extends HTMLElement {
     // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
     // reading keeps its file on show.
     if (state === 'ready' && !this.#readyAt) { this.#readyAt = performance.now(); this.#foldTimer = setTimeout(() => this.#dock(), TIMING.dockFold); }
-    dock.toggleAttribute('data-fold', state === 'ready' && !this.#pinned && performance.now() - this.#readyAt >= TIMING.dockFold);
+    dock.toggleAttribute('data-fold', state === 'ready' && !this.#pinned && !this.#blueprint?.active && performance.now() - this.#readyAt >= TIMING.dockFold);
     if (state === 'starting') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
   }
   #countTimer = 0;
@@ -531,6 +543,8 @@ class PlumbOverlay extends HTMLElement {
       if (s?.chain) this.#step(s.index + (event.key === 'ArrowUp' ? 1 : -1));
       return;
     }
+    // Alt+B: the whole view as its blueprint, every drift drawn where it lives
+    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
