@@ -1,0 +1,126 @@
+// The dock as a person meets it: bottom right, it says what Plumb is doing; Select picks an element without Alt.
+// Real Vite, real React, real Chromium, the overlay's own demo app.
+import assert from 'node:assert/strict';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+import { plumb } from '@unlocalhosted/plumb/vite';
+
+const repo = fileURLToPath(new URL('../', import.meta.url));
+
+async function browser(t) {
+  try {
+    const launched = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    t.after(() => launched.close()); return launched;
+  } catch (error) {
+    if (!/Executable doesn't exist/.test(error.message)) throw error;
+    t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return null;
+  }
+}
+
+async function demo(t) {
+  const root = await mkdtemp(join(repo, 'fixtures/.dock-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+  await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],
+    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0 } });
+  t.after(() => server.close()); await server.listen();
+  return `http://127.0.0.1:${server.httpServer.address().port}/`;
+}
+
+const dockOf = page => page.locator('plumb-overlay').getByRole('toolbar', { name: 'Plumb' });
+const read = page => page.evaluate(() => {
+  const dock = document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock');
+  const pick = dock.querySelector('.pick'), box = dock.getBoundingClientRect();
+  return { state: dock.dataset.state, folded: dock.hasAttribute('data-fold'), say: dock.querySelector('.say').textContent,
+    pressed: pick.getAttribute('aria-pressed'), cursor: document.documentElement.style.cursor,
+    right: innerWidth - box.right, bottom: innerHeight - box.bottom, background: getComputedStyle(dock).backgroundColor };
+});
+
+test('the dock says Plumb is ready, folds away, and Select picks an element without Alt', { timeout: 90000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const url = await demo(t);
+  const page = await launched.newPage();
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+
+  // Ready: bottom right, one line, the status announced politely.
+  const dock = dockOf(page);
+  await dock.waitFor();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
+  let s = await read(page);
+  assert.equal(s.say, 'Plumb · Alt to inspect');
+  assert.ok(s.right >= 12 && s.right <= 20 && s.bottom >= 12 && s.bottom <= 20, `bottom right with a 16px inset: ${s.right}, ${s.bottom}`);
+  assert.equal(await dock.locator('[role="status"]').getAttribute('aria-live'), 'polite');
+
+  // After four seconds the line folds away; the mark and Select stay.
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').hasAttribute('data-fold'), null, { timeout: 8000 });
+  assert.equal(await dock.locator('.say').isVisible(), false);
+  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), true);
+
+  // Select arms the reticle and stays on when Alt is let go; the page is not clickable while it is on.
+  await dock.getByRole('button', { name: 'Select an element' }).click();
+  s = await read(page);
+  assert.deepEqual([s.state, s.pressed, s.cursor, s.folded, s.say], ['select', 'true', 'crosshair', false, 'Pick an element · Esc']);
+  await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
+  assert.equal((await read(page)).state, 'select', 'letting go of Alt does not end Select');
+
+  // Picking pins the reading and ends Select; the dock names the pinned file.
+  const row = await page.locator('#sync-row').boundingBox();
+  await page.mouse.move(row.x + row.width / 2, row.y + 3);
+  await page.mouse.click(row.x + row.width / 2, row.y + 3);
+  const reading = page.locator('plumb-overlay').getByRole('dialog');
+  await reading.waitFor();
+  s = await read(page);
+  assert.deepEqual([s.state, s.pressed, s.cursor], ['ready', 'false', '']);
+  assert.match(s.say, /^App\.jsx:\d+$/);
+
+  // Esc closes the reading; Select then Esc leaves without picking.
+  await page.keyboard.press('Escape');
+  await reading.waitFor({ state: 'hidden' });
+  await dock.getByRole('button', { name: 'Select an element' }).click();
+  assert.equal((await read(page)).state, 'select');
+  await page.keyboard.press('Escape');
+  s = await read(page);
+  assert.deepEqual([s.state, s.pressed, s.cursor], ['ready', 'false', '']);
+  assert.equal(await reading.isVisible(), false, 'Esc out of Select pins nothing');
+  assert.deepEqual(errors, []);
+});
+
+test('the dock reads on dark pages and is still under reduced motion', { timeout: 60000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const url = await demo(t);
+  const backgrounds = {};
+  for (const scheme of ['light', 'dark']) {
+    const page = await launched.newPage({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.goto(url);
+    await page.waitForFunction(() => window.__plumb?.overlay);
+    await dockOf(page).waitFor();
+    backgrounds[scheme] = (await read(page)).background;
+    // While starting, the mark breathes; with reduced motion it is still.
+    const animation = await page.evaluate(() => {
+      const dock = document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock');
+      dock.dataset.state = 'starting';
+      return getComputedStyle(dock.querySelector('.bob')).animationName;
+    });
+    assert.equal(animation, 'none', `${scheme}: no breathing under reduced motion`);
+    await page.close();
+  }
+  assert.notEqual(backgrounds.light, backgrounds.dark, 'the dock takes the dark paper on dark pages');
+  const page = await launched.newPage({ reducedMotion: 'no-preference' });
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await dockOf(page).waitFor();
+  assert.equal(await page.evaluate(() => {
+    const dock = document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock');
+    dock.dataset.state = 'starting';
+    return getComputedStyle(dock.querySelector('.bob')).animationName;
+  }), 'pl-breathe', 'the mark breathes while Plumb reads the project');
+});
