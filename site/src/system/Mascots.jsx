@@ -117,7 +117,7 @@ function Pipe({ y = 103, from = 0, to = 200 }) {
 function Nut({ pose, leaking }) {
   return (
     <g ref={pose.ref}>
-      <rect x="-6" y="-11" width="12" height="22" rx="1.5" fill={leaking ? '#a7b2c9' : C.pipeDark} style={{ transition: 'fill 400ms' }} />
+      <rect x="-6" y="-11" width="12" height="22" rx="1.5" fill={leaking ? '#a7b2c9' : C.pipeDark} style={{ transition: 'fill var(--dur-move)' }} />
       <rect x="-6" y="-11" width="4" height="22" fill="#000" opacity="0.12" />
       <rect x="2" y="-11" width="4" height="22" fill="#fff" opacity="0.22" />
     </g>
@@ -405,7 +405,7 @@ function Valve({ stage }) {
       <rect x="62" y="92" width="20" height="22" rx="4" fill={C.pipeDark} />
       <rect x="69" y="62" width="6" height="32" fill={C.pipeDark} />
       <Drips at={[146, 110]} leaking={stage > 0 && stage < 4} floor={FLOOR} />
-      <rect x="140" y="94" width="12" height="18" rx="1.5" fill={stage > 0 && stage < 4 ? '#a7b2c9' : C.pipeDark} style={{ transition: 'fill 400ms' }} />
+      <rect x="140" y="94" width="12" height="18" rx="1.5" fill={stage > 0 && stage < 4 ? '#a7b2c9' : C.pipeDark} style={{ transition: 'fill var(--dur-move)' }} />
       {/* local origin: the hub */}
       <g ref={wheel.ref}>
         <circle r="25" fill="none" stroke={C.blue} strokeWidth="6" />

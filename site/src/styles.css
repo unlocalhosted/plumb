@@ -190,7 +190,7 @@
   --radius-md: var(--radius);
   /* why: cards and panels you hold */
   --radius-lg: calc(var(--radius) + 4px);
-  /* why: the bob, a switch, round things that are round */
+  /* why: a switch, an avatar, round things that are round */
   --radius-full: 9999px;
 
   /* why: everything you read; the same face as the product's overlay, so page and tool are one thing */
@@ -242,6 +242,15 @@
   --shadow-sticker: 0 1px 0 rgb(0 0 0 / 0.08), 0 6px 14px -6px rgb(16 24 40 / 0.35);
   /* why: a card held over the page, tinted with the ink so it belongs to the drawing */
   --shadow-lift: 0 0 0 1px var(--border), 0 2px 4px rgb(16 24 40 / 0.05), 0 20px 44px -18px rgb(16 24 40 / 0.28);
+
+  /* why: a part raised over its neighbours: a nut on its part, a gate over the conveyor */
+  --z-raised: 10;
+  /* why: stickers, slapped over the stage */
+  --z-sticker: 20;
+  /* why: the page dimmed while Plumb reads a part */
+  --z-dim: 30;
+  /* why: the title strip, and the stage lifted over the dimmed page */
+  --z-bar: 40;
 
   /* why: things arriving and parts separating: fast start, long settle */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

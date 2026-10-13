@@ -1092,7 +1092,7 @@ class PlumbOverlay extends HTMLElement {
   // Pointing at a token shows it on the page for as long as the pointer stays; nothing is picked or written.
   #peek(m, j) {
     const p = this.#pinned, c = m.choices[j];
-    if (!c || p.status?.kind === 'writing' || p.before) return;
+    if (!p || !c || p.status?.kind === 'writing' || p.before) return; // the card may have closed under the pointer
     for (const prop of m.props) {
       if (!p.original.has(prop)) p.original.set(prop, [p.element.style.getPropertyValue(prop), p.element.style.getPropertyPriority(prop)]);
       p.element.style.setProperty(prop, c.value, 'important');

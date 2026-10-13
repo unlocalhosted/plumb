@@ -63,7 +63,7 @@ export function TitleStrip() {
     } catch {}
   };
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-border bg-background/85 backdrop-blur-sm">
+    <header className="fixed inset-x-0 top-0 z-(--z-bar) border-b border-border bg-background/85 backdrop-blur-sm">
       <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-6 md:px-12">
         <a href="#top" className="flex h-full items-center gap-2 pr-6 text-lg font-semibold">
           Plumb
@@ -72,12 +72,12 @@ export function TitleStrip() {
         <nav aria-label="Sheets" className="hidden items-center gap-4 lg:flex">
           {SHEETS.map((s, i) => (
             <a
-              key={s}
-              href={`#${s.toLowerCase().replace(' ', '-')}`}
+              key={s.id}
+              href={`#${s.id}`}
               aria-current={i === sheet ? 'true' : undefined}
               className="text-xs font-semibold text-faint transition-colors hover:text-primary aria-[current]:text-primary"
             >
-              {s}
+              {s.label}
             </a>
           ))}
         </nav>

@@ -190,15 +190,16 @@ export function Hero() {
           plumber help prevent design system drift
         </motion.h1>
         {/* the closing line: wiped in at zero */}
-        <motion.p
-          aria-hidden={zero < 3}
-          initial={false}
-          animate={{ clipPath: zero >= 3 ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)' }}
-          transition={{ duration: 0.6, ease: [0.65, 0, 0.35, 1] }}
-          className="-mt-4 text-4xl font-semibold text-success max-sm:text-xl"
-        >
-          Six fixed. Zero drift.
-        </motion.p>
+        {zero >= 3 && (
+          <motion.p
+            initial={{ clipPath: 'inset(0 100% 0 0)' }}
+            animate={{ clipPath: 'inset(0 0% 0 0)' }}
+            transition={{ duration: 0.6, ease: [0.65, 0, 0.35, 1] }}
+            className="-mt-4 text-4xl font-semibold text-success max-sm:text-lg"
+          >
+            Six fixed. Zero drift.
+          </motion.p>
+        )}
         <p className="max-w-lg text-lg text-muted-foreground max-sm:text-base">
           Plumb finds where your UI drifts from its design system, and fixes it from the page. The card here has drifted in six places. <b className="font-semibold text-foreground">Fix it.</b>
         </p>
@@ -234,8 +235,7 @@ export function Hero() {
         {reading && (
           <motion.div
             aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-[45]"
-            style={{ background: 'rgb(16 24 40 / 0.08)' }}
+            className="pointer-events-none fixed inset-0 z-(--z-dim) bg-foreground/8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -245,18 +245,18 @@ export function Hero() {
       </AnimatePresence>
 
       {/* the stage: the drifted card, held on a blue panel, the field breathing inside it */}
-      <div className={`relative flex min-h-130 ${reading ? 'z-[46]' : ''} flex-col overflow-hidden rounded-lg bg-stage p-6 text-stage-foreground shadow-lift lg:col-span-7 max-sm:min-h-105`}>
+      <div className={`relative flex min-h-130 ${reading ? 'z-(--z-bar)' : ''} flex-col overflow-hidden rounded-lg bg-stage p-6 text-stage-foreground shadow-lift lg:col-span-7 max-sm:min-h-105`}>
         <Field turbulence={zero >= 2 ? 0 : Math.max(left / HERO_DRIFTS.length, done ? 1 / HERO_DRIFTS.length : 0)} />
-        <div className="relative z-10 flex items-center gap-3">
+        <div className="relative z-(--z-raised) flex items-center gap-3">
           <span className="rounded-full bg-stage-foreground/15 px-3 py-1 font-mono text-sm">DriftedCard.jsx</span>
           {/* the count, for screen readers; the seal shows it */}
           <span className="sr-only" aria-live="polite">
             {left ? `${left} of ${HERO_DRIFTS.length} values off the scale` : 'All values on the scale'}
           </span>
         </div>
-        <Seal count={left} rest={8} delay={0.62} className="absolute top-4 right-4 z-20 max-sm:hidden" />
+        <Seal count={left} rest={8} delay={0.62} className="absolute top-4 right-4 z-(--z-sticker) max-sm:hidden" />
         {/* the receipt: the tokens written, stacked under the seal */}
-        <div className="absolute top-36 right-6 z-20 flex flex-col items-end gap-1.5 max-sm:hidden" aria-label="Tokens written">
+        <div className="absolute top-32 right-6 z-(--z-sticker) flex flex-col items-end gap-1.5 max-sm:hidden" aria-label="Tokens written">
           <AnimatePresence>
             {zero >= 1 &&
               tokens.map((t, i) => (
@@ -299,10 +299,10 @@ export function Hero() {
               );
             })}
             {/* a true sticker: the card's corner is rounded-[10px], 2px off rounded-lg */}
-            <OffBy px={2} fix={written.find((w) => w.before === 'rounded-[10px]')?.after ?? 'rounded-lg'} flipped={fixed.has('radius')} rest={5} delay={0.66} className="absolute -right-10 -bottom-16 z-20 max-sm:hidden" />
+            <OffBy px={2} fix={written.find((w) => w.before === 'rounded-[10px]')?.after ?? 'rounded-lg'} flipped={fixed.has('radius')} rest={5} delay={0.66} className="absolute -right-10 -bottom-16 z-(--z-sticker) max-sm:hidden" />
           </motion.div>
         </div>
-        <p className="relative z-10 text-sm text-stage-foreground/85">{zero >= 2 ? '0 off · still. Every value on this card now comes from a decision.' : 'Each nut is a value off this page’s scale. Click one to open Plumb’s reading.'}</p>
+        <p className="relative z-(--z-raised) text-sm text-stage-foreground/85">{zero >= 2 ? '0 off · still. Every value on this card now comes from a decision.' : 'Each nut is a value off this page’s scale. Click one to open Plumb’s reading.'}</p>
       </div>
     </section>
   );
@@ -323,7 +323,7 @@ function Diff({ written, open }) {
           transition={SPRING.settle}
           className="overflow-hidden rounded-md bg-code text-code-foreground shadow-plate"
         >
-          <figcaption className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2 font-mono text-xs">
+          <figcaption className="flex items-center justify-between gap-3 border-b border-code-foreground/15 px-4 py-2 font-mono text-xs">
             <span>{file}</span>
             <span className="shrink-0 opacity-70">{written.length} edits by Plumb</span>
           </figcaption>

@@ -5,7 +5,7 @@ export default function FieldLive({ live, setLive, setGone, stops, count, speed,
   return (
     <Shader
       disableTelemetry
-      className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${live ? 'opacity-100' : 'opacity-0'}`}
+      className={`absolute inset-0 h-full w-full transition-opacity duration-(--dur-explode) ${live ? 'opacity-100' : 'opacity-0'}`}
       onReady={() => setLive(true)}
       onUnavailable={() => setGone(true)}
     >

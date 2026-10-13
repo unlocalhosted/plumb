@@ -10,9 +10,3 @@ export const SPRING = {
 };
 
 export const STAGGER = 0.04; // seconds between parts that move together
-
-// Scroll length of each sheet, in viewport heights. Longer sheets hold more beats.
-export const SHEET_VH = { cover: 220, drift: 300, reading: 260, fix: 360, everywhere: 320, kept: 260 };
-
-// A scroll range [from, to] maps to 0..1; outside it, clamps.
-export const span = (p, from, to) => Math.min(1, Math.max(0, (p - from) / (to - from)));

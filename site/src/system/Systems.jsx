@@ -130,7 +130,7 @@ function Dowsing() {
         <span
           key={d.label}
           ref={(el) => (parts.current[i] = el)}
-          className={`absolute ${d.at} rounded-md px-2 py-1 font-mono text-sm font-semibold transition-colors duration-300 ${i < fixed ? 'bg-success/15 text-success' : 'bg-destructive/12 text-destructive'}`}
+          className={`absolute ${d.at} rounded-md px-2 py-1 font-mono text-sm font-semibold transition-colors duration-(--dur-move) ${i < fixed ? 'bg-success/15 text-success' : 'bg-destructive/12 text-destructive'}`}
         >
           {i < fixed ? '✓' : d.label}
         </span>

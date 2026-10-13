@@ -299,7 +299,7 @@ export function Wrench({ mood = 'idle', cheer = 0, target = null, scale = 1, com
 
       {/* the nut: the drift. Behind the jaws, so they visibly close on it. */}
       <g ref={nutRef} opacity="0">
-        <polygon points={hex(NUT.flats / Math.sqrt(3))} style={{ fill: nutTight ? NUT_INK.tight : NUT_INK.loose, transition: 'fill 320ms' }} />
+        <polygon points={hex(NUT.flats / Math.sqrt(3))} style={{ fill: nutTight ? NUT_INK.tight : NUT_INK.loose, transition: 'fill var(--dur-move)' }} />
         <polygon points={hex(NUT.flats / Math.sqrt(3))} fill="none" stroke="#000" strokeOpacity="0.25" strokeWidth="0.5" />
         <circle r="2.1" fill="#000" opacity="0.32" />
         <path d="M-2.3 -3.6 L0 -4.9 L2.3 -3.6" fill="none" stroke="#fff" strokeOpacity="0.5" strokeWidth="0.6" strokeLinecap="round" />

@@ -223,7 +223,7 @@ function Shell({ rest = -4, delay = 0, label, children, motionState, className =
       animate={{ scaleX: [s.from, s.squashX, 0.98, 1], scaleY: [s.from, s.squashY, 1.02, 1], opacity: 1 }}
       transition={{ duration: reduce ? 0 : s.duration, times: [0, 0.55, 0.8, 1], delay, ease: 'easeOut' }}
       className={`inline-block cursor-grab touch-none select-none ${className}`}
-      style={{ x, rotate, filter: held ? STICKER.shadowHeld : STICKER.shadow, transition: 'filter 200ms', ...style }}
+      style={{ x, rotate, filter: held ? STICKER.shadowHeld : STICKER.shadow, transition: 'filter var(--dur-quick)', ...style }}
     >
       {children}
     </motion.span>

@@ -23,7 +23,7 @@ export function NutMark({ n, fixed = false, label, open = false, shown = true, d
       animate={{ scale: shown ? 1 : 0, opacity: shown ? 1 : 0 }}
       transition={{ ...SPRING.pop, delay: shown ? delay : 0 }}
       style={style}
-      className="group pointer-events-auto absolute z-10 flex cursor-pointer items-center gap-1.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group pointer-events-auto absolute z-(--z-raised) flex cursor-pointer items-center gap-1.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span className="relative grid size-6 shrink-0 place-items-center">
         <motion.svg
@@ -33,15 +33,15 @@ export function NutMark({ n, fixed = false, label, open = false, shown = true, d
           animate={{ rotate: fixed && !reduce ? 60 : 0 }}
           transition={SPRING.turn}
         >
-          <path d={HEX} className={`transition-colors duration-300 ${fixed ? 'fill-success' : 'fill-destructive'}`} />
+          <path d={HEX} className={`transition-colors duration-(--dur-move) ${fixed ? 'fill-success' : 'fill-destructive'}`} />
           <path d={HEX} fill="none" stroke="#000" strokeOpacity=".2" strokeWidth="1" />
           {/* the lit top flats */}
           <path d="M4.2 7.4 L12 2.9 L19.8 7.4" fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
         </motion.svg>
-        <span className="relative font-mono text-xs leading-none font-semibold text-white">{fixed ? '✓' : n}</span>
+        <span className="relative font-mono text-xs leading-none font-semibold text-primary-foreground">{fixed ? '✓' : n}</span>
       </span>
       {label && !fixed && (
-        <span className={`rounded-sm bg-background px-1.5 font-mono text-xs whitespace-nowrap text-foreground shadow-plate transition-[opacity,translate] duration-200 ${open ? 'opacity-100' : 'pointer-events-none -translate-x-1.5 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100'}`}>
+        <span className={`rounded-sm bg-background px-1.5 font-mono text-xs whitespace-nowrap text-foreground shadow-plate transition-[opacity,translate] duration-(--dur-quick) ${open ? 'opacity-100' : 'pointer-events-none -translate-x-1.5 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100'}`}>
           {label}
         </span>
       )}
