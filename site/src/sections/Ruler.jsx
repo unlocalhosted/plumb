@@ -1,61 +1,73 @@
 /* ─────────────────────────────────────────────────────────
- * RULER — a spacing scale you can drag a value along, with a magnet on every step (site/HOMEPAGE.md §4.2)
+ * RULER — a spacing scale drawn as a ladder: every step at its true length, your value one more bar
  *
- *  load      the steps grow from the baseline, 40ms apart, on `settle`; the handle drops onto its start value
- *  drag      the handle follows the pointer exactly until it comes within 8px of a step; then it springs onto the
- *            step on `detent` and that step pulses (1 → 1.15 → 1, 100ms). Leaving a step takes 12px of pull.
- *  readout   "13px · off the scale", or "12px · gap-3 · related parts and compact controls"
- *  keys      ← → move the handle to the previous or next step
- *  steps     change (Tailwind's defaults ↔ your theme): steps that leave shrink away, new ones grow in, labels stay put
+ * Meaning: a spacing step is a distance, so each one is drawn as that distance; the reason written beside it sits in
+ * the same row. Your value is the bar on top. A hairline guide falls from its end through every row, so you read
+ * at a glance which step it meets, or which two it falls between.
+ *
+ *  rest       your bar grows from 0 to its value once, on `settle`, when the ladder comes into view
+ *  drag       anywhere over the bars; the value follows the pointer exactly until it comes within MAGNET px of a
+ *             step, then springs onto it (`detent`). Leaving a step takes RELEASE px of pull.
+ *  on a step  that row's token turns primary and a contact dot pops at the end of its bar, where the guide meets
+ *             it; your bar and its handle turn primary; the class reads gap-3
+ *  between    the two steps either side lift to full ink and show how far you are from each (−1, +3); your bar's
+ *             end and handle carry the drift colour; the class reads gap-[13px]
+ *  click      a row seats your value on that step
+ *  keys       ← → (and ↑ ↓) step through the scale; Home and End go to its ends
+ *  steps      change (Tailwind's defaults ↔ your theme): rows that leave fold away, new ones unfold, the rest stay
+ *  reduced motion: no growth, no detent travel, no folding; the dot appears without the pop
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from 'motion/react';
+import { AnimatePresence, animate, motion, useInView, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from 'motion/react';
 import { SPRING } from '../site/motion.js';
 
-export const RULER = { magnet: 8, release: 12, stagger: 0.04 };
+export const RULER = { magnet: 8, release: 12 };
+
+const ROW = 'grid grid-cols-[6rem_minmax(0,1fr)_3.5rem] items-center gap-x-4 sm:grid-cols-[7rem_minmax(0,1.3fr)_4rem_minmax(0,1fr)]';
+const fmt = (n) => `${Math.round(n * 2) / 2}`;
 
 /**
- * @param steps    [{ v: px, key: '3', why }]
- * @param max      px at the right end
- * @param start    px the handle starts on
- * @param prefix   utility prefix for the readout, e.g. 'gap'
- * @param onSettle (step | null, px) whenever the handle lands on a step or leaves one
- * @param value    optional motion value to drive, so a figure can follow the handle without re-rendering
- * @param readout  false to leave the readout line to the caller
+ * @param steps    [{ v: px, key: '3', why: string | null }]
+ * @param max      px at the right end of the bars
+ * @param start    px your value starts on
+ * @param prefix   utility prefix, e.g. 'gap'
+ * @param onSettle (step | null, px) whenever your value lands on a step or leaves one
+ * @param value    optional motion value to drive, so a figure can follow without re-rendering
+ * @param readout  false to leave the summary line to the caller
  */
-export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, value, readout = true, tone = 'paper', className = '' }) {
+export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, value, readout = true, className = '' }) {
   const reduce = useReducedMotion();
-  const track = useRef(null);
-  const own = useMotionValue(start);
+  const own = useMotionValue(reduce ? start : 0);
   const v = value ?? own;
-  const left = useTransform(v, (x) => `${(x / max) * 100}%`);
-  const [on, setOn] = useState(null); // the step the handle sits on
-  const [px, setPx] = useState(start);
-  const [pulse, setPulse] = useState(0);
-  const held = useRef(false);
-  // the label reads the value itself, so it agrees with the handle in every frame (the drop-in, the detent)
+  const width = useTransform(v, (x) => `${(Math.min(x, max) / max) * 100}%`);
+  const [px, setPx] = useState(v.get());
+  const [on, setOn] = useState(null);
+  const [held, setHeld] = useState(false);
+  const track = useRef(null);
+  const root = useRef(null);
+  const seen = useInView(root, { once: true, amount: 0.4 });
   useMotionValueEvent(v, 'change', (x) => setPx(Math.round(x * 2) / 2));
 
-  // the handle drops onto its start value once, after the steps have grown
+  // your bar grows to its value once, when the ladder is first seen
   useEffect(() => {
-    if (reduce) return;
-    v.set(start + 6);
-    animate(v, start, { ...SPRING.pop, delay: steps.length * RULER.stagger + 0.15 });
-  }, []);
-  // when the steps change under it, a handle on a step that no longer exists lets go
-  // and one still on a step takes that step's meaning in the new scale (its reason, or the lack of one)
+    if (!seen || reduce || value) return;
+    animate(v, start, SPRING.settle);
+  }, [seen]);
+  // when the steps change under it, a value on a step that no longer exists lets go
   useEffect(() => {
     if (!on) return;
     const same = steps.find((s) => s.v === on.v);
-    settle(same ?? null, v.get());
+    land(same ?? null, v.get());
   }, [steps]);
 
-  const settle = (step, x) => {
+  const land = (step, x) => {
     setOn(step);
-    setPx(step ? step.v : Math.round(x * 2) / 2);
     onSettle?.(step, step ? step.v : x);
   };
-
+  const seat = (step) => {
+    animate(v, step.v, reduce ? { duration: 0 } : SPRING.detent);
+    land(step);
+  };
   const pull = (clientX) => {
     const r = track.current.getBoundingClientRect();
     const per = r.width / max;
@@ -63,110 +75,146 @@ export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, v
     if (on && Math.abs(raw - on.v) * per <= RULER.release) return; // still held by the magnet
     const near = steps.reduce((a, s) => (Math.abs(s.v - raw) < Math.abs(a.v - raw) ? s : a), steps[0]);
     if (Math.abs(near.v - raw) * per <= RULER.magnet) {
-      if (on?.v !== near.v) {
-        animate(v, near.v, reduce ? { duration: 0 } : SPRING.detent);
-        setPulse((p) => p + 1);
-        settle(near);
-      }
+      if (on?.v !== near.v) seat(near);
       return;
     }
     v.set(raw);
-    if (on) settle(null, raw);
-    else setPx(Math.round(raw * 2) / 2);
+    if (on) land(null, raw);
   };
-
-  const step = (dir) => {
-    const ordered = [...steps].sort((a, b) => a.v - b.v);
+  const sorted = [...steps].sort((a, b) => a.v - b.v);
+  const stepBy = (dir) => {
     const here = v.get();
-    const next = dir > 0 ? ordered.find((s) => s.v > here + 0.01) : [...ordered].reverse().find((s) => s.v < here - 0.01);
-    if (!next) return;
-    animate(v, next.v, reduce ? { duration: 0 } : SPRING.detent);
-    setPulse((p) => p + 1);
-    settle(next);
+    const next = dir > 0 ? sorted.find((s) => s.v > here + 0.01) : [...sorted].reverse().find((s) => s.v < here - 0.01);
+    if (next) seat(next);
+  };
+  const below = on ? null : [...sorted].reverse().find((s) => s.v < px);
+  const above = on ? null : sorted.find((s) => s.v > px);
+  const near = (s) => s === below || s === above;
+  const cls = on ? `${prefix}-${on.key}` : `${prefix}-[${fmt(px)}px]`;
+
+  const drag = {
+    onPointerDown: (e) => {
+      if (!e.target.closest('[data-track]')) return;
+      setHeld(true);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      pull(e.clientX);
+    },
+    onPointerMove: (e) => held && pull(e.clientX),
+    onPointerUp: () => setHeld(false),
+    onPointerCancel: () => setHeld(false),
   };
 
-  const ink = tone === 'stage' ? 'text-stage-foreground' : 'text-foreground';
-  const sayPx = `${px}px`;
   return (
-    <div className={`flex flex-col gap-3 ${className}`}>
-      <div
-        ref={track}
-        className={`relative h-24 touch-none select-none ${ink}`}
-        onPointerDown={(e) => {
-          held.current = true;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          pull(e.clientX);
-        }}
-        onPointerMove={(e) => held.current && pull(e.clientX)}
-        onPointerUp={() => (held.current = false)}
-        onPointerCancel={() => (held.current = false)}
-      >
-        {/* the baseline */}
-        <span className="absolute inset-x-0 top-14 h-px bg-current opacity-25" />
-        {/* the steps: a bar per token, height by value, growing from the baseline */}
-        <AnimatePresence initial={!reduce}>
-          {steps.map((s, i) => {
-            const here = on?.v === s.v;
-            return (
-              <motion.span
-                key={s.key}
-                className="absolute inset-y-0 w-0"
-                style={{ left: `${(s.v / max) * 100}%` }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* the bar stands on the baseline (56px down), its height by value */}
-                <motion.span
-                  key={here ? `on${pulse}` : 'off'}
-                  className={`absolute bottom-10 left-0 block w-1 -translate-x-1/2 origin-bottom rounded-full ${here ? 'bg-primary' : 'bg-current opacity-45'}`}
-                  style={{ height: 10 + s.v * 0.6 }}
-                  initial={here ? { scaleY: 1, scaleX: 1 } : { scaleY: 0 }}
-                  animate={here ? { scaleX: [1, 1.6, 1], scaleY: [1, 1.15, 1] } : { scaleY: 1 }}
-                  transition={here ? { duration: 0.1 } : { ...SPRING.settle, delay: i * RULER.stagger }}
-                />
-                {/* every label on one line under the baseline */}
-                <span className={`absolute top-16 left-0 -translate-x-1/2 font-mono text-xs tabular-nums ${here ? 'font-semibold text-primary' : 'opacity-60'}`}>{s.key}</span>
-              </motion.span>
-            );
-          })}
-        </AnimatePresence>
-        {/* the handle */}
-        <motion.button
-          type="button"
-          role="slider"
-          aria-label={`${prefix} value`}
-          aria-valuemin={0}
-          aria-valuemax={max}
-          aria-valuenow={px}
-          aria-valuetext={on ? `${sayPx}, ${prefix}-${on.key}` : `${sayPx}, off the scale`}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowUp') (e.preventDefault(), step(1));
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') (e.preventDefault(), step(-1));
-          }}
-          style={{ left }}
-          className="absolute top-10 z-(--z-raised) -ml-4 grid size-8 cursor-grab place-items-center rounded-full outline-none active:cursor-grabbing"
-        >
-          <span className={`size-5 rounded-full border-2 shadow-plate transition-colors ${on ? 'border-primary bg-primary' : 'border-destructive bg-card'}`} />
-          <span className={`absolute -top-6 rounded-sm px-1.5 font-mono text-xs font-semibold tabular-nums whitespace-nowrap ${on ? 'bg-primary text-primary-foreground' : 'bg-destructive text-primary-foreground'}`}>
-            {sayPx}
-          </span>
-        </motion.button>
+    <div ref={root} className={`flex flex-col gap-3 ${className}`}>
+      <div {...drag} className="flex touch-none flex-col select-none">
+        {/* yours */}
+        <div className={`${ROW} pb-3`}>
+          <code className={`truncate font-mono text-sm font-medium transition-colors ${on ? 'text-primary' : 'text-destructive'}`}>{cls}</code>
+          <div ref={track} data-track className="relative h-8 cursor-ew-resize">
+            <motion.span className={`absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full transition-colors ${on ? 'bg-primary' : 'bg-foreground/70'}`} style={{ width }} />
+            <motion.button
+              type="button"
+              role="slider"
+              aria-label={`${prefix} value`}
+              aria-valuemin={0}
+              aria-valuemax={max}
+              aria-valuenow={px}
+              aria-valuetext={on ? `${px}px, ${prefix}-${on.key}` : `${px}px, off the scale`}
+              onKeyDown={(e) => {
+                const k = e.key;
+                if (k === 'ArrowRight' || k === 'ArrowUp') (e.preventDefault(), stepBy(1));
+                if (k === 'ArrowLeft' || k === 'ArrowDown') (e.preventDefault(), stepBy(-1));
+                if (k === 'Home') (e.preventDefault(), seat(sorted[0]));
+                if (k === 'End') (e.preventDefault(), seat(sorted.at(-1)));
+              }}
+              className="absolute top-1/2 grid size-6 -translate-1/2 cursor-grab place-items-center rounded-full outline-none active:cursor-grabbing"
+              style={{ left: width }}
+              animate={{ scale: held ? 1.15 : 1 }}
+              transition={SPRING.snap}
+            >
+              <span className={`size-3.5 rounded-full border-2 bg-card shadow-plate transition-colors ${on ? 'border-primary' : 'border-destructive'}`} />
+              <span className="pointer-events-none absolute inset-0 rounded-full [button:focus-visible>&]:ring-2 [button:focus-visible>&]:ring-primary" />
+            </motion.button>
+          </div>
+          <span className={`text-right font-mono text-sm font-medium tabular-nums transition-colors ${on ? 'text-primary' : 'text-foreground'}`}>{fmt(px)}px</span>
+          <span className="hidden truncate text-sm text-muted-foreground sm:block">{on ? (on.why ?? 'no reason written') : 'off the scale'}</span>
+        </div>
+
+        {/* the scale, a row per step */}
+        <div className="border-t border-border pt-2">
+          <AnimatePresence initial={false}>
+            {sorted.map((s) => {
+              const here = on?.v === s.v;
+              const side = near(s);
+              const delta = side ? s.v - px : null;
+              return (
+                <motion.div
+                  key={s.key}
+                  initial={reduce ? false : { height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                  transition={SPRING.settle}
+                  className="overflow-hidden"
+                >
+                  <div className={`${ROW} h-7 cursor-pointer`} onClick={() => seat(s)}>
+                    <code className={`font-mono text-sm transition-colors ${here ? 'font-medium text-primary' : side ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {prefix}-{s.key}
+                    </code>
+                    <div data-track className="relative h-full cursor-ew-resize">
+                      <span
+                        className={`absolute top-1/2 left-0 h-0.5 -translate-y-1/2 rounded-full transition-colors duration-(--dur-quick) ${here ? 'bg-primary' : side ? 'bg-foreground/45' : 'bg-foreground/15'}`}
+                        style={{ width: `${(Math.min(s.v, max) / max) * 100}%` }}
+                      />
+                      {/* the contact: where your value meets this step */}
+                      <AnimatePresence>
+                        {here && (
+                          <motion.span
+                            className="absolute top-1/2 size-1.5 -translate-1/2 rounded-full bg-primary"
+                            style={{ left: `${(Math.min(s.v, max) / max) * 100}%` }}
+                            initial={reduce ? false : { scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                            transition={SPRING.pop}
+                          />
+                        )}
+                      </AnimatePresence>
+                      {/* the guide, a hairline from your value's end through every row */}
+                      <motion.span className={`pointer-events-none absolute inset-y-0 w-px transition-colors ${on ? 'bg-primary/40' : 'bg-foreground/20'}`} style={{ left: width }} />
+                    </div>
+                    <span className="flex items-baseline justify-end gap-1 font-mono text-xs tabular-nums">
+                      {delta !== null && <span className="text-muted-foreground">{delta > 0 ? `+${fmt(delta)}` : `−${fmt(-delta)}`}</span>}
+                      <span className={here ? 'text-primary' : side ? 'text-foreground' : 'text-muted-foreground'}>{s.v}px</span>
+                    </span>
+                    <span className={`hidden truncate text-sm transition-colors sm:block ${here || side ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{s.why ?? ''}</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
-      {/* the readout */}
+
+      {/* the readout: what Plumb would say */}
       {readout && (
-      <p className={`min-h-6 font-mono text-sm ${ink}`} aria-live="polite">
-        {on ? (
-          <>
-            <b className={`font-semibold ${tone === 'stage' ? 'underline decoration-2 underline-offset-4' : 'text-primary'}`}>{sayPx}</b> · {prefix}-{on.key} · <span className="font-sans opacity-75">{on.why}</span>
-          </>
-        ) : (
-          <>
-            <b className={`rounded-sm px-1 font-semibold ${tone === 'stage' ? 'bg-destructive text-primary-foreground' : 'text-destructive'}`}>{sayPx}</b> · off the scale
-          </>
-        )}
-      </p>
+        <p className="min-h-6 text-sm" aria-live="polite">
+          {on ? (
+            <>
+              <code className="font-mono font-medium text-primary">{cls}</code> <span className="text-muted-foreground">is a step of this scale{on.why ? `: ${on.why}` : ', with no reason written'}.</span>
+            </>
+          ) : (
+            <>
+              <code className="font-mono font-medium text-destructive">{cls}</code>{' '}
+              <span className="text-muted-foreground">
+                is off this scale.{' '}
+                {[below, above]
+                  .filter(Boolean)
+                  .map((s) => `${prefix}-${s.key}`)
+                  .join(' or ')}{' '}
+                {below && above ? 'either side.' : 'is nearest.'}
+              </span>
+            </>
+          )}
+        </p>
       )}
     </div>
   );
