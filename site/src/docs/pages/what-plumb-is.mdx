@@ -1,10 +1,10 @@
-import { JudgePipeline } from '../figures/JudgePipeline.jsx'
+import { LiveGap } from '../figures/LiveGap.jsx'
 
 Plumb finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and lets you fix each drift from the page. It doesn't judge how a value was written. It compiles your classes, stylesheets, `@apply` and inline styles with your own Tailwind, then judges the CSS that comes out against your tokens.
 
-Pick how the value is written and watch it go through:
+A value is on your scale only when it's exactly one of your steps. The card on this site's homepage has a header written `gap-[13px]`, between two steps of the site's spacing. Drag its gap along the scale.
 
-<JudgePipeline />
+<LiveGap />
 
 ## What it judges
 

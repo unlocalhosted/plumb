@@ -9,7 +9,7 @@
  *  steps     change (Tailwind's defaults ↔ your theme): steps that leave shrink away, new ones grow in, labels stay put
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
+import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from 'motion/react';
 import { SPRING } from '../site/motion.js';
 
 export const RULER = { magnet: 8, release: 12, stagger: 0.04 };
@@ -20,16 +20,21 @@ export const RULER = { magnet: 8, release: 12, stagger: 0.04 };
  * @param start    px the handle starts on
  * @param prefix   utility prefix for the readout, e.g. 'gap'
  * @param onSettle (step | null, px) whenever the handle lands on a step or leaves one
+ * @param value    optional motion value to drive, so a figure can follow the handle without re-rendering
+ * @param readout  false to leave the readout line to the caller
  */
-export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, tone = 'paper', className = '' }) {
+export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, value, readout = true, tone = 'paper', className = '' }) {
   const reduce = useReducedMotion();
   const track = useRef(null);
-  const v = useMotionValue(start);
+  const own = useMotionValue(start);
+  const v = value ?? own;
   const left = useTransform(v, (x) => `${(x / max) * 100}%`);
   const [on, setOn] = useState(null); // the step the handle sits on
   const [px, setPx] = useState(start);
   const [pulse, setPulse] = useState(0);
   const held = useRef(false);
+  // the label reads the value itself, so it agrees with the handle in every frame (the drop-in, the detent)
+  useMotionValueEvent(v, 'change', (x) => setPx(Math.round(x * 2) / 2));
 
   // the handle drops onto its start value once, after the steps have grown
   useEffect(() => {
@@ -150,6 +155,7 @@ export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, t
         </motion.button>
       </div>
       {/* the readout */}
+      {readout && (
       <p className={`min-h-6 font-mono text-sm ${ink}`} aria-live="polite">
         {on ? (
           <>
@@ -161,6 +167,7 @@ export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, t
           </>
         )}
       </p>
+      )}
     </div>
   );
 }
