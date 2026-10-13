@@ -264,6 +264,6 @@ export type { StructuredEdit } from './surfaces/edits.js';
 export { agentDocs } from './surfaces/docs.js';
 
 export { Session, createSession } from './session/index.js';
-export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyResult } from './session/index.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, TextRun, TextResult } from './session/index.js';
 export { serve, serveStdio, createHandler, createWebHandler } from './session/server.js';
 export type { HandlerOptions, WebHandlerOptions, ServeInfo } from './session/server.js';

@@ -63,7 +63,9 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
   if (method === 'resolve') return read('resolveSource', [text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1', stamp: params.stamp === '1' }]);
+  if (method === 'text') return read('text', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
+  if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
     return session.apply({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: params.edits.map(edit => ({ id: edit.id as string })) });
@@ -119,8 +121,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'apply', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method);
+    const expected = ['try', 'apply', 'apply-text'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -181,7 +183,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['apply', 'try', 'health', 'refresh'].includes(method);
+      const json = !['apply', 'apply-text', 'try', 'health', 'refresh'].includes(method);
       const result = await dispatchRequest(current, method, params, options, json);
       return json ? { status: 200, headers, body: result as string } : respond(200, result);
     } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
@@ -280,7 +282,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'apply', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

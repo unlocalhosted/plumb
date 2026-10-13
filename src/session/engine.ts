@@ -16,6 +16,10 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
+import { readText, textSites } from './text.js';
+import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
+import type { TextResult } from './text.js';
+export type { TextRun, TextResult } from './text.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean;
   /** Maximum wait before read execution, in milliseconds (default 5000). */
@@ -32,6 +36,7 @@ export interface ClassesResult {
   /** Hard limits encountered during this trace; never includes elapsed time. */
   limits: ClassTraceLimit[];
 }
+export interface ApplyTextOptions { file: string; hash: string; run: string; from: string; to: string }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
@@ -389,7 +394,7 @@ export class Session extends EventEmitter {
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
     }
-    if (['site', 'edits', 'why', 'classes'].includes(method)) {
+    if (['site', 'edits', 'text', 'why', 'classes'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
       if (method === 'classes') this.validateClasses(args[3]);
       if (method === 'classes' || args[2] !== undefined) this.position(args[2] as number);
@@ -434,6 +439,15 @@ export class Session extends EventEmitter {
   site(file: string, line: number, column?: number): Promise<SiteResult> {
     return this.read('site', { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) });
   }
+  text(file: string, line: number, column: number): Promise<TextResult> {
+    const path = this.file(file); this.position(line); this.position(column);
+    return this.serializeRead(async () => {
+      if (!this.batchRead) await this.reconcile([path]);
+      if (!this.sourceFiles.has(path) || !/\.[cm]?[jt]sx?$/.test(path)) throw new UsageError('Text edits require a tracked JSX source file.');
+      const source = await readFile(path, 'utf8');
+      return readText(path, source, line, column);
+    });
+  }
   edits(file: string, line: number, column?: number): Promise<EditsResult> {
     const params = { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) };
     return this.serializeRead(async () => {
@@ -455,6 +469,49 @@ export class Session extends EventEmitter {
       const paths = [...new Set(result.classes.flatMap(item => item.sites.map(site => site.file)))].filter(path => !this.batchRead || !this.hashes.has(path));
       if (paths.length && (await this.reconcile(paths)).length) return { revision: this.revision, ...await this.settledRead<Omit<ClassesResult, 'revision'>>('classes', params) };
       return { revision: this.revision, ...result };
+    });
+  }
+  async applyText(options: ApplyTextOptions): Promise<ApplyResult> {
+    if (!options || typeof options.file !== 'string' || !options.file.trim() || typeof options.hash !== 'string' || !options.hash.trim() ||
+      typeof options.run !== 'string' || !options.run.trim() || typeof options.from !== 'string' || typeof options.to !== 'string') throw new UsageError(textWriteErrors.parameters);
+    if (!options.to.trim()) throw new UsageError(textWriteErrors.empty);
+    if (options.to.length > 500) throw new UsageError(textWriteErrors.length);
+    const file = this.file(options.file);
+    return this.serialize(async () => {
+      await this.editableFile(file);
+      if (sourceHash(await readFile(file, 'utf8')) !== options.hash) throw new UsageError(staleFile);
+      await this.reconcile([file]);
+      if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
+      const identity = await this.editableFile(file);
+      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
+      let next: string, siteLine: number;
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+        await this.sameFile(file, identity);
+        const bytes = Buffer.alloc(info.size);
+        let offset = 0;
+        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
+        const source = bytes.subarray(0, offset).toString('utf8');
+        if (sourceHash(source) !== options.hash) throw new UsageError(staleFile);
+        // Re-derive the run from the held file, never trust a client range or text.
+        const site = textSites(file, source).find(site => site.runs.some(run => run.id === options.run));
+        const run = site?.runs.find(run => run.id === options.run);
+        if (!site || !run) throw new UsageError(textWriteErrors.unknown);
+        if (run.text !== options.from) throw new UsageError(textWriteErrors.mismatch);
+        const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;
+        const replacement = run.literal ? encodeTextLiteral(options.to, run.literal.quote) : encodeJSXText(source.slice(start, end), options.to);
+        next = source.slice(0, start) + replacement + source.slice(end);
+        siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, site.element.openingElement.start, '').line;
+        await this.sameFile(file, identity);
+        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
+        await this.sameFile(file, identity);
+      } finally { await handle.close(); }
+      await this.reconcile([file]);
+      const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
+      if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
+      return { revision: this.revision, file, hash: snapshot.hash, applied: [options.run], remaining: snapshot.remaining };
     });
   }
   async apply(options: ApplyOptions): Promise<ApplyResult> {
