@@ -81,23 +81,33 @@ export function childrenOf(element) {
   const own = [...element.childNodes].filter(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim()).map(n => {
     const range = document.createRange(); range.selectNodeContents(n);
     const t = range.getBoundingClientRect();
-    return { x: t.left, y: t.top, w: t.width, h: t.height, round: 0, lines: [{ x: t.left, y: t.top, w: t.width, h: t.height }], text: true };
+    return { x: t.left, y: t.top, w: t.width, h: t.height, round: 0, lines: [{ x: t.left, y: t.top, w: t.width, h: t.height, words: n.textContent.trim() }], text: true };
   }).filter(t => t.w > 0);
   return [...own, ...visibleChildren(element).slice(0, 24).map(child => {
     const r = child.getBoundingClientRect(), cs = getComputedStyle(child);
     const lines = [];
     const textOnly = [...child.childNodes].every(n => n.nodeType === Node.TEXT_NODE || (n.nodeType === Node.ELEMENT_NODE && getComputedStyle(n).display === 'inline'));
-    const leaves = textOnly ? [child] : [...child.children].filter(c => c.children.length === 0 && c.textContent.trim());
-    for (const leaf of leaves.slice(0, 4)) {
+    // Words at any depth (a name inside a row inside a header), the innermost element that holds them.
+    const leaves = textOnly ? [child] : [...child.querySelectorAll('*')].filter(c => [...c.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && c.getBoundingClientRect().width > 0);
+    for (const leaf of leaves.slice(0, 8)) {
       const range = document.createRange(); range.selectNodeContents(leaf);
       const t = range.getBoundingClientRect();
-      if (t.width && leaf.textContent.trim()) lines.push({ x: t.left, y: t.top, w: t.width, h: t.height });
+      if (t.width && leaf.textContent.trim()) lines.push({ x: t.left, y: t.top, w: t.width, h: t.height, words: leaf.textContent.trim(), weight: getComputedStyle(leaf).fontWeight });
     }
     const round = cs.borderRadius;
     // A child with its own surface (fill, border, shadow) is drawn as a box even when it only holds text: a button.
     const fill = cs.backgroundColor.match(/[\d.]+/g)?.map(Number);
     const surface = (fill && (fill[3] ?? 1) > 0.05) || cs.boxShadow !== 'none' || px(cs.borderTopWidth) > 0 || px(cs.borderLeftWidth) > 0;
-    return { x: r.left, y: r.top, w: r.width, h: r.height, round: round.includes('%') || px(round) >= Math.min(r.width, r.height) / 2 ? 'full' : px(round), lines, text: textOnly && !surface };
+    // Surfaces inside it (a button in a row, an avatar in a header) are drawn too, in their own colours.
+    const parts = textOnly ? [] : [...child.querySelectorAll('*')].map(d => {
+      const dr = d.getBoundingClientRect(), dcs = getComputedStyle(d), f = dcs.backgroundColor.match(/[\d.]+/g)?.map(Number);
+      const filled = f && (f[3] ?? 1) > 0.05, bordered = px(dcs.borderTopWidth) > 0 && dcs.borderTopStyle !== 'none';
+      if (!dr.width || !dr.height || (!filled && !bordered)) return null;
+      const dround = dcs.borderRadius;
+      return { x: dr.left, y: dr.top, w: dr.width, h: dr.height, fill: filled ? dcs.backgroundColor : null, round: dround.includes('%') || px(dround) >= Math.min(dr.width, dr.height) / 2 ? 'full' : px(dround) };
+    }).filter(Boolean).slice(0, 8);
+    return { x: r.left, y: r.top, w: r.width, h: r.height, round: round.includes('%') || px(round) >= Math.min(r.width, r.height) / 2 ? 'full' : px(round), lines, parts, text: textOnly && !surface,
+      fill: fill && (fill[3] ?? 1) > 0.05 ? cs.backgroundColor : null };
   })];
 }
 
@@ -110,6 +120,28 @@ export function hostIsDark(node) {
       return 0.2126 * r + 0.7152 * g + 0.0722 * bl < 0.2;
     }
   }
+  return matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+// The reading and the tag sit beside the element, on whatever surface holds it, so that surface decides light or dark:
+// the nearest ancestor wide enough to carry the card. A dark button on a light page gets a light card.
+// The reading card follows the page's theme, not the patch of colour under the element: a light page with a blue
+// hero is still a light page. The page's ground is the first opaque background on <body> or <html>; failing that,
+// the scheme the page declares (color-scheme), then the system's.
+export function groundIsDark() {
+  const luminance = el => {
+    const c = getComputedStyle(el).backgroundColor.match(/[\d.]+/g)?.map(Number);
+    if (!c || (c[3] ?? 1) <= 0.5) return null;
+    const [r, g, bl] = c.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  for (const el of [document.body, document.documentElement]) {
+    const l = el && luminance(el);
+    if (l !== null && l !== undefined) return l < 0.2;
+  }
+  const declared = getComputedStyle(document.documentElement).colorScheme;
+  if (declared === 'dark') return true;
+  if (declared === 'light') return false;
   return matchMedia('(prefers-color-scheme: dark)').matches;
 }
 

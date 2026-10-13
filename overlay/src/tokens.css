@@ -28,6 +28,11 @@
   --pl-text-row: 400 12px/16px var(--pl-sans);       /* row text */
   --pl-text-reading: 400 11.5px/16px var(--pl-mono); /* readings and code: measurement, not costume */
   --pl-text-title: 600 12.5px/18px var(--pl-sans);   /* card title */
+  /* the reading card has its own four steps, each with one job */
+  --pl-card-title: 600 14px/20px var(--pl-sans);        /* what is off, in words */
+  --pl-card-code: 500 12.5px/18px var(--pl-mono);       /* classes and values: the change itself */
+  --pl-card-body: 400 12.5px/18px var(--pl-sans);       /* reasons and guidance */
+  --pl-card-meta: 400 11.5px/16px var(--pl-mono);       /* pixel values, file and line */
   --pl-tracking-label: 0.02em;
 
   /* space: one ladder */
@@ -46,6 +51,8 @@
   --pl-tag-h: 22px;
   --pl-row-h: 40px;           /* two lines: property and amount, then the reading */
   --pl-card-w: 360px;
+  --pl-card-pad: 16px;          /* card inset and the gap between its sections */
+  --pl-choice-h: 48px;          /* a choice row: specimen, token, reason */
   --pl-card-gap: 12px;          /* card to element */
 
   /* corners: the instrument is square, the card is a held object */

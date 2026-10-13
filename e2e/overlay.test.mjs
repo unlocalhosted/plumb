@@ -73,7 +73,7 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   await reading.locator('.opt[data-pick]').filter({ hasText: 'compact related items' }).click();
   assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
   await reading.locator('.read .edit').filter({ hasText: /gap-\[10px\]\s*→\s*gap-s2/ }).waitFor();
-  await reading.locator('.synced .state').filter({ hasText: 'Preview: 1 on system' }).waitFor();
+  await reading.locator('.synced .state').filter({ hasText: 'Previewing 1 fix on the page' }).waitFor();
 
   // Before shows the page as it is in source; After puts the preview back.
   await reading.getByRole('button', { name: 'Before' }).click();
@@ -109,8 +109,8 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
   const reading = overlay.getByRole('dialog', { name: 'Plumb reading for span in Chip' });
   await reading.waitFor();
 
-  // Sync applies every mark that has exactly one fitting token; the rest wait for a pick.
-  const sync = reading.getByRole('button', { name: /^Sync \d+ to system$/ });
+  // Preview applies every mark that has exactly one fitting token; the rest wait for a pick.
+  const sync = reading.getByRole('button', { name: /^Preview \d+ fix(es)?$/ });
   await sync.click();
   assert.notEqual(await page.locator('#beta-chip').getAttribute('style'), null);
   await reading.getByRole('button', { name: 'Undo' }).click();

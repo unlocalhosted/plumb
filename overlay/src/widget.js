@@ -22,7 +22,7 @@ const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 
 import { locate } from './locate.js';
 import { request, post } from './api.js';
 import { reading, offCount } from './model.js';
-import { regionFor, outlineOf, childrenOf, hostIsDark, hostGround } from './geometry.js';
+import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -55,6 +55,18 @@ const pathTo = element => {
   for (let n = element; n && n !== document.documentElement; n = n.parentElement) parts.unshift(`${n.localName}:nth-child(${[...n.parentElement.children].indexOf(n) + 1})`);
   return ['html', ...parts].join(' > ');
 };
+// A CSS length in px, so values written in different units sit on one ruler: rem from the root, em from the element.
+const toPx = (value, el) => {
+  const m = String(value ?? '').trim().match(/^(-?[\d.]+)(px|rem|em)?$/);
+  if (!m) return undefined;
+  const n = parseFloat(m[1]);
+  if (m[2] === 'rem') return n * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  if (m[2] === 'em') return n * parseFloat(getComputedStyle(el ?? document.documentElement).fontSize);
+  return n;
+};
+const fmtPx = n => `${Math.round(n * 100) / 100}px`;
+// Families whose choices are drawn as tiles; the rest still use the ruler or swatches until they get their own form.
+const TILED = ['radius', 'spacing', 'type'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const code = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
 
@@ -115,44 +127,83 @@ const css = `
   .lit.frame { background: none; }
   .lit.ring { background: none; border-radius: 50%; }
 
-  /* the reading: one card, positioned by transform; the inner card carries the open motion */
+  /* ── the reading card ─────────────────────────────────────────────────────────────────────────────────────
+     One job per region, top to bottom: which element (head), which findings (strip), the change and its choices
+     (read), what happens next (status + foot). Blue is for actions; red, amber and green are verdicts, always with
+     words. Spacing by relationship: 4 inside a group, 8 between parts, 12 between rows, 16 between sections. */
   .w { position: fixed; left: 0; top: 0; pointer-events: auto; }
   .card { background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); overflow: clip;
           transform-origin: 24px 0; transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
-  .w[data-state="opening"] .card { opacity: 0; transform: translateY(-4px); }
+  .w[data-state="opening"] .card { opacity: 0; transform: translateY(-4px) scale(.985); }
   .card:focus { outline: none; } /* the dialog takes focus so keys reach it; its controls show focus, the card does not */
+  button { font: inherit; color: inherit; }
+  .card :focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 
-  .top { height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; font: var(--pl-text-label); white-space: nowrap; background: var(--pl-paper); }
-  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-text-reading); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  /* head: one line, as before: the element, its count, where it's written, the drawing scale, close */
+  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-text-label); white-space: nowrap; }
+  .top .el { font-weight: 600; color: var(--pl-ink); }
+  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
   @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-ink); } }
+  .top .n.live { color: var(--pl-instrument); }
+  .top .n.won { animation: pl-won 600ms var(--pl-ease-out); }
+  @keyframes pl-won { 0% { transform: scale(.9); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
   .top .zoom { display: flex; gap: 1px; margin-inline-start: 6px; }
-  .top button.z, .top .close { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 16px; line-height: 16px; border-radius: 2px; cursor: pointer; }
+  .top button.z { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
   .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
   .top button.z:disabled { color: var(--pl-ink-3); cursor: default; }
-  .top .close { display: grid; place-items: center; width: 16px; padding: 0; margin-inline-start: 2px; }
-  .top .close svg { width: 10px; height: 10px; }
-  .top button:focus-visible, .top .file:focus-visible { outline: 1px solid var(--pl-instrument); }
+  .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-ink-2); cursor: pointer; }
+  .close svg { width: 10px; height: 10px; }
+  @media (hover: hover) and (pointer: fine) { .close:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
 
   /* the chain: where this element comes from, outermost usage first; the read link is marked */
-  .chain { display: flex; align-items: center; gap: 2px; padding: 0 8px 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior: contain; }
-  .chain .link { all: unset; flex: none; font: var(--pl-text-reading); color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: var(--pl-radius-mark); cursor: pointer; white-space: nowrap; }
+  .chain { display: flex; align-items: center; gap: 2px; padding: 6px 12px 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior: contain; }
+  .chain .link { all: unset; flex: none; font: var(--pl-card-meta); color: var(--pl-ink-2); padding: 0 6px; height: 22px; line-height: 22px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
   .chain .link[aria-current="true"] { color: var(--pl-ink); background: var(--pl-paper-2); }
-  .chain .link:focus-visible { outline: 1px solid var(--pl-instrument); }
   @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-ink); } }
-  .chain .sep { color: var(--pl-ink-3); font: var(--pl-text-reading); }
+  .chain .sep { color: var(--pl-ink-3); font: var(--pl-card-meta); }
 
   /* the skeleton: the element at its real proportions, marks set into its outline */
   .diagram { position: relative; margin: 10px 12px 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
+
+  /* the words on the element: one row under the drawing */
+  .txt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 12px 0; min-width: 0; }
+  .txt[hidden] { display: none; }
+  .txt .tk { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--pl-radius-tag);
+             background: var(--pl-paper-2); color: var(--pl-ink-2); font: 600 10.5px/1 Georgia, serif; }
+  .txt .run { all: unset; display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; padding: 1px 6px; border-radius: var(--pl-radius-tag);
+              font: var(--pl-text-reading); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              transition: box-shadow var(--pl-dur-feedback) var(--pl-ease-out); }
+  .txt .run:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .txt .run:hover { box-shadow: inset 0 0 0 1px var(--pl-instrument); } }
+  .txt .run .was { color: var(--pl-ink-2); text-decoration-thickness: 1px; }
+  .txt .run .arrow { color: var(--pl-ink-2); }
+  .txt .tr { font: var(--pl-text-label); color: var(--pl-ink-2); min-width: 0; }
+  .txt .tr.hint { margin-inline-start: auto; }
+  /* the editor laid over the words on the page: the page shows through, re-flowing as you type */
+  .tedit { all: unset; position: fixed; box-sizing: border-box; pointer-events: auto; padding: 0 2px; color: transparent; caret-color: var(--pl-instrument);
+           border-radius: 2px; outline: 1.5px dashed var(--pl-instrument); outline-offset: 2px; background: color-mix(in oklab, var(--pl-instrument) 6%, transparent); }
+  .tedit::selection { background: color-mix(in oklab, var(--pl-instrument) 30%, transparent); color: transparent; }
   .diagram.swapping { opacity: 0; }
-  .d-child { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .d-child { position: absolute; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink-3) 60%, transparent); }
   .d-child.text { box-shadow: none; }
-  .d-child b { position: absolute; border-radius: 2px; background: var(--pl-ink-3); opacity: 0.7; }
+  .d-child.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .d-child, .d-part { font-style: normal; }
+  .d-part { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-paper)); }
+  .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-ink-2); pointer-events: none; }
+  .dim { position: absolute; z-index: 1; translate: -50% -50%; padding: 0 3px; border-radius: 3px; font: 600 10px/14px var(--pl-mono); font-variant-numeric: tabular-nums;
+         color: #fff; background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
+  .dim.left { translate: 0 -50%; } .dim.right { translate: -100% -50%; }
+  .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-ink-2); }
+  .dim[data-active] { opacity: 1; scale: 1; }
   .outline { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-  .outline path { fill: none; stroke: var(--pl-ink-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-  .outline .reg { fill: transparent; transition: fill var(--pl-dur-feedback) var(--pl-ease-out); }
-  .outline .reg[data-active] { fill: color-mix(in oklab, var(--pl-off) 20%, transparent); }
-  .outline .reg.soft[data-active] { fill: color-mix(in oklab, var(--pl-soft) 22%, transparent); }
-  .outline .reg.ok[data-active] { fill: color-mix(in oklab, var(--pl-on) 18%, transparent); }
+  .outline path { fill: none; stroke: var(--pl-ink-2); stroke-opacity: .55; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .outline .surface { fill: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .outline .surface.bare { fill: none; }
+  /* every finding is hatched where it lives; the one being read is hatched strongly */
+  .outline .reg { fill: url(#pl-h-off); opacity: .35; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
+  .outline .reg.soft { fill: url(#pl-h-soft); } .outline .reg.ok { fill: url(#pl-h-ok); } .outline .reg.quiet { fill: url(#pl-h-quiet); }
+  .outline .reg[data-active] { opacity: 1; }
   .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-ink-2);
          display: grid; place-items: center; border-radius: 3px; transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .pin .g { width: 13px; height: 13px; transform: var(--orient, none); }
@@ -164,93 +215,135 @@ const css = `
   .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-ink); } }
 
-  /* the one reading line */
-  .read { margin: 6px 12px 0; padding-block: 10px 12px; display: grid; gap: 10px; min-height: 120px; align-content: start; }
-  .read > * { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .read.swapping > * { opacity: 0; }
-  .read .t { display: flex; align-items: flex-start; gap: 8px; font: var(--pl-text-title); font-weight: 500; text-wrap: balance; }
-  .read .t .g { width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
-  .read .t .g.soft { color: var(--pl-soft); } .read .t .g.ok { color: var(--pl-on); } .read .t .g.quiet { color: var(--pl-ink-2); }
-  .read .because { font: var(--pl-text-row); color: var(--pl-ink-2); margin-top: -6px; }
-  .read .empty { margin: 0; font: var(--pl-text-row); color: var(--pl-ink-2); }
-  .read.short { min-height: 0; }
+  /* read: the change first, then the choice, then the reason */
+  .read { display: grid; gap: 8px; padding: 10px 12px 12px; align-content: start; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
+  .read.swapping { opacity: 0; }
+  .read .t { display: flex; align-items: flex-start; gap: 8px; font: 600 13px/18px var(--pl-sans); text-wrap: pretty; }
+  .read .t > .g { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
+  .read .t > .g.soft { color: var(--pl-soft); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
+  .read .t code { font: var(--pl-card-code); font-size: 12.5px; }
+  .read .t .title { flex: 1; min-width: 0; }
+  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-text-label); letter-spacing: .04em; text-transform: uppercase; }
+  .ledger.new { color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 10%, transparent); }
+  .ledger.debt { color: var(--pl-ink-2); background: var(--pl-paper-2); }
+  .ledger.exception { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 10%, transparent); }
 
-  /* comparisons: tokens and yours side by side, each family in its own material; token rows are the choice */
-  .cmp { display: grid; gap: 2px; }
-  .opt { all: unset; box-sizing: border-box; display: grid; align-items: center; gap: 10px; min-height: 22px; padding: 2px 6px; margin-inline: -6px; border-radius: var(--pl-radius-tag); cursor: pointer; }
-  .opt.you { cursor: default; }
-  .opt[aria-pressed="true"] { background: var(--pl-paper-2); }
-  @media (hover: hover) and (pointer: fine) { .opt:not(.you):hover { background: var(--pl-paper-2); } }
-  .opt:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 1px; }
-  .v { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); text-align: end; white-space: nowrap; }
-  .opt.you .v { color: var(--pl-off); font-weight: 600; }
-  .who { display: flex; align-items: baseline; gap: 6px; font: var(--pl-text-reading); white-space: nowrap; min-width: 0; }
-  .who b { font-weight: 500; color: var(--pl-ink); }
-  .who small { font: var(--pl-text-label); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
-  .who.you { color: var(--pl-off); font: var(--pl-text-label); font-weight: 600; letter-spacing: var(--pl-tracking-label); }
-  .opt[aria-pressed="true"] .who b::after { content: "use"; margin-inline-start: 6px; font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-paper); background: var(--pl-ink); padding: 0 4px; border-radius: var(--pl-radius-mark); }
+  /* the change: what is written → what it becomes */
+  .change { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: var(--pl-card-code); font-size: 12px; }
+  .change .from { padding: 1px 6px; border-radius: 4px; color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 9%, transparent); text-decoration: line-through; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
+  .change .from.soft { color: var(--pl-soft); background: color-mix(in oklab, var(--pl-soft) 11%, transparent); }
+  .change .arrow { color: var(--pl-ink-3); }
+  .change .to { padding: 1px 6px; border-radius: 4px; color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 11%, transparent); animation: pl-in var(--pl-dur-move, 200ms) var(--pl-ease-out); }
+  .change .to.waiting { color: var(--pl-ink-2); background: none; outline: 1px dashed var(--pl-ink-3); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
+  .change .delta { margin-inline-start: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  @keyframes pl-in { from { opacity: 0; transform: translateX(-4px); } }
+  @keyframes pl-nudge { 0%, 100% { outline-color: var(--pl-ink-3); } 45% { outline-color: var(--pl-instrument); color: var(--pl-instrument); } }
 
-  .spacing .opt { grid-template-columns: 34px var(--bars, 160px) minmax(0, 1fr); }
-  .spacing .bar { display: flex; align-items: center; height: 10px; }
-  .spacing .bar i { height: 8px; border-radius: 1px; background: color-mix(in oklab, var(--pl-ink-3) 55%, transparent); box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
-  .spacing .opt[aria-pressed="true"] .bar i { background: var(--pl-ink); box-shadow: none; }
-  .spacing .opt.you .bar i { background: repeating-linear-gradient(-45deg, var(--pl-off) 0 1.5px, transparent 1.5px 4px); box-shadow: inset 0 0 0 1px var(--pl-off); }
+  /* the ask: what to do with the choices */
+  .read .edit:empty { display: none; }
+  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-text-label); letter-spacing: .02em; color: var(--pl-ink-2); }
+  .read .edit .hint { flex: 1; text-transform: none; }
+  .read .edit code { font: var(--pl-card-meta); color: var(--pl-ink); overflow-wrap: anywhere; }
 
-  .radius { grid-template-columns: max-content 1fr; align-items: center; gap: 14px; }
-  .radius svg path { fill: none; stroke: var(--pl-ink-3); stroke-width: 1; }
-  .radius svg path.pick { stroke: var(--pl-ink); stroke-width: 1.5; }
-  .radius svg path.you { stroke: var(--pl-off); stroke-width: 1.5; stroke-dasharray: 3 2; }
-  .radius .list { display: grid; gap: 2px; }
-  .radius .opt { grid-template-columns: 34px 1fr; }
+  /* choices: full-width controls; specimen at the token's real value, token, pixels, reason */
+  /* the scale: the steps that fit as ticks on a ruler, yours as a red mark between them. A tick is the control:
+     point at it to see it on the page, click to pick it. Distance on the ruler is distance in value. */
+  .scale { position: relative; height: 58px; margin: 2px 6px 0; }
+  .scale .rail { position: absolute; inset-inline: 0; top: 22px; height: 1px; background: var(--pl-ink-3); }
+  .opt { all: unset; position: absolute; top: 0; height: 58px; width: 56px; margin-inline-start: -28px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border-radius: 6px; }
+  .opt .tk { width: 1px; height: 14px; margin-top: 15px; background: var(--pl-ink-2); transition: height var(--pl-dur-feedback), background var(--pl-dur-feedback), width var(--pl-dur-feedback); }
+  .opt b { margin-top: 4px; font: var(--pl-card-code); font-size: 11.5px; line-height: 14px; font-weight: 600; color: var(--pl-ink); white-space: nowrap; }
+  .opt .v { font: var(--pl-text-label); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  @media (hover: hover) and (pointer: fine) { .opt:hover .tk { height: 18px; margin-top: 11px; background: var(--pl-instrument); } .opt:hover b { color: var(--pl-instrument); } }
+  .opt[aria-pressed="true"] .tk { width: 3px; height: 22px; margin-top: 11px; border-radius: 1px; background: var(--pl-instrument); }
+  .opt[aria-pressed="true"] b { color: var(--pl-instrument); }
+  .opt[aria-pressed="true"]::before { content: ""; position: absolute; top: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--pl-instrument); }
+  .opt:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; }
+  .opt .sr, .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .scale .you { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); pointer-events: none; }
+  .scale .you em { font: var(--pl-text-label); font-style: normal; color: var(--pl-off); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scale .you i { width: 0; height: 0; margin-top: 1px; border-inline: 4px solid transparent; border-top: 6px solid var(--pl-off); }
+  .scale .you.soft em { color: var(--pl-soft); } .scale .you.soft i { border-top-color: var(--pl-soft); }
+  .scale .gap { position: absolute; top: 21px; height: 3px; background: color-mix(in oklab, var(--pl-off) 35%, transparent); border-radius: 2px; }
+  .scale .opt kbd { font: 500 9px/11px var(--pl-sans); color: var(--pl-ink-3); opacity: 0; transition: opacity var(--pl-dur-feedback); }
+  @media (hover: hover) and (pointer: fine) { .scale:hover .opt kbd { opacity: 1; } }
+  /* choices on the ladder: the theme's scale in order, the fitting steps live, yours notched between */
+  .ladder { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 12px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .rung { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; min-width: 0; height: 52px; padding-bottom: 5px; }
+  .rung + .rung { box-shadow: -1px 0 0 var(--pl-rule); }
+  .rung.off { opacity: .38; }
+  .ladder .opt { all: unset; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; min-width: 0; height: 52px; padding-bottom: 5px;
+                 cursor: pointer; transition: background var(--pl-dur-feedback) var(--pl-ease-out); }
+  .ladder .rung + .opt, .ladder .opt + .rung { box-shadow: -1px 0 0 var(--pl-rule); }
+  .ladder .opt::after { content: ""; position: absolute; inset-inline: 6px; bottom: 0; height: 2px; border-radius: 1px; background: var(--pl-instrument); opacity: .35; }
+  @media (hover: hover) and (pointer: fine) { .ladder .opt:hover { background: var(--pl-paper-2); } .ladder .opt:hover::after { opacity: .7; } }
+  .ladder .opt[aria-pressed="true"] { background: color-mix(in oklab, var(--pl-instrument) 12%, var(--pl-paper)); }
+  .ladder .opt[aria-pressed="true"]::after { opacity: 1; height: 3px; }
+  .ladder .opt:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; border-radius: 6px; }
+  .rung small { font: 600 10.5px/13px var(--pl-mono); color: var(--pl-ink); white-space: nowrap; }
+  .rung small.px { font: 400 10px/12px var(--pl-mono); color: var(--pl-ink-2); }
+  .ladder .opt[aria-pressed="true"] small { color: var(--pl-instrument); }
+  .ladder kbd { position: absolute; top: 3px; right: 4px; font: 500 9.5px/11px var(--pl-mono); color: var(--pl-ink-2); opacity: .6; }
+  .lg-corner { width: 15px; height: 12px; margin-bottom: 3px; box-sizing: border-box; border-top: 1.5px solid var(--pl-ink-2); border-right: 1.5px solid var(--pl-ink-2); }
+  .lg-gap { display: flex; margin-bottom: 3px; } .lg-gap i { width: 3px; height: 13px; border-radius: 1px; background: var(--pl-ink-2); }
+  .lg-ag { font-family: var(--pl-sans); font-weight: 500; line-height: 1; color: var(--pl-ink); margin-bottom: 2px; }
+  .ladder .opt .lg-corner { border-color: var(--pl-ink); } .ladder .opt .lg-gap i { background: var(--pl-ink); }
+  .ladder .opt[aria-pressed="true"] .lg-corner { border-color: var(--pl-instrument); } .ladder .opt[aria-pressed="true"] .lg-gap i { background: var(--pl-instrument); } .ladder .opt[aria-pressed="true"] .lg-ag { color: var(--pl-instrument); }
+  .lnotch { position: absolute; z-index: 1; top: -7px; bottom: -3px; width: 0; border-left: 2px dashed var(--pl-off); translate: -1px 0; pointer-events: none; }
+  .lnotch em { position: absolute; top: -8px; left: 0; translate: -50% 0; padding: 0 3px; border-radius: 3px; font: 600 10px/13px var(--pl-mono); font-style: normal; color: #fff; background: var(--pl-off); white-space: nowrap; }
+  .lnotch.soft { border-color: var(--pl-soft); } .lnotch.soft em { background: var(--pl-soft); }
+  .dim.live { background: var(--pl-instrument); }
+  .why-line { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); }
+  .why-line:empty { display: none; }
+  /* under the ladder the line always holds its place: a reason appearing on hover must never resize the card (the
+     card would move, the step would slip from under the pointer, and the reading would shake) */
+  .ladder + .why-line { min-height: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ladder + .why-line:empty { display: block; }
+  .ladder + .why-line:empty::before { content: "Point at a step to see why it is on your scale"; color: var(--pl-ink-2); opacity: .75; }
+  .why-line b { font: var(--pl-card-meta); font-weight: 600; color: var(--pl-ink); }
+  /* colours and shadows have no line to sit on: a strip of swatches, yours among them */
+  .swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .swatches .opt { position: relative; top: auto; height: auto; width: auto; margin: 0; flex-direction: row; gap: 6px; padding: 3px 8px 3px 3px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .swatches .opt[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
+  .swatches .opt[aria-pressed="true"]::before { display: none; }
+  .swatches .opt b { margin: 0; }
+  .swatches .you { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-off); font: var(--pl-text-label); color: var(--pl-off); }
+  .sw { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .sw.plate { width: 22px; height: 14px; border-radius: 3px; box-shadow: none; }
 
-  .type .opt { grid-template-columns: 1fr 40px minmax(130px, auto); align-items: baseline; }
-  .type .spec { font-family: var(--spec-font, system-ui, sans-serif); font-weight: var(--spec-weight, 500); color: var(--pl-ink); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .type .opt.you .spec { color: var(--pl-off); }
-
-  .plates { grid-auto-flow: column; justify-content: start; gap: 8px; padding: 10px; border-radius: 4px; background: var(--ground); box-shadow: inset 0 0 0 1px var(--pl-rule); overflow-x: auto; }
-  .plates .opt { grid-template-columns: auto; justify-items: center; gap: 8px; margin: 0; padding: 6px 8px; }
-  .plates .plate { width: 56px; height: 32px; border-radius: 7px; }
-  .plates .who small { display: none; }
-  .plates .opt[aria-pressed="true"] { background: color-mix(in oklab, var(--pl-paper) 70%, transparent); }
-
-  .chips { grid-auto-flow: column; justify-content: start; align-items: center; gap: 8px; overflow-x: auto; }
-  .chips .opt { grid-template-columns: auto auto; gap: 6px; margin: 0; }
-  .chips .chip { width: 22px; height: 22px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
-
-  .list .opt { grid-template-columns: minmax(0, 1fr) auto; }
-
-  .read .edit { display: flex; align-items: center; gap: 8px; font: var(--pl-text-reading); flex-wrap: wrap; }
-  .read .edit s { color: var(--pl-ink-2); text-decoration-color: var(--pl-off); }
-  .read .edit b { font-weight: 600; }
-  .read .edit .hint { font: var(--pl-text-row); color: var(--pl-ink-2); min-width: 0; flex: 1 1 100%; }
-  .read .edit .hint code, .notes code { overflow-wrap: anywhere; }
-  .read .edit .ledger { flex: none; }
-  .read .edit .ledger { margin-inline-start: auto; font: var(--pl-text-label); color: var(--pl-ink-2); }
-  .read .edit .ledger.new { color: var(--pl-ink); }
+  .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .read .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-paper-2); font: var(--pl-card-body); color: var(--pl-ink); }
+  .read .note code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
+  .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-ink-2); }
+  .read.short { padding-block: 14px; }
 
   .notes { margin: 0 12px 10px; display: grid; gap: 4px; }
-  .notes p { margin: 0; font: var(--pl-text-label); color: var(--pl-ink-2); display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+  .notes p { margin: 0; font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
   .notes p > * { min-width: 0; }
   .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); transform: translateY(-2px); }
+  .notes code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
 
-  .foot, .synced { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 12px; box-shadow: 0 -1px 0 var(--pl-rule); }
-  .foot .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); margin-inline-end: auto; }
-  .nav { width: 26px; height: 26px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-ink-2); cursor: pointer; display: grid; place-items: center; }
-  .nav svg { width: 12px; height: 12px; }
-  .nav:disabled { color: var(--pl-ink-3); cursor: default; }
-  @media (hover: hover) and (pointer: fine) { .nav:not(:disabled):hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .btn { height: 26px; padding-inline: 10px; border: 0; border-radius: var(--pl-radius-tag); background: transparent; color: var(--pl-ink-2); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); cursor: pointer; white-space: nowrap; }
-  .btn.sync { color: var(--pl-instrument); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-instrument) 45%, var(--pl-paper)); }
-  @media (hover: hover) and (pointer: fine) { .btn.sync:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 10%, var(--pl-paper)); } .btn.plain:not(:disabled):hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .btn.solid { background: var(--pl-ink); color: var(--pl-paper); margin-inline-start: 4px; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
-  .btn[aria-pressed="true"] { background: var(--pl-paper-2); color: var(--pl-ink); }
-  .btn[aria-busy="true"] { cursor: progress; }
-  .btn:focus-visible, .nav:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
-  .synced .state { font: var(--pl-text-label); color: var(--pl-on); margin-inline-end: auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
+  /* status: what happened, and what's left; then the foot, with one primary action */
+  .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-rule); }
+  .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; align-items: center; gap: 8px; min-width: 0; }
   .synced .state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .synced .state.warn { color: var(--pl-soft); } .synced .state.err { color: var(--pl-off); } .synced .state.quiet { color: var(--pl-ink-2); }
-  .w[data-synced] .foot { display: none; }
+  .synced .state.live { color: var(--pl-instrument); } .synced .state.ok { color: var(--pl-on); } .synced .state.warn { color: var(--pl-soft); } .synced .state.err { color: var(--pl-off); }
+  .foot { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 8px; }
+  .synced[hidden] + .foot { border-top: 1px solid var(--pl-rule); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-ink-2);
+         font: 500 12.5px/1 var(--pl-sans); cursor: pointer; white-space: nowrap; transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback), box-shadow var(--pl-dur-feedback); }
+  @media (hover: hover) and (pointer: fine) { .btn.plain:not(:disabled):hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .btn[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.copy { margin-inline-start: auto; }
+  .btn.primary { color: #fff; background: var(--pl-instrument); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
+  @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 88%, var(--pl-ink)); } }
+  .btn.primary:active:not(:disabled) { transform: translateY(1px); }
+  .btn.primary:disabled { opacity: 1; color: var(--pl-ink-2); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); cursor: default; }
+  .btn.primary.done { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 12%, transparent); box-shadow: none; }
+  .btn[aria-busy="true"]::before { content: ""; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
+  @keyframes pl-spin { to { transform: rotate(1turn); } }
+  @media (prefers-reduced-motion: reduce) { .change .to, .change .to.waiting, .pill.won, .btn[aria-busy="true"]::before { animation: none; } .opt .check { transition: none; } }
 `;
 
 const ICON = {
@@ -258,11 +351,12 @@ const ICON = {
   next: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6 4.5 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
   bob: '<svg viewBox="0 0 12 14" aria-hidden="true"><path d="M6 .5v4" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5 9.25 8.75 6 13.5 2.75 8.75Z" fill="currentColor"/></svg>',
   pick: '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.25" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 .5v2.25M6 9.25v2.25M.5 6h2.25M9.25 6h2.25" stroke="currentColor" stroke-width="1.2"/></svg>',
+  check: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.1 7.3 8 2.9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   close: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>',
 };
 
 class PlumbOverlay extends HTMLElement {
-  #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null;
+  #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map();
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
@@ -281,6 +375,7 @@ class PlumbOverlay extends HTMLElement {
     addEventListener('keydown', this.#onKeyDown, true);
     addEventListener('keyup', this.#onKeyUp, true);
     addEventListener('blur', this.#disarm);
+    addEventListener('dblclick', this.#onDblClick, true);
     this.#resume();
   }
 
@@ -304,6 +399,7 @@ class PlumbOverlay extends HTMLElement {
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
     removeEventListener('blur', this.#disarm);
+    removeEventListener('dblclick', this.#onDblClick, true);
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
   }
 
@@ -366,7 +462,9 @@ class PlumbOverlay extends HTMLElement {
   // The reading of one link in the chain: the JSX at that position, its declarations, findings and edits.
   async #readAt(location, element = this.#pinned?.element) {
     const params = { file: location.file, line: location.line, column: location.column };
-    const [site, edits] = await Promise.all([request('site', params), request('edits', params)]);
+    // Its text is read alongside: which runs are plain literals Plumb can write, or why it can't (an older server
+    // without the endpoint answers nothing, and the card simply has no text row).
+    const [site, edits, text] = await Promise.all([request('site', params), request('edits', params), request('text', params).catch(() => null)]);
     if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
@@ -378,9 +476,9 @@ class PlumbOverlay extends HTMLElement {
         if (traced?.status !== 'pending') break;
         await new Promise(r => setTimeout(r, 250));
       }
-      if (traced?.classes) return { status: 'ready', ...this.#computedReading(location, traced) };
+      if (traced?.classes) return { status: 'ready', ...this.#computedReading(location, traced), text };
     }
-    return { status: 'ready', ...reading(location, site, edits) };
+    return { status: 'ready', ...reading(location, site, edits), text };
   }
 
   // Classes traced to one literal in this level's file become ordinary marks (their edits write to that file). A class
@@ -500,7 +598,7 @@ class PlumbOverlay extends HTMLElement {
 
   #renderTag(element, state) {
     const tag = this.#$('.tag');
-    this.dataset.scheme = hostIsDark(element) ? 'dark' : 'light';
+    this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
     tag.innerHTML = this.#label(element, state);
     tag.hidden = false;
     this.#placeTag(element);
@@ -536,9 +634,12 @@ class PlumbOverlay extends HTMLElement {
   #placeWidget() {
     const p = this.#pinned; if (!p) return;
     const w = this.#$('.w'), b = p.element.getBoundingClientRect(), width = w.offsetWidth, height = w.offsetHeight;
-    let y = b.bottom + 8;
-    if (y + height > innerHeight - 8) y = b.top - height - 8 >= 8 ? b.top - height - 8 : Math.max(8, innerHeight - height - 8);
     const x = Math.min(Math.max(8, b.left), Math.max(8, innerWidth - width - 8));
+    // The dock owns the bottom-right corner; a card that would reach under it ends above it instead.
+    const dock = this.#$('.dock').getBoundingClientRect();
+    const floor = x + width > dock.left - 8 ? Math.min(innerHeight, dock.top) - 8 : innerHeight - 8;
+    let y = b.bottom + 8;
+    if (y + height > floor) y = b.top - height - 8 >= 8 ? b.top - height - 8 : Math.max(8, floor - height);
     w.style.transform = `translate(${x}px, ${y}px)`;
     this.#light();
   }
@@ -570,14 +671,16 @@ class PlumbOverlay extends HTMLElement {
     const fit = Math.min((Math.min(480, Math.max(360, width + 24)) - 24) / Math.max(1, width), TIMING.maxDrawing / Math.max(1, height));
     const steps = [1, 2, 4].filter(z => z === 1 || z <= fit);
     const zoom = steps.find(z => width * z >= 160) ?? steps.at(-1);
-    const p = this.#pinned = { element, state: null, active: 0, zoom, original: new Map(), styleAttr: element.getAttribute('style'), before: false, status: null };
-    this.dataset.scheme = hostIsDark(element) ? 'dark' : 'light';
+    const p = this.#pinned = { element, state: null, active: 0, zoom, original: new Map(), texts: new Map(), styleAttr: element.getAttribute('style'), before: false, status: null, peeking: false };
+    this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
     this.#showReticle(element);
     // Picks and previews belong to this pin; the cached reading stays as the server said it.
     p.state = structuredClone(await this.read(element));
     if (this.#pinned !== p) return;
     this.#renderWidget(true);
     this.#follow();
+    // The page can follow along (a host might dim around the part being read): which element is pinned, and when not.
+    dispatchEvent(new CustomEvent('plumb:pin', { detail: { element } }));
     // The reading opened on its stamp alone; the components above it arrive after, for the chain row and Alt+↑/↓.
     if (p.state.location?.partial) locate(element, { chain: true }).then(full => {
       if (this.#pinned !== p || !full?.chain || p.state.index !== 0) return;
@@ -599,8 +702,10 @@ class PlumbOverlay extends HTMLElement {
 
   close() {
     const p = this.#pinned; if (!p) return;
+    this.#endTextEdit(false);
     this.#restore(p);
     this.#pinned = null;
+    dispatchEvent(new CustomEvent('plumb:unpin', { detail: { element: p.element } }));
     this.#$('.w').hidden = true;
     this.#$('.lit').classList.remove('on');
     this.#dock();
@@ -609,31 +714,31 @@ class PlumbOverlay extends HTMLElement {
   }
 
   #renderWidget(opening = false) {
-    const p = this.#pinned, s = p.state, w = this.#$('.w');
+    const p = this.#pinned, s = p.state, w = this.#$('.w'), ready = s.status === 'ready';
     const b = p.element.getBoundingClientRect();
     const width = Math.round(Math.min(480, Math.max(360, b.width + 24)));
-    const label = s.status === 'ready' ? `${s.tag}${s.component ? ' in ' + s.component : ''}` : p.element.localName;
+    const label = ready ? `${s.tag}${s.component ? ' in ' + s.component : ''}` : p.element.localName;
+    p.regions = ready ? s.marks.map(m => regionFor(p.element, m.props)) : [];
     w.hidden = false;
     w.style.width = width + 'px';
     w.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Plumb reading for ${esc(label)}">
       <div class="top">${this.#label(p.element, s)}
-        ${s.status === 'ready' ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column} · click to copy">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
-        ${s.status === 'ready' ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}
+        ${ready ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column}">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
+        ${ready ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}
         <button class="close" aria-label="Close the reading">${ICON.close}</button></div>
-      ${s.status === 'ready' && s.chain?.length > 1 ? `<nav class="chain" aria-label="Where this element comes from, Alt+↑ and Alt+↓ to step">${s.chain.map((link, i) => i).reverse().map(i => {
+      ${ready && s.chain?.length > 1 ? `<nav class="chain" aria-label="Where this element comes from, Alt+↑ and Alt+↓ to step">${s.chain.map((link, i) => i).reverse().map(i => {
         const link = s.chain[i];
         return `<button class="link" data-step="${i}" aria-current="${i === s.index}" title="${esc(link.file)}:${link.line}">${esc(link.component ?? link.file.split('/').pop())}</button>`; }).join('<span class="sep" aria-hidden="true">›</span>')}</nav>` : ''}
-      ${s.status === 'ready' ? `<div class="diagram"></div><div class="read" aria-live="polite"></div>${this.#notes(s)}
-        <div class="foot"><span class="count"></span>
-          <button class="nav prev" aria-label="Previous mark">${ICON.prev}</button><button class="nav next" aria-label="Next mark">${ICON.next}</button>
-          <button class="btn sync">Sync to system</button><button class="btn solid copy">Copy for agent</button></div>
-        <div class="synced" hidden><span class="state"></span>
-          <button class="btn plain flip" aria-pressed="false">Before</button><button class="btn plain undo">Undo</button><button class="btn solid write">Write edits</button></div>`
+      ${ready ? `<div class="diagram"></div><div class="txt" hidden></div><div class="read" aria-live="polite"></div>${this.#notes(s)}
+        <div class="synced" hidden><span class="state" role="status"></span></div>
+        <div class="foot">
+          <button class="btn plain flip" aria-pressed="false" title="Show the page as it is in source">Before</button><button class="btn plain undo" title="Lift every preview">Undo</button>
+          <button class="btn plain copy">Copy for agent</button><button class="btn primary write"></button></div>`
         : `<div class="read short"><p class="empty">${s.status === 'unplaced' ? code(s.message) : esc(s.message)}</p></div>`}
     </div>`;
     if (opening) { w.dataset.state = 'opening'; requestAnimationFrame(() => requestAnimationFrame(() => { w.dataset.state = 'open'; })); }
     this.#bindWidget();
-    if (s.status === 'ready') { this.#drawDiagram(); this.#render(); this.#updateSync(); }
+    if (ready) { this.#drawDiagram(); this.#render(); this.#renderText(); this.#updateSync(); }
     this.#placeWidget();
     if (opening) { w.querySelector('.card').focus({ preventScroll: true }); setTimeout(() => this.#light(), TIMING.light); }
   }
@@ -647,18 +752,19 @@ class PlumbOverlay extends HTMLElement {
     const w = this.#$('.w'), on = (sel, fn) => w.querySelector(sel)?.addEventListener('click', e => { e.stopPropagation(); fn(e); });
     on('.close', () => this.close());
     w.querySelectorAll('.chain .link').forEach(link => link.addEventListener('click', e => { e.stopPropagation(); this.#step(Number(link.dataset.step)); }));
-    on('.prev', () => this.#go(this.#pinned.active - 1));
-    on('.next', () => this.#go(this.#pinned.active + 1));
-    on('.sync', () => this.#sync());
     on('.flip', e => this.#flip(e.currentTarget));
     on('.undo', () => this.#undo());
-    on('.write', () => this.#write());
+    on('.write', e => { const d = e.currentTarget.dataset.do; if (d === 'sync') this.#sync(); else if (d === 'write' || d === 'reread') this.#write(); });
     on('.copy', e => this.#copy(e.currentTarget));
-    on('.file', e => this.#copyText(e.currentTarget, `${this.#pinned.state.file}:${this.#pinned.state.line}:${this.#pinned.state.column}`));
     w.querySelectorAll('.z').forEach(z => z.addEventListener('click', e => { e.stopPropagation(); this.#zoom(Number(z.dataset.z)); }));
+    on('.file', e => this.#copyText(e.currentTarget, `${this.#pinned.state.file}:${this.#pinned.state.line}:${this.#pinned.state.column}`));
+    // Keys: ← → move between findings, 1–9 pick a token, E edits the text, Enter does the primary action.
     w.querySelector('.card').addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (!e.target.closest('.opt')) { e.preventDefault(); this.#go(this.#pinned.active + 1); } }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { if (!e.target.closest('.opt')) { e.preventDefault(); this.#go(this.#pinned.active - 1); } }
+      if (e.altKey || e.metaKey || e.ctrlKey) return;
+      if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key) && !e.target.closest('.opt')) { e.preventDefault(); this.#go(this.#pinned.active + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1)); }
+      else if (/^[1-9]$/.test(e.key)) { const opt = this.#root.querySelectorAll('.cmp .opt')[Number(e.key) - 1]; if (opt) { e.preventDefault(); opt.click(); } }
+      else if ((e.key === 'e' || e.key === 'E') && this.#pinned.state.text?.editable) { e.preventDefault(); this.#startTextEdit(0); }
+      else if (e.key === 'Enter' && !e.target.closest('button')) { const write = this.#$('.write'); if (write && !write.disabled && !write.hidden) { e.preventDefault(); write.click(); } }
     });
   }
 
@@ -675,11 +781,19 @@ class PlumbOverlay extends HTMLElement {
     const toD = r => ({ x: (r.x - o.x) * k, y: (r.y - o.y) * k + pad, w: r.w * k, h: r.h * k });
     const H = o.h * k, W = o.w * k;
     diagram.style.height = pad + H + 22 + 'px';
+    // The element as it is, drawn as a spec: its children in their own colours (softened), its words as words. It has to
+    // read as *this* element at a glance, never as a loading placeholder.
     const shapes = childrenOf(el).map(c => {
       const d = toD(c);
-      const lines = c.lines.map(l => { const ld = toD(l); return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y + ld.h * 0.3}px;width:${Math.min(ld.w, d.w) * 0.7}px;height:${Math.max(3, ld.h * 0.4)}px"></b>`; }).join('');
-      return `<i class="d-child${c.text ? ' text' : ''}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${c.round === 'full' ? '50%' : c.round * k + 'px'}">${lines}</i>`;
+      const lines = c.lines.map(l => {
+        const ld = toD(l), size = Math.max(6, Math.min(13, ld.h * 0.74));
+        return `<b style="left:${ld.x - d.x}px;top:${ld.y - d.y}px;max-width:${Math.max(4, d.w - (ld.x - d.x))}px;height:${ld.h}px;font-size:${size}px;line-height:${ld.h}px;font-weight:${Math.min(700, Number(l.weight) || 400)}">${esc(l.words ?? '')}</b>`;
+      }).join('');
+      const parts = (c.parts ?? []).map(q => { const qd = toD(q);
+        return `<i class="d-part${q.fill ? ' filled' : ''}" style="${q.fill ? `--fill:${q.fill};` : ''}left:${qd.x - d.x}px;top:${qd.y - d.y}px;width:${qd.w}px;height:${qd.h}px;border-radius:${q.round === 'full' ? '50%' : q.round * k + 'px'}"></i>`; }).join('');
+      return `<i class="d-child${c.text ? ' text' : ''}${c.fill ? ' filled' : ''}" style="${c.fill ? `--fill:${c.fill};` : ''}left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;border-radius:${c.round === 'full' ? '50%' : c.round * k + 'px'}">${parts}${lines}</i>`;
     }).join('');
+    const ground = getComputedStyle(el).backgroundColor, grounded = (ground.match(/[\d.]+/g)?.map(Number)?.[3] ?? 1) > 0.05;
     const R = { tl: Math.min(o.radius.tl * k, H / 2, W / 2), tr: Math.min(o.radius.tr * k, H / 2, W / 2), bl: Math.min(o.radius.bl * k, H / 2, W / 2), br: Math.min(o.radius.br * k, H / 2, W / 2) };
     const top = pad, bot = pad + H, GAPW = 9, MIN = 22;
     p.regions = s.marks.map(m => regionFor(el, m.props));
@@ -725,7 +839,22 @@ class PlumbOverlay extends HTMLElement {
     };
     const regionsSvg = s.marks.map((mark, i) => p.regions[i].rects.map(rect => { const r = toD(rect);
       return `<rect class="reg ${this.#tone(mark)}" data-i="${i}" x="${r.x}" y="${r.y}" width="${Math.max(0, r.w)}" height="${Math.max(0, r.h)}" rx="${p.regions[i].kind === 'corner' ? r.w / 4 : 1}"/>`; }).join('')).join('');
-    diagram.innerHTML = `<svg class="outline" width="${W}" height="${pad + H + 22}" aria-hidden="true">${regionsSvg}<path d="${outline}"/></svg>${shapes}` +
+    // Each finding's size, written where it is: the padding band says 21px, the corner says 10px.
+    const dims = s.marks.map((mark, i) => {
+      const shown = p.peekAt?.i === i ? p.peekAt.value : mark.synced && mark.pick !== null ? mark.choices[mark.pick].value : mark.value;
+      const reg = p.regions[i], r = toD(reg.rects[0]), v = toPx(shown, el);
+      if (v === undefined || !reg.rects[0]) return '';
+      const [x, y] = reg.kind === 'corner'
+        ? [reg.corner[1] === 'r' ? r.x - 4 : r.x + r.w + 4, reg.corner[0] === 'b' ? r.y : r.y + r.h]
+        : reg.kind === 'text' ? [r.x + r.w + 4, r.y + r.h / 2] : [r.x + r.w / 2 + 12, r.y + r.h / 2];
+      // beside the mark's glyph (which sits at the band's middle), never on top of it
+      const align = reg.kind === 'corner' ? (reg.corner[1] === 'r' ? 'right' : 'left') : 'left';
+      return `<span class="dim ${p.peekAt?.i === i ? 'live' : this.#tone(mark)} ${align}" data-i="${i}" style="left:${x}px;top:${y}px">${fmtPx(v)}</span>`;
+    }).join('');
+    const hatch = (id, tone) => `<pattern id="${id}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="1.4" height="5" style="fill:var(${tone})"/></pattern>`;
+    diagram.innerHTML = `<svg class="outline" width="${W}" height="${pad + H + 22}" aria-hidden="true"><defs>${hatch('pl-h-off', '--pl-off')}${hatch('pl-h-soft', '--pl-soft')}${hatch('pl-h-ok', '--pl-on')}${hatch('pl-h-quiet', '--pl-ink-3')}</defs>` +
+      `<rect class="surface${grounded ? '' : ' bare'}" style="--fill:${grounded ? ground : 'transparent'}" x="0.5" y="${top + 0.5}" width="${Math.max(0, W - 1)}" height="${Math.max(0, H - 1)}" rx="${Math.min(R.tl, R.tr, R.bl, R.br)}"/>` +
+      `${regionsSvg}<path d="${outline}"/></svg>${shapes}${dims}` +
       marks.map(m => { const mark = s.marks[m.i], [mx, my] = markXY(m);
         return `<button class="pin ${this.#tone(mark)} ${m.kind === 'corner' ? 'on-arc' : ''}" style="left:${mx}px;top:${my}px;--orient:${orient(mark, m)}" data-i="${m.i}" aria-label="${esc(mark.title.replace(/`/g, ''))}">${glyph(mark.glyph)}</button>`; }).join('');
     diagram.querySelectorAll('.pin').forEach(pin => {
@@ -746,7 +875,7 @@ class PlumbOverlay extends HTMLElement {
   #markCurrent() {
     const p = this.#pinned, i = p.active;
     this.#root.querySelectorAll('.pin').forEach(n => n.setAttribute('aria-current', String(Number(n.dataset.i) === i)));
-    this.#root.querySelectorAll('.outline .reg').forEach(n => n.toggleAttribute('data-active', Number(n.dataset.i) === i));
+    this.#root.querySelectorAll('.outline .reg, .diagram .dim').forEach(n => n.toggleAttribute('data-active', Number(n.dataset.i) === i));
   }
 
   #light(i = this.#pinned?.active) {
@@ -763,6 +892,7 @@ class PlumbOverlay extends HTMLElement {
 
   #go(i) {
     const p = this.#pinned, n = p.state.marks.length; if (!n) return;
+    this.#unpeek();
     p.active = (i + n) % n;
     const read = this.#$('.read');
     read.classList.add('swapping');
@@ -780,74 +910,170 @@ class PlumbOverlay extends HTMLElement {
   // ── the reading line ─────────────────────────────────────
   #render() {
     const p = this.#pinned, s = p.state, read = this.#$('.read');
-    const nav = this.#root.querySelectorAll('.nav');
     if (!s.marks.length && !s.declared) {
       read.innerHTML = s.via === 'owner'
-        ? `<div class="t">${glyph('ownership', 'quiet')}<span>This line uses ${esc(s.component ?? 'a component')} and sets no class or style of its own.</span></div>
+        ? `<div class="t">${glyph('ownership', 'quiet')}<span class="title">This line uses ${esc(s.component ?? 'a component')} and sets no class or style of its own.</span></div>
           <div class="because">Its look comes from ${esc(s.component ?? 'the component')} and the props passed here. Plumb checks that component where its styles are written.</div>`
-        : `<div class="t">${glyph('existence', 'quiet')}<span>Nothing is written literally at this line.</span></div>
+        : `<div class="t">${glyph('existence', 'quiet')}<span class="title">Nothing is written literally at this line.</span></div>
           <div class="because">The classes here are built in code (a variable, a function or a template), so Plumb reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
-      this.#$('.count').textContent = 'computed'; nav.forEach(b => b.disabled = true);
-      this.#$('.sync').disabled = true;
       return;
     }
     if (!s.marks.length) {
-      read.innerHTML = `<div class="t">${glyph('habit', 'ok')}<span>Everything this element sets uses your tokens.</span></div>`;
-      this.#$('.count').textContent = 'on system'; nav.forEach(b => b.disabled = true);
-      this.#$('.sync').disabled = true;
+      read.innerHTML = `<div class="t">${glyph('habit', 'ok')}<span class="title">Every value here comes from your tokens.</span></div>`;
       return;
     }
     const m = s.marks[p.active];
-    nav.forEach(b => b.disabled = s.marks.length < 2);
-    read.innerHTML = `<div class="t">${glyph(m.glyph, this.#tone(m) || 'off')}<span>${code(m.title)}</span></div>
-      <div class="because">${esc(m.because)}</div>
+    read.innerHTML = `<div class="t">${glyph(m.glyph, this.#tone(m) || 'off')}<span class="title">${code(m.title)}</span><span class="ledger ${m.ledger}">${{ new: 'new', debt: 'known debt', exception: 'accepted' }[m.ledger] ?? esc(m.ledger)}</span></div>
+      ${this.#change(m)}
+      <div class="edit">${this.#editLine(m)}</div>
       ${this.#compare(m)}
-      <div class="edit">${this.#editLine(m)}<span class="ledger ${m.ledger}">${{ new: 'new', debt: 'known debt', exception: 'accepted' }[m.ledger] ?? m.ledger}</span></div>`;
-    read.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.#pick(m, Number(b.dataset.pick)); }));
-    this.#$('.count').textContent = `${p.active + 1} of ${s.marks.length}`;
+      ${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}`;
+    read.querySelectorAll('[data-pick]').forEach(b => {
+      const j = Number(b.dataset.pick);
+      b.addEventListener('click', e => { e.stopPropagation(); this.#pick(m, j); });
+      // Pointing at a token previews it on the page; leaving puts the page back. Choosing is by eye.
+      const line = read.querySelector('.why-line');
+      b.addEventListener('pointerenter', () => { this.#peek(m, j); if (line) line.innerHTML = this.#why(m, j); });
+      b.addEventListener('pointerleave', () => { this.#unpeek(); if (line) line.innerHTML = this.#why(m); });
+      b.addEventListener('focus', () => { if (line) line.innerHTML = this.#why(m, j); });
+    });
   }
 
+  // The change, as one line: what is written → what it becomes, or a dashed blank that asks for a choice.
+  #change(m) {
+    const c = m.pick !== null ? m.choices[m.pick] : null;
+    const from = c?.edit?.from ?? m.text;
+    const to = c ? `<code class="to">${esc(c.edit?.to ?? c.label)}</code>` : m.choices.length ? '<code class="to waiting">choose below</code>' : '';
+    const el = this.#pinned.element, a = toPx(m.value, el), z = c ? toPx(c.value, el) : undefined;
+    const show = (v, n) => n !== undefined ? fmtPx(n) : esc(v ?? '');
+    const delta = c ? `${show(m.value, a)} → ${show(c.value, z)}` : show(m.value, a);
+    return `<div class="change"><code class="from ${m.soft ? 'soft' : ''}">${esc(from)}</code>${to ? `<span class="arrow" aria-hidden="true">→</span>${to}` : ''}<span class="delta">${delta}</span></div>`;
+  }
+
+  // The ask: one sentence that says what to do next with this finding.
   #editLine(m) {
     // Value families can be fixed with a token; every other rule (a dead or runtime-built class, an override) says its own fix.
     const valued = ['spacing', 'radius', 'type', 'color', 'shadow', 'z', 'motion'].includes(m.glyph);
-    if (!m.choices.length && !valued) return `<span class="hint">${code(m.action ?? '')}${m.accept ? ` If it is intended: <code>${esc(m.accept)}</code>` : ''}</span>`;
-    if (!m.choices.length) return `<span class="hint">No token is close. Add one to your theme, or accept it: <code>${esc(m.accept ?? '')}</code></span>`;
+    if (!m.choices.length && !valued) return `<span class="hint">How to fix it</span>`;
+    if (!m.choices.length) return `<span class="hint">No token is close</span>`;
     if (m.pick === null) return `<span class="hint">${m.choices.length} tokens fit. Pick the one whose reason matches.</span>`;
     const c = m.choices[m.pick];
-    if (!c.edit) return `<span class="hint">Uses ${esc(c.label)}. Plumb has no exact edit for this syntax; Copy for agent hands it over.</span>`;
-    return `<s>${esc(c.edit.from)}</s>→<b>${esc(c.edit.to)}</b>`;
+    if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but Plumb has no exact edit for this syntax. Copy for agent hands it over.</span>`;
+    return '';
   }
 
-  // Each family is compared in its own material: spacing as bars, corners as arcs, type as type, shadows on the
-  // element's own fill, colours as chips. A token row is the choice: picking one previews it on the page.
+  // Choices are positions on a scale: the steps that fit as ticks on a ruler, yours as a red mark between them, so the
+  // card shows where the value sits and how far it is from each step. Colours and shadows have no line; they are a strip
+  // of swatches with yours among them. Pointing at a step previews it on the page; clicking picks it.
   #compare(m) {
-    if (!m.choices.length) return '';
+    if (!m.choices.length) {
+      const valued = ['spacing', 'radius', 'type', 'color', 'shadow', 'z', 'motion'].includes(m.glyph);
+      const say = valued ? 'Add a token to your theme with a reason, or accept this value in the ledger with one.' : code(m.action ?? '');
+      return `<div class="note">${say}${m.accept ? `<br><code>${esc(m.accept)}</code>` : ''}</div>`;
+    }
+    const name = c => esc(c.edit?.to ?? c.label);
+    const reason = c => c.why ? `<span class="sr"> ${esc(c.why)}</span>` : '';
     const el = this.#pinned.element;
-    const rows = [...m.choices.map((c, j) => ({ ...c, j })), { value: m.value, n: m.n, you: true }];
-    if (rows.every(r => r.n !== undefined)) rows.sort((a, b) => a.n - b.n);
-    const who = r => r.you ? `<span class="who you">yours</span>` : `<span class="who"><b>${esc(r.label)}</b>${r.why ? `<small>${esc(r.why)}</small>` : ''}</span>`;
-    const attrs = r => r.you ? 'class="opt you" disabled' : `class="opt" data-pick="${r.j}" aria-pressed="${r.j === m.pick}" title="${esc(r.why ?? '')}"`;
-    const v = r => `<span class="v">${esc(r.n !== undefined ? r.n : r.value)}</span>`;
-    if (m.glyph === 'spacing' && rows.every(r => r.n !== undefined)) {
-      const max = Math.max(...rows.map(r => r.n), 1), k = Math.min(8, 160 / max);
-      return `<div class="cmp spacing" style="--bars:${Math.ceil(max * k) + 8}px">${rows.map(r => `<button ${attrs(r)}>${v(r)}<span class="bar"><i style="width:${Math.max(1, r.n * k)}px"></i></span>${who(r)}</button>`).join('')}</div>`;
+    const yours = toPx(m.value, el), px = m.choices.map(c => toPx(c.value, el));
+    const linear = yours !== undefined && px.every(v => v !== undefined) && m.glyph !== 'color' && m.glyph !== 'shadow';
+    if (linear && TILED.includes(m.glyph)) return this.#ladder(m, yours, px);
+    if (!linear) {
+      const fill = m.glyph === 'shadow' ? getComputedStyle(this.#pinned.element).backgroundColor : null;
+      const sw = v => m.glyph === 'shadow' ? `<span class="sw plate" style="background:${esc(fill)};box-shadow:${esc(v)}"></span>` : m.glyph === 'color' ? `<span class="sw" style="background:${esc(v)}"></span>` : '';
+      return `<div class="swatches" role="group" aria-label="Tokens that fit">
+        <span class="you" title="yours">${sw(m.value)}yours</span>
+        ${m.choices.map((c, j) => `<button class="opt" data-pick="${j}" aria-pressed="${j === m.pick}" title="${esc(c.why ?? '')}">${sw(c.value)}<b>${name(c)}</b>${reason(c)}</button>`).join('')}
+      </div><div class="why-line">${this.#why(m)}</div>`;
     }
-    if (m.glyph === 'radius' && rows.every(r => r.n !== undefined)) {
-      const max = Math.max(...rows.map(r => r.n), 1), k = Math.min(3, 60 / max), size = max * k + 8;
-      return `<div class="cmp radius"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${rows.map(r => { const rr = r.n * k;
-        return `<path class="${r.you ? 'you' : r.j === m.pick ? 'pick' : ''}" d="M 0.5 ${size - 0.5} V ${rr + 0.5} A ${rr} ${rr} 0 0 1 ${rr + 0.5} 0.5 H ${size - 0.5}"/>`; }).join('')}</svg>
-        <div class="list">${rows.map(r => `<button ${attrs(r)}>${v(r)}${who(r)}</button>`).join('')}</div></div>`;
+    // Lay the steps and yours on one line, in px, with room at both ends.
+    const vals = [yours, ...px], lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+    const at = v => 10 + ((v - lo) / span) * 80; // percent across the ruler
+    const order = m.choices.map((c, j) => ({ ...c, j, px: px[j] })).sort((a, b) => a.px - b.px);
+    // Steps never sit closer than a label's width: spread them in order, keeping the ends inside the ruler.
+    const GAP = 22;
+    order.forEach((c, k) => { c.x = Math.max(at(c.px), k ? order[k - 1].x + GAP : 4); });
+    for (let k = order.length - 1; k >= 0; k--) order[k].x = Math.min(order[k].x, k < order.length - 1 ? order[k + 1].x - GAP : 96);
+    // Yours sits where its value falls between the (spread) steps around it.
+    const below = [...order].reverse().find(c => c.px <= yours), above = order.find(c => c.px >= yours);
+    const yx = below && above && below !== above ? below.x + ((yours - below.px) / (above.px - below.px || 1)) * (above.x - below.x)
+      : below && !above ? Math.min(96, below.x + GAP * 0.8) : above && !below ? Math.max(4, above.x - GAP * 0.8) : (below ?? above).x;
+    // The gap between yours and the step the eye should weigh: the picked one, else the nearest.
+    const near = m.pick !== null ? order.find(c => c.j === m.pick) : order.reduce((a, c) => Math.abs(c.px - yours) < Math.abs(a.px - yours) ? c : a);
+    const g0 = Math.min(yx, near.x), g1 = Math.max(yx, near.x);
+    return `<div class="scale" role="group" aria-label="Steps that fit, and yours">
+        <span class="rail"></span><span class="gap" style="left:${g0}%;width:${g1 - g0}%"></span>
+        ${order.map((c, k) => `<button class="opt" data-pick="${c.j}" aria-pressed="${c.j === m.pick}" style="left:${c.x}%" title="${esc(c.why ?? '')} (${esc(c.value)})"><span class="tk"></span><b>${name(c)}</b><span class="v">${fmtPx(c.px)}</span>${reason(c)}<kbd aria-hidden="true">${k + 1}</kbd></button>`).join('')}
+        <span class="you ${m.soft ? 'soft' : ''}" style="left:${yx}%"><em>${fmtPx(yours)}</em><i></i></span>
+      </div><div class="why-line">${this.#why(m)}</div>`;
+  }
+
+  // Your theme's whole scale for this family, read once from Plumb's decisions and measured on the page (so a token
+  // written as calc(var(--radius) + 4px) is known in px). Fetched lazily; the card redraws when it arrives.
+  #scaleOf(family) {
+    if (!this.#decisions) {
+      // Plumb may still be starting: a failed or empty answer is asked again on the next card, never cached as "no scale".
+      this.#decisionsLoading ??= request('decisions', {}).then(d => {
+        if (!Array.isArray(d)) throw new Error('no decisions yet');
+        this.#decisions = d; this.#scales.clear();
+        if (this.#pinned?.state?.status === 'ready') this.#refresh();
+      }).catch(() => { this.#decisionsLoading = null; });
+      return [];
     }
-    if (m.glyph === 'type' && rows.every(r => r.n !== undefined)) {
-      const cs = getComputedStyle(el), sample = (el.textContent.trim() || 'Aa').slice(0, 28);
-      return `<div class="cmp type" style="--spec-font:${esc(cs.fontFamily)};--spec-weight:${esc(cs.fontWeight)}">${rows.map(r => `<button ${attrs(r)}><span class="spec" style="font-size:${r.n}px">${esc(sample)}</span>${v(r)}${who(r)}</button>`).join('')}</div>`;
-    }
-    if (m.glyph === 'shadow') {
-      const fill = getComputedStyle(el).backgroundColor;
-      return `<div class="cmp plates" style="--ground:${esc(hostGround(el))}">${rows.map(r => `<button ${attrs(r)}><span class="plate" style="background:${esc(fill)};box-shadow:${esc(r.value)}"></span>${who(r)}</button>`).join('')}</div>`;
-    }
-    if (m.glyph === 'color') return `<div class="cmp chips">${rows.map(r => `<button ${attrs(r)}><span class="chip" style="background:${esc(r.value)}"></span>${who(r)}</button>`).join('')}</div>`;
-    return `<div class="cmp list">${rows.map(r => `<button ${attrs(r)}>${who(r)}${v(r)}</button>`).join('')}</div>`;
+    if (this.#scales.has(family)) return this.#scales.get(family);
+    const prop = { radius: 'border-top-left-radius', spacing: 'padding-left', type: 'font-size' }[family];
+    const keep = { radius: n => /^--radius-/.test(n), spacing: n => /^--spacing-[\d.]+$/.test(n), type: n => /^--text-[a-z0-9]+$/.test(n) }[family];
+    if (!prop) return [];
+    const probe = document.createElement('i');
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
+    document.body.append(probe);
+    // Measure the token's own definition (calc(var(--spacing) * 3)): an inline theme defines no variable per step.
+    // Failing that, the variable itself. A definition the browser can't parse is left off the ladder.
+    const measure = expr => { probe.style.removeProperty(prop); probe.style.setProperty(prop, expr); return probe.style.getPropertyValue(prop) ? parseFloat(getComputedStyle(probe).getPropertyValue(prop)) : NaN; };
+    const steps = this.#decisions.filter(d => d.family === family && keep(d.name)).map(d => {
+      let px = measure(d.value);
+      if (!Number.isFinite(px)) px = measure(`var(${d.name})`);
+      return { name: d.name, short: d.name.replace(/^--(radius|spacing|text)-/, ''), px };
+    }).filter(t => Number.isFinite(t.px));
+    probe.remove();
+    this.#scales.set(family, steps);
+    return steps;
+  }
+
+  // Choices on the ladder: the theme's whole scale for this family as one strip, in order. The steps that fit here are
+  // live; the rest are drawn but quiet, so you see where you are in the system. Yours is a dashed red line set
+  // between the steps where its value falls. Each step draws itself the way the family is seen (a corner at its
+  // radius, a space at its width, "Ag" at its size). Pointing at a live step previews it on the page AND in the
+  // drawing above, so the reading moves as one; 1–9 pick the live steps in order.
+  #ladder(m, yours, px) {
+    const family = { radius: 'radius', spacing: 'spacing', type: 'type' }[m.glyph];
+    const live = m.choices.map((c, j) => ({ j, px: px[j], short: (c.edit?.to ?? c.label).replace(/^[a-z]+-/, '') || c.label }));
+    const steps = [...live];
+    for (const t of this.#scaleOf(family)) if (!steps.some(s => Math.abs(s.px - t.px) < 0.01)) steps.push({ j: null, px: t.px, short: t.short });
+    steps.sort((a, b) => a.px - b.px);
+    // a window of seven around yours, so a long scale stays a glance
+    const after = steps.findIndex(s => s.px > yours), at = after < 0 ? steps.length : after;
+    let lo = Math.max(0, at - 3); const hi = Math.min(steps.length, lo + 7); lo = Math.max(0, hi - 7);
+    const win = steps.slice(lo, hi), n = win.length;
+    const glyph = v => m.glyph === 'radius' ? `<span class="lg-corner" style="border-top-right-radius:${Math.min(11, v)}px"></span>`
+      : m.glyph === 'type' ? `<span class="lg-ag" style="font-size:${Math.min(24, Math.max(9, v))}px">Ag</span>`
+      : `<span class="lg-gap" style="gap:${Math.min(18, v)}px"><i></i><i></i></span>`;
+    let key = 0;
+    const cells = win.map(s => s.j === null
+      ? `<span class="rung off" title="On your scale, not a fit here">${glyph(s.px)}<small>${esc(s.short)}</small><small class="px">${s.px >= 999 ? 'pill' : fmtPx(s.px)}</small></span>`
+      : `<button class="opt rung" data-pick="${s.j}" aria-pressed="${s.j === m.pick}" aria-label="${esc(m.choices[s.j].edit?.to ?? m.choices[s.j].label)}, ${fmtPx(s.px)}"><kbd aria-hidden="true">${++key}</kbd>${glyph(s.px)}<small>${esc(s.short)}</small><small class="px">${fmtPx(s.px)}</small></button>`).join('');
+    // yours, between the centres of the steps around it
+    const k = win.findIndex(s => s.px > yours), a = k <= 0 ? null : win[k - 1], b = k < 0 ? null : win[k];
+    const pos = !a ? (k === 0 ? 0 : n) : !b ? n : (k - 1) + 0.5 + (yours - a.px) / (b.px - a.px || 1);
+    return `<div class="cmp ladder" role="group" aria-label="Your scale, with yours between its steps" style="--n:${n}">${cells}
+        <span class="lnotch ${m.soft ? 'soft' : ''}" style="left:${(pos / n) * 100}%"><em>${fmtPx(yours)}</em></span></div>
+      <div class="why-line">${this.#why(m)}</div>`;
+  }
+
+  // One line under the scale: the reason of the step being pointed at, else the picked one, else the ask.
+  #why(m, j = m.pick) {
+    const c = j !== null && j !== undefined ? m.choices[j] : null;
+    if (c) return `<b>${esc(c.edit?.to ?? c.label)}</b> · ${esc(c.why || 'from your scale')}`;
+    return '';
   }
 
   // ── preview: the page itself changes ─────────────────────
@@ -863,18 +1089,42 @@ class PlumbOverlay extends HTMLElement {
     return true;
   }
 
+  // Pointing at a token shows it on the page for as long as the pointer stays; nothing is picked or written.
+  #peek(m, j) {
+    const p = this.#pinned, c = m.choices[j];
+    if (!c || p.status?.kind === 'writing' || p.before) return;
+    for (const prop of m.props) {
+      if (!p.original.has(prop)) p.original.set(prop, [p.element.style.getPropertyValue(prop), p.element.style.getPropertyPriority(prop)]);
+      p.element.style.setProperty(prop, c.value, 'important');
+    }
+    p.peeking = true; p.peekAt = { i: p.state.marks.indexOf(m), value: c.value };
+    this.#drawDiagram(); this.#light();
+  }
+  #unpeek() {
+    const p = this.#pinned; if (!p?.peeking) return;
+    p.peeking = false; p.peekAt = null; this.#restore(p);
+    if (!p.before) this.#reapply();
+    this.#drawDiagram(); this.#light();
+  }
+
   #restore(p = this.#pinned) {
     if (!p) return;
+    for (const t of p.texts.values()) if (t.node.isConnected) t.node.data = t.lead + t.from + t.trail;
     for (const [prop, [value, priority]] of p.original) value ? p.element.style.setProperty(prop, value, priority) : p.element.style.removeProperty(prop);
     // Leave no residue: an element that had no style attribute gets none back.
     // Chromium writes inline style back to the attribute lazily; read it first so the removal is the last write.
     if (p.styleAttr === null && !p.element.style.length) { p.element.getAttribute('style'); p.element.removeAttribute('style'); }
   }
 
-  #reapply() { const p = this.#pinned; for (const m of p.state.marks) if (m.synced) this.#preview(m); }
+  #reapply() {
+    const p = this.#pinned;
+    for (const m of p.state.marks) if (m.synced) this.#preview(m);
+    for (const t of p.texts.values()) if (t.node.isConnected) t.node.data = t.lead + t.to + t.trail;
+  }
 
   #pick(m, j) {
     const p = this.#pinned;
+    p.peeking = false;
     m.pick = j;
     if (p.status?.kind !== 'writing') p.status = null;
     if (p.before) this.#flip(this.#$('.flip'), false);
@@ -898,7 +1148,9 @@ class PlumbOverlay extends HTMLElement {
 
   #undo() {
     const p = this.#pinned;
-    this.#restore(); p.original.clear(); p.before = false; p.status = null;
+    p.peeking = false;
+    this.#endTextEdit(false);
+    this.#restore(); p.original.clear(); p.texts.clear(); p.before = false; p.status = null;
     for (const m of p.state.marks) delete m.synced;
     this.#$('.flip').setAttribute('aria-pressed', 'false');
     this.#refresh();
@@ -906,55 +1158,187 @@ class PlumbOverlay extends HTMLElement {
 
   #refresh() {
     const p = this.#pinned;
-    requestAnimationFrame(() => { if (this.#pinned !== p) return; this.#drawDiagram(); this.#render(); this.#updateSync(); this.#light(); });
+    requestAnimationFrame(() => { if (this.#pinned !== p) return; this.#drawDiagram(); this.#render(); this.#renderText(); this.#updateSync(); this.#light(); });
   }
 
   #writable() { return this.#pinned.state.marks.filter(m => m.synced && m.choices[m.pick]?.edit); }
 
   #updateSync() {
-    const p = this.#pinned, s = p.state, w = this.#$('.w');
-    const previewed = s.marks.filter(m => m.synced), waiting = s.marks.filter(m => m.ledger === 'new' && !m.synced && m.choices.length > 1 && m.pick === null);
-    const stuck = s.marks.filter(m => m.ledger === 'new' && !m.choices.length), writable = this.#writable();
-    const top = this.#root.querySelector('.top .n'), st = status(s);
-    if (top) { top.textContent = st.text; top.className = `n ${st.tone}`; }
-    const ready = s.marks.filter(m => m.ledger === 'new' && m.pick !== null && !m.synced).length;
-    const sync = this.#$('.sync'); sync.disabled = !ready && !previewed.length; sync.textContent = ready ? `Sync ${ready} to system` : 'Sync to system';
-    const strip = this.#$('.synced');
-    const showing = previewed.length || p.status;
-    w.toggleAttribute('data-synced', !!showing); strip.hidden = !showing;
-    if (!showing) return;
-    const state = strip.querySelector('.state'), write = strip.querySelector('.write');
-    if (p.status?.kind === 'writing') { state.className = 'state quiet'; state.textContent = 'Writing to source…'; }
-    else if (p.status?.kind === 'written') { state.className = 'state'; state.textContent = p.status.text; }
-    else if (p.status?.kind === 'error') { state.className = 'state err'; state.textContent = p.status.text; }
-    else {
+    const p = this.#pinned, s = p.state;
+    if (s.status !== 'ready') return;
+    const kind = p.status?.kind;
+    const texts = [...p.texts.values()];
+    const previewed = [...s.marks.filter(m => m.synced), ...texts], waiting = s.marks.filter(m => m.ledger === 'new' && !m.synced && m.choices.length > 1 && m.pick === null);
+    const stuck = s.marks.filter(m => m.ledger === 'new' && !m.choices.length), writable = [...this.#writable(), ...texts];
+    const ready = s.marks.filter(m => m.ledger === 'new' && m.pick !== null && !m.synced);
+    const off = offCount(s);
+
+    // The count in the header: one verdict for the element, in words.
+    const n = this.#root.querySelector('.top .n');
+    const [text, tone] = kind === 'written' && !off && !previewed.length ? ['on system', 'ok won']
+      : previewed.length && !p.before ? ['previewing', 'live']
+      : !s.marks.length ? (s.declared ? ['on system', 'ok'] : ['computed', 'quiet'])
+      : off ? [`${off} off`, '']
+      : ['known debt', 'quiet'];
+    if (n) { n.textContent = text; n.className = `n ${tone}`; }
+
+    // The status line: what happened, and what's left.
+    const strip = this.#$('.synced'), state = strip.querySelector('.state');
+    let say = '', sayTone = '';
+    if (kind === 'writing') { say = 'Writing to source…'; sayTone = 'live'; }
+    else if (kind === 'written') { say = p.status.text; sayTone = 'ok'; }
+    else if (kind === 'error') { say = p.status.text; sayTone = 'err'; }
+    else if (previewed.length) {
       const rest = [waiting.length && `${waiting.length} to pick`, stuck.length && `${stuck.length} without a token`].filter(Boolean).join(' · ');
-      state.className = `state ${rest ? 'warn' : ''}`;
-      state.textContent = `Preview: ${previewed.length} on system${rest ? ' · ' + rest : ''}`;
+      const fixes = previewed.length - texts.length;
+      const what = [fixes && `${fixes} fix${fixes === 1 ? '' : 'es'}`, texts.length && `${texts.length} text change${texts.length === 1 ? '' : 's'}`].filter(Boolean).join(' and ');
+      say = `Previewing ${what} on the page${rest ? ' · ' + rest : ''}`; sayTone = rest ? 'warn' : 'live';
     }
-    write.textContent = p.status?.kind === 'error' && p.status.stale ? 'Read again' : `Write ${writable.length} edit${writable.length === 1 ? '' : 's'}`;
-    write.disabled = p.status?.kind === 'writing' || (!writable.length && !(p.status?.kind === 'error' && p.status.stale));
-    write.setAttribute('aria-busy', String(p.status?.kind === 'writing'));
-    strip.querySelector('.flip').disabled = !previewed.length || p.status?.kind === 'writing';
-    strip.querySelector('.undo').disabled = !previewed.length || p.status?.kind === 'writing';
-    // After a write with nothing new previewed, the strip only reports what happened.
-    const reportOnly = p.status?.kind === 'written' && !previewed.length;
-    for (const b of strip.querySelectorAll('button')) b.hidden = reportOnly;
+    strip.hidden = !say; state.textContent = say; state.className = `state ${sayTone}`;
+
+    // The foot: Before and Undo only while something is previewed; one primary action, named for exactly what it does.
+    const flip = this.#$('.flip'), undo = this.#$('.undo'), write = this.#$('.write'), copy = this.#$('.copy');
+    flip.hidden = undo.hidden = !previewed.length;
+    flip.disabled = undo.disabled = kind === 'writing';
+    write.hidden = false; write.disabled = false; write.dataset.do = ''; write.classList.remove('done'); copy.classList.remove('primary');
+    write.setAttribute('aria-busy', String(kind === 'writing'));
+    if (kind === 'writing') { write.textContent = 'Writing…'; write.disabled = true; }
+    else if (kind === 'error' && p.status.stale) { write.textContent = 'Read again'; write.dataset.do = 'reread'; }
+    else if (writable.length) { write.textContent = `Write ${writable.length} edit${writable.length === 1 ? '' : 's'}`; write.dataset.do = 'write'; }
+    else if (ready.length) { write.textContent = `Preview ${ready.length} fix${ready.length === 1 ? '' : 'es'}`; write.dataset.do = 'sync'; }
+    else if (kind === 'written') { write.textContent = 'Written'; write.classList.add('done'); write.disabled = true; }
+    else if (waiting.length) { write.textContent = 'Pick a token'; write.disabled = true; }
+    else { write.hidden = true; if (stuck.length) copy.classList.add('primary'); }
   }
+
+  // ── text: the words on the element ───────────────────────
+  // A run is a piece of plain JSX text between tags. Editable runs are shown as they read on the page; one that is
+  // being changed reads "from → to". Text Plumb can't write (an expression, a prop, a translation) says where it lives.
+  #renderText() {
+    const p = this.#pinned, t = p.state.text, row = this.#$('.txt');
+    if (!row) return;
+    // A container's words belong to its children: say nothing about text unless this element holds some directly.
+    const ownText = [...p.element.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.data.trim());
+    if (!t || (!t.editable && !ownText)) { row.hidden = true; return; }
+    row.hidden = false;
+    if (!t.editable) {
+      row.innerHTML = `<span class="tk" aria-hidden="true">T</span><span class="tr">${code(t.reason)}</span>`;
+      return;
+    }
+    row.innerHTML = `<span class="tk" aria-hidden="true">T</span>${t.runs.map((r, i) => {
+      const e = p.texts.get(r.id);
+      return `<button class="run" data-run="${i}" title="Edit this text (E, or double-click it on the page)">${e
+        ? `<s class="was">${esc(r.text)}</s><span class="arrow" aria-hidden="true">→</span><span>${esc(e.to)}</span>`
+        : esc(r.text)}</button>`;
+    }).join('')}${p.texts.size ? '' : '<span class="tr hint">E to edit</span>'}`;
+    row.querySelectorAll('.run').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.#startTextEdit(Number(b.dataset.run)); }));
+  }
+
+  // The DOM text node that renders a run: a direct child of the element whose words match it.
+  #textNode(run) {
+    const p = this.#pinned, said = p.texts.get(run.id)?.to ?? run.text, norm = v => v.replace(/\s+/g, ' ').trim();
+    return [...p.element.childNodes].find(n => n.nodeType === Node.TEXT_NODE && norm(n.data) === norm(said)) ?? null;
+  }
+
+  // Editing happens on the page, in the element's own font: an input laid over the words, transparent, so what you
+  // see is the page itself re-flowing as you type. Enter keeps it as a preview; Esc puts the words back.
+  #startTextEdit(i) {
+    const p = this.#pinned, run = p.state.text?.runs?.[i];
+    if (!run || p.status?.kind === 'writing') return;
+    this.#endTextEdit(true);
+    const node = this.#textNode(run);
+    if (!node) return;
+    const prior = p.texts.get(run.id);
+    const lead = prior?.lead ?? node.data.match(/^\s*/)[0], trail = prior?.trail ?? node.data.match(/\s*$/)[0];
+    const start = prior?.to ?? run.text;
+    const cs = getComputedStyle(p.element);
+    const input = document.createElement('input');
+    input.className = 'tedit';
+    input.value = start;
+    input.setAttribute('aria-label', `Text of ${p.state.tag ?? 'this element'}`);
+    for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing']) input.style[k] = cs[k];
+    this.#root.append(input);
+    const range = document.createRange();
+    const place = () => {
+      if (!node.isConnected) return;
+      range.selectNodeContents(node);
+      const r = range.getBoundingClientRect();
+      input.style.left = `${r.left - 2}px`; input.style.top = `${r.top}px`;
+      input.style.width = `${Math.max(24, r.width + 6)}px`; input.style.height = `${r.height}px`;
+    };
+    p.editing = { run, node, lead, trail, input, place, start };
+    input.addEventListener('input', () => { node.data = lead + input.value + trail; place(); this.#light(); });
+    input.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); this.#endTextEdit(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); this.#endTextEdit(false); }
+    });
+    input.addEventListener('blur', () => this.#endTextEdit(true));
+    const follow = () => { if (p.editing?.input === input) { place(); requestAnimationFrame(follow); } };
+    place(); follow();
+    input.focus(); input.select();
+  }
+
+  #endTextEdit(keep) {
+    const p = this.#pinned, ed = p?.editing;
+    if (!ed) return;
+    p.editing = null;
+    ed.input.remove();
+    const to = ed.input.value.replace(/\s+/g, ' ').trim();
+    if (!keep || !to) {
+      // back to what it said before this edit began
+      ed.node.data = ed.lead + ed.start + ed.trail;
+    } else if (to === ed.run.text) {
+      p.texts.delete(ed.run.id);
+      ed.node.data = ed.lead + to + ed.trail;
+    } else {
+      p.texts.set(ed.run.id, { from: ed.run.text, to, node: ed.node, lead: ed.lead, trail: ed.trail });
+      ed.node.data = ed.lead + to + ed.trail;
+      if (p.status?.kind !== 'writing') p.status = null;
+    }
+    this.#refresh();
+    this.#$('.card')?.focus({ preventScroll: true });
+  }
+
+  #onDblClick = event => {
+    const p = this.#pinned;
+    if (!p?.state?.text?.editable || !p.element.contains(event.target)) return;
+    event.preventDefault(); event.stopPropagation();
+    const at = document.caretPositionFromPoint?.(event.clientX, event.clientY)?.offsetNode ?? document.caretRangeFromPoint?.(event.clientX, event.clientY)?.startContainer;
+    const i = p.state.text.runs.findIndex(r => this.#textNode(r) === at);
+    this.#startTextEdit(Math.max(0, i));
+    getSelection()?.removeAllRanges();
+  };
 
   // ── write: the same edits, in source ─────────────────────
   async #write() {
     const p = this.#pinned, s = p.state;
     if (p.status?.kind === 'error' && p.status.stale) return this.#reread(p);
     const ids = this.#writable().map(m => ({ id: m.choices[m.pick].edit.id }));
-    if (!ids.length) return;
+    const texts = [...p.texts.values()];
+    if (!ids.length && !texts.length) return;
+    this.#endTextEdit(true);
+    this.#unpeek();
     p.status = { kind: 'writing' }; this.#updateSync();
     const classes = p.element.getAttribute('class');
-    const text = `Wrote ${ids.length} edit${ids.length === 1 ? '' : 's'} to ${s.file}`;
+    const n = ids.length + texts.length;
+    const text = `Wrote ${n} edit${n === 1 ? '' : 's'} to ${s.file}`;
     try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(p.element), file: s.file, tag: s.tag, text, at: Date.now() })); } catch {}
     try {
-      await post('apply', { file: s.file, hash: s.hash, edits: ids });
-      await this.#reread(p, classes, text);
+      if (ids.length) await post('apply', { file: s.file, hash: s.hash, edits: ids });
+      // Each text change is written against the file as it is now: read the runs again, find the one that still says
+      // what the person started from, and write only that. The server refuses if it no longer does.
+      for (const t of texts) {
+        const now = await request('text', { file: s.file, line: s.line, column: s.column });
+        const run = now?.editable ? now.runs.find(r => r.text === t.from) : null;
+        if (!run) throw new Error(`The text "${t.from}" changed since Plumb read it.`);
+        // Lift the preview first: the write is checked against the page as source made it, then the page shows the
+        // written words (a dev server's reload, or the homepage's replay). If the write is refused, the preview returns.
+        if (t.node.isConnected) t.node.data = t.lead + t.from + t.trail;
+        try { await post('apply-text', { file: s.file, hash: now.hash, run: run.id, from: t.from, to: t.to }); }
+        catch (error) { if (t.node.isConnected) t.node.data = t.lead + t.to + t.trail; throw error; }
+      }
+      await this.#reread(p, classes, text, texts.length > 0);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
       const stale = /changed since/i.test(error.message);
@@ -965,18 +1349,19 @@ class PlumbOverlay extends HTMLElement {
 
   // After a write the dev server reloads the element with its new classes. Lift the preview once the page carries the
   // change itself, then read the element again so the reading reflects source, not the preview.
-  async #reread(p, classesBefore, wrote) {
+  async #reread(p, classesBefore, wrote, wroteText = false) {
     const afterWrite = classesBefore !== undefined;
     this.#cache = new WeakMap();
     for (const [n, wait] of (afterWrite ? TIMING.reread : [0]).entries()) {
       await new Promise(r => setTimeout(r, wait));
       if (this.#pinned !== p) return;
       // Until the page carries the new classes, the preview is the only thing showing the change.
-      const reloaded = p.element.getAttribute('class') !== classesBefore || n === TIMING.reread.length - 1;
+      const reloaded = wroteText || p.element.getAttribute('class') !== classesBefore || n === TIMING.reread.length - 1;
       if (afterWrite && !reloaded) continue;
       const next = await this.read(p.element, true);
       if (next.status !== 'ready') continue;
       if (afterWrite && next.hash === p.state.hash) continue;
+      p.texts.clear(); // the page now carries the written text itself: don't put the old words back
       this.#restore(p); p.original.clear(); p.before = false;
       p.state = structuredClone(next); p.active = 0; p.status = afterWrite ? { kind: 'written', text: wrote } : null;
       this.#renderWidget();
@@ -1002,7 +1387,7 @@ class PlumbOverlay extends HTMLElement {
 
   async #copyText(button, text) {
     const label = button.textContent;
-    try { await navigator.clipboard.writeText(text); button.textContent = 'Copied'; }
+    try { await navigator.clipboard.writeText(text); button.textContent = 'Copied ✓'; }
     catch { button.textContent = 'Copy failed'; }
     setTimeout(() => { if (button.isConnected) button.textContent = label; }, 1200);
   }
