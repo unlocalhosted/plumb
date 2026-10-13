@@ -20,12 +20,12 @@ const LABEL = { ts: 'TypeScript', tsx: 'TSX', js: 'JavaScript', jsx: 'JSX', json
  *  rest      one sheet with two lines on it: this block
  *  copy      0ms    a duplicate peels off the sheet and settles up and to the right, behind it, on `pop`:
  *                   the icon becomes the copy glyph because a copy now exists. The original never moves.
- *            0ms    in the block, exactly the text that went to the clipboard is swept with a selection tint,
- *                   left to right (220ms); on a terminal block that's the commands, not the "$" or the comments
+ *            0ms    in the block, a green line draws under exactly the text that went to the clipboard, left to
+ *                   right (240ms); on a terminal block that's the commands, not the "$" or the comments
  *            40ms   "Copy" → "Copied", crossfaded in a slot as wide as the longer word
- *            1.6s   the tint fades and the duplicate fades out where it is (the clipboard still holds the copy)
+ *            1.6s   the line fades and the duplicate fades out where it is (the clipboard still holds the copy)
  *  failed    the duplicate starts to peel and snaps back to the sheet; the label reads "Not copied"
- *  reduced motion: the duplicate and the tint appear and go without travel
+ *  reduced motion: the duplicate and the line appear and go without travel
  */
 export function CopyButton({ text, onCopied, className = '' }) {
   const [state, setState] = useState('rest'); // rest | copied | failed
@@ -83,19 +83,19 @@ export function CopyButton({ text, onCopied, className = '' }) {
   );
 }
 
-// The selection tint over the exact text that was copied: sweeps in left to right, holds, fades.
+// A line drawn under exactly the text that was copied: draws in left to right, holds, fades. No box over the code.
 function Copied({ on, block = false, children }) {
   const reduce = useReducedMotion();
   return (
     <span className={`relative ${block ? 'block' : ''}`}>
+      {children}
       <motion.span
         aria-hidden="true"
-        className="absolute -inset-x-1 inset-y-0 origin-left rounded-sm bg-code-keyword/25"
+        className="absolute inset-x-0 -bottom-0.5 h-px origin-left rounded-full bg-code-string"
         initial={false}
         animate={on ? { scaleX: 1, opacity: 1 } : { scaleX: reduce ? 1 : 0, opacity: 0 }}
-        transition={on ? (reduce ? { duration: 0 } : { scaleX: { duration: 0.22, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.05 } }) : { duration: reduce ? 0 : 0.3 }}
+        transition={on ? (reduce ? { duration: 0 } : { scaleX: { duration: 0.24, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.05 } }) : { duration: reduce ? 0 : 0.3 }}
       />
-      <span className="relative">{children}</span>
     </span>
   );
 }
