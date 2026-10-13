@@ -50,7 +50,7 @@ Start your dev server as usual, then:
 | Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
 | **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
 
-<Callout kind="why">
+<Callout kind="why" title="Plumb only writes where it can prove the position.">
 Plumb writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. Plumb confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
 </Callout>
 

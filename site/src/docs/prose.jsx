@@ -5,10 +5,11 @@
  *  text       17/27 on a ~70ch measure; inline code in mono on a muted chip
  *  code       fenced blocks and inline code: see code.jsx
  *  tables     ruled rows, header in the label weight; scroll sideways on a phone, never squash
- *  callouts   note (blue), careful (amber: it writes to disk), why (the reasoning behind a choice)
+ *  callouts   note, careful, why: see callout.jsx
  * ───────────────────────────────────────────────────────── */
 import { Children, isValidElement, useState } from 'react';
 import { CodeBlock, InlineCode } from './code.jsx';
+import { Callout } from './callout.jsx';
 
 const slugOf = (children) =>
   Children.toArray(children)
@@ -41,22 +42,6 @@ function Heading({ as: Tag, className, children }) {
         {copied ? 'link copied' : '#'}
       </button>
     </Tag>
-  );
-}
-
-const TONE = {
-  note: { label: 'Note', ring: 'bg-tint-2', ink: 'text-primary' },
-  careful: { label: 'Careful', ring: 'bg-warning/12', ink: 'text-warning' },
-  why: { label: 'Why', ring: 'bg-muted', ink: 'text-foreground' },
-};
-
-export function Callout({ kind = 'note', title, children }) {
-  const t = TONE[kind];
-  return (
-    <aside className={`my-6 flex flex-col gap-1 rounded-md px-5 py-4 ${t.ring}`}>
-      <span className={`text-sm font-semibold ${t.ink}`}>{title ?? t.label}</span>
-      <div className="text-base text-foreground [&>p]:my-0">{children}</div>
-    </aside>
   );
 }
 
