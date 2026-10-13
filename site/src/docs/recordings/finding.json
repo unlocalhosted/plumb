@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "fixture": "fixtures/docs-judged/",
+  "regenerate": "node scripts/docs/record-finding.mjs",
+  "runs": [
+    {
+      "command": "plumb check",
+      "exitCode": 1,
+      "stderr": ""
+    },
+    {
+      "command": "plumb check --json",
+      "exitCode": 1,
+      "stderr": ""
+    }
+  ],
+  "terminalText": "`gap-[13px]` hardcodes 13px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:6:23  gap-[13px]\n  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"\n",
+  "lines": [
+    {
+      "line": 1,
+      "part": "title",
+      "text": "`gap-[13px]` hardcodes 13px  1 site"
+    },
+    {
+      "line": 2,
+      "part": "because",
+      "text": "  Off-scale spacing makes layouts drift apart and can't be changed from the theme."
+    },
+    {
+      "line": 3,
+      "part": "fix",
+      "text": "  use  12px  3  var(--spacing-3)  Separate a label from its control"
+    },
+    {
+      "line": 4,
+      "part": "fix",
+      "text": "       16px  4  var(--spacing-4)  Give a group breathing room"
+    },
+    {
+      "line": 5,
+      "part": "site",
+      "text": "  src/Judged.tsx:6:23  gap-[13px]"
+    },
+    {
+      "line": 6,
+      "part": "accept",
+      "text": "  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\""
+    }
+  ],
+  "unprintedParts": [
+    "edit"
+  ],
+  "finding": {
+    "key": "888ffbfcca9212facde2dd9ce5592cafcfa9f85ee79fd477d218b54a3ee46cc1",
+    "rule": "provenance/arbitrary",
+    "family": "spacing",
+    "severity": "error",
+    "sites": [
+      {
+        "file": "src/Judged.tsx",
+        "line": 6,
+        "column": 23,
+        "text": "gap-[13px]",
+        "anchor": "Judged",
+        "ledger": {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "status": "new"
+        }
+      }
+    ],
+    "occurrences": [
+      {
+        "prop": "gap",
+        "value": "13px",
+        "when": [
+          {
+            "kind": "selector",
+            "text": ".gap-\\[13px\\]"
+          }
+        ],
+        "refs": [],
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 6,
+          "column": 23,
+          "text": "gap-[13px]",
+          "anchor": "Judged"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "div"
+        },
+        "origin": "arbitrary",
+        "sourceOrigin": "project",
+        "authoredValue": true,
+        "resolved": "13px"
+      }
+    ],
+    "declaration": {
+      "prop": "gap",
+      "value": "13px",
+      "when": [
+        {
+          "kind": "selector",
+          "text": ".gap-\\[13px\\]"
+        }
+      ],
+      "refs": [],
+      "site": {
+        "file": "src/Judged.tsx",
+        "line": 6,
+        "column": 23,
+        "text": "gap-[13px]",
+        "anchor": "Judged"
+      },
+      "owner": {
+        "kind": "element",
+        "name": "div"
+      },
+      "origin": "arbitrary",
+      "sourceOrigin": "project",
+      "authoredValue": true,
+      "resolved": "13px"
+    },
+    "decisions": [
+      {
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--spacing-3)"
+        ],
+        "why": "Separate a label from its control.",
+        "family": "spacing",
+        "name": "--spacing-3",
+        "value": "12px",
+        "source": {
+          "file": "src/styles.css",
+          "line": 7
+        },
+        "resolved": "12px",
+        "use": {
+          "class": "gap-3",
+          "css": "gap: var(--spacing-3)"
+        }
+      },
+      {
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--spacing-4)"
+        ],
+        "why": "Give a group breathing room.",
+        "family": "spacing",
+        "name": "--spacing-4",
+        "value": "16px",
+        "source": {
+          "file": "src/styles.css",
+          "line": 9
+        },
+        "resolved": "16px",
+        "use": {
+          "class": "gap-4",
+          "css": "gap: var(--spacing-4)"
+        }
+      }
+    ],
+    "title": "`gap-[13px]` hardcodes 13px",
+    "because": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+    "edits": [
+      {
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 6,
+          "column": 23,
+          "text": "gap-[13px]",
+          "anchor": "Judged"
+        },
+        "text": "Replace `gap-[13px]` with `gap-3`.",
+        "token": "--spacing-3"
+      },
+      {
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 6,
+          "column": 23,
+          "text": "gap-[13px]",
+          "anchor": "Judged"
+        },
+        "text": "Replace `gap-[13px]` with `gap-4`.",
+        "token": "--spacing-4"
+      }
+    ],
+    "choices": [
+      {
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--spacing-3)"
+        ],
+        "why": "Separate a label from its control.",
+        "family": "spacing",
+        "name": "--spacing-3",
+        "value": "12px",
+        "source": {
+          "file": "src/styles.css",
+          "line": 7
+        },
+        "resolved": "12px",
+        "use": {
+          "class": "gap-3",
+          "css": "gap: var(--spacing-3)"
+        }
+      },
+      {
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--spacing-4)"
+        ],
+        "why": "Give a group breathing room.",
+        "family": "spacing",
+        "name": "--spacing-4",
+        "value": "16px",
+        "source": {
+          "file": "src/styles.css",
+          "line": 9
+        },
+        "resolved": "16px",
+        "use": {
+          "class": "gap-4",
+          "css": "gap: var(--spacing-4)"
+        }
+      }
+    ],
+    "accept": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
+    "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+    "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
+    "ledgerKeys": [
+      "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged"
+    ],
+    "status": "new"
+  }
+}

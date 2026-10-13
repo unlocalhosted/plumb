@@ -1,4 +1,4 @@
-// Run from the repo root: npm run build && node scripts/docs/record-decisions.mjs
+// Run from repo root: node scripts/docs/record-decisions.mjs (uses existing dist/).
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,9 +9,11 @@ import { references } from '../../dist/collect/source.js';
 import { lowerTailwind } from '../../dist/lower/tailwind.js';
 import { readDecisions } from '../../dist/decisions/index.js';
 import { pixels } from '../../dist/decisions/resolve.js';
+import { recordingJSON, recordingPaths } from './recording.mjs';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const root = resolve(repo, 'site');
+const portable = recordingPaths({ repo, root });
 const { value: config } = await loadConfig(root);
 const project = await discoverProject(root, config);
 const sources = await projectSourceFiles(root, config);
@@ -89,12 +91,12 @@ for (const token of record.decisions) {
 }
 const output = resolve(root, 'src/docs/recordings/decisions.json');
 await mkdir(dirname(output), { recursive: true });
-await writeFile(output, JSON.stringify({
+await writeFile(output, recordingJSON({
   root: 'site/',
   tailwindVersion: project.tailwind.version,
   resolver: 'dist/decisions/index.js:readDecisions',
   classKeysScope: 'Compiler-listed base utilities with successful theme lookups or emitted decision references/spacing recipes, including zero utilities on proved spacing roots; excludes variants, modifiers and arbitrary-value syntax. Empty means no listed utility directly consumes this token.',
   resolvedScope: 'Static resolver values; scalar lengths converted to px (rem = 16px). Null means unresolved, including theme-dependent values.',
   families,
-}, null, 2) + '\n');
+}, portable));
 console.log(`Recorded ${record.decisions.length} decisions: ${relative(repo, output)}`);

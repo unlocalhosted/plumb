@@ -1,0 +1,72 @@
+Decisions judge *values*: is 13px one of your steps? Habits judge *how styles are written*: does a hover style also fire on touch screens, does removing an outline leave keyboard users lost? They're rules your team agrees on, checked in the same pass.
+
+## Turning habits on
+
+List the habits you want in your config. `plumb init` proposes the first four; the rest are opt-in.
+
+```js
+// plumb.config.mjs
+export default {
+  habits: ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'],
+};
+```
+
+With no `habits`, no habit runs. `npx plumb habits` lists all nine, how many times each would break in your project, and whether it's on, so you can see the cost before you turn one on.
+
+## The nine habits
+
+| Habit | Severity | Breaks when |
+| --- | --- | --- |
+| `hover-gate` | error | a hover style isn't limited to devices that hover, so it sticks after a tap |
+| `focus-outline` | error | an outline is removed with no visible focus style to replace it |
+| `transition-named` | error | `transition: all`, which animates changes nobody meant to animate |
+| `no-ease-in` | error | `ease-in` on a transition or animation, so feedback starts slowly |
+| `logical-inline` | error | a physical side, like `left` or `margin-right`, that won't mirror right to left |
+| `viewport-dynamic` | error | `vh` or `vw`, which jump as mobile toolbars come and go |
+| `safe-area-fallback` | error | `env(safe-area-inset-*)` with no fallback |
+| `overflow-clip` | warn | a decorative `overflow: hidden` that also creates a scroll container |
+| `overscroll-contain` | warn | a scrolling area whose scroll leaks to the page behind it |
+
+The first four are the ones `init` proposes.
+
+A habit finding reads like any other, with the habit's reason and its fix:
+
+```text
+`.ungated:hover` also applies on touch screens  1 site
+  Touch can leave a hover style stuck after a tap.
+  Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).
+  src/styles.css:1:18  color: red
+  intended?  plumb accept --rule habits/hover-gate --site src/styles.css:1 --why "…"
+```
+
+## Your own habits
+
+Add an object to `habits` to write a rule of your own. It matches declarations by property, value, where they came from and what they're on:
+
+```js
+export default {
+  habits: [
+    'hover-gate',
+    {
+      id: 'no-fixed-heights-on-text',
+      when: { prop: 'height', value: '^\\d+px$', ownerElements: ['p'] },
+      message: 'Text must grow with its content.',
+      severity: 'warn',
+    },
+  ],
+};
+```
+
+| Field | Matches |
+| --- | --- |
+| `prop` | the CSS property |
+| `value` | a regular expression for the value |
+| `origin` | how it was written: `class`, `arbitrary`, `stylesheet`, `apply`, `inline`, `custom-property` or `keyframes` |
+| `owner`, `ownerElements` | the element or component it's on |
+| `when.has`, `when.lacks` | a `media`, `pseudo` or `selector` condition the declaration must have, or must not |
+
+Severity defaults to `error`. A habit is data, not a function, so it can be checked and shared.
+
+<Callout kind="note" title="Habits read your source">
+Like everything Plumb checks, habits read the styles you wrote and the conditions around them, not the cascade in a browser.
+</Callout>

@@ -1,0 +1,1726 @@
+{
+  "schemaVersion": 1,
+  "fixture": "fixtures/docs-judged/",
+  "regenerate": "node scripts/docs/record-ledger.mjs",
+  "root": "fixtures/docs-judged/",
+  "setup": "Copied fixture without node_modules or .plumb, linked repo dependencies, initialized Git without commits and configured user.name as Plumb docs recording; temporary copy removed after recording. Commands and edits run from fixture root (cwd: .).",
+  "countNotes": "entryCounts counts stored ledger rows. siteCounts sums stored count (default 1). Check summaryLines count current matching sites; check does not rewrite the ledger.",
+  "steps": [
+    {
+      "id": "baseline",
+      "command": "plumb baseline",
+      "exitCode": 0,
+      "cwd": ".",
+      "summaryLines": [
+        "Baseline recorded 7 debt entries (7 sites)."
+      ],
+      "stdout": "Baseline recorded 7 debt entries (7 sites).\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "check-baseline",
+      "command": "plumb check",
+      "exitCode": 0,
+      "cwd": ".",
+      "summaryLines": [
+        "no new findings",
+        "known       3 findings at 7 sites are recorded in the ledger (--verbose lists them)",
+        "ledger  0 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
+      ],
+      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  76.8ms\n\nno new findings\n\nclasses     4 classes read, 0 do nothing\nspacing     1 of 5 use your tokens (20%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "add-new-drift",
+      "edit": {
+        "file": "src/Judged.tsx",
+        "before": "import './styles.css';\n\nexport function Judged() {\n  return (\n    <section>\n      <div className=\"gap-[13px]\">Arbitrary class</div>\n      <div className=\"judged-apply\">Applied class</div>\n      <div style={{ gap: 13 }}>Inline style</div>\n      <div className=\"judged-css\">Plain declaration</div>\n      <div className=\"gap-3\">On-scale class</div>\n    </section>\n  );\n}\n",
+        "after": "import './styles.css';\n\nexport function Judged() {\n  return (\n    <section>\n      <div className=\"gap-[13px]\">Arbitrary class</div>\n      <div className=\"judged-apply\">Applied class</div>\n      <div style={{ gap: 13 }}>Inline style</div>\n      <div className=\"judged-css\">Plain declaration</div>\n      <div className=\"gap-3\">On-scale class</div>\n    </section>\n  );\n}\n\nexport function NewDrift() { return <div className=\"gap-[14px]\">New drift</div>; }\n"
+      },
+      "cwd": ".",
+      "summaryLines": [],
+      "stdout": "",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "check-new-drift",
+      "command": "plumb check",
+      "exitCode": 1,
+      "cwd": ".",
+      "summaryLines": [
+        "known       3 findings at 7 sites are recorded in the ledger (--verbose lists them)",
+        "1 finding: 1 value off your tokens",
+        "ledger  1 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
+      ],
+      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  147.1ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     1 of 6 use your tokens (17%)  5 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n1 finding: 1 value off your tokens\n\nledger  1 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "fix-old-drift",
+      "edit": {
+        "file": "src/Judged.tsx",
+        "before": "import './styles.css';\n\nexport function Judged() {\n  return (\n    <section>\n      <div className=\"gap-[13px]\">Arbitrary class</div>\n      <div className=\"judged-apply\">Applied class</div>\n      <div style={{ gap: 13 }}>Inline style</div>\n      <div className=\"judged-css\">Plain declaration</div>\n      <div className=\"gap-3\">On-scale class</div>\n    </section>\n  );\n}\n\nexport function NewDrift() { return <div className=\"gap-[14px]\">New drift</div>; }\n",
+        "after": "import './styles.css';\n\nexport function Judged() {\n  return (\n    <section>\n      <div className=\"gap-3\">Arbitrary class</div>\n      <div className=\"judged-apply\">Applied class</div>\n      <div style={{ gap: 13 }}>Inline style</div>\n      <div className=\"judged-css\">Plain declaration</div>\n      <div className=\"gap-3\">On-scale class</div>\n    </section>\n  );\n}\n\nexport function NewDrift() { return <div className=\"gap-[14px]\">New drift</div>; }\n"
+      },
+      "cwd": ".",
+      "summaryLines": [],
+      "stdout": "",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "check-debt-falls",
+      "command": "plumb check",
+      "exitCode": 1,
+      "cwd": ".",
+      "summaryLines": [
+        "known       2 findings at 6 sites are recorded in the ledger (--verbose lists them)",
+        "2 findings: 1 value off your tokens, 1 ledger or token change",
+        "ledger  1 new, 6 debt, 0 exception sites; 1 stale, 0 ledger/config growth."
+      ],
+      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  139.0ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nDebt provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged records 1 sites; 0 remain.  1 site\n  The ledger should record only remaining exceptions and debt.\n  Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.\n  .plumb/ledger.jsonl:8:1  {\"key\":\"provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged\",\"kind\":\"debt\",\"rule\":\"provenance/arbitrary\",\"family\":\"spacing\",\"owner\":\"div\",\"prop\":\"gap\",\"authored\":\"gap-[13px]\",\"path\":\"src/Judged.tsx\",\"anchor\":\"Judged\",\"resolved\":\"13px\",\"count\":1,\"on\":\"2026-10-13\",\"by\":\"Plumb docs recording\"}\n  intended?  plumb accept --rule ledger/stale --site .plumb/ledger.jsonl:8 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       2 findings at 6 sites are recorded in the ledger (--verbose lists them)\n2 findings: 1 value off your tokens, 1 ledger or token change\n\nledger  1 new, 6 debt, 0 exception sites; 1 stale, 0 ledger/config growth.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 7,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 7,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[13px]",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "ratchet",
+      "command": "plumb ledger --ratchet",
+      "exitCode": 0,
+      "cwd": ".",
+      "summaryLines": [
+        "Ledger has 10 entries."
+      ],
+      "stdout": "Ledger has 10 entries.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 6,
+        "exception": 0,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 6,
+        "exception": 0
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "accept-new-drift",
+      "command": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why '14px separation is intentional for this docs recording.'",
+      "exitCode": 0,
+      "cwd": ".",
+      "summaryLines": [
+        "Accepted 1 exception entries: provenance/arbitrary:div:gap:gap-[14px]@src/Judged.tsx#NewDrift."
+      ],
+      "stdout": "Accepted 1 exception entries: provenance/arbitrary:div:gap:gap-[14px]@src/Judged.tsx#NewDrift.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 6,
+        "exception": 1,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 6,
+        "exception": 1
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[14px]@src/Judged.tsx#NewDrift",
+          "kind": "exception",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[14px]",
+          "path": "src/Judged.tsx",
+          "anchor": "NewDrift",
+          "resolved": "14px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "14px separation is intentional for this docs recording."
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    },
+    {
+      "id": "check-after-accept",
+      "command": "plumb check",
+      "exitCode": 0,
+      "cwd": ".",
+      "summaryLines": [
+        "no new findings",
+        "known       3 findings at 7 sites are recorded in the ledger (--verbose lists them)",
+        "ledger  0 new, 6 debt, 1 exception sites; 0 stale, 0 ledger/config growth."
+      ],
+      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  67.6ms\n\nno new findings\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 6 debt, 1 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stderr": "",
+      "entryCounts": {
+        "debt": 6,
+        "exception": 1,
+        "decision": 4
+      },
+      "siteCounts": {
+        "debt": 6,
+        "exception": 1
+      },
+      "ledgerEntries": [
+        {
+          "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-2",
+          "authored": "--spacing-2: 8px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "8px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-4",
+          "authored": "--spacing-4: 16px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "16px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+          "kind": "debt",
+          "rule": "dead/spacing",
+          "family": "spacing",
+          "owner": "decisions",
+          "prop": "--spacing-5",
+          "authored": "--spacing-5: 20px",
+          "path": "src/styles.css",
+          "anchor": "<module>",
+          "resolved": "20px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "decision:spacing:--spacing-2",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "8px",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "8px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Compact separation within a related group.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-3",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "12px",
+          "refs": [
+            "var(--spacing-3)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "12px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate a label from its control.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-4",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "16px",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "16px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Give a group breathing room.",
+          "inferred": true
+        },
+        {
+          "key": "decision:spacing:--spacing-5",
+          "kind": "decision",
+          "family": "spacing",
+          "value": "20px",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "origin": "project",
+          "tier": "primitive",
+          "resolved": "20px",
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "Separate adjacent groups.",
+          "inferred": true
+        },
+        {
+          "key": "provenance/arbitrary:div:gap:gap-[14px]@src/Judged.tsx#NewDrift",
+          "kind": "exception",
+          "rule": "provenance/arbitrary",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap-[14px]",
+          "path": "src/Judged.tsx",
+          "anchor": "NewDrift",
+          "resolved": "14px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording",
+          "why": "14px separation is intentional for this docs recording."
+        },
+        {
+          "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-apply",
+          "prop": "gap",
+          "authored": "@apply gap-[13px];",
+          "path": "src/styles.css",
+          "anchor": ".judged-apply",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": ".judged-css",
+          "prop": "gap",
+          "authored": "gap: 13px",
+          "path": "src/styles.css",
+          "anchor": ".judged-css",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        },
+        {
+          "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+          "kind": "debt",
+          "rule": "provenance/spacing",
+          "family": "spacing",
+          "owner": "div",
+          "prop": "gap",
+          "authored": "gap: 13",
+          "path": "src/Judged.tsx",
+          "anchor": "Judged",
+          "resolved": "13px",
+          "count": 1,
+          "on": "2026-10-13",
+          "by": "Plumb docs recording"
+        }
+      ]
+    }
+  ]
+}

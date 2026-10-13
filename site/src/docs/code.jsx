@@ -172,3 +172,51 @@ function sourceTokens(src) {
 
 // Inline code in running text: a quiet chip that never breaks inside a flag or a path.
 export const InlineCode = (p) => <code className="rounded-sm border border-border bg-muted px-1.5 py-px font-mono text-sm whitespace-nowrap text-foreground" {...p} />;
+
+/* ─────────────────────────────────────────────────────────
+ * RECORDED — a real command and the output it really printed (site/DOCS.md §1, rule 1). Pages pass recordings,
+ * never hand-typed output.
+ *
+ *  header    "Terminal", the exit code (0 in the string ink, anything else in the flag ink), Copy for the command
+ *  output    as printed: a line that starts at the margin (a finding's title, a summary) reads in the foreground;
+ *            indented lines recede; "intended?" accept hints are quietest
+ *  lit       optional set of line numbers to light, for figures that point into the output
+ * ───────────────────────────────────────────────────────── */
+export function Recorded({ command, output = '', exit, lit, className = '' }) {
+  const lines = output.replace(/\n$/, '').split('\n');
+  return (
+    <figure className={`my-6 overflow-hidden rounded-md bg-code text-code-foreground shadow-plate ${className}`}>
+      <figcaption className="flex h-10 items-center justify-between border-b border-code-foreground/10 pr-2 pl-4">
+        <span className="flex items-center gap-3 text-xs font-semibold text-code-comment">
+          Terminal
+          {exit !== undefined && <span className={`font-mono font-normal ${exit === 0 ? 'text-code-string' : 'text-code-flag'}`}>exit {exit}</span>}
+        </span>
+        <CopyButton text={command} />
+      </figcaption>
+      <div className="overflow-x-auto px-4 py-4 font-mono text-sm">
+        <div className="mb-3 whitespace-pre">
+          <span className="text-code-comment select-none" aria-hidden="true">
+            ${' '}
+          </span>
+          {paint(shellTokens(command))}
+        </div>
+        <pre className="font-mono text-sm">
+          {lines.map((line, n) => {
+            const quiet = /^\s*intended\?/.test(line);
+            const head = line && !/^\s/.test(line);
+            const on = lit?.has(n);
+            return (
+              <span
+                key={n}
+                data-line={n}
+                className={`-mx-2 block rounded-sm px-2 transition-colors duration-(--dur-quick) ${on ? 'bg-code-keyword/20' : ''} ${quiet ? 'text-code-comment' : head ? 'text-code-foreground' : 'text-code-foreground/75'}`}
+              >
+                {line || ' '}
+              </span>
+            );
+          })}
+        </pre>
+      </div>
+    </figure>
+  );
+}

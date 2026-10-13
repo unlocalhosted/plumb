@@ -1,13 +1,15 @@
-// Run from repo root: npm run build && node scripts/docs/record-judged.mjs
+// Run from repo root: node scripts/docs/record-judged.mjs (uses existing dist/).
 import { spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { plumbCommand, recordingJSON, recordingPaths } from './recording.mjs';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const root = resolve(repo, 'fixtures/docs-judged');
 const cache = await mkdtemp(resolve(tmpdir(), 'plumb-docs-judged-'));
+const portable = recordingPaths({ repo, root, paths: [[cache, '.plumb/cache']] });
 let report, exitCode;
 try {
   const run = spawnSync(process.execPath, ['dist/cli.js', 'check', '--root', 'fixtures/docs-judged', '--json'], {
@@ -28,14 +30,8 @@ try {
 if (!report.tailwind.version?.startsWith('4.')) throw new Error('Fixture must use Tailwind v4.');
 if (report.findings.some(f => f.rule.startsWith('config/'))) throw new Error('Fixture has config diagnostics.');
 
-// Keep report fields verbatim except file paths, made relative to fixture root.
+// Keep report fields verbatim except paths, made fixture- or repo-relative.
 // No extra compiler/resolver calls and no CSS values inferred from source text.
-function portable(value, key) {
-  if (Array.isArray(value)) return value.map(item => portable(item));
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, portable(v, k)]));
-  if (typeof value === 'string' && ['file', 'entry'].includes(key)) return relative(root, value).replaceAll('\\', '/');
-  return value;
-}
 const definitions = [
   { id: 'arbitrary-class', file: 'src/Judged.tsx', text: 'gap-[13px]', authored: 'className="gap-[13px]"', origin: 'arbitrary', rule: 'provenance/arbitrary' },
   { id: 'apply', file: 'src/styles.css', text: '@apply gap-[13px];', authored: '@apply gap-[13px];', origin: 'apply', rule: 'provenance/spacing' },
@@ -70,11 +66,11 @@ for (const item of definitions) {
 const usedFindings = new Set(cases.map(c => c.finding?.key));
 const output = resolve(repo, 'site/src/docs/recordings/judged.json');
 await mkdir(dirname(output), { recursive: true });
-await writeFile(output, JSON.stringify({
+await writeFile(output, recordingJSON({
   schemaVersion: 1,
   fixture: 'fixtures/docs-judged/',
-  command: 'node dist/cli.js check --root fixtures/docs-judged --json',
-  regenerate: 'npm run build && node scripts/docs/record-judged.mjs',
+  command: plumbCommand(['check', '--root', 'fixtures/docs-judged', '--json'], 'fixtures/docs-judged'),
+  regenerate: 'node scripts/docs/record-judged.mjs',
   cliExitCode: exitCode,
   tool: report.tool,
   tailwind: portable(report.tailwind),
@@ -88,5 +84,5 @@ await writeFile(output, JSON.stringify({
   },
   cases,
   otherFindings: portable(report.findings.filter(f => !usedFindings.has(f.key))),
-}, null, 2) + '\n');
+}, portable));
 console.log(`Recorded ${cases.length} CLI cases: ${relative(repo, output)}`);

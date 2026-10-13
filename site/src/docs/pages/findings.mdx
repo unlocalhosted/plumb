@@ -1,0 +1,35 @@
+import { FindingAnatomy } from '../figures/FindingAnatomy.jsx'
+
+Every finding Plumb prints has the same five parts, in the same order, so you can read one at a glance and act on it without opening the docs.
+
+<FindingAnatomy />
+
+## Severity
+
+| Severity | Means | Fails `plumb check` |
+| --- | --- | --- |
+| `error` | drift, or a style that can't work | yes, exit 1 |
+| `warn` | worth a look, such as a literal that equals a token | no |
+| `info` | a note, such as a value Plumb couldn't read | no |
+
+The first time you run `plumb check`, with no config and no ledger, it reports everything and exits 0, so it's safe to try on any project. Once you've adopted Plumb, errors fail the check. A problem with the command itself, such as a bad flag, exits 2.
+
+## One finding, many sites
+
+The same drift in several places is one finding: the same rule, family and amount, with every site listed. The terminal shows the first five sites and says how many more there are; `--json` lists them all.
+
+Plumb also keeps quiet about what you've already recorded. Findings fully covered by the [ledger](/docs/the-ledger) show as a single summary line. Add `--verbose` to see them, with each finding's rule id.
+
+## Status
+
+Every site carries a status from the ledger:
+
+- **new**: not in the ledger. These are what fail a check.
+- **debt**: drift you already had when you adopted Plumb, recorded so it doesn't block you.
+- **exception**: accepted on purpose, with the reason someone gave.
+
+A finding is new if any of its sites is new.
+
+## In JSON
+
+`plumb check --json` prints the same findings as data. Each has its `rule`, `family` and `severity`; the parts above as `title`, `because`, `choices` and `accept`; every site in `sites`, with its status; and `edits`, the exact replacements Plumb would make, which the overlay and agents use. The [report format](/docs/report-format) lists every field.

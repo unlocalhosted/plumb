@@ -8,7 +8,7 @@
  *  callouts   note, careful, why: see callout.jsx
  * ───────────────────────────────────────────────────────── */
 import { Children, isValidElement, useState } from 'react';
-import { CodeBlock, InlineCode } from './code.jsx';
+import { CodeBlock, InlineCode, Recorded } from './code.jsx';
 import { Callout } from './callout.jsx';
 import { Family } from './family.jsx';
 
@@ -65,4 +65,5 @@ export const prose = {
   td: (p) => <td className="border-b border-border px-4 py-3 align-top [tr:last-child_&]:border-0" {...p} />,
   Callout,
   Family,
+  Recorded,
 };

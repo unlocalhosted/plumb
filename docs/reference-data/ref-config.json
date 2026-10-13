@@ -1,0 +1,5638 @@
+{
+  "sources": [
+    "schema/config.schema.json:1"
+  ],
+  "options": [
+    {
+      "path": "classHelpers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:25"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:25"
+      ]
+    },
+    {
+      "path": "classHelpers[]",
+      "type": [
+        "object",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:27"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:29"
+          ]
+        },
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "type": "object",
+            "required": [
+              "name",
+              "args"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:30"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:27",
+        "schema/config.schema.json:29",
+        "schema/config.schema.json:30"
+      ]
+    },
+    {
+      "path": "classHelpers[].args",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "classes",
+        "config"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": true,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "enum": [
+              "classes",
+              "config"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:33",
+            "schema/config.schema.json:36"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:33",
+        "schema/config.schema.json:36"
+      ]
+    },
+    {
+      "path": "classHelpers[].configFrom",
+      "type": "integer",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "integer"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sources": [
+            "schema/config.schema.json:33",
+            "schema/config.schema.json:38"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:33",
+        "schema/config.schema.json:38"
+      ]
+    },
+    {
+      "path": "classHelpers[].configKeys",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:33",
+            "schema/config.schema.json:37"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:33",
+        "schema/config.schema.json:37"
+      ]
+    },
+    {
+      "path": "classHelpers[].configKeys[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:33",
+            "schema/config.schema.json:37"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:33",
+        "schema/config.schema.json:37"
+      ]
+    },
+    {
+      "path": "classHelpers[].name",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": true,
+          "conditions": [
+            "schema/config.schema.json#/properties/classHelpers/items/anyOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:33",
+            "schema/config.schema.json:35"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:33",
+        "schema/config.schema.json:35"
+      ]
+    },
+    {
+      "path": "components",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:84"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:84"
+      ]
+    },
+    {
+      "path": "components.contracts",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:110"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:110"
+      ]
+    },
+    {
+      "path": "components.contracts.*",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:112"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:112"
+      ]
+    },
+    {
+      "path": "components.contracts.*.allow",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:123"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:123"
+      ]
+    },
+    {
+      "path": "components.contracts.*.allow[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:125"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:125"
+      ]
+    },
+    {
+      "path": "components.contracts.*.deny",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:130"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:130"
+      ]
+    },
+    {
+      "path": "components.contracts.*.deny[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:132"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:132"
+      ]
+    },
+    {
+      "path": "components.contracts.*.own",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:116"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:116"
+      ]
+    },
+    {
+      "path": "components.contracts.*.own[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:118"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:118"
+      ]
+    },
+    {
+      "path": "components.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:88"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/components/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:90"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/components/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:94"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:88",
+        "schema/config.schema.json:90",
+        "schema/config.schema.json:94"
+      ]
+    },
+    {
+      "path": "components.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/components/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:96"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:96"
+      ]
+    },
+    {
+      "path": "components.own",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:103"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:103"
+      ]
+    },
+    {
+      "path": "components.own[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:105"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:105"
+      ]
+    },
+    {
+      "path": "css",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:7"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:7"
+      ]
+    },
+    {
+      "path": "decisions",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:51"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:51"
+      ]
+    },
+    {
+      "path": "decisions.color",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:58"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:58"
+      ]
+    },
+    {
+      "path": "decisions.color.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.color.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.color.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.color.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.color.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.color.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.color.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.color.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.color.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.color.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.color.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.color.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.elevation",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:70"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:70"
+      ]
+    },
+    {
+      "path": "decisions.elevation.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.elevation.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.elevation.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.elevation.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.elevation.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.elevation.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.elevation.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.elevation.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.elevation.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.elevation.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.elevation.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.elevation.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.motion",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:67"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:67"
+      ]
+    },
+    {
+      "path": "decisions.motion.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.motion.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.motion.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.motion.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.motion.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.motion.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.motion.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.motion.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.motion.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.motion.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.motion.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.motion.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.opacity",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:79"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:79"
+      ]
+    },
+    {
+      "path": "decisions.opacity.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.opacity.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.opacity.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.opacity.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.opacity.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.opacity.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.opacity.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.opacity.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.opacity.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.opacity.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.opacity.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.opacity.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.radius",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:61"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:61"
+      ]
+    },
+    {
+      "path": "decisions.radius.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.radius.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.radius.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.radius.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.radius.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.radius.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.radius.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.radius.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.radius.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.radius.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.radius.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.radius.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.size",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:73"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:73"
+      ]
+    },
+    {
+      "path": "decisions.size.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.size.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.size.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.size.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.size.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.size.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.size.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.size.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.size.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.size.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.size.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.size.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.spacing",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:55"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:55"
+      ]
+    },
+    {
+      "path": "decisions.spacing.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.spacing.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.spacing.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.spacing.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.spacing.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.spacing.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.spacing.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.spacing.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.spacing.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.spacing.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.spacing.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.spacing.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.type",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:64"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:64"
+      ]
+    },
+    {
+      "path": "decisions.type.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.type.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.type.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.type.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.type.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.type.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.type.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.type.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.type.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.type.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.type.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.type.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "decisions.z",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "refs": [
+            "#/$defs/decisionSource"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:185",
+            "schema/config.schema.json:76"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:185",
+        "schema/config.schema.json:76"
+      ]
+    },
+    {
+      "path": "decisions.z.byValue",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "group",
+        "each"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "group",
+              "each"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:242"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:242"
+      ]
+    },
+    {
+      "path": "decisions.z.callers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:213"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:213"
+      ]
+    },
+    {
+      "path": "decisions.z.callers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "primitive",
+        "semantic"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "primitive",
+              "semantic"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:215"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:215"
+      ]
+    },
+    {
+      "path": "decisions.z.exported",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:232"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:232"
+      ]
+    },
+    {
+      "path": "decisions.z.from",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:192"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:194"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:198"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:192",
+        "schema/config.schema.json:194",
+        "schema/config.schema.json:198"
+      ]
+    },
+    {
+      "path": "decisions.z.from[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/$defs/decisionSource/properties/from/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:200"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:200"
+      ]
+    },
+    {
+      "path": "decisions.z.identity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "value",
+        "reference"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "value",
+              "reference"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:207"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:207"
+      ]
+    },
+    {
+      "path": "decisions.z.inferred",
+      "type": "boolean",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "boolean"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "boolean"
+          },
+          "sources": [
+            "schema/config.schema.json:189"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:189"
+      ]
+    },
+    {
+      "path": "decisions.z.origins",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:222"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:222"
+      ]
+    },
+    {
+      "path": "decisions.z.origins[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "project",
+        "framework",
+        "inferred"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "enum": [
+              "project",
+              "framework",
+              "inferred"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:224"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:224"
+      ]
+    },
+    {
+      "path": "decisions.z.suggest",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:235"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:235"
+      ]
+    },
+    {
+      "path": "decisions.z.suggest[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:237"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:237"
+      ]
+    },
+    {
+      "path": "exported",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:44"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:44"
+      ]
+    },
+    {
+      "path": "exported[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:46"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:46"
+      ]
+    },
+    {
+      "path": "habits",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:142"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:142"
+      ]
+    },
+    {
+      "path": "habits[]",
+      "type": [
+        "object",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:144"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:146"
+          ]
+        },
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "refs": [
+            "#/$defs/customHabit"
+          ],
+          "constraints": {
+            "type": "object",
+            "required": [
+              "id",
+              "when",
+              "message"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:150",
+            "schema/config.schema.json:250"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:144",
+        "schema/config.schema.json:146",
+        "schema/config.schema.json:150",
+        "schema/config.schema.json:250"
+      ]
+    },
+    {
+      "path": "habits[].id",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": true,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "sources": [
+            "schema/config.schema.json:253",
+            "schema/config.schema.json:259"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:253",
+        "schema/config.schema.json:259"
+      ]
+    },
+    {
+      "path": "habits[].message",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": true,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:253",
+            "schema/config.schema.json:354"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:253",
+        "schema/config.schema.json:354"
+      ]
+    },
+    {
+      "path": "habits[].severity",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "info",
+        "warn",
+        "error"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "enum": [
+              "info",
+              "warn",
+              "error"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:253",
+            "schema/config.schema.json:358"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:253",
+        "schema/config.schema.json:358"
+      ]
+    },
+    {
+      "path": "habits[].when",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": true,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:253",
+            "schema/config.schema.json:263"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:253",
+        "schema/config.schema.json:263"
+      ]
+    },
+    {
+      "path": "habits[].when.origin",
+      "type": [
+        "array",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:273"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/origin/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:275"
+          ]
+        },
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/origin/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:278"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:273",
+        "schema/config.schema.json:275",
+        "schema/config.schema.json:278"
+      ]
+    },
+    {
+      "path": "habits[].when.origin[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/origin/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:280"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:280"
+      ]
+    },
+    {
+      "path": "habits[].when.owner",
+      "type": [
+        "object",
+        "string"
+      ],
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": "not supported",
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {},
+          "sources": [
+            "schema/config.schema.json:287"
+          ]
+        },
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/owner/oneOf/0"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:289"
+          ]
+        },
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/owner/oneOf/1"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:292"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:287",
+        "schema/config.schema.json:289",
+        "schema/config.schema.json:292"
+      ]
+    },
+    {
+      "path": "habits[].when.owner.kind",
+      "type": "string",
+      "default": "not supported",
+      "enum": [
+        "element",
+        "component"
+      ],
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/owner/oneOf/1"
+          ],
+          "constraints": {
+            "enum": [
+              "element",
+              "component"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:296"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:296"
+      ]
+    },
+    {
+      "path": "habits[].when.owner.name",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1",
+            "schema/config.schema.json#/$defs/customHabit/properties/when/properties/owner/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:302"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:302"
+      ]
+    },
+    {
+      "path": "habits[].when.ownerElements",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:309"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:309"
+      ]
+    },
+    {
+      "path": "habits[].when.ownerElements[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:311"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:311"
+      ]
+    },
+    {
+      "path": "habits[].when.prop",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:267"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:267"
+      ]
+    },
+    {
+      "path": "habits[].when.value",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:270"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:270"
+      ]
+    },
+    {
+      "path": "habits[].when.when",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:316"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:316"
+      ]
+    },
+    {
+      "path": "habits[].when.when.has",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:320"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:320"
+      ]
+    },
+    {
+      "path": "habits[].when.when.has.media",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:324"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:324"
+      ]
+    },
+    {
+      "path": "habits[].when.when.has.pseudo",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:327"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:327"
+      ]
+    },
+    {
+      "path": "habits[].when.when.has.selector",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:330"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:330"
+      ]
+    },
+    {
+      "path": "habits[].when.when.lacks",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:335"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:335"
+      ]
+    },
+    {
+      "path": "habits[].when.when.lacks.media",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:339"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:339"
+      ]
+    },
+    {
+      "path": "habits[].when.when.lacks.pseudo",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:342"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:342"
+      ]
+    },
+    {
+      "path": "habits[].when.when.lacks.selector",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [
+            "schema/config.schema.json#/properties/habits/items/oneOf/1"
+          ],
+          "constraints": {
+            "type": "string"
+          },
+          "sources": [
+            "schema/config.schema.json:345"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:345"
+      ]
+    },
+    {
+      "path": "imitation",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object"
+          },
+          "sources": [
+            "schema/config.schema.json:156"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:156"
+      ]
+    },
+    {
+      "path": "imitation.*",
+      "type": "object",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "object"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "object",
+            "required": [
+              "fingerprint"
+            ]
+          },
+          "sources": [
+            "schema/config.schema.json:158"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:158"
+      ]
+    },
+    {
+      "path": "imitation.*.elements",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:161",
+            "schema/config.schema.json:165"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:161",
+        "schema/config.schema.json:165"
+      ]
+    },
+    {
+      "path": "imitation.*.elements[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:161",
+            "schema/config.schema.json:167"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:161",
+        "schema/config.schema.json:167"
+      ]
+    },
+    {
+      "path": "imitation.*.fingerprint",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": true,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": true,
+          "conditions": [],
+          "constraints": {
+            "type": "array",
+            "minItems": 1
+          },
+          "sources": [
+            "schema/config.schema.json:161",
+            "schema/config.schema.json:172"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:161",
+        "schema/config.schema.json:172"
+      ]
+    },
+    {
+      "path": "imitation.*.fingerprint[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:161",
+            "schema/config.schema.json:175"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:161",
+        "schema/config.schema.json:175"
+      ]
+    },
+    {
+      "path": "markers",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:18"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:18"
+      ]
+    },
+    {
+      "path": "markers[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:20"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:20"
+      ]
+    },
+    {
+      "path": "source",
+      "type": "array",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "array"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "array"
+          },
+          "sources": [
+            "schema/config.schema.json:11"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:11"
+      ]
+    },
+    {
+      "path": "source[]",
+      "type": "string",
+      "default": "not supported",
+      "enum": "not supported",
+      "description": "not supported",
+      "example": "not supported",
+      "required": false,
+      "variants": [
+        {
+          "type": [
+            "string"
+          ],
+          "required": false,
+          "conditions": [],
+          "constraints": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": [
+            "schema/config.schema.json:13"
+          ]
+        }
+      ],
+      "sources": [
+        "schema/config.schema.json:13"
+      ]
+    }
+  ]
+}

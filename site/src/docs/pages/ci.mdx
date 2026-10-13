@@ -1,0 +1,92 @@
+In CI, Plumb checks each pull request against the branch it merges into. Drift that's new in the changed files fails the check; drift you already had, recorded in the [ledger](/docs/the-ledger), doesn't. Changes to the ledger itself wait for someone you trust to approve them.
+
+## Set it up
+
+```sh
+npx plumb install --ci
+```
+
+That writes `.github/workflows/plumb.yml`, keeping any workflow you already have. It looks like this:
+
+```yaml
+name: Plumb
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  plumb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - uses: unlocalhosted/plumb@<commit>
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          working-directory: "."
+          ledger-approvers: "@ledger-owner"
+```
+
+The installer pins the action to an exact commit. If your project has dependencies, it also adds your package manager's install step before Plumb runs, since Plumb compiles with your own Tailwind.
+
+<Callout kind="careful" title="Fetch the full history">
+Plumb compares against the base commit, so the checkout needs `fetch-depth: 0`. Without it, there's no base to compare with.
+</Callout>
+
+## Inputs
+
+| Input | Default | What it does |
+| --- | --- | --- |
+| `base` | the pull request's base commit | what to compare with |
+| `working-directory` | `.` | the folder with your Plumb config |
+| `ledger-approvers` | none | GitHub logins, separated by commas or spaces, who can approve ledger changes |
+| `token` | `github.token` | used to comment on the pull request |
+
+## What fails, and what doesn't
+
+The action runs `plumb check --base <base>`:
+
+- **New drift in a changed file** fails. Drift in files the pull request didn't touch is still reported, but doesn't fail it.
+- **Debt and exceptions** don't fail. When the pull request touches a line that has some, it's annotated so the reviewer sees it.
+- **A token that vanished** or **stale debt** is a warning.
+
+You can run the same check locally before you push:
+
+```sh
+npx plumb check --base main
+```
+
+## Ledger changes need approval
+
+Adding to the ledger is how drift gets let in, so it's reviewed like code. If a pull request adds an exception, accepts a changed decision or raises debt, one of your `ledger-approvers` must approve the pull request; if the author is an approver, that's enough. A later "changes requested" or a dismissed review cancels the approval.
+
+Debt that grows is an error whoever approves. Approval never turns a failing check green.
+
+<Callout kind="note" title="List people, not teams">
+`ledger-approvers` takes individual logins. GitHub teams aren't supported, so list the team's members.
+</Callout>
+
+## What you'll see
+
+- **Annotations** on the changed lines: new drift as errors, touched debt and exceptions as notices.
+- **A summary comment** on the pull request, updated on each run: how many findings are new, fixed, debt and exceptions, coverage per family against the base, ledger growth, and whether approval is needed.
+
+```text
+## Plumb
+1 new, 2 fixed, 7 debt, 0 exceptions.
+## Coverage
+spacing: 1/3 (33.3%); +33.3 pp vs base.
+color: 2/2 (100%); +0 pp vs base.
+## Ledger
+0 growth lines.
+```
+
+The check passes only when there's no new error and any ledger change is approved.

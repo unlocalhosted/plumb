@@ -1,0 +1,56 @@
+import { LedgerSteps } from '../figures/LedgerSteps.jsx'
+
+The ledger is how Plumb tells drift you already had from drift you just added. It lives in `.plumb/ledger.jsonl`, one entry per line, committed with your code and reviewed like it.
+
+## What's in it
+
+| Entry | Records | Written by |
+| --- | --- | --- |
+| **debt** | a finding you had when you adopted Plumb, and how many places it was | `init`, `baseline` |
+| **exception** | a finding accepted on purpose, with the reason someone gave | `accept --why` |
+| **decision** | each token you've accepted: its value, where it comes from, its reason | `accept-decisions`, `init`, `baseline` |
+
+An entry is keyed by what was written and where: the rule, the element, the property, the authored text and the file. Moving code up or down a file doesn't change its key; changing the text does.
+
+## A repo's history, step by step
+
+Each step below was run on a copy of a small fixture project, with the real CLI.
+
+<LedgerSteps />
+
+## How a check uses it
+
+`plumb check` compares today's findings with the ledger:
+
+- A finding covered by **debt** or an **exception** is known. It's summarised in one line, and doesn't fail.
+- A finding the ledger doesn't cover, or **more places** than the ledger allows, is **new**, and fails.
+- Debt that's gone is **stale**: a warning, so you remember to record the progress.
+
+## Recording progress
+
+The ledger doesn't shrink by itself when you fix things; you lock progress in:
+
+```sh
+npx plumb ledger --ratchet   # lower each debt count to what's left, drop what's fixed
+npx plumb ledger --prune     # drop entries for findings and tokens that no longer exist
+```
+
+`baseline` refuses to record more debt than you already had, unless you pass `--force` after a review. So debt only goes one way.
+
+## Accepting an exception
+
+When a drift is right, say why and record it:
+
+```sh
+npx plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why "Matches the printed form's 13px grid"
+```
+
+The reason is stored with the entry and shown wherever the finding appears. An exception without a reason is an error.
+
+## In review
+
+Because the ledger is how drift gets let in, CI treats changes to it as design decisions:
+
+- `plumb check --base main` reports which entries a branch adds. Debt that grows is an error.
+- In the GitHub Action, an added exception or decision needs approval from one of your `ledger-approvers`. See [CI and pull requests](/docs/ci).
+- `plumb check --strict-ledger` fails on any ledger growth against your last commit, which is what agent hooks use.

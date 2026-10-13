@@ -13,27 +13,27 @@ export const SECTIONS = [
     pages: [
       { slug: 'decisions', title: 'Decisions', load: () => import('./pages/decisions.mdx') },
       { slug: 'how-a-value-is-judged', title: 'How a value is judged', load: () => import('./pages/how-a-value-is-judged.mdx') },
-      { slug: 'findings', title: 'Findings' },
-      { slug: 'the-ledger', title: 'The ledger' },
-      { slug: 'habits', title: 'Habits' },
+      { slug: 'findings', title: 'Findings', load: () => import('./pages/findings.mdx') },
+      { slug: 'the-ledger', title: 'The ledger', load: () => import('./pages/the-ledger.mdx') },
+      { slug: 'habits', title: 'Habits', load: () => import('./pages/habits.mdx') },
     ],
   },
   {
     title: 'Guides',
     pages: [
-      { slug: 'overlay', title: 'The overlay in your app' },
-      { slug: 'ci', title: 'CI and pull requests' },
-      { slug: 'agents', title: 'Agents' },
-      { slug: 'adopting', title: 'Adopting on a big repo' },
+      { slug: 'overlay', title: 'The overlay in your app', load: () => import('./pages/overlay.mdx') },
+      { slug: 'ci', title: 'CI and pull requests', load: () => import('./pages/ci.mdx') },
+      { slug: 'agents', title: 'Agents', load: () => import('./pages/agents.mdx') },
+      { slug: 'adopting', title: 'Adopting on a big repo', load: () => import('./pages/adopting.mdx') },
     ],
   },
   {
     title: 'Reference',
     pages: [
-      { slug: 'cli', title: 'CLI' },
-      { slug: 'configuration', title: 'Configuration' },
-      { slug: 'rules', title: 'Rules' },
-      { slug: 'report-format', title: 'Report format' },
+      { slug: 'cli', title: 'CLI', load: () => import('./pages/cli.mdx') },
+      { slug: 'configuration', title: 'Configuration', load: () => import('./pages/configuration.mdx') },
+      { slug: 'rules', title: 'Rules', load: () => import('./pages/rules.mdx') },
+      { slug: 'report-format', title: 'Report format', load: () => import('./pages/report-format.mdx') },
     ],
   },
 ];

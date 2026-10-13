@@ -1,0 +1,94 @@
+The overlay is Plumb in your browser. Hold Alt over any element of your running app to see its reading: the JSX that made it, each value that's off your scale, and the tokens that fit. Pick one and Plumb writes it to your source.
+
+It runs only in development. Production builds carry none of it.
+
+## Wire it in
+
+`plumb install --overlay` looks at your project and prints the wiring. Add `--write` to make the change and see the diff.
+
+```sh
+npx plumb install --overlay
+npx plumb install --overlay --write
+```
+
+### Vite
+
+One plugin, listed **before** `react()`, so it can mark each JSX tag with where it was written before React compiles it:
+
+```ts
+// vite.config.ts
+import { plumb } from '@unlocalhosted/plumb/vite'
+import react from '@vitejs/plugin-react'
+
+export default { plugins: [plumb(), react()] }
+```
+
+The plugin applies only to `vite dev`. It adds Plumb's routes to your dev server and its script to the page; your source files are never changed by this.
+
+### Next.js (App Router)
+
+Three pieces: a config wrapper, a route that serves the overlay, and a component in your root layout.
+
+```ts
+// next.config.mjs
+import { withPlumb } from '@unlocalhosted/plumb/next/config'
+export default withPlumb(nextConfig)
+```
+
+```ts
+// app/%5F_plumb/[...path]/route.plumb.ts
+import { createPlumbRoute } from '@unlocalhosted/plumb/next'
+export const runtime = 'nodejs'
+export const { GET, POST } = createPlumbRoute()
+```
+
+```tsx
+// app/layout.tsx, inside <body>
+import { PlumbOverlay } from '@unlocalhosted/plumb/next'
+
+<PlumbOverlay />
+```
+
+The folder is `%5F_plumb`, not `__plumb`, because Next.js treats folders starting with `_` as private. In production the wrapper changes nothing, the route answers 404 and the component renders nothing.
+
+### Anything else
+
+Run Plumb's own server beside your dev server, then add its script to your development page:
+
+```sh
+npx plumb serve --overlay --port 7331 --origin http://localhost:5555
+```
+
+Run `npx plumb install --overlay` again while it's running to print the exact script tag, with the token it needs.
+
+## Use it
+
+| Gesture | What happens |
+| --- | --- |
+| Hold **Alt** (Option on a Mac) and hover | The element under the pointer is outlined, with its component and how many values are off. |
+| **Click** while holding Alt | Pins its reading. |
+| **Alt+↑ / Alt+↓** | Steps from the element's JSX to the components above it. |
+| **Esc** | Closes the reading. |
+
+The reading shows where the element was written, a drawing of its box with each measured value, and every finding on it with its ledger status. For each off-scale value it offers the tokens either side with your reasons.
+
+Picking a token **previews** it on the page. Nothing is saved until you press **Write**. **Before** shows the source version again, and **Undo** lifts every preview. **Copy for agent** puts the reading on your clipboard for an agent to act on.
+
+### Editing text
+
+Double-click a label in a reading, or press **E**, to edit its words in place. Write saves them to the JSX or the string literal they came from, keeping its quotes. Text that comes from a prop, an expression or a translation isn't editable here, because it isn't written in that place; edit it where it is.
+
+## What it won't write
+
+The overlay writes only an exact replacement it can prove, and says why when it can't:
+
+- **No choice made**: two tokens fit and you haven't picked one, or no token is close enough. Use Copy for agent, or edit by hand.
+- **The file changed** since Plumb read it. Read it again and retry.
+- **Not your source**: config files, `.plumb/`, symbolic links and anything outside the project are never written.
+- **Not static**: a class built at runtime, or text from an expression.
+
+Every edit is worked out again on the server from the current file, so the page can never ask Plumb to write something else.
+
+<Callout kind="note" title="Who can write">
+On Vite, Plumb answers only to the page your dev server serves, on your own machine. Next.js and `plumb serve` add a token that only your development page has.
+</Callout>

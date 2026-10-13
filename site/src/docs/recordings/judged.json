@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "fixture": "fixtures/docs-judged/",
-  "command": "node dist/cli.js check --root fixtures/docs-judged --json",
-  "regenerate": "npm run build && node scripts/docs/record-judged.mjs",
+  "command": "plumb check --json",
+  "regenerate": "node scripts/docs/record-judged.mjs",
   "cliExitCode": 1,
   "tool": {
     "name": "plumb",
