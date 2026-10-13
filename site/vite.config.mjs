@@ -1,11 +1,14 @@
 // The homepage: a page built on its own design system, with Plumb's overlay on it so a visitor can inspect it.
 import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
+import mdx from '@mdx-js/rollup';
+import gfm from 'remark-gfm';
 import { plumb } from '../dist/hosts/vite.js';
 
 export default ({ mode, command = 'serve' }) => ({
   root: import.meta.dirname,
-  plugins: [tailwindcss(), plumb({ config: 'plumb.config.mjs',
+  // MDX first: docs pages compile to JSX before anything else sees them
+  plugins: [{ enforce: 'pre', ...mdx({ remarkPlugins: [gfm] }) }, tailwindcss(), plumb({ config: 'plumb.config.mjs',
     demo: mode === 'record-replay' ? undefined : { replay: 'src/hero/replay.js', guard: true } })],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') }, dedupe: ['react', 'react-dom'] },
   oxc: { jsx: { runtime: 'automatic', development: command === 'serve' } },

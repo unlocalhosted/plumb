@@ -4,10 +4,11 @@ import { Home } from './Home.jsx';
 import { Specimen } from './Specimen.jsx';
 import { Systems } from './system/Systems.jsx';
 import { Mascots } from './system/Mascots.jsx';
+import { Docs } from './docs/Docs.jsx';
 import { DialRoot } from 'dialkit';
 import 'dialkit/styles.css';
 
-const page = location.hash === '#primitives' ? <Specimen /> : location.hash === '#systems' ? <Systems /> : location.hash === '#mascots' ? <Mascots /> : <Home />;
+const page = location.pathname.startsWith('/docs') ? <Docs /> : location.hash === '#primitives' ? <Specimen /> : location.hash === '#systems' ? <Systems /> : location.hash === '#mascots' ? <Mascots /> : <Home />;
 
 createRoot(document.getElementById('root')).render(
   <>
