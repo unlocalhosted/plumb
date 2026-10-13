@@ -19,8 +19,12 @@ import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useReduce
 import { Ruler } from '../../sections/Ruler.jsx';
 import { THEME } from '../../sections/scales.js';
 import { SPRING } from '../../site/motion.js';
+import recording from '../recordings/decisions.json';
 
 const START = 13;
+// each step's own reason, as Plumb resolves it: a reason shared by more than three steps is the group's, not shown per step
+const REASON = Object.fromEntries(recording.families.spacing.map((d) => [d.name, d.reason]));
+const reasonOf = (s) => REASON[`--spacing-${s.key}`] ?? null;
 const SOURCE = { file: 'hero/DriftedCard.jsx', line: 25 };
 
 const neighbours = (px) => {
@@ -107,7 +111,7 @@ export function LiveGap() {
           <div className="mt-3 flex flex-col gap-1 border-t border-code-foreground/10 pt-3 font-sans text-xs" aria-live="polite">
             {on ? (
               <span>
-                <span className="font-semibold text-code-string">On your scale.</span> <span className="font-mono">gap-{on.key}</span>: {on.why}
+                <span className="font-semibold text-code-string">On your scale.</span> <span className="font-mono">gap-{on.key}</span>{reasonOf(on) ? `: ${reasonOf(on)}` : ''}
               </span>
             ) : (
               <>
@@ -116,7 +120,7 @@ export function LiveGap() {
                 </span>
                 {neighbours(px).map((s) => (
                   <span key={s.key} className="text-code-comment">
-                    <span className="font-mono text-code-foreground">gap-{s.key}</span> {s.v}px · {s.why}
+                    <span className="font-mono text-code-foreground">gap-{s.key}</span> {s.v}px{reasonOf(s) && ` · ${reasonOf(s)}`}
                   </span>
                 ))}
               </>

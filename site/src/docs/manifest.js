@@ -11,7 +11,7 @@ export const SECTIONS = [
   {
     title: 'Concepts',
     pages: [
-      { slug: 'decisions', title: 'Decisions' },
+      { slug: 'decisions', title: 'Decisions', load: () => import('./pages/decisions.mdx') },
       { slug: 'how-a-value-is-judged', title: 'How a value is judged' },
       { slug: 'findings', title: 'Findings' },
       { slug: 'the-ledger', title: 'The ledger' },
