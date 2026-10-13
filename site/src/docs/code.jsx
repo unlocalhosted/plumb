@@ -6,29 +6,61 @@
  *            command, muted, so nothing runs off the edge. Copy takes the commands only.
  *  source    coloured by a small tokenizer: keywords, strings, comments, numbers, called functions. Long lines
  *            scroll sideways inside the block; the page never does.
- *  copy      "Copy" → "Copied" for 1.2s; keyboard reachable
+ *  copy      a morphing icon: see CopyButton's storyboard; keyboard reachable
  * ───────────────────────────────────────────────────────── */
 import { Fragment, isValidElement, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 const SHELL = ['sh', 'bash', 'shell', 'zsh', 'console'];
 const LABEL = { ts: 'TypeScript', tsx: 'TSX', js: 'JavaScript', jsx: 'JSX', json: 'JSON', css: 'CSS', md: 'Markdown', yaml: 'YAML', yml: 'YAML', text: 'Text' };
 
+/* COPY — STORYBOARD
+ *    rest    two stacked sheets, "Copy"
+ *    copy    0ms    the back sheet slides onto the front one (120ms)
+ *            80ms   the sheet's outline draws away while a check draws in (220ms); "Copy" → "Copied" crossfades
+ *                   in place, in a slot as wide as the longer word, so the button never changes width
+ *            1.2s   it all runs back
+ *    failed  (no clipboard) the sheets shake once, 2px
+ *    reduced motion: the icon and label swap without movement
+ */
 export function CopyButton({ text, className = '' }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState('rest'); // rest | copied | failed
+  const reduce = useReducedMotion();
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setState('copied');
+    } catch {
+      setState('failed');
+    }
+    setTimeout(() => setState('rest'), 1200);
+  };
+  const done = state === 'copied';
+  const t = (d = 0, dur = 0.22) => (reduce ? { duration: 0 } : { duration: dur, delay: d, ease: [0.4, 0, 0.2, 1] });
   return (
     <button
       type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1200);
-        } catch {}
-      }}
-      aria-label={copied ? 'Copied' : 'Copy to clipboard'}
-      className={`rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors ${copied ? 'bg-success/20 text-code-string' : 'text-code-comment hover:bg-code-foreground/10 hover:text-code-foreground'} ${className}`}
+      onClick={copy}
+      aria-label={done ? 'Copied' : 'Copy to clipboard'}
+      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-code-keyword ${done ? 'bg-code-string/15 text-code-string' : 'text-code-comment hover:bg-code-foreground/10 hover:text-code-foreground'} ${className}`}
     >
-      {copied ? 'Copied' : 'Copy'}
+      <motion.svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5 overflow-visible" animate={state === 'failed' && !reduce ? { x: [0, -2, 2, -1, 0] } : { x: 0 }} transition={{ duration: 0.3 }}>
+        {/* the back sheet: slides onto the front one */}
+        <motion.rect x="5.5" y="1.5" width="9" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" initial={false} animate={done ? { x: -4, y: 3, opacity: 0 } : { x: 0, y: 0, opacity: 1 }} transition={t(0, 0.12)} />
+        {/* the front sheet: its outline draws away */}
+        <motion.rect x="1.5" y="4.5" width="9" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" initial={false} animate={{ pathLength: done ? 0 : 1, opacity: done ? 0 : 1 }} transition={t(done ? 0.08 : 0)} />
+        {/* the check: draws in */}
+        <motion.path d="M3 8.6 L6.4 12 L13 4.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" initial={false} animate={{ pathLength: done ? 1 : 0, opacity: done ? 1 : 0 }} transition={t(done ? 0.08 : 0)} />
+      </motion.svg>
+      {/* one slot as wide as "Copied", so the button keeps its width */}
+      <span className="grid">
+        <span className="invisible col-start-1 row-start-1">Copied</span>
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.span key={done ? 'done' : 'copy'} className="col-start-1 row-start-1" initial={{ opacity: 0, y: reduce ? 0 : 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduce ? 0 : -4 }} transition={t(0, 0.16)}>
+            {done ? 'Copied' : 'Copy'}
+          </motion.span>
+        </AnimatePresence>
+      </span>
     </button>
   );
 }
