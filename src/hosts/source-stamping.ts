@@ -37,7 +37,7 @@ export function stampJSX(code: string, file: string, path: string) {
 }
 
 /** A dev pre-transform, independent of analysis, receipts or module generations. */
-export function sourceStamping(options: SessionOptions): Plugin {
+export function sourceStamping(options: SessionOptions, production = false): Plugin {
   let root: string;
   let config: ReturnType<typeof loadConfig> | undefined;
   let disabled = false;
@@ -45,7 +45,7 @@ export function sourceStamping(options: SessionOptions): Plugin {
     name: 'plumb',
     enforce: 'pre',
     apply(userConfig, environment) {
-      return environment.command === 'serve' && !process.env.VITEST && !(userConfig as { test?: unknown }).test;
+      return (environment.command === 'serve' || production) && !process.env.VITEST && !(userConfig as { test?: unknown }).test;
     },
     configResolved(resolved) {
       root = options.root === undefined ? resolved.root : resolve(resolved.root, options.root);

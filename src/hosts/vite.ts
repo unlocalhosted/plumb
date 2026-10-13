@@ -1,5 +1,7 @@
 import type { Plugin } from 'vite';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { Session } from '../session/index.js';
 import type { SessionOptions } from '../session/index.js';
 import { createHandler } from '../session/server.js';
@@ -22,15 +24,39 @@ export interface PlumbViteOptions extends SessionOptions {
   /** Stamp JSX with its source position in dev (default true). Turn it off for an app that hydrates HTML prerendered
    * outside the dev server: that HTML carries no stamps, so React reports a mismatch and renders the page again. */
   stamp?: boolean;
+  /** Explicit static demo opt-in: stamp production JSX and mount the real overlay after this replay module.
+   * The module must install its transport synchronously. Paths are relative to the Vite root.
+   * Ordinary production builds still contain no Plumb client or stamps. */
+  demo?: { replay: string; guard?: boolean };
 }
 
-export function plumb({ stamp = true, ...options }: PlumbViteOptions = {}): Plugin {
+export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {}): Plugin {
   let restarts = 0;
   let release: (() => Promise<void>) | undefined;
+  let root: string, production = false;
+  const entry = '\0plumb:demo';
+  const client = fileURLToPath(new URL('../../overlay/client.js', import.meta.url));
+  const stamping = sourceStamping(options, Boolean(demo));
   return {
-    ...(stamp ? sourceStamping(options) : { name: 'plumb', apply: 'serve' as const }),
+    ...(stamp ? stamping : { name: 'plumb', ...(demo ? {} : { apply: 'serve' as const }) }),
+    configResolved(config) {
+      root = config.root; production = config.command === 'build';
+      if (stamp && typeof stamping.configResolved === 'function') stamping.configResolved.call(this, config);
+    },
     resolveId(id) {
+      if (demo && id === 'virtual:plumb-demo') return entry;
+      if (demo && production && id === '../vendor/bippy/source.js') return createRequire(import.meta.url).resolve('bippy/source');
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
+    },
+    load(id) {
+      if (demo && id === entry) return `import ${JSON.stringify(resolve(root, demo.replay))};\n${production ? `await import(${JSON.stringify(client)});` : `const client = '/__plumb/client.js';\nawait import(/* @vite-ignore */ client);`}`;
+    },
+    async transform(code, id) {
+      if (production && id === fileURLToPath(new URL('../../overlay/src/api.js', import.meta.url))) {
+        return code.replace("new URL('../', import.meta.url).href", "new URL('/__plumb/', location.href).href");
+      }
+      if (stamp && typeof stamping.transform === 'function') return stamping.transform.call(this, code, id);
+      return null;
     },
     configureServer(server) {
       const root = options.root === undefined ? server.config.root : resolve(server.config.root, options.root);
@@ -66,6 +92,7 @@ export function plumb({ stamp = true, ...options }: PlumbViteOptions = {}): Plug
       server.middlewares.use(createHandler(owned.session, { client: true, servedRoot: server.config.root }));
     },
     transformIndexHtml: { order: 'pre', handler() {
+      if (demo && (production || demo.guard)) return [{ tag: 'script', attrs: { type: 'module' }, children: `import 'virtual:plumb-demo';`, injectTo: 'head' }];
       return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' },
         { tag: 'script', attrs: { type: 'module' }, children: `import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
 if (import.meta.hot) import.meta.hot.on('vite:afterUpdate', invalidateSourceMaps);`, injectTo: 'head' }];
