@@ -10,58 +10,93 @@
  * ───────────────────────────────────────────────────────── */
 import { Fragment, isValidElement, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { SPRING } from '../site/motion.js';
 
 const SHELL = ['sh', 'bash', 'shell', 'zsh', 'console'];
 const LABEL = { ts: 'TypeScript', tsx: 'TSX', js: 'JavaScript', jsx: 'JSX', json: 'JSON', css: 'CSS', md: 'Markdown', yaml: 'YAML', yml: 'YAML', text: 'Text' };
 
-/* COPY — STORYBOARD
- *    rest    two stacked sheets, "Copy"
- *    copy    0ms    the back sheet slides onto the front one (120ms)
- *            80ms   the sheet's outline draws away while a check draws in (220ms); "Copy" → "Copied" crossfades
- *                   in place, in a slot as wide as the longer word, so the button never changes width
- *            1.2s   it all runs back
- *    failed  (no clipboard) the sheets shake once, 2px
- *    reduced motion: the icon and label swap without movement
+/* COPY — what copying does: a duplicate is made, and the original stays where it is.
+ *
+ *  rest      one sheet with two lines on it: this block
+ *  copy      0ms    a duplicate peels off the sheet and settles up and to the right, behind it, on `pop`:
+ *                   the icon becomes the copy glyph because a copy now exists. The original never moves.
+ *            0ms    in the block, exactly the text that went to the clipboard is swept with a selection tint,
+ *                   left to right (220ms); on a terminal block that's the commands, not the "$" or the comments
+ *            40ms   "Copy" → "Copied", crossfaded in a slot as wide as the longer word
+ *            1.6s   the tint fades and the duplicate fades out where it is (the clipboard still holds the copy)
+ *  failed    the duplicate starts to peel and snaps back to the sheet; the label reads "Not copied"
+ *  reduced motion: the duplicate and the tint appear and go without travel
  */
-export function CopyButton({ text, className = '' }) {
+export function CopyButton({ text, onCopied, className = '' }) {
   const [state, setState] = useState('rest'); // rest | copied | failed
   const reduce = useReducedMotion();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
       setState('copied');
+      onCopied?.();
     } catch {
       setState('failed');
     }
-    setTimeout(() => setState('rest'), 1200);
+    setTimeout(() => setState('rest'), 1600);
   };
   const done = state === 'copied';
-  const t = (d = 0, dur = 0.22) => (reduce ? { duration: 0 } : { duration: dur, delay: d, ease: [0.4, 0, 0.2, 1] });
+  const label = done ? 'Copied' : state === 'failed' ? 'Not copied' : 'Copy';
+  // the duplicate: behind the original until a copy exists, then offset up and to the right
+  const dup = done ? { x: 3, y: -3, opacity: 1 } : state === 'failed' ? { x: [0, 2, 0], y: [0, -2, 0], opacity: [0, 1, 0] } : { x: 0, y: 0, opacity: 0 };
+  const sheet = (
+    <>
+      <rect x="1.5" y="4.5" width="10" height="10" rx="2" />
+      <path d="M4.5 8.5 H8.5 M4.5 11.5 H7" />
+    </>
+  );
   return (
     <button
       type="button"
       onClick={copy}
       aria-label={done ? 'Copied' : 'Copy to clipboard'}
-      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-code-keyword ${done ? 'bg-code-string/15 text-code-string' : 'text-code-comment hover:bg-code-foreground/10 hover:text-code-foreground'} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-code-keyword ${done ? 'text-code-string' : state === 'failed' ? 'text-code-flag' : 'text-code-comment hover:bg-code-foreground/10 hover:text-code-foreground'} ${className}`}
     >
-      <motion.svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5 overflow-visible" animate={state === 'failed' && !reduce ? { x: [0, -2, 2, -1, 0] } : { x: 0 }} transition={{ duration: 0.3 }}>
-        {/* the back sheet: slides onto the front one */}
-        <motion.rect x="5.5" y="1.5" width="9" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" initial={false} animate={done ? { x: -4, y: 3, opacity: 0 } : { x: 0, y: 0, opacity: 1 }} transition={t(0, 0.12)} />
-        {/* the front sheet: its outline draws away */}
-        <motion.rect x="1.5" y="4.5" width="9" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" initial={false} animate={{ pathLength: done ? 0 : 1, opacity: done ? 0 : 1 }} transition={t(done ? 0.08 : 0)} />
-        {/* the check: draws in */}
-        <motion.path d="M3 8.6 L6.4 12 L13 4.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" initial={false} animate={{ pathLength: done ? 1 : 0, opacity: done ? 1 : 0 }} transition={t(done ? 0.08 : 0)} />
-      </motion.svg>
-      {/* one slot as wide as "Copied", so the button keeps its width */}
+      <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5 overflow-visible" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <motion.g initial={false} animate={dup} transition={reduce ? { duration: 0 } : state === 'failed' ? { duration: 0.32 } : done ? SPRING.pop : { duration: 0.2 }}>
+          {sheet}
+        </motion.g>
+        {/* the original: filled with the code ground so the duplicate sits behind it; it never moves */}
+        <g className="fill-code">{sheet}</g>
+      </svg>
+      {/* one slot as wide as the longest word, so the button keeps its width */}
       <span className="grid">
-        <span className="invisible col-start-1 row-start-1">Copied</span>
+        <span className="invisible col-start-1 row-start-1">Not copied</span>
         <AnimatePresence initial={false} mode="popLayout">
-          <motion.span key={done ? 'done' : 'copy'} className="col-start-1 row-start-1" initial={{ opacity: 0, y: reduce ? 0 : 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduce ? 0 : -4 }} transition={t(0, 0.16)}>
-            {done ? 'Copied' : 'Copy'}
+          <motion.span
+            key={label}
+            className="col-start-1 row-start-1 text-right"
+            initial={{ opacity: 0, y: reduce ? 0 : 4 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: reduce ? 0 : 0.16, delay: reduce ? 0 : 0.04 } }}
+            exit={{ opacity: 0, y: reduce ? 0 : -4, transition: { duration: reduce ? 0 : 0.12 } }}
+          >
+            {label}
           </motion.span>
         </AnimatePresence>
       </span>
     </button>
+  );
+}
+
+// The selection tint over the exact text that was copied: sweeps in left to right, holds, fades.
+function Copied({ on, block = false, children }) {
+  const reduce = useReducedMotion();
+  return (
+    <span className={`relative ${block ? 'block' : ''}`}>
+      <motion.span
+        aria-hidden="true"
+        className="absolute -inset-x-1 inset-y-0 origin-left rounded-sm bg-code-keyword/25"
+        initial={false}
+        animate={on ? { scaleX: 1, opacity: 1 } : { scaleX: reduce ? 1 : 0, opacity: 0 }}
+        transition={on ? (reduce ? { duration: 0 } : { scaleX: { duration: 0.22, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.05 } }) : { duration: reduce ? 0 : 0.3 }}
+      />
+      <span className="relative">{children}</span>
+    </span>
   );
 }
 
@@ -73,11 +108,16 @@ export function CodeBlock({ children }) {
   const shell = SHELL.includes(lang);
   const rows = shell ? text.split('\n').filter((l) => l.trim()).map(splitComment) : null;
   const copy = shell ? rows.map((r) => r.cmd).join('\n') : text;
+  const [flash, setFlash] = useState(false);
+  const copied = () => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 1600);
+  };
   return (
     <figure className="my-6 overflow-hidden rounded-md bg-code text-code-foreground shadow-plate">
       <figcaption className="flex h-10 items-center justify-between border-b border-code-foreground/10 pr-2 pl-4">
         <span className="text-xs font-semibold text-code-comment">{shell ? 'Terminal' : (LABEL[lang] ?? lang.toUpperCase())}</span>
-        <CopyButton text={copy} />
+        <CopyButton text={copy} onCopied={copied} />
       </figcaption>
       {shell ? (
         <div className="flex flex-col gap-3 overflow-x-auto px-4 py-4 font-mono text-sm">
@@ -88,14 +128,18 @@ export function CodeBlock({ children }) {
                 <span className="text-code-comment select-none" aria-hidden="true">
                   ${' '}
                 </span>
-                {paint(shellTokens(r.cmd))}
+                <Copied on={flash}>{paint(shellTokens(r.cmd))}</Copied>
               </span>
             </div>
           ))}
         </div>
       ) : (
         <pre className="overflow-x-auto px-4 py-4 font-mono text-sm">
-          <code>{paint(sourceTokens(text))}</code>
+          <code>
+            <Copied on={flash} block>
+              {paint(sourceTokens(text))}
+            </Copied>
+          </code>
         </pre>
       )}
     </figure>
