@@ -355,3 +355,13 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* a stage whose output changed when the value was written another way: one tint, then gone (docs/figures/ValueJourney.jsx) */
+@keyframes journey-flash {
+  from {
+    background-color: var(--tint-2);
+  }
+  to {
+    background-color: transparent;
+  }
+}

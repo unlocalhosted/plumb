@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  /* why: Compact separation within a related group. */
+  --spacing-2: 8px;
+  /* why: Separate a label from its control. */
+  --spacing-3: 12px;
+  /* why: Give a group breathing room. */
+  --spacing-4: 16px;
+  /* why: Separate adjacent groups. */
+  --spacing-5: 20px;
+}
+
+.judged-apply {
+  @apply gap-[13px];
+}
+
+.judged-css {
+  gap: 13px;
+}

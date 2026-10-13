@@ -1,0 +1,1588 @@
+{
+  "schemaVersion": 1,
+  "fixture": "fixtures/docs-judged/",
+  "command": "node dist/cli.js check --root fixtures/docs-judged --json",
+  "regenerate": "npm run build && node scripts/docs/record-judged.mjs",
+  "cliExitCode": 1,
+  "tool": {
+    "name": "plumb",
+    "version": "0.1.0"
+  },
+  "tailwind": {
+    "entry": "src/styles.css",
+    "version": "4.3.3"
+  },
+  "fieldNotes": {
+    "authored": "Text checked against fixture source at the reported line; authored.column locates the complete spelling. authored.site is the raw declaration site.",
+    "declarations": "Raw report.declarations matched by file, site.text, origin and property; file paths only normalized relative to fixture root.",
+    "compiledDeclarations": "Raw prop/value/refs/when projected from declarations; null for inline because there is no compiler stage. Plain CSS in this entry also passes through the stylesheet compiler.",
+    "resolved": "Raw declaration.resolved or null; no reconstruction or pixel conversion.",
+    "finding": "Raw matching report.findings entry or null. Full grouped sites/occurrences retained: apply, inline and plain-css share one finding. Message fields are title/because/action/why/fix; choices retain name/value/resolved/why/use.",
+    "unexposed": "Intermediate ASTs, complete generated CSS, per-part comparison values and numeric distances are not CLI report fields and are not reconstructed."
+  },
+  "cases": [
+    {
+      "id": "arbitrary-class",
+      "authored": {
+        "text": "className=\"gap-[13px]\"",
+        "file": "src/Judged.tsx",
+        "line": 6,
+        "column": 12,
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 6,
+          "column": 23,
+          "text": "gap-[13px]",
+          "anchor": "Judged"
+        }
+      },
+      "declarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".gap-\\[13px\\]"
+            }
+          ],
+          "refs": [],
+          "site": {
+            "file": "src/Judged.tsx",
+            "line": 6,
+            "column": 23,
+            "text": "gap-[13px]",
+            "anchor": "Judged"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "div"
+          },
+          "origin": "arbitrary",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        }
+      ],
+      "compiledDeclarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".gap-\\[13px\\]"
+            }
+          ]
+        }
+      ],
+      "resolved": "13px",
+      "finding": {
+        "key": "888ffbfcca9212facde2dd9ce5592cafcfa9f85ee79fd477d218b54a3ee46cc1",
+        "rule": "provenance/arbitrary",
+        "family": "spacing",
+        "severity": "error",
+        "sites": [
+          {
+            "file": "src/Judged.tsx",
+            "line": 6,
+            "column": 23,
+            "text": "gap-[13px]",
+            "anchor": "Judged",
+            "ledger": {
+              "key": "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged",
+              "status": "new"
+            }
+          }
+        ],
+        "occurrences": [
+          {
+            "prop": "gap",
+            "value": "13px",
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".gap-\\[13px\\]"
+              }
+            ],
+            "refs": [],
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 6,
+              "column": 23,
+              "text": "gap-[13px]",
+              "anchor": "Judged"
+            },
+            "owner": {
+              "kind": "element",
+              "name": "div"
+            },
+            "origin": "arbitrary",
+            "sourceOrigin": "project",
+            "authoredValue": true,
+            "resolved": "13px"
+          }
+        ],
+        "declaration": {
+          "prop": "gap",
+          "value": "13px",
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".gap-\\[13px\\]"
+            }
+          ],
+          "refs": [],
+          "site": {
+            "file": "src/Judged.tsx",
+            "line": 6,
+            "column": 23,
+            "text": "gap-[13px]",
+            "anchor": "Judged"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "div"
+          },
+          "origin": "arbitrary",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        },
+        "decisions": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "title": "`gap-[13px]` hardcodes 13px",
+        "because": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "edits": [
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 6,
+              "column": 23,
+              "text": "gap-[13px]",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap-[13px]` with `gap-3`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 6,
+              "column": 23,
+              "text": "gap-[13px]",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap-[13px]` with `gap-4`.",
+            "token": "--spacing-4"
+          }
+        ],
+        "choices": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "accept": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
+        "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
+        "ledgerKeys": [
+          "provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged"
+        ],
+        "status": "new"
+      },
+      "stageNotes": "Declaration fields come from the final CLI report; no separate pre-judgement compiler snapshot is exposed."
+    },
+    {
+      "id": "apply",
+      "authored": {
+        "text": "@apply gap-[13px];",
+        "file": "src/styles.css",
+        "line": 15,
+        "column": 3,
+        "site": {
+          "file": "src/styles.css",
+          "line": 15,
+          "column": 3,
+          "text": "@apply gap-[13px];",
+          "anchor": ".judged-apply"
+        }
+      },
+      "declarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-apply"
+            }
+          ],
+          "site": {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply"
+          },
+          "owner": {
+            "kind": "element",
+            "name": ".judged-apply"
+          },
+          "origin": "apply",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        }
+      ],
+      "compiledDeclarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-apply"
+            }
+          ]
+        }
+      ],
+      "resolved": "13px",
+      "finding": {
+        "key": "06858ee84fb06fb0058c479ac30b611951b9cfc8971cdc7a2d9ec30f512d5415",
+        "rule": "provenance/spacing",
+        "family": "spacing",
+        "severity": "error",
+        "sites": [
+          {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply",
+            "ledger": {
+              "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/styles.css",
+            "line": 19,
+            "column": 3,
+            "text": "gap: 13px",
+            "anchor": ".judged-css",
+            "ledger": {
+              "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/Judged.tsx",
+            "line": 8,
+            "column": 21,
+            "text": "gap: 13",
+            "anchor": "Judged",
+            "ledger": {
+              "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+              "status": "new"
+            }
+          }
+        ],
+        "occurrences": [
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-apply"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "owner": {
+              "kind": "element",
+              "name": ".judged-apply"
+            },
+            "origin": "apply",
+            "sourceOrigin": "project",
+            "authoredValue": true,
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-css"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "authoredCss": "13px",
+            "owner": {
+              "kind": "element",
+              "name": ".judged-css"
+            },
+            "origin": "stylesheet",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [],
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "owner": {
+              "kind": "element",
+              "name": "div"
+            },
+            "origin": "inline",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          }
+        ],
+        "declaration": {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-apply"
+            }
+          ],
+          "site": {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply"
+          },
+          "owner": {
+            "kind": "element",
+            "name": ".judged-apply"
+          },
+          "origin": "apply",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        },
+        "decisions": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "title": "gap 13px isn't on your spacing scale",
+        "because": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "edits": [
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-3` or `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-4` or `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-3)\"`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-4)\"`.",
+            "token": "--spacing-4"
+          }
+        ],
+        "choices": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
+        "ledgerKeys": [
+          "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged"
+        ],
+        "status": "new"
+      },
+      "stageNotes": "Declaration fields come from the final CLI report; no separate pre-judgement compiler snapshot is exposed."
+    },
+    {
+      "id": "inline",
+      "authored": {
+        "text": "style={{ gap: 13 }}",
+        "file": "src/Judged.tsx",
+        "line": 8,
+        "column": 12,
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 8,
+          "column": 21,
+          "text": "gap: 13",
+          "anchor": "Judged"
+        }
+      },
+      "declarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "src/Judged.tsx",
+            "line": 8,
+            "column": 21,
+            "text": "gap: 13",
+            "anchor": "Judged"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "div"
+          },
+          "origin": "inline",
+          "sourceOrigin": "project",
+          "resolved": "13px"
+        }
+      ],
+      "compiledDeclarations": null,
+      "resolved": "13px",
+      "finding": {
+        "key": "06858ee84fb06fb0058c479ac30b611951b9cfc8971cdc7a2d9ec30f512d5415",
+        "rule": "provenance/spacing",
+        "family": "spacing",
+        "severity": "error",
+        "sites": [
+          {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply",
+            "ledger": {
+              "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/styles.css",
+            "line": 19,
+            "column": 3,
+            "text": "gap: 13px",
+            "anchor": ".judged-css",
+            "ledger": {
+              "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/Judged.tsx",
+            "line": 8,
+            "column": 21,
+            "text": "gap: 13",
+            "anchor": "Judged",
+            "ledger": {
+              "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+              "status": "new"
+            }
+          }
+        ],
+        "occurrences": [
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-apply"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "owner": {
+              "kind": "element",
+              "name": ".judged-apply"
+            },
+            "origin": "apply",
+            "sourceOrigin": "project",
+            "authoredValue": true,
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-css"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "authoredCss": "13px",
+            "owner": {
+              "kind": "element",
+              "name": ".judged-css"
+            },
+            "origin": "stylesheet",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [],
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "owner": {
+              "kind": "element",
+              "name": "div"
+            },
+            "origin": "inline",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          }
+        ],
+        "declaration": {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-apply"
+            }
+          ],
+          "site": {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply"
+          },
+          "owner": {
+            "kind": "element",
+            "name": ".judged-apply"
+          },
+          "origin": "apply",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        },
+        "decisions": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "title": "gap 13px isn't on your spacing scale",
+        "because": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "edits": [
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-3` or `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-4` or `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-3)\"`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-4)\"`.",
+            "token": "--spacing-4"
+          }
+        ],
+        "choices": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
+        "ledgerKeys": [
+          "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged"
+        ],
+        "status": "new"
+      },
+      "stageNotes": "Inline style is collected directly, never sent through Tailwind. CLI exposes its normalized declaration, not a compiled stage."
+    },
+    {
+      "id": "plain-css",
+      "authored": {
+        "text": "gap: 13px;",
+        "file": "src/styles.css",
+        "line": 19,
+        "column": 3,
+        "site": {
+          "file": "src/styles.css",
+          "line": 19,
+          "column": 3,
+          "text": "gap: 13px",
+          "anchor": ".judged-css"
+        }
+      },
+      "declarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-css"
+            }
+          ],
+          "site": {
+            "file": "src/styles.css",
+            "line": 19,
+            "column": 3,
+            "text": "gap: 13px",
+            "anchor": ".judged-css"
+          },
+          "authoredCss": "13px",
+          "owner": {
+            "kind": "element",
+            "name": ".judged-css"
+          },
+          "origin": "stylesheet",
+          "sourceOrigin": "project",
+          "resolved": "13px"
+        }
+      ],
+      "compiledDeclarations": [
+        {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-css"
+            }
+          ]
+        }
+      ],
+      "resolved": "13px",
+      "finding": {
+        "key": "06858ee84fb06fb0058c479ac30b611951b9cfc8971cdc7a2d9ec30f512d5415",
+        "rule": "provenance/spacing",
+        "family": "spacing",
+        "severity": "error",
+        "sites": [
+          {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply",
+            "ledger": {
+              "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/styles.css",
+            "line": 19,
+            "column": 3,
+            "text": "gap: 13px",
+            "anchor": ".judged-css",
+            "ledger": {
+              "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+              "status": "new"
+            }
+          },
+          {
+            "file": "src/Judged.tsx",
+            "line": 8,
+            "column": 21,
+            "text": "gap: 13",
+            "anchor": "Judged",
+            "ledger": {
+              "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
+              "status": "new"
+            }
+          }
+        ],
+        "occurrences": [
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-apply"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "owner": {
+              "kind": "element",
+              "name": ".judged-apply"
+            },
+            "origin": "apply",
+            "sourceOrigin": "project",
+            "authoredValue": true,
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [
+              {
+                "kind": "selector",
+                "text": ".judged-css"
+              }
+            ],
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "authoredCss": "13px",
+            "owner": {
+              "kind": "element",
+              "name": ".judged-css"
+            },
+            "origin": "stylesheet",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          },
+          {
+            "prop": "gap",
+            "value": "13px",
+            "refs": [],
+            "when": [],
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "owner": {
+              "kind": "element",
+              "name": "div"
+            },
+            "origin": "inline",
+            "sourceOrigin": "project",
+            "resolved": "13px"
+          }
+        ],
+        "declaration": {
+          "prop": "gap",
+          "value": "13px",
+          "refs": [],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".judged-apply"
+            }
+          ],
+          "site": {
+            "file": "src/styles.css",
+            "line": 15,
+            "column": 3,
+            "text": "@apply gap-[13px];",
+            "anchor": ".judged-apply"
+          },
+          "owner": {
+            "kind": "element",
+            "name": ".judged-apply"
+          },
+          "origin": "apply",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "13px"
+        },
+        "decisions": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "title": "gap 13px isn't on your spacing scale",
+        "because": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "edits": [
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-3` or `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 15,
+              "column": 3,
+              "text": "@apply gap-[13px];",
+              "anchor": ".judged-apply"
+            },
+            "text": "Use `gap-4` or `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-3)`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/styles.css",
+              "line": 19,
+              "column": 3,
+              "text": "gap: 13px",
+              "anchor": ".judged-css"
+            },
+            "text": "Replace `gap: 13px` with `gap: var(--spacing-4)`.",
+            "token": "--spacing-4"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-3)\"`.",
+            "token": "--spacing-3"
+          },
+          {
+            "site": {
+              "file": "src/Judged.tsx",
+              "line": 8,
+              "column": 21,
+              "text": "gap: 13",
+              "anchor": "Judged"
+            },
+            "text": "Replace `gap: 13` with `gap: \"var(--spacing-4)\"`.",
+            "token": "--spacing-4"
+          }
+        ],
+        "choices": [
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-3)"
+            ],
+            "why": "Separate a label from its control.",
+            "family": "spacing",
+            "name": "--spacing-3",
+            "value": "12px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 7
+            },
+            "resolved": "12px",
+            "use": {
+              "class": "gap-3",
+              "css": "gap: var(--spacing-3)"
+            }
+          },
+          {
+            "origin": "project",
+            "tier": "primitive",
+            "refs": [
+              "var(--spacing-4)"
+            ],
+            "why": "Give a group breathing room.",
+            "family": "spacing",
+            "name": "--spacing-4",
+            "value": "16px",
+            "source": {
+              "file": "src/styles.css",
+              "line": 9
+            },
+            "resolved": "16px",
+            "use": {
+              "class": "gap-4",
+              "css": "gap: var(--spacing-4)"
+            }
+          }
+        ],
+        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+        "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
+        "ledgerKeys": [
+          "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
+          "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
+          "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged"
+        ],
+        "status": "new"
+      },
+      "stageNotes": "Declaration fields come from the final CLI report; no separate pre-judgement compiler snapshot is exposed."
+    },
+    {
+      "id": "on-scale",
+      "authored": {
+        "text": "className=\"gap-3\"",
+        "file": "src/Judged.tsx",
+        "line": 10,
+        "column": 12,
+        "site": {
+          "file": "src/Judged.tsx",
+          "line": 10,
+          "column": 23,
+          "text": "gap-3",
+          "anchor": "Judged"
+        }
+      },
+      "declarations": [
+        {
+          "prop": "gap",
+          "value": "var(--spacing-3)",
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".gap-3"
+            }
+          ],
+          "decisionRefs": [
+            "--spacing-3"
+          ],
+          "refs": [
+            "--spacing-3"
+          ],
+          "site": {
+            "file": "src/Judged.tsx",
+            "line": 10,
+            "column": 23,
+            "text": "gap-3",
+            "anchor": "Judged"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "div"
+          },
+          "origin": "class",
+          "sourceOrigin": "project",
+          "authoredValue": true,
+          "resolved": "12px"
+        }
+      ],
+      "compiledDeclarations": [
+        {
+          "prop": "gap",
+          "value": "var(--spacing-3)",
+          "refs": [
+            "--spacing-3"
+          ],
+          "when": [
+            {
+              "kind": "selector",
+              "text": ".gap-3"
+            }
+          ]
+        }
+      ],
+      "resolved": "12px",
+      "finding": null,
+      "stageNotes": "Declaration fields come from the final CLI report; no separate pre-judgement compiler snapshot is exposed."
+    }
+  ],
+  "otherFindings": [
+    {
+      "key": "dead/spacing",
+      "rule": "dead/spacing",
+      "family": "spacing",
+      "severity": "info",
+      "sites": [
+        {
+          "file": "src/styles.css",
+          "line": 5,
+          "column": 1,
+          "text": "--spacing-2: 8px",
+          "ledger": {
+            "key": "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+            "status": "new"
+          }
+        },
+        {
+          "file": "src/styles.css",
+          "line": 9,
+          "column": 1,
+          "text": "--spacing-4: 16px",
+          "ledger": {
+            "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+            "status": "new"
+          }
+        },
+        {
+          "file": "src/styles.css",
+          "line": 11,
+          "column": 1,
+          "text": "--spacing-5: 20px",
+          "ledger": {
+            "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
+            "status": "new"
+          }
+        }
+      ],
+      "declaration": {
+        "prop": "--spacing-2",
+        "value": "8px",
+        "refs": [],
+        "when": [],
+        "site": {
+          "file": "src/styles.css",
+          "line": 5,
+          "column": 1,
+          "text": "--spacing-2: 8px"
+        },
+        "owner": {
+          "kind": "element",
+          "name": "decisions"
+        },
+        "origin": "custom-property",
+        "sourceOrigin": "project"
+      },
+      "occurrences": [
+        {
+          "prop": "--spacing-2",
+          "value": "8px",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "src/styles.css",
+            "line": 5,
+            "column": 1,
+            "text": "--spacing-2: 8px"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "decisions"
+          },
+          "origin": "custom-property",
+          "sourceOrigin": "project"
+        },
+        {
+          "prop": "--spacing-4",
+          "value": "16px",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "src/styles.css",
+            "line": 9,
+            "column": 1,
+            "text": "--spacing-4: 16px"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "decisions"
+          },
+          "origin": "custom-property",
+          "sourceOrigin": "project"
+        },
+        {
+          "prop": "--spacing-5",
+          "value": "20px",
+          "refs": [],
+          "when": [],
+          "site": {
+            "file": "src/styles.css",
+            "line": 11,
+            "column": 1,
+            "text": "--spacing-5: 20px"
+          },
+          "owner": {
+            "kind": "element",
+            "name": "decisions"
+          },
+          "origin": "custom-property",
+          "sourceOrigin": "project"
+        }
+      ],
+      "decisions": [
+        {
+          "origin": "project",
+          "tier": "primitive",
+          "refs": [
+            "var(--spacing-2)"
+          ],
+          "why": "Compact separation within a related group.",
+          "family": "spacing",
+          "name": "--spacing-2",
+          "value": "8px",
+          "source": {
+            "file": "src/styles.css",
+            "line": 5
+          },
+          "resolved": "8px"
+        },
+        {
+          "origin": "project",
+          "tier": "primitive",
+          "refs": [
+            "var(--spacing-4)"
+          ],
+          "why": "Give a group breathing room.",
+          "family": "spacing",
+          "name": "--spacing-4",
+          "value": "16px",
+          "source": {
+            "file": "src/styles.css",
+            "line": 9
+          },
+          "resolved": "16px"
+        },
+        {
+          "origin": "project",
+          "tier": "primitive",
+          "refs": [
+            "var(--spacing-5)"
+          ],
+          "why": "Separate adjacent groups.",
+          "family": "spacing",
+          "name": "--spacing-5",
+          "value": "20px",
+          "source": {
+            "file": "src/styles.css",
+            "line": 11
+          },
+          "resolved": "20px"
+        }
+      ],
+      "title": "3 spacing tokens are never used in your source",
+      "because": "Unused tokens make the theme harder to choose from.",
+      "action": "If other apps use them, mark them published: decisions.spacing.exported: true. Otherwise remove them.",
+      "accept": "plumb accept --rule dead/spacing --site src/styles.css:5 --why \"…\"",
+      "why": "Unused tokens make the theme harder to choose from.",
+      "fix": "If other apps use them, mark them published: decisions.spacing.exported: true. Otherwise remove them.",
+      "ledgerKeys": [
+        "dead/spacing:decisions:--spacing-2:--spacing-2: 8px@src/styles.css#<module>",
+        "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
+        "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>"
+      ],
+      "status": "new"
+    }
+  ]
+}

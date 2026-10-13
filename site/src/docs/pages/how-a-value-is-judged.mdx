@@ -1,0 +1,56 @@
+import { ValueJourney } from '../figures/ValueJourney.jsx'
+
+Plumb doesn't guess from class names. It takes every value through five stages: it reads what you wrote, compiles it with your own Tailwind, resolves it to a number, measures it against your decisions, and gives a verdict. Below, one value is written five ways and run through the real CLI.
+
+<ValueJourney />
+
+## Read
+
+Plumb reads your source, not the page in a browser. By default that's the JS, TS and CSS files under `src/` and `app/`; set `source` in your config to change it.
+
+- **Classes** in `className` and `class`, including both sides of a condition, arrays and object keys, and calls to `cn`, `clsx`, `cx`, `classNames`, `twMerge`, `twJoin`, `cva` and `tv`. Classes kept in a variable, an import or a function's return value are followed too.
+- **Stylesheets**: your Tailwind entry, everything it imports, CSS imported from your components, and CSS files in your sources.
+- **Inline styles** written as `style={{ … }}` with literal values, or a constant object one step away.
+
+Each value keeps the exact line and column it was written at, so a finding points at the code you wrote.
+
+<Callout kind="note" title="What can't be read">
+A class assembled at runtime, like `` `gap-${size}` ``, is reported as `existence/dynamic-class`, since there's no way to know which class reaches the page. An inline value that isn't a literal is noted as `provenance/opaque-inline`, at info level.
+</Callout>
+
+## Compile
+
+Classes, `@apply` and stylesheets go through the Tailwind v4 installed in your project, so they compile exactly as they do in your build, with your theme and your plugins. What comes out is CSS declarations, each still tied to its source line.
+
+Inline styles skip this stage: they're already CSS. A number like `gap: 13` becomes `13px`, as React would render it.
+
+## Resolve
+
+Plumb works out what each declaration's value comes to. It follows `var()` through your tokens, including fallbacks, and folds `calc()` arithmetic. `rem` counts as 16px.
+
+Some values can't be pinned to one number, and Plumb doesn't pretend: `env()`, `light-dark()`, `em`, percentages and viewport units, and `min()`, `max()` or `clamp()`. A token that changes with the theme stays unresolved too.
+
+## Measure
+
+The value is compared with your decisions for its family. How depends on the family:
+
+| Family | Passes when |
+| --- | --- |
+| <Family id="spacing">Spacing</Family>, <Family id="radius">Radius</Family>, <Family id="type">Type</Family> | the value equals one of your steps, whether it was written as the token or as the number |
+| <Family id="colour">Colour</Family>, <Family id="motion">Motion</Family>, <Family id="elevation">Elevation</Family>, <Family id="z">Z-index</Family> | the value refers to one of your tokens |
+
+So `gap: 12px` passes when 12px is a step, but `color: #2f5be0` is flagged even if it matches your primary exactly, because it won't follow a theme change. You can change this per family with `identity` in your config.
+
+When a value misses, Plumb names the steps to choose from, each with its reason. For spacing that's the step just below and the step just above, if they're within 4px or half the value, whichever is more.
+
+## Verdict
+
+| Rule | Severity | When |
+| --- | --- | --- |
+| `provenance/<family>` | error | a value off your scale, in CSS, `@apply` or an inline style |
+| `provenance/arbitrary` | error | the same, written as a bracket class like `gap-[13px]`; its fix rewrites the class |
+| `provenance/<family>/framework` | error | a Tailwind default your theme doesn't include |
+| `provenance/<family>/by-value` | warning | a literal that equals a token, in a family judged by reference |
+| `existence/dead-class` | error | a class that compiles to nothing |
+
+The same off-scale value in several places, under the same rule, is one finding with every site listed, so you see everywhere it lives at once.

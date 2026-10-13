@@ -1,0 +1,8 @@
+{
+  "name": "plumb-docs-judged-fixture",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "tailwindcss": "^4.1"
+  }
+}
