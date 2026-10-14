@@ -1,0 +1,48 @@
+{
+  "directory": "/Users/vijaysingh/unlocalhosted/plumb/fixtures/.verify-frozen/validation-RdDnTh",
+  "head": "6b73b19c30cb3766796345ed51fbe0dc5b208429",
+  "files": [
+    "bench/apps/verify.mjs",
+    "bench/apps/frozen.mjs",
+    "bench/apps/readonly.mjs",
+    "bench/apps/prove-frozen.mjs",
+    "bench/apps/test-local.mjs",
+    "e2e/verify-frozen.test.mjs",
+    "e2e/computed.test.mjs",
+    "e2e/isolation.test.mjs",
+    "e2e/linked-locate.test.mjs",
+    "e2e/served-root.test.mjs",
+    "bench/apps/probe.mjs"
+  ],
+  "npmTestExitCode": 0,
+  "tests": [
+    345,
+    26,
+    26
+  ],
+  "passed": [
+    344,
+    25,
+    23
+  ],
+  "failed": [
+    0,
+    0,
+    0
+  ],
+  "skipped": [
+    1,
+    1,
+    3
+  ],
+  "runtime": {
+    "directory": "/Users/vijaysingh/unlocalhosted/plumb/fixtures/.verify-frozen/plumb-verify-nuAaBC/tool",
+    "sourceHead": "6b73b19c30cb3766796345ed51fbe0dc5b208429",
+    "sha256": "72eb3867d529b11438f529e30df40fb4b99263e9af4a612649fd0c7d292850d0",
+    "ms": 300.91,
+    "unchanged": true,
+    "removed": true
+  },
+  "runId": "plumb-verify-nuAaBC",
+  "validationCheckoutRemoved": true
+}

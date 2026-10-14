@@ -1,0 +1,456 @@
+DIAG before [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at Inner (webpack-internal:///(app-pages-browser)/./src/App.jsx:12:87)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12206:18)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at App (webpack-internal:///(app-pages-browser)/./src/App.jsx:45:96)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12148:35)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3635:19)\n' +
+      '    at Page (about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3:15:88)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:5238:12)\n' +
+      '    at initializeElement (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2065:35)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: true,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG stale {"sameEvidence":true,"text":"Nested","location":null,"explain":{"location":null,"reason":"source-mismatch","detail":{"source":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-OCMLGb/src/App.jsx","mapHash":"585cc3fdb0e14d1e496fd7f6302ddfbd665160664c9755459b3553b41a6f95ab","currentHash":"4ab5b7e84dbcdedcce33f5c6ccf839385729d4ce6a7e369db5d4e895383f2f84"}}} [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at Inner (webpack-internal:///(app-pages-browser)/./src/App.jsx:12:87)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12206:18)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: true,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at App (webpack-internal:///(app-pages-browser)/./src/App.jsx:45:96)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12148:35)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3635:19)\n' +
+      '    at Page (about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3:15:88)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:5238:12)\n' +
+      '    at initializeElement (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2065:35)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: false,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG updated [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at Inner (webpack-internal:///(app-pages-browser)/./src/App.jsx:12:87)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12206:18)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: true,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at Inner (webpack-internal:///(app-pages-browser)/./src/App.jsx:12:87)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12206:18)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at App (webpack-internal:///(app-pages-browser)/./src/App.jsx:45:96)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12148:35)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    same: false,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react-jsx-dev-runtime.development.js:333:29)\n' +
+      '    at App (webpack-internal:///(app-pages-browser)/./src/App.jsx:45:96)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:28588:20)\n' +
+      '    at renderWithHooksAgain (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8139:20)\n' +
+      '    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8043:22)\n' +
+      '    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10570:19)\n' +
+      '    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12148:35)\n' +
+      '    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1046:30)\n' +
+      '    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19180:22)\n' +
+      '    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19174:9)',
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3635:19)\n' +
+      '    at Page (about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3:15:88)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:5238:12)\n' +
+      '    at initializeElement (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2065:35)',
+    same: false,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3635:19)\n' +
+      '    at Page (about://React/Server/webpack-internal:///(rsc)/./app/page.jsx?3:15:88)\n' +
+      '    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:5238:12)\n' +
+      '    at initializeElement (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2065:35)',
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: false,
+    altStack: undefined,
+    source: undefined
+  }
+]
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (16759.769125ms)
+ℹ warm Next locate main-thread ms: 3.46, 2.34, 2.60, 2.62, 2.49
+DIAG before [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:49584/_next/static/chunks/fixtures__locate-zNh1TW_src_11vroiblof6mf._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:49584/_next/static/chunks/fixtures__locate-zNh1TW_src_11vroiblof6mf._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-zNh1TW/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__0vivx8y7tvecn._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: true,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG stale {"sameEvidence":true,"text":"Nested","location":{"file":"src/App.jsx","line":4,"column":10,"component":"Inner","tag":"span","via":"owner-stack","chain":[{"file":"src/App.jsx","line":4,"column":10,"component":"Inner"},{"file":"src/App.jsx","line":11,"column":48,"component":"Inner"}],"index":0},"explain":{"file":"src/App.jsx","line":4,"column":10,"component":"Inner","tag":"span","via":"owner-stack","chain":[{"file":"src/App.jsx","line":4,"column":10,"component":"Inner"},{"file":"src/App.jsx","line":11,"column":48,"component":"Inner"}],"index":0}} [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:49584/_next/static/chunks/fixtures__locate-zNh1TW_src_11vroiblof6mf._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: true,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:49584/_next/static/chunks/fixtures__locate-zNh1TW_src_11vroiblof6mf._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:49584/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-zNh1TW/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__0vivx8y7tvecn._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:49584/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: false,
+    altStack: undefined,
+    source: undefined
+  }
+]
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (6991.035542ms)
+ℹ warm Next locate main-thread ms: 2.98, 3.24, 3.26, 2.58, 3.07
+DIAG owners [
+  { id: 'base', out: [ [Object], [Object], [Object] ] },
+  { id: 'orphan', out: [ [Object], [Object] ] },
+  {
+    id: 'no-jsx',
+    out: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ]
+  },
+  {
+    id: 'no-jsx-component',
+    out: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ]
+  },
+  { id: 'authored-no-jsx', out: [ [Object], [Object] ] },
+  { id: 'authored-factory', out: [ [Object], [Object], [Object] ] }
+]
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (3083.755792ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24406.676917
+
+✖ failing tests:
+
+test at e2e/.locate-diag.mjs:248:49
+✖ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (16759.769125ms)
+  AssertionError [ERR_ASSERTION]: {"explain":{"location":null,"reason":"source-mismatch","detail":{"source":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-OCMLGb/src/App.jsx","mapHash":"585cc3fdb0e14d1e496fd7f6302ddfbd665160664c9755459b3553b41a6f95ab","currentHash":"4ab5b7e84dbcdedcce33f5c6ccf839385729d4ce6a7e369db5d4e895383f2f84"}}}
+  + actual - expected
+  
+  + null
+  - {
+  -   chain: [
+  -     {
+  -       column: 10,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 4
+  -     },
+  -     {
+  -       column: 48,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 11
+  -     }
+  -   ],
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   index: 0,
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'owner-stack'
+  - }
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:207:10)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:276:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/.locate-diag.mjs:248:49
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (6991.035542ms)
+  AssertionError [ERR_ASSERTION]: source mismatch never corrects an old location: {"file":"src/App.jsx","line":4,"column":10,"component":"Inner","tag":"span","via":"owner-stack","chain":[{"file":"src/App.jsx","line":4,"column":10,"component":"Inner"},{"file":"src/App.jsx","line":11,"column":48,"component":"Inner"}],"index":0}
+  + actual - expected
+  
+  + {
+  +   chain: [
+  +     {
+  +       column: 10,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 4
+  +     },
+  +     {
+  +       column: 48,
+  +       component: 'Inner',
+  +       file: 'src/App.jsx',
+  +       line: 11
+  +     }
+  +   ],
+  +   column: 10,
+  +   component: 'Inner',
+  +   file: 'src/App.jsx',
+  +   index: 0,
+  +   line: 4,
+  +   tag: 'span',
+  +   via: 'owner-stack'
+  + }
+  - null
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:191:12)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:276:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at e2e/.owner-diag.mjs:171:3
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (3083.755792ms)
+  AssertionError [ERR_ASSERTION]: no-jsx: never guess
+  + actual - expected
+  
+  + {
+  +   chain: [
+  +     {
+  +       column: 52,
+  +       component: 'App',
+  +       file: 'src/entry.jsx',
+  +       line: 4
+  +     }
+  +   ],
+  +   column: 52,
+  +   component: 'App',
+  +   file: 'src/entry.jsx',
+  +   index: 0,
+  +   line: 4,
+  +   tag: 'button',
+  +   via: 'owner-stack'
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.owner-diag.mjs:227:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/entry.jsx', line: 4, column: 52, component: 'App', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

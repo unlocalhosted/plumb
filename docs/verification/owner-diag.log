@@ -1,0 +1,47 @@
+DIAG owners [{"id":"base","out":[{"name":"button","source":null,"children":[]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":19,"columnNumber":5},"children":[{"name":"button","source":null,"sameOwner":true}]},{"name":"App","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/entry.jsx","lineNumber":4,"columnNumber":52},"children":[{"name":"main","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":18,"columnNumber":10},"sameOwner":true}]}]},{"id":"orphan","out":[{"name":"button","source":null,"children":[]},{"source":null,"children":[{"name":"button","source":null,"sameOwner":true}]}]},{"id":"no-jsx","out":[{"name":"button","source":null,"children":[]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":42},"children":[{"name":"button","source":null,"sameOwner":true}]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":36},"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":42},"sameOwner":true}]},{"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":36},"sameOwner":true}]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":10},"children":[{"sameOwner":true}]},{"name":"RuntimeSlot","source":null,"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":10},"sameOwner":true}]},{"name":"App","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/entry.jsx","lineNumber":4,"columnNumber":52},"children":[{"name":"main","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":18,"columnNumber":10},"sameOwner":true}]}]},{"id":"no-jsx-component","out":[{"name":"button","source":null,"children":[]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":42},"children":[{"name":"button","source":null,"sameOwner":true}]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":36},"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":42},"sameOwner":true}]},{"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":36},"sameOwner":true}]},{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":10},"children":[{"sameOwner":true}]},{"name":"RuntimeSlot","source":null,"children":[{"source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/node_modules/plumb-owner-runtime/index.jsx","lineNumber":7,"columnNumber":10},"sameOwner":true}]},{"name":"App","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/entry.jsx","lineNumber":4,"columnNumber":52},"children":[{"name":"main","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":18,"columnNumber":10},"sameOwner":true}]}]},{"id":"authored-no-jsx","out":[{"name":"button","source":null,"children":[]},{"name":"App","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/entry.jsx","lineNumber":4,"columnNumber":52},"children":[{"name":"main","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":18,"columnNumber":10},"sameOwner":true}]}]},{"id":"authored-factory","out":[{"name":"button","source":null,"children":[]},{"name":"AuthoredFactory","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":34,"columnNumber":5},"children":[{"name":"button","source":null,"sameOwner":true}]},{"name":"App","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/entry.jsx","lineNumber":4,"columnNumber":52},"children":[{"name":"main","source":{"fileName":"/Users/vijaysingh/unlocalhosted/plumb/fixtures/.owner-9Ob84K/src/App.jsx","lineNumber":18,"columnNumber":10},"sameOwner":true}]}]}]
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (1920.687792ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2251.540625
+
+✖ failing tests:
+
+test at e2e/.owner-diag.mjs:171:3
+✖ Vite React 18 oxc: library owners locate, read and edit authored JSX (1920.687792ms)
+  AssertionError [ERR_ASSERTION]: no-jsx: never guess
+  + actual - expected
+  
+  + {
+  +   chain: [
+  +     {
+  +       column: 52,
+  +       component: 'App',
+  +       file: 'src/entry.jsx',
+  +       line: 4
+  +     }
+  +   ],
+  +   column: 52,
+  +   component: 'App',
+  +   file: 'src/entry.jsx',
+  +   index: 0,
+  +   line: 4,
+  +   tag: 'button',
+  +   via: 'owner-stack'
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.owner-diag.mjs:227:14)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { file: 'src/entry.jsx', line: 4, column: 52, component: 'App', tag: 'button', via: 'owner-stack', chain: [ [Object] ], index: 0 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

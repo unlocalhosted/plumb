@@ -86,6 +86,20 @@ export async function fingerprint(roots, outputs = []) {
   return hash.digest('hex');
 }
 
+// Re-list inputs so added/deleted untracked files and edits to already-dirty files are covered.
+async function originalFingerprint(root, ignored) {
+  const files = [...new Set([...git(root, 'ls-files', '-co', '--exclude-standard', '-z').split('\0').filter(Boolean), ...ignored])]
+    .filter(file => !file.split('/').includes('node_modules')).sort();
+  const hash = createHash('sha256');
+  for (const file of files) {
+    hash.update(file);
+    const path = join(root, file);
+    const exists = await fs.lstat(path).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    hash.update(exists ? await fingerprint([path]) : 'missing');
+  }
+  return hash.digest('hex');
+}
+
 export async function freezeApp(app, scratch) {
   const start = performance.now(), repositories = [], adaptations = [], pendingLinks = [];
   let clones = 0, copies = 0, cloneBackend;
@@ -114,6 +128,7 @@ export async function freezeApp(app, scratch) {
     const record = { original, directory: destination, head: head(original), fileCount: 0, missing: [],
       ignoredInputs: ignoredInputs[name] ?? [], modules: [], tracked: git(original, 'ls-files', '-z').split('\0').filter(Boolean) };
     repositories.push(record);
+    record.originalDigestBefore = await originalFingerprint(original, record.ignoredInputs);
     await fs.mkdir(destination, { recursive: true });
     const files = [...new Set(git(original, 'ls-files', '-co', '--exclude-standard', '-z').split('\0').filter(Boolean))];
     record.gitVisibleFiles = files;
@@ -267,7 +282,10 @@ export async function freezeApp(app, scratch) {
       snapshot.unchanged = unchanged;
       for (const record of snapshot.repositories) {
         record.headAfter = head(record.original); record.originalMoved = record.headAfter !== record.head;
+        record.originalDigestAfter = await originalFingerprint(record.original, record.ignoredInputs);
+        record.originalUnchanged = !record.originalMoved && record.originalDigestBefore === record.originalDigestAfter;
       }
+      snapshot.originalUnchanged = snapshot.repositories.every(record => record.originalUnchanged);
       return unchanged;
     } };
 }

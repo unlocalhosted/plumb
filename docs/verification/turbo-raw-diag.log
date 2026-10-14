@@ -1,0 +1,309 @@
+DIAG before [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__07nsnjwv3p_re._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: true,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG stale {"sameEvidence":true,"text":"Nested","location":null,"explain":{"location":null,"reason":"source-mismatch","detail":{"source":"file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/src/App.jsx","mapHash":"585cc3fdb0e14d1e496fd7f6302ddfbd665160664c9755459b3553b41a6f95ab","currentHash":"4ab5b7e84dbcdedcce33f5c6ccf839385729d4ce6a7e369db5d4e895383f2f84"}}} [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: true,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__07nsnjwv3p_re._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    same: false,
+    altStack: undefined,
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: false,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG resources [
+  'http://127.0.0.1:53774/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0qva5cupmdgep._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/1q96_modules_next_dist_compiled_react-dom_cjs_react-dom_development_1sqry0_53krp4.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-dom_0grqycjrj6mju._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_1amofcmz--cdp._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_090k2jmam7qwg.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_client_1wygxxh5rwq0t._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_%40swc_helpers_cjs_1r9vbqwj2323d._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_1anvha4rlo79g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_219uq1sj0q91c._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/turbopack-fixtures__locate-X0aUgM_06rkbud3pyrlm._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_20wefz_f1k6jn._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_Large_jsx_1sukb7qw3vojg._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsayzyj2p6._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map',
+  'http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js.map'
+]
+DIAG updated [
+  {
+    name: 'span',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: true,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at Inner (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:16:214)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    source: undefined
+  },
+  {
+    name: 'Inner',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    same: false,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)\n' +
+      '    at App (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js:49:223)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)\n' +
+      '    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)\n' +
+      '    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)\n' +
+      '    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)\n' +
+      '    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6524:540)\n' +
+      '    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)\n' +
+      '    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)\n' +
+      '    at workLoopConcurrentByScheduler (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9436:58)',
+    source: undefined
+  },
+  {
+    name: 'App',
+    stack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__07nsnjwv3p_re._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    same: false,
+    altStack: 'Error: react-stack-top-frame\n' +
+      '    at fakeJSXCallSite (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2085:21)\n' +
+      '    at Page (about://React/Server/file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__07nsnjwv3p_re._.js?3:19:264)\n' +
+      '    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:2851:93)\n' +
+      '    at initializeElement (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js:1212:154)',
+    source: undefined
+  },
+  {
+    name: undefined,
+    stack: undefined,
+    same: false,
+    altStack: undefined,
+    source: undefined
+  }
+]
+DIAG raw Error: react-stack-top-frame
+    at exports.jsxDEV (http://127.0.0.1:53774/_next/static/chunks/node_modules_next_dist_compiled_react_0qox21c46arid._.js:211:33)
+    at Inner (http://127.0.0.1:53774/_next/static/chunks/fixtures__locate-X0aUgM_src_1uh6nr37b7r_g._.js?id=%255Bproject%255D/fixtures/.locate-X0aUgM/src/App.jsx+%255Bapp-client%255D+(ecmascript):15:214)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:15013:24)
+    at renderWithHooksAgain (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4508:24)
+    at renderWithHooks (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:4457:28)
+    at updateFunctionComponent (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:5923:21)
+    at beginWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:6549:24)
+    at runWithFiberInDEV (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:777:74)
+    at performUnitOfWork (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9440:97)
+    at workLoopSync (http://127.0.0.1:53774/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js:9334:40)
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (5988.936666ms)
+ℹ warm Next locate main-thread ms: 2.22, 3.38, 2.88, 2.15, 1.97
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6304.670292
+
+✖ failing tests:
+
+test at e2e/.locate-diag.mjs:250:49
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (5988.936666ms)
+  AssertionError [ERR_ASSERTION]: {"explain":{"location":null,"reason":"no-jsx","detail":{"source":"file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/src/App.jsx","line":3,"column":10,"considered":[{"source":"file:///Users/vijaysingh/unlocalhosted/plumb/fixtures/.locate-X0aUgM/src/App.jsx","line":3,"column":10,"answer":"not-jsx"}]}}}
+  + actual - expected
+  
+  + null
+  - {
+  -   chain: [
+  -     {
+  -       column: 10,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 4
+  -     },
+  -     {
+  -       column: 48,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 11
+  -     }
+  -   ],
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   index: 0,
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'owner-stack'
+  - }
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:209:10)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:472:9)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/.locate-diag.mjs:279:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

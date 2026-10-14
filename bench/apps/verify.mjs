@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { freezeApp, freezeTool, fingerprint, ignoredInputs } from './frozen.mjs';
+import { hasExactEdit, writeGate, writeInteraction, restoreWrite } from './write.mjs';
 // Run: PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [app ...]
 // Requires an existing Plumb build. Reads git inputs; never writes original app repositories.
 // The owner's output restriction overrides the brief's bench/apps/verify.<app>.json paths:
@@ -139,6 +140,10 @@ export async function withVerification(own, app, scratch, configFile) {
   if ('test' in own) {
     delete own.test;
     adaptations.push('Removed Vitest-only test configuration from the dev host so Plumb applies; application plugins are retained.');
+  }
+  if (own.server?.hmr === false && process.env.PLUMB_VERIFY_BASELINE !== '1') {
+    own.server = { ...own.server, hmr: true };
+    adaptations.push('Enabled Vite HMR only in the frozen verification host: the app disables it, so source writes otherwise require a manual reload.');
   }
   // TanStack's generator would rewrite the app's route tree. A tracked tree is the app's source: serve it as is. An
   // untracked one is a build output that goes stale as routes change (Kamui), so generate a current one in scratch with
@@ -734,7 +739,7 @@ async function verifyApp(browser, app, scratch) {
   const report = { app: app.name, appDirectory: app.app, plumbRoot: app.root, config: app.config ?? null,
     startedAt: new Date().toISOString(), startup: {}, pages: [], failures: [], exactness: [] };
   retryEvidence = report.readRetries = [];
-  let host, context;
+  let host, context, written;
   try {
     report.appOwnErrors = [...await appOwnErrors(browser, app, scratch)];
     host = await startServer(app, scratch);
@@ -754,13 +759,8 @@ async function verifyApp(browser, app, scratch) {
     host.child.send({ type: 'release' });
     report.startup.gateReleasedMs = performance.now() - host.start;
     context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
-    await context.route('**/__plumb/**', async route => {
-      // Defense in depth: an interaction can never reach a write endpoint.
-      if (route.request().method() !== 'GET' || /\/(apply|try|refresh)(?:[?]|$)/.test(route.request().url())) {
-        report.failures.push(`Write request blocked: ${route.request().method()} ${route.request().url()}`);
-        await route.abort();
-      } else await route.continue();
-    });
+    const gate = writeGate(host.origin, report.failures);
+    await context.route('**/__plumb/**', route => gate.route(route));
     let extraBudget = 400;
     report.notes = [];
     report.interaction = {};
@@ -855,9 +855,11 @@ async function verifyApp(browser, app, scratch) {
         if (burst.failed) record.failures.push(`${burst.failed} burst reads failed; request/status/body/retry evidence in performance.burst.errors`);
         const needsPreview = !['passed', 'failed'].includes(report.interaction.preview?.status);
         const needsChain = !['passed', 'failed'].includes(report.interaction.chain?.status);
+        const needsWrite = !['passed', 'failed'].includes(report.interaction.write?.status);
         let interactionRows = first;
         const hasChoices = rows => rows.some(row => row.reading?.marks?.some(mark => mark.choices?.length));
-        if (extraBudget && ((needsPreview && !hasChoices(first)) || (needsChain && !first.some(row => chainOf(row.location).length > 1)))) {
+        if (extraBudget && ((needsPreview && !hasChoices(first)) || (needsChain && !first.some(row => chainOf(row.location).length > 1))
+          || (needsWrite && !hasExactEdit(first)))) {
           const ids = await selectElements(page, extraBudget);
           extraBudget -= ids.length;
           const extra = await sample(page, false, ids, 'reading');
@@ -873,11 +875,21 @@ async function verifyApp(browser, app, scratch) {
             if (result.status === 'failed') record.failures.push(`${name} interaction: ${result.error}`);
           }
         }
+        if (needsWrite) {
+          const result = await writeInteraction(page, interactionRows, app, scratch, gate, write => { written = write; });
+          (record.interaction ??= {}).write = result;
+          report.interaction.write = { page: path, ...result };
+          if (result.status === 'failed') record.failures.push(`write interaction: ${result.error}`);
+        }
       } catch (error) { record.failures.push(message(error)); }
       finally {
         await page.close();
         record.appErrors = record.pageErrors.filter(error => report.appOwnErrors?.includes(errorKey(error)));
         record.pageErrors = record.pageErrors.filter(error => !report.appOwnErrors?.includes(errorKey(error)));
+        const recovered = new Set((record.interaction?.write?.busyReads ?? []).filter(read => read.recovered).map(read => read.url));
+        record.recoveredBusyConsoleErrors = record.plumbConsoleErrors.filter(error => recovered.has(error.location.url)
+          && /status of 503/.test(error.text));
+        record.plumbConsoleErrors = record.plumbConsoleErrors.filter(error => !record.recoveredBusyConsoleErrors.includes(error));
         if (record.pageErrors.length) record.failures.push(`${record.pageErrors.length} page errors`);
         if (record.plumbConsoleErrors.length) record.failures.push(`${record.plumbConsoleErrors.length} Plumb console errors`);
         report.failures.push(...record.failures.map(failure => `${path}: ${failure}`));
@@ -886,11 +898,16 @@ async function verifyApp(browser, app, scratch) {
     }
     if (report.interaction.preview?.status === 'info') report.notes.push(report.interaction.preview.note);
     if (report.interaction.chain?.status === 'info') report.notes.push(report.interaction.chain.note);
+    if (report.interaction.write?.status === 'info') report.notes.push(report.interaction.write.note);
     if (!report.exactness.length) report.failures.push('Exactness untested: no placed elements');
   } catch (error) { report.failures.push(message(error)); }
   finally {
     if (context) await context.close().catch(error => report.failures.push(`Browser cleanup: ${message(error)}`));
     if (host) { report.serverLog = host.logs(); await host.stop(); }
+    if (written) {
+      try { await restoreWrite(written); }
+      catch (error) { report.failures.push(`Write integrity: ${message(error)}`); }
+    }
   }
   report.finishedAt = new Date().toISOString();
   report.status = report.failures.length ? 'failed' : 'passed';
@@ -906,7 +923,8 @@ function summary(report) {
     readyMs: report.startup.readyMs?.toFixed(0) ?? '-', sampled: total('sampled'), matched: total('bothMatched'),
     detached: total('detached'), oracleLibrary: total('oracle-library'), plumbOnly: total('plumbOnly'), grabOnly: total('grabOnly'), disagreements: total('disagreements'),
     exact: `${report.exactness.filter(result => result.ok).length}/${report.exactness.length}`,
-    locateP95: distribution(locates).p95 ?? '-', healthMax: distribution(health).max ?? '-', failures: report.failures.length };
+    locateP95: distribution(locates).p95 ?? '-', healthMax: distribution(health).max ?? '-',
+    write: report.interaction?.write?.status ?? 'untested', failures: report.failures.length };
 }
 async function writeReports(reports, fatal = null) {
   await fsp.mkdir(output, { recursive: true });
@@ -917,11 +935,13 @@ async function writeReports(reports, fatal = null) {
     'Startup is measured from child launch to the first successful HTML response. Plumb initialization is held until that response and a starting health response are observed. Ready time includes the gate and browser loading; it is not an ungated startup benchmark.', '',
     'Up to 150 visible React elements per page are sampled twice using the same DOM references and fresh overlay readings on the second pass. Detached or re-rendered samples are excluded; a page with >30% of its sampled nodes detached across the two passes is resampled once after up to 10 seconds waiting for 500 ms without DOM mutations and two quiet frames. Dependency oracle answers are counted as oracle-library. Exactness checks cover up to 20 placed elements per app.', '',
     'Busy responses in server checks and bursts retain request, status, body, and retry evidence. Only 503 busy answers recovered on retry with health <100 ms throughout are accepted. Interaction search covers every sampled page and up to 400 extra rendered elements per app; no choices is informational. Chain stepping and no-preview Undo are tested independently. Unexplained disagreements, failed server checks, unstable results, errors, failed interactions, and health >=100 ms fail the run.', '',
-    '| App | Result | Page ms | Ready ms | Sample | Detached | Oracle library | Match | Plumb only | Grab only | Disagree | JSX exact | Locate p95 ms | Health max ms |',
-    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |'];
+    'Write permits one exact overlay apply request per app. Source bytes, automatic dev reload/HMR, current overlay reading without preview, CLI findings before/after and original working-tree hashes are checked. The proven edit is restored after the server stops, then the existing whole-copy integrity guard runs.', '',
+    'Write-phase browser 503 responses retain their bodies, same-URL read-only retries and health in interaction.write.busyReads. They are accepted only after the overlay returns current and both health responses are ready below 100 ms. Their console messages remain in recoveredBusyConsoleErrors; all other Plumb console errors still fail.', '',
+    '| App | Result | Page ms | Ready ms | Sample | Detached | Oracle library | Match | Plumb only | Grab only | Disagree | JSX exact | Locate p95 ms | Health max ms | Write |',
+    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |'];
   for (const report of reports) {
     const row = summary(report);
-    lines.push(`| ${row.app} | ${row.status} | ${row.pageMs} | ${row.readyMs} | ${row.sampled} | ${row.detached} | ${row.oracleLibrary} | ${row.matched} | ${row.plumbOnly} | ${row.grabOnly} | ${row.disagreements} | ${row.exact} | ${row.locateP95} | ${row.healthMax} |`);
+    lines.push(`| ${row.app} | ${row.status} | ${row.pageMs} | ${row.readyMs} | ${row.sampled} | ${row.detached} | ${row.oracleLibrary} | ${row.matched} | ${row.plumbOnly} | ${row.grabOnly} | ${row.disagreements} | ${row.exact} | ${row.locateP95} | ${row.healthMax} | ${row.write} |`);
   }
   if (fatal) lines.push('', '## Harness failure', '', '```text', fatal, '```');
   for (const report of reports) {
@@ -930,6 +950,12 @@ async function writeReports(reports, fatal = null) {
     for (const adaptation of report.adaptations ?? []) lines.push(`- ${adaptation}`);
     for (const note of report.notes ?? []) lines.push(`- INFO: ${note}`);
     for (const failure of report.failures) lines.push(`- FAIL: ${failure.replaceAll('\n', '\n  ')}`);
+    const write = report.interaction?.write;
+    if (write) {
+      lines.push('', '### Write', '', write.file
+        ? `${write.status}: ${write.file}:${write.line}:${write.column}; \`${write.from}\` → \`${write.to}\`; Write to current reading ${write.writeToCurrentMs ?? 'unmeasured'} ms; source exact ${write.source?.exact ?? false}; CLI site ${write.checkBefore?.sites.length ?? '?'} before / ${write.checkAfter?.sites.length ?? '?'} after; originals unchanged ${report.snapshot?.originalUnchanged ?? false}.`
+        : `${write.status}: ${write.note ?? write.error}`);
+    }
     for (const page of report.pages) if (page.counts) {
       const { reading, classes } = page.counts;
       lines.push('', `### ${page.path}`, '',
@@ -972,6 +998,7 @@ async function main() {
       report.snapshot = frozen.snapshot; report.tool = tool; report.runId = scratch.slice(scratch.lastIndexOf(sep) + 1);
       report.adaptations = [...frozen.adaptations, ...(report.adaptations ?? [])];
       if (!await frozen.finish()) { report.failures.push('The frozen app working tree changed during verification'); report.status = 'failed'; }
+      if (!frozen.snapshot.originalUnchanged) { report.failures.push('An original app working tree changed during verification'); report.status = 'failed'; }
       if (frozen.snapshot.ms >= 30_000) { report.failures.push('Snapshot exceeded 30 seconds'); report.status = 'failed'; }
       for (const input of frozen.snapshot.repositories) if (input.originalMoved) {
         (report.notes ??= []).push('The original moved on during the run; the result is for ' + input.head + ' (' + input.original + '; now ' + input.headAfter + ').');

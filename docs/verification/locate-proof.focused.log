@@ -1,0 +1,68 @@
+✔ Vite React 19: real fibers locate exact JSX sites (1512.939375ms)
+✔ Vite React 18: real fibers locate exact JSX sites (1247.925125ms)
+✔ Next 16 webpack: installed route.plumb.ts locates exact JSX sites (25412.282834ms)
+ℹ warm Next locate main-thread ms: 4.82, 2.54, 2.73, 2.63, 4.08
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (13987.593167ms)
+ℹ warm Next locate main-thread ms: 2.78, 2.27, 2.36, 2.80, 2.48
+✔ resolve validates tracked source identity and site queries select only exact JSX attributes (579.487125ms)
+✔ script maps resolve through real HTTP: inline data, relative URLs, sourceRoot, nested index sections and unmapped spans (463.369ms)
+✔ review 2: stable module/map URLs invalidate together and reject mismatched source snapshots (640.604833ms)
+✔ Next stable chunks refresh eval indexes and maps through HTTP and compare current disk hashes (417.576291ms)
+✔ review 5: target requests stat bounded dependencies without watchers; report/decisions retain full reconciliation (7271.868916ms)
+✔ review 5: watch-disabled target judgement refreshes theme, config imports, preset and empty DTCG inputs (3564.018291ms)
+✔ Vite React 19 plugin-react: library owners locate, read and edit authored JSX (2252.476584ms)
+✔ Vite React 19 oxc: library owners locate, read and edit authored JSX (1927.760792ms)
+✔ Vite React 18 oxc: library owners locate, read and edit authored JSX (2406.001333ms)
+✔ authored library JSX resolves, isolates nested declarations and writes through real HTTP (3217.691959ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55408.5265
+
+✖ failing tests:
+
+test at e2e/locate.test.mjs:244:49
+✖ Next 16 turbopack: installed route.plumb.ts locates exact JSX sites (13987.593167ms)
+  AssertionError [ERR_ASSERTION]: {"explain":{"location":null,"reason":"map","detail":{"step":"unmapped-position","url":"http://127.0.0.1:55425/_next/static/chunks/fixtures__locate-GVf0Ry_src_191dtcdx18_-v._.js?id=%255Bproject%255D/fixtures/.locate-GVf0Ry/src/App.jsx+%255Bapp-client%255D+(ecmascript)","line":15,"column":214}}}
+  + actual - expected
+  
+  + null
+  - {
+  -   chain: [
+  -     {
+  -       column: 10,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 4
+  -     },
+  -     {
+  -       column: 48,
+  -       component: 'Inner',
+  -       file: 'src/App.jsx',
+  -       line: 11
+  -     }
+  -   ],
+  -   column: 10,
+  -   component: 'Inner',
+  -   file: 'src/App.jsx',
+  -   index: 0,
+  -   line: 4,
+  -   tag: 'span',
+  -   via: 'owner-stack'
+  - }
+  
+      at hmrAssertions (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:203:10)
+      at async TestContext.<anonymous> (file:///Users/vijaysingh/unlocalhosted/plumb/e2e/locate.test.mjs:272:60)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { file: 'src/App.jsx', line: 4, column: 10, component: 'Inner', tag: 'span', via: 'owner-stack', chain: [ [Object], [Object] ], index: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

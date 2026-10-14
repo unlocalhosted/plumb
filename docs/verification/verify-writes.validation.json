@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-10-13T06:07:04.331Z",
+  "runId": "plumb-verify-11xqLR",
+  "status": "passed",
+  "apps": [
+    {
+      "app": "metalui",
+      "result": "passed",
+      "write": "info",
+      "exactSource": null,
+      "readingMatchesWrittenHash": null,
+      "originalUnchanged": true,
+      "restoredCopyUnchanged": true
+    },
+    {
+      "app": "kamui",
+      "result": "passed",
+      "write": "info",
+      "exactSource": null,
+      "readingMatchesWrittenHash": null,
+      "originalUnchanged": true,
+      "restoredCopyUnchanged": true
+    },
+    {
+      "app": "craftingattention",
+      "result": "passed",
+      "write": "passed",
+      "exactSource": true,
+      "readingMatchesWrittenHash": true,
+      "originalUnchanged": true,
+      "restoredCopyUnchanged": true
+    },
+    {
+      "app": "algorecall",
+      "result": "passed",
+      "write": "passed",
+      "exactSource": true,
+      "readingMatchesWrittenHash": true,
+      "originalUnchanged": true,
+      "restoredCopyUnchanged": true
+    }
+  ],
+  "scopeException": {
+    "reason": "Initial npm run commands created four debug logs outside Plumb; subsequent npm runs used Plumb-local cache and log paths.",
+    "files": [
+      "/Users/vijaysingh/.npm/_logs/2026-10-13T05_18_00_649Z-debug-0.log",
+      "/Users/vijaysingh/.npm/_logs/2026-10-13T05_18_08_931Z-debug-0.log",
+      "/Users/vijaysingh/.npm/_logs/2026-10-13T05_41_27_280Z-debug-0.log",
+      "/Users/vijaysingh/.npm/_logs/2026-10-13T05_41_30_682Z-debug-0.log"
+    ]
+  }
+}

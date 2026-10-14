@@ -1,0 +1,18 @@
+0 verbose cli /Users/vijaysingh/Library/Application Support/fnm/node-versions/v25.9.0/installation/bin/node /Users/vijaysingh/.local/state/fnm_multishells/1267_1791833495539/bin/npm
+1 info using npm@11.12.1
+2 info using node@v25.9.0
+3 silly config load:file:/Users/vijaysingh/Library/Application Support/fnm/node-versions/v25.9.0/installation/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/vijaysingh/unlocalhosted/plumb/.npmrc
+5 silly config load:file:/Users/vijaysingh/.npmrc
+6 silly config load:file:/Users/vijaysingh/Library/Application Support/fnm/node-versions/v25.9.0/installation/etc/npmrc
+7 verbose title npm run typecheck
+8 verbose argv "run" "typecheck"
+9 verbose logfile logs-max:10 dir:/Users/vijaysingh/unlocalhosted/plumb/docs/verification/npm-logs/2026-10-13T06_01_37_645Z-
+10 verbose logfile /Users/vijaysingh/unlocalhosted/plumb/docs/verification/npm-logs/2026-10-13T06_01_37_645Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/vijaysingh/unlocalhosted/plumb
+13 verbose os Darwin 25.6.0
+14 verbose node v25.9.0
+15 verbose npm  v11.12.1
+16 verbose exit 0
+17 info ok

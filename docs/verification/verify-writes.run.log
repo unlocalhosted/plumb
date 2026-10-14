@@ -1,0 +1,26 @@
+metalui: frozen 4066 files in 3888.35 ms
+metalui: ready in 14289 ms
+metalui /components/button: 150 samples; 0 failures
+metalui /foundations/motion: 150 samples; 0 failures
+metalui /: 150 samples; 0 failures
+metalui: passed; frozen inputs unchanged true
+kamui: frozen 7906 files in 9537.57 ms
+kamui: ready in 6391 ms
+kamui /: 113 samples; 0 failures
+kamui: passed; frozen inputs unchanged true
+craftingattention: frozen 2595 files in 2958.43 ms
+craftingattention: ready in 13325 ms
+craftingattention /: 150 samples; 0 failures
+craftingattention: passed; frozen inputs unchanged true
+algorecall: frozen 4714 files in 4516.49 ms
+algorecall: ready in 28376 ms
+algorecall /: 150 samples; 0 failures
+algorecall: passed; frozen inputs unchanged true
+┌─────────┬─────────────────────┬──────────┬────────┬─────────┬─────────┬─────────┬──────────┬───────────────┬───────────┬──────────┬───────────────┬─────────┬───────────┬───────────┬──────────┬──────────┐
+│ (index) │ app                 │ status   │ pageMs │ readyMs │ sampled │ matched │ detached │ oracleLibrary │ plumbOnly │ grabOnly │ disagreements │ exact   │ locateP95 │ healthMax │ write    │ failures │
+├─────────┼─────────────────────┼──────────┼────────┼─────────┼─────────┼─────────┼──────────┼───────────────┼───────────┼──────────┼───────────────┼─────────┼───────────┼───────────┼──────────┼──────────┤
+│ 0       │ 'metalui'           │ 'passed' │ '1374' │ '14289' │ 450     │ 371     │ 3        │ 74            │ 0         │ 0        │ 0             │ '20/20' │ 86.6      │ 3.74      │ 'info'   │ 0        │
+│ 1       │ 'kamui'             │ 'passed' │ '614'  │ '6391'  │ 113     │ 24      │ 0        │ 88            │ 0         │ 0        │ 0             │ '20/20' │ 751.1     │ 3.58      │ 'info'   │ 0        │
+│ 2       │ 'craftingattention' │ 'passed' │ '1144' │ '13325' │ 150     │ 22      │ 44       │ 83            │ 0         │ 0        │ 0             │ '20/20' │ 97.16     │ 4.52      │ 'passed' │ 0        │
+│ 3       │ 'algorecall'        │ 'passed' │ '2285' │ '28376' │ 150     │ 108     │ 40       │ 0             │ 0         │ 0        │ 0             │ '20/20' │ 117.3     │ 2.43      │ 'passed' │ 0        │
+└─────────┴─────────────────────┴──────────┴────────┴─────────┴─────────┴─────────┴──────────┴───────────────┴───────────┴──────────┴───────────────┴─────────┴───────────┴───────────┴──────────┴──────────┘
