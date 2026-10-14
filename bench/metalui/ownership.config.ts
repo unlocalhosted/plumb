@@ -1,4 +1,4 @@
-import config from './plumb.config.ts';
+import config from './plumber.config.ts';
 
 export default {
   ...config,

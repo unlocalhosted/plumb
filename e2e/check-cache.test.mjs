@@ -15,7 +15,7 @@ test('validated check cache preserves CLI/API evidence and invalidates source, m
   const root = await mkdtemp(join(repo, 'fixtures/.checked-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   const options = { root, config };
   const cold = await check(options), warm = await check(options);
@@ -43,8 +43,8 @@ test('validated check cache preserves CLI/API evidence and invalidates source, m
   const css = join(root, 'src/styles.css');
   await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing-s2: 8px', '--spacing-s2: 9px'));
   assert.notDeepEqual(stable(await check(options)), stable(added));
-  await mkdir(join(root, '.plumb'), { recursive: true });
-  await writeFile(join(root, '.plumb/ledger.jsonl'), '');
+  await mkdir(join(root, '.plumber'), { recursive: true });
+  await writeFile(join(root, '.plumber/ledger.jsonl'), '');
   assert.equal((await check(options)).ledger.exists, true);
 });
 
@@ -52,7 +52,7 @@ test('executable CSS configs bypass complete-result caching', async t => {
   const root = await mkdtemp(join(repo, 'fixtures/.checked-executable-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "const css = 'src/styles.css'; export default { css };\n");
   await check({ root, config });
   const warm = await check({ root, config });
@@ -63,7 +63,7 @@ test('literal CSS configs with autoloaded executable presets bypass complete-res
   const root = await mkdtemp(join(repo, 'fixtures/.checked-preset-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module', dependencies: { 'checked-kit': '1.0.0' } }));
   const directory = join(root, 'node_modules/checked-kit');
@@ -80,7 +80,7 @@ test('root-local shadcn presets reuse checked evidence and invalidate component 
   const root = await mkdtemp(join(repo, 'fixtures/.checked-shadcn-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   await writeFile(join(root, 'components.json'), JSON.stringify({ aliases: { ui: 'src/ui' } }));
   await mkdir(join(root, 'src/ui'));
@@ -104,7 +104,7 @@ test('check cache invalidates Tailwind package metadata', async t => {
   await mkdir(join(root, 'node_modules'), { recursive: true });
   const packageDirectory = join(root, 'node_modules/tailwindcss');
   await cp(join(repo, 'node_modules/tailwindcss'), packageDirectory, { recursive: true, dereference: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   const options = { root, config }, cold = await check(options);
   assert.deepEqual(stable(await check(options)), stable(cold));
@@ -119,7 +119,7 @@ test('check cache revalidates imported helper bytes even when size and mtime are
   t.after(() => rm(parent, { recursive: true, force: true }));
   const root = join(parent, 'app');
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   const helper = join(parent, 'helper.ts');
   await writeFile(helper, 'export const styles = "gap-[31px]";');
@@ -140,7 +140,7 @@ test('check cache revalidates import resolution and removed external helpers', a
   t.after(() => rm(parent, { recursive: true, force: true }));
   const root = join(parent, 'app');
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
-  const config = join(root, 'plumb.config.ts');
+  const config = join(root, 'plumber.config.ts');
   await writeFile(config, "export default { css: 'src/styles.css' };\n");
   await mkdir(join(parent, 'helper'));
   await writeFile(join(parent, 'helper/index.ts'), 'export const styles = "gap-[31px]";');

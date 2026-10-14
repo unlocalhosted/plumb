@@ -1,4 +1,4 @@
-import { definePreset, defineDecisions } from '@unlocalhosted/plumb';
+import { definePreset, defineDecisions } from '@unlocalhosted/react-plumber';
 import decisions from './decisions.json' with { type: 'json' };
 import metadata from './metadata.json' with { type: 'json' };
 

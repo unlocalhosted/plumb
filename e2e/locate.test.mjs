@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { Session } from '../dist/session/index.js';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 // These regressions deliberately exercise owner-stack locate without stamps.
 function unstamped(options) {
@@ -60,7 +60,7 @@ function position(fragment) {
 }
 async function browser(t) {
   try {
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => browser.close()); return browser;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;
@@ -169,7 +169,7 @@ async function editSlice(page, root) {
   const text = await readFile(join(root, 'src/App.jsx'), 'utf8');
   assert.ok(text.includes(edit.to)); assert.ok(!text.includes('gap-[31px]'));
 }
-// Turbopack's inline map for a hot-updated module is a line off; Plumb refuses it rather than name the wrong line, and
+// Turbopack's inline map for a hot-updated module is a line off; React Plumber refuses it rather than name the wrong line, and
 // a reload, which runs the rebuilt chunk, locates exactly.
 async function current(page, bundler) {
   const explain = await page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
@@ -262,14 +262,14 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   const launched = await browser(t); if (!launched) return;
   const root = await project(t);
   await writeFile(join(root, 'src/Large.jsx'), '"use client"; export default function Large() { return <div hidden>' + Array.from({ length: 4000 }, (_, i) => `<span className="gap-[13px]">${i}</span>`).join('') + '</div>; }');
-  const installed = join(root, 'node_modules/@unlocalhosted/plumb');
+  const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
   for (const name of ['dist', 'overlay', 'package.json']) await cp(join(repo, name), join(installed, name), { recursive: true });
   const route = join(root, 'app/%5F_plumb/[...path]'); await mkdir(route, { recursive: true });
-  await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/plumb/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
-  await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/plumb/next';\nexport default function Layout({children}) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
+  await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
+  await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({children}) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
   await writeFile(join(root, 'app/page.jsx'), `import App from '../src/App.jsx'; import Large from '../src/Large.jsx'; export default function Page() { return <><App /><Large /></>; }\n`);
-  await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/plumb/next/config';\nexport default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
+  await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
   const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; child.stdout.on('data', chunk => output += chunk); child.stderr.on('data', chunk => output += chunk);
@@ -550,7 +550,7 @@ test('review 5: watch-disabled target judgement refreshes theme, config imports,
   await writeFile(preset, 'export default { name: "query-preset", decisions: {} };');
   const config = identity => `export default { css: 'src/styles.css', presets: ['./preset.mjs'], decisions: { spacing: { identity: '${identity}', from: 'dtcg:tokens/*.json' } } };`;
   await writeFile(rules, config('value'));
-  await writeFile(join(root, 'plumb.config.ts'), "import settings from './rules.mjs'; export default settings;");
+  await writeFile(join(root, 'plumber.config.ts'), "import settings from './rules.mjs'; export default settings;");
   const session = await Session.create({ root, watch: false }); t.after(() => session.close());
   const parity = async () => {
     const actual = await session.site('src/App.jsx', 4, 10);

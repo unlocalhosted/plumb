@@ -1,3 +1,4 @@
+import { migrationNotice } from '../paths.js';
 import { EventEmitter } from 'node:events';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
@@ -26,6 +27,7 @@ export class Session extends EventEmitter {
   }
   static async create(options: SessionOptions = {}): Promise<Session> {
     if (options.readQueueMs !== undefined && (!Number.isFinite(options.readQueueMs) || options.readQueueMs < 0)) throw new UsageError('readQueueMs must be a non-negative finite number.');
+    migrationNotice(resolve(options.root ?? process.cwd()), options.config);
     const session = new Session(options);
     try {
       await new Promise<void>((ready, reject) => {

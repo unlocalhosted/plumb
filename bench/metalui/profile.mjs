@@ -27,7 +27,7 @@ globalThis.__plumbProfileParse = (file, text) => mode === 'json' ? parseSync(fil
     return result;
   });
 const root = '/Users/vijaysingh/unlocalhosted/metalui';
-const config = await loadConfig(root, resolve('bench/metalui/plumb.config.ts'));
+const config = await loadConfig(root, resolve('bench/metalui/plumber.config.ts'));
 const files = await sourceFiles(root, config.value);
 let code = await readFile('dist/collect/classes.js', 'utf8');
 code = code.replace('let parseMs = 0;', 'let parseMs = 0, getterMs = 0, parsedFiles = 0, walkMs = 0;');

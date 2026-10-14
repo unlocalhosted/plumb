@@ -10,7 +10,7 @@ import { errorMessage, UsageError } from './errors.js';
 import type { PlumbConfig } from './config.js';
 import type { FileCounts, Report } from './report.js';
 
-export const ignore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.git/**'];
+export const ignore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.git/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
 export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
 const tailwindImport = /@import\s+(?:url\(\s*)?["']tailwindcss(?:\/[^"']*)?["']/;
 
@@ -40,7 +40,7 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
       }
       await readFile(path, 'utf8');
     } catch (error) {
-      throw new UsageError(`Set css to a readable .css file in plumb.config.ts: ${path}: ${errorMessage(error)}`);
+      throw new UsageError(`Set css to a readable .css file in plumber.config.ts: ${path}: ${errorMessage(error)}`);
     }
     return path;
   }
@@ -56,7 +56,7 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
     inputs.push(...candidates);
     const entry = await appTailwindEntry(root, candidates, diagnostics, inputs);
     if (entry) return entry;
-    throw new UsageError(`Multiple Tailwind entry files: ${candidates.join(', ')}; set css in plumb.config.ts to one of them.`);
+    throw new UsageError(`Multiple Tailwind entry files: ${candidates.join(', ')}; set css in plumber.config.ts to one of them.`);
   }
   return candidates[0] ?? null;
 }

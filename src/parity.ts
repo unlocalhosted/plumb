@@ -101,7 +101,7 @@ export async function parity(report: Report, tokenPath: string): Promise<ParityR
     if (matched.has(target)) throw new UsageError(`Several exported tokens map to ${target.name}. Give each exported token a unique theme name.`);
     matched.add(target);
     if (token.resolved === undefined || target.resolved === undefined) {
-      add('parity/unresolved', token, `\`${short(token.name)}\` cannot be compared with your theme`, 'Unresolved values can hide differences between code and designs using the export.', `Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumb parity.`, { themeToken: target.name });
+      add('parity/unresolved', token, `\`${short(token.name)}\` cannot be compared with your theme`, 'Unresolved values can hide differences between code and designs using the export.', `Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumber parity.`, { themeToken: target.name });
       continue;
     }
     // DTCG dimensions also describe radius/size; numbers also describe z-index.

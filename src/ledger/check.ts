@@ -11,7 +11,7 @@ export function diagnostic(rule: string, severity: Finding['severity'], site: Si
   const declaration: Declaration = { prop: 'ledger', value: site.text, refs: [], when: [], site, owner: { kind: 'element', name: 'ledger' }, origin: 'stylesheet' };
   const title = rule === 'ledger/no-why' ? `Exception \`${key}\` has no reason` : rule === 'decisions/unaccepted' ? `\`${site.text.split(':')[0]}\` is new in your theme and not yet accepted` : rule === 'ledger/grew' ? 'This change adds 1 ledger entries' : why.replace(/decision/g, 'token');
   const because = rule === 'ledger/no-why' ? 'Every exception needs a reason a reviewer can check.' : rule === 'decisions/unaccepted' ? 'New tokens change what everyone may use.' : rule === 'ledger/grew' ? 'New exceptions and tokens are design decisions and need review.' : rule === 'decisions/vanished' ? 'Accepted tokens should stay in sync with the theme.' : 'The ledger should record only remaining exceptions and debt.';
-  const action = rule === 'ledger/no-why' ? `plumb accept ${key} --why "…"` : rule === 'decisions/unaccepted' ? 'plumb accept-decisions --why "…"' : fix;
+  const action = rule === 'ledger/no-why' ? `plumber accept ${key} --why "…"` : rule === 'decisions/unaccepted' ? 'plumber accept-decisions --why "…"' : fix;
   return makeFinding({ key, rule, severity, family: rule.startsWith('decisions/') ? 'decisions' : 'ledger', sites: [site], declaration, decisions: [], title, because, action });
 }
 function grew(entry: LedgerEntry, previous: LedgerEntry | undefined): boolean {
@@ -31,12 +31,12 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
   const diagnostics: Finding[] = [];
   const siteFor = (entry: LedgerEntry): Site => ({ file: path, line: ledger.entries.indexOf(entry) + 1, column: 1, text: JSON.stringify(entry) });
   for (const entry of ledger.entries) {
-    if (entry.kind === 'exception' && !entry.why?.trim()) diagnostics.push(diagnostic('ledger/no-why', 'error', siteFor(entry), `Exception ${entry.key} has no why.`, 'Record a reason with plumb accept --why "…".', entry.key));
+    if (entry.kind === 'exception' && !entry.why?.trim()) diagnostics.push(diagnostic('ledger/no-why', 'error', siteFor(entry), `Exception ${entry.key} has no why.`, 'Record a reason with plumber accept --why "…".', entry.key));
     if (entry.kind === 'debt') {
       const current = groups.get(entry.key)?.sites.length ?? 0;
       if (current < entryCount(entry)) {
         summary.stale += entryCount(entry) - current;
-        diagnostics.push(diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${entryCount(entry)} sites; ${current} remain.`, 'Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key));
+        diagnostics.push(diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${entryCount(entry)} sites; ${current} remain.`, 'Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key));
       }
     }
   }
@@ -47,9 +47,9 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
       const entry = accepted.get(key);
       const snapshot = decisionEntry(decision);
       if (entry?.kind === 'decision' && entry.value === snapshot.value && entry.origin === snapshot.origin && entry.tier === snapshot.tier && JSON.stringify(entry.refs) === JSON.stringify(snapshot.refs)) continue;
-      diagnostics.push(diagnostic('decisions/unaccepted', 'error', { ...decision.source, column: 1, text: `${decision.name}: ${decision.value}` }, `${decision.name} is a new or changed decision not accepted in the ledger.`, 'Run plumb accept-decisions --why "…" after reviewing the decision.', key));
+      diagnostics.push(diagnostic('decisions/unaccepted', 'error', { ...decision.source, column: 1, text: `${decision.name}: ${decision.value}` }, `${decision.name} is a new or changed decision not accepted in the ledger.`, 'Run plumber accept-decisions --why "…" after reviewing the decision.', key));
     }
-    for (const entry of ledger.entries) if (entry.kind === 'decision' && !current.has(entry.key)) diagnostics.push(diagnostic('decisions/vanished', 'warn', siteFor(entry), `Accepted decision ${entry.key} vanished from its source.`, 'Run plumb ledger --prune after reviewing the removal.', entry.key));
+    for (const entry of ledger.entries) if (entry.kind === 'decision' && !current.has(entry.key)) diagnostics.push(diagnostic('decisions/vanished', 'warn', siteFor(entry), `Accepted decision ${entry.key} vanished from its source.`, 'Run plumber ledger --prune after reviewing the removal.', entry.key));
   }
   // Ledger allowances count authored sites; they never partition fix groups.
   const statuses = new Map<string, Map<string, NonNullable<Site['ledger']>>>();
@@ -125,7 +125,7 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
   }
   for (const finding of diagnostics) if (finding.rule === 'ledger/grew') finding.title = `This change adds ${summary.growth} ledger entries`;
   report.findings.push(...diagnostics);
-  summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${summary.exceptions} exception sites; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumb baseline to record current debt and accept the current decisions.';
+  summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${summary.exceptions} exception sites; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumber baseline to record current debt and accept the current decisions.';
   report.ledger = summary;
   report.notes.push(summary.message);
   const elapsed = performance.now() - start;

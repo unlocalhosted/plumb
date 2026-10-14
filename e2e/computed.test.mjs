@@ -66,12 +66,12 @@ test('shared helper shapes cover config, mixed, legacy and imported aliases with
 
 test('unexpected startup failures preserve worker frames in Session, CLI and health diagnostic', async t => {
   const root = await fixture(t);
-  await writeFile(join(root, 'plumb.config.ts'), `export default { source: ['src/Nullable.tsx'], decisions: { spacing: { from: () => { throw new TypeError('startup-stack-sentinel'); } } } };`);
+  await writeFile(join(root, 'plumber.config.ts'), `export default { source: ['src/Nullable.tsx'], decisions: { spacing: { from: () => { throw new TypeError('startup-stack-sentinel'); } } } };`);
   const pending = Session.create({ root, watch: false });
   const handler = createWebHandler(pending, { token: 'stack-test' });
   await assert.rejects(pending, error => {
     assert.match(error.stack, /TypeError: startup-stack-sentinel/);
-    assert.match(error.stack, /plumb\.config\.ts/); assert.match(error.stack, /session\/worker\.js/); return true;
+    assert.match(error.stack, /plumb(?:er)?\.config\.ts/); assert.match(error.stack, /session\/worker\.js/); return true;
   });
   const response = await handler(new Request('http://localhost/__plumb/health', { headers: { 'x-plumb-token': 'stack-test' } }));
   const health = await response.json(); assert.equal(health.status, 'failed');
@@ -210,7 +210,7 @@ test('classes HTTP and Fetch routes validate parameters, auth, CORS and methods'
 
 test('real Chromium rendered classes resolve through GET classes; Node apply updates only helper literal and browser CSS', { timeout: 90000 }, async t => {
   let browser;
-  try { browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined }); }
+  try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return; }
   t.after(() => browser.close());
   const root = await fixture(t);
@@ -239,7 +239,7 @@ test('real Chromium rendered classes resolve through GET classes; Node apply upd
 
 test('imported helper outside source glob remains authored and editable, with transitive invalidation', async t => {
   const root = await fixture(t);
-  await writeFile(join(root, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], decisions: { spacing: { callers: ["primitive", "semantic"] } } };');
+  await writeFile(join(root, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], decisions: { spacing: { callers: ["primitive", "semantic"] } } };');
   const api = await session(t, root), source = await readFile(join(root, 'src/App.tsx'), 'utf8'), at = location(source, 'imported');
   const result = await api.classes('src/App.tsx', at.line, at.column, 'px-[10px]');
   assert.equal(result.unattributed.length, 0);
@@ -311,7 +311,7 @@ export function App() { return <div id="defaults" className={dimensions()}/>; }`
 
 test('cold first and warm tenth HTTP classes reads agree through three large imported modules', async t => {
   const root = await fixture(t);
-  await writeFile(join(root, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], decisions: { spacing: { callers: ["primitive", "semantic"] } } };');
+  await writeFile(join(root, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], decisions: { spacing: { callers: ["primitive", "semantic"] } } };');
   const padding = Array.from({ length: 6000 }, (_, i) => `const unused${i} = ${i};`).join('\n');
   for (let i = 0; i < 3; i++) await writeFile(join(root, `src/large${i}.ts`), padding + '\n' + (i === 2
     ? "export function classes(active) { return ['px-[10px]', active ? 'gap-[10px]' : 'gap-[10px]'].join(' '); }"

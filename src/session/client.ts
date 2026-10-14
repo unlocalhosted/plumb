@@ -1,3 +1,4 @@
+import { statePath } from '../paths.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -12,7 +13,7 @@ import type { ServeInfo } from './server.js';
 async function connection(options: Pick<CheckOptions, 'root' | 'config'>): Promise<ServeInfo | undefined> {
   const root = resolve(options.root ?? process.cwd());
   try {
-    const info = JSON.parse(await readFile(resolve(root, '.plumb/serve.json'), 'utf8')) as ServeInfo;
+    const info = JSON.parse(await readFile(statePath(root, 'serve.json'), 'utf8')) as ServeInfo;
     if (info.protocol !== 1 || info.root !== root || !Number.isSafeInteger(info.port) || info.port < 1 || info.port > 65535 ||
         !Number.isSafeInteger(info.pid) || info.pid < 1 || typeof info.token !== 'string' || !/^[a-f0-9]{64}$/.test(info.token) ||
         info.config !== (options.config === undefined ? null : resolve(root, options.config))) return;

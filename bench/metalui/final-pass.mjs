@@ -29,7 +29,7 @@ if (!existsSync(resolve(snapshot, 'node_modules'))) symlinkSync(resolve(live, 'n
 mkdirSync(configDirectory, { recursive: true });
 // Adapt every preset input to the archive, including source metadata; no live
 // token reads or package-source symlinks participate in rule discovery.
-for (const file of ['plumb.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
+for (const file of ['plumber.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
   let text = readFileSync(resolve('bench/metalui', file), 'utf8');
   text = text.replaceAll("'../../dist/", `'${repo}/dist/`)
     .replace("new URL('../../../metalui/', import.meta.url)", `new URL(${JSON.stringify(pathToFileURL(snapshot + '/').href)})`)

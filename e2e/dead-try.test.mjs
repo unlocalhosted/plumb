@@ -45,18 +45,18 @@ test('dead decisions group per family, exclude framework, and retain semantic de
   assert.deepEqual(report.deadDecisions.spacing, { total: 4, used: 1, exported: 0, dead: 3 });
   assert.match(run(directory).stdout, /unused .*\b3 spacing\b.*tokens are never used in your source/);
   assert.deepEqual(dead(json(run(directory, ['--json']))), dead(report));
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'src/styles.css', decisions: { spacing: { exported: true }, color: { exported: true } } };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'src/styles.css', decisions: { spacing: { exported: true }, color: { exported: true } } };");
   assert.deepEqual(dead(json(run(directory, ['--json']))), []);
 });
 
 test('export globs match names and sources; published semantic decisions retain primitives; equal literals do not count as references', async t => {
   const directory = await project(t);
   await writeFile(join(directory, 'src/App.tsx'), '<div style={{ gap: 12 }} />;');
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'src/styles.css', exported: ['--color-{ink,orphan}', '--spacing-unused'] };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'src/styles.css', exported: ['--color-{ink,orphan}', '--spacing-unused'] };");
   const report = json(run(directory, ['--json']));
   assert.deepEqual(dead(report), ['--spacing-s2', '--spacing-s3', '--spacing-s4']);
   assert.deepEqual(report.deadDecisions.color, { total: 4, used: 2, exported: 2, dead: 0 });
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'src/styles.css', exported: ['src/*.css'] };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'src/styles.css', exported: ['src/*.css'] };");
   assert.deepEqual(dead(json(run(directory, ['--json']))), []);
 });
 
@@ -126,7 +126,7 @@ test('try shares per-site agent instructions and preserves hover oracle and owne
   const css = join(directory, 'src/styles.css');
   await writeFile(css, (await readFile(css, 'utf8')) + '\n@custom-variant fine-hover { &:hover { @media (hover: hover) and (pointer: fine) { @slot; } } }');
   await writeFile(join(directory, 'src/Button.tsx'), 'export function Button(props: { className?: string }) { return <button className={props.className} />; }');
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'src/styles.css', habits: ['hover-gate'], components: { from: 'src/Button.tsx' }, decisions: { spacing: { identity: 'value', callers: ['primitive', 'semantic'] } } };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'src/styles.css', habits: ['hover-gate'], components: { from: 'src/Button.tsx' }, decisions: { spacing: { identity: 'value', callers: ['primitive', 'semantic'] } } };");
   const snippet = 'import { Button } from "./Button"; <><div className="gap-10" /><div className="gap-10" /><Button className="hover:opacity-50 bg-base" /></>;';
   const verify = () => {
     const report = json(run(directory, ['try', '--json'], snippet));
@@ -183,7 +183,7 @@ test('try rejects invalid language/path/flag combinations and syntax without wri
   for (const args of [['try', '--lang', 'html'], ['try', '--as', '../escape.tsx'], ['try', '--as', 'outside/a.tsx'], ['try', '--as', 'src/a.css', '--lang', 'tsx'], ['try', '--json', '--agent'], ['check', '--lang', 'css']]) {
     const result = spawnSync(process.execPath, [cli, ...args, '--root', directory], { input: '<div />', encoding: 'utf8' });
     assert.equal(result.status, 2, result.stdout + result.stderr);
-    assert.match(result.stderr, /plumb:/);
+    assert.match(result.stderr, /plumber:/);
   }
   assert.equal(spawnSync(process.execPath, [cli, 'try', '--lang', 'tsx', '--root', directory], { input: '<div', encoding: 'utf8' }).status, 2);
 });

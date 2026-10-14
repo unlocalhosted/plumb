@@ -4,9 +4,9 @@ import type { NextConfig } from 'next';
 export function withPlumb(nextConfig: NextConfig = {}): NextConfig {
   if (process.env.NODE_ENV !== 'development') return nextConfig;
   // The overlay asks Next to trace browser frames the way Next's own overlay does, by their file in this directory.
-  process.env.PLUMB_NEXT_DIST_DIR = nextConfig.distDir ?? '.next';
+  process.env.PLUMBER_NEXT_DIST_DIR = nextConfig.distDir ?? '.next';
   return { ...nextConfig,
     pageExtensions: [...new Set([...(nextConfig.pageExtensions ?? ['tsx', 'ts', 'jsx', 'js']), 'plumb.ts', 'plumb.tsx'])],
-    serverExternalPackages: [...new Set([...(nextConfig.serverExternalPackages ?? []), '@unlocalhosted/plumb'])],
+    serverExternalPackages: [...new Set([...(nextConfig.serverExternalPackages ?? []), '@unlocalhosted/react-plumber'])],
   };
 }

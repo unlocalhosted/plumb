@@ -25,18 +25,18 @@ test('frozen overlay Write proves exact source, automatic reload, current readin
   await writeFile(join(original, 'src/App.jsx'), `import './styles.css';
     export function App() { return <div id="target" className="flex gap-[9px]"><span>A</span><span>B</span></div>; }\n`);
   await writeFile(join(original, 'src/styles.css'), '@import "tailwindcss"; @theme { --spacing-s2: 8px; }');
-  await writeFile(join(original, 'plumb.config.ts'), "export default { source: ['src/**/*.jsx'], css: 'src/styles.css' };");
+  await writeFile(join(original, 'plumber.config.ts'), "export default { source: ['src/**/*.jsx'], css: 'src/styles.css' };");
   await cp(original, root, { recursive: true });
   const originalBefore = await fingerprint([original]), copyBefore = await fingerprint([root]);
   const priorTemp = process.env.TMPDIR;
-  const priorCache = process.env.PLUMB_CACHE_DIR;
+  const priorCache = (process.env.PLUMBER_CACHE_DIR ?? process.env.PLUMB_CACHE_DIR);
   process.env.TMPDIR = scratch;
   process.env.PLUMB_CACHE_DIR = join(scratch, 'plumb');
   let server, browser, written;
   t.after(async () => {
     await browser?.close(); await server?.close();
     if (priorTemp === undefined) delete process.env.TMPDIR; else process.env.TMPDIR = priorTemp;
-    if (priorCache === undefined) delete process.env.PLUMB_CACHE_DIR; else process.env.PLUMB_CACHE_DIR = priorCache;
+    if (priorCache === undefined) delete (process.env.PLUMBER_CACHE_DIR ?? process.env.PLUMB_CACHE_DIR); else process.env.PLUMB_CACHE_DIR = priorCache;
     await rm(scratch, { recursive: true, force: true });
   });
   server = await createServer({ root, cacheDir: join(scratch, 'vite'), configFile: false,
@@ -45,7 +45,7 @@ test('frozen overlay Write proves exact source, automatic reload, current readin
     server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
-  browser = await chromium.launch({ executablePath: process.env.PLUMB_CHROMIUM });
+  browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) });
   const context = await browser.newContext();
   const failures = [], gate = writeGate(origin, failures);
   await context.route('**/__plumb/**', route => gate.route(route));

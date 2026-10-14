@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const source = '/Users/vijaysingh/unlocalhosted/metalui';
 const directory = await mkdtemp(join(tmpdir(), 'plumb-layer6-metalui-'));
 const cache = resolve(root, 'bench/metalui/.cache/layer6');
-const config = resolve(root, 'bench/metalui/plumb.config.ts');
+const config = resolve(root, 'bench/metalui/plumber.config.ts');
 const sourceHead = spawnSync('git', ['-C', source, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
 const result = { sourceHead, copiedDocs: true, sourceReadOnly: true, cache, counts: {}, checks: {}, acceptance: {} };
 function run(args = [], status = 0, json = true) {
@@ -57,7 +57,7 @@ try {
   assert.equal(errors(drift)[0].sites.length, 1);
   result.acceptance.oneGap10 = { exitCode: 1, newFindings: errors(drift).length, newSites: drift.ledger.new };
   await rm(added);
-  const ledgerFile = join(directory, '.plumb/ledger.jsonl');
+  const ledgerFile = join(directory, '.plumber/ledger.jsonl');
   const baselineText = await readFile(ledgerFile, 'utf8');
   await writeFile(ledgerFile, baselineText + JSON.stringify({ key: 'handwritten-no-why', kind: 'exception' }) + '\n');
   const noWhy = run([], 1).data;

@@ -95,7 +95,7 @@ test('class lowering and existence: real CLI over literals, helpers, maps, branc
 test('configuration rejects malformed markers and classHelpers', async t => {
   const { directory, cache } = await setup(t);
   for (const config of ['{ markers: "js-*" }', '{ classHelpers: [42] }']) {
-    await writeFile(join(directory, 'plumb.config.ts'), `export default ${config};`);
+    await writeFile(join(directory, 'plumber.config.ts'), `export default ${config};`);
     const result = spawnSync(process.execPath, [cli, '--root', directory, '--json'], { encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache } });
     assert.equal(result.status, 2);
     assert.match(result.stderr, /markers to an array|classHelpers to a non-empty string/);
@@ -105,7 +105,7 @@ test('configuration rejects malformed markers and classHelpers', async t => {
 test('resolves project Tailwind, fallback file loaders, Node wrapper and one batched compile', async t => {
   const { directory, cache } = await setup(t);
   for (const folder of ['node_modules/tailwindcss', 'src']) await mkdir(join(directory, folder), { recursive: true });
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/Own.tsx"] };');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/Own.tsx"] };');
   await writeFile(join(directory, 'src/Own.tsx'), 'import { STYLES } from "tailwindcss"; <div className={cn("bg-brand", "bg-brand", STYLES)}/>');
   await writeFile(join(directory, 'src/styles.css'), '@import "./theme.css"; @config "./config.mjs";');
   await writeFile(join(directory, 'src/theme.css'), '@theme { --color-brand: red; }');
@@ -154,7 +154,7 @@ test('resolves project Tailwind, fallback file loaders, Node wrapper and one bat
 
 test('suggestions prefer theme keys, preserve variants and suppress distant identities', async t => {
   const { directory, cache } = await setup(t);
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/Suggestions.tsx"] };');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/Suggestions.tsx"] };');
   await writeFile(join(directory, 'src/Suggestions.tsx'), '<div className="text-ink-dim text-ink2 text-ink3 text-white recipe-status-led-live group-data-checked:recipe-status-led-live mu-palette-eng palette-eng block-ai-composer block-settings rounded-gone"/>');
   await writeFile(join(directory, 'src/theme.css'), `
     @theme { --color-ink2: red; --color-ink3: blue; --radius-never-collected: 2px; }
@@ -185,7 +185,7 @@ test('suggestions prefer theme keys, preserve variants and suppress distant iden
 
 test('collector shortcuts keep earlier-file exports and escaped helper calls', async t => {
   const { directory, cache } = await setup(t);
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/A.tsx", "src/Z.tsx"] };');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/A.tsx", "src/Z.tsx"] };');
   await writeFile(join(directory, 'src/A.tsx'), 'export const STYLES = { brand: "bg-brand" } as const;');
   await writeFile(join(directory, 'src/Z.tsx'), String.raw`import { STYLES } from './A';
     export function Later() { return <div className={STYLES.brand}/>; }
@@ -204,7 +204,7 @@ test('warm collection keeps inline companion identity and revalidates imported c
   await writeFile(join(directory, 'external/one.ts'), 'export const paint = { outline: "none", color: "red" }; export const classes = "bg-brnad";');
   await writeFile(join(directory, 'external/two.ts'), 'export const paint = { outline: "none", color: "blue" }; export const classes = "bg-brand";');
   await writeFile(join(directory, 'tsconfig.json'), JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@paint': ['external/one.ts'] } } }));
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], habits: ["overscroll-contain"] };');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default { css: "src/styles.css", source: ["src/App.tsx", "src/styles.css"], habits: ["overscroll-contain"] };');
   await writeFile(join(directory, 'src/App.tsx'), 'import { paint, classes } from "@paint"; export const App = () => <><div className={classes} style={paint} /><div style={{ overflowY: "auto", overscrollBehaviorY: "contain" }} /></>;');
   const report = () => JSON.parse(run(directory, cache, ['--json']).stdout);
   const cold = report(), warm = report();

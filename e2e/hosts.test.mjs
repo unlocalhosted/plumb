@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build, createServer } from 'vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
 const source = 'export const App = () => <div className="py-[10px] gap-[13px]" />;\n';
@@ -41,7 +41,7 @@ async function connection(t, root) {
   for (let i = 0; i < 300; i++) {
     assert.equal(child.exitCode, null, errors);
     try {
-      const info = JSON.parse(await readFile(join(root, '.plumb/serve.json'), 'utf8'));
+      const info = JSON.parse(await readFile(join(root, '.plumber/serve.json'), 'utf8'));
       return { info, url: `http://127.0.0.1:${info.port}` };
     } catch {}
     await delay(20);
@@ -79,7 +79,7 @@ async function connectClient(url, token, origin) {
   return connected;
 }
 
-test('Vite injects and serves the client, shares edits/apply and excludes Plumb from builds', async t => {
+test('Vite injects and serves the client, shares edits/apply and excludes React Plumber from builds', async t => {
   const root = await project(t, { vite: '^8.3.4' });
   const plumbRoot = await project(t);
   await writeFile(join(root, 'index.html'), '<html><head></head><body><script type="module" src="/src/entry.js"></script></body></html>');
@@ -111,12 +111,12 @@ test('Vite injects and serves the client, shares edits/apply and excludes Plumb 
   await server.close();
   await build({ root, configFile: false, plugins: [plumb({ root: join(root, 'does-not-exist') })], logLevel: 'silent' });
   for (const [, contents] of await snapshot(join(root, 'dist'))) assert.ok(!contents.includes('__plumb'), 'production assets must omit the overlay');
-  await assert.rejects(readFile(join(root, '.plumb/serve.json')), { code: 'ENOENT' });
+  await assert.rejects(readFile(join(root, '.plumber/serve.json')), { code: 'ENOENT' });
 });
 
 test('Vite defaults to its root and resolves explicit relative roots and configs for separate Sessions', async t => {
   const root = await project(t), plumbRoot = await project(t);
-  await rename(join(plumbRoot, 'plumb.config.ts'), join(plumbRoot, 'custom.config.ts'));
+  await rename(join(plumbRoot, 'plumber.config.ts'), join(plumbRoot, 'custom.config.ts'));
   const servers = [];
   let revision;
   t.after(() => Promise.all(servers.map(server => server.close())));
@@ -247,8 +247,8 @@ test('serve --overlay permits exactly its configured CORS origin, including real
 
 test('install --overlay detects hosts from package.json and prints wiring without writes', async t => {
   for (const [dependencies, expected] of [
-    [{ vite: '^8.3.4' }, [/import \{ plumb \} from '@unlocalhosted\/plumb\/vite'/, /plumb\(\)/]],
-    [{ next: '^16.0.0', vite: '^8.3.4' }, [/app\/%5F_plumb\/\[\.\.\.path\]\/route\.plumb\.ts/, /withPlumb\(nextConfig\)/, /@unlocalhosted\/plumb\/next\/config/, /export const runtime = 'nodejs'/, /export const \{ GET, POST \} = createPlumbRoute\(\)/, /<PlumbOverlay \/>/]],
+    [{ vite: '^8.3.4' }, [/import \{ plumb \} from '@unlocalhosted\/react-plumber\/vite'/, /plumb\(\)/]],
+    [{ next: '^16.0.0', vite: '^8.3.4' }, [/app\/%5F_plumb\/\[\.\.\.path\]\/route\.plumb\.ts/, /withPlumb\(nextConfig\)/, /@unlocalhosted\/react-plumber\/next\/config/, /export const runtime = 'nodejs'/, /export const \{ GET, POST \} = createPlumbRoute\(\)/, /<PlumbOverlay \/>/]],
     [{}, [/<script type="module" src="http:\/\/127.0.0.1:7331\/__plumb\/client.js" data-plumb-token="TOKEN_FROM_SERVE_JSON"><\/script>/, /serve --overlay --port 7331 --origin/]],
   ]) {
     const root = await project(t, dependencies), before = await snapshot(root);
@@ -289,14 +289,14 @@ async function nextProcess(t, root, args) {
 test('overlay review 2–4: installed Next wiring serves dev and excludes Session from production and static export', { timeout: 180000 }, async t => {
   const root = await project(t, { next: '^16.4.0', react: '^19.3.0', 'react-dom': '^19.3.0' });
   const { mkdir } = await import('node:fs/promises');
-  const installed = join(root, 'node_modules/@unlocalhosted/plumb');
+  const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
   for (const name of ['dist', 'overlay', 'package.json']) await cp(join(repo, name), join(installed, name), { recursive: true });
   const routeDir = join(root, 'app/%5F_plumb/[...path]'); await mkdir(routeDir, { recursive: true });
-  await writeFile(join(routeDir, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/plumb/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
-  await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/plumb/next';\nexport default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
+  await writeFile(join(routeDir, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
+  await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
   await writeFile(join(root, 'app/page.jsx'), `export default function Page() { return <main>Host page</main>; }\n`);
-  await writeFile(join(root, 'next.config.mjs'), `import assert from 'node:assert/strict';\nimport { withPlumb } from '@unlocalhosted/plumb/next/config';\nconst original = { pageExtensions: ['jsx', 'js'], serverExternalPackages: ['lightningcss'], ...(process.env.PLUMB_EXPORT ? { output: 'export' } : {}) };\nconst config = withPlumb(original);\nassert.deepEqual(original.pageExtensions, ['jsx', 'js']);\nassert.deepEqual(original.serverExternalPackages, ['lightningcss']);\nif (process.env.NODE_ENV === 'development') {\n  assert.deepEqual(config.pageExtensions, ['jsx', 'js', 'plumb.ts', 'plumb.tsx']);\n  assert.deepEqual(config.serverExternalPackages, ['lightningcss', '@unlocalhosted/plumb']);\n  assert.deepEqual(withPlumb(config), config);\n} else assert.equal(config, original);\nexport default config;\n`);
+  await writeFile(join(root, 'next.config.mjs'), `import assert from 'node:assert/strict';\nimport { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nconst original = { pageExtensions: ['jsx', 'js'], serverExternalPackages: ['lightningcss'], ...((process.env.PLUMBER_EXPORT ?? process.env.PLUMB_EXPORT) ? { output: 'export' } : {}) };\nconst config = withPlumb(original);\nassert.deepEqual(original.pageExtensions, ['jsx', 'js']);\nassert.deepEqual(original.serverExternalPackages, ['lightningcss']);\nif (process.env.NODE_ENV === 'development') {\n  assert.deepEqual(config.pageExtensions, ['jsx', 'js', 'plumb.ts', 'plumb.tsx']);\n  assert.deepEqual(config.serverExternalPackages, ['lightningcss', '@unlocalhosted/react-plumber']);\n  assert.deepEqual(withPlumb(config), config);\n} else assert.equal(config, original);\nexport default config;\n`);
   const dev = await nextProcess(t, root, ['dev', '--webpack', '--hostname', '127.0.0.1', '--port', '0']);
   let url;
   for (let i = 0; i < 600; i++) {
@@ -323,7 +323,7 @@ test('overlay review 2–4: installed Next wiring serves dev and excludes Sessio
     await rm(join(root, '.next'), { recursive: true, force: true });
     if (exporting) {
       // Set output on the consumer config, leaving the installed adapter unchanged.
-      await writeFile(join(root, 'next.config.mjs'), (await readFile(join(root, 'next.config.mjs'), 'utf8')).replace('process.env.PLUMB_EXPORT', 'true'));
+      await writeFile(join(root, 'next.config.mjs'), (await readFile(join(root, 'next.config.mjs'), 'utf8')).replace('(process.env.PLUMBER_EXPORT ?? process.env.PLUMB_EXPORT)', 'true'));
     }
     const build = await nextProcess(t, root, ['build', '--webpack']);
     const [status] = await build.done; assert.equal(status, 0, build.output());
@@ -332,8 +332,8 @@ test('overlay review 2–4: installed Next wiring serves dev and excludes Sessio
     for (const dir of ['.next/server', '.next/static', ...(exporting ? ['out'] : [])]) {
       for (const [file, content] of await snapshot(join(root, dir))) {
         assert.ok(!content.includes('data-plumb-token') && !content.includes('/__plumb/'), file);
-        assert.ok(!/plumb[/\\](?:dist[/\\])?session|plumb[/\\]dist[/\\]hosts[/\\]next-dev|Analysis worker exited|Owns one warm analysis worker/.test(content), file);
-        if (file.endsWith('.nft.json')) assert.ok(!JSON.parse(content).files.some(path => /@unlocalhosted[/\\]plumb/.test(path)), `Plumb deployment trace: ${file}`);
+        assert.ok(!/react-plumber[/\\](?:dist[/\\])?session|react-plumber[/\\]dist[/\\]hosts[/\\]next-dev|Analysis worker exited|Owns one warm analysis worker/.test(content), file);
+        if (file.endsWith('.nft.json')) assert.ok(!JSON.parse(content).files.some(path => /@unlocalhosted[/\\]react-plumber/.test(path)), `React Plumber deployment trace: ${file}`);
       }
     }
   }
@@ -378,8 +378,8 @@ test('overlay review 7: Vite restarts reuse root/options Sessions and final clos
 
 // Hold config loading until the host has proved it can serve requests.
 async function holdStartup(root, fail = false) {
-  const config = await readFile(join(root, 'plumb.config.ts'), 'utf8');
-  await writeFile(join(root, 'plumb.config.ts'), `import { access } from 'node:fs/promises';
+  const config = await readFile(join(root, 'plumber.config.ts'), 'utf8');
+  await writeFile(join(root, 'plumber.config.ts'), `import { access } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 const gate = new URL('./startup.release', import.meta.url);
 while (true) { try { await access(gate); break; } catch { await delay(20); } }
@@ -416,7 +416,7 @@ test('Vite listens during startup, shares pending ownership across restarts and 
       const state = await response.json(); assert.equal(state.status, 'failed'); assert.match(state.diagnostic, /startup fixture failed/);
       assert.deepEqual(await (await fetch(url + '/__plumb/health')).json(), state);
       assert.equal((await fetch(url)).status, 200);
-      await writeFile(join(root, 'plumb.config.ts'), await readFile(join(repo, 'fixtures/spacing/plumb.config.ts'), 'utf8'));
+      await writeFile(join(root, 'plumber.config.ts'), await readFile(join(repo, 'fixtures/spacing/plumber.config.ts'), 'utf8'));
       await server.restart(); url = `http://127.0.0.1:${server.httpServer.address().port}`;
       await ready(url);
       assert.equal((await fetch(url + '/__plumb/site?file=src/App.tsx&line=1')).status, 200);

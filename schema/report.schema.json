@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Plumb report",
+  "title": "React Plumber report",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "tool", "root", "config", "tailwind", "files", "findings", "coverage", "timing", "classes", "notes", "declarations", "stylesheets", "moduleGraph", "decisions"],
@@ -9,7 +9,7 @@
     "tool": {
       "type": "object", "additionalProperties": false,
       "required": ["name", "version"],
-      "properties": { "name": { "const": "plumb" }, "version": { "type": "string" } }
+      "properties": { "name": { "const": "react-plumber" }, "version": { "type": "string" } }
     },
     "root": { "type": "string" },
     "configHints": {

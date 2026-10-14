@@ -13,7 +13,7 @@ async function fixture(t, name = 'ds-consumer') {
   await cp(join(root, 'fixtures', name), project, { recursive: true });
   await cp(join(root, 'fixtures/ds-package'), pkg, { recursive: true });
   await link(pkg, join(project, 'node_modules/@fixtures/design-system'));
-  await link(root, join(pkg, 'node_modules/@unlocalhosted/plumb'));
+  await link(root, join(pkg, 'node_modules/@unlocalhosted/react-plumber'));
   await link(join(root, 'node_modules/tailwindcss'), join(project, 'node_modules/tailwindcss'));
   return { project, pkg, base };
 }
@@ -53,7 +53,7 @@ test('dependency preset loads without config, resolves Button contracts and vari
 
 test('disabling dependency preset removes ownership, fingerprints and imported tokens', async t => {
   const { project } = await fixture(t);
-  await writeFile(join(project, 'plumb.config.mjs'), "export default { presets: { '@fixtures/design-system': false } };");
+  await writeFile(join(project, 'plumber.config.mjs'), "export default { presets: { '@fixtures/design-system': false } };");
   const result = report(project);
   assert.equal(result.presets.length, 0); assert.equal(ownership(result).length, 0);
   assert.ok(!result.findings.some(finding => finding.rule.startsWith('imitation/')));
@@ -71,7 +71,7 @@ test('shadcn aliases provide default layout-only ownership with real cva axes', 
 
 test('project policies and contracts override presets, project tokens win same-name conflicts', async t => {
   const { project } = await fixture(t);
-  await writeFile(join(project, 'plumb.config.mjs'), `export default {
+  await writeFile(join(project, 'plumber.config.mjs'), `export default {
     decisions: { spacing: { identity: 'reference', from: () => [{family:'spacing',name:'--spacing-ds-gap',value:'20px',origin:'project',tier:'primitive',refs:['var(--spacing-ds-gap)'],why:'Local gap',source:{file:'local.tokens.json',line:1}}] } },
     components: { contracts: { Button: { allow: ['paint','margin'], deny: ['padding'] } } }, habits: []
   };`);
@@ -79,7 +79,7 @@ test('project policies and contracts override presets, project tokens win same-n
   assert.equal(result.decisions.find(token => token.name === '--spacing-ds-gap').value, '20px');
   assert.ok(!ownership(result).some(finding => ['paint', 'margin'].includes(finding.family)));
   assert.ok(ownership(result).some(finding => finding.family === 'padding'));
-  await writeFile(join(project, 'plumb.config.mjs'), `export default {components:{contracts:{Button:{allow:['margin']}}}};`);
+  await writeFile(join(project, 'plumber.config.mjs'), `export default {components:{contracts:{Button:{allow:['margin']}}}};`);
   assert.ok(!ownership(report(project)).some(finding => finding.family === 'margin'));
 });
 
@@ -104,9 +104,9 @@ test('contracts and fingerprints resolve against package identity, same-name pac
 test('explicit preset modules merge after autoload, array disables work and malformed modules fail clearly', async t => {
   const { project } = await fixture(t);
   await writeFile(join(project, 'extra.mjs'), `export default {name:'extra',decisions:[{family:'spacing',name:'--spacing-ds-gap',value:'18px',source:{file:'tokens.json',line:1}}]};`);
-  await writeFile(join(project, 'plumb.config.mjs'), `export default { presets: ['./extra.mjs'] };`);
+  await writeFile(join(project, 'plumber.config.mjs'), `export default { presets: ['./extra.mjs'] };`);
   assert.equal(report(project).decisions.find(token => token.name === '--spacing-ds-gap').value, '18px');
-  await writeFile(join(project, 'plumb.config.mjs'), `export default { presets: [{ '@fixtures/design-system': false }, './extra.mjs'] };`);
+  await writeFile(join(project, 'plumber.config.mjs'), `export default { presets: [{ '@fixtures/design-system': false }, './extra.mjs'] };`);
   assert.equal(report(project, ['presets']).length, 1);
   await writeFile(join(project, 'extra.mjs'), `export default {name:'bad',habits:['missing-habit']};`);
   const result = cli(project, ['presets']); assert.equal(result.status, 2); assert.ok(result.stderr.includes('Load preset extra.mjs'));
@@ -130,7 +130,7 @@ test('MetalUI fixture imports actual component sources, inherits converted prese
   const pkg = join(base, 'metalui-package');
   await cp(join(root, 'fixtures/metalui-package'), pkg, { recursive: true });
   await cp(join(root, 'bench/metalui/preset'), join(pkg, 'plumb'), { recursive: true });
-  await link(root, join(pkg, 'node_modules/@unlocalhosted/plumb'));
+  await link(root, join(pkg, 'node_modules/@unlocalhosted/react-plumber'));
   await link(pkg, join(project, 'node_modules/@unlocalhosted/metalui'));
   const result = report(project);
   assert.equal(result.config.path, null); assert.equal(result.presets[0].name, '@unlocalhosted/metalui');
@@ -146,13 +146,13 @@ test('library self-preset publishes tokens and inline preset config supports cal
   const { project, pkg } = await fixture(t);
   const library = report(pkg);
   assert.equal(dead(library).length, 0); assert.equal(library.presets[0].exported, 3);
-  await writeFile(join(project, 'plumb.config.mjs'), `export default { presets: [{name:'inline',decisions:()=>[{family:'spacing',name:'--spacing-extra',value:'28px',source:{file:'tokens.json',line:1}}]}] };`);
+  await writeFile(join(project, 'plumber.config.mjs'), `export default { presets: [{name:'inline',decisions:()=>[{family:'spacing',name:'--spacing-extra',value:'28px',source:{file:'tokens.json',line:1}}]}] };`);
   assert.equal(report(project).decisions.find(token => token.name === '--spacing-extra').exported, true);
 });
 
 test('shadcn can be disabled and project CSS overrides inherited values without publishing unrelated local tokens', async t => {
   const { project } = await fixture(t, 'shadcn-preset');
-  await writeFile(join(project, 'plumb.config.mjs'), "export default {presets:{shadcn:false}};");
+  await writeFile(join(project, 'plumber.config.mjs'), "export default {presets:{shadcn:false}};");
   assert.equal(ownership(report(project)).length, 0);
   const consumer = (await fixture(t)).project;
   await writeFile(join(consumer, 'src/styles.css'), `@import "tailwindcss"; @import "@fixtures/design-system/theme.css";

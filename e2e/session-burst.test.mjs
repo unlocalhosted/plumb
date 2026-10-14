@@ -105,7 +105,7 @@ test('HTTP: health stays under 100ms during 300 large site/edits reads, preservi
     assert.equal(await response.text(), result.body, 'Node response matches programmatic JSON byte for byte');
   }
   await fetch(origin + '/__plumb/health').then(response => response.text());
-  if (process.env.PLUMB_BURST_PROFILE) await command('profile-start');
+  if ((process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE)) await command('profile-start');
   let settled = 0;
   const burst = Promise.all(Array.from({ length: 300 }, (_, i) => fetch(origin + queries[i % 2].route)
     .then(async response => {
@@ -123,7 +123,7 @@ test('HTTP: health stays under 100ms during 300 large site/edits reads, preservi
     if (i < 2) await delay(5);
   }
   await burst;
-  if (process.env.PLUMB_BURST_PROFILE) await command('profile-stop', { path: process.env.PLUMB_BURST_PROFILE });
+  if ((process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE)) await command('profile-stop', { path: (process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE) });
   t.diagnostic(JSON.stringify({ bytes: baseline.slice(0, 2).map(result => Buffer.byteLength(result.body)), probes }));
   assert.ok(probes.every(probe => probe.outstanding > 0), 'all health probes overlap reads');
   for (const probe of probes) assert.ok(probe.ms < 100, `health blocked ${probe.ms.toFixed(2)}ms with ${probe.outstanding} reads outstanding`);

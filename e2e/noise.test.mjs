@@ -11,7 +11,7 @@ async function project(t, css, jsx = '', config = {}) {
   await mkdir(join(dir, 'src'));
   await writeFile(join(dir, 'src/styles.css'), css);
   await writeFile(join(dir, 'src/App.tsx'), jsx);
-  await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify(config)};`);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)};`);
   return dir;
 }
 function run(dir, args = [], json = true) {
@@ -43,7 +43,7 @@ test('equal literals warn once per family; every site has its own token, verbose
   assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}:${e.site.column}`)));
   const agent = run(dir, ['--agent'], false);
   assert.ok(!agent.includes('values in your color')); assert.match(agent, /background-color: var\(--color-ink\)/);
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { decisions: { color: { byValue: 'each' } } };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { color: { byValue: 'each' } } };");
   const configured = run(dir);
   assert.deepEqual(sites(findings(configured, 'provenance/color/by-value')), sites(color));
   assert.equal(findings(configured, 'provenance/color/by-value').length, 2);
@@ -128,7 +128,7 @@ test('type hint explains individual-token checks with a supported source selecto
   assert.equal(findings(r, 'provenance/type').length, 2);
   const text = run(dir, [], false);
   assert.equal(text.split('config  type:').length - 1, 1);
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { decisions: { type: { from: 'theme:--text-*' } } };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { type: { from: 'theme:--text-*' } } };");
   assert.equal(findings(run(dir), 'provenance/type').length, 2);
   const schema = JSON.parse(await readFile(join(root, 'schema/report.schema.json')));
   assert.equal(schema.properties.configHints.properties.type.type, 'string');
@@ -136,13 +136,13 @@ test('type hint explains individual-token checks with a supported source selecto
 
 test('init selects four roadmap habits; other habits stay available by explicit opt-in', async t => {
   const dir = await project(t, '.a:hover { transition: all 200ms ease-in; } .b { outline: none; margin-left: 2px; height: 100vh; }');
-  await rm(join(dir, 'plumb.config.ts'));
+  await rm(join(dir, 'plumber.config.ts'));
   run(dir, ['init']);
-  const config = await import(`file://${join(dir, 'plumb.config.ts')}`);
+  const config = await import(`file://${join(dir, 'plumber.config.ts')}`);
   assert.deepEqual(config.default.habits, ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in']);
   const proposed = run(dir);
   assert.ok(!findings(proposed, 'habits/logical-inline').length);
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { habits: ['logical-inline', 'viewport-dynamic'] };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { habits: ['logical-inline', 'viewport-dynamic'] };");
   const explicit = run(dir);
   assert.equal(findings(explicit, 'habits/logical-inline').length, 1);
   assert.equal(findings(explicit, 'habits/viewport-dynamic').length, 1);

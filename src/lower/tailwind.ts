@@ -1,5 +1,6 @@
+import { environment, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -97,8 +98,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     catch (error) { return skipped(error); }
     if (memory) memory.graph = cssGraph;
     const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v7-elevation-ring-layer-refs`);
-    const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
-    const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), key);
+    const directory = resolve(cacheDirectory(root), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
     try { cached = memory?.cached ?? Object.assign(Object.create(null) as Record<string, CandidateCss>, JSON.parse(await readFile(join(directory, 'candidates.json'), 'utf8')) as Record<string, CandidateCss>); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
@@ -122,7 +122,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       let nodeWrapper = false;
       try {
         // Tests force the plain tailwindcss path that projects without @tailwindcss/node take.
-        if (process.env.PLUMB_TAILWIND_DIRECT === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
+        if (environment('TAILWIND_DIRECT') === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
         const nodePath = require.resolve('@tailwindcss/node');
         const nodeRequire = createRequire(nodePath);
         if (nodeRequire.resolve('tailwindcss') === tailwindPath) { compilerPath = nodePath; nodeWrapper = true; }
@@ -130,7 +130,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
       // require.resolve finds a package's CommonJS build; importing that puts the API under default.
       const loaded = await import(pathToFileURL(compilerPath).href) as Partial<Compiler> & { default?: Partial<Compiler> };
       const compiler = (typeof loaded.__unstable__loadDesignSystem === 'function' ? loaded : loaded.default) as Compiler;
-      if (typeof compiler?.__unstable__loadDesignSystem !== 'function') throw new Error(`${compilerPath} does not export __unstable__loadDesignSystem; Plumb needs Tailwind CSS 4.`);
+      if (typeof compiler?.__unstable__loadDesignSystem !== 'function') throw new Error(`${compilerPath} does not export __unstable__loadDesignSystem; React Plumber needs Tailwind CSS 4.`);
       const options: LoaderOptions = { base: dirname(entry) };
       if (!nodeWrapper) {
         options.loadStylesheet = async (id, base) => {

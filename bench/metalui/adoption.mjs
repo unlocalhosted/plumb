@@ -22,7 +22,7 @@ const archive = spawnSync('git', ['-C', original, 'archive', commit], { maxBuffe
 assert.ifError(archive.error); assert.equal(archive.status, 0, archive.stderr.toString());
 const extract = spawnSync('tar', ['-xf', '-', '-C', snapshot], { input: archive.stdout });
 assert.equal(extract.status, 0, extract.stderr.toString());
-git(snapshot, 'init', '-q'); // Keep generated CI inside the copy, not Plumb's outer Git root.
+git(snapshot, 'init', '-q'); // Keep generated CI inside the copy, not React Plumber's outer Git root.
 
 // Dependency packages are read-only links. Workspace links point at archived
 // source, so live MetalUI edits cannot supply implementation files to the run.
@@ -59,7 +59,7 @@ function run(command, expected = 0, record = true) {
 run([], 0, false); // Prime receipts without an installation or package download.
 const first = run([]);
 assert.ok(first.wallMs < 5_000, `warm first run ${first.wallMs.toFixed(1)} ms exceeds 5 s`);
-assert.match(first.stdout, /Next steps\nRun plumb init/);
+assert.match(first.stdout, /Next steps\nRun plumber init/);
 run(['init']);
 run(['install', '--ci']);
 const check = run(['check', '--json'], 0, false);

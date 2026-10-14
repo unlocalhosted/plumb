@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 import { overlayModules } from '../dist/hosts/client.js';
 import { createWebHandler } from '../dist/session/server.js';
 import { mapFrame, invalidateSourceMaps } from '../overlay/src/sourcemap.js';
@@ -67,7 +67,7 @@ createRoot(document.getElementById('root')).render(<App />);
 }
 async function browser(t) {
   try {
-    const launched = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const launched = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => launched.close()); return launched;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;

@@ -19,14 +19,14 @@ async function dispose(id: string, entry: Entry): Promise<void> {
   await session?.close();
 }
 
-/** Mount Plumb on Vite's dev server; process ownership survives server restarts. */
+/** Mount React Plumber on Vite's dev server; process ownership survives server restarts. */
 export interface PlumbViteOptions extends SessionOptions {
   /** Stamp JSX with its source position in dev (default true). Turn it off for an app that hydrates HTML prerendered
    * outside the dev server: that HTML carries no stamps, so React reports a mismatch and renders the page again. */
   stamp?: boolean;
   /** Explicit static demo opt-in: stamp production JSX and mount the real overlay after this replay module.
    * The module must install its transport synchronously. Paths are relative to the Vite root.
-   * Ordinary production builds still contain no Plumb client or stamps. */
+   * Ordinary production builds still contain no React Plumber client or stamps. */
   demo?: { replay: string; guard?: boolean };
 }
 

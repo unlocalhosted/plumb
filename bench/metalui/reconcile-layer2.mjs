@@ -7,7 +7,7 @@ import { projectSourceFiles } from '../../dist/project.js';
 const root = resolve(process.env.METALUI_ROOT ?? '/Users/vijaysingh/unlocalhosted/metalui');
 const report = JSON.parse(await readFile('bench/metalui/layer2.warm.json', 'utf8'));
 assert.equal(report.root, root);
-const config = (await import('./plumb.config.ts')).default;
+const config = (await import('./plumber.config.ts')).default;
 const files = await projectSourceFiles(root, config);
 const collected = await collectClasses(files.filter(file => /\.[jt]sx?$/.test(file)));
 assert.equal(collected.styles.sites.filter(site => site.literal).length, report.coverage.inline.literalSites);

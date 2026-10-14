@@ -120,7 +120,7 @@ export async function hasUntrackedPresetInputs(root: string): Promise<boolean> {
     const path = relative(await realpath(root), await realpath(directory).catch(() => directory)).replaceAll('\\', '/');
     // Root-local shadcn contracts are deterministic source analysis; the check
     // receipt already validates all their bytes and directory membership.
-    if (path === '..' || path.startsWith('../') || isAbsolute(path) || /(?:^|\/)(?:node_modules|dist|build|\.next|\.git|\.cache|\.plumb-cache)(?:\/|$)/.test(path)) return true;
+    if (path === '..' || path.startsWith('../') || isAbsolute(path) || /(?:^|\/)(?:node_modules|dist|build|\.next|\.git|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(path)) return true;
   }
   const manifest = await json(join(root, 'package.json'));
   if (manifest && moduleTarget(manifest)) return true;

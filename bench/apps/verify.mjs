@@ -2,7 +2,7 @@
 import { freezeApp, freezeTool, fingerprint, ignoredInputs } from './frozen.mjs';
 import { hasExactEdit, writeGate, writeInteraction, restoreWrite } from './write.mjs';
 // Run: PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [app ...]
-// Requires an existing Plumb build. Reads git inputs; never writes original app repositories.
+// Requires an existing React Plumber build. Reads git inputs; never writes original app repositories.
 // The owner's output restriction overrides the brief's bench/apps/verify.<app>.json paths:
 // all reports live in docs/verification/. Each app server runs in its own process/cwd.
 import fs from 'node:fs';
@@ -20,14 +20,14 @@ const workspace = dirname(repo);
 const output = join(repo, 'docs/verification');
 const grabFile = join(workspace, 'algorecall/node_modules/react-grab/dist/index.global.js');
 const timeout = 60_000;
-const overrides = JSON.parse(process.env.PLUMB_VERIFY_APP_ROOTS ?? '{}');
-for (const root of Object.values(overrides)) check(resolve(root).startsWith(repo + sep), 'Proof roots must be inside Plumb');
+const overrides = JSON.parse((process.env.PLUMBER_VERIFY_APP_ROOTS ?? process.env.PLUMB_VERIFY_APP_ROOTS) ?? '{}');
+for (const root of Object.values(overrides)) check(resolve(root).startsWith(repo + sep), 'Proof roots must be inside React Plumber');
 const apps = [
   { name: 'metalui', app: join(workspace, 'metalui/apps/docs'), root: join(workspace, 'metalui'),
-    config: join(repo, 'bench/metalui/overlay.plumb.config.ts'), pages: ['/components/button', '/foundations/motion', '/'] },
+    config: join(repo, 'bench/metalui/overlay.plumber.config.ts'), pages: ['/components/button', '/foundations/motion', '/'] },
   { name: 'kamui', app: join(workspace, 'kamui/web/apps/kamui'), pages: ['/'] },
   { name: 'craftingattention', app: join(workspace, 'craftingattention/app'), pages: ['/'] },
-  { name: 'algorecall', app: join(workspace, 'algorecall'), config: join(repo, 'bench/apps/algorecall.plumb.config.ts'), pages: ['/'], depsInProject: true },
+  { name: 'algorecall', app: join(workspace, 'algorecall'), config: join(repo, 'bench/apps/algorecall.plumber.config.ts'), pages: ['/'], depsInProject: true },
 ].map(app => ({ ...app, root: app.root ?? app.app, ignoredInputs: ignoredInputs[app.name] })).map(app => {
   const original = app.root;
   return overrides[app.name] ? { ...app, root: resolve(overrides[app.name], '.'), app: resolve(overrides[app.name], relative(original, app.app)) } : app;
@@ -139,9 +139,9 @@ export async function withVerification(own, app, scratch, configFile) {
   }) };
   if ('test' in own) {
     delete own.test;
-    adaptations.push('Removed Vitest-only test configuration from the dev host so Plumb applies; application plugins are retained.');
+    adaptations.push('Removed Vitest-only test configuration from the dev host so React Plumber applies; application plugins are retained.');
   }
-  if (own.server?.hmr === false && process.env.PLUMB_VERIFY_BASELINE !== '1') {
+  if (own.server?.hmr === false && (process.env.PLUMBER_VERIFY_BASELINE ?? process.env.PLUMB_VERIFY_BASELINE) !== '1') {
     own.server = { ...own.server, hmr: true };
     adaptations.push('Enabled Vite HMR only in the frozen verification host: the app disables it, so source writes otherwise require a manual reload.');
   }
@@ -160,7 +160,7 @@ export async function withVerification(own, app, scratch, configFile) {
     return resolved?.id.split('?')[0] === routeTree.tree ? routeTree.out : null;
   } });
   if (app.depsInProject) adaptations.push('Vite dependency cache inside the project (node_modules/.vite-plumb-verify): a cache outside breaks its CommonJS interop.');
-  const grab = process.env.PLUMB_VERIFY_BASELINE === '1' ? '' : await fsp.readFile(app.toolRoot ? join(app.toolRoot, 'react-grab.js') : grabFile, 'utf8');
+  const grab = (process.env.PLUMBER_VERIFY_BASELINE ?? process.env.PLUMB_VERIFY_BASELINE) === '1' ? '' : await fsp.readFile(app.toolRoot ? join(app.toolRoot, 'react-grab.js') : grabFile, 'utf8');
   const { Session } = await import(pathToFileURL(join(app.toolRoot ?? repo, 'dist/session/index.js')).href);
   let release;
   const gate = new Promise(resolveGate => { release = resolveGate; });
@@ -171,7 +171,7 @@ export async function withVerification(own, app, scratch, configFile) {
     return Promise.all([original.apply(this, args), gate]).then(([session]) => session);
   };
   const { plumb } = await import(pathToFileURL(join(app.toolRoot ?? repo, 'dist/hosts/vite.js')).href);
-  const baseline = process.env.PLUMB_VERIFY_BASELINE === '1';
+  const baseline = (process.env.PLUMBER_VERIFY_BASELINE ?? process.env.PLUMB_VERIFY_BASELINE) === '1';
   const oracle = { name: 'verification:react-grab', transformIndexHtml: { order: 'pre', handler: () => [
     { tag: 'script', attrs: { 'data-verification-react-grab': '' }, children: grab.replaceAll('</script', '<\\/script'), injectTo: 'head-prepend' },
   ] } };
@@ -191,7 +191,7 @@ export async function withVerification(own, app, scratch, configFile) {
     server.httpServer.once('listening', () => {
       const address = server.httpServer.address();
       if (!address || typeof address !== 'object' || !intercepted && !baseline) {
-        process.send?.({ type: 'error', error: 'Vite port or Plumb startup gate missing' });
+        process.send?.({ type: 'error', error: 'Vite port or React Plumber startup gate missing' });
         return;
       }
       process.send?.({ type: 'listening', origin: `http://127.0.0.1:${address.port}`, configFile, adaptations });
@@ -199,7 +199,7 @@ export async function withVerification(own, app, scratch, configFile) {
   } };
   if (!baseline) {
     own.plugins.unshift(plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }));
-    adaptations.push('Plumb source stamping runs before application React transforms.');
+    adaptations.push('React Plumber source stamping runs before application React transforms.');
   }
   adaptations.push("Vite serves installed dependency directories read-only through the copy's symlinks.");
   return vite.mergeConfig(own, {
@@ -212,7 +212,7 @@ export async function withVerification(own, app, scratch, configFile) {
 
 // Each run gets a fresh Vite dependency cache. It lives in the scratch directory unless the app needs it inside the
 // project: there, a cache outside serves pre-bundled CommonJS without the import interop (AlgoRecall's React Compiler
-// runtime then has no export \`c\`, with or without Plumb). Inside, it sits in node_modules under its own name, so the
+// runtime then has no export \`c\`, with or without React Plumber). Inside, it sits in node_modules under its own name, so the
 // app's own .vite cache is untouched; it is removed after. Kamui (pnpm) renders only with it outside.
 const depsCache = (app, scratch) => app.depsInProject ? join(app.app, 'node_modules/.vite-plumb-verify') : join(scratch, 'vite');
 function appConfigFile(app) {
@@ -453,8 +453,8 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
           level = i; break;
         }
       }
-      // react-grab names the component the JSX is written in; Plumb names the element at that line (the component used,
-      // or none for host JSX). Agreement is the same file in Plumb's chain; Plumb's lines are proven by the exactness
+      // react-grab names the component the JSX is written in; React Plumber names the element at that line (the component used,
+      // or none for host JSX). Agreement is the same file in React Plumber's chain; React Plumber's lines are proven by the exactness
       // check. A naming difference is recorded, not failed.
       const fileLevel = chain.findIndex(link => oracleFileMatches(link.file, row.oracle.filePath));
       if (level >= 0) counts.bothMatched++;
@@ -464,21 +464,21 @@ async function inspectRows(app, origin, rows, exactness, failures, scratch) {
         if (fileLevel < 0) {
           oracleCheck = await readCheck(origin, '/__plumb/resolve', { source: row.oracle.filePath });
           if (checks.every(result => result.verified) && oracleCheck.ok && oracleCheck.body.library && !oracleCheck.body.file) {
-            reason = 'Server verified Plumb chain and refused oracle file as library/untracked source.';
+            reason = 'Server verified React Plumber chain and refused oracle file as library/untracked source.';
           }
         }
         // react-grab ranks the component that renders an element passed as children (Well, Surface) above the line
-        // that writes it. When Plumb's innermost link opens the element's own tag on disk, Plumb is the precise one.
+        // that writes it. When React Plumber's innermost link opens the element's own tag on disk, React Plumber is the precise one.
         const inner = row.location?.chain?.[0] ?? row.location;
         if (!reason && inner && row.tag) {
           try {
             const text = await fsp.readFile(resolve(app.root, inner.file), 'utf8');
             const line = text.split(/\r?\n/)[inner.line - 1] ?? '';
-            if (line.slice(inner.column - 1).startsWith('<' + row.tag)) reason = `Plumb's location opens <${row.tag}> on disk; react-grab names the rendering component.`;
+            if (line.slice(inner.column - 1).startsWith('<' + row.tag)) reason = `React Plumber's location opens <${row.tag}> on disk; react-grab names the rendering component.`;
           } catch {}
         }
         // A react-grab answer that is not JSX on disk (a hook line, a data object: a module whose map is off) cannot be
-        // the element's site; Plumb's server-verified chain stands. Recorded with what the server found there.
+        // the element's site; React Plumber's server-verified chain stands. Recorded with what the server found there.
         if (!reason && checks.every(result => result.verified) && row.oracle.lineNumber) {
           const at = await readCheck(origin, '/__plumb/resolve', { source: row.oracle.filePath, line: row.oracle.lineNumber, column: row.oracle.columnNumber ?? 1 });
           oracleCheck = at;
@@ -717,8 +717,8 @@ function stable(row) {
   return JSON.stringify(value);
 }
 
-// The app's own page errors, with neither Plumb nor react-grab loaded (AlgoRecall's server render does not match its
-// client). Only an error the app does not throw alone is charged to Plumb.
+// The app's own page errors, with neither React Plumber nor react-grab loaded (AlgoRecall's server render does not match its
+// client). Only an error the app does not throw alone is charged to React Plumber.
 const errorKey = text => String(text).split('\n')[0].replace(/https?:\/\/[^\s)]+/g, '<url>').replace(/\?v=[0-9a-f]+/g, '');
 async function appOwnErrors(browser, app, scratch) {
   const host = await startServer(app, scratch, { baseline: true });
@@ -751,11 +751,11 @@ async function verifyApp(browser, app, scratch) {
     check(response.ok, `Initial Vite page returned ${response.status}`);
     const html = response.body;
     check(typeof html === 'string' && html.includes('data-verification-react-grab') && html.includes('/__plumb/client.js'),
-      'Initial HTML must load both react-grab and Plumb');
+      'Initial HTML must load both react-grab and React Plumber');
     const held = await get(host.origin, '/__plumb/health');
     report.startup.heldHealth = held;
     report.startup.independent = held.ok && held.body.status === 'starting';
-    check(report.startup.independent, 'Startup waits on Plumb or readiness gate failed');
+    check(report.startup.independent, 'Startup waits on React Plumber or readiness gate failed');
     host.child.send({ type: 'release' });
     report.startup.gateReleasedMs = performance.now() - host.start;
     context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
@@ -779,7 +779,7 @@ async function verifyApp(browser, app, scratch) {
         check(navigation?.ok(), `${path} returned ${navigation?.status()}`);
         await page.waitForFunction(() => window.__plumb?.overlay && window.__REACT_GRAB__?.getSource, null, { timeout });
         const health = await bounded(page.evaluate(() => window.__plumb.ready()), 'window.__plumb.ready()', 120_000);
-        check(health.status === 'ready', `Plumb readiness: ${health.status}`);
+        check(health.status === 'ready', `React Plumber readiness: ${health.status}`);
         if (report.startup.readyMs === undefined) {
           report.startup.readyMs = performance.now() - host.start;
           report.startup.readyAfterReleaseMs = report.startup.readyMs - report.startup.gateReleasedMs;
@@ -891,7 +891,7 @@ async function verifyApp(browser, app, scratch) {
           && /status of 503/.test(error.text));
         record.plumbConsoleErrors = record.plumbConsoleErrors.filter(error => !record.recoveredBusyConsoleErrors.includes(error));
         if (record.pageErrors.length) record.failures.push(`${record.pageErrors.length} page errors`);
-        if (record.plumbConsoleErrors.length) record.failures.push(`${record.plumbConsoleErrors.length} Plumb console errors`);
+        if (record.plumbConsoleErrors.length) record.failures.push(`${record.plumbConsoleErrors.length} React Plumber console errors`);
         report.failures.push(...record.failures.map(failure => `${path}: ${failure}`));
         console.log(app.name + ' ' + path + ': ' + (record.counts?.sampled ?? 0) + ' samples; ' + record.failures.length + ' failures');
       }
@@ -929,15 +929,15 @@ function summary(report) {
 async function writeReports(reports, fatal = null) {
   await fsp.mkdir(output, { recursive: true });
   for (const report of reports) await fsp.writeFile(join(output, `verify.${report.app}.json`), JSON.stringify(report, null, 2) + '\n');
-  const lines = ['# Plumb overlay end-to-end verification', '', `Run: ${new Date().toISOString()}`, '',
+  const lines = ['# React Plumber overlay end-to-end verification', '', `Run: ${new Date().toISOString()}`, '',
     'Command: `PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [app ...]`', '',
     'Reports use docs/verification/. App servers run sequentially against frozen git-visible working-tree copies, including uncommitted edits and explicit ignored runtime inputs. Git reads original HEAD and file lists; originals remain read-only.', '',
-    'Startup is measured from child launch to the first successful HTML response. Plumb initialization is held until that response and a starting health response are observed. Ready time includes the gate and browser loading; it is not an ungated startup benchmark.', '',
+    'Startup is measured from child launch to the first successful HTML response. React Plumber initialization is held until that response and a starting health response are observed. Ready time includes the gate and browser loading; it is not an ungated startup benchmark.', '',
     'Up to 150 visible React elements per page are sampled twice using the same DOM references and fresh overlay readings on the second pass. Detached or re-rendered samples are excluded; a page with >30% of its sampled nodes detached across the two passes is resampled once after up to 10 seconds waiting for 500 ms without DOM mutations and two quiet frames. Dependency oracle answers are counted as oracle-library. Exactness checks cover up to 20 placed elements per app.', '',
     'Busy responses in server checks and bursts retain request, status, body, and retry evidence. Only 503 busy answers recovered on retry with health <100 ms throughout are accepted. Interaction search covers every sampled page and up to 400 extra rendered elements per app; no choices is informational. Chain stepping and no-preview Undo are tested independently. Unexplained disagreements, failed server checks, unstable results, errors, failed interactions, and health >=100 ms fail the run.', '',
     'Write permits one exact overlay apply request per app. Source bytes, automatic dev reload/HMR, current overlay reading without preview, CLI findings before/after and original working-tree hashes are checked. The proven edit is restored after the server stops, then the existing whole-copy integrity guard runs.', '',
-    'Write-phase browser 503 responses retain their bodies, same-URL read-only retries and health in interaction.write.busyReads. They are accepted only after the overlay returns current and both health responses are ready below 100 ms. Their console messages remain in recoveredBusyConsoleErrors; all other Plumb console errors still fail.', '',
-    '| App | Result | Page ms | Ready ms | Sample | Detached | Oracle library | Match | Plumb only | Grab only | Disagree | JSX exact | Locate p95 ms | Health max ms | Write |',
+    'Write-phase browser 503 responses retain their bodies, same-URL read-only retries and health in interaction.write.busyReads. They are accepted only after the overlay returns current and both health responses are ready below 100 ms. Their console messages remain in recoveredBusyConsoleErrors; all other React Plumber console errors still fail.', '',
+    '| App | Result | Page ms | Ready ms | Sample | Detached | Oracle library | Match | React Plumber only | Grab only | Disagree | JSX exact | Locate p95 ms | Health max ms | Write |',
     '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |'];
   for (const report of reports) {
     const row = summary(report);
@@ -971,7 +971,7 @@ async function writeReports(reports, fatal = null) {
 async function main() {
   const selected = process.argv.slice(2);
   if (selected.includes('--help')) {
-    console.log('PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [metalui kamui craftingattention algorecall]\nUses existing dist build; frozen inputs on by default; writes only docs/verification/ and Plumb-local temporary caches.');
+    console.log('PLUMB_CHROMIUM=/path/to/chromium node bench/apps/verify.mjs [metalui kamui craftingattention algorecall]\nUses existing dist build; frozen inputs on by default; writes only docs/verification/ and React Plumber-local temporary caches.');
     return;
   }
   check(selected.every(name => apps.some(app => app.name === name)), `Unknown app: ${selected.filter(name => !apps.some(app => app.name === name)).join(', ')}`);
@@ -983,11 +983,11 @@ async function main() {
     // Launch before starting any app. Failure produces a nonzero report, never a successful skip.
     await fsp.mkdir(join(repo, 'fixtures/.verify-frozen'), { recursive: true });
     scratch = await fsp.mkdtemp(join(repo, 'fixtures/.verify-frozen/plumb-verify-'));
-    const toolSource = resolve(process.env.PLUMB_VERIFY_TOOL_ROOT ?? repo);
-    check(toolSource === repo || toolSource.startsWith(repo + sep), 'Tool snapshot source must be inside Plumb');
+    const toolSource = resolve((process.env.PLUMBER_VERIFY_TOOL_ROOT ?? process.env.PLUMB_VERIFY_TOOL_ROOT) ?? repo);
+    check(toolSource === repo || toolSource.startsWith(repo + sep), 'Tool snapshot source must be inside React Plumber');
     tool = await freezeTool(toolSource, join(scratch, 'tool'), grabFile);
     process.env.TMPDIR = scratch;
-    browser = await chromium.launch({ executablePath: process.env.PLUMB_CHROMIUM });
+    browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) });
     for (const app of targets) {
       const directory = join(scratch, app.name); await fsp.mkdir(directory, { recursive: true });
       const frozen = await freezeApp({ ...app, toolRoot: tool.directory }, directory);
@@ -1014,7 +1014,7 @@ async function main() {
     if (browser) await browser.close().catch(error => { fatal ??= message(error); });
     if (tool) {
       tool.unchanged = tool.sha256 === await fingerprint([tool.directory]);
-      if (!tool.unchanged) fatal ??= 'Frozen Plumb runtime changed during verification';
+      if (!tool.unchanged) fatal ??= 'Frozen React Plumber runtime changed during verification';
     }
     if (scratch) await fsp.rm(scratch, { recursive: true, force: true }).catch(error => { fatal ??= message(error); });
   }

@@ -1,3 +1,4 @@
+import { statePath } from '../paths.js';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
@@ -26,7 +27,7 @@ function instructions(before: string, body: string, file: string): string {
   const ends = before.split(markers.end).length - 1;
   if (!starts && !ends) return before + (before ? (before.endsWith('\n') ? '\n' : '\n\n') : '') + markers.start + '\n' + body + markers.end + '\n';
   const start = before.indexOf(markers.start), end = before.indexOf(markers.end);
-  if (starts !== 1 || ends !== 1 || end < start) throw new UsageError('Invalid Plumb markers in ' + file + '; no install files changed.');
+  if (starts !== 1 || ends !== 1 || end < start) throw new UsageError('Invalid React Plumber markers in ' + file + '; no install files changed.');
   return before.slice(0, start + markers.start.length) + '\n' + body + before.slice(end);
 }
 
@@ -66,12 +67,12 @@ async function approvers(repo: string, path: string): Promise<{ logins: string[]
 async function workflow(root: string): Promise<{ file: string; text: string; notes: string[] }> {
   const repo = git(root, 'rev-parse', '--show-toplevel') ?? root;
   const workingDirectory = relative(repo, root).replaceAll('\\', '/') || '.';
-  const owners = await approvers(repo, `${workingDirectory === '.' ? '' : workingDirectory + '/'}.plumb/ledger.jsonl`);
+  const owners = await approvers(repo, `${workingDirectory === '.' ? '' : workingDirectory + '/'}${relative(root, statePath(root, 'ledger.jsonl'))}`);
   const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
   const metadata = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as { repository: { url: string }; gitHead?: string };
   const repository = metadata.repository.url.replace(/^git\+https:\/\/github.com\//, '').replace(/\.git$/, '');
   // An installed package can live inside the consumer's Git tree. Its HEAD is
-  // not a Plumb revision and must never become the action's pin.
+  // not a React Plumber revision and must never become the action's pin.
   const revision = git(packageRoot, 'rev-parse', '--show-toplevel') === resolve(packageRoot) ? git(packageRoot, 'rev-parse', 'HEAD') : metadata.gitHead;
   const action = `${repository}@${revision && /^[a-f\d]{40}$/.test(revision) ? revision : 'main'}`;
   let dependencies = '';
@@ -80,10 +81,10 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
   else if (existsSync(join(repo, 'yarn.lock'))) dependencies = '      - run: corepack enable && yarn install --immutable\n';
   else if (existsSync(join(repo, 'package.json'))) dependencies = '      - run: npm install\n';
   const notes = [owners.source ? `CI approvers: ${owners.logins.join(', ') || 'none'} from ${owners.source}.` : 'CI approvers: none. Set ledger-approvers in .github/workflows/plumb.yml before approving new tokens or exceptions.'];
-  if (!revision) notes.push('Action revision: main. Pin it to a reviewed Plumb commit in .github/workflows/plumb.yml.');
+  if (!revision) notes.push('Action revision: main. Pin it to a reviewed React Plumber commit in .github/workflows/plumb.yml.');
   if (owners.teams.length) notes.push(`CODEOWNERS teams: ${owners.teams.join(', ')}. The action accepts individual GitHub logins; add team members to ledger-approvers.`);
   return { file: join(repo, '.github/workflows/plumb.yml'), notes, text:
-    'name: Plumb\non:\n  pull_request:\n  pull_request_review:\n    types: [submitted, dismissed]\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  plumb:\n    runs-on: ubuntu-latest\n    steps:\n' +
+    'name: React Plumber\non:\n  pull_request:\n  pull_request_review:\n    types: [submitted, dismissed]\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  plumb:\n    runs-on: ubuntu-latest\n    steps:\n' +
     '      - uses: actions/checkout@v4\n        with:\n          ref: ${{ github.event.pull_request.head.sha }}\n          fetch-depth: 0\n' +
     "      - uses: actions/setup-node@v4\n        with:\n          node-version: '22.18.0'\n" + dependencies +
     `      - uses: ${action}\n        with:\n          base: \${{ github.event.pull_request.base.sha }}\n          working-directory: ${JSON.stringify(workingDirectory)}\n` +
@@ -103,36 +104,36 @@ export async function installOverlay(root: string, write = false): Promise<strin
   }
   if (dependencies.next) return [
     'Wrap your existing next.config.mjs export:',
-    "import { withPlumb } from '@unlocalhosted/plumb/next/config';",
+    "import { withPlumb } from '@unlocalhosted/react-plumber/next/config';",
     'export default withPlumb(nextConfig);',
-    '// Keeps existing pageExtensions and serverExternalPackages; adds Plumb only in development.',
+    '// Keeps existing pageExtensions and serverExternalPackages; adds React Plumber only in development.',
     '',
     'Add to app/%5F_plumb/[...path]/route.plumb.ts (or src/app/%5F_plumb/[...path]/route.plumb.ts):',
     '// Serves /__plumb/*; a literal app/__plumb/ folder is private in Next.js.',
-    "import { createPlumbRoute } from '@unlocalhosted/plumb/next';",
+    "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';",
     "export const runtime = 'nodejs';",
     'export const { GET, POST } = createPlumbRoute();',
     '',
     'Add to your root layout:',
-    "import { PlumbOverlay } from '@unlocalhosted/plumb/next';",
+    "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';",
     '// Inside <body>:',
     '<PlumbOverlay />',
     '',
   ].join('\n');
   if (dependencies.vite) return [
     'Add to vite.config.ts:',
-    "import { plumb } from '@unlocalhosted/plumb/vite';",
+    "import { plumb } from '@unlocalhosted/react-plumber/vite';",
     '// Put first in your existing plugins array, before react():',
     'plumb()',
     '',
   ].join('\n');
-  const discovery = await content(join(root, '.plumb/serve.json'));
+  const discovery = await content(statePath(root, 'serve.json'));
   const info = discovery === undefined ? undefined : JSON.parse(discovery) as ServeInfo;
   const ready = info?.overlay === true && info.root === resolve(root) && Number.isSafeInteger(info.port) && info.port > 0 && info.port <= 65535 && /^[a-f\d]{64}$/.test(info.token);
   return [
     ...(ready ? [] : ['Start your overlay server (replace the origin with your development page origin):',
-      'plumb serve --overlay --port 7331 --origin http://localhost:5555',
-      'Run plumb install --overlay again for the exact port and process token, or replace TOKEN_FROM_SERVE_JSON with .plumb/serve.json token.', '']),
+      'plumber serve --overlay --port 7331 --origin http://localhost:5555',
+      `Run plumber install --overlay again for the exact port and process token, or replace TOKEN_FROM_SERVE_JSON with ${relative(root, statePath(root, 'serve.json'))} token.`, '']),
     'Paste into your development page only:',
     `<script type="module" src="http://127.0.0.1:${ready ? info!.port : 7331}/__plumb/client.js" data-plumb-token="${ready ? info!.token : 'TOKEN_FROM_SERVE_JSON'}"></script>`,
     '',
@@ -151,12 +152,12 @@ export async function installProject(root: string, options: InstallOptions = {})
   const selected = [...new Set([...detected.keys(), ...options.agents ?? []])];
   if (!selected.length) selected.push('generic');
   // Read the package's copy, never a consumer's similarly named skill.
-  const skill = await readFile(new URL('../../skills/plumb/SKILL.md', import.meta.url), 'utf8');
+  const skill = await readFile(new URL('../../skills/plumber/SKILL.md', import.meta.url), 'utf8');
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(skill);
-  if (!frontmatter) throw new UsageError('Packaged Plumb skill is missing frontmatter.');
+  if (!frontmatter) throw new UsageError('Packaged React Plumber skill is missing frontmatter.');
   const body = skill.slice(frontmatter[0].length);
   const description = /^description: (.*)$/m.exec(frontmatter[1]!)?.[1];
-  if (!description) throw new UsageError('Packaged Plumb skill is missing description.');
+  if (!description) throw new UsageError('Packaged React Plumber skill is missing description.');
   const plans: { file: string; before?: string; after: string }[] = [];
   async function add(name: string, render: (before: string | undefined) => string): Promise<void> {
     const file = join(root, name);
@@ -165,9 +166,9 @@ export async function installProject(root: string, options: InstallOptions = {})
     plans.push({ file, ...(before === undefined ? {} : { before }), after: render(before) });
   }
   for (const agent of selected) {
-    if (agent === 'claude') await add('.claude/skills/plumb/SKILL.md', () => skill);
-    else if (agent === 'cursor') await add('.cursor/rules/plumb.mdc', () => '---\ndescription: ' + JSON.stringify(description) + '\nglobs: ' + globs + '\nalwaysApply: false\n---\n' + body);
-    else if (agent === 'windsurf') await add('.windsurf/rules/plumb.md', () => '---\ntrigger: always_on\n---\n' + body);
+    if (agent === 'claude') await add('.claude/skills/plumber/SKILL.md', () => skill);
+    else if (agent === 'cursor') await add('.cursor/rules/plumber.mdc', () => '---\ndescription: ' + JSON.stringify(description) + '\nglobs: ' + globs + '\nalwaysApply: false\n---\n' + body);
+    else if (agent === 'windsurf') await add('.windsurf/rules/plumber.md', () => '---\ntrigger: always_on\n---\n' + body);
     else {
       const name = agent === 'copilot' ? '.github/copilot-instructions.md' : agent === 'gemini' ? 'GEMINI.md' : 'AGENTS.md';
       await add(name, before => instructions(before ?? '', body, name));

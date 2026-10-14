@@ -1,11 +1,11 @@
 {
-  "name": "@unlocalhosted/plumb",
+  "name": "@unlocalhosted/react-plumber",
   "version": "0.1.0",
   "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "plumb": "./dist/cli.js"
+    "plumber": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -43,7 +43,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && PLUMB_WATCH=1 PLUMB_POLLING=0 node --test --test-concurrency=1 e2e/*.test.mjs && PLUMB_WATCH=1 PLUMB_POLLING=1 node --test e2e/serve.test.mjs && PLUMB_WATCH=0 PLUMB_POLLING=0 node --test e2e/serve.test.mjs",
+    "test": "npm run build && PLUMBER_WATCH=1 PLUMBER_POLLING=0 node --test --test-concurrency=1 e2e/*.test.mjs && PLUMBER_WATCH=1 PLUMBER_POLLING=1 node --test e2e/serve.test.mjs && PLUMBER_WATCH=0 PLUMBER_POLLING=0 node --test e2e/serve.test.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {

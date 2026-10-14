@@ -15,14 +15,14 @@ import { UsageError } from '../dist/errors.js';
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
 const hash = text => createHash('sha256').update(text).digest('hex');
 const stale = 'The file changed since the overlay read it. Read it again.';
-const protectedPaths = ['.plumb/ledger.jsonl', 'plumb.config.ts', 'src/styles.css'];
+const protectedPaths = ['.plumber/ledger.jsonl', 'plumber.config.ts', 'src/styles.css'];
 async function project(t, code = 'export const App = () => <div className="py-[10px] gap-[13px]" />;\n') {
   const root = await mkdtemp(join(repo, 'fixtures/.edits-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   await writeFile(join(root, 'src/App.tsx'), code);
-  await mkdir(join(root, '.plumb'), { recursive: true });
-  await writeFile(join(root, '.plumb/ledger.jsonl'), '');
+  await mkdir(join(root, '.plumber'), { recursive: true });
+  await writeFile(join(root, '.plumber/ledger.jsonl'), '');
   return root;
 }
 function run(root, args, input) {
@@ -41,7 +41,7 @@ async function transport(t, root, mode) {
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill('SIGTERM'); await once(child, 'exit'); } assert.equal(errors, ''); });
   let info;
   for (let i = 0; i < 300; i++) {
-    try { info = JSON.parse(await readFile(join(root, '.plumb/serve.json'), 'utf8')); break; } catch {}
+    try { info = JSON.parse(await readFile(join(root, '.plumber/serve.json'), 'utf8')); break; } catch {}
     assert.equal(child.exitCode, null, errors); await delay(20);
   }
   assert.ok(info, errors || 'daemon did not start');
@@ -139,7 +139,7 @@ test('Session applies tracked stylesheet edits while excluding imported and unse
   const root = await project(t);
   await writeFile(join(root, 'src/local.css'), '.local { gap: 10px; padding: 13px; }\n');
   await writeFile(join(root, 'src/theme.css'), '@theme { --spacing-unused: 22px; } .theme { gap: 10px; }\n');
-  await writeFile(join(root, 'plumb.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-s*' } } };\n");
+  await writeFile(join(root, 'plumber.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-s*' } } };\n");
   const session = await transport(t, root, 'Session'), file = join(root, 'src/local.css');
   const result = await session.edits(file, 1), choice = result.edits.find(edit => edit.from === '10px');
   assert.ok(choice); const applied = await session.apply(selection(result, [choice]));
@@ -367,7 +367,7 @@ test('overlay review 1: configured sibling sources cannot be edited through nati
   const { relative, sep } = await import('node:path');
   const outside = relative(root, file);
   assert.ok(outside.startsWith('..' + sep));
-  await writeFile(join(root, 'plumb.config.ts'), `export default { source: ['src/**/*.tsx', ${JSON.stringify(relative(root, join(sibling, 'src')).replaceAll('\\', '/') + '/**/*.tsx')}] };`);
+  await writeFile(join(root, 'plumber.config.ts'), `export default { source: ['src/**/*.tsx', ${JSON.stringify(relative(root, join(sibling, 'src')).replaceAll('\\', '/') + '/**/*.tsx')}] };`);
   const session = await transport(t, root, 'Engine');
   const offered = await session.request('edits', { file, line: 1 });
   assert.ok(offered.edits.length, 'configured sibling is analyzed and has legitimate edit ids');

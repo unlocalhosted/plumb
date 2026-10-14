@@ -8,7 +8,7 @@ import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
 import { serve } from '../../dist/session/server.js';
 const repo = resolve('.'), live = '/Users/vijaysingh/unlocalhosted/metalui';
-const cache = process.env.PLUMB_CACHE_DIR ?? resolve('bench/metalui/.cache/2-serve');
+const cache = (process.env.PLUMBER_CACHE_DIR ?? process.env.PLUMB_CACHE_DIR) ?? resolve('bench/metalui/.cache/2-serve');
 process.env.PLUMB_CACHE_DIR = cache;
 const snapshot = resolve(cache, 'input'), configs = resolve(cache, 'config');
 const command = (bin, args, extra = {}) => {
@@ -38,7 +38,7 @@ for (const entry of readdirSync(resolve(live, 'node_modules'), { withFileTypes: 
   } else if (!existsSync(target)) symlinkSync(resolve(live, 'node_modules', entry.name), target);
 }
 mkdirSync(configs, { recursive: true });
-for (const name of ['plumb.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
+for (const name of ['plumber.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
   const text = readFileSync(resolve('bench/metalui', name), 'utf8').replaceAll("'../../dist/", `'${repo}/dist/`)
     .replace("new URL('../../../metalui/', import.meta.url)", `new URL(${JSON.stringify(pathToFileURL(snapshot + '/').href)})`)
     .replace("new URL('../../../metalui/tokens/tokens.json', import.meta.url)", `new URL(${JSON.stringify(pathToFileURL(resolve(snapshot, 'tokens/tokens.json')).href)})`);
@@ -90,7 +90,7 @@ try {
     assert.ok(result.findings.some(f => f.sites.some(s => s.text.includes(`${amount}px`))), 'site returns edited class'); latencies.push(ms);
   }
   const tries = [];
-  const siteProfile = process.env.PLUMB_PROFILE === '1' ? (await request('/health')).profile : undefined;
+  const siteProfile = (process.env.PLUMBER_PROFILE ?? process.env.PLUMB_PROFILE) === '1' ? (await request('/health')).profile : undefined;
   await request('/try', { code: '<div className="gap-[137px]" />', lang: 'tsx', as: file });
   for (let i = 0; i < trials; i++) {
     const start = performance.now(); const result = await request('/try', { code: '<div className="gap-[137px]" />', lang: 'tsx', as: file });

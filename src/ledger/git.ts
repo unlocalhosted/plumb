@@ -1,8 +1,9 @@
+import { allConfigNames } from '../paths.js';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
-import { ledgerPath, parseLedger } from './store.js';
+import { parseLedger } from './store.js';
 import type { LedgerEntry } from './types.js';
 
 function git(root: string, args: string[]): string {
@@ -25,7 +26,9 @@ function refFile(context: { top: string; commit: string }, file: string): string
 }
 export function ledgerAt(root: string, ref: string): LedgerEntry[] {
   const context = gitContext(root, ref);
-  return parseLedger(refFile(context, ledgerPath(root)), `${ref}:.plumb/ledger.jsonl`);
+  const current = refFile(context, resolve(root, '.plumber/ledger.jsonl'));
+  const exists = git(context.top, ['ls-tree', '--name-only', context.commit, '--', relative(context.top, resolve(root, '.plumber/ledger.jsonl'))]).trim();
+  return parseLedger(exists ? current : refFile(context, resolve(root, '.plumb/ledger.jsonl')), `${ref}:ledger.jsonl`);
 }
 export function changedFiles(root: string, ref: string): Set<string> {
   const context = gitContext(root, ref);
@@ -35,7 +38,7 @@ export function changedFiles(root: string, ref: string): Set<string> {
 }
 export async function configGrowth(root: string, config: string | null): Promise<{ file: string; line: number; text: string }[]> {
   const context = gitContext(root, 'HEAD');
-  const paths = new Set(['ts', 'mts', 'mjs', 'js'].map(ext => resolve(root, `plumb.config.${ext}`)));
+  const paths = new Set(allConfigNames.map(name => resolve(root, name)));
   if (config) paths.add(config);
   const added: { file: string; line: number; text: string }[] = [];
   for (const file of paths) {
@@ -43,7 +46,8 @@ export async function configGrowth(root: string, config: string | null): Promise
     try { text = await readFile(file, 'utf8'); }
     catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue; throw error; }
     const counts = new Map<string, number>();
-    for (const line of refFile(context, file).split(/\r?\n/).map(line => line.trim()).filter(Boolean)) counts.set(line, (counts.get(line) ?? 0) + 1);
+    const before = refFile(context, file) || (file.includes('plumber.config.') ? refFile(context, file.replace('plumber.config.', 'plumb.config.')) : '');
+    for (const line of before.split(/\r?\n/).map(line => line.trim()).filter(Boolean)) counts.set(line, (counts.get(line) ?? 0) + 1);
     text.split(/\r?\n/).forEach((text, index) => {
       const line = text.trim(); if (!line) return;
       const count = counts.get(line) ?? 0;

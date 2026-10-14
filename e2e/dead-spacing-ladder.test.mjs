@@ -18,8 +18,8 @@ test('numeric utilities and compiled spacing expressions keep only used configur
   const root = await mkdtemp(join(repo, 'fixtures/.dead-spacing-ladder-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/tailwind-min'), root, { recursive: true, filter: p => !p.includes('.plumb-cache') });
-  await rm(join(root, 'plumb.config.ts'));
-  await writeFile(join(root, 'plumb.config.mjs'), `export default {
+  await rm(join(root, 'plumber.config.ts'));
+  await writeFile(join(root, 'plumber.config.mjs'), `export default {
     decisions: { spacing: { callers: ['primitive', 'semantic'], from: () =>
       [0, 0.5, 2, 3, 4, 6, 8, 10].map(step => ({
         family: 'spacing', name: '--spacing-' + step, value: 'calc(var(--spacing) * ' + step + ')',

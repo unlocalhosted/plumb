@@ -1,4 +1,4 @@
-import config from './plumb.config.ts';
+import config from './plumber.config.ts';
 
 // These are library-authored token sources, published beyond the docs tree.
 // Leave docs-only variables visible to the unused-decision report.

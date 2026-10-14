@@ -67,7 +67,7 @@ test('component modules provide CSS existence proof across workspace and package
   await writeFile(join(directory, 'node_modules/ui-kit/dynamic.js'), 'export const value = 1;');
   assert.deepEqual(run(directory).report.findings.map(f => f.declaration.value), ['kit-unused'], 'type-only imports never supply CSS proof');
   await writeFile(join(directory, 'tsconfig.json'), JSON.stringify({ compilerOptions: { paths: { 'ui-kit': ['./packages/ui-kit/index.js'] } } }));
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { source: ['src/**/*.tsx', 'packages/ui-kit/kit.css'] };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { source: ['src/**/*.tsx', 'packages/ui-kit/kit.css'] };");
   const explicit = run(directory).report;
   const sheet = explicit.stylesheets.find(s => s.file.endsWith('/packages/ui-kit/kit.css'));
   assert.equal(sheet.sourceOrigin, 'project', 'explicit source CSS remains a project site');
@@ -78,7 +78,7 @@ test('stylesheet and inline feature slice through real CLI and explain', async t
   const directory = await mkdtemp(join(root, 'fixtures/.layer2-e2e-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await cp(join(root, 'fixtures/stylesheets-inline'), directory, { recursive: true });
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { css: 'styles/entry.css', source: ['src/**/*.{tsx,js,css}', 'styles/{entry,source,imported}.css'] };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'styles/entry.css', source: ['src/**/*.{tsx,js,css}', 'styles/{entry,source,imported}.css'] };");
   const first = run(directory);
   assert.equal(first.status, 1);
   assert.deepEqual(first.report.findings.filter(finding => finding.rule.startsWith('existence/')).map(finding => finding.declaration.value), ['forgotten']);

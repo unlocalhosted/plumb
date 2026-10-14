@@ -1,3 +1,5 @@
+import { isLedgerPath } from '../paths.js';
+import { environment } from '../paths.js';
 import { parentPort, workerData } from 'node:worker_threads';
 import { analyze } from '../index.js';
 import type { CheckOptions } from '../index.js';
@@ -61,8 +63,8 @@ const dependencies = () => [...new Set([...state.dependencies, ...state.collecti
   ...raw.declarations.map(d => d.site.file), ...raw.stylesheets.map(s => s.file), ...raw.decisions.map(d => d.source.file), ...(raw.config.path ? [raw.config.path] : [])])];
 async function update(paths: string[]): Promise<string[]> {
   let affected: string[] = [];
-  if (paths.some(p => p.endsWith('/.plumb/ledger.jsonl'))) ledger = await readLedger(options.root!);
-  if (paths.some(p => !p.endsWith('/.plumb/ledger.jsonl'))) {
+  if (paths.some(p => isLedgerPath(p))) ledger = await readLedger(options.root!);
+  if (paths.some(p => !isLedgerPath(p))) {
     const signature = (file: string) => { const value = state.collection.slices.get(file)?.value; return JSON.stringify([value?.modules, state.embeddedShape(file), value?.styles.declarations.filter(d => d.prop.startsWith('--'))], (_, item) => item instanceof Map ? [...item] : item); };
     const candidates = new Set(paths);
     for (const path of paths) for (const file of state.collection.consumers.get(path) ?? []) candidates.add(file);
@@ -79,7 +81,7 @@ async function update(paths: string[]): Promise<string[]> {
     for (const file of affected) localReports.delete(file);
     if (sharedDirty || paths.some(file => file.endsWith('.css'))) localReports.clear();
   }
-  if (paths.some(p => p.endsWith('/.plumb/ledger.jsonl'))) localReports.clear();
+  if (paths.some(p => isLedgerPath(p))) localReports.clear();
   classified = undefined; revision++;
   return affected;
 }
@@ -238,7 +240,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     return { revision, dependencyQueries, dependencyDelta: [...new Set(queryDependencies.flatMap(([, paths]) => paths))],
       files: state.collection.parsedFiles, visited: state.collection.visitedFiles, judged: state.judgement.judgedFiles,
       timing: raw.timing, queryDependencies,
-      ...(process.env.PLUMB_PROFILE === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
+      ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   }
   if (method === 'report') return report(params as CheckOptions);
   if (method === 'classes') {
@@ -317,7 +319,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   }
   if (method === 'decisions') return (sharedDirty ? await current() : raw).decisions;
   if (method === 'why') return inspectLedger('why', `${params.file}:${params.line}`, await report());
-  if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(process.env.PLUMB_PROFILE === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
+  if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   if (method === 'try') {
     const result = (await analyze({ ...options, ...(params.verbose === undefined ? {} : { verbose: params.verbose as boolean }), ledger: false }, { text: params.code as string, ...(params.lang ? { lang: params.lang as 'tsx' | 'css' } : {}), ...(params.as ? { as: params.as as string } : {}) }, state)).report;
     result.notes.push('Dead decisions skipped: try judges a snippet, not whole-project usage. Ledger allowances are not applied.');

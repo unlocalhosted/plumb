@@ -1,6 +1,6 @@
+import { cacheDirectory } from '../paths.js';
 import { serialize, deserialize } from 'node:v8';
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import type { ClassSite } from './classes.js';
@@ -18,7 +18,7 @@ interface SerializedData extends Omit<Data, 'styles'> {
 interface Receipt { data: SerializedData; dependencies: [string, string][]; resolutions: [string, string | null][] }
 export function collectionCache(root: string, helpers: ClassHelperInput[], texts: Map<string, string>) {
   const key = sourceHash(JSON.stringify(['classes-inline-v9-template-boundaries-computed', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
-  const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'sources');
+  const directory = resolve(cacheDirectory(root), 'sources');
   const path = join(directory, `${key}.v8`);
   return {
     async read(resolveImport: (file: string, specifier: string) => string | undefined): Promise<Data | undefined> {

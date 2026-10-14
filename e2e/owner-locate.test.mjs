@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import react from '@vitejs/plugin-react';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 // These regressions deliberately exercise owner-stack locate without stamps.
 function unstamped(options) {
@@ -99,8 +99,8 @@ export async function project(t, version, transform, { holdStartup = false } = {
   await writeFile(join(root, 'src/App.jsx'), source);
   await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
   if (holdStartup) {
-    const config = await readFile(join(root, 'plumb.config.ts'), 'utf8');
-    await writeFile(join(root, 'plumb.config.ts'), `import { access } from 'node:fs/promises';
+    const config = await readFile(join(root, 'plumber.config.ts'), 'utf8');
+    await writeFile(join(root, 'plumber.config.ts'), `import { access } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 while (true) { try { await access(${JSON.stringify(join(root, 'startup.release'))}); break; } catch { await delay(20); } }
 ${config}`);
@@ -131,7 +131,7 @@ createRoot(document.getElementById('root')).render(<App />);
 }
 async function browser(t) {
   try {
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => browser.close()); return browser;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;

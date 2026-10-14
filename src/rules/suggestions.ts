@@ -1,5 +1,5 @@
+import { cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import type { CandidateCss } from '../lower/css.js';
@@ -8,7 +8,7 @@ import type { CandidateCss } from '../lower/css.js';
  * Locations, marker/existence proof and grouping still run on fresh inputs. */
 export async function suggestionCache(root: string, candidates: Map<string, CandidateCss>, hints: { token: string; prefix: string }[], readOnly = false) {
   const key = createHash('sha256').update(JSON.stringify(['ranking-messages-v4-isolated', hints, [...candidates].map(([token, result]) => [token, !result.unreadable && !!result.css?.trim()])])).digest('hex');
-  const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'rankings');
+  const directory = resolve(cacheDirectory(root), 'rankings');
   const path = join(directory, `${key}.json`);
   let entries: [string, string[]][] = [];
   try { entries = JSON.parse(await readFile(path, 'utf8')); }

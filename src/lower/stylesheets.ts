@@ -1,5 +1,6 @@
+import { environment, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -151,14 +152,14 @@ async function compiler(entry: string): Promise<{ compile(css: string, options: 
   let path = tailwind;
   try {
     // Tests force the plain tailwindcss path that projects without @tailwindcss/node take.
-    if (process.env.PLUMB_TAILWIND_DIRECT === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
+    if (environment('TAILWIND_DIRECT') === '1') throw Object.assign(new Error('direct'), { code: 'MODULE_NOT_FOUND' });
     const node = require.resolve('@tailwindcss/node');
     if (createRequire(node).resolve('tailwindcss') === tailwind) path = node;
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error; }
   // require.resolve finds a package's CommonJS build; importing that puts the API under default.
   const loaded = await import(pathToFileURL(path).href) as { compile?: unknown; default?: { compile?: unknown } };
   const api = typeof loaded.compile === 'function' ? loaded : loaded.default;
-  if (typeof api?.compile !== 'function') throw new Error(`${path} does not export compile; Plumb needs Tailwind CSS 4.`);
+  if (typeof api?.compile !== 'function') throw new Error(`${path} does not export compile; React Plumber needs Tailwind CSS 4.`);
   return api as Awaited<ReturnType<typeof compiler>>;
 }
 
@@ -198,8 +199,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(sheet => dependency(sheet.source.file, sheet.css)));
   const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v3-isolated', version, entry, dependencies, embeddedDependencies, diagnostics,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
-  const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
-  const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'stylesheets');
+  const directory = resolve(cacheDirectory(root), 'stylesheets');
   const path = join(directory, `${hash}.json`);
   try { return JSON.parse(await readFile(path, 'utf8')) as LoweredStylesheets; }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }

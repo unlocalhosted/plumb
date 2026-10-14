@@ -1,3 +1,4 @@
+import { statePath } from '../paths.js';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -67,7 +68,7 @@ function componentSource(root: string): string | undefined {
 
 export async function initProject(root: string, options: { config?: string; force?: boolean }, print: (text: string) => void): Promise<{ message: string; entries: import('../ledger/types.js').LedgerEntry[]; moves: never[] }> {
   const loaded = await loadConfig(root, options.config);
-  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}. Run plumb init --force to replace it after reviewing the diff.`);
+  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}. Run plumber init --force to replace it after reviewing the diff.`);
   const ledger = await readLedger(root); // Refuse malformed state before writing config.
   const scratch = await mkdtemp(join(tmpdir(), 'plumb-init-'));
   try {
@@ -93,7 +94,7 @@ export async function initProject(root: string, options: { config?: string; forc
       const family = [...proposals].find(([, records]) => value() === records)![0];
       return `__plumb_${family}__`;
     }, 2).replace(/"(__plumb_\w+__)"/g, (match, key: string) => functions.get(key) ?? match);
-    let text = '// Inferred by Plumb. Review token sources and habits with the design owner.\n' +
+    let text = '// Inferred by React Plumber. Review token sources and habits with the design owner.\n' +
       [...proposals].map(([family, records]) => `// ${family}: inferred from values used at three or more locations; 0 of ${records.length} have a reason.\n`).join('') +
       `// Components: ${components.length} found${from ? ` from ${from}` : ''}.\n` +
       components.map(component => `// ${component.name}: ${pathFrom(root, component.source.file)}:${component.source.line}\n`).join('') +
@@ -113,11 +114,11 @@ export async function initProject(root: string, options: { config?: string; forc
       const previous = accepted.get(entry.key);
       // Init can propose config again, but cannot silently grow an adopted baseline.
       if (ledger.exists && (previous?.kind !== 'debt' && previous?.kind !== 'exception' || previous && entryCount(entry) > entryCount(previous))) {
-        throw new UsageError('Init refuses new debt in an existing ledger. Fix new findings or run plumb baseline --force after review.');
+        throw new UsageError('Init refuses new debt in an existing ledger. Fix new findings or run plumber baseline --force after review.');
       }
       if (previous?.kind !== 'exception') accepted.set(entry.key, { ...entry, ...stamp });
     }
-    const destination = loaded.path ?? resolve(root, options.config ?? 'plumb.config.ts');
+    const destination = loaded.path ?? resolve(root, options.config ?? 'plumber.config.ts');
     const before = loaded.path ? await readFile(destination, 'utf8') : '';
     if (loaded.path) print(`--- ${pathFrom(root, destination)}\n+++ ${pathFrom(root, destination)}\n@@ config before / after @@\n` +
       before.trimEnd().split('\n').map(line => `-${line}`).join('\n') + '\n' + text.trimEnd().split('\n').map(line => `+${line}`).join('\n') + '\n');
@@ -125,7 +126,7 @@ export async function initProject(root: string, options: { config?: string; forc
     await writeFile(destination, text, { flag: loaded.path ? 'w' : 'wx' });
     try { await writeLedger(root, [...accepted.values()]); }
     catch (error) { if (loaded.path) await writeFile(destination, before); else await rm(destination); throw error; }
-    await rm(join(root, '.plumb/.baseline-pending'), { force: true });
-    return { message: `Wrote ${pathFrom(root, destination)} with inferred token sources.\nComponents: ${components.length} found${from ? ` from ${from}` : ''}.\nBaseline: ${debt.length} debt entries (${debt.reduce((sum, entry) => sum + entryCount(entry), 0)} locations) in .plumb/ledger.jsonl.\nAccepted ${currentDecisions(adopted).length} tokens as inferred.\nNext steps: run plumb install --ci.`, entries: [...accepted.values()], moves: [] };
+    await rm(statePath(root, '.baseline-pending'), { force: true });
+    return { message: `Wrote ${pathFrom(root, destination)} with inferred token sources.\nComponents: ${components.length} found${from ? ` from ${from}` : ''}.\nBaseline: ${debt.length} debt entries (${debt.reduce((sum, entry) => sum + entryCount(entry), 0)} locations) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${currentDecisions(adopted).length} tokens as inferred.\nNext steps: run plumber install --ci.`, entries: [...accepted.values()], moves: [] };
   } finally { await rm(scratch, { recursive: true, force: true }); }
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Plumb config (serializable fields; TS configs also support from callbacks)",
+  "title": "React Plumber config (serializable fields; TS configs also support from callbacks)",
   "type": "object",
   "additionalProperties": false,
   "properties": {

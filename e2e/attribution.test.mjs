@@ -66,7 +66,7 @@ test('outside-source and package nondecisions prove existence but produce no use
   assert.ok(report.findings.some(f => f.sites.some(s => s.text === 'background: linear-gradient(var(--vendor-ink), #ff00ff)')));
   // Changing the source boundary makes the exact same authored vendor values
   // reviewable at their definitions; package CSS remains framework-owned.
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { source: ['src/**/*.{tsx,css}', 'vendor/*.css'] };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { source: ['src/**/*.{tsx,css}', 'vendor/*.css'] };");
   const included = run(dir);
   for (const name of ['--vendor-well', '--vendor-ink']) {
     const f = included.findings.find(f => f.variable?.name === name);

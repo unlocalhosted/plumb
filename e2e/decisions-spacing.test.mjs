@@ -84,7 +84,7 @@ test('imported project CSS outside source globs proves existence without spacing
   await writeFile(outside, '.outside { margin: 13px; }');
   await writeFile(inside, '@import "tailwindcss"; @theme { --spacing: 1px; --spacing-small: 12px; } .inside { margin: 13px; }');
   await writeFile(join(directory, 'src/App.tsx'), "import './styles.css'; import '../packages/ui/theme.css'; <div className='outside inside' />;");
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { source: ['src/**/*.{tsx,css}'] };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { source: ['src/**/*.{tsx,css}'] };");
   const report = run(directory);
   assert.ok(report.stylesheets.some(sheet => sheet.file === outside && sheet.sourceOrigin === 'project'));
   assert.ok(!report.findings.some(f => f.rule.startsWith('existence/')), 'outside CSS still proves class existence');
@@ -104,12 +104,12 @@ test('spacing policies enforce origin, tier and reference identity and refresh o
       /* why: intent despite literal tier: semantic */ --spacing-intent: 16px; }
     :root { --spacing-root: 8px; } .applied { @apply gap-base; } .literal { margin-inline: 12px; }`);
   await writeFile(join(directory, 'src/App.tsx'), `import './styles.css'; <div className="gap-base gap-related gap-intent gap-12" style={{ scrollMargin: '12px', gap: 'var(--spacing-root)' }} />;`);
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default {};');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default {};');
   let report = run(directory);
   assert.ok(report.findings.some(f => f.rule === 'provenance/spacing/tier' && f.sites.some(s => s.text === 'gap-base')));
   assert.ok(report.findings.some(f => f.rule === 'provenance/spacing/tier' && f.sites.some(s => s.text.includes('@apply'))));
   assert.equal(report.decisions.find(d => d.name === '--spacing-intent').tier, 'semantic');
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { decisions: { spacing: { from: ['theme:--spacing-*', 'css:src/styles.css'], callers: ['primitive', 'semantic'], identity: 'reference' } } };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { decisions: { spacing: { from: ['theme:--spacing-*', 'css:src/styles.css'], callers: ['primitive', 'semantic'], identity: 'reference' } } };");
   report = run(directory);
   assert.ok(report.findings.some(f => f.rule === 'provenance/spacing/by-value' && f.severity === 'warn'));
   assert.ok(!report.findings.some(f => f.rule.endsWith('/tier')));
@@ -120,7 +120,7 @@ test('spacing policies enforce origin, tier and reference identity and refresh o
   await writeFile(join(directory, 'src/styles.css'), '@import "tailwindcss"; @import "scale";');
   await writeFile(join(directory, 'src/App.tsx'), "import './styles.css'; <div className='gap-scale' />;");
   assert.equal(run(directory).findings[0].rule, 'config/no-tokens');
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-*', origins: ['project', 'framework'] } } };");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-*', origins: ['project', 'framework'] } } };");
   assert.deepEqual(run(directory).findings, []);
 });
 

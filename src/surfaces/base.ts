@@ -1,3 +1,4 @@
+import { environment } from '../paths.js';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtemp, readdir, rm, stat, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -33,7 +34,7 @@ export async function baseReport(root: string, ref: string, options: Pick<CheckO
     const checked = spawnSync(process.execPath, [fileURLToPath(new URL('../cli.js', import.meta.url)),
       '--root', resolve(temp, relative(context.top, root)), '--json', ...(config === undefined ? [] : ['--config', config])],
       { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, timeout: 60000,
-        env: { ...process.env, PLUMB_CACHE_DIR: process.env.PLUMB_CACHE_DIR ?? join(temp, '.plumb-cache') } });
+        env: { ...process.env, PLUMBER_CACHE_DIR: environment('CACHE_DIR') ?? join(temp, '.plumb-cache') } });
     if (checked.error) throw checked.error;
     if (checked.status !== 0 && checked.status !== 1) throw new Error(checked.stderr || 'Base check did not complete.');
     return JSON.parse(checked.stdout) as Report;

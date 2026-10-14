@@ -3,8 +3,8 @@ import { atSite, newSites, pathFor } from './sites.js';
 import { editChoices, replacement } from './edits.js';
 
 export const loopRules = [
-  'Do not edit plumb.config.ts (or another Plumb config), .plumb/ledger.jsonl, or the theme to make a finding pass.',
-  'Run `plumb check --changed --agent` after editing; stop when it prints "0 new".',
+  'Do not edit plumber.config.ts (or another React Plumber config), .plumber/ledger.jsonl, or the theme to make a finding pass.',
+  'Run `plumber check --changed --agent` after editing; stop when it prints "0 new".',
   'If neither decision fits, do not invent a value: stop and report NEEDS-DECISION with the sites and the value you wanted.',
   'Reporting NEEDS-DECISION is fine. Never add a token.',
 ];

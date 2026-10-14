@@ -24,7 +24,7 @@ for (const ref of refs) {
   command(process.execPath, [resolve(repo, 'node_modules/typescript/bin/tsc'), '-p', resolve(root, 'tsconfig.json')]);
   const configDirectory = resolve(root, 'config');
   mkdirSync(configDirectory, { recursive: true });
-  for (const file of ['plumb.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
+  for (const file of ['plumber.config.ts', 'families.ts', 'ownership.config.ts', 'imitation.config.ts', 'layer5-habits.ts']) {
     let text = command('git', ['show', `d91c102:bench/metalui/${file}`]).stdout;
     text = text.replaceAll("'../../dist/", `'${root}/dist/`)
       .replace("new URL('../../../metalui/', import.meta.url)", `new URL(${JSON.stringify(pathToFileURL(snapshot + '/').href)})`)

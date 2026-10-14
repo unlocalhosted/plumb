@@ -1,9 +1,10 @@
+import { statePath } from '../paths.js';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { UsageError } from '../errors.js';
 import type { LedgerEntry } from './types.js';
 
-export const ledgerPath = (root: string) => join(root, '.plumb/ledger.jsonl');
+export const ledgerPath = (root: string) => statePath(root, 'ledger.jsonl');
 export const entryCount = (entry: LedgerEntry) => entry.count ?? 1;
 export function parseLedger(text: string, path: string): LedgerEntry[] {
   const keys = new Set<string>();

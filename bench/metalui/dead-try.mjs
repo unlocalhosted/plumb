@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 const root = '/Users/vijaysingh/unlocalhosted/metalui';
 const cache = resolve('bench/metalui/.cache/layer10');
 const env = { ...process.env, PLUMB_CACHE_DIR: cache };
-const config = resolve('bench/metalui/plumb.config.ts');
+const config = resolve('bench/metalui/plumber.config.ts');
 const head = spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
 function run(args, input, configPath = config) {
   const start = performance.now();

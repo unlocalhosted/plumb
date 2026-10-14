@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { migrationNotice, statePath } from './paths.js';
 import { CheckCache } from './check-cache.js';
 import { createReadStream } from 'node:fs';
 import { performance } from 'node:perf_hooks';
@@ -26,31 +27,31 @@ import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
 
-const help = `Plumb ${tool.version}: design decisions, habits and ledger
-Usage: plumb [check] [--json] [--verbose] [--root <dir>] [--config <path>]
-       plumb presets [--json] [--root <dir>] [--config <path>]
-       plumb serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
-       plumb check --watch [--json|--agent] [--root <dir>]
-       plumb habits [--json] [--root <dir>] [--config <path>]
-       plumb decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
-       plumb explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
-       plumb try [--lang tsx|css] [--as <path>] [--json|--agent] < snippet
-       plumb imitation --suggest [--json] [--root <dir>] [--config <path>]
-       plumb report [--markdown] [--since <git-ref>] [--root <dir>]
-       plumb parity <tokens.json> [--format dtcg] [--strict] [--json]
+const help = `React Plumber ${tool.version}: design decisions, habits and ledger
+Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumber presets [--json] [--root <dir>] [--config <path>]
+       plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
+       plumber check --watch [--json|--agent] [--root <dir>]
+       plumber habits [--json] [--root <dir>] [--config <path>]
+       plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
+       plumber explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
+       plumber try [--lang tsx|css] [--as <path>] [--json|--agent] < snippet
+       plumber imitation --suggest [--json] [--root <dir>] [--config <path>]
+       plumber report [--markdown] [--since <git-ref>] [--root <dir>]
+       plumber parity <tokens.json> [--format dtcg] [--strict] [--json]
 
-       plumb init | baseline [--force]
-       plumb accept <key> --why "…"
-       plumb accept --rule <rule> --site <file:line> --why "…"
-       plumb accept-decisions [--why "…"]
-       plumb ledger [--ratchet] [--prune] [--rebase]
-       plumb show <key|rule> | why <file:line>
-       plumb check [--base <git-ref>] [--changed] [--strict-ledger]
-       plumb check [--sarif | --agent | --format github]
-       plumb agent-docs
-       plumb install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
-       plumb install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
-       plumb doctor [--root <dir>] [--config <path>]
+       plumber init | baseline [--force]
+       plumber accept <key> --why "…"
+       plumber accept --rule <rule> --site <file:line> --why "…"
+       plumber accept-decisions [--why "…"]
+       plumber ledger [--ratchet] [--prune] [--rebase]
+       plumber show <key|rule> | why <file:line>
+       plumber check [--base <git-ref>] [--changed] [--strict-ledger]
+       plumber check [--sarif | --agent | --format github]
+       plumber agent-docs
+       plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
+       plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
+       plumber doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
@@ -83,7 +84,7 @@ async function main(): Promise<void> {
         strict: true,
       });
     } catch (error) {
-      throw new UsageError(`${errorMessage(error)}; run plumb --help for supported flags.`);
+      throw new UsageError(`${errorMessage(error)}; run plumber --help for supported flags.`);
     }
   })();
   if (args.values.help) { process.stdout.write(help); return; }
@@ -97,10 +98,10 @@ async function main(): Promise<void> {
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
-  if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumb decisions and a known family.');
+  if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumber decisions and a known family.');
   if (!['serve', 'presets', 'check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
       ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
-    throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumb check or plumb explain <file> (see --help).`);
+    throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumber check or plumber explain <file> (see --help).`);
   }
   const flags: Record<string, string[]> = {
     base: ['check'], changed: ['check'], agent: ['check', 'try', 'install'], list: ['install'], sarif: ['check'], format: ['check', 'parity'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
@@ -109,20 +110,20 @@ async function main(): Promise<void> {
     markdown: ['report'], since: ['report'], strict: ['parity'],
     overlay: ['serve', 'install'], write: ['install'], origin: ['serve'], 'served-root': ['serve'],
   };
-  for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumb ${commands.join(' or ')}.`);
-  if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumb parity.' : '--format supports github.');
+  for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.`);
+  if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumber parity.' : '--format supports github.');
   if ([args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
   if (args.values.json && args.values.markdown) throw new UsageError('Choose --json or --markdown.');
   if (args.values.since?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --since.');
-  if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumb parity.');
+  if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumber parity.');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
   const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
   if (args.values.write && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.');
   if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.');
   if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
-  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumb ${command} prints text; remove --json.`);
-  if (suggesting && !args.values.suggest) throw new UsageError('Use plumb imitation --suggest to report candidate fingerprints.');
+  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.`);
+  if (suggesting && !args.values.suggest) throw new UsageError('Use plumber imitation --suggest to report candidate fingerprints.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
   for (const name of ['root', 'config', 'served-root'] as const) {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
@@ -133,6 +134,7 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  migrationNotice(resolve(options.root ?? process.cwd()), options.config);
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
     process.stdout.write(args.values.json ? `${JSON.stringify(loaded.presets ?? [], null, 2)}\n` :
@@ -146,7 +148,7 @@ async function main(): Promise<void> {
     catch (error) {
       if (!(error instanceof UsageError)) throw error;
       // Manual host wiring is copyable code: retain its line breaks.
-      process.stderr.write(`plumb: ${error.message}\n`); process.exitCode = 2;
+      process.stderr.write(`plumber: ${error.message}\n`); process.exitCode = 2;
     }
     return;
   }
@@ -180,7 +182,7 @@ async function main(): Promise<void> {
       if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
     } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
       Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
-      (!report.config.path && !report.ledger?.exists ? '\nNext: run plumb init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+      (!report.config.path && !report.ledger?.exists ? '\nNext: run plumber init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
   };
   if (args.values.watch) {
@@ -189,7 +191,7 @@ async function main(): Promise<void> {
     process.on('SIGINT', stop); process.on('SIGTERM', stop);
     try { await watchReports({ ...options, ...(args.values.base === undefined ? {} : { base: args.values.base }),
       ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
-      ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }, emitCheck, controller.signal, error => process.stderr.write(`plumb: ${errorMessage(error)}\n`)); }
+      ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }, emitCheck, controller.signal, error => process.stderr.write(`plumber: ${errorMessage(error)}\n`)); }
     finally { process.off('SIGINT', stop); process.off('SIGTERM', stop); }
     return;
   }
@@ -204,7 +206,7 @@ async function main(): Promise<void> {
       ...(args.values['served-root'] === undefined ? {} : { servedRoot: args.values['served-root'] }),
       ...(args.values.origin === undefined ? {} : { origin: args.values.origin }),
       ...(args.values.port === undefined ? {} : { port: Number(args.values.port) }) });
-    process.stdout.write(`Plumb is listening on http://127.0.0.1:${daemon.info.port}. Connection details are in .plumb/serve.json.\n`);
+    process.stdout.write(`React Plumber is listening on http://127.0.0.1:${daemon.info.port}. Connection details are in ${statePath(resolve(options.root ?? process.cwd()), 'serve.json')}.\n`);
     await new Promise<void>(done => {
       const stop = () => { process.off('SIGINT', stop); process.off('SIGTERM', stop); void daemon.close().then(done); };
       process.on('SIGINT', stop); process.on('SIGTERM', stop);
@@ -309,6 +311,6 @@ async function main(): Promise<void> {
 try {
   await main();
 } catch (error) {
-  process.stderr.write(`plumb: ${errorDiagnostic(error)}\n`);
+  process.stderr.write(`plumber: ${errorDiagnostic(error)}\n`);
   process.exitCode = 2;
 }

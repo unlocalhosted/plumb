@@ -1,4 +1,4 @@
-// Preload for npm test when every temporary file must stay inside Plumb.
+// Preload for npm test when every temporary file must stay inside React Plumber.
 import fs from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -20,7 +20,7 @@ async function project(t, css, jsx = '', config = { habits: ['hover-gate'] }) {
   await mkdir(join(dir, 'src'));
   await writeFile(join(dir, 'src/styles.css'), css);
   await writeFile(join(dir, 'src/App.tsx'), jsx);
-  await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify(config)};`);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)};`);
   return dir;
 }
 
@@ -45,7 +45,7 @@ test('every built-in and custom DSL run through CLI over fixture, with conservat
 
 test('zero config/disabled habits judge nothing; habits command counts all built-ins and exits zero', async t => {
   const dir = await project(t, '.a:hover { transition: all 1s ease-in; }', '', {});
-  await rm(join(dir, 'plumb.config.ts'));
+  await rm(join(dir, 'plumber.config.ts'));
   const r = report(dir);
   assert.equal(r.findings.filter(f => f.rule.startsWith('habits/')).length, 0);
   assert.ok(r.habits.every(h => h.breaks === null && !h.enabled));
@@ -84,17 +84,17 @@ test('class companions respect element, branch and media; source globs alone are
   assert.equal(breaks(r, 'overflow-clip').length, 0);
   await mkdir(join(dir, 'other')); await writeFile(join(dir, 'other/imported.css'), '.outside:hover { opacity: .5; }');
   await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @import "../other/imported.css"; .inside:hover { opacity: .5; }');
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { css: 'src/styles.css', source: ['src/**/*.css'], habits: ['hover-gate'] };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { css: 'src/styles.css', source: ['src/**/*.css'], habits: ['hover-gate'] };");
   assert.deepEqual(owners(report(dir), 'hover-gate'), ['.inside:hover']);
 });
 
 test('closed DSL rejects unknown predicates, names, regex, callbacks and severity as usage errors', async t => {
   const dir = await project(t, '.a { opacity: .5; }');
   for (const habits of [ ['unknown'], ['hover-gate', 'hover-gate'], [{ id: 'x', when: { mystery: true }, message: 'x' }], [{ id: 'x', when: { value: '[' }, message: 'x' }], [{ id: 'x', when: { when: { has: { supports: 'x' } } }, message: 'x' }], [{ id: 'x', when: {}, message: 'x', severity: 'fatal' }], [{ id: 'hover-gate', when: {}, message: 'x' }] ]) {
-    await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify({ habits })}`);
+    await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify({ habits })}`);
     const result = run(dir); assert.equal(result.status, 2, result.stdout); assert.match(result.stderr, /habits\[/); assert.equal(result.stdout, '');
   }
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { habits: [{ id: 'x', when: { value: () => true }, message: 'x' }] }");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { habits: [{ id: 'x', when: { value: () => true }, message: 'x' }] }");
   assert.equal(run(dir).status, 2);
 });
 

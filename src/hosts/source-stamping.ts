@@ -61,7 +61,7 @@ export function sourceStamping(options: SessionOptions, production = false): Plu
       if (disabled || id.includes('\0') || id.startsWith('virtual:')) return null;
       const file = id.replace(/[?#].*$/, ''), path = relative(root, file).replaceAll('\\', '/');
       if (!isAbsolute(file) || !/\.[cm]?[jt]sx?$/.test(file) || !path || path === '..' || path.startsWith('../') || isAbsolute(path) ||
-        /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(path) || !code.includes('<')) return null;
+        /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(path) || !code.includes('<')) return null;
       // The same source selectors as analysis, without a project crawl. Real
       // paths exclude linked packages even when an alias lives under src/.
       if (await realpath(file) !== resolve(await realpath(root), path)) return null;

@@ -8,7 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const source = `"use client";
@@ -22,8 +22,8 @@ async function project(t, app) {
   const root = await mkdtemp(join(repo, 'fixtures/.served-root-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
-  const config = await readFile(join(root, 'plumb.config.ts'), 'utf8');
-  await writeFile(join(root, 'plumb.config.ts'), config.replace('export default {', "export default { source: ['src/**/*.{jsx,js,ts,tsx,css}', 'apps/**/*.{jsx,js,ts,tsx,css}', '!apps/**/src/Untracked.jsx'],"));
+  const config = await readFile(join(root, 'plumber.config.ts'), 'utf8');
+  await writeFile(join(root, 'plumber.config.ts'), config.replace('export default {', "export default { source: ['src/**/*.{jsx,js,ts,tsx,css}', 'apps/**/*.{jsx,js,ts,tsx,css}', '!apps/**/src/Untracked.jsx'],"));
   await rm(join(root, 'src/App.tsx'));
   // Identical JSX/hash/coordinates make accidental selection of the repo file observable.
   await writeFile(join(root, 'src/App.jsx'), source);
@@ -75,19 +75,19 @@ async function child(t, args, cwd) {
 }
 async function next(t, fixture) {
   const { root, servedRoot } = fixture;
-  const installed = join(root, 'node_modules/@unlocalhosted/plumb');
+  const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
   for (const name of ['dist', 'overlay', 'package.json']) await cp(join(repo, name), join(installed, name), { recursive: true });
   const route = join(servedRoot, 'app/%5F_plumb/[...path]'); await mkdir(route, { recursive: true });
-  await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/plumb/next';
+  await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';
 export const runtime = 'nodejs';
 export const { GET, POST } = createPlumbRoute({ root: ${JSON.stringify(root)}, watch: false });
 `);
-  await writeFile(join(servedRoot, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/plumb/next';
+  await writeFile(join(servedRoot, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';
 export default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }
 `);
   await writeFile(join(servedRoot, 'app/page.jsx'), `import App from '../src/App.jsx'; export default function Page() { return <App />; }\n`);
-  await writeFile(join(servedRoot, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/plumb/next/config';
+  await writeFile(join(servedRoot, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
 export default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(servedRoot)} } });
 `);
   const running = await child(t, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', '0'], servedRoot);
@@ -176,7 +176,7 @@ test('serve --overlay --served-root resolves relative to CLI cwd while --root ow
   let info;
   for (let i = 0; i < 1000; i++) {
     assert.equal(running.process.exitCode, null, running.output());
-    try { info = JSON.parse(await readFile(join(fixture.root, '.plumb/serve.json'), 'utf8')); break; } catch {}
+    try { info = JSON.parse(await readFile(join(fixture.root, '.plumber/serve.json'), 'utf8')); break; } catch {}
     await delay(20);
   }
   assert.ok(info, running.output());
@@ -194,7 +194,7 @@ test('serve --overlay --served-root resolves relative to CLI cwd while --root ow
 });
 async function browser(t) {
   try {
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => browser.close()); return browser;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;

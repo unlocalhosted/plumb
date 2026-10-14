@@ -1,6 +1,7 @@
+import { cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync, statSync } from 'node:fs';
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseSync } from 'oxc-parser';
@@ -41,8 +42,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
   diagnostics: Finding[]; imports: CssImport[]; notes: string[]; counts: Report['moduleGraph'];
 }> {
   const start = performance.now();
-  const hasModules = await stat(join(root, 'node_modules')).then(info => info.isDirectory()).catch(() => false);
-  const directory = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, hasModules ? 'node_modules/.cache/plumb' : '.plumb-cache'), 'modules');
+  const directory = resolve(cacheDirectory(root), 'modules');
   const path = join(directory, `${createHash('sha256').update(`module-graph-v1\n${root}`).digest('hex')}.json`);
   let cache: Record<string, CachedModule> = Object.create(null) as Record<string, CachedModule>;
   try { cache = Object.assign(cache, JSON.parse(await readFile(path, 'utf8')) as Record<string, CachedModule>); }

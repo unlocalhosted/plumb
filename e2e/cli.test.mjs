@@ -88,9 +88,9 @@ test('tailwind-min emits the schema with no failing findings', () => {
   matchesSchema(report);
   assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
   assert.equal(report.schemaVersion, 1);
-  assert.deepEqual(report.tool, { name: 'plumb', version: metadata.version });
+  assert.deepEqual(report.tool, { name: 'react-plumber', version: metadata.version });
   assert.equal(report.root, fixture('tailwind-min'));
-  assert.deepEqual(report.config, { path: join(fixture('tailwind-min'), 'plumb.config.ts'), inferred: false });
+  assert.deepEqual(report.config, { path: join(fixture('tailwind-min'), 'plumber.config.ts'), inferred: false });
   assert.ok(report.tailwind.entry.endsWith('src/styles.css'));
   assert.deepEqual(report.files, { tsx: 3, jsx: 0, css: 1, other: 0 });
   assert.deepEqual(report.findings.filter(f => !f.rule.startsWith('dead/')), []);
@@ -123,7 +123,7 @@ test('plain-css is valid without a Tailwind entry', () => {
 
 test('ambiguous entries name both files and the config fix', () => {
   const result = run(['--json', '--root', fixture('two-entries')]);
-  usage(result, /set css in plumb\.config\.ts/);
+  usage(result, /set css in plumb(?:er)?\.config\.ts/);
   assert.match(result.stderr, /src\/first\.css/);
   assert.match(result.stderr, /src\/second\.css/);
 });
@@ -145,7 +145,7 @@ test('text mode prints header, counts, timing and layer status', () => {
   const result = run(['--root', fixture('tailwind-min')]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stderr, '');
-  assert.ok(result.stdout.startsWith(`plumb ${metadata.version}  ${fixture('tailwind-min')}  tailwind `));
+  assert.ok(result.stdout.startsWith(`React Plumber ${metadata.version}  ${fixture('tailwind-min')}  tailwind `));
   assert.match(result.stdout, /theme .*src\/styles\.css/);
   assert.match(result.stdout, /files 3 tsx, 0 jsx, 1 css, 0 other\s+\d+\.\dms/);
   assert.match(result.stdout, /no findings/);
@@ -164,7 +164,7 @@ test('--help describes supported commands, flags and exits', () => {
   const result = run(['--help', '--root', fixture('bad-config')]);
   assert.equal(result.status, 0);
   assert.equal(result.stderr, '');
-  for (const text of ['plumb [check]', '--json', '--verbose', '--root', '--config', '--version', '--help', 'Exit codes:']) {
+  for (const text of ['plumber [check]', '--json', '--verbose', '--root', '--config', '--version', '--help', 'Exit codes:']) {
     assert.ok(result.stdout.includes(text), text);
   }
 });
@@ -183,18 +183,18 @@ test('all supported config extensions load, with deterministic precedence', asyn
     await t.test(extension, async t => {
       const directory = await project(t, {
         'package.json': '{"type":"module"}',
-        [`plumb.config.${extension}`]: `export default ${extension === 'ts' || extension === 'mts' ? '({ source: [] } satisfies { source: string[] })' : '{ source: [] }'};`,
+        [`plumber.config.${extension}`]: `export default ${extension === 'ts' || extension === 'mts' ? '({ source: [] } satisfies { source: string[] })' : '{ source: [] }'};`,
       });
       const report = json(run(['--root', directory, '--json']));
-      assert.deepEqual(report.config, { path: join(directory, `plumb.config.${extension}`), inferred: false });
+      assert.deepEqual(report.config, { path: join(directory, `plumber.config.${extension}`), inferred: false });
       assert.deepEqual(report.files, { tsx: 0, jsx: 0, css: 0, other: 0 });
     });
   }
   const directory = await project(t, {
-    'plumb.config.ts': 'export default {};',
-    'plumb.config.mjs': 'export default { wrong: true };',
+    'plumber.config.ts': 'export default {};',
+    'plumber.config.mjs': 'export default { wrong: true };',
   });
-  assert.equal(json(run(['--root', directory, '--json'])).config.path, join(directory, 'plumb.config.ts'));
+  assert.equal(json(run(['--root', directory, '--json'])).config.path, join(directory, 'plumber.config.ts'));
 });
 
 test('explicit config resolves ambiguity, overrides source and loads defineConfig', async t => {
@@ -255,12 +255,12 @@ test('malformed config shapes, import errors and invalid CSS paths fail clearly'
   ];
   for (const [value, pattern] of cases) {
     await t.test(value, async t => {
-      const directory = await project(t, { 'plumb.config.ts': `export default ${value};`, 'src/App.tsx': '' });
+      const directory = await project(t, { 'plumber.config.ts': `export default ${value};`, 'src/App.tsx': '' });
       usage(run(['--root', directory, '--json']), pattern);
     });
   }
   for (const contents of ['export const config = {};', 'export default {', 'throw new Error("broken\\nconfig");']) {
-    const directory = await project(t, { 'plumb.config.ts': contents });
+    const directory = await project(t, { 'plumber.config.ts': contents });
     usage(run(['--root', directory]), /Fix.*config/);
   }
 });

@@ -84,7 +84,7 @@ test('report records two commits, coverage delta and authored-key fixed counts; 
   assert.equal(snapshot.commit, second); assert.equal(snapshot.dirty, false); assert.equal(trend.length, 2);
   assert.deepEqual(snapshot, trend[1]); assert.deepEqual(snapshot.changes, { new: 0, fixed: 1, debt: 2, exceptions: 0 });
   const before = await readFile(trendFile, 'utf8');
-  await writeFile(join(directory, 'plumb.config.ts'), 'invalid config syntax');
+  await writeFile(join(directory, 'plumber.config.ts'), 'invalid config syntax');
   assert.deepEqual(JSON.parse(run(directory, ['report', '--since', first.slice(0, 8), '--json']).stdout), trend);
   git(directory, 'tag', 'v-fixture', first);
   assert.match(run(directory, ['report', '--since', 'v-fixture', '--markdown']).stdout, /\+25/);
@@ -159,7 +159,7 @@ test('parity compares unselected theme inventory, DTCG HSL/HWB, radius, duration
   const directory = await fixture(t, 'parity');
   const css = join(directory, 'src/tokens.css');
   await writeFile(css, (await readFile(css, 'utf8')).replace(':root', '@import "tailwindcss";\n@theme').replace('\n}', '\n --radius-review: 8px;\n --duration-review: 1000ms;\n --z-review: 2;\n}'));
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default { css: "src/tokens.css", decisions: { spacing: { from: "theme:--spacing-small" }, color: { from: "theme:--color-*" } } };');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default { css: "src/tokens.css", decisions: { spacing: { from: "theme:--spacing-small" }, color: { from: "theme:--color-*" } } };');
   const file = join(directory, 'export.tokens.json'), data = JSON.parse(await readFile(file, 'utf8'));
   delete data.spacing.missing; data.spacing.extra = { $value: '1rem' };
   data.color.brand.$value = { colorSpace: 'hsl', components: [0, 100, 50] };
@@ -175,9 +175,9 @@ test('parity compares unselected theme inventory, DTCG HSL/HWB, radius, duration
 test('parity refuses ambiguous theme references and flattened export names', async t => {
   const directory = await fixture(t, 'parity');
   const file = join(directory, 'export.tokens.json');
-  await writeFile(join(directory, 'plumb.config.ts'), `export default { decisions: { color: { from: () => ['first', 'second'].map(name => ({ family: 'color', name, value: '#f00', refs: ['var(--color-brand)'], origin: 'project', tier: 'primitive', why: '', source: { file: 'src/tokens.css', line: 1 } })) } } };`);
+  await writeFile(join(directory, 'plumber.config.ts'), `export default { decisions: { color: { from: () => ['first', 'second'].map(name => ({ family: 'color', name, value: '#f00', refs: ['var(--color-brand)'], origin: 'project', tier: 'primitive', why: '', source: { file: 'src/tokens.css', line: 1 } })) } } };`);
   assert.match(run(directory, ['parity', 'export.tokens.json', '--strict'], 2).stderr, /matches several theme tokens/);
-  await writeFile(join(directory, 'plumb.config.ts'), 'export default {};');
+  await writeFile(join(directory, 'plumber.config.ts'), 'export default {};');
   await writeFile(join(directory, 'src/tokens.css'), ':root { --color-a-b: red; }');
   await writeFile(file, JSON.stringify({ color: { $type: 'color', a: { b: { $value: '#f00' } }, 'a-b': { $value: '#f00' } } }));
   assert.match(run(directory, ['parity', 'export.tokens.json'], 2).stderr, /Several exported tokens map/);

@@ -21,7 +21,7 @@ test('homepage text replay writes only DOM, validates refusals and commutes with
   const dev = await createServer({ configFile, logLevel: 'error', server: { port: 0, watch: null } });
   await dev.listen();
   t.after(async () => { await dev.close(); await new Promise(done => staticServer.httpServer.close(done)); });
-  const browser = await chromium.launch({ executablePath: process.env.PLUMB_CHROMIUM || undefined }); t.after(() => browser.close());
+  const browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); t.after(() => browser.close());
   for (const [server, production] of [[dev, false], [staticServer, true]]) {
     const page = await browser.newPage({ reducedMotion: 'reduce' }); t.after(() => page.close());
     const requests = [], errors = [];

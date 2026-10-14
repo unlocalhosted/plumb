@@ -9,7 +9,7 @@ import { collectClasses } from '../../dist/collect/classes.js';
 if (!isMainThread) {
   parentPort.postMessage(await collectClasses(workerData.files, workerData.helpers));
 } else {
-  const config = await loadConfig('/Users/vijaysingh/unlocalhosted/metalui', resolve('bench/metalui/plumb.config.ts'));
+  const config = await loadConfig('/Users/vijaysingh/unlocalhosted/metalui', resolve('bench/metalui/plumber.config.ts'));
   const files = await sourceFiles('/Users/vijaysingh/unlocalhosted/metalui', config.value);
   const size = Number(process.argv[2] ?? availableParallelism());
   const start = performance.now();

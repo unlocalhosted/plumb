@@ -264,7 +264,7 @@ export async function freezeApp(app, scratch) {
     if (app.name === 'metalui') await fs.symlink(primary.directory, join(scratch, 'metalui'), 'dir');
     config = join(harness, relative(harnessRepo, config));
     configRoots.push(harness);
-    adaptations.push('Frozen benchmark configuration and its imports; MetalUI token/CSS providers resolve into the frozen repository, and helper imports use the frozen Plumb build.');
+    adaptations.push('Frozen benchmark configuration and its imports; MetalUI token/CSS providers resolve into the frozen repository, and helper imports use the frozen React Plumber build.');
   }
   adaptations.push('Cloudflare .wrangler and TanStack .tanstack generated state stays in the disposable app; integrity excludes only these dev outputs and node_modules, and covers copied runtime artifacts.');
   const roots = [...repositories.map(record => record.directory), ...configRoots];
@@ -290,11 +290,11 @@ export async function freezeApp(app, scratch) {
     } };
 }
 
-// Plumb itself can be edited by another job. All four apps must inspect the same built runtime and oracle.
+// React Plumber itself can be edited by another job. All four apps must inspect the same built runtime and oracle.
 export async function freezeTool(root, directory, oracle) {
   const start = performance.now();
   await fs.mkdir(directory, { recursive: true });
-  for (const input of ['dist', 'overlay', 'package.json', 'bench/metalui/overlay.plumb.config.ts', 'bench/metalui/plumb.config.ts', 'bench/metalui/families.ts', 'bench/apps/algorecall.plumb.config.ts']) {
+  for (const input of ['dist', 'overlay', 'package.json', 'bench/metalui/overlay.plumber.config.ts', 'bench/metalui/plumber.config.ts', 'bench/metalui/families.ts', 'bench/apps/algorecall.plumber.config.ts']) {
     await fs.mkdir(dirname(join(directory, input)), { recursive: true });
     await fs.cp(join(root, input), join(directory, input), {
     recursive: true, mode: constants.COPYFILE_FICLONE, filter: path => !path.split(sep).includes('node_modules'),

@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const source = '/Users/vijaysingh/unlocalhosted/metalui';
 const directory = await mkdtemp(join(tmpdir(), 'plumb-layer9-metalui-'));
 const cache = resolve(root, 'bench/metalui/.cache/layer9');
-const config = resolve(root, 'bench/metalui/plumb.config.ts');
+const config = resolve(root, 'bench/metalui/plumber.config.ts');
 const sourceHead = spawnSync('git', ['-C', source, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
 const result = { sourceHead, sourceReadOnly: true, copiedDocs: true, cache, runs: {}, acceptance: {} };
 function run(args = [], status = 0) {
@@ -23,13 +23,13 @@ function run(args = [], status = 0) {
 }
 try {
   await mkdir(join(directory, 'apps'), { recursive: true });
-  await cp(join(source, 'apps/docs'), join(directory, 'apps/docs'), { recursive: true, filter: path => !['node_modules', 'dist', '.cache', '.plumb-cache', '.plumb'].includes(basename(path)) });
+  await cp(join(source, 'apps/docs'), join(directory, 'apps/docs'), { recursive: true, filter: path => !['node_modules', 'dist', '.cache', '.plumb-cache', '.plumber'].includes(basename(path)) });
   await cp(join(source, 'package.json'), join(directory, 'package.json'));
   await symlink(join(source, 'node_modules'), join(directory, 'node_modules'), 'dir');
   await mkdir(join(directory, 'packages'), { recursive: true });
   await symlink(join(source, 'packages/metalui'), join(directory, 'packages/metalui'), 'dir');
   run(['baseline']);
-  const ledger = await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8');
+  const ledger = await readFile(join(directory, '.plumber/ledger.jsonl'), 'utf8');
   const baseline = JSON.parse(run(['--json']));
   const sarif = JSON.parse(run(['--sarif']));
   assert.equal(sarif.runs[0].results.length, baseline.findings.reduce((n, f) => n + f.sites.length, 0));
@@ -44,7 +44,7 @@ try {
   result.acceptance.addedGap = { new: 1, githubErrors: 1, agentNamesSite: true };
   run(['agent-docs']); const docs = await readFile(join(directory, 'PLUMB.md'), 'utf8');
   assert.ok(docs.includes('--spacing-mu-space-8')); result.acceptance.docsBytes = Buffer.byteLength(docs);
-  assert.equal(await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8'), ledger);
+  assert.equal(await readFile(join(directory, '.plumber/ledger.jsonl'), 'utf8'), ledger);
   result.acceptance.ledgerUntouched = true;
   await writeFile(join(root, 'bench/metalui/layer9.run.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify(result, null, 2));

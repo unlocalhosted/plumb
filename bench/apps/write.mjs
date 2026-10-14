@@ -59,7 +59,7 @@ async function checkCLI(app, scratch, file, mark) {
       child.stderr.on('data', data => { stderr = (stderr + data).slice(-16_000); });
       child.once('error', reject);
       child.once('close', (code, signal) => {
-        if (code !== 0 && code !== 1) reject(new Error(`plumb check failed (${code ?? signal}): ${stderr}`));
+        if (code !== 0 && code !== 1) reject(new Error(`plumber check failed (${code ?? signal}): ${stderr}`));
         else resolveRun({ exitCode: code, stderr });
       });
     });
@@ -250,7 +250,7 @@ export async function writeInteraction(page, rows, app, scratch, gate, remember)
     }
     result.busyReads = busy;
     result.checkAfter = await checkCLI(app, scratch, file, mark);
-    assert.equal(result.checkAfter.sites.length, 0, 'plumb check must no longer report the edited site');
+    assert.equal(result.checkAfter.sites.length, 0, 'plumber check must no longer report the edited site');
     result.status = 'passed';
     return result;
   } catch (error) {

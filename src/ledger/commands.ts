@@ -1,3 +1,4 @@
+import { statePath } from '../paths.js';
 import { readFile, rm } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
@@ -76,13 +77,13 @@ export async function ledgerCommand(command: string, report: Report, options: Co
   const moves: { from: string; to: string }[] = [];
   let message = '';
   const attribution = stamp(report.root);
-  const pendingPath = resolve(report.root, '.plumb/.baseline-pending');
+  const pendingPath = statePath(report.root, '.baseline-pending');
   if (command === 'baseline') {
     const old = new Map(entries.map(entry => [entry.key, entry]));
     const debt = [...current.values()].filter(entry => old.get(entry.key)?.kind !== 'exception');
     const growth = debt.filter(entry => old.get(entry.key)?.kind !== 'debt' || entryCount(entry) > entryCount(old.get(entry.key)!));
     const pending = await readFile(pendingPath, 'utf8').then(() => entries.every(entry => entry.kind === 'decision')).catch(error => { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; });
-    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${growth.length} keys); fix new findings or use plumb baseline --force after review.`);
+    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${growth.length} keys); fix new findings or use plumber baseline --force after review.`);
     entries = [...entries.filter(entry => entry.kind !== 'debt'), ...debt.map(entry => ({ ...entry, ...(old.get(entry.key)?.kind === 'debt' ? old.get(entry.key)! : attribution), count: entry.count!, resolved: entry.resolved! }))];
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
     message = `Baseline recorded ${debt.length} debt entries (${debt.reduce((sum, entry) => sum + entryCount(entry), 0)} sites).`;
@@ -90,8 +91,8 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     entries = acceptSet(report, entries, options.why);
     message = `Accepted ${currentDecisions(report).length} current decisions.`;
   } else if (command === 'accept') {
-    if (!options.why?.trim()) throw new UsageError('plumb accept requires --why "…"; exceptions need a written reason.');
-    if (options.key && (options.rule || options.site) || !options.key && !(options.rule && options.site)) throw new UsageError('Use plumb accept <key> or plumb accept --rule <rule> --site <file:line>.');
+    if (!options.why?.trim()) throw new UsageError('plumber accept requires --why "…"; exceptions need a written reason.');
+    if (options.key && (options.rule || options.site) || !options.key && !(options.rule && options.site)) throw new UsageError('Use plumber accept <key> or plumber accept --rule <rule> --site <file:line>.');
     const site = options.site ? parseSite(report.root, options.site) : undefined;
     const selected = [...groups.values()].filter(group => options.key ? group.entry.key === options.key : group.finding.rule === options.rule && group.sites.some(s => s.file === site!.file && s.line === site!.line));
     if (!selected.length) throw new UsageError('No current finding matches the supplied key/rule/site.');
@@ -101,7 +102,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
     message = `Accepted ${selected.length} exception entries: ${[...keys].join(', ')}.`;
   } else if (command === 'ledger') {
-    if (!ledger.exists) throw new UsageError('No ledger exists; run plumb baseline first.');
+    if (!ledger.exists) throw new UsageError('No ledger exists; run plumber baseline first.');
     if (options.rebase) {
       const occupied = new Set(entries.map(entry => entry.key));
       const identity = (entry: LedgerEntry) => JSON.stringify([entry.rule, entry.owner, entry.prop, entry.authored, entry.resolved, entryCount(entry)]);

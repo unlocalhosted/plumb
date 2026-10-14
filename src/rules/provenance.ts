@@ -208,7 +208,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     if (resolved !== undefined) declaration.resolved = resolved;
     let rule = '', title = '', because = familyReasons[family]!, judgedValue = '', severity: Finding['severity'] = 'error', nearest: Decision[] = [];
     if (declaration.opaque) {
-      rule = 'provenance/opaque-inline'; severity = 'info'; title = `This ${declaration.prop} is computed at runtime, so it can't be checked`; because = 'Plumb reads source, not running values.';
+      rule = 'provenance/opaque-inline'; severity = 'info'; title = `This ${declaration.prop} is computed at runtime, so it can't be checked`; because = 'React Plumber reads source, not running values.';
     } else {
       for (const part of parts) {
         // Tailwind draws focus/stroke rings through box-shadow, not elevation.
@@ -345,8 +345,8 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
       const sites = [...new Map(unchecked.flatMap(f => f.sites).map(s => [JSON.stringify([s.file, s.line, s.column, s.text]), s])).values()];
       return [makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,
         declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${sites.length} ${familyNames[family]} values can't be checked`,
-        because: 'Plumb judges values against the tokens your theme declares.',
-        action: `Add ${familyNames[family]} tokens to your theme, or point \`decisions.${family}.from\` in plumb.config.ts at where they live.` }), ...findings.filter(f => f.rule === 'provenance/opaque-inline')];
+        because: 'React Plumber judges values against the tokens your theme declares.',
+        action: `Add ${familyNames[family]} tokens to your theme, or point \`decisions.${family}.from\` in plumber.config.ts at where they live.` }), ...findings.filter(f => f.rule === 'provenance/opaque-inline')];
     }
   }
   return findings;

@@ -19,7 +19,7 @@ await rm(cache, { recursive: true, force: true }); await mkdir(input, { recursiv
 const archive = execute('git', ['-C', source, 'archive', sourceHead, 'package.json', 'apps/docs/src', 'apps/docs/tsconfig.json', 'apps/docs/package.json', 'packages/metalui/src', 'packages/metalui/package.json', 'tokens']);
 execute('tar', ['-xf', '-', '-C', input], { input: archive });
 await symlink(join(source, 'node_modules'), join(input, 'node_modules'), 'dir');
-const config = join(root, 'bench/metalui/plumb.config.ts');
+const config = join(root, 'bench/metalui/plumber.config.ts');
 const presetInputs = ['tokens/tokens.json', 'packages/metalui/src/components/theme.css', 'packages/metalui/src/components/tokens.css', 'apps/docs/src/styles.css'];
 for (const path of presetInputs) assert.deepEqual(await readFile(join(source, path)), await readFile(join(input, path)), `Preset input changed since ${sourceHead}: ${path}`);
 const runs = {};
@@ -34,7 +34,7 @@ const specimen = join(input, 'apps/docs/src/ReviewTrend.tsx');
 await writeFile(specimen, 'export const ReviewTrend = () => <div className="gap-10" />;\n');
 run('baseline', ['baseline']);
 execute('git', ['-C', input, 'init', '-q']);
-execute('git', ['-C', input, 'config', 'user.name', 'Plumb benchmark']);
+execute('git', ['-C', input, 'config', 'user.name', 'React Plumber benchmark']);
 execute('git', ['-C', input, 'config', 'user.email', 'bench@example.test']);
 await writeFile(join(input, '.gitignore'), 'node_modules/\nplumb/\n');
 execute('git', ['-C', input, 'add', '.']); execute('git', ['-C', input, 'commit', '-qm', 'benchmark baseline']);

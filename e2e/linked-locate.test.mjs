@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build, createServer } from 'vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 import { SourceMapStore } from '../overlay/src/sourcemap.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -33,7 +33,7 @@ async function project(t, workspace) {
     build: { minify: false, sourcemap: true, lib: { entry: join(library, 'src/Button.jsx'), formats: ['es'], fileName: () => 'index.js' },
       rolldownOptions: { external: /^(?:react(?:\/|$)|@base-ui\/)/ } } });
   if (nodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = nodeEnv;
-  if (workspace) await writeFile(join(root, 'plumb.config.ts'), `export default {
+  if (workspace) await writeFile(join(root, 'plumber.config.ts'), `export default {
   css: 'app/src/styles.css', source: ['app/src/**/*.{jsx,css}', '!app/src/Unchecked.jsx', 'library/src/**/*.jsx'],
   decisions: { spacing: { callers: ['primitive', 'semantic'] } }
 };\n`);
@@ -116,7 +116,7 @@ for (const workspace of [false, true]) {
   });
   test(`${name}: real Base UI owners locate and Node applies the authored edit`, { timeout: 90000 }, async t => {
     let browser;
-    try { browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined }); }
+    try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
     catch (error) {
       if (!/Executable doesn't exist/.test(error.message)) throw error;
       t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return;

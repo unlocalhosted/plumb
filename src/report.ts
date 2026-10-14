@@ -2,7 +2,7 @@ import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 export const tool = {
-  name: 'plumb' as const,
+  name: 'react-plumber' as const,
   version: (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version,
 };
 
@@ -115,7 +115,7 @@ export type ProvenanceCoverage = Record<JudgedFamily, Pick<FamilyCoverage, 'from
 export interface Report {
   presets?: import('./presets/index.js').PresetSummary[];
   schemaVersion: 1;
-  tool: { name: 'plumb'; version: string };
+  tool: { name: 'react-plumber'; version: string };
   root: string;
   config: { path: string | null; inferred: boolean };
   /** Configuration context, without suppressing the family's real findings. */
@@ -250,7 +250,7 @@ export function formatText(report: Report, verbose = false): string {
     `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${report.timing.cacheHits} hits, ${report.timing.cacheMisses} misses`,
     ...report.notes.map(note => `note: ${note}`),
   ].join('\n') + '\n' : '';
-  return `plumb ${report.tool.version}  ${report.root}  ${tailwind}\n` +
+  return `React Plumber ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
     `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || (recorded.length ? 'no new findings' : 'no findings')}\n\n` +
     `${summary.join('\n')}\n` +

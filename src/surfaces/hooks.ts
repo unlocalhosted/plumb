@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
 
-const command = 'plumb check --changed --agent --strict-ledger';
+const command = 'plumber check --changed --agent --strict-ledger';
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 interface Plan { file: string; before: string; after: string }
 async function plan(root: string, name: string, event: string, entry: object, cursor = false, checkCommand = command): Promise<Plan> {

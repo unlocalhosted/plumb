@@ -134,5 +134,5 @@ export function trendMarkdown(trend: TrendRecord[]): string {
     return [record.commit ? `${record.commit.slice(0, 12)}${record.dirty ? ' (working tree)' : ''}` : 'no commit', record.date.slice(0, 10), ...coverage,
       record.changes.new, record.changes.fixed, record.changes.debt, record.changes.exceptions];
   });
-  return '# Plumb trend\n\n' + (trend.length ? [header, header.map(() => '---'), ...rows].map(row => `| ${row.join(' | ')} |`).join('\n') : 'No reports recorded. Run plumb report to record coverage.') + '\n';
+  return '# React Plumber trend\n\n' + (trend.length ? [header, header.map(() => '---'), ...rows].map(row => `| ${row.join(' | ')} |`).join('\n') : 'No reports recorded. Run plumber report to record coverage.') + '\n';
 }

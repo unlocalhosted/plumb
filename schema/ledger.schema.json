@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "One Plumb ledger JSONL entry",
+  "title": "One React Plumber ledger JSONL entry",
   "type": "object",
   "required": ["key", "kind"],
   "properties": {

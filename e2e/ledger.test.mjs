@@ -19,8 +19,8 @@ async function copy(t, fixture = 'ledger') {
   await cp(join(root, 'fixtures', fixture), directory, { recursive: true });
   return directory;
 }
-const ledger = async directory => (await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);
-const save = (directory, entries) => writeFile(join(directory, '.plumb/ledger.jsonl'), entries.map(JSON.stringify).join('\n') + '\n');
+const ledger = async directory => (await readFile(join(directory, '.plumber/ledger.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);
+const save = (directory, entries) => writeFile(join(directory, '.plumber/ledger.jsonl'), entries.map(JSON.stringify).join('\n') + '\n');
 function git(directory, args) {
   const result = spawnSync('git', ['-C', directory, ...args], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -39,7 +39,7 @@ const newSites = finding => finding.sites.filter(site => site.ledger?.status ===
 
 test('habit findings flow through baseline, new-site gates and reasoned exceptions', async t => {
   const directory = await copy(t);
-  const config = join(directory, 'plumb.config.ts');
+  const config = join(directory, 'plumber.config.ts');
   await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n  habits: ['hover-gate'],"));
   const path = join(directory, 'src/styles.css');
   const css = await readFile(path, 'utf8');
@@ -111,9 +111,9 @@ test('spacing fix groups stay identical through baseline; one new gap-10 joins t
 test('baseline records sorted authored keys, exact properties, nearest anchors and counts; check green', async t => {
   const directory = await copy(t);
   const first = run(directory, [], 1);
-  assert.match(first.ledger.message, /Run plumb baseline/);
+  assert.match(first.ledger.message, /Run plumber baseline/);
   const text = run(directory, [], 1, false).stdout;
-  assert.match(text, /Run plumb baseline/);
+  assert.match(text, /Run plumber baseline/);
   run(directory, ['baseline']);
   const entries = await ledger(directory);
   assert.deepEqual(entries.map(e => e.key), entries.map(e => e.key).sort());
@@ -143,9 +143,9 @@ test('one extra gap-10 yields exactly one new site; baseline refuses debt growth
   assert.equal(newSites(errors(red)[0])[0].text, 'gap-10');
   assert.ok(errors(red)[0].sites.some(s => s.ledger.status === 'debt'));
   assert.equal(red.ledger.new, 1);
-  const before = await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8');
+  const before = await readFile(join(directory, '.plumber/ledger.jsonl'), 'utf8');
   assert.match(run(directory, ['baseline'], 2).stderr, /refuses debt growth.*--force/);
-  assert.equal(await readFile(join(directory, '.plumb/ledger.jsonl'), 'utf8'), before);
+  assert.equal(await readFile(join(directory, '.plumber/ledger.jsonl'), 'utf8'), before);
   run(directory, ['baseline', '--force']);
   assert.equal(run(directory).ledger.new, 0);
 });
@@ -270,10 +270,10 @@ test('base scopes files, reports every added ledger line, and debt growth fails'
   const growth = branch.findings.filter(f => f.rule === 'ledger/grew');
   assert.equal(growth.length, (await ledger(directory)).length);
   assert.ok(growth.every(f => f.sites[0].text.startsWith('{')));
-  git(directory, ['add', '.plumb']);
+  git(directory, ['add', '.plumber']);
   git(directory, ['commit', '-qm', 'accept debt']);
   // A pre-existing finding is not judged when an unrelated file changed.
-  await rm(join(directory, '.plumb/ledger.jsonl'));
+  await rm(join(directory, '.plumber/ledger.jsonl'));
   // Removing debt is allowed; source unchanged means no scoped failures.
   await writeFile(join(directory, 'README.md'), 'branch notes\n');
   assert.equal(run(directory, ['check', '--base', 'HEAD']).ledger.new, 0);
@@ -294,11 +294,11 @@ test('strict ledger blocks exceptions, decision changes and config growth vs HEA
   const strict = run(directory, ['check', '--strict-ledger'], 1);
   assert.ok(errors(strict).some(f => f.rule === 'ledger/grew' && f.why.includes('exception')));
   assert.ok(!errors(run(directory, ['check', '--base', 'HEAD'])).length, 'reasoned exception growth is information outside strict mode');
-  git(directory, ['restore', '.plumb/ledger.jsonl']);
-  const config = join(directory, 'plumb.config.ts');
+  git(directory, ['restore', '.plumber/ledger.jsonl']);
+  const config = join(directory, 'plumber.config.ts');
   await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n  markers: ['branch-hook'],"));
-  assert.ok(errors(run(directory, ['check', '--strict-ledger'], 1)).some(f => f.rule === 'ledger/grew' && f.sites.some(s => s.file.endsWith('plumb.config.ts'))));
-  git(directory, ['restore', 'plumb.config.ts']);
+  assert.ok(errors(run(directory, ['check', '--strict-ledger'], 1)).some(f => f.rule === 'ledger/grew' && f.sites.some(s => s.file.endsWith('plumber.config.ts'))));
+  git(directory, ['restore', 'plumber.config.ts']);
   const path = join(directory, 'src/App.tsx');
   await writeFile(path, (await readFile(path, 'utf8')).replaceAll('className="gap-10"', 'className="gap-12"'));
   run(directory, ['ledger', '--ratchet']);
@@ -307,15 +307,15 @@ test('strict ledger blocks exceptions, decision changes and config growth vs HEA
 
 test('init creates inferred config and decisions; baseline/check works without overwriting config', async t => {
   const directory = await copy(t);
-  await rm(join(directory, 'plumb.config.ts'));
+  await rm(join(directory, 'plumber.config.ts'));
   run(directory, ['init']);
-  const config = await readFile(join(directory, 'plumb.config.ts'), 'utf8');
+  const config = await readFile(join(directory, 'plumber.config.ts'), 'utf8');
   assert.match(config, /"inferred": true/);
   assert.ok((await ledger(directory)).filter(e => e.kind === 'decision').every(e => e.inferred));
   run(directory, ['baseline']);
   run(directory);
   assert.match(run(directory, ['init'], 2).stderr, /Config already exists/);
-  assert.equal(await readFile(join(directory, 'plumb.config.ts'), 'utf8'), config);
+  assert.equal(await readFile(join(directory, 'plumber.config.ts'), 'utf8'), config);
 });
 
 test('malformed ledgers and invalid command flags fail with actionable usage errors', async t => {
@@ -324,7 +324,7 @@ test('malformed ledgers and invalid command flags fail with actionable usage err
   const entries = await ledger(directory);
   await save(directory, [...entries, entries[0]]);
   assert.match(run(directory, [], 2).stderr, /Duplicate ledger key/);
-  await writeFile(join(directory, '.plumb/ledger.jsonl'), '{broken\n');
+  await writeFile(join(directory, '.plumber/ledger.jsonl'), '{broken\n');
   assert.match(run(directory, [], 2).stderr, /Invalid ledger JSON/);
   assert.match(run(directory, ['check', '--why', 'no'], 2).stderr, /--why requires/);
   await save(directory, entries);

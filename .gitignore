@@ -13,3 +13,7 @@ dist/
 *.tgz
 
 /fixtures/.verify-frozen/
+
+# React Plumber generated caches
+**/.plumber/cache/
+**/.plumb/cache/

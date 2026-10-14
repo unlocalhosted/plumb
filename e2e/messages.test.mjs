@@ -61,7 +61,7 @@ test('zero project tokens reports one config warning per family, while runtime v
 test('token reasons preserve group descriptions and show only a relevant sentence of at most 100 characters', async t => {
   const dir = await fixture(t);
   const group = 'Recipe controls corner geometry, paint, and padding.';
-  await writeFile(join(dir, 'plumb.config.ts'), `export default { decisions: { spacing: { from: () => [${[4,8,12,16].map(n => `{family:'spacing',name:'space-${n}',value:'${n}px',refs:['{space-${n}}'],origin:'project',tier:'primitive',why:${JSON.stringify(group)},source:{file:'tokens.json',line:1}}`).join(',')}, {family:'spacing',name:'space-related',value:'24px',refs:['{space-related}'],origin:'project',tier:'primitive',why:'Unrelated sentence. Related content uses 24px. Another sentence.',source:{file:'tokens.json',line:1}}, {family:'spacing',name:'space-wide',value:'32px',refs:['{space-wide}'],origin:'project',tier:'primitive',why:'32px ${'wide '.repeat(30)}.',source:{file:'tokens.json',line:1}}] } } };`);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default { decisions: { spacing: { from: () => [${[4,8,12,16].map(n => `{family:'spacing',name:'space-${n}',value:'${n}px',refs:['{space-${n}}'],origin:'project',tier:'primitive',why:${JSON.stringify(group)},source:{file:'tokens.json',line:1}}`).join(',')}, {family:'spacing',name:'space-related',value:'24px',refs:['{space-related}'],origin:'project',tier:'primitive',why:'Unrelated sentence. Related content uses 24px. Another sentence.',source:{file:'tokens.json',line:1}}, {family:'spacing',name:'space-wide',value:'32px',refs:['{space-wide}'],origin:'project',tier:'primitive',why:'32px ${'wide '.repeat(30)}.',source:{file:'tokens.json',line:1}}] } } };`);
   const r = cli(dir);
   for (const d of r.decisions.filter(d => d.name.startsWith('space-') && /^space-\d/.test(d.name))) { assert.equal(d.why, ''); assert.equal(d.groupWhy, group); }
   assert.equal(r.decisions.find(d => d.name === 'space-related').why, 'Related content uses 24px.');
@@ -76,7 +76,7 @@ test('suggest globs limit choices and equal-value matching across every judged f
   const props = {spacing:'padding',color:'color',radius:'border-radius',type:'font-size',motion:'transition-duration',elevation:'box-shadow',z:'z-index'};
   await writeFile(join(dir,'src/styles.css'), `@import "tailwindcss"; @theme { --*: initial; ${families.map(f=>`--${namespace[f]}-recipe: ${values[f]};`).join(' ')} } .copy { ${families.map(f=>`${props[f]}: ${values[f]};`).join(' ')} } .ref { ${families.map(f=>`${props[f]}: var(--${namespace[f]}-recipe);`).join(' ')} }`);
   await writeFile(join(dir,'src/App.tsx'), "import './styles.css';");
-  await writeFile(join(dir,'plumb.config.ts'), `export default ${JSON.stringify({ decisions: Object.fromEntries(families.map(f=>[f,{identity:'reference',suggest:['*-global'],callers:['primitive','semantic']}])) })}`);
+  await writeFile(join(dir,'plumber.config.ts'), `export default ${JSON.stringify({ decisions: Object.fromEntries(families.map(f=>[f,{identity:'reference',suggest:['*-global'],callers:['primitive','semantic']}])) })}`);
   const r=cli(dir);
   for(const f of families) {
     const finding=checks(r).find(d=>d.rule===`provenance/${f}`);
@@ -84,7 +84,7 @@ test('suggest globs limit choices and equal-value matching across every judged f
     assert.ok(finding.action.startsWith(f === 'elevation' ? 'No tokens fit:' : 'No token is close to'));
     assert.ok(!at(r, `${props[f]}: var(`).some(d=>d.family===f),f);
   }
-  await writeFile(join(dir,'plumb.config.ts'), 'export default { decisions: { color: { suggest: [42] } } };');
+  await writeFile(join(dir,'plumber.config.ts'), 'export default { decisions: { color: { suggest: [42] } } };');
   const invalid=spawnSync(process.execPath,[join(root,'dist/cli.js'),'--root',dir,'--json'],{encoding:'utf8'});
   assert.equal(invalid.status,2); assert.match(invalid.stderr,/decisions.color.suggest/);
 });
@@ -92,7 +92,7 @@ test('suggest globs limit choices and equal-value matching across every judged f
 test('all messages use relative paths including ownership definitions, and accept commands work', async t => {
   const dir=await fixture(t);
   await writeFile(join(dir,'src/Control.tsx'), 'export const Control = ({className}) => <button className={className} />;');
-  await writeFile(join(dir,'plumb.config.ts'), "export default { components: { from: 'src/Control.tsx' } };");
+  await writeFile(join(dir,'plumber.config.ts'), "export default { components: { from: 'src/Control.tsx' } };");
   await writeFile(join(dir,'src/App.tsx'), "import './styles.css'; import { Control } from './Control'; <Control className='bg-brand'/>; <div className='missing-class'/>;");
   const r=cli(dir);
   assert.ok(r.findings.find(f=>f.rule==='ownership/Control').action.includes('Defined in src/Control.tsx:1.'));
@@ -100,7 +100,7 @@ test('all messages use relative paths including ownership definitions, and accep
   const missing=r.findings.find(f=>f.rule==='existence/dead-class');
   assert.equal(missing.title,'`missing-class` does nothing: no CSS is generated for it');
   assert.equal(missing.why,missing.because); assert.equal(missing.fix,missing.action);
-  assert.equal(missing.accept,'plumb accept --rule existence/dead-class --site src/App.tsx:1 --why "…"');
+  assert.equal(missing.accept,'plumber accept --rule existence/dead-class --site src/App.tsx:1 --why "…"');
   cli(dir,['accept','--rule',missing.rule,'--site','src/App.tsx:1','--why','intentional fixture'],0);
   assert.ok(cli(dir).findings.find(f=>f.rule===missing.rule).sites.every(s=>s.ledger.status==='exception'));
 });
@@ -124,7 +124,7 @@ test('opaque inline values group once per file, across properties and families, 
   const opaque=cli(dir).findings.filter(f=>f.rule==='provenance/opaque-inline');
   assert.equal(opaque.length,2); assert.ok(opaque.every(f=>f.severity==='info'&&f.sites.length===5));
   assert.ok(opaque.every(f=>f.title==="This padding is computed at runtime, so it can't be checked"));
-  assert.ok(opaque.every(f=>f.because==='Plumb reads source, not running values.'));
+  assert.ok(opaque.every(f=>f.because==='React Plumber reads source, not running values.'));
 });
 
 test('off-token titles name the CSS property and distinguish scales from token sets', async t => {
@@ -172,7 +172,7 @@ test('dynamic-class examples keep only the static prefix and provide complete li
 test('ownership titles use stylesheet selectors, including @apply and heuristic descendants', async t => {
   const dir = await fixture(t);
   await writeFile(join(dir, 'src/Button.tsx'), 'export const Button = ({className}) => <button className={className} />;');
-  await writeFile(join(dir, 'plumb.config.ts'), "export default { components: { from: 'src/Button.tsx' } };");
+  await writeFile(join(dir, 'plumber.config.ts'), "export default { components: { from: 'src/Button.tsx' } };");
   await writeFile(join(dir, 'src/App.tsx'), "import './styles.css'; import { Button } from './Button'; <div className='container'><Button className='landing-cta applied bg-brand' style={{letterSpacing: '.04em'}} /></div>;");
   await writeFile(join(dir, 'src/overrides.css'), '@reference "./styles.css"; .landing-cta { letter-spacing: .03em; } .applied { @apply tracking-wide; } .container button { font-weight: 550; }');
   const titles = cli(dir).findings.filter(f => f.rule === 'ownership/Button').map(f => f.title);
@@ -194,7 +194,7 @@ test('choices deduplicate resolved amounts before limiting suggestions and prefe
     ['elevation', 'shadow', 'box-shadow', '0 2px 4px #123456', '0 4px 8px #123456', '0 2px 4px #123456', 'float', 'high'],
     ['z', 'z', 'z-index', '50', '60', '50', 'dialog', 'toast'],
   ];
-  await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify({ decisions: Object.fromEntries(tokens.map(([family]) => [family, { from: 'css:src/styles.css', callers: ['primitive', 'semantic'], identity: 'reference' }])) })};`);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify({ decisions: Object.fromEntries(tokens.map(([family]) => [family, { from: 'css:src/styles.css', callers: ['primitive', 'semantic'], identity: 'reference' }])) })};`);
   await writeFile(join(dir, 'src/App.tsx'), "import './styles.css';");
   await writeFile(join(dir, 'src/styles.css'), `@import "tailwindcss"; @theme { --*: initial;
     ${tokens.map(([, ns,, lower, upper,, low, high]) => `--${ns}-${low}: ${lower}; --${ns}-${high}: ${upper};`).join('\n')}
@@ -239,7 +239,7 @@ test('suggestion policies retain exact names and glob semantics across cold, war
     [['--spacing-large', '--spacing-missing'], ['--spacing-large']],
     [[], []],
   ]) {
-    await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify({ decisions: { spacing: { suggest, callers: ['primitive', 'semantic'] } } })};`);
+    await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify({ decisions: { spacing: { suggest, callers: ['primitive', 'semantic'] } } })};`);
     const cold = cli(dir), warm = cli(dir);
     assert.deepEqual(cold.findings, warm.findings);
     const findings = cold.findings.filter(f => f.rule === 'provenance/spacing');

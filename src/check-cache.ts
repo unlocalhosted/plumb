@@ -1,3 +1,4 @@
+import { cacheDirectory, statePath } from './paths.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
@@ -57,7 +58,7 @@ export class CheckCache {
     try { graph = await tailwindGraph(css); } catch { return; }
     // Module plugins/configs can read arbitrary runtime inputs.
     if (graph.files.some(file => !file.endsWith('.css'))) return;
-    const base = resolve(process.env.PLUMB_CACHE_DIR ?? join(root, existsSync(join(root, 'node_modules')) ? 'node_modules/.cache/plumb' : '.plumb-cache'));
+    const base = cacheDirectory(root);
     // Package metadata determines the reported compiler version even when
     // every stylesheet byte stays the same. Resolve it afresh at admission.
     let compilerPackage: string | undefined;
@@ -67,7 +68,7 @@ export class CheckCache {
     return new CheckCache(root, join(base, 'checked', key), config, css);
   }
   private async inventory(): Promise<string[]> {
-    return (await glob('**/*', { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.cache/**'] })).sort();
+    return (await glob('**/*', { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**', '**/.cache/**'] })).sort();
   }
   async snapshot(): Promise<Map<string, string | null>> {
     const files = await this.inventory();
@@ -160,7 +161,7 @@ export class CheckCache {
     }
     const compiler = { entry: this.css, hash: (await tailwindGraph(this.css)).hash };
     // Ledger diagnostics and allowances are part of this result, too.
-    const ledger = join(this.root, '.plumb/ledger.jsonl'); after.set(ledger, fileHash(ledger));
+    const ledger = statePath(this.root, 'ledger.jsonl'); after.set(ledger, fileHash(ledger));
     const stamps: Receipt['stamps'] = [];
     for (const [file, previous] of after) {
       const current = stamp(file);

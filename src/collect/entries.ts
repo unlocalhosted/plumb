@@ -126,7 +126,7 @@ export async function appTailwindEntry(root: string, candidates: string[], diagn
   if (ranked[0] && ranked[0].count > (ranked[1]?.count ?? 0)) {
     const { file, count } = ranked[0];
     diagnostics.push(configDiagnostic('config/tailwind-entry', { file, line: 1, column: 1, text: file },
-      `Using Tailwind entry ${file}`, `The app reaches several Tailwind entries; this entry reaches the most source files (${count}).`, 'Set css in plumb.config.ts to choose a different entry.'));
+      `Using Tailwind entry ${file}`, `The app reaches several Tailwind entries; this entry reaches the most source files (${count}).`, 'Set css in plumber.config.ts to choose a different entry.'));
     return file;
   }
 }

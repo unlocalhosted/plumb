@@ -8,7 +8,7 @@ import { plumb } from '../dist/hosts/vite.js';
 export default ({ mode, command = 'serve' }) => ({
   root: import.meta.dirname,
   // MDX first: docs pages compile to JSX before anything else sees them
-  plugins: [{ enforce: 'pre', ...mdx({ remarkPlugins: [gfm] }) }, tailwindcss(), plumb({ config: 'plumb.config.mjs',
+  plugins: [{ enforce: 'pre', ...mdx({ remarkPlugins: [gfm] }) }, tailwindcss(), plumb({ config: 'plumber.config.mjs',
     demo: mode === 'record-replay' ? undefined : { replay: 'src/hero/replay.js', guard: true } })],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') }, dedupe: ['react', 'react-dom'] },
   oxc: { jsx: { runtime: 'automatic', development: command === 'serve' } },

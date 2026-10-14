@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 import { build, createServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { decode } from '@jridgewell/sourcemap-codec';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const file = 'src/App.jsx';
@@ -58,9 +58,9 @@ createRoot(document.getElementById('root')).render(<App />);
   await mkdir(join(root, 'src/names&part'));
   await writeFile(join(root, 'src/names&part/Encoded.jsx'), 'export default () => <button id="encoded" />;');
   await writeFile(join(root, 'src/delimiters:#?%.jsx'), 'export default () => <button id="delimiters" />;');
-  await writeFile(join(root, 'plumb.config.ts'), `export default { source: ['src/**/*.{tsx,jsx,ts,js,css}', '!src/excluded.jsx'], decisions: { spacing: { callers: ['primitive', 'semantic'] } } };`);
+  await writeFile(join(root, 'plumber.config.ts'), `export default { source: ['src/**/*.{tsx,jsx,ts,js,css}', '!src/excluded.jsx'], decisions: { spacing: { callers: ['primitive', 'semantic'] } } };`);
   // Aliases under src must not turn files outside this project's root into
-  // tracked sources. The target is still inside Plumb, read-only.
+  // tracked sources. The target is still inside React Plumber, read-only.
   await symlink(join(repo, 'fixtures/spacing/src/App.tsx'), join(root, 'src/linked.tsx'));
   return root;
 }
@@ -76,7 +76,7 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
   const server = await createServer({ ...settings(root), plugins: [plumb({ watch: false }), capture, react()] });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+  const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
   t.after(() => browser.close());
   const page = await browser.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));

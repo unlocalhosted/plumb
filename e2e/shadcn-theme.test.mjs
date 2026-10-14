@@ -157,7 +157,7 @@ test('fix generator rejects self-reference and transitive cycles outside theme d
   `);
   await writeFile(join(directory, 'src/App.jsx'), `import './styles.css';`);
   await writeFile(join(directory, 'src/Motion.jsx'), '');
-  await writeFile(join(directory, 'plumb.config.ts'), `export default { decisions: { color: {
+  await writeFile(join(directory, 'plumber.config.ts'), `export default { decisions: { color: {
     from: () => [
       { family: 'color', name: '--color-direct', value: 'var(--recipe-direct)', refs: ['var(--color-direct)'], origin: 'project', tier: 'primitive', why: 'direct', source: { file: 'src/styles.css', line: 3 } },
       { family: 'color', name: '--color-indirect', value: 'var(--bridge-one)', refs: ['var(--color-indirect)'], origin: 'project', tier: 'primitive', why: 'indirect', source: { file: 'src/styles.css', line: 4 } }
@@ -217,7 +217,7 @@ test('explicit semantic callers stay strict; generated docs describe inferred an
   function docs() {
     const result = spawnSync(process.execPath, [join(root, 'dist/cli.js'), 'agent-docs', '--root', directory], { encoding: 'utf8', timeout: 15000 });
     assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
-    return readFile(join(directory, 'PLUMB.md'), 'utf8');
+    return readFile(join(directory, 'PLUMBER.md'), 'utf8');
   }
   run(directory);
   const records = run(directory, ['decisions', '--family', 'type']);
@@ -227,7 +227,7 @@ test('explicit semantic callers stay strict; generated docs describe inferred an
   assert.match(inferred, /Caller tiers: primitive, semantic; primitives with semantic aliases require those aliases/);
   assert.match(inferred, /--text-xs: use --text-caption/);
   assert.doesNotMatch(inferred, /--font-serif: use/);
-  await writeFile(join(directory, 'plumb.config.ts'), "export default { decisions: { type: { callers: ['semantic'] } } };\n");
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { decisions: { type: { callers: ['semantic'] } } };\n");
   const report = run(directory);
   for (const text of ['text-xs', 'text-sm', 'text-lg', 'text-2xl', 'text-5xl', 'font-mono', 'font-serif', 'font-medium']) {
     assert.ok(report.findings.some(f => f.rule === 'provenance/type/tier' && f.sites.some(s => s.text === text)), text);
@@ -314,7 +314,7 @@ test('motion inference shares theme scopes across entry imports and keeps source
 });
 
 test('configured motion sources and caller tiers still control inferred root values', async t => {
-  const directory = await copy(t), config = join(directory, 'plumb.config.ts');
+  const directory = await copy(t), config = join(directory, 'plumber.config.ts');
   await writeFile(config, "export default { decisions: { motion: { from: 'theme:*' } } };\n");
   const excluded = run(directory);
   assert.ok(!excluded.decisions.some(d => d.name === '--dur-explode'));

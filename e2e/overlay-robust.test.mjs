@@ -47,7 +47,7 @@ test('zero-config follows the HTML module entry and dynamic imports to app Tailw
   assert.equal(text.status, 0); assert.match(text.stdout, /1 item skipped/); assert.doesNotMatch(text.stdout, /Unexpected token/);
   const verbose = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root, '--verbose'], { encoding: 'utf8' });
   assert.equal(verbose.status, 0); assert.match(verbose.stdout, /config\/unreadable/); assert.match(verbose.stdout, /Unexpected token/);
-  await put(root, 'plumb.config.ts', "export default { css: 'src/index.css' };");
+  await put(root, 'plumber.config.ts', "export default { css: 'src/index.css' };");
   const before = check(root).status;
   await put(root, 'src/App.tsx', 'export const App = () => <div className="gap-[13px] bg-app" />;');
   assert.equal(check(root).status, before, 'unreadable diagnostic does not change configured CLI exit status');
@@ -120,14 +120,14 @@ test('compiler exceptions isolate candidates and source-map CSS lowering remains
   const dead = report.findings.find(f => f.rule === 'existence/dead-class' && f.declaration.value === 'baad-parse');
   assert.ok(dead); assert.ok(!dead.fix.includes('bad-parse'), 'unreadable candidates never become replacement suggestions');
   assert.deepEqual(semantic(check(root).report), semantic(report));
-  await put(root, 'plumb.config.ts', "export default { habits: ['hover-gate'] };");
+  await put(root, 'plumber.config.ts', "export default { habits: ['hover-gate'] };");
   await put(root, 'src/App.tsx', 'export const App = () => <div className="bad-compile bad-parse good needs-hints" />;');
   const probes = check(root).report;
   assert.equal(diagnostics(probes).length, 4);
   assert.deepEqual(semantic(check(root).report), semantic(probes), 'failed probes and completions remain visible through warm caches');
   const session = await Session.create({ root }); t.after(() => session.close());
   assert.deepEqual(semantic(await session.report()), semantic(probes));
-  await put(root, 'plumb.config.ts', 'export default {};');
+  await put(root, 'plumber.config.ts', 'export default {};');
   await put(root, 'src/App.tsx', 'export const App = () => <div className="good" />;');
   await put(root, 'src/index.css', '@import "tailwindcss"; @utility bad-util { padding: 7px; } @utility good-util { padding: 9px; }');
   const utilities = check(root).report;
@@ -174,5 +174,5 @@ test('static bundler inputs choose entries without executing config; graph ties 
   await put(root, 'src/main.tsx', 'import "./index.css";');
   await put(root, 'vite.config.ts', 'export default { build: { rollupOptions: { input: ["src/main.tsx", "src/landing.ts"] } } };');
   const result = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root, '--json'], { encoding: 'utf8' });
-  assert.equal(result.status, 2); assert.match(result.stderr, /set css in plumb.config.ts/);
+  assert.equal(result.status, 2); assert.match(result.stderr, /set css in plumber.config.ts/);
 });

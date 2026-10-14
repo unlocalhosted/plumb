@@ -1,3 +1,4 @@
+import { environment, stateDirectory, statePath, configurationNames, isLedgerPath } from '../paths.js';
 import { constants, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { stat, lstat, readdir, readFile, realpath, open } from 'node:fs/promises';
@@ -41,9 +42,9 @@ export interface ApplyOptions { file: string; hash: string; edits: { id: string 
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
-const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**'];
-const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb\/serve\.json$/.test(file);
-const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(file);
+const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
+const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(file);
+const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file);
 const missing = (error: unknown) => ['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
 
 /** Owns one warm analysis worker and serializes changes with reads. */
@@ -86,7 +87,7 @@ export class Session extends EventEmitter {
   private patternFiles = new Set<string>();
   private constructor(private options: SessionOptions) { super(); this.root = resolve(options.root ?? process.cwd()); }
   static async create(options: SessionOptions = {}): Promise<Session> {
-    if (options.watch === undefined && process.env.PLUMB_WATCH === '0') options = { ...options, watch: false };
+    if (options.watch === undefined && environment('WATCH') === '0') options = { ...options, watch: false };
     const session = new Session(options);
     try {
       await session.start(); await session.scan(true);
@@ -222,7 +223,7 @@ export class Session extends EventEmitter {
         if (dynamic < 0) this.patternRoots.set(pattern, Infinity);
       }
     }
-    const locations = new Set([this.root, resolve(this.root, '.plumb'), ...this.patternRoots.keys(),
+    const locations = new Set([this.root, stateDirectory(this.root), ...this.patternRoots.keys(),
       ...[...this.dependencies, ...this.inputs, ...(this.options.config ? [resolve(this.root, this.options.config)] : [])].map(dirname)]);
     for (const path of locations) {
       await this.retainDirectory(path, paths);
@@ -247,7 +248,7 @@ export class Session extends EventEmitter {
     // Ask the analysis worker for only the paths this reconciliation needs.
     const queryPaths = local ? await this.request<string[]>('queryDependencies', { files: query }) : [];
     const paths = new Set(local ? [...query, ...this.inputs, ...(this.options.config ? [resolve(this.root, this.options.config)] :
-      ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'].map(name => resolve(this.root, name))), resolve(this.root, '.plumb/ledger.jsonl'),
+      configurationNames(this.root).map(name => resolve(this.root, name))), statePath(this.root, 'ledger.jsonl'),
       ...this.analysisInputs, ...queryPaths] :
       [...this.events, ...query ?? [], ...this.hashes.keys(), ...this.dependencies, ...this.inputs, ...this.patternFiles]);
     if (!local) this.events.clear();
@@ -295,7 +296,7 @@ export class Session extends EventEmitter {
     if (!local) this.selectAnalysisInputs();
     if (initial) return [];
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
-    const broad = changed.some(path => !path.endsWith('/.plumb/ledger.jsonl') && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
+    const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
       else {
@@ -311,12 +312,12 @@ export class Session extends EventEmitter {
     return changed;
   }
   private observe(): void {
-    if (!(this.options.polling ?? process.env.PLUMB_POLLING === '1')) {
+    if (!(this.options.polling ?? environment('POLLING') === '1')) {
       try {
         this.watchers.push(watch(this.root, { recursive: true }, (_event, file) => {
           const name = file === null ? undefined : String(file).replaceAll('\\', '/');
           const path = name === undefined ? undefined : resolve(this.root, name);
-          if (name === undefined || path !== undefined && this.dependencies.has(path) || !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache)(?:\/|$)/.test(name) && !/(?:^|\/)\.plumb\/serve\.json$/.test(name)) {
+          if (name === undefined || path !== undefined && this.dependencies.has(path) || !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(name) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(name)) {
             if (path && (tracked(name!) || this.dependencies.has(path) || this.directories.has(path))) this.events.add(path);
             if (this.debounce) clearTimeout(this.debounce);
             this.debounce = setTimeout(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, 5);
@@ -585,7 +586,7 @@ export class Session extends EventEmitter {
   private async editableFile(file: string): Promise<{ dev: number; ino: number }> {
     this.file(file);
     const inside = relative(this.root, file).replaceAll('\\', '/');
-    if (/(?:^|\/)plumb\.config\.[^/]+$/.test(inside) || /(?:^|\/)\.plumb(?:\/|$)/.test(inside)) throw new UsageError('Apply cannot edit Plumb config or .plumb files.');
+    if (/(?:^|\/)plumb(?:er)?\.config\.[^/]+$/.test(inside) || /(?:^|\/)\.plumb(?:er)?(?:\/|$)/.test(inside)) throw new UsageError('Apply cannot edit React Plumber config or .plumb files.');
     const identity = await lstat(file);
     const root = await realpath(this.root), path = await realpath(file);
     if (path !== resolve(root, inside)) throw new UsageError('Apply cannot edit symbolic links or paths outside the project root.');

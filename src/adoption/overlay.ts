@@ -7,10 +7,10 @@ import { nodeName, unwrap } from '../collect/source.js';
 import { UsageError } from '../errors.js';
 
 interface Edit { file: string; before: string | undefined; after: string }
-const viteModule = '@unlocalhosted/plumb/vite';
-const nextModule = '@unlocalhosted/plumb/next/config';
-const overlayModule = '@unlocalhosted/plumb/next';
-const route = "import { createPlumbRoute } from '@unlocalhosted/plumb/next';\n\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute();\n";
+const viteModule = '@unlocalhosted/react-plumber/vite';
+const nextModule = '@unlocalhosted/react-plumber/next/config';
+const overlayModule = '@unlocalhosted/react-plumber/next';
+const route = "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\n\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute();\n";
 
 function refuse(message: string): never { throw new UsageError(`Overlay setup refused: ${message}`); }
 
@@ -170,7 +170,7 @@ function viteConfig(file: string, source: string): string {
     if (array.type !== 'ArrayExpression' || array.elements.some(item => !item || item.type === 'SpreadElement')) refuse('plugins must be a literal array without spreads.');
     const elements = array.elements as Node[];
     const installed = elements.filter(item => item.type === 'CallExpression' && item.callee.type === 'Identifier' && item.callee.name === name);
-    if (installed.length > 1) refuse('plugins contains more than one Plumb call.');
+    if (installed.length > 1) refuse('plugins contains more than one React Plumber call.');
     const previous = installed[0];
     if (previous !== elements[0] || !previous) {
       const call = previous ? source.slice(previous.start, previous.end) : `${name}()`;

@@ -1,3 +1,4 @@
+import { statePath, stateDirectory } from '../paths.js';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -234,13 +235,13 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
   if (options.servedRoot?.trim() === '') throw new UsageError('Provide a non-empty path for --served-root.');
   if (options.origin !== undefined && !options.overlay) throw new UsageError('--origin requires serve --overlay.');
   const origin = options.origin === undefined ? undefined : trustedOrigin(options.origin);
-  const root = resolve(options.root ?? process.cwd()), path = resolve(root, '.plumb/serve.json');
+  const root = resolve(options.root ?? process.cwd()), path = statePath(root, 'serve.json');
   // A live PID owns its discovery file. Never overwrite another daemon.
   try {
     const old = JSON.parse(await readFile(path, 'utf8')) as ServeInfo;
     let alive = false;
     if (Number.isSafeInteger(old.pid) && old.pid > 0) try { process.kill(old.pid, 0); alive = true; } catch (error) { alive = (error as NodeJS.ErrnoException).code === 'EPERM'; }
-    if (alive) throw new UsageError('A server is already running for this project. Use its .plumb/serve.json connection.');
+    if (alive) throw new UsageError(`A server is already running for this project. Use its ${statePath(root, 'serve.json')} connection.`);
     await rm(path);
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, ...sessionOptions } = options;
@@ -256,7 +257,7 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
     if (!address || typeof address === 'string') throw new Error('Server has no TCP address.');
     const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1,
       ...(options.overlay ? { overlay: true, origin: origin! } : {}) };
-    await mkdir(resolve(root, '.plumb'), { recursive: true, mode: 0o700 });
+    await mkdir(stateDirectory(root), { recursive: true, mode: 0o700 });
     await writeFile(path, JSON.stringify(info) + '\n', { flag: 'wx', mode: 0o600 });
     let closed = false;
     return { session, server, info, async close() {

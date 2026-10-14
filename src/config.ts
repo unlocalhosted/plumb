@@ -1,3 +1,4 @@
+import { allConfigNames, migrationNotice } from './paths.js';
 import { loadPresets, validatePresetSelection } from './presets/index.js';
 import type { PresetSelection, PresetSummary } from './presets/index.js';
 import { stat } from 'node:fs/promises';
@@ -60,10 +61,10 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
 
 const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
-const filenames = ['plumb.config.ts', 'plumb.config.mts', 'plumb.config.mjs', 'plumb.config.js'];
+const filenames = allConfigNames;
 
 function invalid(path: string, expected: string): never {
-  throw new UsageError(`Set ${path} to ${expected} in your Plumb config.`);
+  throw new UsageError(`Set ${path} to ${expected} in your React Plumber config.`);
 }
 
 function object(value: unknown, path: string): Record<string, unknown> {
@@ -176,6 +177,7 @@ export function validateConfig(value: unknown): PlumbConfig {
 }
 
 export async function loadConfig(root: string, explicitPath?: string): Promise<LoadedConfig> {
+  migrationNotice(root, explicitPath);
   let path: string | null = explicitPath === undefined ? null : resolve(root, explicitPath);
   if (path === null) {
     for (const filename of filenames) {

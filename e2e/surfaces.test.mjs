@@ -37,7 +37,7 @@ test('SARIF 2.1.0 has required fields, rule help and per-site baseline/fingerpri
   const sarif = JSON.parse(run(directory, ['--sarif'], 1).stdout);
   assert.equal(sarif.version, '2.1.0'); assert.match(sarif.$schema, /sarif-2\.1\.0/); assert.equal(sarif.runs.length, 1);
   const { tool, results, columnKind } = sarif.runs[0];
-  assert.equal(tool.driver.name, 'plumb'); assert.equal(typeof tool.driver.version, 'string'); assert.equal(columnKind, 'utf16CodeUnits');
+  assert.equal(tool.driver.name, 'react-plumber'); assert.equal(typeof tool.driver.version, 'string'); assert.equal(columnKind, 'utf16CodeUnits');
   assert.equal(results.length, data.findings.reduce((n, f) => n + f.sites.length, 0));
   const drift = results.filter(r => r.ruleId === 'provenance/spacing');
   const dead = results.filter(r => r.ruleId === 'dead/spacing');
@@ -105,12 +105,12 @@ test('scripted agent applies exact new gap-10 edit, reaches 0 new and preserves 
   const directory = await fixture(t);
   const file = join(directory, 'src/App.tsx'); await writeFile(file, 'export function App() { return <div />; }\n');
   run(directory, ['baseline']); await history(directory);
-  const ledgerFile = join(directory, '.plumb/ledger.jsonl'); const ledgerBefore = await readFile(ledgerFile, 'utf8');
+  const ledgerFile = join(directory, '.plumber/ledger.jsonl'); const ledgerBefore = await readFile(ledgerFile, 'utf8');
   await writeFile(file, 'export function App() { return <div className="gap-10" />; }\n');
   const output = run(directory, ['--changed', '--agent'], 1).stdout;
   assert.match(output, /1 new/); assert.match(output, /Sites: src\/App.tsx:1:/); assert.match(output, /Compiles to: gap: 10px/);
   assert.match(output, /- 8px: use gap-step-small or gap: var\(--spacing-step-small\); why: related parts/);
-  assert.match(output, /NEEDS-DECISION/); assert.match(output, /Do not edit plumb.config.ts/); assert.match(output, /Never add a token/);
+  assert.match(output, /NEEDS-DECISION/); assert.match(output, /Do not edit plumber.config.ts/); assert.match(output, /Never add a token/);
   const edit = output.match(/Edit: replace `([^`]+)` with `([^`]+)` at src\/App.tsx:1:(\d+)\./);
   assert.ok(edit, output);
   const source = await readFile(file, 'utf8');
@@ -129,7 +129,7 @@ test('agent excludes debt, preserves variants, and does not choose among multipl
   assert.doesNotMatch(output, /replace `gap-10`/);
   const css = join(directory, 'src/styles.css'); await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing: 1px;', '--spacing: 1px;\n /* why: separate groups */ --spacing-step-large: 12px;'));
   output = run(directory, ['--agent'], 1).stdout;
-  // Two close decisions: both edits are offered as options and Plumb does not pick one.
+  // Two close decisions: both edits are offered as options and React Plumber does not pick one.
   assert.match(output, /Choose a token using its reason/);
   assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-small!`  \(8px\)/);
   assert.match(output, /replace `hover:gap-10!` with `hover:gap-step-large!`  \(12px\)/);
@@ -138,23 +138,23 @@ test('agent excludes debt, preserves variants, and does not choose among multipl
 
 test('agent never announces 0 new while strict config or unaccepted decisions fail', async t => {
   const directory = await fixture(t); run(directory, ['baseline']); await history(directory);
-  const config = join(directory, 'plumb.config.ts');
+  const config = join(directory, 'plumber.config.ts');
   await writeFile(config, (await readFile(config, 'utf8')).replace("css: 'src/styles.css',", "css: 'src/styles.css',\n markers: ['branch-only'],"));
   const output = run(directory, ['--changed', '--agent', '--strict-ledger'], 1).stdout;
   assert.doesNotMatch(output, /^0 new/); assert.match(output, /New exceptions and tokens/); assert.match(output, /NEEDS-DECISION/);
-  git(directory, 'restore', 'plumb.config.ts');
+  git(directory, 'restore', 'plumber.config.ts');
   const css = join(directory, 'src/styles.css');
   await writeFile(css, (await readFile(css, 'utf8')).replace('--spacing: 1px;', '--spacing: 1px; --spacing-step-large: 12px;'));
   const decisionOutput = run(directory, ['--changed', '--agent'], 1).stdout;
   assert.doesNotMatch(decisionOutput, /^0 new/); assert.match(decisionOutput, /decisions\/unaccepted/);
-  assert.doesNotMatch(decisionOutput, /Edit: Run plumb accept-decisions/);
+  assert.doesNotMatch(decisionOutput, /Edit: Run plumber accept-decisions/);
 });
 
 test('agent-docs derives whys from decisions, enabled habits and shared loop; absent ownership works', async t => {
   const directory = await fixture(t);
   const printed = run(directory, ['agent-docs']).stdout;
   assert.match(printed, /Add this block to AGENTS.md or CLAUDE.md/);
-  const file = join(directory, 'PLUMB.md'); const before = await readFile(file, 'utf8');
+  const file = join(directory, 'PLUMBER.md'); const before = await readFile(file, 'utf8');
   assert.match(before, /--spacing-step-small: 8px/); assert.match(before, /Why: related parts/);
   assert.match(before, /Identity: value/); assert.match(before, /No component ownership data/);
   assert.match(before, /team-spacing\. Why: Keep related parts together/); assert.match(before, /stop when it prints "0 new"/);
@@ -174,7 +174,7 @@ test('install --hooks merges settings, preserves existing hooks and stays idempo
   const merged = JSON.parse(await readFile(claudeFile, 'utf8')), mergedCursor = JSON.parse(await readFile(cursorFile, 'utf8'));
   assert.deepEqual(merged.permissions, original.permissions); assert.deepEqual(merged.env, original.env); assert.deepEqual(merged.hooks.Stop, original.hooks.Stop);
   assert.deepEqual(merged.hooks.PostToolUse[0], original.hooks.PostToolUse[0]);
-  assert.equal(merged.hooks.PostToolUse[1].hooks[0].command, 'plumb check --changed --agent --strict-ledger');
+  assert.equal(merged.hooks.PostToolUse[1].hooks[0].command, 'plumber check --changed --agent --strict-ledger');
   assert.deepEqual(mergedCursor.hooks.beforeShellExecution, cursor.hooks.beforeShellExecution); assert.equal(mergedCursor.team, 'kept'); assert.equal(mergedCursor.hooks.afterFileEdit.length, 2);
   const before = await readFile(claudeFile, 'utf8'); assert.match(run(directory, ['install', '--hooks']).stdout, /unchanged/); assert.equal(await readFile(claudeFile, 'utf8'), before);
   await writeFile(cursorFile, '{bad'); assert.match(run(directory, ['install', '--hooks'], 2).stderr, /Invalid JSON/); assert.equal(await readFile(claudeFile, 'utf8'), before);

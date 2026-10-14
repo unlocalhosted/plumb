@@ -1,4 +1,4 @@
-import { definePreset } from '@unlocalhosted/plumb';
+import { definePreset } from '@unlocalhosted/react-plumber';
 export default definePreset({
   name: '@fixtures/design-system',
   decisions: [

@@ -26,7 +26,7 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
   });
   await new Promise(done => server.listen(0, '127.0.0.1', done));
   t.after(() => new Promise(done => server.close(done)));
-  const browser = await chromium.launch({ executablePath: process.env.PLUMB_CHROMIUM || undefined });
+  const browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
   t.after(() => browser.close());
   const drifts = fixture.groups.flatMap(group => group.drifts);
   assert.equal(drifts.length, 6);
@@ -57,7 +57,7 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
     for (const index of run.order) {
       const drift = drifts[index];
       const control = page.getByRole('button', { name: new RegExp(`^${index + 1}:`) });
-      // Hero controls pin the actual element in Plumb; all choices and writes happen inside the real overlay.
+      // Hero controls pin the actual element in React Plumber; all choices and writes happen inside the real overlay.
       await control.click();
       const dialog = overlay.getByRole('dialog'); await dialog.waitFor();
       const markButton = dialog.getByRole('button', { name: new RegExp(drift.bad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).first();

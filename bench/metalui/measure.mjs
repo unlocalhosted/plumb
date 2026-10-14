@@ -4,12 +4,12 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
 const label = process.argv[2] ?? 'review';
-const cache = resolve(process.env.PLUMB_CACHE_DIR ?? `bench/metalui/.cache/${label}-${Date.now()}`);
+const cache = resolve((process.env.PLUMBER_CACHE_DIR ?? process.env.PLUMB_CACHE_DIR) ?? `bench/metalui/.cache/${label}-${Date.now()}`);
 const runs = {};
 let coldReport;
 for (const temperature of ['cold', 'warm']) {
   const start = performance.now();
-  const result = spawnSync(process.execPath, ['dist/cli.js', '--root', '/Users/vijaysingh/unlocalhosted/metalui', '--config', resolve('bench/metalui/plumb.config.ts'), '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLUMB_CACHE_DIR: cache } });
+  const result = spawnSync(process.execPath, ['dist/cli.js', '--root', '/Users/vijaysingh/unlocalhosted/metalui', '--config', resolve('bench/metalui/plumber.config.ts'), '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLUMB_CACHE_DIR: cache } });
   if (result.error || result.stderr || result.status !== 1) throw new Error(result.stderr || String(result.error ?? result.status));
   const wallMs = performance.now() - start;
   const report = JSON.parse(result.stdout);

@@ -15,7 +15,7 @@ async function project(t, source, config, files = {}) {
  t.after(() => rm(dir, { recursive: true, force: true }));
  await cp(join(root, 'fixtures/ownership'), dir, { recursive: true });
  if (source !== undefined) { await writeFile(join(dir, 'src/App.tsx'), `import './styles.css';\n${source}`); await writeFile(join(dir,'src/wrappers.tsx'),''); }
- if (config !== undefined) await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify(config)}`);
+ if (config !== undefined) await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)}`);
  for (const [path, contents] of Object.entries(files)) { await mkdir(join(dir,path,'..'), { recursive: true }); await writeFile(join(dir,path),contents); }
  return dir;
 }

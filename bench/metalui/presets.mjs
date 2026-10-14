@@ -20,7 +20,7 @@ try {
   const metadata = JSON.parse(await readFile(join(library, 'package.json'), 'utf8'));
   metadata.plumb = './plumb/index.mjs'; metadata.exports['./plumb'] = './plumb/index.mjs';
   await writeFile(join(library, 'package.json'), JSON.stringify(metadata, null, 2));
-  await link(root, join(library, 'node_modules/@unlocalhosted/plumb'));
+  await link(root, join(library, 'node_modules/@unlocalhosted/react-plumber'));
   await link(library, join(project, 'node_modules/@unlocalhosted/metalui'));
   const runs = [];
   for (const lane of ['cold', 'warm']) {

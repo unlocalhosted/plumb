@@ -11,7 +11,7 @@ import { performance } from 'node:perf_hooks';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const root = process.env.ALGORECALL_ROOT ?? resolve(repo, '../algorecall');
-const config = join(repo, 'bench/apps/algorecall.plumb.config.ts');
+const config = join(repo, 'bench/apps/algorecall.plumber.config.ts');
 const output = mkdtempSync('/private/tmp/plumb-large-');
 const profile = process.argv.includes('--profile');
 const compare = process.argv.find(arg => arg.startsWith('--compare='))?.slice(10);
@@ -75,7 +75,7 @@ import {BroadcastChannel} from 'node:worker_threads';
 const start=performance.now();
 const session=await Session.create({root:${JSON.stringify(root)},config:${JSON.stringify(config)},watch:false,readQueueMs:60000});
 const coldMs=performance.now()-start;
-if(process.env.PLUMB_LARGE_PROFILE){
+if((process.env.PLUMBER_LARGE_PROFILE ?? process.env.PLUMB_LARGE_PROFILE)){
   const channel=new BroadcastChannel('plumb-large-profile');
   await new Promise((resolve,reject)=>{let saved=0;const timer=setTimeout(()=>reject(new Error('Worker profile timeout')),10000);channel.onmessage=({data})=>{if(data.saved && ++saved===2){clearTimeout(timer);resolve();}};channel.postMessage('stop');});channel.close();
 }

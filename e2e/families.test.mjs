@@ -16,7 +16,7 @@ async function project(t, css, source, config = {}) {
   await writeFile(join(dir, 'src/styles.css'), css);
   await writeFile(join(dir, 'src/App.tsx'), `import './styles.css'; ${source}`);
   await writeFile(join(dir, 'src/Button.tsx'), ''); await writeFile(join(dir, 'src/Card.tsx'), '');
-  await writeFile(join(dir, 'plumb.config.ts'), `export default ${JSON.stringify(config)}`);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)}`);
   return dir;
 }
 const theme = `@import "tailwindcss"; @theme {
@@ -56,7 +56,7 @@ test('tier defaults flip per family, framework origin wins, value and reference 
  const r=run(dir); const tier=finding(r,'bg-brand','provenance/color/tier'); assert.ok(tier); assert.ok(tier.decisions.some(d=>d.name==='--color-text-muted' && d.use.class==='bg-text-muted'));
  assert.ok(finding(r,'bg-red-500','provenance/color/framework')); assert.ok(finding(r,'rounded-lg','provenance/radius/framework'));
  assert.ok(!finding(r,'text-text-muted')); assert.ok(finding(r,"color: '#2563eb'",'provenance/color/tier'));
- await writeFile(join(dir,'plumb.config.ts'), `export default { decisions: { color: { callers: ['primitive','semantic'], identity: 'value' }, motion: { identity: 'value' } } }`);
+ await writeFile(join(dir,'plumber.config.ts'), `export default { decisions: { color: { callers: ['primitive','semantic'], identity: 'value' }, motion: { identity: 'value' } } }`);
  await writeFile(join(dir,'src/styles.css'),theme+' .value { color: rgb(37 99 235); transition-duration: .16s; transition-timing-function: cubic-bezier(.2,0,.2,1); }');
  assert.ok(!run(dir).findings.filter(f=>!f.rule.startsWith('dead/')).some(f=>f.sites.some(s=>/rgb\(37|\.16s|cubic-bezier/.test(s.text))));
 });

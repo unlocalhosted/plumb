@@ -1,4 +1,4 @@
-name: Plumb
+name: React Plumber
 description: Check design drift, annotate new drift, touched debt and exceptions, and review ledger growth.
 inputs:
   base:
@@ -6,7 +6,7 @@ inputs:
     required: false
     default: ''
   working-directory:
-    description: Project directory containing the Plumb config.
+    description: Project directory containing the React Plumber config.
     required: false
     default: '.'
   ledger-approvers:
@@ -23,7 +23,7 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22.18.0'
-    - name: Install Plumb
+    - name: Install React Plumber
       shell: bash
       run: |
         npm ci --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
@@ -32,7 +32,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
-        PLUMB_BASE: ${{ inputs.base }}
-        PLUMB_WORKING_DIRECTORY: ${{ inputs.working-directory }}
-        PLUMB_LEDGER_APPROVERS: ${{ inputs.ledger-approvers }}
+        PLUMBER_BASE: ${{ inputs.base }}
+        PLUMBER_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        PLUMBER_LEDGER_APPROVERS: ${{ inputs.ledger-approvers }}
       run: node "$GITHUB_ACTION_PATH/scripts/action/run.mjs"

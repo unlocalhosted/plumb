@@ -69,4 +69,4 @@ function protectApps(scratch, app) {
   syncBuiltinESMExports();
 }
 
-protectApps(process.env.PLUMB_VERIFY_SCRATCH, JSON.parse(process.env.PLUMB_VERIFY_APP));
+protectApps((process.env.PLUMBER_VERIFY_SCRATCH ?? process.env.PLUMB_VERIFY_SCRATCH), JSON.parse((process.env.PLUMBER_VERIFY_APP ?? process.env.PLUMB_VERIFY_APP)));

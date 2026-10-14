@@ -1,3 +1,4 @@
+import { environment } from '../paths.js';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -29,7 +30,7 @@ export function createPlumbRoute(options: SessionOptions = {}): { GET(request: R
 
 // Where this dev server writes the chunks the browser runs. Next 16 keeps development output in <distDir>/dev.
 function distDir(): string {
-  const root = resolve(process.cwd(), process.env.PLUMB_NEXT_DIST_DIR ?? '.next');
+  const root = resolve(process.cwd(), environment('NEXT_DIST_DIR') ?? '.next');
   return existsSync(join(root, 'dev', 'static')) ? join(root, 'dev') : root;
 }
 

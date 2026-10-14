@@ -9,8 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Session } from '../dist/session/engine.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url)), cli = join(repo, 'dist/cli.js');
-const forcedPolling = process.env.PLUMB_POLLING === '1';
-const noWatch = process.env.PLUMB_WATCH === '0';
+const forcedPolling = (process.env.PLUMBER_POLLING ?? process.env.PLUMB_POLLING) === '1';
+const noWatch = (process.env.PLUMBER_WATCH ?? process.env.PLUMB_WATCH) === '0';
 const test = (name, ...args) => nodeTest(`${name} [${noWatch ? 'no-watch' : forcedPolling ? 'polling' : 'native'}]`, ...args);
 const createSession = Session.create.bind(Session);
 Session.create = async options => {
@@ -38,7 +38,7 @@ async function daemon(t, root) {
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill('SIGTERM'); await once(child, 'exit'); } assert.equal(errors, ''); });
   let info;
   for (let i = 0; i < 300; i++) {
-    try { info = JSON.parse(await readFile(join(root, '.plumb/serve.json'), 'utf8')); break; } catch {}
+    try { info = JSON.parse(await readFile(join(root, '.plumber/serve.json'), 'utf8')); break; } catch {}
     assert.equal(child.exitCode, null, errors); await delay(20);
   }
   assert.ok(info, errors || 'daemon did not start');
@@ -126,7 +126,7 @@ test('watch-disabled reads preserve cold parity without callbacks or polling', a
   await writeFile(join(root, 'src/.hidden/Probe.tsx'), '<div style={{ gap: 149 }} />;'); await parity();
   const external = await mkdtemp(join(repo, 'fixtures/.serve-tokens-'));
   t.after(() => rm(external, { recursive: true, force: true }));
-  await writeFile(join(root, 'plumb.config.ts'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/missing/**/{tokens,moved}.json`)} } } };`);
+  await writeFile(join(root, 'plumber.config.ts'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/missing/**/{tokens,moved}.json`)} } } };`);
   await parity();
   const tokens = join(external, 'missing/deep/tokens.json');
   await mkdir(join(external, 'missing/deep'), { recursive: true });
@@ -135,7 +135,7 @@ test('watch-disabled reads preserve cold parity without callbacks or polling', a
   await rm(join(external, 'missing'), { recursive: true }); await parity();
   const preset = join(external, 'preset.mjs');
   await writeFile(preset, 'export default { name: "external", decisions: { spacing: { from: "dtcg:preset-tokens/**/*.json" } } };');
-  await writeFile(join(root, 'plumb.config.ts'), `export default { presets: [${JSON.stringify(preset)}] };`); await parity();
+  await writeFile(join(root, 'plumber.config.ts'), `export default { presets: [${JSON.stringify(preset)}] };`); await parity();
   await mkdir(join(external, 'preset-tokens/deep'), { recursive: true });
   const presetTokens = join(external, 'preset-tokens/deep/tokens.json');
   await writeFile(presetTokens, '{}'); await parity();
@@ -156,7 +156,7 @@ test('serve incrementally matches cold CLI through TSX, CSS, theme, config and l
   await writeFile(join(root, 'src/extra.css'), '.new { gap: 17px; color: #abcdef; }'); await parity();
   const theme = join(root, 'src/styles.css');
   await writeFile(theme, (await readFile(theme, 'utf8')) + '\n@theme { --spacing-s13: 13px; --color-new: #abcdef; }\n'); await parity();
-  await writeFile(join(root, 'plumb.config.ts'), "export default { css: 'src/styles.css', decisions: { spacing: { identity: 'reference' } }, habits: ['logical-inline'] };\n"); await parity();
+  await writeFile(join(root, 'plumber.config.ts'), "export default { css: 'src/styles.css', decisions: { spacing: { identity: 'reference' } }, habits: ['logical-inline'] };\n"); await parity();
   run(root, ['baseline']); await parity();
   const report = await request('/report');
   assert.ok(report.ledger.debt > 0);
@@ -218,7 +218,7 @@ test('external DTCG sources are tracked even before they contain matching tokens
   const root = await project(t), external = await mkdtemp(join(repo, 'fixtures/.serve-tokens-'));
   t.after(() => rm(external, { recursive: true, force: true }));
   const tokens = join(external, 'tokens.json'); await writeFile(tokens, '{}');
-  await writeFile(join(root, 'plumb.config.ts'), `export default { css: 'src/styles.css', decisions: { spacing: { from: ${JSON.stringify(`dtcg:${tokens}`)} } } };`);
+  await writeFile(join(root, 'plumber.config.ts'), `export default { css: 'src/styles.css', decisions: { spacing: { from: ${JSON.stringify(`dtcg:${tokens}`)} } } };`);
   const session = await Session.create({ root }); t.after(() => session.close());
   assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
   await writeFile(tokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 13, unit: 'px' } } }));
@@ -232,7 +232,7 @@ test('HTTP requires token, binds loopback, validates requests and cleans discove
     assert.equal((await fetch(url + path)).status, 401);
     assert.equal((await fetch(url + path, { headers: { 'x-plumb-token': 'f'.repeat(64) } })).status, 401);
   }
-  assert.equal((await stat(join(root, '.plumb/serve.json'))).mode & 0o777, 0o600);
+  assert.equal((await stat(join(root, '.plumber/serve.json'))).mode & 0o777, 0o600);
   assert.equal((await request('/health')).status, 'ready');
   await delay(350);
   assert.equal((await request('/health')).revision, 0, 'writing discovery does not invalidate the project');
@@ -242,7 +242,7 @@ test('HTTP requires token, binds loopback, validates requests and cleans discove
   }
   assert.equal((await fetch(url + '/try', { method: 'POST', headers: { 'x-plumb-token': info.token }, body: 'bad' })).status, 400);
   child.kill('SIGTERM'); await once(child, 'exit');
-  await assert.rejects(readFile(join(root, '.plumb/serve.json')), { code: 'ENOENT' });
+  await assert.rejects(readFile(join(root, '.plumber/serve.json')), { code: 'ENOENT' });
 });
 
 test('warm try and CLI client match cold snippet checks and do not change project files', async t => {
@@ -305,15 +305,15 @@ test('stdio JSON-RPC serves all methods, preserves ids and reports protocol erro
   assert.deepEqual(semantic(replies[1].result), semantic(cold(root)));
   assert.ok(replies[5].result.findings.length > 0);
   assert.deepEqual(replies.slice(-3).map(r => r.error.code), [-32601, -32600, -32700]);
-  await assert.rejects(readFile(join(root, '.plumb/serve.json')), { code: 'ENOENT' });
+  await assert.rejects(readFile(join(root, '.plumber/serve.json')), { code: 'ENOENT' });
 });
 
 test('stale client discovery falls back in process', async t => {
   const root = await project(t);
   const code = '<div className="gap-13" />';
   const expected = semantic(JSON.parse(run(root, ['try', '--json'], code).stdout));
-  await mkdir(join(root, '.plumb'), { recursive: true });
-  await writeFile(join(root, '.plumb/serve.json'), JSON.stringify({ root, config: null, port: 1, pid: 99999999, token: 'a'.repeat(64), protocol: 1 }));
+  await mkdir(join(root, '.plumber'), { recursive: true });
+  await writeFile(join(root, '.plumber/serve.json'), JSON.stringify({ root, config: null, port: 1, pid: 99999999, token: 'a'.repeat(64), protocol: 1 }));
   assert.deepEqual(semantic(JSON.parse(run(root, ['try', '--json'], code).stdout)), expected);
 });
 
@@ -388,7 +388,7 @@ test('Session retains autoloaded presets and their rules after source and preset
   assert.deepEqual(semantic(first), semantic(cold(root)));
   await writeFile(join(root, 'src/Probe.tsx'), 'export const Probe = () => <button className="rounded-[7px] gap-[13px]" />;');
   assert.deepEqual(semantic(await session.report()), semantic(cold(root)));
-  await writeFile(join(root, 'plumb.config.mjs'), 'export default { presets: { shadcn: false } };');
+  await writeFile(join(root, 'plumber.config.mjs'), 'export default { presets: { shadcn: false } };');
   const disabled = await session.report();
   assert.deepEqual(disabled.presets, []);
   assert.deepEqual(semantic(disabled), semantic(cold(root)));
@@ -407,8 +407,8 @@ test('startup inventory and reconciled directory listings agree on symlinks, ign
     await mkdir(join(root, 'src', directory, 'nested'), { recursive: true });
     await writeFile(join(root, 'src', directory, 'nested/Invalid.tsx'), 'not valid TSX {');
   }
-  await mkdir(join(root, '.plumb'), { recursive: true });
-  await writeFile(join(root, '.plumb/serve.json'), '{}');
+  await mkdir(join(root, '.plumber'), { recursive: true });
+  await writeFile(join(root, '.plumber/serve.json'), '{}');
   const aliases = ['src/ThemeAlias.tsx', 'src/Outside.tsx', 'src/Linked', 'src/Dangling.tsx'];
   await symlink(join(root, 'src/styles.css'), join(root, aliases[0]));
   await symlink(join(outside, 'src/App.tsx'), join(root, aliases[1]));
@@ -516,10 +516,10 @@ test('reads reconcile directory changes, renames, deletions and external inputs 
   await parity();
   await writeFile(join(root, 'src/Unknown.tsx'), '<div className="gap-[139px]" />;');
   notify('change', 'src/Unknown.tsx'); await parity();
-  await rm(join(root, 'plumb.config.ts'));
-  await writeFile(join(root, 'plumb.config.mjs'), 'export default { habits: ["logical-inline"] };');
+  await rm(join(root, 'plumber.config.ts'));
+  await writeFile(join(root, 'plumber.config.mjs'), 'export default { habits: ["logical-inline"] };');
   notify('rename', null); await parity(); assert.equal(session.native, !noWatch);
-  assert.equal((await session.report()).config.path, join(root, 'plumb.config.mjs'));
+  assert.equal((await session.report()).config.path, join(root, 'plumber.config.mjs'));
   // Autoload metadata is another newly matched shared input.
   await writeFile(join(root, 'components.json'), JSON.stringify({ aliases: { ui: 'src/components/ui' } }));
   notify('change', 'components.json'); await parity();
@@ -528,8 +528,8 @@ test('reads reconcile directory changes, renames, deletions and external inputs 
   // gain tokens, then lose/rename those matches, without a root inventory.
   const external = await mkdtemp(join(repo, 'fixtures/.serve-tokens-'));
   t.after(() => rm(external, { recursive: true, force: true }));
-  await writeFile(join(root, 'plumb.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/*.json`)} } } };`);
-  notify('change', 'plumb.config.mjs'); await parity();
+  await writeFile(join(root, 'plumber.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/*.json`)} } } };`);
+  notify('change', 'plumber.config.mjs'); await parity();
   const tokens = join(external, 'tokens.json');
   await writeFile(tokens, '{}'); await parity();
   await rm(tokens); await parity();
@@ -539,7 +539,7 @@ test('reads reconcile directory changes, renames, deletions and external inputs 
   await mkdir(join(external, 'nested'));
   const nestedTokens = join(external, 'nested/tokens.json');
   await writeFile(nestedTokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 17, unit: 'px' } } })); await parity();
-  await writeFile(join(root, 'plumb.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/**/*.json`)} } } };`);
+  await writeFile(join(root, 'plumber.config.mjs'), `export default { decisions: { spacing: { from: ${JSON.stringify(`dtcg:${external}/**/*.json`)} } } };`);
   await parity();
   await writeFile(nestedTokens, JSON.stringify({ step: { $type: 'dimension', $value: { value: 19, unit: 'px' } } })); await parity();
   const settled = inventories;
