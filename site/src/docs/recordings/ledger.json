@@ -3,12 +3,12 @@
   "fixture": "fixtures/docs-judged/",
   "regenerate": "node scripts/docs/record-ledger.mjs",
   "root": "fixtures/docs-judged/",
-  "setup": "Copied fixture without node_modules or .plumb, linked repo dependencies, initialized Git without commits and configured user.name as Plumb docs recording; temporary copy removed after recording. Commands and edits run from fixture root (cwd: .).",
+  "setup": "Copied fixture without node_modules or .plumber, linked repo dependencies, initialized Git without commits and configured user.name as React Plumber docs recording; temporary copy removed after recording. Commands and edits run from fixture root (cwd: .).",
   "countNotes": "entryCounts counts stored ledger rows. siteCounts sums stored count (default 1). Check summaryLines count current matching sites; check does not rewrite the ledger.",
   "steps": [
     {
       "id": "baseline",
-      "command": "plumb baseline",
+      "command": "plumber baseline",
       "exitCode": 0,
       "cwd": ".",
       "summaryLines": [
@@ -38,8 +38,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -53,8 +53,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -68,8 +68,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -82,8 +82,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -98,8 +98,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -114,8 +114,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -130,8 +130,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -147,8 +147,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -162,8 +162,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -177,8 +177,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -192,14 +192,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "check-baseline",
-      "command": "plumb check",
+      "command": "plumber check",
       "exitCode": 0,
       "cwd": ".",
       "summaryLines": [
@@ -207,7 +207,7 @@
         "known       3 findings at 7 sites are recorded in the ledger (--verbose lists them)",
         "ledger  0 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
       ],
-      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  76.8ms\n\nno new findings\n\nclasses     4 classes read, 0 do nothing\nspacing     1 of 5 use your tokens (20%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stdout": "React Plumber 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  72.1ms\n\nno new findings\n\nclasses     4 classes read, 0 do nothing\nspacing     1 of 5 use your tokens (20%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
       "stderr": "",
       "entryCounts": {
         "debt": 7,
@@ -231,8 +231,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -246,8 +246,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -261,8 +261,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -275,8 +275,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -291,8 +291,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -307,8 +307,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -323,8 +323,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -340,8 +340,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -355,8 +355,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -370,8 +370,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -385,8 +385,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
@@ -423,8 +423,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -438,8 +438,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -453,8 +453,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -467,8 +467,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -483,8 +483,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -499,8 +499,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -515,8 +515,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -532,8 +532,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -547,8 +547,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -562,8 +562,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -577,14 +577,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "check-new-drift",
-      "command": "plumb check",
+      "command": "plumber check",
       "exitCode": 1,
       "cwd": ".",
       "summaryLines": [
@@ -592,7 +592,7 @@
         "1 finding: 1 value off your tokens",
         "ledger  1 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth."
       ],
-      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  147.1ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     1 of 6 use your tokens (17%)  5 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n1 finding: 1 value off your tokens\n\nledger  1 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stdout": "React Plumber 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  138.8ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumber accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     1 of 6 use your tokens (17%)  5 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n1 finding: 1 value off your tokens\n\nledger  1 new, 7 debt, 0 exception sites; 0 stale, 0 ledger/config growth.\n",
       "stderr": "",
       "entryCounts": {
         "debt": 7,
@@ -616,8 +616,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -631,8 +631,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -646,8 +646,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -660,8 +660,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -676,8 +676,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -692,8 +692,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -708,8 +708,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -725,8 +725,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -740,8 +740,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -755,8 +755,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -770,8 +770,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
@@ -808,8 +808,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -823,8 +823,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -838,8 +838,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -852,8 +852,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -868,8 +868,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -884,8 +884,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -900,8 +900,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -917,8 +917,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -932,8 +932,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -947,8 +947,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -962,14 +962,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "check-debt-falls",
-      "command": "plumb check",
+      "command": "plumber check",
       "exitCode": 1,
       "cwd": ".",
       "summaryLines": [
@@ -977,7 +977,7 @@
         "2 findings: 1 value off your tokens, 1 ledger or token change",
         "ledger  1 new, 6 debt, 0 exception sites; 1 stale, 0 ledger/config growth."
       ],
-      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  139.0ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nDebt provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged records 1 sites; 0 remain.  1 site\n  The ledger should record only remaining exceptions and debt.\n  Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.\n  .plumb/ledger.jsonl:8:1  {\"key\":\"provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged\",\"kind\":\"debt\",\"rule\":\"provenance/arbitrary\",\"family\":\"spacing\",\"owner\":\"div\",\"prop\":\"gap\",\"authored\":\"gap-[13px]\",\"path\":\"src/Judged.tsx\",\"anchor\":\"Judged\",\"resolved\":\"13px\",\"count\":1,\"on\":\"2026-10-13\",\"by\":\"Plumb docs recording\"}\n  intended?  plumb accept --rule ledger/stale --site .plumb/ledger.jsonl:8 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       2 findings at 6 sites are recorded in the ledger (--verbose lists them)\n2 findings: 1 value off your tokens, 1 ledger or token change\n\nledger  1 new, 6 debt, 0 exception sites; 1 stale, 0 ledger/config growth.\n",
+      "stdout": "React Plumber 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  137.0ms\n\n`gap-[14px]` hardcodes 14px  1 site\n  Off-scale spacing makes layouts drift apart and can't be changed from the theme.\n  use  12px  3  var(--spacing-3)  Separate a label from its control\n       16px  4  var(--spacing-4)  Give a group breathing room\n  src/Judged.tsx:15:53  gap-[14px]\n  intended?  plumber accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why \"…\"\n\nDebt provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged records 1 sites; 0 remain.  1 site\n  The ledger should record only remaining exceptions and debt.\n  Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.\n  .plumber/ledger.jsonl:8:1  {\"key\":\"provenance/arbitrary:div:gap:gap-[13px]@src/Judged.tsx#Judged\",\"kind\":\"debt\",\"rule\":\"provenance/arbitrary\",\"family\":\"spacing\",\"owner\":\"div\",\"prop\":\"gap\",\"authored\":\"gap-[13px]\",\"path\":\"src/Judged.tsx\",\"anchor\":\"Judged\",\"resolved\":\"13px\",\"count\":1,\"on\":\"2026-10-14\",\"by\":\"React Plumber docs recording\"}\n  intended?  plumber accept --rule ledger/stale --site .plumber/ledger.jsonl:8 --why \"…\"\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       2 findings at 6 sites are recorded in the ledger (--verbose lists them)\n2 findings: 1 value off your tokens, 1 ledger or token change\n\nledger  1 new, 6 debt, 0 exception sites; 1 stale, 0 ledger/config growth.\n",
       "stderr": "",
       "entryCounts": {
         "debt": 7,
@@ -1001,8 +1001,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -1016,8 +1016,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -1031,8 +1031,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -1045,8 +1045,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -1061,8 +1061,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -1077,8 +1077,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -1093,8 +1093,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -1110,8 +1110,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-apply:gap:@apply gap-[13px];@src/styles.css#.judged-apply",
@@ -1125,8 +1125,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -1140,8 +1140,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -1155,14 +1155,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "ratchet",
-      "command": "plumb ledger --ratchet",
+      "command": "plumber ledger --ratchet",
       "exitCode": 0,
       "cwd": ".",
       "summaryLines": [
@@ -1192,8 +1192,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -1207,8 +1207,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -1222,8 +1222,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -1236,8 +1236,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -1252,8 +1252,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -1268,8 +1268,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -1284,8 +1284,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -1301,8 +1301,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -1316,8 +1316,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -1331,14 +1331,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "accept-new-drift",
-      "command": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why '14px separation is intentional for this docs recording.'",
+      "command": "plumber accept --rule provenance/arbitrary --site src/Judged.tsx:15 --why '14px separation is intentional for this docs recording.'",
       "exitCode": 0,
       "cwd": ".",
       "summaryLines": [
@@ -1368,8 +1368,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -1383,8 +1383,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -1398,8 +1398,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -1412,8 +1412,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -1428,8 +1428,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -1444,8 +1444,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -1460,8 +1460,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -1477,8 +1477,8 @@
           "anchor": "NewDrift",
           "resolved": "14px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "14px separation is intentional for this docs recording."
         },
         {
@@ -1493,8 +1493,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -1508,8 +1508,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -1523,14 +1523,14 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     },
     {
       "id": "check-after-accept",
-      "command": "plumb check",
+      "command": "plumber check",
       "exitCode": 0,
       "cwd": ".",
       "summaryLines": [
@@ -1538,7 +1538,7 @@
         "known       3 findings at 7 sites are recorded in the ledger (--verbose lists them)",
         "ledger  0 new, 6 debt, 1 exception sites; 0 stale, 0 ledger/config growth."
       ],
-      "stdout": "plumb 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  67.6ms\n\nno new findings\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 6 debt, 1 exception sites; 0 stale, 0 ledger/config growth.\n",
+      "stdout": "React Plumber 0.1.0  .  tailwind 4.3.3  theme src/styles.css\nfiles 1 tsx, 0 jsx, 1 css, 0 other  71.1ms\n\nno new findings\n\nclasses     5 classes read, 0 do nothing\nspacing     2 of 6 use your tokens (33%)  4 don't\ninline      1 of 1 style attributes have literal values\nunused      3 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported\nknown       3 findings at 7 sites are recorded in the ledger (--verbose lists them)\n\nledger  0 new, 6 debt, 1 exception sites; 0 stale, 0 ledger/config growth.\n",
       "stderr": "",
       "entryCounts": {
         "debt": 6,
@@ -1562,8 +1562,8 @@
           "anchor": "<module>",
           "resolved": "8px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-4:--spacing-4: 16px@src/styles.css#<module>",
@@ -1577,8 +1577,8 @@
           "anchor": "<module>",
           "resolved": "16px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "dead/spacing:decisions:--spacing-5:--spacing-5: 20px@src/styles.css#<module>",
@@ -1592,8 +1592,8 @@
           "anchor": "<module>",
           "resolved": "20px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "decision:spacing:--spacing-2",
@@ -1606,8 +1606,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "8px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Compact separation within a related group.",
           "inferred": true
         },
@@ -1622,8 +1622,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "12px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate a label from its control.",
           "inferred": true
         },
@@ -1638,8 +1638,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "16px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Give a group breathing room.",
           "inferred": true
         },
@@ -1654,8 +1654,8 @@
           "origin": "project",
           "tier": "primitive",
           "resolved": "20px",
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "Separate adjacent groups.",
           "inferred": true
         },
@@ -1671,8 +1671,8 @@
           "anchor": "NewDrift",
           "resolved": "14px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording",
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording",
           "why": "14px separation is intentional for this docs recording."
         },
         {
@@ -1687,8 +1687,8 @@
           "anchor": ".judged-apply",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:.judged-css:gap:gap: 13px@src/styles.css#.judged-css",
@@ -1702,8 +1702,8 @@
           "anchor": ".judged-css",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         },
         {
           "key": "provenance/spacing:div:gap:gap: 13@src/Judged.tsx#Judged",
@@ -1717,8 +1717,8 @@
           "anchor": "Judged",
           "resolved": "13px",
           "count": 1,
-          "on": "2026-10-13",
-          "by": "Plumb docs recording"
+          "on": "2026-10-14",
+          "by": "React Plumber docs recording"
         }
       ]
     }

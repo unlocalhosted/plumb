@@ -2678,7 +2678,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 200
+          "line": 225
         }
       },
       {
@@ -2748,7 +2748,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 201
+          "line": 226
         }
       },
       {
@@ -2818,7 +2818,217 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 188
+          "line": 213
+        }
+      },
+      {
+        "name": "--color-blueprint",
+        "classKeys": [
+          "accent-blueprint",
+          "bg-blueprint",
+          "border-b-blueprint",
+          "border-be-blueprint",
+          "border-blueprint",
+          "border-bs-blueprint",
+          "border-e-blueprint",
+          "border-l-blueprint",
+          "border-r-blueprint",
+          "border-s-blueprint",
+          "border-t-blueprint",
+          "border-x-blueprint",
+          "border-y-blueprint",
+          "caret-blueprint",
+          "decoration-blueprint",
+          "divide-blueprint",
+          "drop-shadow-blueprint",
+          "fill-blueprint",
+          "from-blueprint",
+          "inset-ring-blueprint",
+          "inset-shadow-blueprint",
+          "mask-b-from-blueprint",
+          "mask-b-to-blueprint",
+          "mask-conic-from-blueprint",
+          "mask-conic-to-blueprint",
+          "mask-l-from-blueprint",
+          "mask-l-to-blueprint",
+          "mask-linear-from-blueprint",
+          "mask-linear-to-blueprint",
+          "mask-r-from-blueprint",
+          "mask-r-to-blueprint",
+          "mask-radial-from-blueprint",
+          "mask-radial-to-blueprint",
+          "mask-t-from-blueprint",
+          "mask-t-to-blueprint",
+          "mask-x-from-blueprint",
+          "mask-x-to-blueprint",
+          "mask-y-from-blueprint",
+          "mask-y-to-blueprint",
+          "outline-blueprint",
+          "placeholder-blueprint",
+          "ring-blueprint",
+          "ring-offset-blueprint",
+          "scrollbar-thumb-blueprint",
+          "scrollbar-track-blueprint",
+          "shadow-blueprint",
+          "shimmer-color-blueprint",
+          "stroke-blueprint",
+          "text-blueprint",
+          "text-shadow-blueprint",
+          "to-blueprint",
+          "via-blueprint"
+        ],
+        "value": "var(--blueprint)",
+        "resolved": "#2f5be0",
+        "reason": "the blueprint the page is drawn on before it's built: the brand's blue as a field",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--color-blueprint)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 205
+        }
+      },
+      {
+        "name": "--color-blueprint-ink",
+        "classKeys": [
+          "accent-blueprint-ink",
+          "bg-blueprint-ink",
+          "border-b-blueprint-ink",
+          "border-be-blueprint-ink",
+          "border-blueprint-ink",
+          "border-bs-blueprint-ink",
+          "border-e-blueprint-ink",
+          "border-l-blueprint-ink",
+          "border-r-blueprint-ink",
+          "border-s-blueprint-ink",
+          "border-t-blueprint-ink",
+          "border-x-blueprint-ink",
+          "border-y-blueprint-ink",
+          "caret-blueprint-ink",
+          "decoration-blueprint-ink",
+          "divide-blueprint-ink",
+          "drop-shadow-blueprint-ink",
+          "fill-blueprint-ink",
+          "from-blueprint-ink",
+          "inset-ring-blueprint-ink",
+          "inset-shadow-blueprint-ink",
+          "mask-b-from-blueprint-ink",
+          "mask-b-to-blueprint-ink",
+          "mask-conic-from-blueprint-ink",
+          "mask-conic-to-blueprint-ink",
+          "mask-l-from-blueprint-ink",
+          "mask-l-to-blueprint-ink",
+          "mask-linear-from-blueprint-ink",
+          "mask-linear-to-blueprint-ink",
+          "mask-r-from-blueprint-ink",
+          "mask-r-to-blueprint-ink",
+          "mask-radial-from-blueprint-ink",
+          "mask-radial-to-blueprint-ink",
+          "mask-t-from-blueprint-ink",
+          "mask-t-to-blueprint-ink",
+          "mask-x-from-blueprint-ink",
+          "mask-x-to-blueprint-ink",
+          "mask-y-from-blueprint-ink",
+          "mask-y-to-blueprint-ink",
+          "outline-blueprint-ink",
+          "placeholder-blueprint-ink",
+          "ring-blueprint-ink",
+          "ring-offset-blueprint-ink",
+          "scrollbar-thumb-blueprint-ink",
+          "scrollbar-track-blueprint-ink",
+          "shadow-blueprint-ink",
+          "shimmer-color-blueprint-ink",
+          "stroke-blueprint-ink",
+          "text-blueprint-ink",
+          "text-shadow-blueprint-ink",
+          "to-blueprint-ink",
+          "via-blueprint-ink"
+        ],
+        "value": "var(--blueprint-ink)",
+        "resolved": "#ffffff",
+        "reason": "blueprint linework: white drawn on the blueprint field",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--color-blueprint-ink)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 209
+        }
+      },
+      {
+        "name": "--color-blueprint-line",
+        "classKeys": [
+          "accent-blueprint-line",
+          "bg-blueprint-line",
+          "border-b-blueprint-line",
+          "border-be-blueprint-line",
+          "border-blueprint-line",
+          "border-bs-blueprint-line",
+          "border-e-blueprint-line",
+          "border-l-blueprint-line",
+          "border-r-blueprint-line",
+          "border-s-blueprint-line",
+          "border-t-blueprint-line",
+          "border-x-blueprint-line",
+          "border-y-blueprint-line",
+          "caret-blueprint-line",
+          "decoration-blueprint-line",
+          "divide-blueprint-line",
+          "drop-shadow-blueprint-line",
+          "fill-blueprint-line",
+          "from-blueprint-line",
+          "inset-ring-blueprint-line",
+          "inset-shadow-blueprint-line",
+          "mask-b-from-blueprint-line",
+          "mask-b-to-blueprint-line",
+          "mask-conic-from-blueprint-line",
+          "mask-conic-to-blueprint-line",
+          "mask-l-from-blueprint-line",
+          "mask-l-to-blueprint-line",
+          "mask-linear-from-blueprint-line",
+          "mask-linear-to-blueprint-line",
+          "mask-r-from-blueprint-line",
+          "mask-r-to-blueprint-line",
+          "mask-radial-from-blueprint-line",
+          "mask-radial-to-blueprint-line",
+          "mask-t-from-blueprint-line",
+          "mask-t-to-blueprint-line",
+          "mask-x-from-blueprint-line",
+          "mask-x-to-blueprint-line",
+          "mask-y-from-blueprint-line",
+          "mask-y-to-blueprint-line",
+          "outline-blueprint-line",
+          "placeholder-blueprint-line",
+          "ring-blueprint-line",
+          "ring-offset-blueprint-line",
+          "scrollbar-thumb-blueprint-line",
+          "scrollbar-track-blueprint-line",
+          "shadow-blueprint-line",
+          "shimmer-color-blueprint-line",
+          "stroke-blueprint-line",
+          "text-blueprint-line",
+          "text-shadow-blueprint-line",
+          "to-blueprint-line",
+          "via-blueprint-line"
+        ],
+        "value": "var(--blueprint-line)",
+        "resolved": "color-mix(in oklab, #ffffff 62%, transparent)",
+        "reason": "blueprint secondary lines: white thinned, so the drawing has depth",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--color-blueprint-line)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 211
         }
       },
       {
@@ -2888,7 +3098,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 202
+          "line": 227
         }
       },
       {
@@ -2958,7 +3168,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 190
+          "line": 215
         }
       },
       {
@@ -3028,7 +3238,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 191
+          "line": 216
         }
       },
       {
@@ -3098,7 +3308,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 216
+          "line": 241
         }
       },
       {
@@ -3168,7 +3378,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 221
+          "line": 246
         }
       },
       {
@@ -3238,7 +3448,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 220
+          "line": 245
         }
       },
       {
@@ -3308,7 +3518,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 217
+          "line": 242
         }
       },
       {
@@ -3378,7 +3588,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 218
+          "line": 243
         }
       },
       {
@@ -3448,7 +3658,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 219
+          "line": 244
         }
       },
       {
@@ -3518,7 +3728,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 205
+          "line": 230
         }
       },
       {
@@ -3588,7 +3798,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 208
+          "line": 233
         }
       },
       {
@@ -3658,7 +3868,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 225
+          "line": 250
         }
       },
       {
@@ -3728,7 +3938,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 233
+          "line": 258
         }
       },
       {
@@ -3798,7 +4008,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 231
+          "line": 256
         }
       },
       {
@@ -3868,7 +4078,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 227
+          "line": 252
         }
       },
       {
@@ -3938,7 +4148,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 223
+          "line": 248
         }
       },
       {
@@ -4008,7 +4218,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 229
+          "line": 254
         }
       },
       {
@@ -4078,7 +4288,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 235
+          "line": 260
         }
       },
       {
@@ -4148,7 +4358,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 189
+          "line": 214
         }
       },
       {
@@ -4218,7 +4428,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 209
+          "line": 234
         }
       },
       {
@@ -4288,7 +4498,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 203
+          "line": 228
         }
       },
       {
@@ -4358,7 +4568,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 198
+          "line": 223
         }
       },
       {
@@ -4428,7 +4638,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 199
+          "line": 224
         }
       },
       {
@@ -4498,7 +4708,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 192
+          "line": 217
         }
       },
       {
@@ -4568,7 +4778,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 193
+          "line": 218
         }
       },
       {
@@ -4638,7 +4848,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 194
+          "line": 219
         }
       },
       {
@@ -4708,7 +4918,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 195
+          "line": 220
         }
       },
       {
@@ -4778,7 +4988,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 204
+          "line": 229
         }
       },
       {
@@ -4848,7 +5058,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 196
+          "line": 221
         }
       },
       {
@@ -4918,7 +5128,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 197
+          "line": 222
         }
       },
       {
@@ -4988,7 +5198,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 214
+          "line": 239
         }
       },
       {
@@ -5058,7 +5268,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 215
+          "line": 240
         }
       },
       {
@@ -5128,7 +5338,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 206
+          "line": 231
         }
       },
       {
@@ -5198,7 +5408,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 210
+          "line": 235
         }
       },
       {
@@ -5268,7 +5478,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 211
+          "line": 236
         }
       },
       {
@@ -5338,7 +5548,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 212
+          "line": 237
         }
       },
       {
@@ -5408,7 +5618,77 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 213
+          "line": 238
+        }
+      },
+      {
+        "name": "--color-trace",
+        "classKeys": [
+          "accent-trace",
+          "bg-trace",
+          "border-b-trace",
+          "border-be-trace",
+          "border-bs-trace",
+          "border-e-trace",
+          "border-l-trace",
+          "border-r-trace",
+          "border-s-trace",
+          "border-t-trace",
+          "border-trace",
+          "border-x-trace",
+          "border-y-trace",
+          "caret-trace",
+          "decoration-trace",
+          "divide-trace",
+          "drop-shadow-trace",
+          "fill-trace",
+          "from-trace",
+          "inset-ring-trace",
+          "inset-shadow-trace",
+          "mask-b-from-trace",
+          "mask-b-to-trace",
+          "mask-conic-from-trace",
+          "mask-conic-to-trace",
+          "mask-l-from-trace",
+          "mask-l-to-trace",
+          "mask-linear-from-trace",
+          "mask-linear-to-trace",
+          "mask-r-from-trace",
+          "mask-r-to-trace",
+          "mask-radial-from-trace",
+          "mask-radial-to-trace",
+          "mask-t-from-trace",
+          "mask-t-to-trace",
+          "mask-x-from-trace",
+          "mask-x-to-trace",
+          "mask-y-from-trace",
+          "mask-y-to-trace",
+          "outline-trace",
+          "placeholder-trace",
+          "ring-offset-trace",
+          "ring-trace",
+          "scrollbar-thumb-trace",
+          "scrollbar-track-trace",
+          "shadow-trace",
+          "shimmer-color-trace",
+          "stroke-trace",
+          "text-shadow-trace",
+          "text-trace",
+          "to-trace",
+          "via-trace"
+        ],
+        "value": "var(--trace)",
+        "resolved": null,
+        "reason": "the lines a page is measured against: hairlines that stay as faint traces once it's built",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--color-trace)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 207
         }
       },
       {
@@ -5478,7 +5758,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 207
+          "line": 232
         }
       }
     ],
@@ -5513,7 +5793,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 244
+          "line": 269
         }
       },
       {
@@ -5547,7 +5827,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 242
+          "line": 267
         }
       },
       {
@@ -5580,7 +5860,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 240
+          "line": 265
         }
       },
       {
@@ -5613,7 +5893,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 238
+          "line": 263
         }
       }
     ],
@@ -5721,6 +6001,25 @@
         }
       },
       {
+        "name": "--font-display",
+        "classKeys": [
+          "font-display"
+        ],
+        "value": "'Instrument Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "resolved": "'Instrument Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "reason": "headlines and the hero's words: a crisp modern grotesk, so the page reads current and precise",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--font-display)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 203
+        }
+      },
+      {
         "name": "--font-heading",
         "classKeys": [
           "font-heading"
@@ -5736,7 +6035,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 251
+          "line": 276
         }
       },
       {
@@ -5755,7 +6054,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 249
+          "line": 274
         }
       },
       {
@@ -5775,7 +6074,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 247
+          "line": 272
         }
       },
       {
@@ -5794,7 +6093,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 256
+          "line": 281
         }
       },
       {
@@ -5813,7 +6112,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 254
+          "line": 279
         }
       },
       {
@@ -5832,7 +6131,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 258
+          "line": 283
         }
       },
       {
@@ -5946,7 +6245,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 273
+          "line": 301
         }
       },
       {
@@ -5965,7 +6264,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 275
+          "line": 303
         }
       },
       {
@@ -5984,7 +6283,45 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 274
+          "line": 302
+        }
+      },
+      {
+        "name": "--text-2xs",
+        "classKeys": [
+          "text-2xs"
+        ],
+        "value": "10px",
+        "resolved": "10px",
+        "reason": "ruler figures and measurement lettering on a blueprint: read up close, never as running text",
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--text-2xs)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 286
+        }
+      },
+      {
+        "name": "--text-2xs--line-height",
+        "classKeys": [
+          "text-2xs"
+        ],
+        "value": "12px",
+        "resolved": "12px",
+        "reason": null,
+        "groupReason": null,
+        "origin": "project",
+        "tier": "primitive",
+        "refs": [
+          "var(--text-2xs--line-height)"
+        ],
+        "source": {
+          "file": "src/styles.css",
+          "line": 287
         }
       },
       {
@@ -6003,7 +6340,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 281
+          "line": 309
         }
       },
       {
@@ -6022,7 +6359,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 283
+          "line": 311
         }
       },
       {
@@ -6041,7 +6378,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 282
+          "line": 310
         }
       },
       {
@@ -6060,7 +6397,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 285
+          "line": 313
         }
       },
       {
@@ -6079,7 +6416,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 287
+          "line": 315
         }
       },
       {
@@ -6098,7 +6435,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 286
+          "line": 314
         }
       },
       {
@@ -6117,7 +6454,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 277
+          "line": 305
         }
       },
       {
@@ -6136,7 +6473,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 279
+          "line": 307
         }
       },
       {
@@ -6155,7 +6492,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 278
+          "line": 306
         }
       },
       {
@@ -6174,7 +6511,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 267
+          "line": 295
         }
       },
       {
@@ -6193,7 +6530,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 268
+          "line": 296
         }
       },
       {
@@ -6212,7 +6549,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 270
+          "line": 298
         }
       },
       {
@@ -6231,7 +6568,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 271
+          "line": 299
         }
       },
       {
@@ -6345,7 +6682,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 264
+          "line": 292
         }
       },
       {
@@ -6364,7 +6701,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 265
+          "line": 293
         }
       },
       {
@@ -6383,7 +6720,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 261
+          "line": 289
         }
       },
       {
@@ -6402,7 +6739,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 262
+          "line": 290
         }
       },
       {
@@ -6750,7 +7087,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 310
+          "line": 338
         }
       },
       {
@@ -6767,7 +7104,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 311
+          "line": 339
         }
       },
       {
@@ -6784,7 +7121,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 124
+          "line": 137
         }
       },
       {
@@ -6801,7 +7138,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 123
+          "line": 136
         }
       },
       {
@@ -6818,7 +7155,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 122
+          "line": 135
         }
       },
       {
@@ -6837,7 +7174,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 306
+          "line": 334
         }
       },
       {
@@ -6856,7 +7193,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 308
+          "line": 336
         }
       },
       {
@@ -6873,7 +7210,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 125
+          "line": 138
         }
       }
     ],
@@ -7065,7 +7402,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 294
+          "line": 322
         }
       },
       {
@@ -7085,7 +7422,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 290
+          "line": 318
         }
       },
       {
@@ -7104,7 +7441,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 292
+          "line": 320
         }
       }
     ],
@@ -7123,7 +7460,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 303
+          "line": 331
         }
       },
       {
@@ -7140,7 +7477,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 301
+          "line": 329
         }
       },
       {
@@ -7157,7 +7494,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 297
+          "line": 325
         }
       },
       {
@@ -7174,7 +7511,7 @@
         ],
         "source": {
           "file": "src/styles.css",
-          "line": 299
+          "line": 327
         }
       }
     ],

@@ -9,12 +9,12 @@ import { plumbCommand, recordingJSON, recordingPaths } from './recording.mjs';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const cache = await mkdtemp(join(tmpdir(), 'plumb-docs-finding-'));
-const portable = recordingPaths({ repo, root: resolve(repo, 'fixtures/docs-judged'), paths: [[cache, '.plumb/cache']] });
+const portable = recordingPaths({ repo, root: resolve(repo, 'fixtures/docs-judged'), paths: [[cache, '.plumber/cache']] });
 try {
   const run = flags => {
     const args = ['dist/cli.js', 'check', '--root', 'fixtures/docs-judged', ...flags];
     const result = spawnSync(process.execPath, args, {
-      cwd: repo, encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache },
+      cwd: repo, encoding: 'utf8', env: { ...process.env, PLUMBER_CACHE_DIR: cache },
       maxBuffer: 32 * 1024 * 1024, timeout: 30_000,
     });
     if (result.error) throw result.error;

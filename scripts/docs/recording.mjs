@@ -21,7 +21,7 @@ export function plumbCommand(args, fixtureRoot) {
     publicArgs.push(args[i]);
   }
   const shell = value => /^[\w./:@%+=,-]+$/.test(value) ? value : `'${value.replaceAll("'", "'\\''")}'`;
-  return ['plumb', ...publicArgs.map(shell)].join(' ');
+  return ['plumber', ...publicArgs.map(shell)].join(' ');
 }
 
 export function recordingJSON(value, portable) {

@@ -76,7 +76,7 @@ async function files(directory) {
 function cliRun(args, cache) {
   const run = spawnSync(process.execPath, ['dist/cli.js', ...args], {
     cwd: repo, encoding: 'utf8', timeout: 30_000, maxBuffer: 32 * 1024 * 1024,
-    env: { ...process.env, PLUMB_CACHE_DIR: cache, NO_COLOR: '1', FORCE_COLOR: '0' },
+    env: { ...process.env, PLUMBER_CACHE_DIR: cache, NO_COLOR: '1', FORCE_COLOR: '0' },
   });
   if (run.error) throw run.error;
   if (![0, 1].includes(run.status)) throw new Error(`CLI ${args.join(' ')} failed (${run.status}): ${run.stderr}`);
@@ -183,7 +183,7 @@ function summaryFor(name) {
   return { summary, summarySources: [cite(node, cli)] };
 }
 const helpSource = expression(helpNode, cli).template;
-const usageLines = helpSource.split('\n').filter(line => /(?:Usage: |^\s+)plumb /.test(line)).map(line => line.trim().replace(/^Usage: /, ''));
+const usageLines = helpSource.split('\n').filter(line => /(?:Usage: |^\s+)plumber /.test(line)).map(line => line.trim().replace(/^Usage: /, ''));
 const globalFlags = properties(optionsNode).map(p => {
   const name = p.name.text, spec = literal(p.initializer);
   const match = helpSource.split('\n').find(line => new RegExp(`^  --${name}(?: |$)`).test(line));
@@ -341,10 +341,10 @@ const rules = sorted(ruleMap.keys()).map(id => {
     if (['error', 'warn', 'info'].includes(value.template)) return [value.template];
     return [...value.expression.matchAll(/['"](error|warn|info)['"]/g)].map(match => match[1]);
   })));
-  let accept = `plumb accept --rule ${id} --site <file:line> --why "…"`;
+  let accept = `plumber accept --rule ${id} --site <file:line> --why "…"`;
   if (id.startsWith('config/') || id.startsWith('parity/')) accept = unsupported;
-  if (id === 'ledger/no-why') accept = 'plumb accept <key> --why "…"';
-  if (id === 'decisions/unaccepted') accept = 'plumb accept-decisions --why "…"';
+  if (id === 'ledger/no-why') accept = 'plumber accept <key> --why "…"';
+  if (id === 'decisions/unaccepted') accept = 'plumber accept-decisions --why "…"';
   const printedAccept = accept;
   if (['ledger/stale', 'ledger/grew', 'decisions/vanished'].includes(id)) accept = unsupported;
   return { id, pattern: record.pattern, family: record.family, defaultSeverity: severityValues.length === 1 ? severityValues[0] : severityValues.length ? severityValues : unsupported,
@@ -353,13 +353,13 @@ const rules = sorted(ruleMap.keys()).map(id => {
 });
 
 const cache = await mkdtemp(resolve(tmpdir(), 'plumb-reference-'));
-const portablePaths = recordingPaths({ repo, paths: [[cache, '.plumb/cache']] });
+const portablePaths = recordingPaths({ repo, paths: [[cache, '.plumber/cache']] });
 let commands, rawReport, checkRun;
 try {
   commands = sorted(literal(commandNode)).map(name => {
     const captured = cliRun([name, '--help'], cache);
     if (captured.exitCode !== 0) throw new Error(`${name} --help failed.`);
-    return { name, ...summaryFor(name), usage: usageLines.filter(line => new RegExp(`(?:plumb |\\| )${name}(?: |$)`).test(line) || name === 'check' && line.startsWith('plumb [check]')),
+    return { name, ...summaryFor(name), usage: usageLines.filter(line => new RegExp(`(?:plumber |\\| )${name}(?: |$)`).test(line) || name === 'check' && line.startsWith('plumber [check]')),
       flags: globalFlags.filter(flag => flag.commands.includes(name)).map(flag => ({ ...flag, type: name === 'install' && flag.name === '--agent' ? 'string[]' : flag.type,
         ...(name === 'install' && flag.name === '--agent' ? { sources: [...flag.sources, 'src/cli.ts:81'] } : {}) })),
       examples: [captured.command], help: captured, sources: [cite(commandNode, cli), cite(helpNode, cli)] };
@@ -385,7 +385,7 @@ const outputs = {
   'ref-config.json': { sources: ['schema/config.schema.json:1'], options: configOptions },
   'ref-rules.json': { sources: ['src/messages.ts:19'], rules },
   'ref-report.json': { sources: ['schema/report.schema.json:1'], fields: reportFields.map(({ path, type, required, description, variants, sources }) => ({ path, type, required, description, variants, sources })),
-    example: portable({ ...rawReport, findings: [firstFinding] }), exampleRun: { command: checkRun.command, exitCode: checkRun.exitCode, sources: ['src/cli.ts:180', 'fixtures/docs-judged/plumb.config.ts:1', 'fixtures/docs-judged/src/Judged.tsx:1', 'fixtures/docs-judged/src/styles.css:1'] },
+    example: portable({ ...rawReport, findings: [firstFinding] }), exampleRun: { command: checkRun.command, exitCode: checkRun.exitCode, sources: ['src/cli.ts:180', 'fixtures/docs-judged/plumber.config.ts:1', 'fixtures/docs-judged/src/Judged.tsx:1', 'fixtures/docs-judged/src/styles.css:1'] },
     omittedVolatileFields: ['timing', 'moduleGraph.parseMs', 'moduleGraph.totalMs', 'moduleGraph.cacheHits', 'moduleGraph.cacheMisses'], originalFindingCount: rawReport.findings.length },
 };
 // Display data carries no provenance or repeated help captures. Preserve absent

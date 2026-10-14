@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "fixture": "fixtures/docs-judged/",
-  "command": "plumb check --json",
+  "command": "plumber check --json",
   "regenerate": "node scripts/docs/record-judged.mjs",
   "cliExitCode": 1,
   "tool": {
-    "name": "plumb",
+    "name": "react-plumber",
     "version": "0.1.0"
   },
   "tailwind": {
@@ -260,7 +260,7 @@
             }
           }
         ],
-        "accept": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
+        "accept": "plumber accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
         "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
         "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
         "ledgerKeys": [
@@ -621,7 +621,7 @@
             }
           }
         ],
-        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "accept": "plumber accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
         "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
         "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
         "ledgerKeys": [
@@ -966,7 +966,7 @@
             }
           }
         ],
-        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "accept": "plumber accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
         "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
         "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
         "ledgerKeys": [
@@ -1329,7 +1329,7 @@
             }
           }
         ],
-        "accept": "plumb accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
+        "accept": "plumber accept --rule provenance/spacing --site src/styles.css:15 --why \"…\"",
         "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
         "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
         "ledgerKeys": [
@@ -1574,7 +1574,7 @@
       "title": "3 spacing tokens are never used in your source",
       "because": "Unused tokens make the theme harder to choose from.",
       "action": "If other apps use them, mark them published: decisions.spacing.exported: true. Otherwise remove them.",
-      "accept": "plumb accept --rule dead/spacing --site src/styles.css:5 --why \"…\"",
+      "accept": "plumber accept --rule dead/spacing --site src/styles.css:5 --why \"…\"",
       "why": "Unused tokens make the theme harder to choose from.",
       "fix": "If other apps use them, mark them published: decisions.spacing.exported: true. Otherwise remove them.",
       "ledgerKeys": [

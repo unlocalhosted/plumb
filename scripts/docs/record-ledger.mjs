@@ -10,13 +10,13 @@ import { plumbCommand, recordingJSON, recordingPaths } from './recording.mjs';
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const scratch = await mkdtemp(join(tmpdir(), 'plumb-docs-ledger-'));
 const root = join(scratch, 'fixture'), cache = join(scratch, 'cache');
-const portable = recordingPaths({ repo, root, paths: [[cache, '.plumb/cache'], [scratch, '.']] });
+const portable = recordingPaths({ repo, root, paths: [[cache, '.plumber/cache'], [scratch, '.']] });
 const steps = [];
 try {
-  await cp(join(repo, 'fixtures/docs-judged'), root, { recursive: true, filter: file => !['node_modules', '.plumb'].includes(file.split('/').at(-1)) });
+  await cp(join(repo, 'fixtures/docs-judged'), root, { recursive: true, filter: file => !['node_modules', '.plumber'].includes(file.split('/').at(-1)) });
   await symlink(join(repo, 'node_modules'), join(root, 'node_modules'), 'dir');
   const entries = async () => {
-    const text = await readFile(join(root, '.plumb/ledger.jsonl'), 'utf8').catch(error => {
+    const text = await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8').catch(error => {
       if (error.code === 'ENOENT') return ''; throw error;
     });
     return text.split('\n').filter(Boolean).map(line => JSON.parse(line));
@@ -36,7 +36,7 @@ try {
   const cli = async (id, args, expectedExit) => {
     const invocation = [...args, '--root', root];
     const result = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), ...invocation], {
-      cwd: root, encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache },
+      cwd: root, encoding: 'utf8', env: { ...process.env, PLUMBER_CACHE_DIR: cache },
       maxBuffer: 32 * 1024 * 1024, timeout: 30_000,
     });
     if (result.error) throw result.error;
@@ -49,7 +49,7 @@ try {
     await writeFile(join(root, file), after);
     return capture(id, { edit: { file, before, after } });
   };
-  for (const args of [['init', '--quiet'], ['config', 'user.name', 'Plumb docs recording']]) {
+  for (const args of [['init', '--quiet'], ['config', 'user.name', 'React Plumber docs recording']]) {
     const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', timeout: 30_000 });
     if (result.error) throw result.error;
     if (result.status !== 0) throw new Error(`Git setup failed: ${result.stderr}`);
@@ -76,7 +76,7 @@ try {
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, recordingJSON({
     schemaVersion: 1, fixture: 'fixtures/docs-judged/', regenerate: 'node scripts/docs/record-ledger.mjs',
-    root: 'fixtures/docs-judged/', setup: 'Copied fixture without node_modules or .plumb, linked repo dependencies, initialized Git without commits and configured user.name as Plumb docs recording; temporary copy removed after recording. Commands and edits run from fixture root (cwd: .).',
+    root: 'fixtures/docs-judged/', setup: 'Copied fixture without node_modules or .plumber, linked repo dependencies, initialized Git without commits and configured user.name as React Plumber docs recording; temporary copy removed after recording. Commands and edits run from fixture root (cwd: .).',
     countNotes: 'entryCounts counts stored ledger rows. siteCounts sums stored count (default 1). Check summaryLines count current matching sites; check does not rewrite the ledger.',
     steps,
   }, portable));
