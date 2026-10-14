@@ -70,19 +70,21 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
   const workingDirectory = relative(repo, root).replaceAll('\\', '/') || '.';
   const owners = await approvers(repo, `${workingDirectory === '.' ? '' : workingDirectory + '/'}${relative(root, statePath(root, 'ledger.jsonl')).replaceAll('\\', '/')}`);
   const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
-  const metadata = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as { repository: { url: string }; gitHead?: string };
+  const metadata = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as { repository: { url: string }; version: string; gitHead?: string };
   const repository = metadata.repository.url.replace(/^git\+https:\/\/github.com\//, '').replace(/\.git$/, '');
   // An installed package can live inside the consumer's Git tree. Its HEAD is
   // not a React Plumber revision and must never become the action's pin.
   const revision = git(packageRoot, 'rev-parse', '--show-toplevel') === resolve(packageRoot) ? git(packageRoot, 'rev-parse', 'HEAD') : metadata.gitHead;
-  const action = `${repository}@${revision && /^[a-f\d]{40}$/.test(revision) ? revision : 'main'}`;
+  const commit = revision && /^[a-f\d]{40}$/.test(revision) ? revision : undefined;
+  const pin = commit ?? `v${metadata.version}`;
+  const action = `${repository}@${pin}`;
   let dependencies = '';
   if (existsSync(join(repo, 'package-lock.json'))) dependencies = '      - run: npm ci\n';
   else if (existsSync(join(repo, 'pnpm-lock.yaml'))) dependencies = '      - run: corepack enable && pnpm install --frozen-lockfile\n';
   else if (existsSync(join(repo, 'yarn.lock'))) dependencies = '      - run: corepack enable && yarn install --immutable\n';
   else if (existsSync(join(repo, 'package.json'))) dependencies = '      - run: npm install\n';
   const notes = [owners.source ? `CI approvers: ${owners.logins.join(', ') || 'none'} from ${owners.source}.` : 'CI approvers: none. Set ledger-approvers in .github/workflows/plumb.yml before approving new tokens or exceptions.'];
-  if (!revision) notes.push('Action revision: main. Pin it to a reviewed React Plumber commit in .github/workflows/plumb.yml.');
+  if (!commit) notes.push(`Action revision: ${pin}. This release tag must exist in ${repository}.`);
   if (owners.teams.length) notes.push(`CODEOWNERS teams: ${owners.teams.join(', ')}. The action accepts individual GitHub logins; add team members to ledger-approvers.`);
   return { file: join(repo, '.github/workflows/plumb.yml'), notes, text:
     'name: React Plumber\non:\n  pull_request:\n  pull_request_review:\n    types: [submitted, dismissed]\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  plumb:\n    runs-on: ubuntu-latest\n    steps:\n' +

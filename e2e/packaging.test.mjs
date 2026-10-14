@@ -48,4 +48,22 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
     assert.fail(`Repository README link ${link} must use an absolute repository URL`);
   }
   assert.match(command(consumer, process.execPath, [join(installed, 'dist/cli.js'), '--help']), /plumber/);
+  const cli = join(installed, 'dist/cli.js');
+  const metadata = JSON.parse(await readFile(join(installed, 'package.json'), 'utf8'));
+  assert.equal(metadata.gitHead, undefined, 'exercise the released-tag fallback');
+  command(consumer, 'git', ['init', '--quiet']);
+  command(consumer, process.execPath, [cli, 'install', '--ci']);
+  const workflow = await readFile(join(consumer, '.github/workflows/plumb.yml'), 'utf8');
+  assert.equal(metadata.version, '0.1.0');
+  assert.ok(workflow.includes(`uses: unlocalhosted/plumb@v${metadata.version}\n`));
+  assert.doesNotMatch(workflow, /@main\b/);
+  const action = await readFile(join(installed, 'action.yml'), 'utf8');
+  for (const [, pin] of action.matchAll(/uses:\s+[^\s@]+@([^\s]+)/g)) {
+    assert.match(pin, /^(?:v\d+\.\d+\.\d+|[a-f\d]{40})$/);
+  }
+  const releasedCommit = '1234567890abcdef1234567890abcdef12345678';
+  await writeFile(join(installed, 'package.json'), JSON.stringify({ ...metadata, gitHead: releasedCommit }));
+  await rm(join(consumer, '.github/workflows/plumb.yml'));
+  command(consumer, process.execPath, [cli, 'install', '--ci']);
+  assert.ok((await readFile(join(consumer, '.github/workflows/plumb.yml'), 'utf8')).includes(`uses: unlocalhosted/plumb@${releasedCommit}\n`));
 });
