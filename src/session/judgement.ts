@@ -99,6 +99,7 @@ export class JudgementState {
     return mergeFindings(parts, declarations).sort((a, b) => a.key.localeCompare(b.key));
   }
   provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false) {
+    const usedNumericSpacing = new Set<string>();
     const positions = orders(declarations).declarations;
     const files = byFile(declarations), definitions = indexDefinitions(declarations, record);
     const resolution = resolutionContext(declarations, record);
@@ -152,6 +153,7 @@ export class JudgementState {
           return familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
         });
         parts.get(family)!.push(...result.entries);
+        for (const name of result.usedNumericSpacing) usedNumericSpacing.add(name);
         for (const key of ['fromDecisions', 'total', 'findings'] as const) coverage[family][key] += result.coverage[key];
       }
     }
@@ -169,7 +171,7 @@ export class JudgementState {
       const merged = findingsForFamily(family, entries, record);
       return verbose || config.decisions?.[family]?.byValue === 'each' ? merged : groupByValue(family, merged);
     });
-    return { findings: presentProvenance(findings), coverage };
+    return { findings: presentProvenance(findings), coverage, usedNumericSpacing: [...usedNumericSpacing].sort() };
   }
   ownership(declarations: Declaration[], graph: ComponentGraph, shards: Map<string, ComponentGraph>, config: PlumbConfig) {
     const files = byFile(declarations); this.ownershipCache.keep(new Set(files.keys()));

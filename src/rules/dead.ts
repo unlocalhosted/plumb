@@ -9,8 +9,8 @@ export type DeadDecisionCounts = Partial<Record<Family, { total: number; used: n
 const valueRefs = (value: string) => [...references(value), ...[...value.matchAll(/\{([\w.-]+)\}/g)].map(match => match[1]!)];
 const refName = (ref: string) => /^var\(\s*([\w.-]+)(?:\s*,[\s\S]*)?\)$/.exec(ref)?.[1] ?? /^\{([\w.-]+)\}$/.exec(ref)?.[1] ?? ref;
 
-/** Reference reachability, never value equality. Definitions are edges, not roots. */
-export function deadDecisions(root: string, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig): { findings: Finding[]; counts: DeadDecisionCounts } {
+/** Reference reachability, including numeric unit expressions matched by provenance. Definitions are edges, not roots. */
+export function deadDecisions(root: string, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, usedNumericSpacing: string[] = []): { findings: Finding[]; counts: DeadDecisionCounts } {
   const decisions = [...new Map([...(record.inventory ?? []), ...record.decisions].map(d => [`${d.family}:${d.name}`, d])).values()];
   const byRef = new Map<string, Decision[]>();
   for (const decision of decisions) for (const ref of [decision.name, ...decision.refs]) {
@@ -28,7 +28,7 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
   for (const declaration of declarations) if (declaration.prop.startsWith('--')) edge(declaration.prop, declaration.authoredCss ?? declaration.value);
   const published = new Set(decisions.filter(d => d.exported || config.decisions?.[d.family]?.exported || config.exported?.some(pattern =>
     [d.name, relative(root, d.source.file), ...d.refs.map(refName)].some(name => matchesGlob(name, pattern)))));
-  const used = new Set<Decision>(), seen = new Set<string>(), queue: string[] = [];
+  const used = new Set<Decision>(), seen = new Set<string>(), queue: string[] = [...usedNumericSpacing];
   for (const declaration of declarations) {
     if (declaration.prop.startsWith('--') && byRef.has(declaration.prop)) continue;
     queue.push(...declaration.refs, ...(declaration.decisionRefs ?? []), ...valueRefs(declaration.authoredCss ?? declaration.value));

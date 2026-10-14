@@ -324,7 +324,7 @@ export class WarmState implements AnalysisRuntime {
     if (name === 'deadDecisions') {
       const declarations = inputs[0] as Declaration[];
       const defined = new Set((inputs[1] as { decisions: { name: string; refs: string[] }[]; inventory?: { name: string; refs: string[] }[] }).decisions.concat((inputs[1] as { inventory?: { name: string; refs: string[] }[] }).inventory ?? []).flatMap(d => [d.name, ...d.refs.map(ref => /^var\(\s*([\w.-]+)(?:\s*,[\s\S]*)?\)$/.exec(ref)?.[1] ?? /^\{([\w.-]+)\}$/.exec(ref)?.[1] ?? ref)]));
-      const refs = signature([declarations.filter(d => d.prop.startsWith('--')).map(d => [d.prop, d.authoredCss ?? d.value]),
+      const refs = signature([inputs[3], declarations.filter(d => d.prop.startsWith('--')).map(d => [d.prop, d.authoredCss ?? d.value]),
         [...new Set(declarations.filter(d => !d.prop.startsWith('--') || !defined.has(d.prop))
           .flatMap(d => [...d.refs, ...(d.decisionRefs ?? []), ...references(d.authoredCss ?? d.value), ...[...(d.authoredCss ?? d.value).matchAll(/\{([\w.-]+)\}/g)].map(m => m[1]!)]))].sort()]);
       if (this.dead?.refs === refs && this.dead.record === inputs[1] && this.dead.config === inputs[2]) return this.dead.value as T;

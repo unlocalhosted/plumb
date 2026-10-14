@@ -155,7 +155,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const judged = sync('provenance', [declarations, record, config.value, sourceFiles, options.verbose], () => provenance(declarations, record, config.value, sourceFiles, options.verbose));
   findings.push(...judged.findings);
   const deadStart = performance.now();
-  const dead = input ? undefined : sync('deadDecisions', [declarations, record, config.value], () => deadDecisions(root, declarations, record, config.value));
+  const dead = input ? undefined : sync('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing));
   if (dead) findings.push(...dead.findings);
   profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;

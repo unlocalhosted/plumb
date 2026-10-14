@@ -104,7 +104,7 @@ export function resolutionContext(declarations: Declaration[], record: DecisionR
 
 export function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
   sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
-  findings: Finding[]; entries: ProvenanceEntry[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
+  findings: Finding[]; entries: ProvenanceEntry[]; usedNumericSpacing: string[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {
   const decisions = record.decisions.filter(decision => decision.family === family);
   const numeric = family === 'spacing' && !record.numericSpacing?.replaced ? record.numericSpacing : undefined;
@@ -191,6 +191,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     return pool.filter(close).sort((a, b) => Math.abs(Number(comparable(a.resolved!, prop)) - n) - Math.abs(Number(comparable(b.resolved!, prop)) - n)).slice(0, 2);
   }
   const entries: ProvenanceEntry[] = [];
+  const usedNumericSpacing = new Set<string>();
   const coverage = { fromDecisions: 0, total: 0, findings: 0 };
   const judgedDeclarations = family === 'type' ? declarations.flatMap(d => typeDeclarations(d, decisionRefs)) : declarations;
   const variablesFor = resolution.variablesFor;
@@ -241,11 +242,19 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         const length = value === undefined ? undefined : pixels(value);
         // Preserve the authored unit expression; do not accept unrelated arithmetic
         // merely because it mentions --spacing somewhere.
-        if (numeric && length !== undefined && /^(?:calc\(\s*(?:var\(--spacing\)\s*\*\s*[-+]?(?:\d*\.)?\d+|[-+]?(?:\d*\.)?\d+\s*\*\s*var\(--spacing\))\s*\)|var\(--spacing\))$/.test(part)) continue;
+        const numericExpression = family === 'spacing' && length !== undefined && /^(?:calc\(\s*(?:var\(--spacing\)\s*\*\s*[-+]?(?:\d*\.)?\d+|[-+]?(?:\d*\.)?\d+\s*\*\s*var\(--spacing\))\s*\)|var\(--spacing\))$/.test(part);
+        if (numeric && numericExpression) continue;
+        const match = value === undefined ? undefined : matching(value, declaration.prop);
+        // Tailwind folds step zero to a literal. Reuse the actionable utility
+        // mapping to distinguish that use from an equal raw CSS/inline value.
+        if (match && numericUse(match) && callers.allows(match) && identityFor(declaration.prop) === 'value') {
+          const utility = useFor(match, declaration.prop, record.theme).class;
+          const numericUtility = declaration.origin === 'class' && utility && (declaration.site.text === utility || declaration.site.text.endsWith(`:${utility}`));
+          if (numericExpression || numericUtility) usedNumericSpacing.add(match.name);
+        }
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
         if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
-        const match = value === undefined ? undefined : matching(value, declaration.prop);
         if (match) {
           if (!callers.allows(match)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = source?.callers === undefined ? callers.semanticsFor(match).filter(suggestible) : project.filter(decision => callers.allows(decision) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
@@ -272,7 +281,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
           ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) });
     entries.push({ declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message });
   }
-  return { findings: findingsForFamily(family, entries, record), entries, coverage };
+  return { findings: findingsForFamily(family, entries, record), entries, usedNumericSpacing: [...usedNumericSpacing], coverage };
 }
 
 export interface ProvenanceEntry {
@@ -348,16 +357,18 @@ export function spacingProvenance(declarations: Declaration[], record: DecisionR
 }
 export function provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles?: ReadonlySet<string>, verbose = false) {
   const findings: Finding[] = [];
+  const usedNumericSpacing = new Set<string>();
   const definitions = indexDefinitions(declarations, record);
   const resolution = resolutionContext(declarations, record);
   const coverage = {} as Record<JudgedFamily, Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>>;
   for (const family of judgedFamilies) {
     const start = performance.now();
     const result = familyProvenance(family, declarations, record, config, sourceFiles, definitions, resolution);
+    for (const name of result.usedNumericSpacing) usedNumericSpacing.add(name);
     profileDuration(`rule:provenance/${family}`, performance.now() - start);
     findings.push(...(verbose || config.decisions?.[family]?.byValue === 'each' ? result.findings : groupByValue(family, result.findings))); coverage[family] = result.coverage;
   }
-  return { findings: presentProvenance(findings), coverage };
+  return { findings: presentProvenance(findings), coverage, usedNumericSpacing: [...usedNumericSpacing].sort() };
 }
 
 /** Shared final presentation for cold and incremental rule results. */
