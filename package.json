@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "plumber": "./dist/cli.js"
+    "plumber": "dist/cli.js"
   },
   "exports": {
     ".": {
