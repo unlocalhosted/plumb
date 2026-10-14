@@ -74,7 +74,7 @@ export default defineConfig({
 
 Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumber --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumber init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
-Init enables the hover-gate, focus-outline, viewport-dynamic and overscroll-contain habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
+Init enables the `hover-gate`, `focus-outline`, `transition-named` and `no-ease-in` habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
 
 ## Agent installation
 

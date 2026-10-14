@@ -57,6 +57,10 @@ test('three-command transcript: first look, init baseline, detected agents and C
   assert.match(text, /Unused: src\/components\/ui\/Button.tsx/);
   const configured = await import(`file://${join(directory, 'plumber.config.ts')}`);
   assert.deepEqual(configured.default.habits, defaults);
+  const readme = await readFile(join(root, 'README.md'), 'utf8');
+  const listedDefaults = /^Init enables the (.+?) habits/m.exec(readme)?.[1];
+  assert.ok(listedDefaults, 'README lists init defaults');
+  assert.deepEqual([...listedDefaults.matchAll(/`([^`]+)`/g)].map(match => match[1]), configured.default.habits, 'README defaults match what real plumber init writes');
   assert.ok(Object.values(configured.default.decisions).every(source => source.inferred === true));
   for (const id of ['viewport-dynamic', 'overscroll-contain', 'logical-inline', 'safe-area-fallback', 'overflow-clip']) {
     assert.match(text, new RegExp(`// "${id}", // \\d+ breaks`));
