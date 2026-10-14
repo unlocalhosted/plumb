@@ -43,7 +43,7 @@ async function fixture(t) {
   await rm(join(root, 'src/App.tsx'));
   await writeFile(join(root, file), source);
   await writeFile(join(root, 'package.json'), '{"type":"module"}');
-  await writeFile(join(root, 'index.html'), '<html><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
+  await writeFile(join(root, 'index.html'), '<html><head><link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E"></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
   await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
