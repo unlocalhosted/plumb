@@ -6,7 +6,7 @@
 npm install -D @unlocalhosted/react-plumber
 ```
 
-Published as [`@unlocalhosted/react-plumber`](https://www.npmjs.com/package/@unlocalhosted/react-plumber); the command it installs is `plumber`. Source and releases live at [unlocalhosted/plumb](https://github.com/unlocalhosted/plumb). The project was called Plumb before its first release; it is React Plumber now, and the repository keeps the short name.
+Published as [`@unlocalhosted/react-plumber`](https://www.npmjs.com/package/@unlocalhosted/react-plumber); the command it installs is `plumber`. Source and releases live at [unlocalhosted/plumb](https://github.com/unlocalhosted/plumb).
 
 React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
 
