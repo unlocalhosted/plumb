@@ -14,6 +14,7 @@ import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
 import { hoverGated, positivePseudo, selector } from '../habits/css.js';
 import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
+import { tailwindFix } from '../setup-messages.js';
 
 type ParsedCandidate = { kind: string; root?: string; value?: { kind: string; value: string } | null };
 type DesignSystem = {
@@ -82,6 +83,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
   const results = new Map<string, CandidateCss>();
   const diagnostics: Finding[] = [];
   if (entry === null) return { diagnostics, hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
+  if (!version?.startsWith('4.')) throw new UsageError(`${version ? `Tailwind ${version} is not supported.` : 'Tailwind is not installed.'} ${tailwindFix}`);
   const start = performance.now();
   function skipped(error: unknown) {
     const message = errorMessage(error);
@@ -92,7 +94,6 @@ export async function lowerTailwind(root: string, entry: string | null, version:
   try {
     const require = createRequire(join(dirname(entry), 'package.json'));
     const tailwindPath = require.resolve('tailwindcss');
-    if (!version?.startsWith('4.')) throw new Error('Layer 1 requires the project’s Tailwind v4 installation');
     let cssGraph: Awaited<ReturnType<typeof tailwindGraph>>;
     try { cssGraph = memory?.graph ?? await tailwindGraph(entry); }
     catch (error) { return skipped(error); }

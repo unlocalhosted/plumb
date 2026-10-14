@@ -31,6 +31,14 @@ Readers know tokens, scales and Tailwind. They do not know React Plumber's inter
 
 Paths are relative to the project root, everywhere, including ownership sources. Amounts are shown as compiled (`10px`), with the authored form beside them (`gap-10`).
 
+## Unsupported setups
+
+- A CSS entry needs Tailwind, but it is missing: `Tailwind is not installed. Use Tailwind 4 in the project containing the CSS entry.`
+- A CSS entry resolves Tailwind v3: `Tailwind {version} is not supported. Use Tailwind 4 in the project containing the CSS entry.`
+- Overlay installation cannot resolve React: `React is not installed. Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.` Show this before host wiring, including with `--write`.
+
+Tailwind errors keep exit 2 and use the same fix as `plumber doctor`. Overlay guidance keeps the install command's existing exit code. Do not print compiler internals, require stacks or stack traces for these cases.
+
 ## Reasons quoted from tokens
 
 A token's reason is shown only when it is about that token. A reason string attached to more than three tokens is a group description (MetalUI's `$use` is one per recipe), not a reason for this value: keep it in JSON as `groupWhy`, do not show it. Shown reasons are cut to the sentence that mentions the token or its amount, at most 72 characters.

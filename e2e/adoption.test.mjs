@@ -234,6 +234,43 @@ test('doctor reports unsupported Tailwind, missing CSS entry and unusable cache 
   assert.equal(output.trim().split('\n').length, 6);
 });
 
+for (const version of [null, '3.4.19']) {
+  test(`CLI gives doctor's Tailwind fix for ${version ?? 'missing installation'} without internal errors`, async t => {
+    const directory = await fixture(t);
+    await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
+    if (version) await file(directory, 'node_modules/tailwindcss/package.json', JSON.stringify({ name: 'tailwindcss', version }));
+    const doctor = run(directory, ['doctor'], 1).stdout;
+    const fix = /fix  Tailwind: [^.]+(?:\.[\d]+)*\. (Use Tailwind 4[^\n]+)/.exec(doctor)?.[1];
+    assert.equal(fix, 'Use Tailwind 4 in the project containing the CSS entry.');
+    for (const args of [[], ['check'], ['check', '--json']]) {
+      const result = run(directory, args, 2);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, `plumber: ${version ? `Tailwind ${version} is not supported.` : 'Tailwind is not installed.'} ${fix}\n`);
+      assert.doesNotMatch(result.stderr, /Require stack|Cannot find module|Layer 1|Load project Tailwind|\n\s+at /);
+    }
+  });
+}
+
+test('overlay install explains missing React while plain CSS checks and install exit codes stay unchanged', async t => {
+  const directory = await fixture(t);
+  const original = await readFile(join(directory, 'src/styles.css'), 'utf8');
+  const notice = 'React is not installed. Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.';
+  const advisory = run(directory, ['install', '--overlay']);
+  assert.ok(advisory.stdout.startsWith(notice + '\n\n'));
+  assert.equal(advisory.stderr, '');
+  assert.equal(await readFile(join(directory, 'src/styles.css'), 'utf8'), original);
+  run(directory, ['check']);
+  const unsupportedWrite = run(directory, ['install', '--overlay', '--write'], 2);
+  assert.ok(unsupportedWrite.stderr.includes(notice));
+  assert.doesNotMatch(unsupportedWrite.stderr, /Require stack|\n\s+at /);
+  await file(directory, 'package.json', '{"dependencies":{"vite":"*"}}');
+  await file(directory, 'vite.config.mjs', 'export default {};\n');
+  const write = run(directory, ['install', '--overlay', '--write']);
+  assert.ok(write.stdout.startsWith(notice + '\n\n'));
+  assert.match(write.stdout, /Wrote vite.config.mjs/);
+  assert.equal(write.stderr, '');
+});
+
 test('packaged CLI never uses its enclosing consumer repository HEAD as a React Plumber action pin', async t => {
   // Simulate package files inside someone else's Git tree, with existing
   // dependencies linked for reads. No package installation or download.

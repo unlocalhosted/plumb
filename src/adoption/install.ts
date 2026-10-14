@@ -8,6 +8,7 @@ import { planHooks, writeHooks } from '../surfaces/hooks.js';
 import { UsageError } from '../errors.js';
 import type { ServeInfo } from '../session/server.js';
 import { writeOverlay } from './overlay.js';
+import { overlaySetupNotice } from '../setup-messages.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -93,13 +94,17 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
 
 /** Print host wiring by default; source edits require explicit --write. */
 export async function installOverlay(root: string, write = false): Promise<string> {
+  return overlaySetupNotice(root) + await overlayWiring(root, write);
+}
+
+async function overlayWiring(root: string, write = false): Promise<string> {
   const metadata = JSON.parse(await content(join(root, 'package.json')) ?? '{}') as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
   const dependencies = { ...metadata.dependencies, ...metadata.devDependencies };
   if (write) {
     try { return await writeOverlay(root, dependencies.next ? 'next' : dependencies.vite ? 'vite' : undefined); }
     catch (error) {
       if (!(error instanceof UsageError)) throw error;
-      throw new UsageError(`${error.message}\nNo install files changed. Add this wiring manually:\n${await installOverlay(root)}`);
+      throw new UsageError(`${error.message}\nNo install files changed. Add this wiring manually:\n${overlaySetupNotice(root)}${await overlayWiring(root)}`);
     }
   }
   if (dependencies.next) return [

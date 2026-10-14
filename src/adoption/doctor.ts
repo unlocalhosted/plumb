@@ -9,6 +9,7 @@ import { discoverProject } from '../project.js';
 import { readLedger } from '../ledger/store.js';
 import { check } from '../index.js';
 import { errorMessage } from '../errors.js';
+import { tailwindFix } from '../setup-messages.js';
 
 async function size(path: string): Promise<number> {
   let total = 0;
@@ -42,7 +43,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     const project = await discoverProject(root, config);
     const version = project.tailwind.version;
     const compatible = !!version && Number(version.split('.')[0]) === 4;
-    line('Tailwind', !project.tailwind.entry || compatible, project.tailwind.entry ? version ?? 'not installed' : 'not used', project.tailwind.entry && !compatible ? 'Use Tailwind 4 in the project containing the CSS entry.' : 'No change needed.');
+    line('Tailwind', !project.tailwind.entry || compatible, project.tailwind.entry ? version ?? 'not installed' : 'not used', project.tailwind.entry && !compatible ? tailwindFix : 'No change needed.');
     line('CSS entry', true, project.tailwind.entry ? relative(root, project.tailwind.entry) : 'plain CSS from source files', 'No change needed.');
   } catch (error) {
     line('Tailwind', false, 'version could not be checked', 'Fix the CSS entry and rerun plumber doctor.');
