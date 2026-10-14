@@ -1,10 +1,22 @@
 # React Plumber
 
+[![npm](https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm)](https://www.npmjs.com/package/@unlocalhosted/react-plumber) [![release](https://img.shields.io/github/v/release/unlocalhosted/plumb?label=release)](https://github.com/unlocalhosted/plumb/releases) [![license](https://img.shields.io/npm/l/@unlocalhosted/react-plumber)](LICENSE)
+
+```sh
+npm install -D @unlocalhosted/react-plumber
+```
+
+Published as [`@unlocalhosted/react-plumber`](https://www.npmjs.com/package/@unlocalhosted/react-plumber); the command it installs is `plumber`. Source and releases live at [unlocalhosted/plumb](https://github.com/unlocalhosted/plumb).
+
 React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
 
 <p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="960" alt="Blueprint mode: the running page as a wireframe, every drift as an amber break with the nearest token ghosted beside it, held as designed, and the causes listed by count"></p>
 
 It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. Inline values written in code are read symbolically: constants fold, a ternary or a typed prop is read as every outcome, a token beside a runtime number is judged by the token, and `k * STAGGER` is judged by its step. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
+
+### Why "plumb"
+
+A plumb line is the builder's oldest instrument: a weight on a string that shows whether a wall is true. That is what this tool does for an interface, so the project and its repository are called **plumb**, and the tagline on the site is "every pixel has a plumb line". The package and the CLI are **React Plumber** and `plumber` because the tool reads React source, and because `plumber` on npm belongs to an abandoned package; publishing under the `@unlocalhosted` scope keeps the command `plumber` either way. The names mean one thing: Plumb the idea, React Plumber the thing you install.
 
 ## Quick start
 
