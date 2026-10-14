@@ -2,7 +2,9 @@
 
 React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
 
-It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
+<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="960" alt="Blueprint mode: the running page as a wireframe, every drift as an amber break with the nearest token ghosted beside it, held as designed, and the causes listed by count"></p>
+
+It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. Inline values written in code are read symbolically: constants fold, a ternary or a typed prop is read as every outcome, a token beside a runtime number is judged by the token, and `k * STAGGER` is judged by its step. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
 
 ## Quick start
 
@@ -43,6 +45,19 @@ Start your dev server as usual. Then:
 | **Alt+↑ / Alt+↓** | Steps between the element's JSX and the components above it. |
 | Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
 | **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
+
+#### Blueprint mode
+
+Press **Alt+B** and the whole view becomes its own blueprint, a wireframe of the running page with every drift drawn where it lives. Words become bars. Gaps on your scale are faint dimensions named by their token; rails on the left and top margins read the page's rhythm. Anything off the scale is an amber break on its own geometry, with the nearest token ghosted in mint beside it at its own size. Each element carries a count, a red wash says how far it sits from the system, and the title block lists the causes of the drift by count, the first line being the decision that closes the most. Nothing else is lettered at rest.
+
+| Gesture | What happens |
+| --- | --- |
+| **Alt+B** | Blueprint on or off. **Esc** also leaves, and the page is put back exactly. |
+| **Point** at a break, or **Tab** to it | One note in words: what is off, the nearest tokens, what a click does. |
+| **Click** a break, or **Enter** | Opens its chooser. Pointing at a step previews it; clicking picks it. Several picks go in one **Write**. |
+| **Hold D** | The view as designed: every drift takes its nearest token at once and the ink turns mint. Release puts it back. |
+| **L** | The punch list: every drift in view in rows. |
+| Point at a cause in the title block | Outlines every element it touches. |
 
 If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; React Plumber then finds positions through React's owner chain instead.
 
