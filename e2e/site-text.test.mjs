@@ -71,7 +71,9 @@ test('homepage text replay writes only DOM, validates refusals and commutes with
       const edits = (await call('edits', positions[part])).body;
       const edit = edits.edits.find(edit => edit.from === from && edit.to === to); assert.ok(edit);
       const result = await call('apply', { file: fixture.file, hash: edits.hash, edits: [{ id: edit.id }] }, 'POST');
-      assert.equal(result.status, 200, JSON.stringify(result.body)); expected = expected.replace(from, to);
+      assert.equal(result.status, 200, JSON.stringify(result.body));
+      // Drift names also occur in the card's explanatory comments. Only JSX is edited.
+      expected = expected.replace(/className="[^"]*"/g, attribute => attribute.replace(from, to));
       assert.equal(result.body.hash, hash(expected));
       assert.equal((await read(part)).body.hash, result.body.hash);
       assert.equal(await page.locator(`[data-drift="${part}"]`).evaluate((node, token) => node.classList.contains(token), to), true);
