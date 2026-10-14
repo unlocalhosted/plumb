@@ -1,5 +1,5 @@
 import { presetDecisions } from '../presets/index.js';
-import { relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { Decision, Family } from '../report.js';
 import type { StylesheetGraph } from '../collect/stylesheets.js';
@@ -38,6 +38,10 @@ export function matches(value: string, pattern: string): boolean {
 }
 
 export interface DecisionRecord { numericSpacing?: NumericSpacing | undefined; inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
+function outside(root: string, file: string): boolean {
+  const path = relative(root, resolve(root, file)).replaceAll('\\', '/');
+  return path === '..' || path.startsWith('../') || isAbsolute(path);
+}
 export async function readDecisions(root: string, config: PlumbConfig, graph: StylesheetGraph, theme: ThemeValue[]): Promise<DecisionRecord> {
   const raw = readCssVariables(graph), variables = new Map<string, Variable>();
   const metadata = new Map<string, typeof raw[number]>();
@@ -57,7 +61,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
       throw new UsageError(`Invalid decision record in decisions.${record.family}.from.`);
     }
     const previous = decisions.get(`${record.family}:${record.name}`);
-    if (previous?.exported && (!projectOverride && (record.origin === 'framework' || relative(root, resolve(root, record.source.file)).startsWith('../')))) return;
+    if (previous?.exported && (!projectOverride && (record.origin === 'framework' || outside(root, record.source.file)))) return;
     if (previous?.exported && previous.value === record.value) record = { ...record, exported: true };
     decisions.set(`${record.family}:${record.name}`, { ...record, refs: [...record.refs], source: { ...record.source, file: resolve(root, record.source.file) } });
     if (explicit) overrides.add(`${record.family}:${record.name}`);
@@ -101,7 +105,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
       for (const record of await readDtcg(root, pattern.slice(5), family as Family)) add(record, hasTierOverride(record), true);
     }
   }
-  const projectNamesForValues = new Set(raw.filter(item => item.origin === 'project' && !relative(root, item.source.file).startsWith('../')).map(item => item.name));
+  const projectNamesForValues = new Set(raw.filter(item => item.origin === 'project' && !outside(root, item.source.file)).map(item => item.name));
   for (const record of decisions.values()) variables.set(record.name, record.exported && !projectNamesForValues.has(record.name) ? { value: record.value } : variables.get(record.name) ?? { value: record.value });
   // DTCG references share the resolver with CSS variables.
   const cssValue = (value: string) => value.replace(/\{([\w.-]+)\}/g, 'var($1)');

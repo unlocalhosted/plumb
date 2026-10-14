@@ -30,7 +30,8 @@ export async function baseReport(root: string, ref: string, options: Pick<CheckO
       catch (e) { if ((e as NodeJS.ErrnoException).code === 'EEXIST') break; if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
       parent = dirname(parent);
     }
-    const config = options.config === undefined ? undefined : isAbsolute(options.config) && relative(context.top, options.config).startsWith('..') ? options.config : resolve(temp, relative(context.top, resolve(root, options.config)));
+    const configPath = options.config === undefined ? undefined : relative(context.top, resolve(root, options.config)).replaceAll('\\', '/');
+    const config = options.config === undefined ? undefined : configPath === '..' || configPath!.startsWith('../') || isAbsolute(configPath!) ? resolve(root, options.config) : resolve(temp, configPath!);
     const checked = spawnSync(process.execPath, [fileURLToPath(new URL('../cli.js', import.meta.url)),
       '--root', resolve(temp, relative(context.top, root)), '--json', ...(config === undefined ? [] : ['--config', config])],
       { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, timeout: 60000,

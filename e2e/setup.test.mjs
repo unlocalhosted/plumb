@@ -35,6 +35,53 @@ function command(root, executable, args, status = 0, timeout = 30000) {
 }
 const install = (root, status = 0) => command(root, process.execPath, [cli, 'install', '--overlay', '--write'], status);
 
+test('real overlay installer refuses file and missing-route escapes with win32 relative paths', async t => {
+  const boundary = await fixture(t), outside = await fixture(t);
+  const preload = join(boundary, 'win32-boundary.mjs'), receipt = join(boundary, 'paths.jsonl');
+  // Keep real filesystem I/O and installer code; adapt only node:path.relative
+  // at the OS boundary so POSIX CI exercises Windows separator semantics.
+  await writeFile(preload, `import path from 'node:path';
+import { appendFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+path.relative = (from, to) => {
+  const windows = value => 'C:' + value.replaceAll('/', '\\\\');
+  const result = path.win32.relative(windows(from), windows(to));
+  appendFileSync(${JSON.stringify(receipt)}, JSON.stringify(result) + '\\n');
+  return result;
+};
+syncBuiltinESMExports();
+`);
+  const run = (root, status) => {
+    const result = spawnSync(process.execPath, ['--import', preload, cli, 'install', '--overlay', '--write'], { cwd: root, env, encoding: 'utf8', timeout: 30000 });
+    assert.ifError(result.error);
+    assert.equal(result.status, status, result.stderr);
+    return result;
+  };
+  const valid = await fixture(t);
+  await file(valid, 'package.json', '{"dependencies":{"vite":"*"}}');
+  await file(valid, 'vite.config.mjs', 'export default {};\n');
+  assert.match(run(valid, 0).stdout, /Wrote vite.config.mjs/);
+  for (const host of ['vite', 'next']) {
+    const root = await fixture(t), original = 'export default {};\n';
+    await file(root, 'package.json', JSON.stringify({ dependencies: { [host]: '*' } }));
+    if (host === 'vite') {
+      await file(outside, 'config.mjs', original);
+      await symlink(join(outside, 'config.mjs'), join(root, 'vite.config.mjs'));
+    } else {
+      await file(root, 'next.config.mjs', original);
+      await file(root, 'app/layout.jsx', 'export default () => <body></body>;\n');
+      await symlink(outside, join(root, 'app/%5F_plumb'));
+    }
+    assert.match(run(root, 2).stderr, /resolves outside the project root/);
+    assert.equal(await readFile(join(host === 'vite' ? outside : root, host === 'vite' ? 'config.mjs' : 'next.config.mjs'), 'utf8'), original);
+    if (host === 'next') {
+      assert.doesNotMatch(await readFile(join(root, 'app/layout.jsx'), 'utf8'), /PlumbOverlay/);
+      await assert.rejects(readFile(join(outside, '[...path]/route.plumb.ts')), { code: 'ENOENT' });
+    }
+  }
+  assert.ok((await readFile(receipt, 'utf8')).trim().split('\n').map(JSON.parse).some(path => path.startsWith('..\\')), 'installer actually crossed win32 boundary');
+});
+
 test('overlay installer edits supported configs in place and refuses ambiguous or escaping files before writes', { timeout: 90000 }, async t => {
   for (const [extension, source] of [
     ['ts', "// Keep header.\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react'; // Keep import note.\nexport default defineConfig({\n  // Keep plugin note.\n  plugins: [react()],\n  server: { port: 4311 },\n});\n"],

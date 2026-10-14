@@ -1,7 +1,7 @@
 import { allConfigNames } from '../paths.js';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
 import { parseLedger } from './store.js';
 import type { LedgerEntry } from './types.js';
@@ -20,7 +20,7 @@ export function gitContext(root: string, ref: string): { top: string; commit: st
 }
 function refFile(context: { top: string; commit: string }, file: string): string {
   const path = relative(context.top, file).replaceAll('\\', '/');
-  if (path === '..' || path.startsWith('../')) throw new UsageError(`Git comparison file is outside the repository: ${file}.`);
+  if (path === '..' || path.startsWith('../') || isAbsolute(path)) throw new UsageError(`Git comparison file is outside the repository: ${file}.`);
   const exists = git(context.top, ['ls-tree', '--name-only', context.commit, '--', path]).trim();
   return exists ? git(context.top, ['show', `${context.commit}:${path}`]) : '';
 }

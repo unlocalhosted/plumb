@@ -12,10 +12,10 @@ export function prepareSnippet(root: string, config: PlumbConfig, snippet: Snipp
   const lang = snippet.lang ?? (snippet.as?.endsWith('.css') ? 'css' : snippet.as && /\.[jt]sx?$/.test(snippet.as) ? 'tsx' :
     parseSync('__plumb_try__.tsx', snippet.text).errors.length ? 'css' : 'tsx');
   const file = resolve(root, snippet.as ?? 'src/__plumb_try__.tsx');
-  const path = relative(root, file);
+  const path = relative(root, file).replaceAll('\\', '/');
   const patterns = config.source ?? defaultSource;
   const matches = (pattern: string) => matchesGlob(isAbsolute(pattern) ? file : path, pattern);
-  if (!path || path.startsWith('../') || isAbsolute(path) || ignore.some(pattern => matchesGlob(path, pattern)) ||
+  if (!path || path === '..' || path.startsWith('../') || isAbsolute(path) || ignore.some(pattern => matchesGlob(path, pattern)) ||
       !patterns.filter(pattern => !pattern.startsWith('!')).some(matches) || patterns.some(pattern => pattern.startsWith('!') && matches(pattern.slice(1)))) {
     throw new UsageError('--as must name a file inside the project source globs; set --as to a matching path.');
   }

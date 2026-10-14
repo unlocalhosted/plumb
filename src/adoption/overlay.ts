@@ -20,7 +20,7 @@ async function inside(root: string, file: string): Promise<void> {
   let ancestor = file;
   for (;;) {
     try {
-      const path = relative(root, await realpath(ancestor));
+      const path = relative(root, await realpath(ancestor)).replaceAll('\\', '/');
       if (path === '..' || path.startsWith('../') || isAbsolute(path)) refuse(`${relative(root, file)} resolves outside the project root.`);
       return;
     } catch (error) {

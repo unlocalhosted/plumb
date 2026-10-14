@@ -67,7 +67,7 @@ async function approvers(repo: string, path: string): Promise<{ logins: string[]
 async function workflow(root: string): Promise<{ file: string; text: string; notes: string[] }> {
   const repo = git(root, 'rev-parse', '--show-toplevel') ?? root;
   const workingDirectory = relative(repo, root).replaceAll('\\', '/') || '.';
-  const owners = await approvers(repo, `${workingDirectory === '.' ? '' : workingDirectory + '/'}${relative(root, statePath(root, 'ledger.jsonl'))}`);
+  const owners = await approvers(repo, `${workingDirectory === '.' ? '' : workingDirectory + '/'}${relative(root, statePath(root, 'ledger.jsonl')).replaceAll('\\', '/')}`);
   const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
   const metadata = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as { repository: { url: string }; gitHead?: string };
   const repository = metadata.repository.url.replace(/^git\+https:\/\/github.com\//, '').replace(/\.git$/, '');
