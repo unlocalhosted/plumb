@@ -6,6 +6,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { plumbCommand, recordingJSON, recordingPaths } from './recording.mjs';
+import { commandFlags } from '../../dist/cli-flags.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const unsupported = 'not supported';
@@ -142,15 +143,9 @@ async function flatten(file) {
 
 const cli = await source('src/cli.ts');
 const optionsNode = declaration(cli, 'options');
-const restrictionNode = declaration(cli, 'flags');
-const restrictions = literal(restrictionNode);
-let commandNode;
-walk(cli.ast, node => {
-  if (ts.isCallExpression(node) && node.expression.getText(cli.ast).endsWith('.includes') && node.arguments[0]?.getText(cli.ast) === 'command' && ts.isArrayLiteralExpression(node.expression.expression)) {
-    if (!commandNode || node.expression.expression.elements.length > commandNode.elements.length) commandNode = node.expression.expression;
-  }
-});
-if (!commandNode) throw new Error('CLI command allowlist missing.');
+const acceptanceSource = await source('src/cli-flags.ts');
+const commandNode = declaration(acceptanceSource, 'commandFlags');
+const commandNames = sorted(Object.keys(commandFlags));
 const helpNode = declaration(cli, 'help');
 // Editorial summaries describe the source dispatch, never simulated CLI output.
 const summaries = {
@@ -176,7 +171,7 @@ const summaries = {
   why: ['Inspect findings, declarations and ledger records at a file and line.', 'inspectLedger'],
 };
 function summaryFor(name) {
-  if (!summaries[name]) return { summary: unsupported, summarySources: [cite(commandNode, cli)] };
+  if (!summaries[name]) return { summary: unsupported, summarySources: [cite(commandNode, acceptanceSource)] };
   const [summary, marker] = summaries[name];
   const node = firstMatch(cli, node => ts.isCallExpression(node) && node.expression.getText(cli.ast) === marker
     || ts.isPropertyAccessExpression(node) && node.getText(cli.ast) === marker);
@@ -193,8 +188,8 @@ const globalFlags = properties(optionsNode).map(p => {
   });
   return { name: `--${name}`, type: spec.type, default: spec.default ?? (name === 'root' ? 'current directory' : unsupported),
     description: match?.trim().split(/\s{2,}/).slice(1).join(' ') || unsupported,
-    commands: restrictions[name] ?? literal(commandNode), validations,
-    sources: [cite(p, cli), ...(match ? [cite(helpNode, cli)] : []), ...(restrictions[name] ? [cite(prop(restrictionNode, name), cli)] : [])] };
+    commands: commandNames.filter(command => commandFlags[command].includes(name)), validations,
+    sources: [cite(p, cli), ...(match ? [cite(helpNode, cli)] : []), cite(commandNode, acceptanceSource)] };
 }).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
 // Scan emission sites, not docs or string mentions in consumers.
@@ -356,13 +351,13 @@ const cache = await mkdtemp(resolve(tmpdir(), 'plumb-reference-'));
 const portablePaths = recordingPaths({ repo, paths: [[cache, '.plumber/cache']] });
 let commands, rawReport, checkRun;
 try {
-  commands = sorted(literal(commandNode)).map(name => {
+  commands = commandNames.map(name => {
     const captured = cliRun([name, '--help'], cache);
     if (captured.exitCode !== 0) throw new Error(`${name} --help failed.`);
     return { name, ...summaryFor(name), usage: usageLines.filter(line => new RegExp(`(?:plumber |\\| )${name}(?: |$)`).test(line) || name === 'check' && line.startsWith('plumber [check]')),
       flags: globalFlags.filter(flag => flag.commands.includes(name)).map(flag => ({ ...flag, type: name === 'install' && flag.name === '--agent' ? 'string[]' : flag.type,
         ...(name === 'install' && flag.name === '--agent' ? { sources: [...flag.sources, 'src/cli.ts:81'] } : {}) })),
-      examples: [captured.command], help: captured, sources: [cite(commandNode, cli), cite(helpNode, cli)] };
+      examples: [captured.command], help: captured, sources: [cite(prop(commandNode, name), acceptanceSource), cite(helpNode, cli)] };
   });
   checkRun = cliRun(['check', '--root', 'fixtures/docs-judged', '--json'], cache);
   rawReport = JSON.parse(checkRun.stdout);

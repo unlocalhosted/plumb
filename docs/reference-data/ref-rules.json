@@ -39,8 +39,8 @@
       ],
       "because": [
         {
-          "template": "Plumb judges values against the tokens your theme declares.",
-          "expression": "'Plumb judges values against the tokens your theme declares.'",
+          "template": "React Plumber judges values against the tokens your theme declares.",
+          "expression": "'React Plumber judges values against the tokens your theme declares.'",
           "sources": [
             "src/rules/provenance.ts:348"
           ]
@@ -48,8 +48,8 @@
       ],
       "fix": [
         {
-          "template": "Add {familyNames[family]} tokens to your theme, or point `decisions.{family}.from` in plumb.config.ts at where they live.",
-          "expression": "`Add ${familyNames[family]} tokens to your theme, or point \\`decisions.${family}.from\\` in plumb.config.ts at where they live.`",
+          "template": "Add {familyNames[family]} tokens to your theme, or point `decisions.{family}.from` in plumber.config.ts at where they live.",
+          "expression": "`Add ${familyNames[family]} tokens to your theme, or point \\`decisions.${family}.from\\` in plumber.config.ts at where they live.`",
           "sources": [
             "src/rules/provenance.ts:349"
           ]
@@ -63,7 +63,7 @@
       "emissions": [
         {
           "source": "src/rules/provenance.ts:346",
-          "expression": "makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,\n        declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${sites.length} ${familyNames[family]} values can't be checked`,\n        because: 'Plumb judges values against the tokens your theme declares.',\n        action: `Add ${familyNames[family]} tokens to your theme, or point \\`decisions.${family}.from\\` in plumb.config.ts at where they live.` })"
+          "expression": "makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,\n        declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${sites.length} ${familyNames[family]} values can't be checked`,\n        because: 'React Plumber judges values against the tokens your theme declares.',\n        action: `Add ${familyNames[family]} tokens to your theme, or point \\`decisions.${family}.from\\` in plumber.config.ts at where they live.` })"
         }
       ]
     },
@@ -104,8 +104,8 @@
       ],
       "fix": [
         {
-          "template": "Set css in plumb.config.ts to choose a different entry.",
-          "expression": "'Set css in plumb.config.ts to choose a different entry.'",
+          "template": "Set css in plumber.config.ts to choose a different entry.",
+          "expression": "'Set css in plumber.config.ts to choose a different entry.'",
           "sources": [
             "src/collect/entries.ts:129"
           ]
@@ -119,7 +119,7 @@
       "emissions": [
         {
           "source": "src/collect/entries.ts:128",
-          "expression": "configDiagnostic('config/tailwind-entry', { file, line: 1, column: 1, text: file },\n      `Using Tailwind entry ${file}`, `The app reaches several Tailwind entries; this entry reaches the most source files (${count}).`, 'Set css in plumb.config.ts to choose a different entry.')"
+          "expression": "configDiagnostic('config/tailwind-entry', { file, line: 1, column: 1, text: file },\n      `Using Tailwind entry ${file}`, `The app reaches several Tailwind entries; this entry reaches the most source files (${count}).`, 'Set css in plumber.config.ts to choose a different entry.')"
         }
       ]
     },
@@ -223,8 +223,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/color --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/color --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/color --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/color --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -285,8 +285,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/elevation --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/elevation --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/elevation --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/elevation --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -347,8 +347,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/motion --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/motion --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/motion --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/motion --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -409,8 +409,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/opacity --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/opacity --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/opacity --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/opacity --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -471,8 +471,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/radius --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/radius --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/radius --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/radius --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -533,8 +533,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/size --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/size --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/size --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/size --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -595,8 +595,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/spacing --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/spacing --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/spacing --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/spacing --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -657,8 +657,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/type --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/type --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/type --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/type --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -719,8 +719,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule dead/z --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule dead/z --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule dead/z --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule dead/z --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -774,22 +774,22 @@
       ],
       "fix": [
         {
-          "template": "plumb accept-decisions --why \"…\"",
-          "expression": "'plumb accept-decisions --why \"…\"'",
+          "template": "plumber accept-decisions --why \"…\"",
+          "expression": "'plumber accept-decisions --why \"…\"'",
           "sources": [
             "src/ledger/check.ts:14"
           ]
         }
       ],
-      "accept": "plumb accept-decisions --why \"…\"",
-      "printedAccept": "plumb accept-decisions --why \"…\"",
+      "accept": "plumber accept-decisions --why \"…\"",
+      "printedAccept": "plumber accept-decisions --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
       "emissions": [
         {
           "source": "src/ledger/check.ts:50",
-          "expression": "diagnostic('decisions/unaccepted', 'error', { ...decision.source, column: 1, text: `${decision.name}: ${decision.value}` }, `${decision.name} is a new or changed decision not accepted in the ledger.`, 'Run plumb accept-decisions --why \"…\" after reviewing the decision.', key)"
+          "expression": "diagnostic('decisions/unaccepted', 'error', { ...decision.source, column: 1, text: `${decision.name}: ${decision.value}` }, `${decision.name} is a new or changed decision not accepted in the ledger.`, 'Run plumber accept-decisions --why \"…\" after reviewing the decision.', key)"
         }
       ]
     },
@@ -830,15 +830,15 @@
       ],
       "fix": [
         {
-          "template": "Run plumb ledger --prune after reviewing the removal.",
-          "expression": "'Run plumb ledger --prune after reviewing the removal.'",
+          "template": "Run plumber ledger --prune after reviewing the removal.",
+          "expression": "'Run plumber ledger --prune after reviewing the removal.'",
           "sources": [
             "src/ledger/check.ts:52"
           ]
         }
       ],
       "accept": "not supported",
-      "printedAccept": "plumb accept --rule decisions/vanished --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule decisions/vanished --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50",
         "src/cli.ts:248",
@@ -848,7 +848,7 @@
       "emissions": [
         {
           "source": "src/ledger/check.ts:52",
-          "expression": "diagnostic('decisions/vanished', 'warn', siteFor(entry), `Accepted decision ${entry.key} vanished from its source.`, 'Run plumb ledger --prune after reviewing the removal.', entry.key)"
+          "expression": "diagnostic('decisions/vanished', 'warn', siteFor(entry), `Accepted decision ${entry.key} vanished from its source.`, 'Run plumber ledger --prune after reviewing the removal.', entry.key)"
         }
       ]
     },
@@ -896,8 +896,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule existence/dead-class --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule existence/dead-class --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule existence/dead-class --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule existence/dead-class --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -961,8 +961,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule existence/dead-var --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule existence/dead-var --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule existence/dead-var --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule existence/dead-var --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1023,8 +1023,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule existence/dynamic-class --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule existence/dynamic-class --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule existence/dynamic-class --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule existence/dynamic-class --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1085,8 +1085,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/focus-outline --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/focus-outline --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/focus-outline --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/focus-outline --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1141,8 +1141,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/hover-gate --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/hover-gate --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/hover-gate --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/hover-gate --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1197,8 +1197,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/logical-inline --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/logical-inline --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/logical-inline --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/logical-inline --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1253,8 +1253,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/no-ease-in --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/no-ease-in --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/no-ease-in --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/no-ease-in --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1309,8 +1309,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/overflow-clip --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/overflow-clip --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/overflow-clip --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/overflow-clip --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1365,8 +1365,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/overscroll-contain --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/overscroll-contain --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/overscroll-contain --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/overscroll-contain --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1421,8 +1421,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/safe-area-fallback --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/safe-area-fallback --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/safe-area-fallback --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/safe-area-fallback --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1477,8 +1477,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/transition-named --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/transition-named --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/transition-named --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/transition-named --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1533,8 +1533,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/viewport-dynamic --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/viewport-dynamic --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/viewport-dynamic --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/viewport-dynamic --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1587,8 +1587,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule habits/{id} --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule habits/{id} --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule habits/{id} --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule habits/{id} --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1643,8 +1643,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule imitation/{Component} --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule imitation/{Component} --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule imitation/{Component} --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule imitation/{Component} --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -1724,7 +1724,7 @@
         }
       ],
       "accept": "not supported",
-      "printedAccept": "plumb accept --rule ledger/grew --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule ledger/grew --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50",
         "src/cli.ts:248",
@@ -1779,22 +1779,22 @@
       ],
       "fix": [
         {
-          "template": "plumb accept {key} --why \"…\"",
-          "expression": "`plumb accept ${key} --why \"…\"`",
+          "template": "plumber accept {key} --why \"…\"",
+          "expression": "`plumber accept ${key} --why \"…\"`",
           "sources": [
             "src/ledger/check.ts:14"
           ]
         }
       ],
-      "accept": "plumb accept <key> --why \"…\"",
-      "printedAccept": "plumb accept <key> --why \"…\"",
+      "accept": "plumber accept <key> --why \"…\"",
+      "printedAccept": "plumber accept <key> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
       "emissions": [
         {
           "source": "src/ledger/check.ts:34",
-          "expression": "diagnostic('ledger/no-why', 'error', siteFor(entry), `Exception ${entry.key} has no why.`, 'Record a reason with plumb accept --why \"…\".', entry.key)"
+          "expression": "diagnostic('ledger/no-why', 'error', siteFor(entry), `Exception ${entry.key} has no why.`, 'Record a reason with plumber accept --why \"…\".', entry.key)"
         }
       ]
     },
@@ -1835,15 +1835,15 @@
       ],
       "fix": [
         {
-          "template": "Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.",
-          "expression": "'Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.'",
+          "template": "Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.",
+          "expression": "'Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.'",
           "sources": [
             "src/ledger/check.ts:39"
           ]
         }
       ],
       "accept": "not supported",
-      "printedAccept": "plumb accept --rule ledger/stale --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule ledger/stale --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50",
         "src/cli.ts:248",
@@ -1853,7 +1853,7 @@
       "emissions": [
         {
           "source": "src/ledger/check.ts:39",
-          "expression": "diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${entryCount(entry)} sites; ${current} remain.`, 'Run plumb ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key)"
+          "expression": "diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${entryCount(entry)} sites; ${current} remain.`, 'Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key)"
         }
       ]
     },
@@ -1916,8 +1916,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule ownership/{Component} --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule ownership/{Component} --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule ownership/{Component} --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule ownership/{Component} --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2182,8 +2182,8 @@
       ],
       "fix": [
         {
-          "template": "Resolve the aliases or conditional values for {token.name} and {target.name}, then rerun plumb parity.",
-          "expression": "`Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumb parity.`",
+          "template": "Resolve the aliases or conditional values for {token.name} and {target.name}, then rerun plumber parity.",
+          "expression": "`Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumber parity.`",
           "sources": [
             "src/parity.ts:104"
           ]
@@ -2198,7 +2198,7 @@
       "emissions": [
         {
           "source": "src/parity.ts:104",
-          "expression": "add('parity/unresolved', token, `\\`${short(token.name)}\\` cannot be compared with your theme`, 'Unresolved values can hide differences between code and designs using the export.', `Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumb parity.`, { themeToken: target.name })"
+          "expression": "add('parity/unresolved', token, `\\`${short(token.name)}\\` cannot be compared with your theme`, 'Unresolved values can hide differences between code and designs using the export.', `Resolve the aliases or conditional values for ${token.name} and ${target.name}, then rerun plumber parity.`, { themeToken: target.name })"
         }
       ]
     },
@@ -2310,8 +2310,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/arbitrary --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/arbitrary --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/arbitrary --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/arbitrary --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2385,8 +2385,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/color --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/color --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/color --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/color --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2460,8 +2460,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/color/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/color/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/color/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/color/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2535,8 +2535,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/color/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/color/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/color/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/color/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2625,8 +2625,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/color/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/color/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/color/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/color/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2704,8 +2704,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/elevation --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/elevation --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/elevation --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/elevation --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2779,8 +2779,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/elevation/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/elevation/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/elevation/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/elevation/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2854,8 +2854,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/elevation/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/elevation/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/elevation/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/elevation/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -2944,8 +2944,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/elevation/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/elevation/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/elevation/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/elevation/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3023,8 +3023,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/motion --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/motion --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/motion --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/motion --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3098,8 +3098,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/motion/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/motion/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/motion/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/motion/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3188,8 +3188,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/motion/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/motion/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/motion/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/motion/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3282,8 +3282,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/motion/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/motion/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/motion/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/motion/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3340,8 +3340,8 @@
       ],
       "because": [
         {
-          "template": "Plumb reads source, not running values.",
-          "expression": "'Plumb reads source, not running values.'",
+          "template": "React Plumber reads source, not running values.",
+          "expression": "'React Plumber reads source, not running values.'",
           "sources": [
             "src/rules/provenance.ts:211"
           ]
@@ -3355,13 +3355,13 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/opaque-inline --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/opaque-inline --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/opaque-inline --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/opaque-inline --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
       "messageContract": {
-        "text": "**provenance/opaque-inline** (info)\n- Title: `` This {property} is computed at runtime, so it can't be checked ``\n- Because: Plumb reads source, not running values.\n- Action: Pass the number through a CSS variable and set {property} from a class or stylesheet.\n- Grouped per file: one finding per file with a site count, not one per property.",
+        "text": "**provenance/opaque-inline** (info)\n- Title: `` This {property} is computed at runtime, so it can't be checked ``\n- Because: React Plumber reads source, not running values.\n- Action: Pass the number through a CSS variable and set {property} from a class or stylesheet.\n- Grouped per file: one finding per file with a site count, not one per property.",
         "sources": [
           "docs/MESSAGES.md:106"
         ]
@@ -3430,8 +3430,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/radius --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/radius --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/radius --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/radius --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3505,8 +3505,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/radius/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/radius/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/radius/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/radius/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3580,8 +3580,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/radius/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/radius/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/radius/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/radius/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3670,8 +3670,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/radius/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/radius/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/radius/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/radius/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3749,8 +3749,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/spacing --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/spacing --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/spacing --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/spacing --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3824,8 +3824,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/spacing/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/spacing/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/spacing/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/spacing/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3899,8 +3899,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/spacing/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/spacing/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/spacing/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/spacing/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -3989,8 +3989,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/spacing/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/spacing/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/spacing/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/spacing/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4068,8 +4068,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/type --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/type --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/type --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/type --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4143,8 +4143,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/type/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/type/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/type/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/type/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4218,8 +4218,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/type/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/type/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/type/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/type/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4308,8 +4308,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/type/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/type/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/type/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/type/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4387,8 +4387,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/z --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/z --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/z --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/z --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4462,8 +4462,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/z/by-value --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/z/by-value --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/z/by-value --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/z/by-value --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4537,8 +4537,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/z/framework --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/z/framework --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/z/framework --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/z/framework --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],
@@ -4627,8 +4627,8 @@
           ]
         }
       ],
-      "accept": "plumb accept --rule provenance/z/tier --site <file:line> --why \"…\"",
-      "printedAccept": "plumb accept --rule provenance/z/tier --site <file:line> --why \"…\"",
+      "accept": "plumber accept --rule provenance/z/tier --site <file:line> --why \"…\"",
+      "printedAccept": "plumber accept --rule provenance/z/tier --site <file:line> --why \"…\"",
       "acceptanceSources": [
         "src/messages.ts:50"
       ],

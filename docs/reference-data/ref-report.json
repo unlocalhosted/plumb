@@ -12452,7 +12452,7 @@
           "required": true,
           "conditions": [],
           "constraints": {
-            "const": "plumb"
+            "const": "react-plumber"
           },
           "sources": [
             "schema/report.schema.json:11",
@@ -12495,12 +12495,12 @@
   "example": {
     "schemaVersion": 1,
     "tool": {
-      "name": "plumb",
+      "name": "react-plumber",
       "version": "0.1.0"
     },
     "root": "fixtures/docs-judged",
     "config": {
-      "path": "fixtures/docs-judged/plumb.config.ts",
+      "path": "fixtures/docs-judged/plumber.config.ts",
       "inferred": false
     },
     "tailwind": {
@@ -12696,7 +12696,7 @@
             }
           }
         ],
-        "accept": "plumb accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
+        "accept": "plumber accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why \"…\"",
         "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
         "fix": "12px --spacing-3 gap-3 gap: var(--spacing-3) \"Separate a label from its control.\"; 16px --spacing-4 gap-4 gap: var(--spacing-4) \"Give a group breathing room.\"",
         "ledgerKeys": [
@@ -19703,7 +19703,7 @@
       "cssFiles": 0
     },
     "notes": [
-      "No ledger. Run plumb baseline to record current debt and accept the current decisions."
+      "No ledger. Run plumber baseline to record current debt and accept the current decisions."
     ],
     "coverage": {
       "spacing": {
@@ -19784,7 +19784,7 @@
     },
     "ledger": {
       "exists": false,
-      "path": "fixtures/docs-judged/.plumb/ledger.jsonl",
+      "path": "fixtures/docs-judged/.plumber/ledger.jsonl",
       "entries": 0,
       "new": 7,
       "debt": 0,
@@ -19792,15 +19792,15 @@
       "outOfScope": 0,
       "stale": 0,
       "growth": 0,
-      "message": "No ledger. Run plumb baseline to record current debt and accept the current decisions."
+      "message": "No ledger. Run plumber baseline to record current debt and accept the current decisions."
     }
   },
   "exampleRun": {
-    "command": "plumb check --json",
+    "command": "plumber check --json",
     "exitCode": 1,
     "sources": [
       "src/cli.ts:180",
-      "fixtures/docs-judged/plumb.config.ts:1",
+      "fixtures/docs-judged/plumber.config.ts:1",
       "fixtures/docs-judged/src/Judged.tsx:1",
       "fixtures/docs-judged/src/styles.css:1"
     ]

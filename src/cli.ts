@@ -26,6 +26,7 @@ import { formatDeadSummary } from './rules/dead.js';
 import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
+import { commandFlags } from './cli-flags.js';
 
 const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -99,18 +100,16 @@ async function main(): Promise<void> {
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumber decisions and a known family.');
-  if (!['serve', 'presets', 'check', 'habits', 'decisions', 'explain', 'imitation', 'try', 'init', 'baseline', 'accept', 'accept-decisions', 'ledger', 'show', 'why', 'agent-docs', 'install', 'doctor', 'report', 'parity'].includes(command) ||
+  if (!Object.hasOwn(commandFlags, command) ||
       ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
     throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumber check or plumber explain <file> (see --help).`);
   }
-  const flags: Record<string, string[]> = {
-    base: ['check'], changed: ['check'], agent: ['check', 'try', 'install'], list: ['install'], sarif: ['check'], format: ['check', 'parity'], hooks: ['install'], ci: ['install'], 'strict-ledger': ['check'], force: ['baseline', 'init'], why: ['accept', 'accept-decisions'], suggest: ['imitation'],
-    rule: ['accept'], site: ['accept'], ratchet: ['ledger'], prune: ['ledger'], rebase: ['ledger'],
-    lang: ['try'], as: ['try'], port: ['serve'], stdio: ['serve'], watch: ['check'],
-    markdown: ['report'], since: ['report'], strict: ['parity'],
-    overlay: ['serve', 'install'], write: ['install'], origin: ['serve'], 'served-root': ['serve'],
-  };
-  for (const [flag, commands] of Object.entries(flags)) if (args.values[flag as keyof typeof args.values] !== undefined && !commands.includes(command)) throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.`);
+  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.`);
+  if (command === 'serve' && (args.values.json || args.values.verbose)) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
+  for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag)) {
+    const commands = Object.keys(commandFlags).filter(name => commandFlags[name]!.includes(flag));
+    throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.`);
+  }
   if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumber parity.' : '--format supports github.');
   if ([args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
   if (args.values.json && args.values.markdown) throw new UsageError('Choose --json or --markdown.');
@@ -122,7 +121,6 @@ async function main(): Promise<void> {
   if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.');
   if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
-  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.`);
   if (suggesting && !args.values.suggest) throw new UsageError('Use plumber imitation --suggest to report candidate fingerprints.');
   if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
   for (const name of ['root', 'config', 'served-root'] as const) {
@@ -199,7 +197,6 @@ async function main(): Promise<void> {
     if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.');
     if (args.values['served-root'] !== undefined && !args.values.overlay) throw new UsageError('--served-root requires serve --overlay.');
     if (args.values.stdio && (args.values.overlay || args.values.origin !== undefined)) throw new UsageError('Serve --overlay requires HTTP; omit --stdio.');
-    if (args.values.json || args.values.verbose) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
     if (args.values.stdio) { await serveStdio(options); return; }
     if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.');
     const daemon = await serve({ ...options, overlay: args.values.overlay ?? false,
