@@ -237,7 +237,7 @@ export class Fixer {
     if (!m.choices.length) return `<span class="hint">No token is close</span>`;
     if (m.pick === null) return `<span class="hint">${m.choices.length === 1 ? 'One token fits. Take it with 1, or Enter.' : `${m.choices.length} tokens fit. Pick the one whose reason matches.`}</span>`;
     const c = m.choices[m.pick];
-    if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but Plumb has no exact edit for this syntax. Open the reading and copy for an agent.</span>`;
+    if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but React Plumber has no exact edit for this syntax. Open the reading and copy for an agent.</span>`;
     return '';
   }
 
@@ -447,7 +447,7 @@ export class Fixer {
       } catch (error) {
         const stale = /changed since/i.test(error?.message ?? '');
         for (const p of group) p.state = stale ? 'stale' : 'picked';
-        refused.push({ file, stale, message: error?.message ?? 'Plumb refused the write.' });
+        refused.push({ file, stale, message: error?.message ?? 'React Plumber refused the write.' });
       }
     }
     const short = f => f.split('/').pop();
@@ -457,7 +457,7 @@ export class Fixer {
       this.#status = { kind: 'wrote', text: said };
       clearTimeout(this.#hold); this.#hold = setTimeout(() => { if (this.#status?.kind === 'wrote') { this.#status = null; this.#host.changed(); } }, HOLD);
     } else {
-      const bad = refused.map(r => r.stale ? `${short(r.file)} changed since Plumb read it` : `${short(r.file)} refused: ${r.message}`).join(' · ');
+      const bad = refused.map(r => r.stale ? `${short(r.file)} changed since React Plumber read it` : `${short(r.file)} refused: ${r.message}`).join(' · ');
       this.#status = { kind: 'refused', text: said ? `${said} · ${bad}` : bad, title: refused.map(r => r.message).join('\n'), stale: refused.some(r => r.stale) };
     }
     this.#host.announce(this.#status.text);

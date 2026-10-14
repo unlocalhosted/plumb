@@ -39,7 +39,7 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
     ['ts', "// Keep header.\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react'; // Keep import note.\nexport default defineConfig({\n  // Keep plugin note.\n  plugins: [react()],\n  server: { port: 4311 },\n});\n"],
     ['mts', "import { defineConfig as config } from 'vite'\nconst options = { plugins: [], base: '/' } satisfies import('vite').UserConfig\nexport default config(options)\n"],
     ['js', "export default { /* keep this */ server: { port: 4311 } };\n"],
-    ['mjs', "import { plumb as inspect } from '@unlocalhosted/plumb/vite';\nexport default { plugins: [react(), /* keep late note */ inspect({ watch: false }) /* keep tail */] };\n"],
+    ['mjs', "import { plumb as inspect } from '@unlocalhosted/react-plumber/vite';\nexport default { plugins: [react(), /* keep late note */ inspect({ watch: false }) /* keep tail */] };\n"],
     ['ts', 'import react from "@vitejs/plugin-react"; /* Keep multiline\r\nimport note. */\r\nexport default {\r\n  plugins: [react()],\r\n  server: { port: 4311 },\r\n};\r\n'],
   ]) {
     const root = await fixture(t);
@@ -69,7 +69,7 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
     assert.match(install(root), /Wrote .*route.plumb.ts/);
     const config = await readFile(join(root, `next.config.${extension}`), 'utf8');
     assert.match(config, /withPlumb\(/);
-    assert.match(config, /@unlocalhosted\/plumb\/next\/config/);
+    assert.match(config, /@unlocalhosted\/react-plumber\/next\/config/);
     assert.ok(config.includes(source.split('\n')[0]));
     const nextLayout = await readFile(join(root, `${app}/layout.jsx`), 'utf8');
     assert.match(nextLayout, /<body className="shell">\{children\}<PlumbOverlay \/><\/body>/);
@@ -98,7 +98,7 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
     assert.equal(await readFile(join(root, `${host}.config.mjs`), 'utf8'), config);
   }
 
-  // The "outside" targets still live inside Plumb, but outside this project root.
+  // The "outside" targets still live inside React Plumber, but outside this project root.
   const outside = await fixture(t), root = await fixture(t);
   const original = 'export default { plugins: [react()] };\n';
   await file(outside, 'config.mjs', original);
@@ -186,21 +186,21 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
 `);
   const packed = JSON.parse(command(repo, 'npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', root]))[0];
   command(root, 'npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(root, packed.filename)], 0, 180000);
-  const plumb = (...args) => command(root, 'npx', ['--no-install', 'plumb', ...args]);
+  const plumb = (...args) => command(root, 'npx', ['--no-install', 'plumber', ...args]);
   assert.match(plumb(), /gap-\[10px\]/);
   const first = JSON.parse(plumb('--json'));
   const gapFinding = first.findings.find(finding => finding.sites.some(site => site.text.includes('gap-[10px]')));
   assert.ok(gapFinding, 'first config-free check reports this drift site');
   assert.match(plumb('init'), /Baseline:/);
-  assert.match(await readFile(join(root, 'plumb.config.ts'), 'utf8'), /Inferred by Plumb/);
-  assert.ok((await readFile(join(root, '.plumb/ledger.jsonl'), 'utf8')).length);
+  assert.match(await readFile(join(root, 'plumber.config.ts'), 'utf8'), /Inferred by React Plumber/);
+  assert.ok((await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8')).length);
   const baseline = JSON.parse(plumb('check', '--json'));
   assert.equal(baseline.ledger.new, 0);
-  const protectedFiles = ['plumb.config.ts', '.plumb/ledger.jsonl'];
+  const protectedFiles = ['plumber.config.ts', '.plumber/ledger.jsonl'];
   const protectedBefore = await Promise.all(protectedFiles.map(path => readFile(join(root, path), 'utf8')));
   assert.match(plumb('install', '--overlay', '--write'), /--- vite.config.mjs/);
   const wired = await readFile(join(root, 'vite.config.mjs'), 'utf8');
-  assert.equal(wired, "import { plumb } from '@unlocalhosted/plumb/vite';\n" + config.replace('plugins: [react()', 'plugins: [plumb(), react()'));
+  assert.equal(wired, "import { plumb } from '@unlocalhosted/react-plumber/vite';\n" + config.replace('plugins: [react()', 'plugins: [plumb(), react()'));
   assert.match(plumb('install', '--overlay', '--write'), /already set up/);
   assert.equal(await readFile(join(root, 'vite.config.mjs'), 'utf8'), wired);
 
@@ -217,7 +217,7 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
     server.once('error', error => { clearTimeout(timer); reject(error); });
     server.once('exit', code => { clearTimeout(timer); reject(new Error(`Fixture server exited ${code}: ${logs}`)); });
   });
-  browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined, env });
+  browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined, env });
   const page = await browser.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
@@ -233,7 +233,7 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   // Init accepted today's drift as debt: the tag need not call it "new/off".
   await overlay.locator('.tag .el').filter({ hasText: /^div$/ }).waitFor();
   await page.mouse.click(point.x, point.y); await page.keyboard.up('Alt');
-  const reading = overlay.getByRole('dialog', { name: /^Plumb reading for div/ });
+  const reading = overlay.getByRole('dialog', { name: /^React Plumber reading for div/ });
   await reading.waitFor();
   const pinnedLocation = (await reading.locator('.top .file').getAttribute('title')).split(' · ')[0];
   assert.equal(pinnedLocation, `${located.file}:${located.line}:${located.column}`);

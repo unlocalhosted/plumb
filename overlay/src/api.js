@@ -15,8 +15,8 @@ export async function request(method, params, options = {}) {
   if (response.status === 503) {
     const body = await response.json().catch(() => ({}));
     // A failed start is not "still reading": it needs the person, and says why.
-    if (body.status === 'failed') throw Object.assign(new Error(body.diagnostic ?? 'Plumb could not start.'), { failed: true });
-    throw Object.assign(new Error('Plumb is still reading your project.'), { starting: true });
+    if (body.status === 'failed') throw Object.assign(new Error(body.diagnostic ?? 'React Plumber could not start.'), { failed: true });
+    throw Object.assign(new Error('React Plumber is still reading your project.'), { starting: true });
   }
   if (!response.ok) {
     if (options.explain) throw Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method, source: params.source, status: response.status, response: await response.text() } });
@@ -29,6 +29,6 @@ export async function request(method, params, options = {}) {
 export async function post(method, body) {
   const response = await fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(result.error ?? `Plumb refused ${method}.`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
   return result;
 }

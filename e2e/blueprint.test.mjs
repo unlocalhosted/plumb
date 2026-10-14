@@ -8,13 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
 async function browser(t) {
   try {
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => browser.close());
     return browser;
   } catch (error) {
@@ -47,8 +47,8 @@ async function open(t, launched, url, { motion = false } = {}) {
   return { page, errors, overlay: page.locator('plumb-overlay') };
 }
 
-// Everything blueprint mode could leave on the host page: <html>'s attributes, every inline style, every Plumb
-// attribute on an element, and Plumb's stylesheets.
+// Everything blueprint mode could leave on the host page: <html>'s attributes, every inline style, every React Plumber
+// attribute on an element, and React Plumber's stylesheets.
 const footprint = (page) =>
   page.evaluate(() => {
     const all = [...document.querySelectorAll('*')].filter((e) => !e.closest('plumb-overlay'));
@@ -77,8 +77,14 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
   assert.equal(row.color, 'rgb(255, 255, 255)');
   // reading, then the count
   await say(overlay).filter({ hasText: /\d+ off in view · Alt\+B/ }).waitFor({ timeout: 20000 });
+  // the marks are drawn on the frame after the count, so wait for them rather than read once
+  const expected = ['gap-[10px]', 'py-[10px]', 'px-[14px]', 'rounded-[14px]', 'text-[13.5px]', 'gap-[3px]', 'rounded-[5px]'];
+  await page.waitForFunction((drifts) => {
+    const labels = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((r) => r.getAttribute('aria-label'));
+    return drifts.every((d) => labels.some((l) => l.includes(d)));
+  }, expected, { timeout: 5000 }).catch(() => {});
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
-  for (const drift of ['gap-[10px]', 'py-[10px]', 'px-[14px]', 'rounded-[14px]', 'text-[13.5px]', 'gap-[3px]', 'rounded-[5px]']) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
+  for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
   const count = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
   assert.equal(count, labels.filter((l) => l.startsWith('Drift:')).length, 'the dock counts the drift marks drawn');
   // every mark is a button you can name and reach
@@ -113,7 +119,7 @@ test('Leaving puts the page back exactly, and nothing keeps listening', { timeou
 
   assert.equal(await footprint(page), before, 'no attribute, inline style or stylesheet is left behind');
   assert.equal(await hits(overlay).count(), 0);
-  assert.match(await say(overlay).innerText(), /Plumb · Alt to inspect/);
+  assert.match(await say(overlay).innerText(), /React Plumber · Alt to inspect/);
   assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'false');
   await page.mouse.wheel(0, 300);
   await page.waitForTimeout(300);
@@ -273,7 +279,7 @@ test('A write the server refuses as stale is said so; Read again recovers the pi
   });
   const file = join(root, 'src/App.jsx');
   await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
-  await say(overlay).filter({ hasText: 'App.jsx changed since Plumb read it' }).waitFor({ timeout: 15000 });
+  await say(overlay).filter({ hasText: 'App.jsx changed since React Plumber read it' }).waitFor({ timeout: 15000 });
   assert.match(await readFile(file, 'utf8'), /gap-\[10px\] py-\[10px\]/, 'nothing was written');
   assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the preview stays');
   await overlay.locator('.bp .hit[aria-label*="Picked gap-s2"]').waitFor();

@@ -1,4 +1,4 @@
-// The dock as a person meets it: bottom right, it says what Plumb is doing; Select picks an element without Alt.
+// The dock as a person meets it: bottom right, it says what React Plumber is doing; Select picks an element without Alt.
 // Real Vite, real React, real Chromium, the overlay's own demo app.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, rm } from 'node:fs/promises';
@@ -8,13 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
-import { plumb } from '@unlocalhosted/plumb/vite';
+import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
 async function browser(t) {
   try {
-    const launched = await chromium.launch({ headless: true, executablePath: process.env.PLUMB_CHROMIUM || undefined });
+    const launched = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
     t.after(() => launched.close()); return launched;
   } catch (error) {
     if (!/Executable doesn't exist/.test(error.message)) throw error;
@@ -42,7 +42,7 @@ const read = page => page.evaluate(() => {
     right: innerWidth - box.right, bottom: innerHeight - box.bottom, background: getComputedStyle(dock).backgroundColor };
 });
 
-test('the dock says Plumb is ready, folds away, and Select picks an element without Alt', { timeout: 90000 }, async t => {
+test('the dock says React Plumber is ready, folds away, and Select picks an element without Alt', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const url = await demo(t);
   const page = await launched.newPage();
@@ -56,7 +56,7 @@ test('the dock says Plumb is ready, folds away, and Select picks an element with
   await dock.waitFor();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
   let s = await read(page);
-  assert.equal(s.say, 'Plumb · Alt to inspect');
+  assert.equal(s.say, 'React Plumber · Alt to inspect');
   assert.ok(s.right >= 12 && s.right <= 20 && s.bottom >= 12 && s.bottom <= 20, `bottom right with a 16px inset: ${s.right}, ${s.bottom}`);
   assert.equal(await dock.locator('[role="status"]').getAttribute('aria-live'), 'polite');
 
@@ -122,5 +122,5 @@ test('the dock reads on dark pages and is still under reduced motion', { timeout
     const dock = document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock');
     dock.dataset.state = 'starting';
     return getComputedStyle(dock.querySelector('.bob')).animationName;
-  }), 'pl-breathe', 'the mark breathes while Plumb reads the project');
+  }), 'pl-breathe', 'the mark breathes while React Plumber reads the project');
 });

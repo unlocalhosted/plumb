@@ -44,13 +44,13 @@ function unplaced(found) {
   if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(response)) {
     let file = String(detail.file ?? detail.source ?? '');
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
-    return { short: `not checked: ${file}`, message: `This element is written in \`${file}\`, which Plumb doesn’t check. Add it to \`source\` in your Plumb config to read it here.` };
+    return { short: `not checked: ${file}`, message: `This element is written in \`${file}\`, which React Plumber doesn’t check. Add it to \`source\` in your React Plumber config to read it here.` };
   }
   if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'This element wasn’t rendered by React (HTML written at runtime, or outside your app), so it has no line in your source.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
-    return { short: 'library only', message: 'A library rendered this element, and Plumb can’t prove which line of your code used it. Point at the component that wraps it instead.' };
-  if (found?.reason === 'map') return { short: 'no source map', message: 'The dev server’s source map for this element doesn’t lead back to your source, so Plumb won’t guess a line.' };
-  return { short: 'not placed', message: 'Plumb can’t tie this element to a line in your source, so it won’t guess one.' };
+    return { short: 'library only', message: 'A library rendered this element, and React Plumber can’t prove which line of your code used it. Point at the component that wraps it instead.' };
+  if (found?.reason === 'map') return { short: 'no source map', message: 'The dev server’s source map for this element doesn’t lead back to your source, so React Plumber won’t guess a line.' };
+  return { short: 'not placed', message: 'React Plumber can’t tie this element to a line in your source, so it won’t guess one.' };
 }
 // A structural path survives a reload of the same app state; ids and classes may not (the write changes classes).
 const pathTo = element => {
@@ -295,7 +295,7 @@ class PlumbOverlay extends HTMLElement {
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
       <section class="w" hidden></section>
-      <div class="dock" role="toolbar" aria-label="Plumb" data-state="starting" data-enter>
+      <div class="dock" role="toolbar" aria-label="React Plumber" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
         <button class="act undo" type="button" hidden title="Lift every pick (nothing is written)">Undo</button>
         <button class="act write" type="button" hidden></button>
@@ -384,7 +384,7 @@ class PlumbOverlay extends HTMLElement {
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {
-    if (state === 'refused') return this.#announce('Blueprint waits until Plumb is running.');
+    if (state === 'refused') return this.#announce('Blueprint waits until React Plumber is running.');
     this.#bp.state = state;
     if (state === 'entering') this.#bp.progress = null;
     // the blueprint's paper is dark: the overlay's own cards take the dark scheme over it, and give it back after
@@ -439,9 +439,9 @@ class PlumbOverlay extends HTMLElement {
     const text = {
       select: 'Pick an element · Esc',
       starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
-      failed: 'Plumb couldn’t start',
+      failed: 'React Plumber couldn’t start',
       lost: 'Reconnecting…',
-      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#blueprintSays()}` : 'Plumb · Alt to inspect',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#blueprintSays()}` : 'React Plumber · Alt to inspect',
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
     const f = this.#fixer, fs = f?.status;
@@ -479,9 +479,9 @@ class PlumbOverlay extends HTMLElement {
       if (!found?.file) return { status: 'unplaced', tag: element.localName, ...unplaced(found) };
       return this.#readAt(found, element);
     })().catch(error => error?.starting
-      ? { status: 'starting', tag: element.localName, message: 'Plumb is still reading your project…' }
-      : error?.failed ? { status: 'error', tag: element.localName, short: 'Plumb couldn’t start', message: `Plumb couldn’t start: ${error.message}` }
-      : { status: 'error', tag: element.localName, message: error?.message ?? "Plumb isn't answering." });
+      ? { status: 'starting', tag: element.localName, message: 'React Plumber is still reading your project…' }
+      : error?.failed ? { status: 'error', tag: element.localName, short: 'React Plumber couldn’t start', message: `React Plumber couldn’t start: ${error.message}` }
+      : { status: 'error', tag: element.localName, message: error?.message ?? "React Plumber isn't answering." });
     // A pin must not inherit cancellation from an in-flight hover reading.
     if (!signal) this.#cache.set(element, promise);
     // Only a reading is worth keeping. A refusal can be transient (a dev server still pre-bundling, a map mid-reload),
@@ -498,7 +498,7 @@ class PlumbOverlay extends HTMLElement {
     // only; the edits and text are fetched when a reading is opened.
     const marksOnly = want === 'marks';
     const [site, edits, text] = await Promise.all([request('site', params), marksOnly ? null : request('edits', params), marksOnly ? null : request('text', params).catch(() => null)]);
-    if (!site) return { status: 'error', tag: location.tag, location, message: "Plumb couldn't read this element." };
+    if (!site) return { status: 'error', tag: location.tag, location, message: "React Plumber couldn't read this element." };
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
     if (!site.declarations.length && rendered) {
@@ -536,9 +536,9 @@ class PlumbOverlay extends HTMLElement {
     const notes = [...r.notes];
     const unattributed = traced.unattributed ?? [];
     if (unattributed.length) notes.push({ title: `\`${unattributed.join(' ')}\` ${unattributed.length === 1 ? 'is' : 'are'} passed in by the code that uses this component. Alt+↑ reads it there.` });
-    if (ambiguous) notes.push({ title: `${ambiguous} class${ambiguous === 1 ? '' : 'es'} could come from more than one line, depending on props; Plumb won’t guess which.` });
+    if (ambiguous) notes.push({ title: `${ambiguous} class${ambiguous === 1 ? '' : 'es'} could come from more than one line, depending on props; React Plumber won’t guess which.` });
     const limited = Array.isArray(traced.limited) ? traced.limited : [];
-    if (limited.length) notes.push({ title: `${limited.length} class${limited.length === 1 ? ' is' : 'es are'} built deeper than Plumb follows (helpers inside helpers); they are not judged here.` });
+    if (limited.length) notes.push({ title: `${limited.length} class${limited.length === 1 ? ' is' : 'es are'} built deeper than React Plumber follows (helpers inside helpers); they are not judged here.` });
     if (elsewhere.size) notes.push({ title: `Some classes are written in ${[...elsewhere].slice(0, 3).join(', ')}${elsewhere.size > 3 ? '…' : ''}.` });
     return { ...r, notes, declared: declarations.length || traced.classes.length, traced: { attributed: traced.classes.length, unattributed: unattributed.length, ambiguous } };
   }
@@ -775,7 +775,7 @@ class PlumbOverlay extends HTMLElement {
     p.regions = ready ? s.marks.map(m => regionFor(p.element, m.props)) : [];
     w.hidden = false;
     w.style.width = width + 'px';
-    w.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Plumb reading for ${esc(label)}">
+    w.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="React Plumber reading for ${esc(label)}">
       <div class="top">${this.#label(p.element, s)}
         ${ready ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column}">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
         ${ready ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}
@@ -967,9 +967,9 @@ class PlumbOverlay extends HTMLElement {
     if (!s.marks.length && !s.declared) {
       read.innerHTML = s.via === 'owner'
         ? `<div class="t">${glyph('ownership', 'quiet')}<span class="title">This line uses ${esc(s.component ?? 'a component')} and sets no class or style of its own.</span></div>
-          <div class="because">Its look comes from ${esc(s.component ?? 'the component')} and the props passed here. Plumb checks that component where its styles are written.</div>`
+          <div class="because">Its look comes from ${esc(s.component ?? 'the component')} and the props passed here. React Plumber checks that component where its styles are written.</div>`
         : `<div class="t">${glyph('existence', 'quiet')}<span class="title">Nothing is written literally at this line.</span></div>
-          <div class="because">The classes here are built in code (a variable, a function or a template), so Plumb reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
+          <div class="because">The classes here are built in code (a variable, a function or a template), so React Plumber reads them where they are written as text. Open ${esc(s.file)} to see those places.</div>`;
       return;
     }
     if (!s.marks.length) {
@@ -1005,7 +1005,7 @@ class PlumbOverlay extends HTMLElement {
     if (!m.choices.length) return `<span class="hint">No token is close</span>`;
     if (m.pick === null) return `<span class="hint">${m.choices.length} tokens fit. Pick the one whose reason matches.</span>`;
     const c = m.choices[m.pick];
-    if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but Plumb has no exact edit for this syntax. Copy for agent hands it over.</span>`;
+    if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but React Plumber has no exact edit for this syntax. Copy for agent hands it over.</span>`;
     return '';
   }
 
@@ -1299,7 +1299,7 @@ class PlumbOverlay extends HTMLElement {
       for (const t of texts) {
         const now = await request('text', { file: s.file, line: s.line, column: s.column });
         const run = now?.editable ? now.runs.find(r => r.text === t.from) : null;
-        if (!run) throw new Error(`The text "${t.from}" changed since Plumb read it.`);
+        if (!run) throw new Error(`The text "${t.from}" changed since React Plumber read it.`);
         // Lift the preview first: the write is checked against the page as source made it, then the page shows the
         // written words (a dev server's reload, or the homepage's replay). If the write is refused, the preview returns.
         if (t.node.isConnected) t.node.data = t.lead + t.from + t.trail;
@@ -1310,7 +1310,7 @@ class PlumbOverlay extends HTMLElement {
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
       const stale = /changed since/i.test(error.message);
-      p.status = { kind: 'error', stale, text: stale ? 'The file changed since Plumb read it.' : error.message };
+      p.status = { kind: 'error', stale, text: stale ? 'The file changed since React Plumber read it.' : error.message };
       this.#updateSync();
     }
   }
@@ -1350,8 +1350,8 @@ class PlumbOverlay extends HTMLElement {
       if (m.choices.length) return `- ${where}: ${m.title.replace(/`/g, '')}. Choose a token by its reason: ${m.choices.map(c => `${c.label}${c.why ? ' (' + c.why + ')' : ''}`).join(', ')}.`;
       return `- ${where}: ${m.title.replace(/`/g, '')}. No token is close: stop and report NEEDS-DECISION with the value you wanted.`;
     });
-    const text = [`Plumb found ${lines.length} thing${lines.length === 1 ? '' : 's'} on <${s.tag}>${s.component ? ' in ' + s.component : ''} (${s.file}:${s.line}).`, ...lines, '',
-      'Do not edit the Plumb config, .plumb/ledger.jsonl or the theme to make these pass. Run `plumb check --changed --agent` after editing.'].join('\n');
+    const text = [`React Plumber found ${lines.length} thing${lines.length === 1 ? '' : 's'} on <${s.tag}>${s.component ? ' in ' + s.component : ''} (${s.file}:${s.line}).`, ...lines, '',
+      'Do not edit the React Plumber config, .plumber/ledger.jsonl or the theme to make these pass. Run `plumber check --changed --agent` after editing.'].join('\n');
     this.#copyText(button, text);
   }
 
