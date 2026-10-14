@@ -9,13 +9,13 @@ Every finding is read by someone deciding what to change: a person in a terminal
 | Title | `title` | One line, under 80 characters. Names the authored code or amount and what is wrong with it. Specific to this finding. |
 | Because | `because` | One sentence on why it matters. Stable per rule; never a restatement of the title. |
 | Do | `choices` + per-site edits, or `action` | The tokens to use with their amounts, or one plain instruction. Exact edit per site when one choice fits. |
-| If intended | `accept` | The command that records it as a reasoned exception: `plumb accept <key> --why "…"`. Shown once per finding. |
+| If intended | `accept` | The command that records it as a reasoned exception: `plumber accept <key> --why "…"`. Shown once per finding. |
 
 `why` and `fix` stay in JSON for compatibility: `why` = `because`, `fix` = the action text.
 
 ## Vocabulary
 
-Readers know tokens, scales and Tailwind. They do not know Plumb's internals.
+Readers know tokens, scales and Tailwind. They do not know React Plumber's internals.
 
 | Internal | Say |
 |---|---|
@@ -105,15 +105,15 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 
 **provenance/opaque-inline** (info)
 - Title: `` This {property} is computed at runtime, so it can't be checked ``
-- Because: Plumb reads source, not running values.
+- Because: React Plumber reads source, not running values.
 - Action: Pass the number through a CSS variable and set {property} from a class or stylesheet.
 - Grouped per file: one finding per file with a site count, not one per property.
 
 **No tokens in a family** (config gap, replaces per-value findings)
 - Rule: `config/no-tokens`, severity warn, one finding per family.
 - Title: `` Your theme has no {family} tokens, so {n} {property} values can't be checked ``
-- Because: Plumb judges values against the tokens your theme declares.
-- Action: Add {family} tokens to your theme, or point `decisions.{family}.from` in plumb.config.ts at where they live.
+- Because: React Plumber judges values against the tokens your theme declares.
+- Action: Add {family} tokens to your theme, or point `decisions.{family}.from` in plumber.config.ts at where they live.
 
 **No token fits** (a family has tokens, none near)
 - Do line: `` No token is close to {amount}. Pick one with the design owner, or add one to the theme. ``
@@ -161,9 +161,9 @@ Logical-inline judges physical sides that would change under RTL. Equal left/rig
 
 ### Ledger and decisions
 
-- ledger/no-why: `` Exception `{key}` has no reason `` · Every exception needs a reason a reviewer can check. · `` plumb accept {key} --why "…" ``
+- ledger/no-why: `` Exception `{key}` has no reason `` · Every exception needs a reason a reviewer can check. · `` plumber accept {key} --why "…" ``
 - ledger/grew: `` This change adds {n} ledger entries `` · New exceptions and tokens are design decisions and need review.
-- decisions/unaccepted: `` `{token}` is new in your theme and not yet accepted `` · New tokens change what everyone may use. · `` plumb accept-decisions --why "…" `` (an agent reports it instead).
+- decisions/unaccepted: `` `{token}` is new in your theme and not yet accepted `` · New tokens change what everyone may use. · `` plumber accept-decisions --why "…" `` (an agent reports it instead).
 
 ## Text layout
 
@@ -174,7 +174,7 @@ Logical-inline judges physical sides that would change under RTL. Equal left/rig
        12px  mu-related   var(--spacing-mu-related)   Related content uses 12
   apps/docs/src/blocks/ai-composer/ai-composer.tsx:119:76  py-10
   …
-  intended? plumb accept 3fa9… --why "…"
+  intended? plumber accept 3fa9… --why "…"
 ```
 
 The rule id is shown with `--verbose`. Findings are ordered errors first, then by site count.

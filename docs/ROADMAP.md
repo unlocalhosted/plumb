@@ -1,10 +1,10 @@
-# Improving Plumb: from a correct CLI to a daily tool
-> **Owner decision, 2026-10-10:** no MCP server. Agents use the CLI directly (`plumb try`, `plumb check --changed --agent`, `plumb why`), taught by the shipped skill file `skills/plumb/SKILL.md`, which `plumb install` copies into the project. Item 4 below is dropped; the overlay's "Copy for agent" hands over text the agent acts on with the same CLI.
+# Improving React Plumber: from a correct CLI to a daily tool
+> **Owner decision, 2026-10-10:** no MCP server. Agents use the CLI directly (`plumber try`, `plumber check --changed --agent`, `plumber why`), taught by the shipped skill file `skills/plumber/SKILL.md`, which `plumber install` copies into the project. Item 4 below is dropped; the overlay's "Copy for agent" hands over text the agent acts on with the same CLI.
 
 
-Written 2026-10-10 against Plumb at the "Final state" of BENCHMARK.md (layers 0 to 10, 137 e2e tests, warm run 997 ms on MetalUI docs) and against react-grab and react.doctor as they are today. Sources: Plumb's README, docs/DESIGN.md, docs/layers/*.md, BENCHMARK.md (Performance pass, Final state), docs/research/react-doctor-landscape.md; react-grab's README, react-grab.com and its "how it works" page; www.react.doctor. Anything I could not confirm from a primary source is marked UNVERIFIED.
+Written 2026-10-10 against React Plumber at the "Final state" of BENCHMARK.md (layers 0 to 10, 137 e2e tests, warm run 997 ms on MetalUI docs) and against react-grab and react.doctor as they are today. Sources: React Plumber's README, docs/DESIGN.md, docs/layers/*.md, BENCHMARK.md (Performance pass, Final state), docs/research/react-doctor-landscape.md; react-grab's README, react-grab.com and its "how it works" page; www.react.doctor. Anything I could not confirm from a primary source is marked UNVERIFIED.
 
-The short answer to the owner's question: Plumb is a judge with no courtroom. The engine is right (it judges compiled declarations, it has a ledger, it is fast) but the only place a person meets it is a terminal they chose to open. react-grab and react.doctor are daily tools because they sit at the moment a person already has, cost one gesture, and hand the result to the agent that will do the work. Plumb needs the same three things: a moment, a gesture, a handoff. The rest of this memo says which moments, which gestures, and in what order to build them.
+The short answer to the owner's question: React Plumber is a judge with no courtroom. The engine is right (it judges compiled declarations, it has a ledger, it is fast) but the only place a person meets it is a terminal they chose to open. react-grab and react.doctor are daily tools because they sit at the moment a person already has, cost one gesture, and hand the result to the agent that will do the work. React Plumber needs the same three things: a moment, a gesture, a handoff. The rest of this memo says which moments, which gestures, and in what order to build them.
 
 ## 1. Why react-grab and react.doctor are daily tools
 
@@ -31,40 +31,40 @@ Why it sticks:
 - Enforcement is graduated. Advisory PR comments first, blocking later, and only on introduced findings. Nobody is forced to pay old debt to adopt it.
 - It installs itself into the places work already happens: agents, hooks, CI, editor. The user decides once; the tool shows up everywhere after that.
 
-### The principles Plumb should take
+### The principles React Plumber should take
 
 1. Be present at the moment of noticing (the browser) and the moment of writing (the agent, the editor), not only at the moment of checking (CI).
 2. One gesture, one result. Nothing to configure before the first useful answer.
-3. Hand off identity and the exact edit, never a description. Plumb already has this in `--agent`; it needs to reach the surfaces above.
-4. The loop must terminate: `0 new` or `NEEDS-DECISION`. Plumb has this.
-5. Install once, appear everywhere. `plumb install` should do what `react-doctor install` does and more (hooks, agent docs, MCP, Action).
-6. Quiet by default. react.doctor's noise is hidden behind grouping and a score; Plumb has no score, so it must be quiet in fact.
+3. Hand off identity and the exact edit, never a description. React Plumber already has this in `--agent`; it needs to reach the surfaces above.
+4. The loop must terminate: `0 new` or `NEEDS-DECISION`. React Plumber has this.
+5. Install once, appear everywhere. `plumber install` should do what `react-doctor install` does and more (hooks, agent docs, MCP, Action).
+6. Quiet by default. react.doctor's noise is hidden behind grouping and a score; React Plumber has no score, so it must be quiet in fact.
 
 What not to take: the remote score, inline suppressions, the 870-rule sprawl, the source-available licence.
 
 ## 2. The people and their moments
 
-Five people, each with one or two moments. For each: what they do, what they see, what it saves. Mock output is in the shape Plumb already prints (verified against `fixtures/spacing`), extended where a surface does not exist yet.
+Five people, each with one or two moments. For each: what they do, what they see, what it saves. Mock output is in the shape React Plumber already prints (verified against `fixtures/spacing`), extended where a surface does not exist yet.
 
 ### 2.1 The design-system owner
 
-Moment A: a PR touches the theme or a component. Today she reads a 400-line diff and tries to spot `--spacing-13`. With Plumb in the Action, the PR comment says:
+Moment A: a PR touches the theme or a component. Today she reads a 400-line diff and tries to spot `--spacing-13`. With React Plumber in the Action, the PR comment says:
 
 ```
-plumb  +2 new  −5 fixed  312 debt (−5)   ledger +1 decision (needs review from @design)
+React Plumber  +2 new  −5 fixed  312 debt (−5)   ledger +1 decision (needs review from @design)
 
 decisions/unaccepted  --spacing-13: 13px  added in apps/docs/src/styles.css:41, no why
-  accept with: plumb accept-decisions --why "…"   or remove it
+  accept with: plumber accept-decisions --why "…"   or remove it
 
 spacing 87% → 88%   color 96%   elevation 15%   hover 12% → 31%
 ```
 
-She reviews one line in `.plumb/ledger.jsonl`, not the diff. The Action blocks until a listed approver accepts. This exists today. What is missing is the second moment.
+She reviews one line in `.plumber/ledger.jsonl`, not the diff. The Action blocks until a listed approver accepts. This exists today. What is missing is the second moment.
 
 Moment B: the monthly question "where is the system drifting?" Today the answer is a CLI run and a long text report. She needs one page per family with the top fixes and the trend, generated from the JSON the Action already produces:
 
 ```
-$ plumb report --since v1.4
+$ plumber report --since v1.4
 family      coverage   Δ      new sites  top fix
 color        82%      +1.2    4          --color-ink used raw at 11 sites → text-ink
 spacing      74%      +0.4    9          gap: 10px at 12 sites → gap-mu-space-12 "between related parts"
@@ -74,7 +74,7 @@ type         61%      -2.1    31         font-size without a type-* role in 3 ne
 
 A static Markdown or HTML page committed by the Action is enough. No hosted dashboard (section 4).
 
-Moment C (the ecosystem one): she publishes the design system. Today its 840 exported tokens show as dead in the library's own run, and consumers get nothing. With a preset export (section 5) consumers inherit her decisions, contracts and fingerprints the day they `npm i` her package. This is the moment that makes Plumb mandatory rather than nice, because it is the moment the design-system owner stops being the only person who runs it.
+Moment C (the ecosystem one): she publishes the design system. Today its 840 exported tokens show as dead in the library's own run, and consumers get nothing. With a preset export (section 5) consumers inherit her decisions, contracts and fingerprints the day they `npm i` her package. This is the moment that makes React Plumber mandatory rather than nice, because it is the moment the design-system owner stops being the only person who runs it.
 
 ### 2.2 The product engineer
 
@@ -96,7 +96,7 @@ What it saves: the search for which token to use (the finding names it with the 
 
 The designer does not run CLIs and should not have to. Two moments.
 
-Moment A: "does the build match what we decided?" The overlay is the answer, because the browser is already her surface. She opens the staging build with the overlay enabled (dev or a preview build with the Plumb script and a report bundled), hovers the hero, and sees:
+Moment A: "does the build match what we decided?" The overlay is the answer, because the browser is already her surface. She opens the staging build with the overlay enabled (dev or a preview build with the React Plumber script and a report bundled), hovers the hero, and sees:
 
 ```
 ┌ Hero › <section>  pages/Home.tsx:22 ────────────────────────┐
@@ -128,9 +128,9 @@ Today the annotation shows only new sites, which is right for blocking but hides
 
 ### 2.5 The AI agent
 
-The agent is the main author of UI code now, and it is the user Plumb was designed for. Three moments, two of them exist.
+The agent is the main author of UI code now, and it is the user React Plumber was designed for. Three moments, two of them exist.
 
-Moment A, before writing: `plumb try` judges a snippet. Today it is a stdin command that reloads the whole project context (about a second warm). As an MCP tool backed by a warm daemon it is 50 ms and the agent calls it before every `Write`:
+Moment A, before writing: `plumber try` judges a snippet. Today it is a stdin command that reloads the whole project context (about a second warm). As an MCP tool backed by a warm daemon it is 50 ms and the agent calls it before every `Write`:
 
 ```
 › plumb.try({ lang: "tsx", as: "src/pages/Fan.tsx", code: '<div className="gap-10 bg-red-500" />' })
@@ -140,11 +140,11 @@ Moment A, before writing: `plumb try` judges a snippet. Today it is a stdin comm
    NEEDS-DECISION: no project colour is near oklch(63.7% 0.237 25.331).
 ```
 
-Moment B, after writing: the post-edit hook runs `plumb check --changed --agent --strict-ledger` and the agent reads the exact edits. Exists today.
+Moment B, after writing: the post-edit hook runs `plumber check --changed --agent --strict-ledger` and the agent reads the exact edits. Exists today.
 
-Moment C, when a person points at the screen: the overlay's "Copy for agent" hands the agent an element identity plus Plumb's verdict in one block, and (better) an MCP call `plumb.element(ref)` that returns the full JSON for that element. The agent then edits the right line without a search.
+Moment C, when a person points at the screen: the overlay's "Copy for agent" hands the agent an element identity plus React Plumber's verdict in one block, and (better) an MCP call `plumb.element(ref)` that returns the full JSON for that element. The agent then edits the right line without a search.
 
-What it saves: invented tokens, a wrong guess at which spacing step, and a loop that does not terminate. The rules block Plumb already prints ("never add a token", "NEEDS-DECISION is fine") is the right contract.
+What it saves: invented tokens, a wrong guess at which spacing step, and a loop that does not terminate. The rules block React Plumber already prints ("never add a token", "NEEDS-DECISION is fine") is the right contract.
 
 A whole exchange, as it should read once the MCP server exists. The person has pointed at the element with the overlay; the agent does the rest.
 
@@ -159,7 +159,7 @@ Agent: › plumb.element("7f3a")
 
        › Edit Fan.tsx:41  gap-10 → gap-mu-space-12
        › plumb.check_changed()
-       0 new. Ledger unchanged (the debt line for gap-10 at FanPage is now stale; run plumb ledger --ratchet when you commit).
+       0 new. Ledger unchanged (the debt line for gap-10 at FanPage is now stale; run plumber ledger --ratchet when you commit).
 
        Changed one class. Nothing else on that element is off-system.
 ```
@@ -170,50 +170,50 @@ Three things to notice. The agent did not search for the file. It chose between 
 
 ### 3.1 What it is
 
-A dev-only overlay, installed like react-grab (`@unlocalhosted/plumb/vite` plugin or a `<script>` for Next/Webpack), that on Alt+hover highlights an element and on click pins a panel. The panel shows, for that element:
+A dev-only overlay, installed like react-grab (`@unlocalhosted/react-plumber/vite` plugin or a `<script>` for Next/Webpack), that on Alt+hover highlights an element and on click pins a panel. The panel shows, for that element:
 
 1. every judged declaration the element carries (from classes, inline style and matched stylesheet rules), with its compiled value, where it came from (`gap-10` at `Fan.tsx:41:19`), and the verdict: decision (named, with its why), not a decision (nearest decisions named), framework default, wrong tier, opaque;
 2. which design-system component owns it (if it is inside one) and which of the caller's properties override the contract, naming the real variant axes;
 3. the ledger status per site: new, debt, exception with the reason;
-4. the computed value for each judged property, so the cascade Plumb cannot compute statically is visible here ("computed gap 10px, declared by `.library-row` at library.css:120");
+4. the computed value for each judged property, so the cascade React Plumber cannot compute statically is visible here ("computed gap 10px, declared by `.library-row` at library.css:120");
 5. one button: Copy for agent. And, when the MCP server is running, an element reference the agent can fetch itself.
 
 It is not a visual-regression tool. It shows the judgement at the place where the person noticed the problem. (Superseded in part, 2026-10-12: the overlay becomes a live editor, layer by layer. See [VISION.md](VISION.md).)
 
-### 3.2 Mapping a DOM element back to Plumb's sites
+### 3.2 Mapping a DOM element back to React Plumber's sites
 
-Plumb's sites are already positioned at the attribute token level (`file`, `line`, `column`, `text`, `anchor`) and every declaration carries its `owner` element or component and its `origin`. The mapping problem is therefore: given a DOM element, find the set of Plumb sites that produced its declarations. Four independent routes, in order of reliability, each degrading gracefully.
+React Plumber's sites are already positioned at the attribute token level (`file`, `line`, `column`, `text`, `anchor`) and every declaration carries its `owner` element or component and its `origin`. The mapping problem is therefore: given a DOM element, find the set of React Plumber sites that produced its declarations. Four independent routes, in order of reliability, each degrading gracefully.
 
-Route 1, classes without any fiber. `element.classList` is the authored class string, unchanged in a Tailwind v4 dev build (Tailwind does not rename classes). Plumb's candidate cache maps every class token to its compiled declarations and to the sites that use it. So `gap-10` on the element resolves to its declaration and its candidate sites without knowing the component. Ambiguity (the same class at 30 sites) is resolved by route 2; without it the panel shows the declaration and says "used at 30 sites".
+Route 1, classes without any fiber. `element.classList` is the authored class string, unchanged in a Tailwind v4 dev build (Tailwind does not rename classes). React Plumber's candidate cache maps every class token to its compiled declarations and to the sites that use it. So `gap-10` on the element resolves to its declaration and its candidate sites without knowing the component. Ambiguity (the same class at 30 sites) is resolved by route 2; without it the panel shows the declaration and says "used at 30 sites".
 
-Route 2, the JSX site through the fiber. Use bippy, as react-grab does: `getFiberFromHostInstance(element)`, then the owner stack. In React 19 the stack comes from `_debugStack` and names the call site of the JSX element inside the owner component, which is the file:line:column of the opening tag. That is within a few columns of Plumb's className site on the same element. Index Plumb's sites by (file, line) and pick the ones on that element's attributes. For React 17 and 18, `_debugSource` exists when the dev Babel transform runs; otherwise the fiber gives the component name only and the panel falls back to route 1 plus the component name. Source maps: Vite serves them to the dev server; Next's server components need the `/__nextjs_original-stack-frames` endpoint, which react-grab already uses. Other frameworks: UNVERIFIED, fall back.
+Route 2, the JSX site through the fiber. Use bippy, as react-grab does: `getFiberFromHostInstance(element)`, then the owner stack. In React 19 the stack comes from `_debugStack` and names the call site of the JSX element inside the owner component, which is the file:line:column of the opening tag. That is within a few columns of React Plumber's className site on the same element. Index React Plumber's sites by (file, line) and pick the ones on that element's attributes. For React 17 and 18, `_debugSource` exists when the dev Babel transform runs; otherwise the fiber gives the component name only and the panel falls back to route 1 plus the component name. Source maps: Vite serves them to the dev server; Next's server components need the `/__nextjs_original-stack-frames` endpoint, which react-grab already uses. Other frameworks: UNVERIFIED, fall back.
 
-Route 3, stylesheet rules. Iterate `document.styleSheets`, test `element.matches(rule.selectorText)` for style rules (and `@media` by `matchMedia`), and map (stylesheet file, selector) to Plumb's lowered stylesheet declarations, which carry the resolved selector and the authored file. Which file a `<style>` belongs to: Vite tags injected styles with `data-vite-dev-id="/abs/path.css"`; for Webpack's style-loader the file identity has to come from a `sourceURL` comment or a source map, UNVERIFIED, so degrade to selector-only matching against Plumb's declaration set, which is unique in practice for project CSS. `@apply` output maps through Plumb's source maps to the authored `@apply` line, which Plumb already records.
+Route 3, stylesheet rules. Iterate `document.styleSheets`, test `element.matches(rule.selectorText)` for style rules (and `@media` by `matchMedia`), and map (stylesheet file, selector) to React Plumber's lowered stylesheet declarations, which carry the resolved selector and the authored file. Which file a `<style>` belongs to: Vite tags injected styles with `data-vite-dev-id="/abs/path.css"`; for Webpack's style-loader the file identity has to come from a `sourceURL` comment or a source map, UNVERIFIED, so degrade to selector-only matching against React Plumber's declaration set, which is unique in practice for project CSS. `@apply` output maps through React Plumber's source maps to the authored `@apply` line, which React Plumber already records.
 
-Route 4, computed style. `getComputedStyle(element)` for the judged properties. Compare each value to the decision record directly (value identity for spacing and radius, reference identity cannot be read from computed values, so colour and motion show "computed 10px, declared by …" and the verdict comes from the declaring site). Inherited values are labelled inherited and not judged. This is the only place in Plumb where the cascade is observed instead of ignored, and it is a genuine addition: a decision at one site overridden by a literal in a later rule becomes visible.
+Route 4, computed style. `getComputedStyle(element)` for the judged properties. Compare each value to the decision record directly (value identity for spacing and radius, reference identity cannot be read from computed values, so colour and motion show "computed 10px, declared by …" and the verdict comes from the declaring site). Inherited values are labelled inherited and not judged. This is the only place in React Plumber where the cascade is observed instead of ignored, and it is a genuine addition: a decision at one site overridden by a literal in a later rule becomes visible.
 
-Component ownership: the fiber's owner chain gives component names and their source files; match against Plumb's discovered components (which carry resolved source paths). The nearest design-system ancestor whose host element is this element, or whose `render` lends identity, is the owner; Plumb's ownership judgement for the caller's JSX site is already in the report. The panel reuses it.
+Component ownership: the fiber's owner chain gives component names and their source files; match against React Plumber's discovered components (which carry resolved source paths). The nearest design-system ancestor whose host element is this element, or whose `render` lends identity, is the owner; React Plumber's ownership judgement for the caller's JSX site is already in the report. The panel reuses it.
 
 ### 3.3 What it needs from the build and the project
 
 - A dev build with React dev mode (owner stacks exist only there) and a dev server that serves source maps. Production builds get route 1 and 4 only, with no file positions. That is acceptable: the overlay is a dev tool, like react-grab.
-- A warm Plumb process. The overlay cannot bundle a 1 second analysis into the page. It needs `plumb serve`: a daemon that watches the project, keeps the analysis warm (the caches already exist), and answers over a local HTTP port: `GET /site?file&line`, `GET /classes?names=…`, `POST /element` with `{ file, line, col, classes, inlineStyle, matchedRules, computed }` returning the panel's JSON. This daemon is the same process the MCP server and the editor plugin need, so it is built once (section 7).
-- A one-line install: `plumb install --overlay` adds the Vite plugin or the dev-only script and prints the port. The plugin injects the overlay only when `import.meta.env.DEV`.
+- A warm React Plumber process. The overlay cannot bundle a 1 second analysis into the page. It needs `plumber serve`: a daemon that watches the project, keeps the analysis warm (the caches already exist), and answers over a local HTTP port: `GET /site?file&line`, `GET /classes?names=…`, `POST /element` with `{ file, line, col, classes, inlineStyle, matchedRules, computed }` returning the panel's JSON. This daemon is the same process the MCP server and the editor plugin need, so it is built once (section 7).
+- A one-line install: `plumber install --overlay` adds the Vite plugin or the dev-only script and prints the port. The plugin injects the overlay only when `import.meta.env.DEV`.
 - Nothing else. No data attributes in source, no build transform, no React patch. bippy pretends to be DevTools; if real DevTools are open both still work (react-grab has the same arrangement).
 
 ### 3.4 Limits
 
 - React only, through the fiber route. Routes 1, 3 and 4 work on any framework that keeps authored class names and serves source CSS, so a Vue project gets declarations and verdicts but no component or site; that is still useful and honest.
-- Dev builds only for source positions. Minified or hashed class names (CSS modules) are outside Plumb anyway.
+- Dev builds only for source positions. Minified or hashed class names (CSS modules) are outside React Plumber anyway.
 - Runtime-computed styles stay opaque; the overlay shows the computed value and that the site is `dynamic-value`, which is more than the CLI can say.
 - Shadow DOM and iframes: not in v1.
-- Third-party components: the overlay reaches the host element; if the component comes from a package with a Plumb preset, ownership is judged; otherwise the element is plain.
+- Third-party components: the overlay reaches the host element; if the component comes from a package with a React Plumber preset, ownership is judged; otherwise the element is plain.
 - Latency: route 2 costs a source-map decode per new file (cache it, react-grab caches by WeakMap and 100 ms debounce); the daemon answers from memory.
 - It does not prove anything looks right. It says whether each value is a decision. Same limit as the CLI, same honesty.
 
 ### 3.5 The element contract
 
-The overlay and the daemon need one agreed shape. The overlay collects what only the browser knows; the daemon answers with what only Plumb knows. Everything in the response already exists in the JSON report schema (`site`, `declaration`, `decisions`, `ledger`, `component`), so this is a view over the report, not a new model.
+The overlay and the daemon need one agreed shape. The overlay collects what only the browser knows; the daemon answers with what only React Plumber knows. Everything in the response already exists in the JSON report schema (`site`, `declaration`, `decisions`, `ledger`, `component`), so this is a view over the report, not a new model.
 
 Request, `POST /element`:
 
@@ -252,11 +252,11 @@ Response:
 
 Two details matter. `verdict` is one of `decision`, `off`, `framework`, `tier`, `by-value`, `opaque`, `inherited`, and the panel colours by it. `edit` is present only when `--agent` would also print an exact replacement; otherwise the panel shows the candidates and the copy block says NEEDS-DECISION, so the overlay can never be a way to guess.
 
-When the element is inside a design-system component, `component` carries the Plumb identity (`{ name: "Button", source: "packages/metalui/src/components/button/button.tsx", axes: { cap, size, state } }`) and each caller declaration that overrides the contract gets `verdict: "override"` with the owned family named, which is the ownership finding the CLI already reports.
+When the element is inside a design-system component, `component` carries the React Plumber identity (`{ name: "Button", source: "packages/metalui/src/components/button/button.tsx", axes: { cap, size, state } }`) and each caller declaration that overrides the contract gets `verdict: "override"` with the owned family named, which is the ownership finding the CLI already reports.
 
 ### 3.6 Is it the most important next surface?
 
-Yes, with one condition. It is the surface that gives Plumb a daily moment for the two people who have none today (the product engineer looking at the page, the designer), it is the one that makes Plumb feel like react-grab, and it is the one that pulls the agent handoff into the place where problems are noticed. Nothing else on the list does that.
+Yes, with one condition. It is the surface that gives React Plumber a daily moment for the two people who have none today (the product engineer looking at the page, the designer), it is the one that makes React Plumber feel like react-grab, and it is the one that pulls the agent handoff into the place where problems are noticed. Nothing else on the list does that.
 
 The condition is that it comes after the daemon and after publishing, because an overlay without a warm process is a demo, and an overlay for a package nobody can install is a video. The order in section 7 reflects that: publish, daemon, overlay. The MCP server falls out of the daemon almost for free and ships in the same week as the overlay, because "Copy for agent" and `plumb.element` are the same payload.
 
@@ -264,17 +264,17 @@ I considered the editor plugin as the alternative candidate. It serves the engin
 
 ## 4. Other surfaces and integrations, ranked
 
-1. **`plumb serve` daemon** (prerequisite, not a surface). Warm analysis, file watcher, local HTTP and stdio. Everything below reads it. Also gives `--watch` for free and makes `try` 50 ms.
+1. **`plumber serve` daemon** (prerequisite, not a surface). Warm analysis, file watcher, local HTTP and stdio. Everything below reads it. Also gives `--watch` for free and makes `try` 50 ms.
 
-2. **MCP server** (`plumb mcp`, registered by `plumb install`). Tools: `try` (snippet verdict), `check_changed` (the agent loop), `decisions` (ladders with whys, per family), `why` (file:line), `element` (overlay reference), `explain` (every declaration of a file), `accept_request` (writes nothing; returns the exact ledger line and command a human must run, so the agent can propose an exception without being able to add one). Deslint has `verify_before_write`; Lapidist has an MCP; neither has an element route or the no-write exception path. Registration for Claude Code, Cursor and Codex in `plumb install`.
+2. **MCP server** (`plumber mcp`, registered by `plumber install`). Tools: `try` (snippet verdict), `check_changed` (the agent loop), `decisions` (ladders with whys, per family), `why` (file:line), `element` (overlay reference), `explain` (every declaration of a file), `accept_request` (writes nothing; returns the exact ledger line and command a human must run, so the agent can propose an exception without being able to add one). Deslint has `verify_before_write`; Lapidist has an MCP; neither has an element route or the no-write exception path. Registration for Claude Code, Cursor and Codex in `plumber install`.
 
-3. **Design-system presets** (the ecosystem loop; detail in section 5). A package exports `./plumb` returning decisions (with `exported: true`), ownership contracts, imitation fingerprints and recommended habits. Plumb autoloads presets from installed dependencies. The MetalUI preset currently lives in `bench/metalui/` inside the Plumb repo; DESIGN said it belongs in MetalUI and should be published as `@unlocalhosted/metalui/plumb`. Move it and make MetalUI the first consumer.
+3. **Design-system presets** (the ecosystem loop; detail in section 5). A package exports `./plumb` returning decisions (with `exported: true`), ownership contracts, imitation fingerprints and recommended habits. React Plumber autoloads presets from installed dependencies. The MetalUI preset currently lives in `bench/metalui/` inside the React Plumber repo; DESIGN said it belongs in MetalUI and should be published as `@unlocalhosted/metalui/plumb`. Move it and make MetalUI the first consumer.
 
-4. **Editor: Oxlint and ESLint plugins reading the daemon.** Thin: one rule, `plumb/finding`, that asks the daemon for the open file's sites and reports them with Plumb's text and a quick fix when the edit is unambiguous. Oxlint first (react.doctor and shadcn use it, it is what MetalUI's generation runs on), ESLint second for the same file. No LSP in v1; the lint plugins already reach VS Code, Cursor and Zed. An LSP only if a non-lint editor surface (hover cards with the decision's why) proves wanted.
+4. **Editor: Oxlint and ESLint plugins reading the daemon.** Thin: one rule, `plumb/finding`, that asks the daemon for the open file's sites and reports them with React Plumber's text and a quick fix when the edit is unambiguous. Oxlint first (react.doctor and shadcn use it, it is what MetalUI's generation runs on), ESLint second for the same file. No LSP in v1; the lint plugins already reach VS Code, Cursor and Zed. An LSP only if a non-lint editor surface (hover cards with the decision's why) proves wanted.
 
-5. **GitHub Action: keep, and fix the three things reviewers need.** Notices for debt-touched and exception sites (2.4), a committed `plumb/report.json` and a Markdown trend page (2.1), and `plumb ci install` that writes the workflow (react.doctor's pattern; DESIGN promised it and it is not in the CLI yet). GitLab CI is a template, not a product.
+5. **GitHub Action: keep, and fix the three things reviewers need.** Notices for debt-touched and exception sites (2.4), a committed `plumb/report.json` and a Markdown trend page (2.1), and `plumber ci install` that writes the workflow (react.doctor's pattern; DESIGN promised it and it is not in the CLI yet). GitLab CI is a template, not a product.
 
-6. **Token-file parity** (DTCG export from Figma or Tokens Studio versus the theme). Small and valuable for designers: `plumb parity tokens/figma.tokens.json` lists decisions in one source and not the other, and values that differ. Plumb already reads DTCG. Do not build a Figma plugin.
+6. **Token-file parity** (DTCG export from Figma or Tokens Studio versus the theme). Small and valuable for designers: `plumber parity tokens/figma.tokens.json` lists decisions in one source and not the other, and values that differ. React Plumber already reads DTCG. Do not build a Figma plugin.
 
 7. **Storybook: nothing to build.** Storybook is a running React app, so the overlay works inside it. Document it.
 
@@ -287,9 +287,9 @@ I considered the editor plugin as the alternative candidate. It serves the engin
 Today: README says the first run exits 1 ("including the first run"), and adoption is `init` then `baseline` then `agent-docs` then `install --hooks`. DESIGN said first run exits 0 and proposes; the implementation went the other way. Fix the path to three commands:
 
 ```
-npx @unlocalhosted/plumb          # look. exits 0 always. coverage per family, top 5 fixes, "run plumb init"
-npx plumb init                    # config with inferred sources, decisions accepted as inferred, baseline written
-npx plumb install                 # detects Claude Code / Cursor / Codex, writes hooks, MCP, PLUMB.md, AGENTS.md block,
+npx @unlocalhosted/react-plumber          # look. exits 0 always. coverage per family, top 5 fixes, "run plumber init"
+npx plumber init                    # config with inferred sources, decisions accepted as inferred, baseline written
+npx plumber install                 # detects Claude Code / Cursor / Codex, writes hooks, MCP, PLUMBER.md, AGENTS.md block,
                                   # offers --ci (Action) and --overlay (Vite plugin or script)
 ```
 
@@ -297,7 +297,7 @@ npx plumb install                 # detects Claude Code / Cursor / Codex, writes
 
 ### 5.2 Zero-config value on first run
 
-The first run must say something true and useful without a config, or people leave. Today without a config Plumb judges against the keys the project's CSS declares, with Tailwind's defaults set aside, which is right. Three things to add to that first screen:
+The first run must say something true and useful without a config, or people leave. Today without a config React Plumber judges against the keys the project's CSS declares, with Tailwind's defaults set aside, which is right. Three things to add to that first screen:
 
 - Presets found in dependencies (section 5.3): "found `@unlocalhosted/metalui/plumb`: 1,946 decisions, 23 component contracts, 2 fingerprints". A consumer of a design system gets a full judgement on the first run with no config.
 - The top five fixes by site count, with the decision and its why, so the first screen already contains something to do.
@@ -305,13 +305,13 @@ The first run must say something true and useful without a config, or people lea
 
 ### 5.3 The ecosystem loop
 
-This is the mechanism that turns Plumb from a tool a team chooses into a tool a design system requires.
+This is the mechanism that turns React Plumber from a tool a team chooses into a tool a design system requires.
 
 A design-system package adds one export:
 
 ```ts
-// @unlocalhosted/metalui/plumb
-import { definePreset } from '@unlocalhosted/plumb'
+// @unlocalhosted/metalui/plumber
+import { definePreset } from '@unlocalhosted/react-plumber'
 export default definePreset({
   decisions: metalTokens,                       // from tokens.json; exported: true
   components: { from: 'package:@unlocalhosted/metalui', contracts: { Surface: { allow: ['padding'] } } },
@@ -320,14 +320,14 @@ export default definePreset({
 })
 ```
 
-Plumb finds presets by scanning installed dependencies for a `plumb` export condition (or a `"plumb"` field in package.json). The consumer's run then knows which values are decisions, which properties Button owns, and which raw textareas are imitations, without writing a config. The design system's own run marks its tokens `exported`, which removes the 840-dead-token noise there.
+React Plumber finds presets by scanning installed dependencies for a `plumb` export condition (or a `"plumb"` field in package.json). The consumer's run then knows which values are decisions, which properties Button owns, and which raw textareas are imitations, without writing a config. The design system's own run marks its tokens `exported`, which removes the 840-dead-token noise there.
 
 What a consumer sees on the first run, with the preset and no config:
 
 ```
-$ npx @unlocalhosted/plumb
-plumb 0.2  apps/web  tailwind 4.3.3  theme src/app.css
-presets  @unlocalhosted/metalui/plumb  1,946 decisions (exported), 23 component contracts, 2 fingerprints, 4 habits
+$ npx @unlocalhosted/react-plumber
+plumber 0.2  apps/web  tailwind 4.3.3  theme src/app.css
+presets  @unlocalhosted/metalui/plumber  1,946 decisions (exported), 23 component contracts, 2 fingerprints, 4 habits
 lowered 88 tsx, 6 css  →  4,120 declarations   0.6s
 
 family      from decisions        off   top fix
@@ -343,12 +343,12 @@ ownership    <Button className="font-semibold tracking-tight shadow-none"> overr
              Button has cap: flat | raised | glass and size: sm | md | lg; pick a cap instead of restyling
 imitation    <textarea className="recipe-well-field …"> at src/pages/Contact.tsx:40 → use <Textarea>; it already owns this well
 
-run `plumb init` to write this as config and record today's 156 off-system sites as debt
+run `plumber init` to write this as config and record today's 156 off-system sites as debt
 ```
 
 Nothing in that screen required the consumer to know what a tier or an identity is. The design system decided; the consumer sees the consequences.
 
-Why it becomes mandatory: the design system's docs say "run `npx plumb`" the way they say "install the fonts". Consumers who skip it ship drift that the design-system owner can now see (the preset is the same record that judges them). Design-system owners want this because it is the first tool that enforces their contracts in consumers' repos without a bespoke ESLint plugin (Atlassian, Primer and Polaris each built one; Plumb makes that a preset). The loop closes when a second design system ships a preset; the first should be MetalUI, and the second should be a shadcn preset derived from `components.json`, which Plumb already reads.
+Why it becomes mandatory: the design system's docs say "run `npx plumber`" the way they say "install the fonts". Consumers who skip it ship drift that the design-system owner can now see (the preset is the same record that judges them). Design-system owners want this because it is the first tool that enforces their contracts in consumers' repos without a bespoke ESLint plugin (Atlassian, Primer and Polaris each built one; React Plumber makes that a preset). The loop closes when a second design system ships a preset; the first should be MetalUI, and the second should be a shadcn preset derived from `components.json`, which React Plumber already reads.
 
 ### 5.4 What makes a team put it in CI and keep it
 
@@ -374,9 +374,9 @@ Counts, not opinions. Each one is readable from the daemon's log or the Action's
 
 Specific, in rough order of how much they block the above.
 
-1. **Not published.** Everything else is moot. The npm name dispute can run in parallel; ship `@unlocalhosted/plumb` with `bin: plumb` now. Node 22.18 minimum is higher than react.doctor's 20.19; keep it if the raw-transfer oxc path needs it, otherwise lower it, because a floor above an LTS costs installs.
+1. **Not published.** Everything else is moot. The npm name dispute can run in parallel; ship `@unlocalhosted/react-plumber` with `bin: plumber` now. Node 22.18 minimum is higher than react.doctor's 20.19; keep it if the raw-transfer oxc path needs it, otherwise lower it, because a floor above an LTS costs installs.
 
-2. **First run exits 1.** README: "1 for error findings (including the first run)". For `npx plumb` with no config that is wrong; a look must not fail. Exit 0 until a ledger exists, then the normal contract.
+2. **First run exits 1.** README: "1 for error findings (including the first run)". For `npx plumber` with no config that is wrong; a look must not fail. Exit 0 until a ledger exists, then the normal contract.
 
 3. **CLI-only feedback.** No daemon, no watch, no overlay, no editor, no MCP. Section 7.
 
@@ -390,13 +390,13 @@ Specific, in rough order of how much they block the above.
 
 5. **Config is expert-only.** `identity`, `origins`, `callers`, tiers, `from: 'utility:type-*'`. The defaults are right; the problem is that the first-run screen does not teach them. Each family line in the report should carry the one config line that would change it (5.2). Presets remove most of this for consumers.
 
-6. **The MetalUI preset is in the wrong repo.** `bench/metalui/plumb.config.ts` and friends live in Plumb. DESIGN section 9 says the preset belongs in MetalUI and is published from there. MetalUI itself does not run Plumb in CI today, which means the dogfood is read-only and the ecosystem loop has zero links.
+6. **The MetalUI preset is in the wrong repo.** `bench/metalui/plumber.config.ts` and friends live in React Plumber. DESIGN section 9 says the preset belongs in MetalUI and is published from there. MetalUI itself does not run React Plumber in CI today, which means the dogfood is read-only and the ecosystem loop has zero links.
 
 7. **React and Tailwind v4 only.** Tailwind v4 is the right bet (v3 has no `candidatesToCss`); React-only is the real limit. Routes 1, 3 and 4 of the overlay and the whole stylesheet reader are framework-free, so the honest position is "any framework for CSS and custom properties; React for classes in markup, ownership and the overlay's source route". Say that in the README. Vue and Svelte readers only when a repo asks.
 
 8. **`try` reloads the project per call** (about a second warm). Acceptable for a hook, not for an agent calling it before every write. The daemon fixes it.
 
-9. **Ledger size.** MetalUI's baseline is 5,743 lines (3,910 debt). It is sorted and line-wise mergeable, which is right, but a 5,000-line file in the first commit frightens people. Two mitigations: `init` prints "baseline: 3,910 debt sites in .plumb/ledger.jsonl; this file only shrinks", and the Action's summary shows the debt trend so the file is seen as a number going down.
+9. **Ledger size.** MetalUI's baseline is 5,743 lines (3,910 debt). It is sorted and line-wise mergeable, which is right, but a 5,000-line file in the first commit frightens people. Two mitigations: `init` prints "baseline: 3,910 debt sites in .plumber/ledger.jsonl; this file only shrinks", and the Action's summary shows the debt trend so the file is seen as a number going down.
 
 10. **No scoring, correctly, but no headline either.** Per-family coverage is the right report; the PR comment and the trend page need a one-line headline that is not a score: "+3 new, −7 fixed, debt 312 (−7)". Already printed in text; make it the first line of the PR comment and the Action's check title.
 
@@ -404,7 +404,7 @@ Specific, in rough order of how much they block the above.
 
 12. **Descendant-selector ownership and imitation inference are heuristics** and say so. Fine; keep them at warn and keep `imitation --suggest` report-only.
 
-13. **Name.** `plumb` on npm is taken by an abandoned package. The dispute is filed or should be; until then the scoped name is fine because the binary is still `plumb`.
+13. **Name.** `plumber` on npm is taken by an abandoned package. The dispute is filed or should be; until then the scoped name is fine because the binary is still `plumber`.
 
 ## 7. Roadmap: the next eight things
 
@@ -412,14 +412,14 @@ Each: what, who, acceptance, size. Built one at a time, finished and verified be
 
 | # | Build | Serves | Acceptance check | Size |
 |---|---|---|---|---|
-| 1 | **Publish and the three-command path.** `npm publish` 0.1.x; first run exits 0 and shows coverage, top 5 fixes, preset discovery and per-family config hints; `init` folds in baseline; `install` detects agents and writes hooks, MCP registration, PLUMB.md, the AGENTS.md block; `ci install` writes the Action. | everyone | On a fresh clone of MetalUI docs: `npx @unlocalhosted/plumb` exits 0 in under 5 s; `npx plumb init && npx plumb install --ci` leaves a green `plumb check` and a workflow file; e2e records the three transcripts. | S |
-| 2 | **`plumb serve` daemon.** Watches source, CSS, config and ledger; keeps analysis warm; serves HTTP and stdio; `--watch` becomes a client of it; `try` through the daemon. | agents, overlay, editor | Edit one class in MetalUI docs; `curl /site?file&line` answers in under 100 ms with the new finding; `try` through the daemon under 100 ms; 24 h soak with no memory growth beyond the cache. | M |
+| 1 | **Publish and the three-command path.** `npm publish` 0.1.x; first run exits 0 and shows coverage, top 5 fixes, preset discovery and per-family config hints; `init` folds in baseline; `install` detects agents and writes hooks, MCP registration, PLUMBER.md, the AGENTS.md block; `ci install` writes the Action. | everyone | On a fresh clone of MetalUI docs: `npx @unlocalhosted/react-plumber` exits 0 in under 5 s; `npx plumber init && npx plumber install --ci` leaves a green `plumber check` and a workflow file; e2e records the three transcripts. | S |
+| 2 | **`plumber serve` daemon.** Watches source, CSS, config and ledger; keeps analysis warm; serves HTTP and stdio; `--watch` becomes a client of it; `try` through the daemon. | agents, overlay, editor | Edit one class in MetalUI docs; `curl /site?file&line` answers in under 100 ms with the new finding; `try` through the daemon under 100 ms; 24 h soak with no memory growth beyond the cache. | M |
 | 3 | **Browser overlay** (section 3). Vite plugin plus script install; bippy fiber route; class, stylesheet and computed routes; panel with declarations, verdicts, ownership, ledger; "Copy for agent". | engineer, designer, agent | On MetalUI docs in dev: hovering the Fan page's row shows `gap-10` at `Fan.tsx:41` with the nearest decisions and ledger status; hovering a landing CTA shows the Button overrides with the variant axes; Copy pastes a block that lets Claude Code make the exact edit without a search; works with React DevTools open; Playwright slice captures the panel in both colourways. | L |
 | 4 | **MCP server** on the daemon: `try`, `check_changed`, `decisions`, `why`, `element`, `explain`, `accept_request` (read-only proposal). Registered by `install`. | agents | A recorded Claude Code session: agent calls `try` before a write, gets NEEDS-DECISION for `bg-red-500`, asks, writes with the decision, hook prints `0 new`; `accept_request` provably writes nothing (snapshot test, as `try` has). | S |
-| 5 | **Presets** (section 5.3): `definePreset`, autoload from dependencies' `plumb` export, `exported` by default for preset decisions; move the MetalUI preset into the MetalUI repo, publish as `@unlocalhosted/metalui/plumb`, put Plumb in MetalUI's CI; a shadcn preset from `components.json`. | design-system owners, consumers | A fixture consumer of MetalUI runs `npx plumb` with no config and reports ownership findings against Button and zero dead tokens; MetalUI's own CI is green with its ledger; the shadcn fixture judges a `<Button className="bg-red-500">` against the real cva variants. | M |
+| 5 | **Presets** (section 5.3): `definePreset`, autoload from dependencies' `plumber` export, `exported` by default for preset decisions; move the MetalUI preset into the MetalUI repo, publish as `@unlocalhosted/metalui/plumb`, put React Plumber in MetalUI's CI; a shadcn preset from `components.json`. | design-system owners, consumers | A fixture consumer of MetalUI runs `npx plumber` with no config and reports ownership findings against Button and zero dead tokens; MetalUI's own CI is green with its ledger; the shadcn fixture judges a `<Button className="bg-red-500">` against the real cva variants. | M |
 | 6 | **Noise pass** (section 6.4): opaque-inline as one informational line per file by default; `init` proposes only four habits; type-family config hint; by-value as a count; elevation message for families with no semantic tier. | everyone | MetalUI docs findings drop from 1,072 groups to under 400 with no rule removed and every removed group accounted for in BENCHMARK.md; the e2e for each change asserts the new default and the opt-in. | S |
-| 7 | **Oxlint and ESLint plugins** reading the daemon: one rule, Plumb's text, quick fix when unambiguous. | engineer | In MetalUI with Oxlint, typing `gap-10` shows the squiggle with the decision's why within a second of saving; the quick fix produces the same edit `--agent` prints; without the daemon the rule says so once and stays silent. | M |
-| 8 | **Reviewer notices and the trend page**: debt-touched and exception notices in the Action; `plumb report` writes `plumb/report.json` and a Markdown trend; `parity` for DTCG files. | owner, reviewer, designer | Fixture PR shows the three annotation kinds; the trend page shows a coverage delta across two commits; `parity` lists a token present in Figma's export and absent from the theme. | S |
+| 7 | **Oxlint and ESLint plugins** reading the daemon: one rule, React Plumber's text, quick fix when unambiguous. | engineer | In MetalUI with Oxlint, typing `gap-10` shows the squiggle with the decision's why within a second of saving; the quick fix produces the same edit `--agent` prints; without the daemon the rule says so once and stays silent. | M |
+| 8 | **Reviewer notices and the trend page**: debt-touched and exception notices in the Action; `plumber report` writes `plumb/report.json` and a Markdown trend; `parity` for DTCG files. | owner, reviewer, designer | Fixture PR shows the three annotation kinds; the trend page shows a coverage delta across two commits; `parity` lists a token present in Figma's export and absent from the theme. | S |
 
 ### Deliberately not built
 
@@ -431,18 +431,18 @@ Each: what, who, acceptance, size. Built one at a time, finished and verified be
 - CSS-in-JS, Tailwind v3, Vue and Svelte readers, until a repository asks and can be a fixture.
 - An LSP, until the lint plugins prove insufficient.
 - A Figma plugin. Token-file parity covers the designer's question without a plugin.
-- Auto-fix without a decision. Plumb edits only when exactly one candidate fits; otherwise it says NEEDS-DECISION. Keep that.
+- Auto-fix without a decision. React Plumber edits only when exactly one candidate fits; otherwise it says NEEDS-DECISION. Keep that.
 - Depending on react-grab. Use bippy directly; react-grab's primitives are a product surface, not a stable library contract (UNVERIFIED either way).
 
 ## Summary
 
-1. react-grab and react.doctor are daily tools because they sit at a moment people already have, cost one gesture, and hand identity plus an exact edit to the agent; Plumb has the judge and the handoff but no moment.
+1. react-grab and react.doctor are daily tools because they sit at a moment people already have, cost one gesture, and hand identity plus an exact edit to the agent; React Plumber has the judge and the handoff but no moment.
 2. The people are the design-system owner (PR and trend), the product engineer (typing, looking, PR), the designer (looking, approving tokens), the reviewer (annotations) and the agent (before write, after write, when pointed at).
 3. The browser overlay is the most important next surface: Alt+hover an element, see every declaration's compiled value, verdict, owning component, overrides and ledger status, and copy the context for an agent.
-4. Map elements to sites by four routes: class names against Plumb's candidate cache, the fiber owner stack via bippy for file:line:col, matched stylesheet rules against lowered declarations, and computed style for the cascade Plumb cannot compute statically.
-5. The overlay needs a warm `plumb serve` daemon and a dev build; build the daemon first, then the overlay, then the MCP server on the same process.
-6. Make adoption three commands: `npx plumb` (exits 0, proposes), `plumb init` (config plus baseline), `plumb install` (hooks, MCP, docs, Action, overlay).
-7. The ecosystem loop is presets: a design-system package exports `./plumb` and its consumers inherit decisions, contracts and fingerprints with no config; move the MetalUI preset into MetalUI and put Plumb in MetalUI's CI.
+4. Map elements to sites by four routes: class names against React Plumber's candidate cache, the fiber owner stack via bippy for file:line:col, matched stylesheet rules against lowered declarations, and computed style for the cascade React Plumber cannot compute statically.
+5. The overlay needs a warm `plumber serve` daemon and a dev build; build the daemon first, then the overlay, then the MCP server on the same process.
+6. Make adoption three commands: `npx plumber` (exits 0, proposes), `plumber init` (config plus baseline), `plumber install` (hooks, MCP, docs, Action, overlay).
+7. The ecosystem loop is presets: a design-system package exports `./plumb` and its consumers inherit decisions, contracts and fingerprints with no config; move the MetalUI preset into MetalUI and put React Plumber in MetalUI's CI.
 8. Fix the noise before the overlay shows it per element: opaque-inline, logical-inline by default, the type-family config hint, by-value as a count, elevation messages.
 9. Editor plugins come fourth, as thin Oxlint and ESLint rules reading the daemon; no LSP yet.
 10. Keep the Action, add debt-touched and exception notices, a committed trend page and `ci install`; no hosted dashboard, no score.

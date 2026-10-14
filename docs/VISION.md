@@ -1,13 +1,13 @@
 # Vision: any React project as a live editor
 
-Owner's direction, 2026-10-12. Plumb's overlay grows from a design-drift judge into a live editor for any React project, and then into a prototyping tool. The model is Bret Victor's *Inventing on Principle*: whoever is making something needs an immediate connection to it. You change a value and see the result while you change it. You point at a pixel and reach the code that drew it.
+Owner's direction, 2026-10-12. React Plumber's overlay grows from a design-drift judge into a live editor for any React project, and then into a prototyping tool. The model is Bret Victor's *Inventing on Principle*: whoever is making something needs an immediate connection to it. You change a value and see the result while you change it. You point at a pixel and reach the code that drew it.
 
 This supersedes the line in [ROADMAP.md](ROADMAP.md) §3.1 that the overlay "is not a style editor". The rest of the roadmap stands. The judge, the ledger and design-system decisions become what the editor snaps to.
 
 ## What does not change
 
-- **Exactness.** Plumb writes only to a position it has proven, and refuses otherwise. A live editor that writes to the wrong line once loses trust for good, so no layer below relaxes this.
-- **Source is the truth.** Every change is a minimal edit to the authored file, applied through the dev server's normal reload. Plumb keeps no hidden layer of overrides or second copy of the UI.
+- **Exactness.** React Plumber writes only to a position it has proven, and refuses otherwise. A live editor that writes to the wrong line once loses trust for good, so no layer below relaxes this.
+- **Source is the truth.** Every change is a minimal edit to the authored file, applied through the dev server's normal reload. React Plumber keeps no hidden layer of overrides or second copy of the UI.
 - **Preview before write.** Every change shows on the live page first, can be reverted with Before and Undo, and reaches disk only on Write.
 - **The design system leads.** Values snap to the project's decisions (tokens, scales, variants). A value off the scale is allowed, but marked as off the scale and recorded in the ledger, never silently accepted.
 - **Dev only.** Nothing ships to production. Nothing is written into source except the edits a person asks for.

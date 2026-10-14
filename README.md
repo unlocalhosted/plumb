@@ -1,6 +1,6 @@
-# Plumb
+# React Plumber
 
-Plumb finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
+React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
 
 It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
 
@@ -9,26 +9,26 @@ It compiles classes, stylesheets, `@apply` and inline styles with the project's 
 ### 1. Find the drift
 
 ```sh
-npm install -D @unlocalhosted/plumb
-npx plumb                 # report drift; exits 0 with no config
-npx plumb init            # write plumb.config.ts and a baseline of today's findings
-npx plumb check           # green: only new drift fails from here
-npx plumb install --ci    # add the GitHub Action
+npm install -D @unlocalhosted/react-plumber
+npx plumber                 # report drift; exits 0 with no config
+npx plumber init            # write plumber.config.ts and a baseline of today's findings
+npx plumber check           # green: only new drift fails from here
+npx plumber install --ci    # add the GitHub Action
 ```
 
-`init` infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumb doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
+`init` infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
 
 ### 2. Fix it from the page
 
 ```sh
-npx plumb install --overlay           # print the wiring for Vite or Next.js
-npx plumb install --overlay --write   # make the change, and show the diff
+npx plumber install --overlay           # print the wiring for Vite or Next.js
+npx plumber install --overlay --write   # make the change, and show the diff
 ```
 
 For Vite, the overlay is one plugin, listed **before** `react()`:
 
 ```ts
-import { plumb } from '@unlocalhosted/plumb/vite'
+import { plumb } from '@unlocalhosted/react-plumber/vite'
 import react from '@vitejs/plugin-react'
 
 export default { plugins: [plumb(), react()] }
@@ -44,9 +44,9 @@ Start your dev server as usual. Then:
 | Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
 | **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
 
-If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; Plumb then finds positions through React's owner chain instead.
+If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; React Plumber then finds positions through React's owner chain instead.
 
-Plumb writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. Plumb then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+React Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
 
 ### From a checkout
 
@@ -59,10 +59,10 @@ npm test
 
 ## Configuration
 
-The package is named `@unlocalhosted/plumb` and exposes the `plumb` binary when installed. Config is optional. Place `plumb.config.ts`, `.mts`, `.mjs` or `.js` in the project root, or pass `--config <path>`. Relative config and CSS paths resolve from `--root`; the default root is the current directory.
+The package is named `@unlocalhosted/react-plumber` and exposes the `plumber` binary when installed. Config is optional. Place `plumber.config.ts`, `.mts`, `.mjs` or `.js` in the project root, or pass `--config <path>`. Relative config and CSS paths resolve from `--root`; the default root is the current directory.
 
 ```ts
-import { defineConfig } from '@unlocalhosted/plumb'
+import { defineConfig } from '@unlocalhosted/react-plumber'
 
 export default defineConfig({
   css: 'src/styles.css',
@@ -72,33 +72,33 @@ export default defineConfig({
 })
 ```
 
-Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumb --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumb init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
+Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumber --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumber init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
 Init enables the hover-gate, focus-outline, viewport-dynamic and overscroll-contain habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
 
 ## Agent installation
 
-`plumb install` renders the unchanged instructions shipped in `skills/plumb/SKILL.md` into every detected agent's format. The skill resolves from the installed package, independent of the current directory. Preview without writes using `plumb install --list`. Repeat `--agent <name>` to add targets even when not detected:
+`plumber install` renders the unchanged instructions shipped in `skills/plumber/SKILL.md` into every detected agent's format. The skill resolves from the installed package, independent of the current directory. Preview without writes using `plumber install --list`. Repeat `--agent <name>` to add targets even when not detected:
 
 ```sh
-plumb install --list
-plumb install --agent codex --agent cursor
-plumb install --ci
+plumber install --list
+plumber install --agent codex --agent cursor
+plumber install --ci
 ```
 
 Detection checks the project root, then its Git repository root. Instructions are written at the project root; Claude and Cursor hooks use the detected settings scope, with `--root` for nested projects. Forced agents with no marker get hooks at the project root.
 
 | Agent name | Detection markers | Instructions written |
 | --- | --- | --- |
-| `claude` | `.claude/` or `CLAUDE.md` | `.claude/skills/plumb/SKILL.md`, including skill frontmatter, plus PostToolUse hook |
+| `claude` | `.claude/` or `CLAUDE.md` | `.claude/skills/plumber/SKILL.md`, including skill frontmatter, plus PostToolUse hook |
 | `codex` | `AGENTS.md` or `.codex/` | Marked block in `AGENTS.md` |
-| `cursor` | `.cursor/` | `.cursor/rules/plumb.mdc`, plus afterFileEdit hook |
+| `cursor` | `.cursor/` | `.cursor/rules/plumber.mdc`, plus afterFileEdit hook |
 | `copilot` | `.github/copilot-instructions.md` | Marked block in that file |
 | `gemini` | `GEMINI.md` or `.gemini/` | Marked block in `GEMINI.md` |
-| `windsurf` | `.windsurf/` | `.windsurf/rules/plumb.md` |
+| `windsurf` | `.windsurf/` | `.windsurf/rules/plumber.md` |
 | `generic` | Explicit `--agent generic`, or fallback when no agents are detected | Marked block in `AGENTS.md` |
 
-Plain Markdown targets receive the skill body without frontmatter between `<!-- plumb:start -->` and `<!-- plumb:end -->`. Only that block is replaced; surrounding bytes survive. Missing blocks are appended. Malformed or duplicate markers fail before install writes. Dedicated Plumb skill/rule files are rewritten only when content differs; unrelated rules and hook settings survive. Every write is printed. Reinstallation preserves bytes. No agent detected creates only `AGENTS.md`; other agent selections don't create it unless Codex or generic is selected. Existing `CLAUDE.md` and `PLUMB.md` are left alone; use `plumb agent-docs` to generate the optional project token reference.
+Plain Markdown targets receive the skill body without frontmatter between `<!-- plumb:start -->` and `<!-- plumb:end -->`. Only that block is replaced; surrounding bytes survive. Missing blocks are appended. Malformed or duplicate markers fail before install writes. Dedicated React Plumber skill/rule files are rewritten only when content differs; unrelated rules and hook settings survive. Every write is printed. Reinstallation preserves bytes. No agent detected creates only `AGENTS.md`; other agent selections don't create it unless Codex or generic is selected. Existing `CLAUDE.md` and `PLUMBER.md` are left alone; use `plumber agent-docs` to generate the optional project token reference.
 
 Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, and `alwaysApply: false`, as documented in [Cursor Rules](https://cursor.com/docs/rules). Windsurf rules use Markdown with `trigger: always_on` frontmatter, documented in [Cascade Rules](https://docs.windsurf.com/windsurf/cascade/memories). Agent application behavior remains unverified in the editors; [adoption notes](docs/roadmap/1-adoption.md#agent-format-notes) record format verification and limits.
 
@@ -106,12 +106,12 @@ Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, a
 
 ## Development overlay hosts
 
-`plumb install --overlay` reads `package.json` and prints the host wiring without changing files; `--write` makes the change and prints the diff. Vite and React are optional peers, loaded only through their adapter subpaths.
+`plumber install --overlay` reads `package.json` and prints the host wiring without changing files; `--write` makes the change and prints the diff. Vite and React are optional peers, loaded only through their adapter subpaths.
 
 For Vite, add the plugin to your existing configuration:
 
 ```ts
-import { plumb } from '@unlocalhosted/plumb/vite'
+import { plumb } from '@unlocalhosted/react-plumber/vite'
 
 export default { plugins: [plumb()] }
 ```
@@ -121,58 +121,58 @@ The plugin shares Vite's development server, analyzes its configured root, serve
 For Next.js App Router, wrap your existing `next.config.mjs` export:
 
 ```ts
-import { withPlumb } from '@unlocalhosted/plumb/next/config'
+import { withPlumb } from '@unlocalhosted/react-plumber/next/config'
 
 export default withPlumb(nextConfig)
 ```
 
-In development, this preserves your [page extensions](https://nextjs.org/docs/app/api-reference/config/next-config-js/pageExtensions), adds `plumb.ts` and `plumb.tsx`, and [externalizes Plumb's Node implementation](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages) alongside your existing `serverExternalPackages`. Production configuration receives neither addition.
+In development, this preserves your [page extensions](https://nextjs.org/docs/app/api-reference/config/next-config-js/pageExtensions), adds `plumb.ts` and `plumb.tsx`, and [externalizes React Plumber's Node implementation](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages) alongside your existing `serverExternalPackages`. Production configuration receives neither addition.
 
 Add `app/%5F_plumb/[...path]/route.plumb.ts` (or the equivalent under `src/app`):
 
 ```ts
-import { createPlumbRoute } from '@unlocalhosted/plumb/next'
+import { createPlumbRoute } from '@unlocalhosted/react-plumber/next'
 
 export const runtime = 'nodejs'
 export const { GET, POST } = createPlumbRoute()
 ```
 
-The encoded folder serves `/__plumb/*`; [Next.js treats literal underscore-prefixed folders as private](https://nextjs.org/docs/app/getting-started/project-structure#private-folders). Import `PlumbOverlay` from `@unlocalhosted/plumb/next` and render `<PlumbOverlay />` inside your root layout's `<body>`. The component server-renders the process token, and the client sends it as `x-plumb-token`. Routes reuse one Session across hot reloads. Production and `output: 'export'` builds never discover `route.plumb.ts`; the component renders nothing and imports no Session implementation. Keep the `.plumb.ts` suffix: renaming it to `route.ts` defeats build exclusion. `createPlumbRoute` accepts Session options, including `root` and `config`; the first active route initializes the process Session.
+The encoded folder serves `/__plumb/*`; [Next.js treats literal underscore-prefixed folders as private](https://nextjs.org/docs/app/getting-started/project-structure#private-folders). Import `PlumbOverlay` from `@unlocalhosted/react-plumber/next` and render `<PlumbOverlay />` inside your root layout's `<body>`. The component server-renders the process token, and the client sends it as `x-plumb-token`. Routes reuse one Session across hot reloads. Production and `output: 'export'` builds never discover `route.plumb.ts`; the component renders nothing and imports no Session implementation. Keep the `.plumb.ts` suffix: renaming it to `route.ts` defeats build exclusion. `createPlumbRoute` accepts Session options, including `root` and `config`; the first active route initializes the process Session.
 
-In monorepos, Vite uses its dev-server root and Next uses the app's current working directory to resolve browser source paths, even when Plumb's `root` is the repository. Returned locations and edits remain relative to Plumb's root; only tracked sources inside it are accepted.
+In monorepos, Vite uses its dev-server root and Next uses the app's current working directory to resolve browser source paths, even when React Plumber's `root` is the repository. Returned locations and edits remain relative to React Plumber's root; only tracked sources inside it are accepted.
 
 For other hosts, start a separate local server with your page's exact development origin:
 
 ```sh
-plumb serve --overlay --origin http://localhost:5555
-plumb install --overlay
+plumber serve --overlay --origin http://localhost:5555
+plumber install --overlay
 ```
 
-When the host serves a subdirectory, add `--served-root apps/web` (relative to the current directory, or absolute) to `serve --overlay`, and use `--root` for the repository containing the Plumb config and sources.
+When the host serves a subdirectory, add `--served-root apps/web` (relative to the current directory, or absolute) to `serve --overlay`, and use `--root` for the repository containing the React Plumber config and sources.
 
-The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting Plumb, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumb serve` and stdio behavior are unchanged.
+The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting React Plumber, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumber serve` and stdio behavior are unchanged.
 
 ## Layer 9 surfaces
 
 ```sh
-plumb check --sarif > plumb.sarif
-plumb check --base origin/main --format github
-plumb check --changed --agent
-plumb agent-docs
-plumb install --hooks
+plumber check --sarif > plumb.sarif
+plumber check --base origin/main --format github
+plumber check --changed --agent
+plumber agent-docs
+plumber install --hooks
 ```
 
 SARIF 2.1.0 retains every finding site, including debt and exceptions, with ledger fingerprints and `new`/`unchanged` baseline state. Scoped GitHub annotations show new drift, touched debt with its key, and touched exceptions with their reasons on changed lines. Agent instructions include only new sites within the requested file scope. `--changed` means tracked files changed versus HEAD, including staged edits, plus untracked files; `--base` compares against the supplied ref. Both still analyze the whole project so imports and decisions resolve correctly. Formats are mutually exclusive.
 
 GitHub output includes a plain Markdown summary and appends it to `GITHUB_STEP_SUMMARY` when set. Coverage delta and fixed counts with `--base` come from analyzing an isolated copy of the base sources with existing dependencies linked for reads. The programmatic API exports `githubSummary(report, baseReport?)`, returning `{ title, lines }` sections, and `renderSummary(sections)` for the default Markdown. No score is computed.
 
-`--agent` groups fixes by finding, lists only new sites, includes compiled declarations and decision reasons, and gives exact edits when one candidate and the authored syntax make the edit unambiguous. Multiple candidates require a choice. The loop stops on `0 new`; unresolved choices are `NEEDS-DECISION`. Do not change config, ledger or theme to pass. `agent-docs` writes `PLUMB.md` from the same decision records and enabled habit configuration, and prints a short block to paste into AGENTS.md or CLAUDE.md. Optional ownership records are included when available; missing ownership or habit reasons are stated explicitly.
+`--agent` groups fixes by finding, lists only new sites, includes compiled declarations and decision reasons, and gives exact edits when one candidate and the authored syntax make the edit unambiguous. Multiple candidates require a choice. The loop stops on `0 new`; unresolved choices are `NEEDS-DECISION`. Do not change config, ledger or theme to pass. `agent-docs` writes `PLUMBER.md` from the same decision records and enabled habit configuration, and prints a short block to paste into AGENTS.md or CLAUDE.md. Optional ownership records are included when available; missing ownership or habit reasons are stated explicitly.
 
-Hook installation merges `.claude/settings.json` `PostToolUse` (`Edit|Write|MultiEdit`) and `.cursor/hooks.json` version 1 `afterFileEdit`, preserving other settings and hooks. It prints the before/after diff and is idempotent. Both run `plumb check --changed --agent --strict-ledger`; install Plumb on PATH first. These post-edit hooks provide feedback after a write; they do not undo edits. Supported formats: [Claude Code hooks](https://code.claude.com/docs/en/hooks), [Cursor hooks](https://cursor.com/docs/hooks).
+Hook installation merges `.claude/settings.json` `PostToolUse` (`Edit|Write|MultiEdit`) and `.cursor/hooks.json` version 1 `afterFileEdit`, preserving other settings and hooks. It prints the before/after diff and is idempotent. Both run `plumber check --changed --agent --strict-ledger`; install React Plumber on PATH first. These post-edit hooks provide feedback after a write; they do not undo edits. Supported formats: [Claude Code hooks](https://code.claude.com/docs/en/hooks), [Cursor hooks](https://cursor.com/docs/hooks).
 
 ## GitHub Action
 
-The repository-root `action.yml` installs this Action checkout's locked dependencies, builds Plumb, runs `plumb check --base <PR base> --format github`, writes the job summary, and creates or updates one `<!-- plumb-summary -->` PR comment. The checked project must already have its dependencies installed. The runner also reads a JSON report for the ledger approval gate. It uses GitHub REST, paginates reviews/comments, and only updates marker comments authored by `github-actions[bot]`.
+The repository-root `action.yml` installs this Action checkout's locked dependencies, builds React Plumber, runs `plumber check --base <PR base> --format github`, writes the job summary, and creates or updates one `<!-- plumb-summary -->` PR comment. The checked project must already have its dependencies installed. The runner also reads a JSON report for the ledger approval gate. It uses GitHub REST, paginates reviews/comments, and only updates marker comments authored by `github-actions[bot]`.
 
 ```yaml
 name: Design decisions
@@ -204,3 +204,16 @@ Inputs: `base` defaults to the PR base SHA; `working-directory` defaults to `.`;
 Fetch the base history (`fetch-depth: 0`). Review events rerun the gate after approval or dismissal. Fork PRs have read-only default tokens, so posting comments requires a separately designed trusted workflow; this example needs a writable token. Use a reviewed Action SHA. Avoid running this dependency/compiler pipeline with privileged tokens on untrusted code through `pull_request_target`. Non-PR runs need an explicit `base` and produce annotations/summary without a PR comment.
 
 Verification and limits: [Layer 9 notes](docs/layers/9-surfaces.md). The Action runner and approval script are tested over disposable fixture PRs and GitHub API response fixtures, with a local REST server. This verifies create/update, approval failure/success and CLI execution; it is not a hosted GitHub run.
+
+### Migrating older projects
+
+Rename `plumb.config.ts` to `plumber.config.ts` (the same applies to `.mts`, `.js`, and `.mjs`) and move `.plumb` to `.plumber`:
+
+```bash
+mv plumb.config.ts plumber.config.ts
+mv .plumb .plumber
+```
+
+React Plumber reads legacy names when the new names are absent, prints one migration notice on stderr, and keeps writing into the legacy config and state directory until you move them. When both exist, the new names take precedence. New projects write `plumber.config.ts` and `.plumber/`, including ledger, daemon discovery, and caches. `PLUMBER_*` environment variables take precedence over the corresponding `PLUMB_*` fallback.
+
+The npm package is `@unlocalhosted/react-plumber`; its only binary is `plumber`. Vite's `plumb()` function, Next.js exports, and the overlay's internal protocol identifiers remain unchanged. GitHub Actions still use `unlocalhosted/plumb@<revision>`.
