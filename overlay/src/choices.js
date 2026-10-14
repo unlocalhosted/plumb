@@ -18,9 +18,11 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;'
 export const code = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
 
 // A CSS length in px, so values written in different units sit on one ruler: rem from the root, em from the element.
-export const toPx = (value, el) => {
+// Properties whose bare number is not a length: a weight of 600 is 600, never 600px.
+export const UNITLESS = new Set(['font-weight', 'line-height', 'z-index', 'opacity', 'flex', 'flex-grow', 'flex-shrink', 'order', 'zoom', 'tab-size', 'column-count', 'animation-iteration-count']);
+export const toPx = (value, el, prop) => {
   const m = String(value ?? '').trim().match(/^(-?[\d.]+)(px|rem|em)?$/);
-  if (!m) return undefined;
+  if (!m || (!m[2] && UNITLESS.has(prop))) return undefined;
   const n = parseFloat(m[1]);
   if (m[2] === 'rem') return n * parseFloat(getComputedStyle(document.documentElement).fontSize);
   if (m[2] === 'em') return n * parseFloat(getComputedStyle(el ?? document.documentElement).fontSize);

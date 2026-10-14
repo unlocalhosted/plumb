@@ -227,7 +227,7 @@ export class Fixer {
     const c = m.pick !== null ? m.choices[m.pick] : null;
     const from = c?.edit?.from ?? m.text;
     const to = c ? `<code class="to">${esc(c.edit?.to ?? c.label)}</code>` : m.choices.length ? '<code class="to waiting">choose below</code>' : '';
-    const a = toPx(m.value, el), z = c ? toPx(c.value, el) : undefined;
+    const a = toPx(m.value, el, m.props[0]), z = c ? toPx(c.value, el, m.props[0]) : undefined;
     const show = (v, n) => n !== undefined ? fmtPx(n) : esc(v ?? '');
     const delta = c ? `${show(m.value, a)} → ${show(c.value, z)}` : show(m.value, a);
     return `<div class="change"><code class="from ${m.soft ? 'soft' : ''}">${esc(from)}</code>${to ? `<span class="arrow" aria-hidden="true">→</span>${to}` : ''}<span class="delta">${delta}</span></div>`;

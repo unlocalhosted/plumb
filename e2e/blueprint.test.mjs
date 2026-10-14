@@ -556,3 +556,21 @@ test('With motion: turning around mid-sweep and removing the overlay both leave 
   await page.waitForTimeout(200);
   assert.deepEqual(errors, []);
 });
+
+test('A weight reads as a number in the chooser, never as pixels', { timeout: 90000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  const mark = markFor(overlay, 'font-semibold').first();
+  await mark.waitFor();
+  const b = await mark.boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  const ch = chooser(overlay);
+  await ch.waitFor();
+  assert.equal((await ch.locator('.change .delta').innerText()).trim(), '600');
+  await page.keyboard.press('Escape');
+  assert.deepEqual(errors, []);
+});
