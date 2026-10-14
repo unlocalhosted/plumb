@@ -74,6 +74,21 @@ The reading shows where the element was written, a drawing of its box with each 
 
 Picking a token **previews** it on the page. Nothing is saved until you press **Write**. **Before** shows the source version again, and **Undo** lifts every preview. **Copy for agent** puts the reading on your clipboard for an agent to act on.
 
+### Blueprint mode
+
+Press **Alt+B** and the whole view becomes its own blueprint: a wireframe of the running page, with every drift in view drawn where it lives. Words become bars, so structure and rhythm read without copy. Gaps on your scale are faint dimensions named by their token. Anything off the scale is an amber break on its own geometry: an arc on a corner, a bracket across a gap or padding, a bracket beside text, a dot for a colour or shadow. Beside each numeric break, the nearest token is ghosted in mint at its own size, so 14 reads against 12 in place. Each element carries one badge with its count, and a red wash says how far it sits from the system. Nothing is lettered at rest.
+
+| Gesture | What happens |
+| --- | --- |
+| **Alt+B** | Blueprint on or off. **Esc** also leaves. |
+| **Point** at a break, or **Tab** to it | One note in words: what is off, the nearest tokens, what a click does. |
+| **Click** a break, or **Enter** | Opens its chooser. Pointing at a step previews it; clicking picks it. Several picks go in one **Write**. |
+| **Hold D** | The view as designed: every drift takes its nearest token at once and the ink turns mint. Release puts it back. |
+| **L** | The punch list: every drift in view in rows. |
+| **N / P** or **] / [** | The next or previous drift in view. |
+
+The title block in the corner names the sheet: the route, the viewport and its breakpoint, the tally of what is on the system and what is off, and the causes of the drift by count. The first cause is the decision that closes the most; pointing at one outlines every element it touches. Leaving puts the page back exactly as it was.
+
 ### Editing text
 
 Double-click a label in a reading, or press **E**, to edit its words in place. Write saves them to the JSX or the string literal they came from, keeping its quotes. Text that comes from a prop, an expression or a translation isn't editable here, because it isn't written in that place; edit it where it is.
