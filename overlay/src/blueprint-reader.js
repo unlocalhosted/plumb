@@ -4,9 +4,12 @@
  * Which elements are on screen, and what Plumb says about each. Every reading is the engine's (host.readMarks: the
  * same findings as the Alt card, without the edits and text the card fetches when it opens).
  *
- *  pool       elements stamped with their source by the dev plugin, else every element; watched by one
+ *  pool       elements stamped with their source by the dev plugin, else every element, never anything inside an
+ *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read); watched by one
  *             IntersectionObserver, so only what is in (or near) view is read, nearest the middle first, CAP at most
  *  dedupe     elements that share a stamp (a list's rows) share one reading
+ *  waves      readings are started in waves of WAVE, a new wave only once the last has landed, so each wave is one
+ *             batched request for its resolves and one for its sites, not a trickle of single questions
  *  retry      a reading that comes back starting or failed is tried again when the server is ready, and after a
  *             backoff (2s, 4s, 8s)
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
@@ -15,7 +18,7 @@
  *             the system (drawn as quiet dimensions), `drift` the new findings (drawn as marks)
  * ───────────────────────────────────────────────────────── */
 
-const CONCURRENT = 6;
+const WAVE = 128; // readings go to the server in waves: one batched request for the resolves, one for the sites
 const CAP = 260;
 const BACKOFF = [2000, 4000, 8000];
 const THROTTLE = 150;
@@ -64,6 +67,7 @@ export class Reader {
     this.#mo?.disconnect();
     clearTimeout(this.#throttle);
     clearTimeout(this.#retry);
+    clearTimeout(this.#settle); this.#settle = 0;
     this.#items.clear();
     this.#ids = new WeakMap(); // the next start registers every element again
     this.#byStamp.clear();
@@ -104,10 +108,14 @@ export class Reader {
   // Register the pool's elements with the IntersectionObserver; forget the ones that left the document.
   #scan(changed) {
     if (!this.#running) return;
+    const t0 = performance.now();
+    try { this.#scan_(changed); } finally { performance.measure('plumb:reader-scan', { start: t0 }); }
+  }
+  #scan_(changed) {
     const stamped = document.querySelectorAll('[data-plumb-source]');
     const pool = stamped.length ? stamped : document.body.querySelectorAll('*');
     for (const el of pool) {
-      if (el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
+      if (el.ownerSVGElement || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
       const stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
       const sig = `${stamp}|${el.getAttribute('class') ?? ''}`;
       let id = this.#ids.get(el);
@@ -125,8 +133,14 @@ export class Reader {
     this.#schedule();
   }
 
+  // Visibility arrives in chunks; a wave starts once they have settled, so one wave holds the whole view.
+  #settle = 0;
   #schedule() {
     if (!this.#running) return;
+    if (this.#settle) return;
+    this.#settle = setTimeout(() => { this.#settle = 0; if (!this.#running) return; const t0 = performance.now(); try { this.#schedule_(); } finally { performance.measure('plumb:reader-schedule', { start: t0 }); } }, 40);
+  }
+  #schedule_() {
     // what's in view, nearest the middle first, CAP at most
     const mid = innerHeight / 2;
     const order = [...this.#visible]
@@ -142,22 +156,27 @@ export class Reader {
   }
 
   #pump() {
-    while (this.#running && this.#inflight < CONCURRENT && this.#queue.length) {
+    if (this.#inflight) return; // the wave in flight lands first
+    while (this.#running && this.#inflight < WAVE && this.#queue.length) {
       const item = this.#queue.shift();
       if (item.state !== 'queued') continue;
       item.state = 'reading';
       this.#inflight++;
       const fresh = item.fresh;
       item.fresh = false;
-      let reading = item.stamp && !fresh ? this.#byStamp.get(item.stamp) : null;
+      // classes built in code (a cn() helper) are traced in a second pass, so the first count never waits on them
+      const computed = item.computed === true;
+      let reading = item.stamp && !fresh && !computed ? this.#byStamp.get(item.stamp) : null;
       if (!reading) {
-        reading = this.#host.readMarks(item.el, fresh);
-        if (item.stamp) this.#byStamp.set(item.stamp, reading);
+        reading = this.#host.readMarks(item.el, fresh, { computed });
+        if (item.stamp && !computed) this.#byStamp.set(item.stamp, reading);
       }
       reading
         .then((state) => {
           if (!this.#running || !this.#items.has(item.id)) return;
-          if (state?.status === 'ready') {
+          if (state?.status === 'ready' && state.computed && !computed) {
+            item.state = 'queued'; item.computed = true; // read again, with its classes traced
+          } else if (state?.status === 'ready') {
             item.state = 'ready';
             item.file = state.file;
             item.marks = state.marks.filter((m) => m.ledger !== 'exception');

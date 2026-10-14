@@ -6,7 +6,7 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'classes' | 'apply' | 'applyText' | 'decisions' | 'why' | 'try' | 'refresh';
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'classes' | 'apply' | 'applyText' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
 export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'try' | 'refresh'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
@@ -85,6 +85,7 @@ export class Session extends EventEmitter {
   report(...args: Parameters<Engine['report']>) { return this.call('report', args); }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
+  many(...args: Parameters<Engine['many']>) { return this.call('many', args); }
   text(...args: Parameters<Engine['text']>) { return this.call('text', args); }
   edits(...args: Parameters<Engine['edits']>) { return this.call('edits', args); }
   private validateClasses(args: Parameters<Engine['classes']>): void {

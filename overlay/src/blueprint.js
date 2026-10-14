@@ -7,7 +7,10 @@
  *  off → entering → on → leaving → off      Alt+B or the dock's button toggles; Esc leaves
  *
  *  entering  a scan line crosses the view left to right (SPAN); a deep blue field is laid under the page behind it
- *            (html::before), and each element re-inks to white line as the line reaches its column (DEVELOP each);
+ *            (html::before, revealed by one clip-path transition, never a per-frame style write: a custom property
+ *            changed on <html> every frame would restyle every element every frame), and each element re-inks to
+ *            white line as the line reaches its column (DEVELOP each). Everything the entry needs to read from the
+ *            page is read before anything is written, so the page's style is recomputed once, not three times;
  *            words go transparent and, once the line has crossed, the Greek layer draws a bar per line of text, so
  *            the drawing shows structure and rhythm, not copy
  *  on        the Reader reads what's in view through Plumb; the MarkLayer draws each finding as a break in the
@@ -27,10 +30,13 @@
  *            never writes an inline style on a host element, so nothing is left in a style attribute
  *  reduced motion: no sweep; the mode changes at once
  *
- * Host-page footprint while on: one <style data-plumb="blueprint"> in <head>; on <html> data-plumb-blueprint (ink),
- * data-plumb-field (the blue field), and, during a sweep, data-plumb-developing, data-plumb-dir and three custom
- * properties; on elements data-plumb-drawn (keep an outline once the fill is cleared) and, during a sweep,
- * data-plumb-col (which column the line reaches it in).
+ * Host-page footprint while on: one <style data-plumb="blueprint"> in <head> and one <style data-plumb="blueprint-vars">
+ * (the field's clip and each column's delay); on <html> data-plumb-blueprint (ink) and data-plumb-field (the blue
+ * field), both set in the same task as the stylesheet so the page is restyled once; on elements data-plumb-drawn
+ * (keep an outline once the fill is cleared), data-plumb-ink on every element in or near view (fills, borders and
+ * shadows cleared) with data-plumb-text on those that hold words (their colour cleared),
+ * and, during a sweep, data-plumb-col (which column the line reaches it in). Nothing on <html> changes during a
+ * sweep, and no rule reaches every element.
  * ───────────────────────────────────────────────────────── */
 import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
@@ -47,22 +53,34 @@ html[data-plumb-field]::before { content: ''; position: fixed; inset: 0; z-index
   background-color: ${FIELD};
   background-image: linear-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.07) 1px, transparent 1px);
   background-size: 8px 8px;
-  clip-path: inset(0 var(--plumb-field-r, 0%) 0 0); }
+  clip-path: inset(0 100% 0 0); transition: clip-path 0ms linear; }
 html[data-plumb-blueprint] body { background: transparent none !important; }
-html[data-plumb-blueprint] body * {
-  color: transparent !important; -webkit-text-fill-color: transparent !important; background-color: transparent !important; background-image: none !important;
+/* The ink goes on element by element, in two parts, and never through an inherited property on a container:
+   changing \`color\` on the page's root box restyles every element under it, which on a page of fifteen thousand
+   is most of a second, however few elements were touched. So data-plumb-ink carries only properties that do not
+   inherit (fills, borders, shadows) and goes on every element in or near view, and data-plumb-text carries the
+   inherited ones (color, text shadow, caret) and goes only on elements that hold text themselves. The rest are
+   inked as they arrive. */
+[data-plumb-ink] {
+  background-color: transparent !important; background-image: none !important;
   border-color: rgb(255 255 255 / 0.55) !important; outline-color: rgb(255 255 255 / 0.55) !important;
-  box-shadow: none !important; text-shadow: none !important; caret-color: #fff !important; }
-html[data-plumb-blueprint] body [data-plumb-drawn] { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6) !important; }
-html[data-plumb-blueprint] body :is(img, video, canvas, picture, iframe) { opacity: 0.18 !important; }
-html[data-plumb-blueprint] body :is(input, textarea, select) { color: #fff !important; -webkit-text-fill-color: #fff !important; }
-html[data-plumb-blueprint] body svg:not([data-plumb-drawn]) { outline: 1px solid rgb(255 255 255 / 0.45) !important; outline-offset: -1px !important; }
-html[data-plumb-peek] body [data-plumb-drawn] { box-shadow: inset 0 0 0 1px rgb(168 240 198 / 0.75) !important; }
-html[data-plumb-peek] body * { border-color: rgb(168 240 198 / 0.6) !important; outline-color: rgb(168 240 198 / 0.6) !important; }
-${cols.map((k) => `html[data-plumb-dir="in"] body [data-plumb-col="${k}"] { --plumb-k: ${k}; } html[data-plumb-dir="out"] body [data-plumb-col="${k}"] { --plumb-k: ${COLS - 1 - k}; }`).join('\n')}
-html[data-plumb-developing] body [data-plumb-col] {
-  transition: color ${DEVELOP}ms ease-out, background-color ${DEVELOP}ms ease-out, border-color ${DEVELOP}ms ease-out, box-shadow ${DEVELOP}ms ease-out, opacity ${DEVELOP}ms ease-out !important;
-  transition-delay: calc(var(--plumb-k, 0) * var(--plumb-step) - var(--plumb-shift, 0ms)) !important; }
+  box-shadow: none !important; }
+[data-plumb-text] { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: #fff !important; }
+[data-plumb-ink]::before, [data-plumb-ink]::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; }
+[data-plumb-ink][data-plumb-drawn] { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6) !important; }
+[data-plumb-ink]:is(img, video, canvas, picture, iframe) { opacity: 0.18 !important; }
+/* an image or an icon is a plate: its outline and a hatch, never its picture */
+[data-plumb-ink]:is(input, textarea, select) { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+svg[data-plumb-ink] { outline: 1px solid rgb(255 255 255 / 0.45) !important; outline-offset: -1px !important;
+  background: repeating-linear-gradient(135deg, transparent 0 5px, rgb(255 255 255 / 0.14) 5px 6px) !important; }
+/* an icon's drawing goes, its plate stays; named tags rather than *, so adding this sheet re-matches only them */
+svg[data-plumb-ink] :is(path, g, rect, circle, ellipse, line, polyline, polygon, text, tspan, use, image, defs, symbol, foreignObject, mask, pattern, clipPath) { visibility: hidden !important; }
+html[data-plumb-peek] body [data-plumb-ink][data-plumb-drawn] { box-shadow: inset 0 0 0 1px rgb(168 240 198 / 0.75) !important; }
+html[data-plumb-peek] body [data-plumb-ink] { border-color: rgb(168 240 198 / 0.6) !important; outline-color: rgb(168 240 198 / 0.6) !important; }
+/* the sweep's state lives on the elements it reaches, never on <html>: an attribute flipped on <html> restyles
+   every element on the page, and a page of fifteen thousand pays half a second for each flip */
+[data-plumb-ink][data-plumb-col] {
+  transition: color ${DEVELOP}ms ease-out, background-color ${DEVELOP}ms ease-out, border-color ${DEVELOP}ms ease-out, box-shadow ${DEVELOP}ms ease-out, opacity ${DEVELOP}ms ease-out !important; }
 `;
 
 // The title block: a drawing's corner stamp, in the blueprint's own ink on its own field.
@@ -122,14 +140,22 @@ const BREAKPOINTS = [['2xl', 1536], ['xl', 1280], ['lg', 1024], ['md', 768], ['s
 const breakpointOf = (width) => BREAKPOINTS.find(([, min]) => width >= min)?.[0] ?? 'base';
 
 const visible = (r) => r.width > 1 && r.height > 1 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+// an element that holds words itself (a text node child), so its colour is its own to clear
+const holdsText = (el) => { for (const n of el.childNodes) if (n.nodeType === 3 && n.textContent.trim()) return true; return false; };
+// in view or within one screen of it: inked before it can be seen
+const near = (r) => r.bottom > -innerHeight && r.top < innerHeight * 2 && r.right > -innerWidth && r.left < innerWidth * 2 && (r.width > 0 || r.height > 0);
 const drawn = (cs) => cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || parseFloat(cs.borderTopWidth) > 0 || cs.boxShadow !== 'none';
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const hostElements = () => [...document.body.querySelectorAll('*')].filter((el) => !el.closest('plumb-overlay') && el.localName !== 'script' && el.localName !== 'style');
+const hostElements = () => [...document.body.querySelectorAll('*')].filter((el) => !el.ownerSVGElement && !el.closest('plumb-overlay') && el.localName !== 'script' && el.localName !== 'style');
 
 export class Blueprint {
   #host; #layer; #scan; #style = null; #marks; #reader; #onState; #onProgress;
   #state = 'off';
   #sweep = null; // { dir: 'in' | 'out', p: 0..1 line progress along dir, t0, token, cols: Element[] }
+  #cols = null; // [[element, column]] measured before the ink goes on, reused by both sweeps
+  #inked = new Set(); // host elements carrying data-plumb-ink
+  #inkTimer = 0; #inkObserver = null;
+  #fieldReady = false;
   #token = 0;
   #vars = null; // a tiny <style> holding the sweep's custom properties, so no host element gets an inline style
   #sheet; #progress = null; #greek; #items = []; #causes = []; #peeking = false;
@@ -175,10 +201,18 @@ export class Blueprint {
     if (this.#host.health === 'failed') return this.#set('refused');
     const html = document.documentElement;
     if (this.#state === 'off') {
-      // read pass, then write pass: no style or layout is invalidated between reads
+      const t0 = performance.now();
+      // read pass, then write pass: no style or layout is invalidated between reads, and the sweep's columns are
+      // measured here too, so the sweep never has to read the page after the ink is on
       const els = hostElements();
-      const marks = els.map((el) => drawn(getComputedStyle(el)));
-      els.forEach((el, i) => marks[i] && el.setAttribute('data-plumb-drawn', ''));
+      const rects = els.map((el) => el.getBoundingClientRect());
+      const inView = rects.map(near);
+      const marks = els.map((el, i) => inView[i] && drawn(getComputedStyle(el)));
+      this.#cols = [];
+      els.forEach((el, i) => { if (visible(rects[i])) this.#cols.push([el, Math.min(COLS - 1, Math.floor(Math.min(1, Math.max(0, (rects[i].left + rects[i].width / 2) / innerWidth)) * COLS))]); });
+      els.forEach((el, i) => { if (inView[i]) { el.setAttribute('data-plumb-ink', ''); if (holdsText(el)) el.setAttribute('data-plumb-text', ''); this.#inked.add(el); if (marks[i]) el.setAttribute('data-plumb-drawn', ''); } });
+      this.#inkObserver = new MutationObserver(() => this.#inkLater());
+      this.#inkObserver.observe(document.body, { subtree: true, childList: true });
       this.#style = Object.assign(document.createElement('style'), { textContent: HOST_CSS });
       this.#style.dataset.plumb = 'blueprint';
       document.head.appendChild(this.#style);
@@ -187,9 +221,15 @@ export class Blueprint {
       document.head.appendChild(this.#vars);
       this.#layer.hidden = false;
       html.setAttribute('data-plumb-field', '');
+      this.#setVars({ field: '100%', ms: 0 }); // clipped, ready for the sweep to carry it
+      performance.measure('plumb:enter-ink', { start: t0 });
+      const t1 = performance.now();
       this.#reader.start();
+      performance.measure('plumb:reader-start', { start: t1 });
       addEventListener('scroll', this.#invalidate, { passive: true, capture: true });
+      addEventListener('scroll', this.#inkLater, { passive: true, capture: true });
       addEventListener('resize', this.#invalidate);
+      addEventListener('resize', this.#inkLater);
       addEventListener('pointermove', this.#point, { passive: true });
       document.addEventListener('pointerleave', this.#unpoint);
     } else this.#reader.refresh(); // turned back on mid-sweep: draw what's already read
@@ -226,6 +266,21 @@ export class Blueprint {
   }
 
   #invalidate = () => { this.#marks.invalidate(); this.#stamp(); };
+  // Elements that scrolled or rendered into view since the entry are inked when the movement settles: one rect
+  // pass over the page (cheap when its layout is clean), then attributes on the newcomers only.
+  #inkLater = () => {
+    if (this.#inkTimer || this.#state === 'off') return;
+    this.#inkTimer = setTimeout(() => { this.#inkTimer = 0; this.#inkMore(); }, 120);
+  };
+  #inkMore() {
+    if (this.#state === 'off') return;
+    const t0 = performance.now();
+    const fresh = hostElements().filter((el) => !this.#inked.has(el));
+    const rects = fresh.map((el) => el.getBoundingClientRect());
+    const marks = fresh.map((el, i) => near(rects[i]) && drawn(getComputedStyle(el)));
+    fresh.forEach((el, i) => { if (near(rects[i])) { el.setAttribute('data-plumb-ink', ''); if (holdsText(el)) el.setAttribute('data-plumb-text', ''); this.#inked.add(el); if (marks[i]) el.setAttribute('data-plumb-drawn', ''); } });
+    performance.measure('plumb:ink-more', { start: t0 });
+  }
   // the element under the pointer, looking through the overlay's own marks: its wash lifts
   #point = (e) => this.#marks.lift(document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.closest('plumb-overlay')) ?? null);
   #unpoint = () => this.#marks.lift(null);
@@ -277,28 +332,27 @@ export class Blueprint {
     const html = document.documentElement;
     const token = ++this.#token;
     if (instant || still()) {
+      if (dir === 'in') this.#setVars({ field: '0%', ms: 0 });
       this.#finish(dir, token, this.#sweep?.cols ?? []);
       return;
     }
+    // the field's ::before needs one frame at its clipped start before a transition can carry it
+    if (!this.#sweep && dir === 'in' && !this.#fieldReady) { this.#fieldReady = true; requestAnimationFrame(() => { if (token === this.#token) this.#run(dir, instant); }); return; }
     let cols = this.#sweep?.cols;
     const turned = !!this.#sweep;
     const p = turned ? 1 - this.#sweep.p : 0; // keep the line where it is
     if (!cols) {
-      // read pass, then write pass
-      const els = hostElements();
-      const rects = els.map((el) => el.getBoundingClientRect());
+      const t0 = performance.now();
+      // the columns were measured before the ink went on; a leaving sweep reuses them, so nothing is read here
       cols = [];
-      els.forEach((el, i) => {
-        if (!visible(rects[i])) return;
-        const at = Math.min(1, Math.max(0, (rects[i].left + rects[i].width / 2) / innerWidth));
-        el.setAttribute('data-plumb-col', String(Math.min(COLS - 1, Math.floor(at * COLS))));
-        cols.push(el);
-      });
+      // a leaving sweep runs the columns the other way
+      for (const [el, k] of this.#cols ?? []) if (el.isConnected) el.setAttribute('data-plumb-col', String(dir === 'in' ? k : COLS - 1 - k)), cols.push(el);
+      performance.measure('plumb:sweep-cols', { start: t0 });
     }
-    html.setAttribute('data-plumb-dir', dir);
-    const vars = { step: `${SPAN / (COLS - 1)}ms`, shift: `${p * SPAN}ms`, field: '100%' };
-    this.#setVars(vars);
-    html.setAttribute('data-plumb-developing', '');
+    // written once, into our own stylesheet: each column's delay, and the field's clip target, which one
+    // transition then carries. Only [data-plumb-col] elements and the field's pseudo-element are restyled
+    const per = SPAN / (COLS - 1), shift = p * SPAN;
+    this.#setVars({ field: dir === 'in' ? '0%' : '100%', ms: Math.round(SPAN * (1 - p)), delays: Array.from({ length: COLS }, (_, k) => Math.round(k * per - shift)) });
     this.#scan.hidden = false;
     const t0 = performance.now() - p * SPAN;
     this.#sweep = { dir, p, t0, token, cols };
@@ -307,8 +361,7 @@ export class Blueprint {
       const s = this.#sweep;
       s.p = Math.min(1, Math.max(0, (now - t0) / SPAN));
       const x = dir === 'in' ? s.p : 1 - s.p; // the line, 0 at the left edge
-      this.#scan.style.left = `${x * 100}%`;
-      this.#setVars({ ...vars, field: `${(1 - x) * 100}%` });
+      this.#scan.style.left = `${x * 100}%`; // the only per-frame write, on the overlay's own element
       if (s.p < 1) return requestAnimationFrame(step);
       this.#scan.hidden = true;
       setTimeout(() => this.#finish(dir, token, cols), DEVELOP); // the last column finishes re-inking
@@ -321,19 +374,19 @@ export class Blueprint {
     const html = document.documentElement;
     this.#sweep = null;
     this.#scan.hidden = true;
-    html.removeAttribute('data-plumb-developing');
-    html.removeAttribute('data-plumb-dir');
-    this.#setVars(null);
     for (const el of cols) el.removeAttribute('data-plumb-col');
-    if (dir === 'in') return this.#stamp(), this.#sheet.setAttribute('data-on', ''), this.#greek.start(), this.#set('on'), this.#marks.invalidate();
+    if (dir === 'in') return this.#setVars({ field: '0%', ms: 0 }), this.#stamp(), this.#sheet.setAttribute('data-on', ''), this.#greek.start(), this.#set('on'), this.#marks.invalidate();
+    this.#setVars(null);
     this.#teardown();
     this.#set('off');
   }
 
-  // The sweep's custom properties, written into our own stylesheet rather than onto <html>.
+  // The sweep's stylesheet: the field's clip target and duration on its own pseudo-element, and one delay rule per
+  // column. No custom property on <html>: an inherited property changed there restyles every element.
   #setVars(v) {
     if (!this.#vars) return;
-    this.#vars.textContent = v ? `html { --plumb-step: ${v.step}; --plumb-shift: ${v.shift}; --plumb-field-r: ${v.field}; }` : '';
+    const delays = v?.delays ? Array.from({ length: COLS }, (_, k) => `[data-plumb-ink][data-plumb-col="${k}"] { transition-delay: ${v.delays[k] ?? Math.round(k * SPAN / (COLS - 1))}ms !important; }`).join('\n') : '';
+    this.#vars.textContent = v ? `html[data-plumb-field]::before { clip-path: inset(0 ${v.field} 0 0) !important; transition-duration: ${v.ms}ms !important; }\n${delays}` : '';
   }
 
   #teardown() {
@@ -342,15 +395,23 @@ export class Blueprint {
     this.#reader.stop();
     this.#marks.clear();
     removeEventListener('scroll', this.#invalidate, { capture: true });
+    removeEventListener('scroll', this.#inkLater, { capture: true });
     removeEventListener('resize', this.#invalidate);
+    removeEventListener('resize', this.#inkLater);
+    clearTimeout(this.#inkTimer); this.#inkTimer = 0;
+    this.#inkObserver?.disconnect(); this.#inkObserver = null;
+    for (const el of this.#inked) el.removeAttribute('data-plumb-ink'), el.removeAttribute('data-plumb-text');
+    this.#inked.clear();
     removeEventListener('pointermove', this.#point);
     document.removeEventListener('pointerleave', this.#unpoint);
-    for (const name of ['data-plumb-blueprint', 'data-plumb-field', 'data-plumb-developing', 'data-plumb-dir', 'data-plumb-peek']) html.removeAttribute(name);
+    for (const name of ['data-plumb-blueprint', 'data-plumb-field', 'data-plumb-peek']) html.removeAttribute(name);
     this.#setVars(null);
-    for (const el of document.querySelectorAll('[data-plumb-drawn], [data-plumb-col]')) el.removeAttribute('data-plumb-drawn'), el.removeAttribute('data-plumb-col');
+    for (const el of document.querySelectorAll('[data-plumb-drawn], [data-plumb-col], [data-plumb-ink], [data-plumb-text]')) for (const name of ['data-plumb-drawn', 'data-plumb-col', 'data-plumb-ink', 'data-plumb-text']) el.removeAttribute(name);
     this.#style?.remove();
     this.#vars?.remove();
     this.#style = this.#vars = null;
+    this.#cols = null;
+    this.#fieldReady = false;
     this.#scan.hidden = true;
     this.#greek.stop();
     this.#sheet.removeAttribute('data-on');

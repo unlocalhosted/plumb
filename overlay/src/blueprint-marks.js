@@ -365,24 +365,50 @@ export class MarkLayer {
 
   // One frame: every measurement first, then every write.
   #render() {
+    const t0 = performance.now();
+    try { this.#frame(); } finally { performance.measure('plumb:marks', { start: t0 }); }
+  }
+  #frame() {
     const view = { w: innerWidth, h: innerHeight };
+    const tOcc = performance.now();
     const under = this.#occluders?.() ?? [];
+    performance.measure('plumb:marks-occluders', { start: tOcc });
     const plan = [];
     const spans = { v: new Map(), h: new Map() }; // the rails: `${a}:${b}` → { a, b, text, off }
     const span = (g, text, off) => {
       if (g.kind === 'v' && g.y2 - g.y1 >= 2) { const key = `${Math.round(g.y1)}:${Math.round(g.y2)}`; if (!spans.v.has(key) || off) spans.v.set(key, { a: g.y1, b: g.y2, text, off }); }
       if (g.kind === 'h' && g.x2 - g.x1 >= 2) { const key = `${Math.round(g.x1)}:${Math.round(g.x2)}`; if (!spans.h.has(key) || off) spans.h.set(key, { a: g.x1, b: g.x2, text, off }); }
     };
+    const tRead = performance.now();
+    // READS. Every rect, geometry and style the frame needs is measured here, before a single write, so the
+    // page's layout is computed once per frame however many marks there are.
+    const rects = new Map(), dimsPlan = [], washPlan = [], litRects = [];
+    const heats = new Map();
+    for (const item of this.#items) heats.set(item.el, warmth(item.marks));
     for (const item of this.#items) {
       if (!item.el.isConnected) continue;
       const r = item.el.getBoundingClientRect();
+      rects.set(item, r);
       const shown = r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0;
       item.marks.forEach((mark, k) => {
         const g = shown ? dimensionsFor(item.el, mark.props) : null;
         plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g });
         if (g && mark.ledger === 'new' && mark.n !== undefined && /^(gap|row-gap|column-gap|padding|margin)/.test(mark.props[0] ?? '')) span(g, String(Math.round(mark.n * 10) / 10), true);
       });
+      for (const dim of item.dims ?? []) {
+        const g = shown ? dimensionsFor(item.el, dim.props) : null;
+        if (g) span(g, dim.token, false);
+        dimsPlan.push({ item, dim, g });
+      }
+      let heat = heats.get(item.el);
+      if (heat) for (let a = item.el.parentElement; a && heat; a = a.parentElement) if (heats.get(a) >= heat) heat = 0;
+      // a page-sized wrapper would wash the whole screen: a wash is for a thing, not the page
+      if (heat && shown && r.width && r.height && r.bottom > 0 && r.top < view.h && r.width * r.height < view.w * view.h * 0.6) washPlan.push({ item, r, heat, radius: Math.min(parseFloat(getComputedStyle(item.el).borderTopLeftRadius) || 0, r.width / 2, r.height / 2) });
     }
+    for (const el of this.#lit) if (el.isConnected) { const r = el.getBoundingClientRect(); if (r.width && r.bottom > 0 && r.top < view.h) litRects.push(r); }
+    performance.measure('plumb:marks-read', { start: tRead });
+    // WRITES, from here on.
+    const tWrite = performance.now();
     let after = null; // keeps hit rects in document order for Tab
     const placed = [], order = [];
     const overlaps = ([x, y, w, h]) => placed.some(([a, b, c, d]) => x < a + c && a < x + w && y < b + d && b < y + h);
@@ -423,14 +449,16 @@ export class MarkLayer {
       if (node.hit !== node.g.nextSibling) this.#svg.insertBefore(node.hit, node.g.nextSibling);
       after = node.hit;
     }
+    performance.measure('plumb:marks-write-marks', { start: tWrite });
+    const tRest = performance.now();
     if (this.#badges !== this.#svg.lastChild) this.#svg.appendChild(this.#badges);
     // one badge per element with new drift in view
     let badges = '';
     const taken = [];
     for (const item of this.#items) {
       const n = item.marks.filter((m) => m.ledger === 'new').length;
-      if (!n || !item.el.isConnected) continue;
-      const r = item.el.getBoundingClientRect();
+      const r = rects.get(item);
+      if (!n || !r) continue;
       if (r.bottom < 0 || r.top > view.h || r.right < 0 || r.left > view.w || !r.width) continue;
       badges += `<g class="badge">${badge(r, n, view, taken)}</g>`;
     }
@@ -439,42 +467,29 @@ export class MarkLayer {
     // the wash, per element, lifted where the pointer is. An element inside a washed one is washed only when it is
     // warmer than what surrounds it, so nesting does not read as heat
     let wash = '';
-    const heats = new Map();
-    for (const item of this.#items) heats.set(item.el, warmth(item.marks));
-    for (const item of this.#items) {
-      let heat = heats.get(item.el);
-      if (!heat || !item.el.isConnected) continue;
-      for (let a = item.el.parentElement; a && heat; a = a.parentElement) if (heats.get(a) >= heat) heat = 0;
-      if (!heat) continue;
-      const r = item.el.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > view.h || r.right < 0 || r.left > view.w || !r.width || !r.height) continue;
+    for (const { item, r, heat, radius } of washPlan) {
       const lifted = this.#lifted && item.el.contains(this.#lifted);
-      const radius = Math.min(parseFloat(getComputedStyle(item.el).borderTopLeftRadius) || 0, r.width / 2, r.height / 2);
       wash += `<rect x="${r.left.toFixed(1)}" y="${r.top.toFixed(1)}" width="${r.width.toFixed(1)}" height="${r.height.toFixed(1)}" rx="${radius.toFixed(1)}" fill-opacity="${lifted ? 0 : heat}" data-heat="${heat}"/>`;
     }
     if (wash !== this.#washMarkup) (this.#wash.innerHTML = wash), (this.#washMarkup = wash);
     let light = '';
-    for (const el of this.#lit) {
-      if (!el.isConnected) continue;
-      const r = el.getBoundingClientRect();
-      if (!r.width || r.bottom < 0 || r.top > view.h) continue;
+    for (const r of litRects) {
       light += `<rect x="${(r.left - 2).toFixed(1)}" y="${(r.top - 2).toFixed(1)}" width="${(r.width + 4).toFixed(1)}" height="${(r.height + 4).toFixed(1)}" rx="3"/>`;
     }
     if (light !== this.#lightMarkup) (this.#light.innerHTML = light), (this.#lightMarkup = light);
     if (this.#light !== this.#svg.lastChild) this.#svg.appendChild(this.#light);
+    performance.measure('plumb:marks-write-rest', { start: tRest });
     this.#order = order;
     const key = order.map((o) => o.id).join(',');
+    const tOrder = performance.now();
     if (key !== this.#orderKey) (this.#orderKey = key), this.#onOrder?.();
+    performance.measure('plumb:marks-order', { start: tOrder });
     // the structure, after every mark has its place: a dimension yields to any label already there, and to the
     // chooser, the card, the dock and the sheet
-    for (const item of this.#items) {
-      for (const dim of item.dims ?? []) {
+    for (const { item, dim, g: dg } of dimsPlan) {
+      {
         const id = `${item.id}:${dim.key}`;
         let node = this.#dims.get(id);
-        const r = item.el.isConnected ? item.el.getBoundingClientRect() : null;
-        const shown = r && r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0;
-        const dg = shown ? dimensionsFor(item.el, dim.props) : null;
-        if (dg) span(dg, dim.token, false);
         const d = dg ? drawDim(dg, dim.token) : null;
         const hidden = !d || overlaps(d.box) || under.some((o) => d.box[0] < o.right && o.left < d.box[0] + d.box[2] && d.box[1] < o.bottom && o.top < d.box[1] + d.box[3]);
         if (hidden) {

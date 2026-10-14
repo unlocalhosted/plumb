@@ -72,9 +72,10 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
   await page.keyboard.press('Alt+B');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true);
   // the page is re-inked: fills cleared, words transparent with a bar per line in their place
-  const row = await page.locator('#sync-row').evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color }));
+  const row = await page.locator('#sync-row').evaluate((el) => { const title = el.querySelectorAll('span')[1]; return { bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(title).color, title: title.textContent }; });
   assert.equal(row.bg, 'rgba(0, 0, 0, 0)');
-  assert.equal(row.color, 'rgba(0, 0, 0, 0)');
+  assert.equal(row.color, 'rgba(0, 0, 0, 0)', `the words themselves are painted out: ${JSON.stringify(row)}`);
+  assert.equal(row.title, 'Sync calendar');
   const bars = overlay.locator('.bp svg.greek rect');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.greek rect').length > 0, null, { timeout: 5000 });
   const greeked = await bars.count();
@@ -203,6 +204,8 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   const names = await dimensions(overlay).locator('text').evaluateAll((ts) => ts.map((t) => t.textContent));
   assert.ok(names.every((n) => /^s\d$/.test(n)), `dimensions are named by token, not pixels: ${names}`);
   // a dimension is structure, not a finding: nothing to click, nothing in the count
+  // the count and the drawn marks agree once the last reading lands
+  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) off/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.getAttribute('aria-label').startsWith('Drift:')).length; }, null, { timeout: 5000 });
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
   assert.equal(Number((await say(overlay).innerText()).match(/(\d+) off/)[1]), labels.filter((l) => l.startsWith('Drift:')).length);
@@ -553,8 +556,9 @@ test('With motion: turning around mid-sweep and removing the overlay both leave 
   assert.equal(await footprint(page), before, 'a reversed sweep leaves nothing behind');
 
   await page.keyboard.press('Alt+B');
-  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-developing'), null, { timeout: 5000 });
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).color), 'rgba(0, 0, 0, 0)', 'the sweep finished re-inking: words greeked');
+  // the sweep has landed when the sheet is on and the scan line is put away
+  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return root.querySelector('.bp .sheet[data-on]') && root.querySelector('.bp .scan').hidden; }, null, { timeout: 5000 });
+  assert.equal(await page.locator('#sync-row span').nth(1).evaluate((el) => getComputedStyle(el).color), 'rgba(0, 0, 0, 0)', 'the sweep finished re-inking: words greeked');
   assert.equal(await overlay.locator('.bp .scan').isHidden(), true);
 
   await page.evaluate(() => document.querySelector('plumb-overlay').remove());

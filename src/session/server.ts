@@ -58,12 +58,25 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     }
     return read('report', [options]);
   }
-  if (method === 'site') return read('site', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
+  const siteArgs = (p: Record<string, unknown>) => [text(p, 'file')!, position(p, 'line')!, position(p, 'column', true)] as const;
+  const resolveArgs = (p: Record<string, unknown>) => [text(p, 'source')!, position(p, 'line', true), position(p, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(p.tag === undefined ? {} : { tag: text(p, 'tag')! }), component: p.component === '1', ...(p.hash === undefined ? {} : { hash: text(p, 'hash')! }), snapshot: p.snapshot === '1', owner: p.owner === '1', stamp: p.stamp === '1' }] as const;
+  if (method === 'site') return read('site', [...siteArgs(params)]);
+  // Several resolve and site questions, answered in one read: the overlay's blueprint asks about a view at once.
+  if (method === 'batch') {
+    if (!Array.isArray(params.calls) || !params.calls.length || params.calls.length > 256) throw new UsageError('calls must be an array of 1 to 256 calls.');
+    const calls = params.calls.map(call => {
+      if (!object(call) || !object(call.params)) throw new UsageError('Each call needs a method and params.');
+      if (call.method === 'site') return { method: 'site' as const, args: [...siteArgs(call.params)] as [string, number, number | undefined] };
+      if (call.method === 'resolve') return { method: 'resolveSource' as const, args: [...resolveArgs(call.params)] as [string, number | undefined, number | undefined, Record<string, unknown>] };
+      throw new UsageError('A batched call must be resolve or site.');
+    });
+    return read('many', [calls as Parameters<Session['many']>[0]]);
+  }
   if (method === 'classes') {
     if (typeof params.classes !== 'string') throw new UsageError('classes must be a string.');
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
-  if (method === 'resolve') return read('resolveSource', [text(params, 'source')!, position(params, 'line', true), position(params, 'column', true), { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }), ...(params.tag === undefined ? {} : { tag: text(params, 'tag')! }), component: params.component === '1', ...(params.hash === undefined ? {} : { hash: text(params, 'hash')! }), snapshot: params.snapshot === '1', owner: params.owner === '1', stamp: params.stamp === '1' }]);
+  if (method === 'resolve') return read('resolveSource', [...resolveArgs(params)]);
   if (method === 'text') return read('text', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
@@ -122,8 +135,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'batch'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -283,7 +296,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

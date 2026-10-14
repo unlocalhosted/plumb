@@ -358,13 +358,15 @@ class PlumbOverlay extends HTMLElement {
 
   // What blueprint mode needs from the widget: Plumb's findings for an element (not the card's edits and text, and
   // never in the card's cache), the server's health, the pinned element, and where the card and dock sit.
-  readMarks(element, fresh = false) {
+  readMarks(element, fresh = false, { computed = true } = {}) {
     if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
     const promise = (async () => {
       const found = await locate(element, { explain: true });
       if (!found?.file) return { status: 'unplaced' };
-      return this.#readAt(found, element, { want: 'marks' });
+      return this.#readAt(found, element, { want: 'marks', computed });
     })().catch(error => ({ status: error?.starting ? 'starting' : 'error' }));
+    // an answer that still needs its classes traced is not the element's reading yet
+    promise.then(state => { if (state?.computed && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     this.#marksCache.set(element, promise);
     promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     return promise;
@@ -495,7 +497,7 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // The reading of one link in the chain: the JSX at that position, its declarations, findings and edits.
-  async #readAt(location, element = this.#pinned?.element, { want = 'full' } = {}) {
+  async #readAt(location, element = this.#pinned?.element, { want = 'full', computed = true } = {}) {
     const params = { file: location.file, line: location.line, column: location.column };
     // Its text is read alongside: which runs are plain literals Plumb can write, or why it can't (an older server
     // without the endpoint answers nothing, and the card simply has no text row). Blueprint mode wants the findings
@@ -506,6 +508,8 @@ class PlumbOverlay extends HTMLElement {
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.
     if (!site.declarations.length && rendered) {
+      // Blueprint's first pass does not wait for a trace: it says so, and the reader comes back for it.
+      if (!computed) return { status: 'ready', ...reading(location, site, edits), computed: true, text };
       // The server answers 'pending' while it is still reading the modules a class helper lives in; ask again.
       let traced = null;
       for (let attempt = 0; attempt < 12; attempt++) {

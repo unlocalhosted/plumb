@@ -27,6 +27,8 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
   readQueueMs?: number
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
+export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> };
+export type ManyResult = { value: unknown } | { error: string; usage: boolean };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
 export interface ClassesResult {
   revision: number; file: string; line: number; column: number;
@@ -390,6 +392,15 @@ export class Session extends EventEmitter {
   }
   /** Validate before reconciliation; untrusted source spellings cannot add disk snapshots. */
   async readQuery(method: string, args: unknown[]): Promise<string[] | undefined> {
+    if (method === 'many') {
+      const paths = new Set<string>();
+      for (const call of args[0] as ManyCall[]) {
+        const query = await this.readQuery(call.method, call.args);
+        if (query === undefined) return undefined;
+        for (const path of query) paths.add(path);
+      }
+      return [...paths];
+    }
     if (method === 'resolveSource') {
       const expected = args[3] as { servedRoot?: string; stamp?: boolean } | undefined;
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
@@ -402,6 +413,22 @@ export class Session extends EventEmitter {
       return [file];
     }
     return undefined;
+  }
+  /** Several reads in one cohort: the overlay sends a view's worth of resolve and site questions as one request, so
+   * the lock, the reconciliation and the round trip are paid once, not once per element. Each answer stands alone:
+   * a refused question does not refuse the others. */
+  many(calls: ManyCall[]): Promise<ManyResult[]> {
+    return this.serializeRead(async () => {
+      if (!this.batchRead) await this.reconcile(await this.readQuery('many', [calls]));
+      const wasBatch = this.batchRead;
+      this.batchRead = true;
+      try {
+        return await Promise.all(calls.map(async call => {
+          try { return { value: await (this[call.method] as (...args: unknown[]) => Promise<unknown>)(...call.args) }; }
+          catch (error) { return { error: errorMessage(error), usage: error instanceof UsageError }; }
+        }));
+      } finally { this.batchRead = wasBatch; }
+    });
   }
   resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; owner?: boolean; servedRoot?: string; stamp?: boolean } = {}): Promise<SourceResolution> {
     return this.serializeRead(async () => {

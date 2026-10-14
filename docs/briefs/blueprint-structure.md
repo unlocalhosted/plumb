@@ -44,6 +44,28 @@ Rules that hold across layers: no words at rest except token names on dimensions
 only colour that asks for attention; nothing is written on the host but the attributes the mode already uses, and
 everything is removed on leave. Hover never reveals words: the drawing is the drawing.
 
+## Performance, measured on algorecall's /problems (15,929 elements, 396 svgs, 213 drifts in view)
+
+Every phase of the mode carries a `performance.measure` (`plumb:enter-ink`, `plumb:sweep-cols`, `plumb:marks`
+and its read, write, occluder and order parts, `plumb:greek`, `plumb:greek-measure`, `plumb:reader-scan`,
+`plumb:reader-schedule`, `plumb:ink-more`), so the numbers below can be read back from any page.
+
+| what | before | after | why |
+| --- | --- | --- | --- |
+| frozen frame on entry | 1.7 s | ~0.2 s | the host stylesheet changed `color` through `body *`; `color` inherits, so one change on the root box restyled all 16k elements, three times. The ink is now two attributes per element: paint properties that do not inherit on every element in or near view, text properties only on elements that hold words. Inking 10 elements cost 741 ms before and 26 ms after |
+| the sweep | a style write on `<html>` per frame, each a full restyle | one clip-path transition on the field's pseudo-element, column delays written once | a custom property changed on `<html>` restyles every descendant |
+| sweep column pass | 774 ms | 0 | measured before the ink goes on, with the entry's own read pass |
+| greek measure | 746 ms in the frame | 5 ms, in idle time | a frame never measures text; a MutationObserver asks for a re-measure in `requestIdleCallback` |
+| marks frame | reads and writes interleaved | every read, then every write | one layout per frame however many marks |
+| hold D | ~700 ms each way | ~50 ms | the peek rules reach `[data-plumb-ink]` elements, never `*` |
+| svg internals | read, marked, badged | skipped; the `<svg>` is a hatched plate | an icon's paths are drawing, not decisions |
+| server reads | 261 requests, one per element, six in flight, each paying the engine's per-cohort reconciliation | a handful of batched POSTs (`batch`: resolve and site calls answered in one read cohort by `Session.many`) | in one cohort 40 site calls cost 18 ms; one at a time 21 ms each |
+| readings | started as visibility arrived, one at a time | in waves, after visibility settles, classes built in code traced in a second pass | a wave is one batch of resolves and one of sites; a 3 s trace no longer holds the count |
+| entry to count, algorecall | 8.4 s | 4.0 s | the rest is per-element owner-chain resolves, which are sequential by nature, and ~7 ms per `site` on a report this size |
+| entry to count, docs site (490 elements) | 1.5 s, 131 requests | 0.9 s, 4 requests, no long frame | |
+
+Still open: the engine's per-`site` cost on a very large report (~7 ms, from scoping the report by file each call); a client-side cache of readings across reloads; a lighter sweep above a threshold of elements.
+
 ## Reader
 
 Leaving blueprint cleared the reader's items but kept its element-to-id map, so the next entry saw every element as

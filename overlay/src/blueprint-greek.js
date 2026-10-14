@@ -7,13 +7,13 @@
  *  bars      one rect per line box of every text node in view, as the browser lays it out: the bar is the line's
  *            width, about half its font size tall, centred on the line
  *  weight    a heading's bar is solid white, body text half white, small text fainter: hierarchy without reading
- *  measure   text is measured once per change of the page (a MutationObserver) and at most every 1.5s otherwise, in
- *            document space; frames read it back through the scroll position
+ *  measure   text is measured in idle time, once per change of the page (a MutationObserver), in document space;
+ *            frames read it back through the scroll position and never measure themselves, so a frame after a
+ *            style change does not pay for recomputing the whole page
  *  footprint none on the host: the bars live in the overlay's shadow root
  * ───────────────────────────────────────────────────────── */
 
 const CAP = 4000;
-const STALE = 1500;
 const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'PLUMB-OVERLAY', 'TEXTAREA', 'OPTION']);
 
 export const GREEK_CSS = `
@@ -24,7 +24,7 @@ export const GREEK_CSS = `
 const NS = 'http://www.w3.org/2000/svg';
 
 export class Greek {
-  #svg; #lines = null; #at = 0; #raf = 0; #mo = null; #running = false; #markup = '';
+  #svg; #lines = null; #raf = 0; #idle = 0; #mo = null; #running = false; #markup = '';
 
   constructor(layer) {
     this.#svg = document.createElementNS(NS, 'svg');
@@ -38,9 +38,8 @@ export class Greek {
   start() {
     if (this.#running) return;
     this.#running = true;
-    this.#mo = new MutationObserver(() => { this.#lines = null; this.invalidate(); });
-    // inline style changes (the chooser's previews) are frequent and caught by the staleness re-measure instead
-    this.#mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden'] });
+    this.#mo = new MutationObserver(() => this.#remeasure());
+    this.#mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
     addEventListener('scroll', this.invalidate, { passive: true, capture: true });
     addEventListener('resize', this.#resized);
     this.invalidate();
@@ -54,6 +53,7 @@ export class Greek {
     removeEventListener('resize', this.#resized);
     cancelAnimationFrame(this.#raf);
     this.#raf = 0;
+    if (this.#idle) (globalThis.cancelIdleCallback ?? clearTimeout)(this.#idle), (this.#idle = 0);
     this.#lines = null;
     this.#svg.innerHTML = '';
     this.#markup = '';
@@ -69,12 +69,24 @@ export class Greek {
     this.#raf = requestAnimationFrame(() => { this.#raf = 0; this.#render(); });
   };
 
-  #resized = () => { this.#lines = null; this.invalidate(); };
+  #resized = () => this.#remeasure();
+
+  // Measuring happens when the browser is idle, after it has recomputed whatever changed; a frame only paints.
+  #remeasure() {
+    this.#lines = null;
+    if (this.#idle || !this.#running) return;
+    const idle = globalThis.requestIdleCallback ?? ((cb) => setTimeout(cb, 32));
+    this.#idle = idle(() => { this.#idle = 0; if (!this.#running) return; this.#lines = this.#measure(); this.invalidate(); }, { timeout: 400 });
+  }
 
   #measure() {
+    const t0 = performance.now();
+    try { return this.#lines_(); } finally { performance.measure('plumb:greek-measure', { start: t0 }); }
+  }
+  #lines_() {
     const lines = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-      acceptNode: (n) => n.textContent.trim() && n.parentElement && !SKIP.has(n.parentElement.tagName) && !n.parentElement.closest('plumb-overlay') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+      acceptNode: (n) => n.textContent.trim() && n.parentElement && !SKIP.has(n.parentElement.tagName) && !n.parentElement.ownerSVGElement && !n.parentElement.closest('plumb-overlay') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
     });
     const range = document.createRange();
     for (let n = walker.nextNode(); n && lines.length < CAP; n = walker.nextNode()) {
@@ -93,7 +105,11 @@ export class Greek {
 
   #render() {
     if (!this.#running) return;
-    if (!this.#lines || performance.now() - this.#at > STALE) (this.#lines = this.#measure()), (this.#at = performance.now());
+    const t0 = performance.now();
+    try { this.#paint(); } finally { performance.measure('plumb:greek', { start: t0 }); }
+  }
+  #paint() {
+    if (!this.#lines) return this.#remeasure();
     const w = innerWidth, h = innerHeight, sx = scrollX, sy = scrollY;
     let markup = '';
     for (const line of this.#lines) {
