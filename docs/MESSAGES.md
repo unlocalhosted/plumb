@@ -80,6 +80,7 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 
 **provenance/{family}** (value on no token)
 - Title: `` {property} {amount} isn't on your {scale} `` for the scale families (spacing, radius, type), `` {property} {amount} isn't one of your {tokens} `` for the rest (motion tokens, shadow tokens, z-index layers), and `` `{value}` is a raw colour, not one of your colour tokens `` for colour. The property is the CSS property in plain form (`font-weight 500`, `z-index 2`, `transition .15s`); spacing amounts with units may drop it when the finding spans several properties (`10px isn't on your spacing scale`).
+  A value that is a constant times a runtime number (`k * 13`, `` `${k * STAGGER}ms` ``) is judged by its step: `` {property} steps by {amount} × {multiplier}, and {amount} isn't on your {scale} ``, because "The step is the decision; the multiplier is runtime. A multiple of a token stays on the scale." Its fix writes the token as the step: `` `calc(var(--spacing-s3) * ${k})` ``.
 - Because, by family:
   - spacing: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
   - radius: Off-scale corners make surfaces look unrelated and can't be changed from the theme.

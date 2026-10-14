@@ -42,7 +42,10 @@ export function replacement(finding: Finding, site: Site, decision: Decision, re
   if (property.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`) !== d.prop) return undefined;
   const value = use.css.slice(d.prop.length + 2);
   if (!value.startsWith('var(') && !numericUse(decision)) return undefined;
-  const to = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${JSON.stringify(value)}` : use.css;
+  // A stepped value keeps its runtime multiplier: the token becomes the step.
+  const written = d.dynamic?.kind === 'step' ? (value.startsWith('var(') ? `\`calc(${value} * \${${d.dynamic.by}})\`` : undefined) : JSON.stringify(value);
+  if (written === undefined) return undefined;
+  const to = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${written}` : use.css;
   return { from: site.text, to, token: decision.name };
 }
 

@@ -151,7 +151,7 @@ test('stylesheet and inline feature slice through real CLI and explain', async t
   const constants = run(directory, ['explain', 'src/App.tsx']).report.declarations;
   assert.ok(constants.some(declaration => declaration.origin === 'inline' && declaration.prop === 'gap' && declaration.value === '11px'));
   assert.ok(constants.some(declaration => declaration.origin === 'inline' && declaration.prop === 'line-height' && declaration.value === '2'));
-  assert.ok(constants.some(declaration => declaration.opaque === 'spread' && declaration.site.line === 22), 'second-hop alias remains opaque');
+  assert.ok(constants.some(declaration => declaration.site.line === 22 && declaration.prop === 'gap' && declaration.value === '11px'), 'second-hop alias is read through the first');
   assert.ok(constants.some(declaration => declaration.opaque === 'spread' && declaration.site.line === 23), 'parameter shadows imported const');
   assert.ok(constants.some(declaration => declaration.prop === 'gap' && declaration.value === '17px' && declaration.owner.name === 'button'), 'JSX inside object-valued props is scanned');
   assert.ok(constants.some(declaration => declaration.prop === 'line-height' && declaration.value === '3' && declaration.owner.name === 'span'), 'direct JSX-valued prop is scanned');

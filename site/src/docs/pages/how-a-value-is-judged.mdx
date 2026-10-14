@@ -10,12 +10,12 @@ Plumber reads your source, not the page in a browser. By default that's the JS, 
 
 - **Classes** in `className` and `class`, including both sides of a condition, arrays and object keys, and calls to `cn`, `clsx`, `cx`, `classNames`, `twMerge`, `twJoin`, `cva` and `tv`. Classes kept in a variable, an import or a function's return value are followed too.
 - **Stylesheets**: your Tailwind entry, everything it imports, CSS imported from your components, and CSS files in your sources.
-- **Inline styles** written as `style={{ … }}` with literal values, or a constant object one step away.
+- **Inline styles** written as `style={{ … }}`. Values are read, not just matched: constants fold, even imported ones; a ternary, a lookup table or a prop typed `'sm' | 'lg'` is read as every outcome; a token beside a runtime number, like `` `calc(var(--spacing-s3) * ${k})` ``, is judged by the token; and `k * STAGGER` is judged by its step, because the step is the decision and `k` is not.
 
 Each value keeps the exact line and column it was written at, so a finding points at the code you wrote.
 
 <Callout kind="note" title="What can't be read">
-A class assembled at runtime, like `` `gap-${size}` ``, is reported as `existence/dynamic-class`, since there's no way to know which class reaches the page. An inline value that isn't a literal is noted as `provenance/opaque-inline`, at info level.
+A class assembled at runtime, like `` `gap-${size}` ``, is reported as `existence/dynamic-class`, since there's no way to know which class reaches the page. An inline value that source genuinely can't decide, such as an untyped prop or a function's result with no token beside it, is noted as `provenance/opaque-inline`, at info level. CSS variables are never the problem: `var(--token)` is followed wherever it appears.
 </Callout>
 
 ## Compile

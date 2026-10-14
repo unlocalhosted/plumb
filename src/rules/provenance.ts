@@ -260,7 +260,10 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
           continue;
         }
-        rule = `provenance/${family}`; judgedValue = value ?? part; title = family === 'color' ? `\`${judgedValue}\` is a raw colour, not one of your colour tokens` : `${declaration.prop} ${judgedValue} ${['spacing', 'radius', 'type'].includes(family) ? "isn't on your" : "isn't one of your"} ${scales[family]}`;
+        rule = `provenance/${family}`; judgedValue = value ?? part;
+        const fit = ['spacing', 'radius', 'type'].includes(family) ? "isn't on your" : "isn't one of your";
+        if (declaration.dynamic?.kind === 'step') { title = `${declaration.prop} steps by ${judgedValue} × ${declaration.dynamic.by}, and ${judgedValue} ${fit} ${scales[family]}`; because = 'The step is the decision; the multiplier is runtime. A multiple of a token stays on the scale.'; }
+        else title = family === 'color' ? `\`${judgedValue}\` is a raw colour, not one of your colour tokens` : `${declaration.prop} ${judgedValue} ${fit} ${scales[family]}`;
         nearest = closest(judgedValue, declaration.prop);
         break;
       }
@@ -273,7 +276,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     // Group syntaxes by their static authored amount, while retaining all sites
     // and the original compiler value. Decision/variable changes still rerun judgement.
     const amount = judgedValue || resolved || declaration.value.replace(/\s+/g, ' ').trim();
-    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
+    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(declaration.dynamic?.kind === 'step' ? ['step', declaration.dynamic.by] : []), ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
     const fixProp = definition?.prop ?? declaration.prop;
     const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.allows(d) && suggestible(d) &&
       (!fixProp.startsWith('--') || [d.name, ...references(useFor(d, fixProp, record.theme).css)].every(name => name !== fixProp && !definitions.themeSources.sources(name).has(fixProp)))), fixProp);
@@ -333,7 +336,7 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
       if (properties.size && alternatives.length && rule !== 'provenance/opaque-inline') finding.fix += '; ' + choiceText(alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })));
       properties.add(fixProp);
     }
-    if (rule === 'provenance/spacing' && properties.size > 1 && pixels(amount) !== undefined) finding.title = `${amount} isn't on your spacing scale`;
+    if (rule === 'provenance/spacing' && properties.size > 1 && pixels(amount) !== undefined && declaration.dynamic?.kind !== 'step') finding.title = `${amount} isn't on your spacing scale`;
     const location = JSON.stringify([declaration.site.file, declaration.site.line, declaration.site.column, declaration.site.text]);
     if (!locations.get(key)!.has(location)) { finding.sites.push(declaration.site); locations.get(key)!.add(location); }
   }

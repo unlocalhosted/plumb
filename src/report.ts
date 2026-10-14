@@ -49,6 +49,8 @@ export interface Declaration {
   authoredCss?: string;
   package?: string;
   opaque?: 'dynamic-value' | 'dynamic-class' | 'spread';
+  /** A runtime value read symbolically: a token scaled or offset at runtime, or a constant step times a runtime number. */
+  dynamic?: { kind: 'reference' | 'step'; by: string };
 }
 
 export interface Decision {
