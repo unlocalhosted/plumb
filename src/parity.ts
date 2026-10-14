@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { readDtcg } from './decisions/dtcg.js';
 import { pixels, resolveValue } from './decisions/resolve.js';
 import { UsageError } from './errors.js';
-import { makeFinding } from './messages.js';
+import { makeFinding, count } from './messages.js';
 import { colorDistance, oklab } from './rules/families.js';
 import { tool } from './report.js';
 import type { Decision, Finding, Report, Site } from './report.js';
@@ -118,5 +118,5 @@ export async function parity(report: Report, tokenPath: string): Promise<ParityR
 
 export function formatParity(report: ParityReport): string {
   return report.findings.map(finding => `${finding.title}\n  ${finding.because}\n  ${finding.action}\n  ${finding.sites[0]!.file}:${finding.sites[0]!.line}:1\n`).join('\n') +
-    `${report.findings.length} token differences. ${report.compared} tokens compared.\n`;
+    `${count(report.findings.length, 'token difference')}. ${count(report.compared, 'token')} compared.\n`;
 }

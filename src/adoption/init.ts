@@ -7,6 +7,7 @@ import { loadConfig } from '../config.js';
 import type { PlumbConfig, DecisionSource } from '../config.js';
 import { check } from '../index.js';
 import { UsageError } from '../errors.js';
+import { count } from '../messages.js';
 import { currentDecisions, decisionEntry, findingGroups } from '../ledger/keys.js';
 import { author } from '../ledger/git.js';
 import { entryCount, readLedger, writeLedger } from '../ledger/store.js';
@@ -127,6 +128,6 @@ export async function initProject(root: string, options: { config?: string; forc
     try { await writeLedger(root, [...accepted.values()]); }
     catch (error) { if (loaded.path) await writeFile(destination, before); else await rm(destination); throw error; }
     await rm(statePath(root, '.baseline-pending'), { force: true });
-    return { message: `Wrote ${pathFrom(root, destination)} with inferred token sources.\nComponents: ${components.length} found${from ? ` from ${from}` : ''}.\nBaseline: ${debt.length} debt entries (${debt.reduce((sum, entry) => sum + entryCount(entry), 0)} locations) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${currentDecisions(adopted).length} tokens as inferred.\nNext steps: run plumber install --ci.`, entries: [...accepted.values()], moves: [] };
+    return { message: `Wrote ${pathFrom(root, destination)} with inferred token sources.\nComponents: ${components.length} found${from ? ` from ${from}` : ''}.\nBaseline: ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'location')}) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(currentDecisions(adopted).length, 'token')} as inferred.\nNext steps: run plumber install --ci.`, entries: [...accepted.values()], moves: [] };
   } finally { await rm(scratch, { recursive: true, force: true }); }
 }

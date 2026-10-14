@@ -10,6 +10,7 @@ import { readLedger } from '../ledger/store.js';
 import { check } from '../index.js';
 import { errorMessage } from '../errors.js';
 import { tailwindFix } from '../setup-messages.js';
+import { count } from '../messages.js';
 
 async function size(path: string): Promise<number> {
   let total = 0;
@@ -52,14 +53,14 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   try {
     const ledger = await readLedger(root);
     if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', 'Run plumber init.');
-    else if (!valid) line('Ledger', false, `${ledger.entries.length} entries parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
+    else if (!valid) line('Ledger', false, `${count(ledger.entries.length, 'entry', 'entries')} parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
     else {
       const report = await check({ root, ...(configPath === undefined ? {} : { config: configPath }) });
       const problems = report.findings.filter(finding => /^(ledger|decisions)\//.test(finding.rule));
       const stale = problems.some(finding => /stale|vanished/.test(finding.rule));
       const unaccepted = problems.some(finding => finding.rule === 'decisions/unaccepted');
       const noWhy = problems.some(finding => finding.rule === 'ledger/no-why');
-      line('Ledger', !problems.length, `${ledger.entries.length} entries, ${problems.length} issues`, problems.length ?
+      line('Ledger', !problems.length, `${count(ledger.entries.length, 'entry', 'entries')}, ${count(problems.length, 'issue')}`, problems.length ?
         [noWhy && 'Record exception reasons with plumber accept <key> --why "reason".', unaccepted && 'Review tokens, then run plumber accept-decisions --why "reason".', stale && 'Run plumber ledger --ratchet --prune after reviewing removals.'].filter(Boolean).join(' ') : 'No change needed.');
     }
   } catch (error) { line('Ledger', false, errorMessage(error), 'Repair .plumber/ledger.jsonl, then rerun plumber doctor.'); }
@@ -69,7 +70,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     let parent = cache;
     while (!existsSync(parent) && dirname(parent) !== parent) parent = dirname(parent);
     await access(parent, constants.W_OK);
-    line('Cache', true, `${cache}, ${bytes} bytes${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
+    line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${errorMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
   return { text: lines.join('\n') + '\n', ok };
 }

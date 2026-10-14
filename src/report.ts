@@ -1,5 +1,6 @@
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { count, plural } from './messages.js';
 
 export const tool = {
   name: 'react-plumber' as const,
@@ -157,7 +158,6 @@ function brief(why: string, decision?: Decision): string {
   return text.length > WHY_WIDTH ? `${text.slice(0, WHY_WIDTH - 1).trimEnd()}…` : text;
 }
 
-const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 const share = (part: number, total: number) => total ? ` (${Math.round(part / total * 100)}%)` : '';
 
 function formatFinding(finding: Finding, path: (file: string) => string, verbose: boolean): string {
@@ -205,6 +205,8 @@ export function formatText(report: Report, verbose = false): string {
   const diagnostics = report.findings.filter(finding => finding.rule === 'config/unreadable');
   const choices = report.findings.filter(finding => finding.rule === 'config/tailwind-entry');
   const unused = report.findings.filter(finding => finding.rule.startsWith('dead/'));
+  const unusedTokens = unused.reduce((n, f) => n + f.sites.length, 0);
+  const runtimeStyles = runtime.reduce((n, f) => n + f.sites.length, 0);
   // With a ledger, the daily view is what is new; recorded debt and exceptions are one summary line (--verbose lists them).
   const known = (finding: Finding) => finding.sites.length > 0 && finding.sites.every(site => site.ledger !== undefined && site.ledger.status !== 'new');
   const recorded = report.findings.filter(known);
@@ -221,12 +223,12 @@ export function formatText(report: Report, verbose = false): string {
   const summary = [
     ...(diagnostics.length && !verbose ? [`unreadable  ${count(diagnostics.length, 'item')} skipped (--verbose lists parser diagnostics)`] : []),
     ...(!verbose ? choices.map(finding => `entry       ${finding.title}; ${finding.because}`) : []),
-    `classes     ${count(existence.total, 'class', 'classes')} read, ${existence.dead} do nothing${existence.deadVars ? `, ${existence.deadVars} undefined variables` : ''}`,
-    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} use your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} don't`),
-    `inline      ${inline.literalSites} of ${inline.sites} style attributes have literal values`,
-    ...(unused.length && !verbose ? [`unused      ${unused.map(f => `${f.sites.length.toLocaleString('en-US')} ${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family}`).join(', ')} tokens are never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
-    ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} ${recorded.length === 1 ? 'is' : 'are'} recorded in the ledger (--verbose lists them)`] : []),
-    ...(runtime.length && !verbose ? [`runtime     ${count(runtime.reduce((n, f) => n + f.sites.length, 0), 'style')} in ${count(runtime.length, 'file')} are computed at runtime and can't be checked (--verbose lists them)`] : []),
+    `classes     ${count(existence.total, 'class', 'classes')} read, ${existence.dead} ${plural(existence.dead, 'does', 'do')} nothing${existence.deadVars ? `, ${count(existence.deadVars, 'undefined variable')}` : ''}`,
+    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} ${plural(c.fromDecisions, 'uses', 'use')} your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} ${plural(c.findings, "doesn't", "don't")}`),
+    `inline      ${inline.literalSites} of ${count(inline.sites, 'style attribute')} ${plural(inline.literalSites, 'has', 'have')} literal values`,
+    ...(unused.length && !verbose ? [`unused      ${unused.map(f => count(f.sites.length, `${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family} token`)).join(', ')} ${plural(unusedTokens, 'is', 'are')} never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
+    ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} ${plural(recorded.length, 'is', 'are')} recorded in the ledger (--verbose lists ${plural(recorded.length, 'it', 'them')})`] : []),
+    ...(runtime.length && !verbose ? [`runtime     ${count(runtimeStyles, 'style')} in ${count(runtime.length, 'file')} ${plural(runtimeStyles, 'is', 'are')} computed at runtime and can't be checked (--verbose lists ${plural(runtimeStyles, 'it', 'them')})`] : []),
   ];
   const kinds: [string, (rule: string) => boolean][] = [
     ['values off your tokens', rule => rule.startsWith('provenance/') && rule !== 'provenance/opaque-inline'],
@@ -245,9 +247,9 @@ export function formatText(report: Report, verbose = false): string {
   const details = verbose ? [
     `declarations ${Object.entries(report.coverage.declarations).map(([origin, n]) => `${n} ${origin}`).join(', ')}`,
     `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, n]) => `${n} ${reach}`).join(', ')}`,
-    `inline ${inline.opaque} opaque declarations (${inline.fullyOpaque} fully opaque)  classes ${report.classes.opaque} opaque`,
-    `modules ${report.moduleGraph.followed} followed outside source globs, ${report.moduleGraph.cssFiles} CSS files reached  ${report.moduleGraph.totalMs.toFixed(1)}ms  cache ${report.moduleGraph.cacheHits} hits, ${report.moduleGraph.cacheMisses} misses`,
-    `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${report.timing.cacheHits} hits, ${report.timing.cacheMisses} misses`,
+    `inline ${count(inline.opaque, 'opaque declaration')} (${inline.fullyOpaque} fully opaque)  classes ${report.classes.opaque} opaque`,
+    `modules ${report.moduleGraph.followed} followed outside source globs, ${count(report.moduleGraph.cssFiles, 'CSS file')} reached  ${report.moduleGraph.totalMs.toFixed(1)}ms  cache ${count(report.moduleGraph.cacheHits, 'hit')}, ${count(report.moduleGraph.cacheMisses, 'miss', 'misses')}`,
+    `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${count(report.timing.cacheHits, 'hit')}, ${count(report.timing.cacheMisses, 'miss', 'misses')}`,
     ...report.notes.map(note => `note: ${note}`),
   ].join('\n') + '\n' : '';
   return `React Plumber ${report.tool.version}  ${report.root}  ${tailwind}\n` +

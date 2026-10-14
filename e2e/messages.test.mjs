@@ -19,6 +19,14 @@ function cli(directory, args = [], status) {
   return JSON.parse(result.stdout);
 }
 const checks = report => report.findings.filter(f => !f.rule.startsWith('dead/'));
+function text(directory, args = [], status) {
+  const result = spawnSync(process.execPath, [join(root, 'dist/cli.js'), '--root', directory, ...args], { encoding: 'utf8', timeout: 10000 });
+  assert.ifError(result.error);
+  assert.equal(result.stderr, '');
+  if (status !== undefined) assert.equal(result.status, status, result.stdout);
+  else assert.ok([0, 1].includes(result.status), result.stdout);
+  return result.stdout;
+}
 const at = (report, text) => checks(report).filter(f => f.sites.some(s => s.text.includes(text)));
 
 test('ring width never becomes an empty colour and static framework keywords are not authored values', async t => {
@@ -225,7 +233,41 @@ test('dead-token titles say in your source across every family without exposing 
   const dead = cli(dir).findings.filter(f => f.rule.startsWith('dead/'));
   assert.deepEqual(dead.map(f => f.family).sort(), ['color', 'elevation', 'motion', 'opacity', 'radius', 'size', 'spacing', 'type', 'z']);
   const names = { color: 'colour', elevation: 'shadow', z: 'z-index' };
-  for (const f of dead) assert.equal(f.title, `${f.decisions.length} ${names[f.family] ?? f.family} tokens are never used in your source`);
+  for (const f of dead) assert.equal(f.title, `${f.decisions.length} ${names[f.family] ?? f.family} ${f.decisions.length === 1 ? 'token is' : 'tokens are'} never used in your source`);
+});
+
+test('count messages use zero, singular and plural grammar in actual CLI checks and ledger commands', async t => {
+  for (const n of [0, 1, 2]) {
+    const dir = await fixture(t);
+    await writeFile(join(dir, 'src/styles.css'), `@import "tailwindcss"; @theme { --*: initial; --spacing: 1px;
+      ${Array.from({ length: n }, (_, i) => `--spacing-unused-${i}: ${8 + i}px;`).join('\n')}
+    } ${Array.from({ length: n }, (_, i) => `.colour-${i} { color: #abcdef; }`).join('\n')}`);
+    await writeFile(join(dir, 'src/App.tsx'), `import './styles.css'; export const App = ({n}) => <>${Array.from({ length: n }, (_, i) => `<div className="missing-${i}" style={{ padding: n, opacity: .5 }} />`).join('')}</>;`);
+    const report = cli(dir), output = text(dir);
+    const gaps = report.findings.filter(f => f.rule === 'config/no-tokens');
+    if (n) {
+      assert.equal(gaps.find(f => f.family === 'color').title, `Your theme has no colour tokens, so ${n} colour ${n === 1 ? 'value' : 'values'} can't be checked`);
+      assert.match(output, new RegExp(`unused\\s+${n} spacing ${n === 1 ? 'token is' : 'tokens are'} never used`));
+      assert.match(output, new RegExp(`runtime\\s+${n} ${n === 1 ? 'style' : 'styles'} in 1 file ${n === 1 ? 'is' : 'are'} computed`));
+      assert.match(output, new RegExp(`classes\\s+${n} ${n === 1 ? 'class' : 'classes'} read, ${n} ${n === 1 ? 'does' : 'do'} nothing`));
+    } else {
+      assert.equal(gaps.length, 0);
+      assert.match(output, /0 classes read, 0 do nothing/);
+    }
+    assert.match(output, new RegExp(`${n} of ${n} style ${n === 1 ? 'attribute has' : 'attributes have'} literal values`));
+    assert.match(text(dir, ['accept-decisions'], 0), new RegExp(`Accepted ${n} current ${n === 1 ? 'decision' : 'decisions'}\\.`));
+    const baseline = text(dir, ['baseline', '--force'], 0);
+    assert.doesNotMatch(baseline, /\b1 (?:debt entries|sites)\b/);
+    if (n) {
+      assert.match(text(dir, ['accept', '--rule', 'existence/dead-class', '--site', 'src/App.tsx:1', '--why', 'Reviewed missing class'], 0), new RegExp(`Accepted ${n} exception ${n === 1 ? 'entry' : 'entries'}:`));
+      const github = text(dir, ['check', '--format', 'github']);
+      assert.ok(github.includes(`${n} ${n === 1 ? 'exception.' : 'exceptions.'}`), github);
+    }
+    assert.doesNotMatch(text(dir, ['ledger']), /\b1 entries\b/);
+    assert.doesNotMatch(text(dir, ['doctor']), /\b1 (?:entries|issues|bytes)\b/);
+    await writeFile(join(dir, 'export.tokens.json'), JSON.stringify({ spacing: { $type: 'dimension', ...Object.fromEntries(Array.from({ length: n }, (_, i) => [`unused-${i}`, { $value: '24px' }])) } }));
+    assert.match(text(dir, ['parity', 'export.tokens.json']), new RegExp(`${n} token ${n === 1 ? 'difference' : 'differences'}\\. ${n} ${n === 1 ? 'token' : 'tokens'} compared\\.`));
+  }
 });
 
 test('suggestion policies retain exact names and glob semantics across cold, warm and changed config checks', async t => {

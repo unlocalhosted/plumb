@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { migrationNotice, statePath } from './paths.js';
 import { CheckCache } from './check-cache.js';
+import { count } from './messages.js';
 import { createReadStream } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { serve, serveStdio } from './session/server.js';
@@ -136,7 +137,7 @@ async function main(): Promise<void> {
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
     process.stdout.write(args.values.json ? `${JSON.stringify(loaded.presets ?? [], null, 2)}\n` :
-      loaded.presets?.length ? loaded.presets.map(preset => `${preset.name}  ${preset.decisions} tokens (${preset.exported} published), ${preset.components.contracts.length} contracts, ${preset.imitation.length} fingerprints, ${preset.habits.length} habits\n` +
+      loaded.presets?.length ? loaded.presets.map(preset => `${preset.name}  ${count(preset.decisions, 'token')} (${preset.exported} published), ${count(preset.components.contracts.length, 'contract')}, ${count(preset.imitation.length, 'fingerprint')}, ${count(preset.habits.length, 'habit')}\n` +
         `  source: ${preset.source}\n  components: ${preset.components.from.join(', ') || 'none'}\n` +
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
     return;

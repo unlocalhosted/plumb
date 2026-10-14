@@ -91,7 +91,7 @@ test('GitHub annotation properties and messages escape authored filenames and re
   const errors = commands.filter(line => line.startsWith('::error'));
   assert.equal(errors.length, 1); assert.match(errors[0], /file=src\/odd%2C%25%3Aname.tsx/);
   assert.match(errors[0], /50%25/); assert.doesNotMatch(output, /\n::error file=spoof/);
-  assert.equal(commands.filter(line => line.startsWith('::notice') && line.includes('spacing tokens are never used in')).length, 1);
+  assert.equal(commands.filter(line => line.startsWith('::notice') && line.includes('spacing token is never used in')).length, 1);
 });
 
 test('summary fixed count and positive coverage delta come from actual base declarations', async t => {
@@ -234,7 +234,7 @@ test('Action runs real CLI against fixture PR, creates then updates sticky comme
   let result = await subprocess(join(root, 'scripts/action/run.mjs'), env);
   assert.equal(result.status, 1, result.stderr); assert.match(result.stderr, /Approval required from @designer/);
   assert.ok(requests.some(r => r.method === 'POST' && r.url.endsWith('/issues/42/comments')));
-  assert.match(comments.find(c => c.id === 10).body, /1 growth lines/); assert.match(await readFile(env.GITHUB_STEP_SUMMARY, 'utf8'), /vs base/);
+  assert.match(comments.find(c => c.id === 10).body, /1 growth line\./); assert.match(await readFile(env.GITHUB_STEP_SUMMARY, 'utf8'), /vs base/);
   reviews = recorded.reviews;
   result = await subprocess(join(root, 'scripts/action/run.mjs'), env);
   assert.equal(result.status, 0, result.stderr); assert.ok(requests.some(r => r.method === 'PATCH' && r.url.endsWith('/issues/comments/10')));

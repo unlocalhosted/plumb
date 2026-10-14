@@ -1,4 +1,4 @@
-import { makeFinding } from '../messages.js';
+import { makeFinding, count, plural } from '../messages.js';
 import { performance } from 'node:perf_hooks';
 import { profileDuration } from '../profile.js';
 import type { Declaration, Finding, Report, Site } from '../report.js';
@@ -9,7 +9,7 @@ import type { LedgerEntry, LedgerOptions } from './types.js';
 
 export function diagnostic(rule: string, severity: Finding['severity'], site: Site, why: string, fix: string, key = `${rule}:${site.text}`): Finding {
   const declaration: Declaration = { prop: 'ledger', value: site.text, refs: [], when: [], site, owner: { kind: 'element', name: 'ledger' }, origin: 'stylesheet' };
-  const title = rule === 'ledger/no-why' ? `Exception \`${key}\` has no reason` : rule === 'decisions/unaccepted' ? `\`${site.text.split(':')[0]}\` is new in your theme and not yet accepted` : rule === 'ledger/grew' ? 'This change adds 1 ledger entries' : why.replace(/decision/g, 'token');
+  const title = rule === 'ledger/no-why' ? `Exception \`${key}\` has no reason` : rule === 'decisions/unaccepted' ? `\`${site.text.split(':')[0]}\` is new in your theme and not yet accepted` : rule === 'ledger/grew' ? 'This change adds 1 ledger entry' : why.replace(/decision/g, 'token');
   const because = rule === 'ledger/no-why' ? 'Every exception needs a reason a reviewer can check.' : rule === 'decisions/unaccepted' ? 'New tokens change what everyone may use.' : rule === 'ledger/grew' ? 'New exceptions and tokens are design decisions and need review.' : rule === 'decisions/vanished' ? 'Accepted tokens should stay in sync with the theme.' : 'The ledger should record only remaining exceptions and debt.';
   const action = rule === 'ledger/no-why' ? `plumber accept ${key} --why "…"` : rule === 'decisions/unaccepted' ? 'plumber accept-decisions --why "…"' : fix;
   return makeFinding({ key, rule, severity, family: rule.startsWith('decisions/') ? 'decisions' : 'ledger', sites: [site], declaration, decisions: [], title, because, action });
@@ -36,7 +36,7 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
       const current = groups.get(entry.key)?.sites.length ?? 0;
       if (current < entryCount(entry)) {
         summary.stale += entryCount(entry) - current;
-        diagnostics.push(diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${entryCount(entry)} sites; ${current} remain.`, 'Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key));
+        diagnostics.push(diagnostic('ledger/stale', 'warn', siteFor(entry), `Debt ${entry.key} records ${count(entryCount(entry), 'site')}; ${current} ${plural(current, 'remains', 'remain')}.`, 'Run plumber ledger --ratchet to shrink debt, or --prune to drop stale entries.', entry.key));
       }
     }
   }
@@ -123,9 +123,9 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
       diagnostics.push(diagnostic('ledger/grew', 'error', { ...site, column: 1 }, 'Config grew in the working tree versus HEAD.', 'Do not grow config to pass an agent check; fix the sites or report NEEDS-DECISION.'));
     }
   }
-  for (const finding of diagnostics) if (finding.rule === 'ledger/grew') finding.title = `This change adds ${summary.growth} ledger entries`;
+  for (const finding of diagnostics) if (finding.rule === 'ledger/grew') finding.title = `This change adds ${count(summary.growth, 'ledger entry', 'ledger entries')}`;
   report.findings.push(...diagnostics);
-  summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${summary.exceptions} exception sites; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumber baseline to record current debt and accept the current decisions.';
+  summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${count(summary.exceptions, 'exception site')}; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumber baseline to record current debt and accept the current decisions.';
   report.ledger = summary;
   report.notes.push(summary.message);
   const elapsed = performance.now() - start;

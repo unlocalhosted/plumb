@@ -31,6 +31,8 @@ Readers know tokens, scales and Tailwind. They do not know React Plumber's inter
 
 Paths are relative to the project root, everywhere, including ownership sources. Amounts are shown as compiled (`10px`), with the authored form beside them (`gap-10`).
 
+Count-bearing messages use singular nouns and verbs for exactly one, and plural forms for zero or more than one. This applies to findings, summaries, ledger commands, setup, presets, parity and PR output: `1 colour value can't be checked`, `1 spacing token is never used`, `1 ledger entry`, `0 entries`, `2 entries`. Use the shared `count` and `plural` helpers in `src/messages.ts`; leave numeric table labels neutral.
+
 ## Unsupported setups
 
 - A CSS entry needs Tailwind, but it is missing: `Tailwind is not installed. Use Tailwind 4 in the project containing the CSS entry.`
@@ -119,7 +121,7 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 
 **No tokens in a family** (config gap, replaces per-value findings)
 - Rule: `config/no-tokens`, severity warn, one finding per family.
-- Title: `` Your theme has no {family} tokens, so {n} {property} values can't be checked ``
+- Title: `` Your theme has no {family} tokens, so {n} {property} value(s) can't be checked ``
 - Because: React Plumber judges values against the tokens your theme declares.
 - Action: Add {family} tokens to your theme, or point `decisions.{family}.from` in plumber.config.ts at where they live.
 

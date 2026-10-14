@@ -2,6 +2,7 @@ import { statePath } from '../paths.js';
 import { readFile, rm } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
+import { count } from '../messages.js';
 import { parseSync } from 'oxc-parser';
 import { namedAnchors } from '../collect/source.js';
 import { maskImports } from '../collect/stylesheets.js';
@@ -83,13 +84,13 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     const debt = [...current.values()].filter(entry => old.get(entry.key)?.kind !== 'exception');
     const growth = debt.filter(entry => old.get(entry.key)?.kind !== 'debt' || entryCount(entry) > entryCount(old.get(entry.key)!));
     const pending = await readFile(pendingPath, 'utf8').then(() => entries.every(entry => entry.kind === 'decision')).catch(error => { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; });
-    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${growth.length} keys); fix new findings or use plumber baseline --force after review.`);
+    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
     entries = [...entries.filter(entry => entry.kind !== 'debt'), ...debt.map(entry => ({ ...entry, ...(old.get(entry.key)?.kind === 'debt' ? old.get(entry.key)! : attribution), count: entry.count!, resolved: entry.resolved! }))];
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
-    message = `Baseline recorded ${debt.length} debt entries (${debt.reduce((sum, entry) => sum + entryCount(entry), 0)} sites).`;
+    message = `Baseline recorded ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'site')}).`;
   } else if (command === 'accept-decisions') {
     entries = acceptSet(report, entries, options.why);
-    message = `Accepted ${currentDecisions(report).length} current decisions.`;
+    message = `Accepted ${count(currentDecisions(report).length, 'current decision')}.`;
   } else if (command === 'accept') {
     if (!options.why?.trim()) throw new UsageError('plumber accept requires --why "…"; exceptions need a written reason.');
     if (options.key && (options.rule || options.site) || !options.key && !(options.rule && options.site)) throw new UsageError('Use plumber accept <key> or plumber accept --rule <rule> --site <file:line>.');
@@ -100,7 +101,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     entries = [...entries.filter(entry => !keys.has(entry.key)), ...selected.map(group => ({ ...group.entry, kind: 'exception' as const, ...attribution, why: options.why! }))];
     // An exception-only adoption still starts with a snapshot of current decisions.
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
-    message = `Accepted ${selected.length} exception entries: ${[...keys].join(', ')}.`;
+    message = `Accepted ${count(selected.length, 'exception entry', 'exception entries')}: ${[...keys].join(', ')}.`;
   } else if (command === 'ledger') {
     if (!ledger.exists) throw new UsageError('No ledger exists; run plumber baseline first.');
     if (options.rebase) {
@@ -134,7 +135,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
       return count ? [{ ...entry, count: Math.min(entryCount(entry), count) }] : [];
     });
     if (options.prune) entries = entries.filter(entry => entry.kind === 'decision' ? decisionKeys.has(entry.key) : current.has(entry.key));
-    message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${entries.length} entries.`;
+    message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${count(entries.length, 'entry', 'entries')}.`;
   } else throw new UsageError(`Unknown ledger command: ${command}.`);
   await writeLedger(report.root, entries);
   if (command === 'baseline') await rm(pendingPath, { force: true });

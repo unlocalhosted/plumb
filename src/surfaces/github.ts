@@ -1,3 +1,4 @@
+import { count } from '../messages.js';
 import type { Report } from '../report.js';
 import { newSites, pathFor } from './sites.js';
 import { touchesLine } from './changed-lines.js';
@@ -18,7 +19,7 @@ function siteCounts(report: Report): Map<string, number> {
 export function githubSummary(report: Report, base?: Report, scope?: LineScope): SummarySection[] {
   const now = siteCounts(report);
   const fixed = base ? [...siteCounts(base)].reduce((n, [key, count]) => n + Math.max(0, count - (now.get(key) ?? 0)), 0) : report.ledger?.stale ?? 0;
-  const sections: SummarySection[] = [{ title: 'React Plumber', lines: [`${report.ledger?.new ?? report.findings.reduce((n, f) => n + newSites(f).length, 0)} new, ${fixed} fixed, ${report.ledger?.debt ?? 0} debt, ${report.ledger?.exceptions ?? 0} exceptions.`] }];
+  const sections: SummarySection[] = [{ title: 'React Plumber', lines: [`${report.ledger?.new ?? report.findings.reduce((n, f) => n + newSites(f).length, 0)} new, ${fixed} fixed, ${report.ledger?.debt ?? 0} debt, ${count(report.ledger?.exceptions ?? 0, 'exception')}.`] }];
   const coverage: string[] = [];
   for (const [family, value] of Object.entries(report.coverage)) {
     if (!('fromDecisions' in value)) continue;
@@ -31,7 +32,7 @@ export function githubSummary(report: Report, base?: Report, scope?: LineScope):
   }
   sections.push({ title: 'Coverage', lines: coverage });
   const growth = report.findings.filter(f => f.rule === 'ledger/grew');
-  sections.push({ title: 'Ledger', lines: [`${report.ledger?.growth ?? 0} growth lines.`, ...growth.map(f => markdown(f.title))] });
+  sections.push({ title: 'Ledger', lines: [`${count(report.ledger?.growth ?? 0, 'growth line')}.`, ...growth.map(f => markdown(f.title))] });
   const annotations = reviewAnnotations(report, scope);
   sections.push({ title: 'Review annotations', lines: [
     `New: ${annotations.filter(a => a.kind === 'new').length}.`,

@@ -1,6 +1,9 @@
 import { relative } from 'node:path';
 import type { Declaration, Decision, Finding, Report } from './report.js';
 
+export const plural = (n: number, one: string, many = `${one}s`) => n === 1 ? one : many;
+export const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-US')} ${plural(n, one, many)}`;
+
 export const scales: Record<string, string> = { spacing: 'spacing scale', radius: 'radius scale', type: 'type scale', motion: 'motion tokens', elevation: 'shadow tokens', z: 'z-index layers', color: 'colour tokens' };
 export const familyNames: Record<string, string> = { color: 'colour', elevation: 'shadow', z: 'z-index', type: 'type', radius: 'radius', spacing: 'spacing', motion: 'motion' };
 export const familyReasons: Record<string, string> = {

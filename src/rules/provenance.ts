@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks';
 import { profileDuration } from '../profile.js';
 import { createHash } from 'node:crypto';
 import { matchesGlob } from 'node:path';
-import { makeFinding, familyReasons, familyNames, scales, noFit, choiceText, sourceEdit } from '../messages.js';
+import { makeFinding, familyReasons, familyNames, scales, noFit, choiceText, sourceEdit, count } from '../messages.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Decision, Finding, FamilyCoverage } from '../report.js';
 import type { DecisionRecord } from '../decisions/index.js';
@@ -344,7 +344,7 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
       const occurrences = unchecked.flatMap(f => f.occurrences ?? [f.declaration]);
       const sites = [...new Map(unchecked.flatMap(f => f.sites).map(s => [JSON.stringify([s.file, s.line, s.column, s.text]), s])).values()];
       return [makeFinding({ key: `config/no-tokens:${family}`, rule: 'config/no-tokens', family, severity: 'warn', sites, occurrences,
-        declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${sites.length} ${familyNames[family]} values can't be checked`,
+        declaration: occurrences[0]!, decisions: [], title: `Your theme has no ${familyNames[family]} tokens, so ${count(sites.length, `${familyNames[family]} value`)} can't be checked`,
         because: 'React Plumber judges values against the tokens your theme declares.',
         action: `Add ${familyNames[family]} tokens to your theme, or point \`decisions.${family}.from\` in plumber.config.ts at where they live.` }), ...findings.filter(f => f.rule === 'provenance/opaque-inline')];
     }

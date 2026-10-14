@@ -1,4 +1,4 @@
-import { makeFinding, familyNames } from '../messages.js';
+import { makeFinding, familyNames, count, plural } from '../messages.js';
 import { matchesGlob, relative } from 'node:path';
 import type { PlumbConfig } from '../config.js';
 import type { DecisionRecord } from '../decisions/index.js';
@@ -63,7 +63,7 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
     const occurrences: Declaration[] = group.map(d => ({ prop: d.name, value: d.value, refs: valueRefs(d.value), when: [],
       site: { ...d.source, column: 1, text: `${d.name}: ${d.value}` }, owner: { kind: 'element', name: 'decisions' }, origin: 'custom-property', sourceOrigin: 'project' }));
     return makeFinding({ key: `dead/${family}`, rule: `dead/${family}`, family, severity: 'info', sites: occurrences.map(d => d.site),
-      declaration: occurrences[0]!, occurrences, decisions: group, title: `${group.length} ${familyNames[family] ?? family} tokens are never used in your source`,
+      declaration: occurrences[0]!, occurrences, decisions: group, title: `${count(group.length, `${familyNames[family] ?? family} token`)} ${plural(group.length, 'is', 'are')} never used in your source`,
       because: 'Unused tokens make the theme harder to choose from.',
       action: `If other apps use them, mark them published: decisions.${family}.exported: true. Otherwise remove them.` });
   });
@@ -71,5 +71,5 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
 }
 
 export function formatDeadSummary(counts: DeadDecisionCounts = {}): string {
-  return Object.entries(counts).map(([family, c]) => `dead/${family}  ${c.dead} unused of ${c.total} project decisions (${c.used} used, ${c.exported} exported)\n`).join('');
+  return Object.entries(counts).map(([family, c]) => `dead/${family}  ${c.dead} unused of ${count(c.total, 'project decision')} (${c.used} used, ${c.exported} exported)\n`).join('');
 }
