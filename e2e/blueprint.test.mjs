@@ -320,6 +320,55 @@ test('Keyboard only: Tab reaches a mark, Enter opens its chooser, a digit picks,
   assert.notEqual(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'));
 });
 
+test('The punch list: every drift in view in rows; arrows move, Enter opens that chooser, Backspace unpicks', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await clickMark(page, overlay, 'gap-[10px]');
+  await pickStep(overlay, /s2/);
+  await page.keyboard.press('Escape');
+
+  await dock(overlay).getByRole('button', { name: 'Every drift in view' }).click();
+  const list = overlay.locator('.pl .card[role="dialog"]');
+  await list.waitFor();
+  assert.match(await list.locator('.top .title').innerText(), /off · 1 picked/);
+  const rows = list.getByRole('option');
+  const n = await rows.count();
+  assert.equal(n, await hits(overlay).count(), 'one row per mark in view');
+  assert.equal(await list.locator('.file').first().innerText(), 'App.jsx');
+  const picked = rows.filter({ hasText: /gap-\[10px\]/ });
+  assert.match(await picked.innerText(), /gap-s2/);
+  assert.equal(await picked.getAttribute('aria-selected'), 'true');
+  // Backspace on the picked row lifts it; the title and the page follow
+  await picked.focus();
+  await page.keyboard.press('Backspace');
+  await list.locator('.top .title').filter({ hasText: /^In view · \d+ off$/ }).waitFor();
+  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
+  // arrows walk the rows; Enter opens that drift's chooser and closes the list
+  const active = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.getAttribute('aria-label'));
+  await rows.first().focus();
+  await page.keyboard.press('ArrowDown');
+  const second = await active();
+  assert.equal(second, await rows.nth(1).getAttribute('aria-label'));
+  await page.keyboard.press('Enter');
+  await list.waitFor({ state: 'hidden' });
+  const ch = chooser(overlay);
+  await ch.waitFor();
+  assert.ok(second.startsWith((await ch.getAttribute('aria-label')).replace(/^Choose a token for /, '')), 'the chooser is for the row chosen');
+  // Esc closes the chooser, L opens the list from the keyboard, Esc closes it
+  await page.keyboard.press('Escape');
+  await ch.waitFor({ state: 'hidden' });
+  await page.keyboard.press('l');
+  await list.waitFor();
+  await page.keyboard.press('Escape');
+  await list.waitFor({ state: 'hidden' });
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true);
+  assert.deepEqual(errors, []);
+});
+
 test('The field shows on a page that paints both html and body, and both come back after', { timeout: 90000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;

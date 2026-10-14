@@ -72,7 +72,7 @@ export class Blueprint {
     this.#scan = Object.assign(document.createElement('i'), { className: 'scan', hidden: true });
     this.#layer.append(this.#scan);
     root.appendChild(this.#layer);
-    this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null });
+    this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#reader = new Reader(host, { onChange: (items) => this.#marks.set(items), onProgress: (p) => this.#onProgress?.(p) });
   }
 

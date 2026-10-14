@@ -13,6 +13,9 @@
  *             A written pick keeps its preview until the dev server reloads the element's classes, then lifts
  *  stale      a file that changed since it was read is refused; Read again re-reads those elements and keeps the
  *             picks whose edits still exist
+ *  list       the punch list: every drift in view as rows grouped by file, from the dock's list button or L.
+ *             Arrows move, Enter opens that drift's chooser, Backspace unpicks, the foot holds Before, Undo, Write.
+ *             It is the same queue the marks show, in rows; nothing lives only in the list
  *  before     the page as source has it while on; picks stay queued and their marks stay mint
  *  leave      leaving blueprint lifts every preview and drops the queue: nothing is left on the page
  * ───────────────────────────────────────────────────────── */
@@ -22,6 +25,8 @@ import { glyph } from './glyphs.js';
 
 const LIFT = [250, 600, 1200, 2400]; // ms to wait for the dev server to reload a written element's classes
 const HOLD = 5000; // ms a "wrote" line stays on the dock
+
+export const LIST_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 3h9M1.5 6h9M1.5 9h6" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>';
 
 export const FIX_CSS = `
   /* the chooser: the reading card's vocabulary at the mark, without the drawing */
@@ -51,6 +56,32 @@ export const FIX_CSS = `
   .ch .foot .btn.write, .ch .foot .btn.reading { flex: none; }
   .ch .keys { display: flex; gap: 10px; padding: 0 12px 8px; font: var(--pl-text-label); color: var(--pl-ink-3); }
   .ch .keys kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-ink-2); }
+  .ch[data-before] .keys .b { color: var(--pl-instrument); } .ch[data-before] .keys .b kbd { color: var(--pl-instrument); }
+
+  /* the punch list: above the dock, every drift in view in rows */
+  .pl { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + 8px); width: 360px; pointer-events: auto; }
+  .pl .card { display: flex; flex-direction: column; max-height: min(60vh, 520px); transform-origin: 100% 100%; }
+  .pl[data-state="opening"] .card { opacity: 0; transform: translateY(4px); }
+  .pl .top { flex: none; }
+  .pl .top .title { flex: 1; font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); }
+  .pl .top .title b { color: var(--pl-ink); font-weight: 600; }
+  .pl .rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 6px 6px; }
+  .pl .file { padding: 8px 6px 2px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .pl .row { all: unset; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; height: 28px; padding: 0 6px; border-radius: 5px; cursor: pointer; color: var(--pl-ink); }
+  .pl .row .g { flex: none; width: 13px; height: 13px; color: var(--pl-off); }
+  .pl .row .g.ok { color: var(--pl-on); } .pl .row .g.quiet { color: var(--pl-ink-2); } .pl .row .g.soft { color: var(--pl-soft); }
+  .pl .row code { font: var(--pl-card-meta); color: var(--pl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pl .row .arrow { color: var(--pl-ink-3); }
+  .pl .row code.to { color: var(--pl-on); }
+  .pl .row .ask { font: var(--pl-text-label); color: var(--pl-ink-2); }
+  .pl .row .ask.none { color: var(--pl-ink-3); }
+  .pl .row .el { margin-inline-start: auto; flex: none; font: var(--pl-text-label); color: var(--pl-ink-2); }
+  .pl .row[aria-current="true"] { box-shadow: inset 0 0 0 1px var(--pl-instrument); }
+  @media (hover: hover) and (pointer: fine) { .pl .row:hover { background: var(--pl-paper-2); } }
+  .pl .row:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; }
+  .pl .empty { margin: 0; padding: 14px 12px; font: var(--pl-card-body); color: var(--pl-ink-2); }
+  .pl .foot { flex: none; border-top: 1px solid var(--pl-rule); }
+  .pl .foot .btn.write { margin-inline-start: auto; }
 `;
 
 const ICON = {
@@ -62,7 +93,7 @@ const LEDGER = { new: 'new', debt: 'known debt', exception: 'accepted' };
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export class Fixer {
-  #host; #root; #marks; #invalidate; #scale; #el;
+  #host; #root; #marks; #invalidate; #scale; #el; #list; #listOpen = false;
   #byEl = new WeakMap(); // Element → Map<mark.key, pick>
   #picks = new Set(); // pick: { el, key, file, hash, mark, j, choice, state: 'picked' | 'written' | 'stale' }
   #previews = new Map(); // Element → { styleAttr, original: Map<prop, [value, priority]> }
@@ -79,7 +110,8 @@ export class Fixer {
     this.#invalidate = invalidate;
     this.#scale = scale;
     this.#el = Object.assign(document.createElement('section'), { className: 'ch', hidden: true });
-    root.appendChild(this.#el);
+    this.#list = Object.assign(document.createElement('section'), { className: 'pl', hidden: true });
+    root.append(this.#el, this.#list);
   }
 
   // ── what the marks and the dock ask ──────────────────────
@@ -90,13 +122,14 @@ export class Fixer {
     return null;
   }
   get isOpen() { return !!this.#open; }
+  get listOpen() { return this.#listOpen; }
   get before() { return this.#before; }
   get status() { return this.#status; }
   get stale() { return [...this.#picks].some(p => p.state === 'stale'); }
   // picks that Write would send
   writable() { return [...this.#picks].filter(p => p.state === 'picked' && p.choice.edit); }
   get count() { return [...this.#picks].filter(p => p.state !== 'written').length; }
-  occluder() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
+  occluders() { return [this.#el, this.#list].filter(e => !e.hidden).map(e => e.getBoundingClientRect()); }
 
   // ── the chooser ──────────────────────────────────────────
   async open(el, mark, id) {
@@ -174,9 +207,10 @@ export class Fixer {
         <span class="nav" aria-label="Drift in view"><button class="prev" aria-label="Previous drift ([)" ${at <= 0 ? 'disabled' : ''}>${ICON.prev}</button><span>${at + 1} of ${n}</span><button class="next" aria-label="Next drift (])" ${at >= n - 1 ? 'disabled' : ''}>${ICON.next}</button></span>
         <button class="btn primary write" ${writable ? '' : 'disabled'}>${writable ? `Write ${plural(writable, 'edit')}` : 'Write'}</button>
       </div>
-      <div class="keys" aria-hidden="true"><span><kbd>1–9</kbd> pick</span><span><kbd>⌫</kbd> unpick</span><span><kbd>[ ]</kbd> drift</span><span><kbd>B</kbd> before</span><span><kbd>Esc</kbd> close</span></div>
+      <div class="keys" aria-hidden="true"><span><kbd>1–9</kbd> pick</span><span><kbd>⌫</kbd> unpick</span><span><kbd>[ ]</kbd> drift</span><span class="b"><kbd>B</kbd> before</span><span><kbd>Esc</kbd> close</span></div>
     </div>`;
     el.hidden = false;
+    el.toggleAttribute('data-before', this.#before);
     if (state === 'opening') { el.dataset.state = 'opening'; requestAnimationFrame(() => requestAnimationFrame(() => { el.dataset.state = 'open'; })); }
     else if (state === 'moving') { el.dataset.state = 'moving'; setTimeout(() => { if (el.dataset.state === 'moving') el.dataset.state = 'open'; }, 260); }
     else if (!el.dataset.state) el.dataset.state = 'open';
@@ -329,39 +363,49 @@ export class Fixer {
     this.#picks.add(pick);
     if (this.#status?.kind !== 'writing') this.#status = null;
     this.#repaint(o.el);
-    this.#marks.invalidate();
     this.#host.announce(`Picked ${c.edit?.to ?? c.label} for ${o.full.text}`);
-    this.#render();
+    this.#sync();
+  }
+  // After the queue changes: the marks redraw, the dock recounts, the chooser and the list follow.
+  #sync() {
+    this.#marks.invalidate();
+    if (this.#open) this.#render();
+    this.#renderList();
+    this.#host.changed();
+  }
+  #drop(pick) {
+    this.#picks.delete(pick);
+    this.#byEl.get(pick.el)?.delete(pick.key);
+    this.#repaint(pick.el);
   }
   unpick() {
     const o = this.#open; if (!o) return;
     const byKey = this.#byEl.get(o.el), pick = byKey?.get(o.key);
     if (!pick || pick.state === 'written') return;
-    byKey.delete(o.key);
-    this.#picks.delete(pick);
+    this.#drop(pick);
     if (o.full) o.full.pick = null;
     o.peeking = false;
-    this.#repaint(o.el);
-    this.#marks.invalidate();
     this.#host.announce(`Unpicked ${o.full?.text ?? ''}`);
-    this.#render();
+    this.#sync();
+  }
+  // Unpick from the list: by the element and the mark.
+  unpickAt(el, key) {
+    const pick = this.#byEl.get(el)?.get(key);
+    if (!pick || pick.state === 'written') return;
+    if (this.#open && this.#open.el === el && this.#open.key === key) return this.unpick();
+    this.#drop(pick);
+    this.#host.announce(`Unpicked ${pick.mark.text}`);
+    this.#sync();
   }
 
   // Every unwritten pick in view lifted; the queue is empty again.
   undo() {
     this.unpeek();
-    for (const pick of [...this.#picks]) {
-      if (pick.state === 'written') continue;
-      this.#picks.delete(pick);
-      this.#byEl.get(pick.el)?.delete(pick.key);
-      this.#repaint(pick.el);
-    }
+    for (const pick of [...this.#picks]) if (pick.state !== 'written') this.#drop(pick);
     if (this.#open?.full) this.#open.full.pick = null;
     if (this.#status?.kind !== 'writing') this.#status = null;
-    this.#marks.invalidate();
     this.#host.announce('Every pick lifted');
-    this.#render();
-    this.#host.changed();
+    this.#sync();
   }
 
   // Before: the page as source has it; the queue stays.
@@ -370,6 +414,8 @@ export class Fixer {
     this.unpeek();
     this.#before = on;
     for (const el of new Set([...this.#picks].map(p => p.el))) this.#repaint(el);
+    this.#el.toggleAttribute('data-before', on);
+    this.#list.querySelector('.flip')?.setAttribute('aria-pressed', String(on));
     this.#host.changed();
   }
 
@@ -385,7 +431,7 @@ export class Fixer {
     for (const p of picks) (byFile.get(p.file) ?? byFile.set(p.file, []).get(p.file)).push(p);
     const n = picks.length;
     this.#status = { kind: 'writing', text: `Writing ${plural(n, 'edit')}…` };
-    this.#host.changed(); this.#render();
+    this.#host.changed(); this.#render(); this.#renderList();
     const wrote = [], refused = [];
     this.#host.remember(`Wrote ${plural(n, 'edit')} to ${[...byFile.keys()].map(f => f.split('/').pop()).join(', ')}`);
     for (const [file, group] of byFile) {
@@ -415,9 +461,7 @@ export class Fixer {
       this.#status = { kind: 'refused', text: said ? `${said} · ${bad}` : bad, title: refused.map(r => r.message).join('\n'), stale: refused.some(r => r.stale) };
     }
     this.#host.announce(this.#status.text);
-    this.#marks.invalidate();
-    this.#host.changed();
-    this.#render();
+    this.#sync();
   }
 
   // A written pick keeps its preview until the page carries the change itself (the element's classes change), or
@@ -430,17 +474,13 @@ export class Fixer {
         const el = p.el;
         if (!this.#picks.has(p)) { group.splice(group.indexOf(p), 1); continue; }
         if (!el.isConnected || el.getAttribute('class') !== before.get(el) || i === LIFT.length - 1) {
-          this.#picks.delete(p);
-          this.#byEl.get(el)?.delete(p.key);
-          this.#repaint(el);
+          this.#drop(p);
           group.splice(group.indexOf(p), 1);
         }
       }
       if (!group.length) break;
     }
-    this.#marks.invalidate();
-    this.#host.changed();
-    if (this.#open) this.#render();
+    this.#sync();
   }
 
   // The file changed under a pick: read those elements again and keep the picks whose edits still exist.
@@ -459,17 +499,93 @@ export class Fixer {
         p.mark = structuredClone(m); p.mark.pick = j; p.j = j; p.choice = p.mark.choices[j]; p.hash = full.hash; p.state = 'picked';
         kept++;
       } else {
-        this.#picks.delete(p);
-        this.#byEl.get(p.el)?.delete(p.key);
-        this.#repaint(p.el);
+        this.#drop(p);
         dropped++;
       }
     }
     this.#status = dropped ? { kind: 'error', text: `Read again: ${plural(kept, 'pick')} kept, ${dropped} no longer in the source` } : null;
     if (this.#open) await this.#reload();
-    this.#marks.invalidate();
     this.#host.announce(this.#status?.text ?? `Read again: ${plural(kept, 'pick')} kept`);
+    this.#sync();
+  }
+
+  // ── the punch list ───────────────────────────────────────
+  toggleList() {
+    this.#listOpen ? this.closeList() : this.openList();
+  }
+  openList() {
+    if (this.#listOpen) return;
+    this.#listOpen = true;
+    this.#list.dataset.state = 'opening';
+    this.#renderList();
+    requestAnimationFrame(() => requestAnimationFrame(() => { this.#list.dataset.state = 'open'; }));
+    const current = this.#list.querySelector('.row[aria-current="true"]') ?? this.#list.querySelector('.row') ?? this.#list.querySelector('.card');
+    current?.focus({ preventScroll: true });
     this.#host.changed();
+  }
+  closeList({ focus = true } = {}) {
+    if (!this.#listOpen) return;
+    this.#listOpen = false;
+    this.#list.hidden = true;
+    this.#list.innerHTML = '';
+    this.#host.changed();
+    if (focus) this.#root.querySelector('.dock .list')?.focus({ preventScroll: true });
+  }
+  // The drawn set changed (scroll, a reading arrived, a write landed): the rows follow.
+  ordered() {
+    if (this.#listOpen) this.#renderList();
+  }
+  #renderList() {
+    if (!this.#listOpen) return;
+    const list = this.#list, order = this.#marks.order();
+    const had = list.contains(this.#root.activeElement) ? this.#root.activeElement?.dataset.id : null;
+    const picked = this.count, off = order.filter(o => o.mark.ledger === 'new').length;
+    const writable = this.writable().length, writing = this.#status?.kind === 'writing';
+    const byFile = new Map();
+    for (const o of order) (byFile.get(o.file ?? '') ?? byFile.set(o.file ?? '', []).get(o.file ?? '')).push(o);
+    const row = o => {
+      const fix = this.state(o.el, o.mark), current = this.#open?.id === o.id;
+      const tone = fix?.kind === 'picked' || fix?.kind === 'written' ? 'ok' : o.mark.ledger !== 'new' ? 'quiet' : o.mark.soft ? 'soft' : 'off';
+      const to = fix?.to ? `<span class="arrow" aria-hidden="true">→</span><code class="to">${esc(fix.to)}</code>`
+        : o.mark.choices.length ? `<span class="arrow" aria-hidden="true">→</span><span class="ask">pick</span>` : `<span class="ask none">no token</span>`;
+      return `<button class="row" role="option" data-id="${esc(o.id)}" tabindex="-1" aria-selected="${!!fix}" aria-current="${current}" aria-label="${esc(o.mark.title.replace(/`/g, ''))}${fix?.to ? `, picked ${esc(fix.to)}` : ''}">${glyph(o.mark.glyph, tone)}<code>${esc(o.mark.text)}</code>${to}<span class="el">${esc(o.el.localName)}</span></button>`;
+    };
+    list.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Drift in view">
+      <div class="top"><span class="title">In view · <b>${off} off</b>${picked ? ` · <b>${picked} picked</b>` : ''}</span><button class="close" aria-label="Close the list">${ICON.close}</button></div>
+      ${order.length ? `<div class="rows" role="listbox" aria-label="Drift in view">${[...byFile].map(([file, rows]) => `<div class="file">${esc(file.split('/').pop() || 'unplaced')}</div>${rows.map(row).join('')}`).join('')}</div>`
+        : `<p class="empty">${this.#status ? esc(this.#status.text) : 'Nothing is off in view.'}</p>`}
+      <div class="foot">
+        <button class="btn plain flip" aria-pressed="${this.#before}" title="The page as source has it (B)" ${picked ? '' : 'disabled'}>Before</button>
+        <button class="btn plain undo" title="Lift every pick" ${picked && !writing ? '' : 'disabled'}>Undo</button>
+        <button class="btn primary write" ${writable && !writing ? '' : 'disabled'} aria-busy="${writing}">${writing ? 'Writing…' : this.stale ? 'Read again' : `Write ${plural(writable, 'edit')}`}</button>
+      </div></div>`;
+    list.hidden = false;
+    if (!list.dataset.state) list.dataset.state = 'open';
+    const on = (sel, fn) => list.querySelector(sel)?.addEventListener('click', e => { e.stopPropagation(); fn(e); });
+    on('.close', () => this.closeList());
+    on('.flip', () => this.flip());
+    on('.undo', () => this.undo());
+    on('.write', () => this.write());
+    const rows = [...list.querySelectorAll('.row')];
+    const at = id => order.find(o => o.id === id);
+    rows.forEach((r, i) => {
+      r.addEventListener('click', e => { e.stopPropagation(); const o = at(r.dataset.id); if (o) { this.closeList({ focus: false }); this.open(o.el, o.mark, o.id); } });
+      r.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length]?.focus(); }
+        else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); const o = at(r.dataset.id); if (o) this.unpickAt(o.el, o.mark.key); }
+      });
+    });
+    list.querySelector('.card').addEventListener('keydown', e => {
+      if (e.altKey || e.metaKey || e.ctrlKey) return;
+      if (e.key === 'b' || e.key === 'B') { e.preventDefault(); this.flip(); }
+      else if (e.key === 'Enter' && !e.target.closest('button')) { e.preventDefault(); this.write(); }
+    });
+    // focus stays on the row it was on, across renders
+    const back = had ? list.querySelector(`.row[data-id="${CSS.escape(had)}"]`) : null;
+    if (back) back.focus({ preventScroll: true });
+    else if (had !== null && this.#root.activeElement && !list.contains(this.#root.activeElement)) rows[0]?.focus({ preventScroll: true });
+    rows.forEach(r => r.tabIndex = -1);
+    (back ?? rows[0])?.setAttribute('tabindex', '0');
   }
 
   // The page reloaded after a write (a dev server without fast refresh): say what was written.
@@ -482,6 +598,7 @@ export class Fixer {
   // Leaving blueprint: nothing stays on the page, nothing stays queued.
   leave() {
     this.close({ focus: false });
+    this.closeList({ focus: false });
     for (const el of [...this.#previews.keys()]) this.#lift(el);
     for (const pick of this.#picks) this.#byEl.get(pick.el)?.delete(pick.key);
     this.#picks.clear();

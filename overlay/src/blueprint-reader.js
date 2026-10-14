@@ -194,6 +194,6 @@ export class Reader {
     }
     // what to draw: everything read, in document order
     const shown = order.filter((i) => i.marks.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
-    this.#onChange?.(shown.map(({ id, el, marks }) => ({ id, el, marks })));
+    this.#onChange?.(shown.map(({ id, el, marks, file }) => ({ id, el, marks, file })));
   }
 }

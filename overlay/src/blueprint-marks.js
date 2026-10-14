@@ -88,11 +88,12 @@ function draw(g, mark, nudge = 0, fix = null) {
 }
 
 export class MarkLayer {
-  #svg; #nodes = new Map(); #items = []; #order = []; #scheduled = 0; #onPick; #occluders; #state;
+  #svg; #nodes = new Map(); #items = []; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
   // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
-  // state(element, mark) → null | { kind: 'current' | 'picked' | 'written', to } says how the mark is drawn
-  constructor(layer, { onPick, occluders, state }) {
+  // state(element, mark) → null | { kind: 'current' | 'picked' | 'written', to } says how the mark is drawn;
+  // onOrder() is told when the set of drawn marks changes (the punch list follows it)
+  constructor(layer, { onPick, occluders, state, onOrder }) {
     this.#svg = document.createElementNS(NS, 'svg');
     this.#svg.setAttribute('role', 'group');
     this.#svg.setAttribute('aria-label', 'Drift on this view');
@@ -100,6 +101,7 @@ export class MarkLayer {
     this.#onPick = onPick;
     this.#occluders = occluders;
     this.#state = state;
+    this.#onOrder = onOrder;
     // Where hit boxes overlap (a long label over a short one), a click goes to the smallest box under the pointer: the
     // one the eye aimed at. Enter goes to the focused box.
     const pick = (e) => {
@@ -125,7 +127,7 @@ export class MarkLayer {
     this.#svg.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && pick(e));
   }
 
-  // items: [{ id, el, marks }] in document order. Nodes are kept for marks that persist and made for new ones.
+  // items: [{ id, el, marks, file }] in document order. Nodes are kept for marks that persist and made for new ones.
   set(items) {
     this.#items = items;
     const want = new Set();
@@ -134,7 +136,7 @@ export class MarkLayer {
     this.invalidate();
   }
 
-  // Marks in document order, as last drawn: [{ id, el, mark }].
+  // Marks in document order, as last drawn: [{ id, el, mark, file }].
   order() {
     return this.#order;
   }
@@ -197,10 +199,10 @@ export class MarkLayer {
         continue;
       }
       const fix = this.#state?.(item.el, mark) ?? null;
-      // the label steps away from labels already placed, its own way first then the other, never out of the view;
-      // when every step collides it keeps the nearest in-view one
+      // the label steps away from labels already placed: its own way (over empty space) first, then the other way
+      // (into the element), never out of the view; when every step collides it keeps the nearest in-view one
       let drawn = null, first = null;
-      for (const n of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+      for (const n of [0, 1, 2, 3, -1, -2, 4, -3, -4]) {
         const d = draw(g, mark, n, fix);
         if (d.box[1] < 0 || d.box[1] + d.box[3] > view.h) continue;
         first ??= d;
@@ -224,7 +226,7 @@ export class MarkLayer {
       if (node.markup !== markup) (node.g.innerHTML = markup), (node.markup = markup);
       node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? 'Drift' : 'Recorded'}: ${mark.title}.${fix?.to ? ` Picked ${fix.to}.` : ''} Choose a token.`);
       node.hit.toggleAttribute('aria-current', fix?.kind === 'current');
-      order.push({ id, el: item.el, mark });
+      order.push({ id, el: item.el, mark, file: item.file ?? null });
       const [x, y, w, h] = box;
       node.hit.setAttribute('x', x);
       node.hit.setAttribute('y', y);
@@ -238,5 +240,7 @@ export class MarkLayer {
       after = node.hit;
     }
     this.#order = order;
+    const key = order.map((o) => o.id).join(',');
+    if (key !== this.#orderKey) (this.#orderKey = key), this.#onOrder?.();
   }
 }

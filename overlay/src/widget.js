@@ -25,7 +25,7 @@ import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
-import { Fixer, FIX_CSS } from './blueprint-fix.js';
+import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -78,12 +78,12 @@ const css = `
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock :is(.pick, .bp-toggle) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  .dock :is(.pick, .bp-toggle) svg { width: 12px; height: 12px; }
-  .dock :is(.pick, .bp-toggle):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock :is(.pick, .bp-toggle)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock :is(.pick, .bp-toggle):disabled { color: var(--pl-ink-3); cursor: default; }
+  .dock :is(.pick, .bp-toggle, .list) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle, .list) svg { width: 12px; height: 12px; }
+  .dock :is(.pick, .bp-toggle, .list):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .dock :is(.pick, .bp-toggle, .list)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .dock :is(.pick, .bp-toggle, .list):disabled { color: var(--pl-ink-3); cursor: default; }
   .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
   .dock .act.write { color: #fff; background: var(--pl-instrument); }
@@ -299,6 +299,7 @@ class PlumbOverlay extends HTMLElement {
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
         <button class="act undo" type="button" hidden title="Lift every pick (nothing is written)">Undo</button>
         <button class="act write" type="button" hidden></button>
+        <button class="list" type="button" hidden aria-pressed="false" aria-label="Every drift in view" title="Every drift in view, as a list (L)">${LIST_ICON}</button>
         <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
         <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
       </div>
@@ -312,6 +313,7 @@ class PlumbOverlay extends HTMLElement {
     this.#fixer = new Fixer(this, this.#root, { marks: this.#blueprint.marks, invalidate: change => this.#blueprint.invalidate(change), scale: family => this.#scaleOf(family) });
     this.#$('.dock .undo').addEventListener('click', () => this.#fixer.undo());
     this.#$('.dock .write').addEventListener('click', () => this.#fixer.write());
+    this.#$('.dock .list').addEventListener('click', () => this.#fixer.toggleList());
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
     addEventListener('keydown', this.#onKeyDown, true);
@@ -368,12 +370,13 @@ class PlumbOverlay extends HTMLElement {
   get health() { return this.#health; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), this.#fixer?.occluder()].filter(Boolean);
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...(this.#fixer?.occluders() ?? [])];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id) { return this.#fixer.open(element, mark, id); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
   changed() { this.#dock(); }
+  ordered() { this.#fixer?.ordered(); }
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
@@ -443,6 +446,9 @@ class PlumbOverlay extends HTMLElement {
     // Undo and Write ride on the dock while the blueprint has picks: the queue spans the view, the dock is always there.
     const undo = dock.querySelector('.undo'), write = dock.querySelector('.write');
     const bp = state === 'ready' && this.#blueprint?.active && !this.#pinned;
+    const list = dock.querySelector('.list');
+    list.hidden = !bp;
+    list.setAttribute('aria-pressed', String(!!f?.listOpen));
     const writable = f?.writable().length ?? 0, writing = fs?.kind === 'writing';
     undo.hidden = !(bp && f.count);
     undo.disabled = writing;
@@ -558,10 +564,17 @@ class PlumbOverlay extends HTMLElement {
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
+    else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
     else if (event.key === 'Escape' && this.#fixer?.isOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.close(); }
+    // L: the punch list, when nothing on the page is being typed into
+    else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#fixer.toggleList(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
+  #typing(event) {
+    const t = event.composedPath()[0];
+    return !!t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.localName ?? ''));
+  }
   // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
   #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
 
