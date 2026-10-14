@@ -164,7 +164,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     try {
       if (current && !known) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
-      if (client) { headers['Content-Type'] = method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
+      if (client) { headers['Content-Type'] = method === 'THIRD_PARTY_NOTICES' ? 'text/plain; charset=utf-8' : method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
       if (!current) {
         const state = diagnostic === undefined ? { status: 'starting' } : { status: 'failed', diagnostic };
         if (method !== 'health') headers['Retry-After'] = '1';

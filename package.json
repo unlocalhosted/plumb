@@ -30,10 +30,10 @@
     "overlay/client.js",
     "overlay/src/*.js",
     "overlay/src/tokens.css",
-    "overlay/dist",
     "schema",
     "action.yml",
     "LICENSE",
+    "THIRD_PARTY_NOTICES",
     "README.md",
     "skills"
   ],
@@ -41,7 +41,8 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && npm run notices",
+    "notices": "node scripts/third-party-notices.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && PLUMBER_WATCH=1 PLUMBER_POLLING=0 node --test --test-concurrency=1 e2e/*.test.mjs && PLUMBER_WATCH=1 PLUMBER_POLLING=1 node --test e2e/serve.test.mjs && PLUMBER_WATCH=0 PLUMBER_POLLING=0 node --test e2e/serve.test.mjs",
     "prepack": "npm run build",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@base-ui/react": "^1.8.0",
+    "@jridgewell/sourcemap-codec": "^1.6.0",
     "@radix-ui/react-primitive": "^2.1.11",
     "@radix-ui/react-slot": "^1.4.0",
     "@tailwindcss/node": "4.3",

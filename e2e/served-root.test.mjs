@@ -77,7 +77,7 @@ async function next(t, fixture) {
   const { root, servedRoot } = fixture;
   const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
-  for (const name of ['dist', 'overlay', 'package.json']) await cp(join(repo, name), join(installed, name), { recursive: true });
+  for (const name of ['dist', 'overlay', 'package.json', 'THIRD_PARTY_NOTICES']) await cp(join(repo, name), join(installed, name), { recursive: true });
   const route = join(servedRoot, 'app/%5F_plumb/[...path]'); await mkdir(route, { recursive: true });
   await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';
 export const runtime = 'nodejs';

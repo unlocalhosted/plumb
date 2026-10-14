@@ -291,7 +291,7 @@ test('overlay review 2–4: installed Next wiring serves dev and excludes Sessio
   const { mkdir } = await import('node:fs/promises');
   const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
-  for (const name of ['dist', 'overlay', 'package.json']) await cp(join(repo, name), join(installed, name), { recursive: true });
+  for (const name of ['dist', 'overlay', 'package.json', 'THIRD_PARTY_NOTICES']) await cp(join(repo, name), join(installed, name), { recursive: true });
   const routeDir = join(root, 'app/%5F_plumb/[...path]'); await mkdir(routeDir, { recursive: true });
   await writeFile(join(routeDir, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
   await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
