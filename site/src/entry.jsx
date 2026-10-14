@@ -1,19 +1,23 @@
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import { Home } from './Home.jsx';
-import { Specimen } from './Specimen.jsx';
-import { Systems } from './system/Systems.jsx';
-import { Mascots } from './system/Mascots.jsx';
-import { Docs } from './docs/Docs.jsx';
 import { DialRoot } from 'dialkit';
 import 'dialkit/styles.css';
 
-const page = location.pathname.startsWith('/docs') ? <Docs /> : location.hash === '#primitives' ? <Specimen /> : location.hash === '#systems' ? <Systems /> : location.hash === '#mascots' ? <Mascots /> : <Home />;
+// Each page loads only when it's the one asked for: the homepage and the docs never carry the prototypes' code.
+const PAGES = {
+  '#primitives': () => import('./Specimen.jsx').then((m) => m.Specimen),
+  '#systems': () => import('./system/Systems.jsx').then((m) => m.Systems),
+  '#mascots': () => import('./system/Mascots.jsx').then((m) => m.Mascots),
+  '#opening': () => import('./opening/Opening.jsx').then((m) => m.Opening),
+};
+const load = location.pathname.startsWith('/docs') ? () => import('./docs/Docs.jsx').then((m) => m.Docs) : (PAGES[location.hash] ?? (() => import('./Home.jsx').then((m) => m.Home)));
 
-createRoot(document.getElementById('root')).render(
-  <>
-    {page}
-    {/* live tuning panels, development only */}
-    {import.meta.env.DEV && <DialRoot position="top-right" />}
-  </>,
-)
+load().then((Page) =>
+  createRoot(document.getElementById('root')).render(
+    <>
+      <Page />
+      {/* live tuning panels, development only */}
+      {import.meta.env.DEV && <DialRoot position="top-right" />}
+    </>,
+  ),
+);

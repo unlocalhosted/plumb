@@ -1,0 +1,34 @@
+/* Blueprint mode: the same page, re-inked. Every surface token is redirected to the blueprint's, so text, borders and
+   fills become white linework on the blue without a second copy of the page. Each element changes as the scan line
+   reaches it (--develop, set from its position when the mode flips). */
+[data-mode='blueprint'] {
+  --background: var(--blueprint);
+  --card: transparent;
+  --foreground: var(--blueprint-ink);
+  --muted-foreground: var(--blueprint-line);
+  --border: var(--blueprint-line);
+  --primary: var(--blueprint-ink);
+  --primary-foreground: var(--blueprint);
+  --destructive: var(--blueprint-redline);
+  --tint-1: color-mix(in oklab, var(--blueprint-ink) 12%, transparent);
+  --tint-2: transparent;
+  --trace: color-mix(in oklab, var(--blueprint-ink) 12%, transparent);
+}
+
+[data-mode],
+[data-mode] * {
+  transition-property: color, background-color, border-color, box-shadow, fill, stroke;
+  transition-duration: var(--dur-move);
+  transition-timing-function: var(--ease-out);
+  transition-delay: var(--develop, 0ms);
+}
+
+/* solid parts (a filled button, the install line, the avatar) are drawn as outlines on the blueprint */
+[data-mode='blueprint'] [data-solid] {
+  background-color: transparent;
+  color: var(--blueprint-ink);
+  box-shadow: inset 0 0 0 1px var(--blueprint-ink);
+}
+[data-mode='blueprint'] .shadow-lift {
+  box-shadow: inset 0 0 0 1px var(--color-blueprint-line);
+}
