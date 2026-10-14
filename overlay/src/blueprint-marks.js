@@ -24,6 +24,10 @@
  *  tag        pointing at a break, or reaching it with Tab, shows one note in plain words beside it: what is off, the
  *             tokens nearest to it, and that a click fixes it. One at a time; it goes when the pointer leaves, the
  *             focus moves, or the chooser opens
+ *  rails      the rhythm, read off the margins: every vertical gap in view is a tick pair on a rail at the left
+ *             edge, every horizontal one on a rail along the top, named by its token in white or, off the scale, by
+ *             its number in amber. The same gap in several rows is one tick. A glance down the rail says whether
+ *             the page keeps one rhythm
  *  spotlight  the sheet's causes point back at the page: the elements a cause touches get an amber outline while
  *             it is pointed at
  *  act        every mark's hit area is a button in document order: Tab reaches it, Enter or a click opens its chooser
@@ -37,6 +41,11 @@ const TICK = 3;
 const CH = 6.6; // px per character of the 11px label
 
 export const MARKS_CSS = `
+  .bp .rails line { stroke: rgb(255 255 255 / 0.45); }
+  .bp .rails .rail { stroke: rgb(255 255 255 / 0.3); }
+  .bp .rails .off line { stroke: #ffb347; stroke-width: 1.5; }
+  .bp .rails text { fill: rgb(255 255 255 / 0.75); font-size: 10px; }
+  .bp .rails .off text { fill: #ffb347; }
   .bp .light rect { fill: none; stroke: #ffb347; stroke-width: 1.5; }
   .bp .bp-hint { position: fixed; max-width: 280px; padding: 6px 9px 7px; box-sizing: border-box; pointer-events: none; z-index: 1;
     font: 500 11px/15px var(--pl-mono); color: #fff; background: rgb(15 36 102 / 0.96); border: 1px solid #ffb347; border-radius: 3px;
@@ -179,7 +188,7 @@ function drawDim(g, token) {
 }
 
 export class MarkLayer {
-  #svg; #structure; #badges; #badgeMarkup = ''; #wash; #washMarkup = ''; #lifted = null; #hint; #hinted = null; #light; #lit = []; #lightMarkup = ''; #nodes = new Map(); #dims = new Map(); #items = []; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
+  #svg; #structure; #badges; #badgeMarkup = ''; #wash; #washMarkup = ''; #lifted = null; #hint; #hinted = null; #light; #lit = []; #lightMarkup = ''; #rails; #railsMarkup = ''; #nodes = new Map(); #dims = new Map(); #items = []; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
   // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
   // state(element, mark) → null | { kind: 'current' | 'picked' | 'written', to } says how the mark is drawn;
@@ -197,6 +206,10 @@ export class MarkLayer {
     this.#badges.setAttribute('class', 'badges');
     this.#badges.setAttribute('aria-hidden', 'true');
     this.#svg.appendChild(this.#badges);
+    this.#rails = document.createElementNS(NS, 'g');
+    this.#rails.setAttribute('class', 'rails');
+    this.#rails.setAttribute('aria-hidden', 'true');
+    this.#svg.appendChild(this.#rails);
     this.#light = document.createElementNS(NS, 'g');
     this.#light.setAttribute('class', 'light');
     this.#light.setAttribute('aria-hidden', 'true');
@@ -336,6 +349,8 @@ export class MarkLayer {
     this.#lit = [];
     this.#light.innerHTML = '';
     this.#lightMarkup = '';
+    this.#rails.innerHTML = '';
+    this.#railsMarkup = '';
     this.#showHint(null);
     this.#order = [];
   }
@@ -353,11 +368,20 @@ export class MarkLayer {
     const view = { w: innerWidth, h: innerHeight };
     const under = this.#occluders?.() ?? [];
     const plan = [];
+    const spans = { v: new Map(), h: new Map() }; // the rails: `${a}:${b}` → { a, b, text, off }
+    const span = (g, text, off) => {
+      if (g.kind === 'v' && g.y2 - g.y1 >= 2) { const key = `${Math.round(g.y1)}:${Math.round(g.y2)}`; if (!spans.v.has(key) || off) spans.v.set(key, { a: g.y1, b: g.y2, text, off }); }
+      if (g.kind === 'h' && g.x2 - g.x1 >= 2) { const key = `${Math.round(g.x1)}:${Math.round(g.x2)}`; if (!spans.h.has(key) || off) spans.h.set(key, { a: g.x1, b: g.x2, text, off }); }
+    };
     for (const item of this.#items) {
       if (!item.el.isConnected) continue;
       const r = item.el.getBoundingClientRect();
       const shown = r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0;
-      item.marks.forEach((mark, k) => plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g: shown ? dimensionsFor(item.el, mark.props) : null }));
+      item.marks.forEach((mark, k) => {
+        const g = shown ? dimensionsFor(item.el, mark.props) : null;
+        plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g });
+        if (g && mark.ledger === 'new' && mark.n !== undefined && /^(gap|row-gap|column-gap|padding|margin)/.test(mark.props[0] ?? '')) span(g, String(Math.round(mark.n * 10) / 10), true);
+      });
     }
     let after = null; // keeps hit rects in document order for Tab
     const placed = [], order = [];
@@ -449,7 +473,9 @@ export class MarkLayer {
         let node = this.#dims.get(id);
         const r = item.el.isConnected ? item.el.getBoundingClientRect() : null;
         const shown = r && r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0;
-        const d = shown ? drawDim(dimensionsFor(item.el, dim.props), dim.token) : null;
+        const dg = shown ? dimensionsFor(item.el, dim.props) : null;
+        if (dg) span(dg, dim.token, false);
+        const d = dg ? drawDim(dg, dim.token) : null;
         const hidden = !d || overlaps(d.box) || under.some((o) => d.box[0] < o.right && o.left < d.box[0] + d.box[2] && d.box[1] < o.bottom && o.top < d.box[1] + d.box[3]);
         if (hidden) {
           if (node) node.g.remove(), this.#dims.delete(id);
@@ -464,5 +490,29 @@ export class MarkLayer {
         if (!node.g.isConnected) this.#structure.appendChild(node.g);
       }
     }
+    // the rails: the left one from the top down to whatever sits in the corner (the sheet), the top one across
+    const sheetTop = Math.min(view.h, ...under.filter((o) => o.left < 60 && o.bottom > view.h - 200).map((o) => o.top));
+    const left = 14, top = 14;
+    let rails = '';
+    const vs = [...spans.v.values()].filter((s) => s.a >= 24 && s.b <= sheetTop - 10).sort((x, y) => x.a - y.a).slice(0, 48);
+    const hs = [...spans.h.values()].filter((s) => s.a >= 40 && s.b <= view.w - 24).sort((x, y) => x.a - y.a).slice(0, 48);
+    if (vs.length) rails += `<line class="rail" x1="${left}" y1="24" x2="${left}" y2="${sheetTop - 10}"/>`;
+    if (hs.length) rails += `<line class="rail" x1="40" y1="${top}" x2="${view.w - 24}" y2="${top}"/>`;
+    let lastY = -Infinity;
+    for (const sp of vs) {
+      let ly = (sp.a + sp.b) / 2 + 3.5;
+      if (ly - lastY < 12) ly = lastY + 12;
+      lastY = ly;
+      rails += `<g${sp.off ? ' class="off"' : ''}><line x1="${left - 3}" y1="${sp.a}" x2="${left + 3}" y2="${sp.a}"/><line x1="${left - 3}" y1="${sp.b}" x2="${left + 3}" y2="${sp.b}"/><line x1="${left}" y1="${sp.a}" x2="${left}" y2="${sp.b}"/><text x="${left + 7}" y="${ly}">${esc(sp.text)}</text></g>`;
+    }
+    let lastX = -Infinity;
+    for (const sp of hs) {
+      let lx = (sp.a + sp.b) / 2;
+      const wide = sp.text.length * CH;
+      if (lx - wide / 2 - lastX < 6) lx = lastX + 6 + wide / 2;
+      lastX = lx + wide / 2;
+      rails += `<g${sp.off ? ' class="off"' : ''}><line x1="${sp.a}" y1="${top - 3}" x2="${sp.a}" y2="${top + 3}"/><line x1="${sp.b}" y1="${top - 3}" x2="${sp.b}" y2="${top + 3}"/><line x1="${sp.a}" y1="${top}" x2="${sp.b}" y2="${top}"/><text x="${lx}" y="${top + 15}" text-anchor="middle">${esc(sp.text)}</text></g>`;
+    }
+    if (rails !== this.#railsMarkup) (this.#rails.innerHTML = rails), (this.#railsMarkup = rails);
   }
 }

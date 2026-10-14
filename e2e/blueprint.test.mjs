@@ -241,6 +241,13 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   assert.equal(await sheet.locator('.off').innerText(), `${labels.filter((l) => l.startsWith('Drift:')).length} off`);
   // the tally counts every gap on the system in view, drawn or yielding to a mark's label
   assert.ok(Number((await sheet.innerText()).match(/(\d+) on system/)[1]) >= names.length, 'the tally counts at least the dimensions drawn');
+  // the rails: every gap in view as a tick on the margin, tokens in white, off-scale numbers in amber
+  const rails = await page.evaluate(() => {
+    const root = document.querySelector('plumb-overlay').shadowRoot;
+    return [...root.querySelectorAll('.bp .rails g')].map((g) => ({ text: g.querySelector('text').textContent, off: g.classList.contains('off'), vertical: g.querySelector('line').getAttribute('y1') === g.querySelector('line').getAttribute('y2') }));
+  });
+  assert.ok(rails.some((r) => /^s\d$/.test(r.text) && !r.off), `a token on a rail: ${JSON.stringify(rails)}`);
+  assert.ok(rails.some((r) => r.off && /^\d+(\.\d+)?$/.test(r.text)), `an off-scale number on a rail: ${JSON.stringify(rails)}`);
   // D held: the view as designed, every drift at its nearest token, inked mint; release puts it back exactly
   await page.keyboard.down('d');
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-plumb-peek'));
