@@ -157,3 +157,25 @@ No springs on the ladder; it is a ruler.
 5. the punch list.
 6. e2e: click → chooser → pick → preview → write → disk → mark gone; two picks written together; undo; a refused write;
    keyboard only.
+
+## 12. As built (commits 0a0a808 … on `homepage-react-plumber`)
+
+Everything in §1–§11 is in, with these decisions made while building:
+
+- **Pressed means queued.** The card pre-presses a lone fitting token and asks for Preview; the chooser offers it
+  ("One token fits. Take it with 1, or Enter") and presses it only once picked, so a pressed step is always in the
+  queue and clicking it again unpicks. Enter on a pressed step, or off the buttons, writes the queue.
+- **Clicks go to the smallest hit box under the pointer.** Tab order has to follow the document, so overlapping
+  hit rects are not reordered; a click resolves to the smallest box containing the point, the one the eye aimed at.
+- **Labels step their own way first, then the other, never out of the view.** A picked label grows ("gap 13 →
+  gap-3"); it climbs over empty space before it would drop into the element.
+- **Full reloads.** A dev server without fast refresh reloads the page on a write; the fixer saves the resume record
+  before writing, so blueprint comes back on, instantly, with "Wrote n edits to …" on the dock.
+- **The chooser closes when its written mark leaves** (the element reloaded, or the re-read no longer finds the
+  mark on an element still in view); scrolling its mark out of view does not close it.
+- **Picks preview on the clicked element only.** Elements that share a stamp (a list's rows) share a reading and a
+  mark state, but the inline preview is on the one that was clicked. The write fixes all of them.
+- **The reading card** stays as the detail view (Alt-hover, Select, the chooser's "Reading" link). Its ladder is
+  now `choices.js`, shared with the chooser. While the blueprint is on, the overlay's cards take the dark scheme.
+- **Not built:** "Copy accept command" in the chooser (the accept line is still in the card's note), and a resolve
+  motion beyond the fade (the dimension line folding into its label).

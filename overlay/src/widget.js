@@ -387,6 +387,9 @@ class PlumbOverlay extends HTMLElement {
     if (state === 'refused') return this.#announce('Blueprint waits until Plumb is running.');
     this.#bp.state = state;
     if (state === 'entering') this.#bp.progress = null;
+    // the blueprint's paper is dark: the overlay's own cards take the dark scheme over it, and give it back after
+    if (state === 'entering') { this.#schemeBefore = this.dataset.scheme ?? null; this.dataset.scheme = 'dark'; }
+    if (state === 'leaving' || state === 'off') { if (this.#schemeBefore) this.dataset.scheme = this.#schemeBefore; else delete this.dataset.scheme; this.#schemeBefore = null; }
     const on = state === 'entering' || state === 'on';
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
@@ -397,6 +400,7 @@ class PlumbOverlay extends HTMLElement {
     this.#dock();
   }
 
+  #schemeBefore = null;
   #announced = '';
   #announce(text) {
     if (text === this.#announced) return;
@@ -647,7 +651,7 @@ class PlumbOverlay extends HTMLElement {
 
   #renderTag(element, state) {
     const tag = this.#$('.tag');
-    this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
+    if (!this.#blueprint?.active) this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
     tag.innerHTML = this.#label(element, state);
     tag.hidden = false;
     this.#placeTag(element);
@@ -722,7 +726,7 @@ class PlumbOverlay extends HTMLElement {
     const steps = [1, 2, 4].filter(z => z === 1 || z <= fit);
     const zoom = steps.find(z => width * z >= 160) ?? steps.at(-1);
     const p = this.#pinned = { element, state: null, active: 0, zoom, original: new Map(), texts: new Map(), styleAttr: element.getAttribute('style'), before: false, status: null, peeking: false };
-    this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
+    if (!this.#blueprint?.active) this.dataset.scheme = groundIsDark(element) ? 'dark' : 'light';
     this.#showReticle(element);
     // Picks and previews belong to this pin; the cached reading stays as the server said it.
     p.state = structuredClone(await this.read(element));

@@ -24,7 +24,7 @@ import { choicesHtml, bindChoices, toPx, fmtPx, esc, code, VALUED } from './choi
 import { glyph } from './glyphs.js';
 
 const LIFT = [250, 600, 1200, 2400]; // ms to wait for the dev server to reload a written element's classes
-const HOLD = 5000; // ms a "wrote" line stays on the dock
+const HOLD = 6000; // ms a "wrote" line stays on the dock
 
 export const LIST_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 3h9M1.5 6h9M1.5 9h6" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>';
 
@@ -474,6 +474,7 @@ export class Fixer {
         const el = p.el;
         if (!this.#picks.has(p)) { group.splice(group.indexOf(p), 1); continue; }
         if (!el.isConnected || el.getAttribute('class') !== before.get(el) || i === LIFT.length - 1) {
+          if (this.#open && this.#open.el === el && this.#open.key === p.key) this.close({ focus: false });
           this.#drop(p);
           group.splice(group.indexOf(p), 1);
         }
@@ -531,9 +532,22 @@ export class Fixer {
     this.#host.changed();
     if (focus) this.#root.querySelector('.dock .list')?.focus({ preventScroll: true });
   }
-  // The drawn set changed (scroll, a reading arrived, a write landed): the rows follow.
+  // The drawn set changed (scroll, a reading arrived, a write landed): the rows follow, and the chooser keeps its
+  // mark by element and key when the re-read gave it a new id, or closes when the mark is gone from an element
+  // still in view (its drift was written, or the source changed).
   ordered() {
+    const o = this.#open;
+    if (o && !this.#marks.order().some(x => x.id === o.id)) {
+      const id = this.#marks.idOf(o.el, o.mark);
+      if (id) o.id = id;
+      else if (o.el.isConnected && this.#inView(o.el)) this.close({ focus: false });
+    }
     if (this.#listOpen) this.#renderList();
+    else if (this.#open) this.#render();
+  }
+  #inView(el) {
+    const r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
   }
   #renderList() {
     if (!this.#listOpen) return;
