@@ -43,7 +43,7 @@ export function labelOf(mark, fix) {
 }
 
 // A mark's drawing and its hit box, as markup and a rect, from its geometry. `nudge` steps the label (and its box)
-// away from labels already placed: up for a label above its mark, down for one under or beside it.
+// away from labels already placed: up for a label above its mark, down for one under or beside it; negative, the other way.
 function draw(g, mark, nudge = 0, fix = null) {
   const ink = fix?.kind === 'picked' || fix?.kind === 'written' ? INK.picked : fix?.kind === 'current' ? INK.current : mark.ledger === 'new' ? INK.drift : INK.debt;
   const heavy = mark.ledger === 'new' || !!fix;
@@ -100,9 +100,22 @@ export class MarkLayer {
     this.#onPick = onPick;
     this.#occluders = occluders;
     this.#state = state;
+    // Where hit boxes overlap (a long label over a short one), a click goes to the smallest box under the pointer: the
+    // one the eye aimed at. Enter goes to the focused box.
     const pick = (e) => {
-      const hit = e.target.closest?.('.hit');
-      const node = hit && this.#nodes.get(hit.dataset.id);
+      let hit = e.target.closest?.('.hit');
+      if (!hit) return;
+      if (e.type === 'click' && Number.isFinite(e.clientX)) {
+        let best = null, area = Infinity;
+        for (const node of this.#nodes.values()) {
+          if (node.hit.hasAttribute('data-under')) continue;
+          const r = node.hit.getBoundingClientRect();
+          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) continue;
+          if (r.width * r.height < area) (area = r.width * r.height), (best = node.hit);
+        }
+        hit = best ?? hit;
+      }
+      const node = this.#nodes.get(hit.dataset.id);
       if (!node) return;
       e.preventDefault();
       e.stopPropagation();
@@ -184,8 +197,16 @@ export class MarkLayer {
         continue;
       }
       const fix = this.#state?.(item.el, mark) ?? null;
-      let drawn = draw(g, mark, 0, fix);
-      for (let n = 1; n <= 4 && overlaps(drawn.box); n++) drawn = draw(g, mark, n, fix);
+      // the label steps away from labels already placed, its own way first then the other, never out of the view;
+      // when every step collides it keeps the nearest in-view one
+      let drawn = null, first = null;
+      for (const n of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+        const d = draw(g, mark, n, fix);
+        if (d.box[1] < 0 || d.box[1] + d.box[3] > view.h) continue;
+        first ??= d;
+        if (!overlaps(d.box)) { drawn = d; break; }
+      }
+      drawn ??= first ?? draw(g, mark, 0, fix);
       const { markup, box } = drawn;
       placed.push(box);
       if (!node) {

@@ -117,8 +117,9 @@ export class Fixer {
     this.#open.hash = full.hash;
     this.#open.file = full.file;
     this.#open.line = full.line;
+    // pressed means queued: a single fitting token is offered, not taken, until it is picked
     const pick = this.#byEl.get(el)?.get(mark.key);
-    this.#open.full.pick = pick ? pick.j : m.pick;
+    this.#open.full.pick = pick ? pick.j : null;
     this.#render();
   }
   // The theme's scale arrived: the ladder fills in.
@@ -158,6 +159,8 @@ export class Fixer {
     const order = this.#marks.order(), at = order.findIndex(x => x.id === o.id), n = order.length;
     const writable = this.writable().length;
     const title = (m ?? o.mark).title;
+    // focus stays with the chooser across its renders: on the card while reading, then on a step
+    const held = state || el.contains(this.#root.activeElement) || !this.#root.activeElement;
     const tone = m ? (this.#byEl.get(o.el)?.get(o.key) ? 'ok' : m.ledger !== 'new' ? 'quiet' : m.soft ? 'soft' : '') : '';
     el.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Choose a token for ${esc(title.replace(/`/g, ''))}">
       <div class="top">${glyph((m ?? o.mark).glyph, tone || 'off')}<span class="title">${code(title)}</span>
@@ -179,7 +182,7 @@ export class Fixer {
     else if (!el.dataset.state) el.dataset.state = 'open';
     this.#bind();
     this.#place();
-    if (state) {
+    if (held) {
       const first = el.querySelector('.cmp .opt[aria-pressed="true"]') ?? el.querySelector('.cmp .opt') ?? el.querySelector('.card');
       first?.focus({ preventScroll: true });
     }
@@ -198,7 +201,7 @@ export class Fixer {
   #hint(m) {
     if (!m.choices.length && !VALUED.includes(m.glyph)) return `<span class="hint">How to fix it</span>`;
     if (!m.choices.length) return `<span class="hint">No token is close</span>`;
-    if (m.pick === null) return `<span class="hint">${m.choices.length} tokens fit. Pick the one whose reason matches.</span>`;
+    if (m.pick === null) return `<span class="hint">${m.choices.length === 1 ? 'One token fits. Take it with 1, or Enter.' : `${m.choices.length} tokens fit. Pick the one whose reason matches.`}</span>`;
     const c = m.choices[m.pick];
     if (!c.edit) return `<span class="hint">${esc(c.label)} fits, but Plumb has no exact edit for this syntax. Open the reading and copy for an agent.</span>`;
     return '';
@@ -226,7 +229,9 @@ export class Fixer {
       else if (e.key === ']' || e.key === 'n' || e.key === 'N') { e.preventDefault(); this.step(1); }
       else if (e.key === '[' || e.key === 'p' || e.key === 'P') { e.preventDefault(); this.step(-1); }
       else if (e.key === 'b' || e.key === 'B') { e.preventDefault(); this.flip(); }
-      else if (e.key === 'Enter' && !onButton) { e.preventDefault(); this.write(); }
+      // Enter means go: on a pressed step (already picked) or off the buttons it writes the queue; a lone fitting
+      // token is taken first. Enter on an unpressed step picks it, as a button does; Space toggles either way.
+      else if (e.key === 'Enter' && (!onButton || e.target.closest('.opt')?.getAttribute('aria-pressed') === 'true')) { e.preventDefault(); if (m && m.pick === null && m.choices.length === 1) this.pick(0); else this.write(); }
       else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && e.target.closest('.cmp .opt')) {
         // the steps are one row: arrows walk it
         const opts = [...el.querySelectorAll('.cmp .opt')], i = opts.indexOf(e.target.closest('.opt'));
@@ -334,7 +339,7 @@ export class Fixer {
     if (!pick || pick.state === 'written') return;
     byKey.delete(o.key);
     this.#picks.delete(pick);
-    if (o.full) o.full.pick = o.full.choices.length === 1 ? 0 : null;
+    if (o.full) o.full.pick = null;
     o.peeking = false;
     this.#repaint(o.el);
     this.#marks.invalidate();
@@ -351,7 +356,7 @@ export class Fixer {
       this.#byEl.get(pick.el)?.delete(pick.key);
       this.#repaint(pick.el);
     }
-    if (this.#open?.full) this.#open.full.pick = this.#open.full.choices.length === 1 ? 0 : null;
+    if (this.#open?.full) this.#open.full.pick = null;
     if (this.#status?.kind !== 'writing') this.#status = null;
     this.#marks.invalidate();
     this.#host.announce('Every pick lifted');
@@ -382,6 +387,7 @@ export class Fixer {
     this.#status = { kind: 'writing', text: `Writing ${plural(n, 'edit')}…` };
     this.#host.changed(); this.#render();
     const wrote = [], refused = [];
+    this.#host.remember(`Wrote ${plural(n, 'edit')} to ${[...byFile.keys()].map(f => f.split('/').pop()).join(', ')}`);
     for (const [file, group] of byFile) {
       // the newest reading of the file decides the hash; the server refuses anything older
       const hash = group.map(p => p.hash).at(-1);
@@ -400,6 +406,7 @@ export class Fixer {
     }
     const short = f => f.split('/').pop();
     const said = wrote.map(w => `Wrote ${plural(w.n, 'edit')} to ${short(w.file)}`).join(' · ');
+    if (!wrote.length) this.#host.forgetResume();
     if (!refused.length) {
       this.#status = { kind: 'wrote', text: said };
       clearTimeout(this.#hold); this.#hold = setTimeout(() => { if (this.#status?.kind === 'wrote') { this.#status = null; this.#host.changed(); } }, HOLD);
@@ -462,6 +469,13 @@ export class Fixer {
     if (this.#open) await this.#reload();
     this.#marks.invalidate();
     this.#host.announce(this.#status?.text ?? `Read again: ${plural(kept, 'pick')} kept`);
+    this.#host.changed();
+  }
+
+  // The page reloaded after a write (a dev server without fast refresh): say what was written.
+  resumed(text) {
+    this.#status = { kind: 'wrote', text };
+    clearTimeout(this.#hold); this.#hold = setTimeout(() => { if (this.#status?.kind === 'wrote') { this.#status = null; this.#host.changed(); } }, HOLD);
     this.#host.changed();
   }
 

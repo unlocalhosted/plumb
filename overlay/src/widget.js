@@ -329,6 +329,7 @@ class PlumbOverlay extends HTMLElement {
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
     if (saved.blueprint) this.#blueprint?.enter({ instant: true });
+    if (saved.fix) { this.#fixer?.resumed(saved.fix); return; }
     const element = document.querySelector(saved.path);
     if (!element) return;
     const location = await locate(element);
@@ -375,6 +376,9 @@ class PlumbOverlay extends HTMLElement {
   changed() { this.#dock(); }
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); }
   announce(text) { this.#announce(text); }
+  // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
+  remember(text) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text })); } catch {} }
+  forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {
     if (state === 'refused') return this.#announce('Blueprint waits until Plumb is running.');

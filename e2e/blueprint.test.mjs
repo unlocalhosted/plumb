@@ -1,5 +1,5 @@
 // Blueprint mode as a person uses it: Alt+B turns the app into its blueprint with every drift in view drawn where it
-// lives; a mark opens the reading; leaving puts the page back exactly. Real Vite, real React 19, real Chromium.
+// lives; a mark opens its chooser, picks preview on the page and Write puts them in source; leaving puts the page back exactly. Real Vite, real React 19, real Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -126,53 +126,198 @@ test('Leaving puts the page back exactly, and nothing keeps listening', { timeou
   assert.deepEqual(errors, []);
 });
 
-test('A mark opens its reading; writing the fix removes the mark and keeps the mode on', { timeout: 120000 }, async (t) => {
+const chooser = (overlay) => overlay.locator('.ch .card[role="dialog"]');
+const markFor = (overlay, text) => hits(overlay).and(overlay.locator(`[aria-label*="${text}"]`));
+// a real click on the mark's box (Playwright's click would scroll the page to reach a fixed SVG rect, moving every mark)
+async function clickMark(page, overlay, text) {
+  const mark = markFor(overlay, text);
+  await mark.waitFor();
+  const b = await mark.boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+}
+const dock = (overlay) => overlay.locator('.dock');
+// pick a step by the token it names, in whichever form the family uses
+const pickStep = (overlay, token) => chooser(overlay).locator('.cmp .opt[data-pick]').filter({ hasText: token }).first().click();
+const noMark = (page, text) => page.waitForFunction((t) => ![...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((r) => r.getAttribute('aria-label').includes(t)), text, { timeout: 15000 });
+
+test('A mark opens its chooser; a pick previews on the page; Write puts it in source and the mark goes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
-  const { page, overlay } = await open(t, launched, url);
+  const { page, errors, overlay } = await open(t, launched, url);
 
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
   const before = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
-  const gapMark = hits(overlay).and(overlay.locator('[aria-label*="gap-[10px]"]'));
-  await gapMark.click();
-  const reading = overlay.getByRole('dialog', { name: 'Plumb reading for div in SyncRow' });
-  await reading.waitFor();
-  // the card lays the choices out as a list or as the scale's ladder; either way the token is named s2
-  await reading.locator('.opt[data-pick]').filter({ hasText: /s2/ }).first().click();
-  await reading.getByRole('button', { name: 'Write 1 edit' }).click();
-  await overlay.locator('.synced .state').filter({ hasText: 'Wrote 1 edit to src/App.jsx' }).waitFor({ timeout: 15000 });
-  assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /gap-s2 py-\[10px\]/);
+  await clickMark(page, overlay, 'gap-[10px]');
+  // the chooser, beside the row, names the finding and offers the family's steps; nothing opens the reading card
+  const ch = chooser(overlay);
+  await ch.waitFor();
+  assert.match(await ch.getAttribute('aria-label'), /Choose a token for gap-\[10px\] hardcodes 10px/);
+  assert.equal(await overlay.locator('.w:not([hidden])').count(), 0, 'the reading card stays closed');
+  const row = await page.locator('#sync-row').boundingBox(), box = await ch.boundingBox();
+  assert.ok(box.x >= row.x + row.width || box.x + box.width <= row.x || box.y >= row.y + row.height || box.y + box.height <= row.y, 'the chooser stands beside the element, never over it');
+  await ch.locator('.read .edit').filter({ hasText: /2 tokens fit/ }).waitFor();
 
-  // the written element is read again: its gap mark goes, its other marks stay, the count drops by one
-  await page.waitForFunction(() => ![...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((r) => r.getAttribute('aria-label').includes('gap-[10px]')), null, { timeout: 15000 });
-  assert.ok(await overlay.locator('.bp .hit[aria-label*="py-[10px]"]').count(), 'the row’s other drift is still marked');
-  // while a reading is pinned the dock names its file; closing it brings the count back, one fewer
-  await page.keyboard.press('Escape');
-  await reading.waitFor({ state: 'hidden' });
+  // pointing at a step previews it on the page; leaving puts it back
+  const s2 = ch.locator('.cmp .opt[data-pick]').filter({ hasText: /s2/ }).first();
+  await s2.hover();
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
+  await page.mouse.move(5, 5);
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '10px');
+
+  // picking keeps the preview; the mark says what it becomes; the dock counts the pick and offers Write
+  await s2.click();
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
+  await overlay.locator('.bp .hit[aria-label*="gap-[10px]"][aria-label*="Picked gap-s2"]').waitFor();
+  await say(overlay).filter({ hasText: `${before} off · 1 picked` }).waitFor();
+  await ch.locator('.change').filter({ hasText: /gap-s2/ }).waitFor();
+
+  // Write: one edit lands in source, the preview lifts once the page carries it, the mark leaves, the count drops
+  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
+  await say(overlay).filter({ hasText: 'Wrote 1 edit to App.jsx' }).waitFor({ timeout: 15000 });
+  assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /gap-s2 py-\[10px\]/);
+  await noMark(page, 'gap-[10px]');
+  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null, null, { timeout: 15000 });
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the page carries the change from source');
+  await overlay.locator('.bp .hit[aria-label*="py-[10px]"]').waitFor({ timeout: 15000 }); // the row’s other drift is still marked
   await say(overlay).filter({ hasText: `${before - 1} off in view` }).waitFor({ timeout: 15000 });
-  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true, 'closing the reading keeps blueprint on');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true, 'blueprint stays on');
+  assert.deepEqual(errors, []);
 });
 
-test('Keyboard: Tab reaches a mark, Enter opens its reading', { timeout: 90000 }, async (t) => {
+test('Several drifts are picked from their marks and written together, one apply per file', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
-  const { url } = await demo(t);
+  const { root, url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+
+  await clickMark(page, overlay, 'rounded-[14px]');
+  await chooser(overlay).locator('.cmp').waitFor();
+  const radius = await chooser(overlay).locator('.cmp .opt[data-pick]').first();
+  const token = (await radius.getAttribute('aria-label')).split(',')[0];
+  await radius.click();
+  await chooser(overlay).locator('.nav').waitFor();
+  await clickMark(page, overlay, 'gap-[3px]');
+  await chooser(overlay).filter({ hasText: /gap-\[3px\]/ }).waitFor();
+  await pickStep(overlay, /s1/);
+  await say(overlay).filter({ hasText: /2 picked/ }).waitFor();
+  assert.notEqual(await page.locator('#sync-row').getAttribute('style'), null);
+  assert.notEqual(await page.locator('#beta-chip').getAttribute('style'), null);
+
+  await chooser(overlay).getByRole('button', { name: 'Write 2 edits' }).click();
+  await say(overlay).filter({ hasText: 'Wrote 2 edits to App.jsx' }).waitFor({ timeout: 15000 });
+  const source = await readFile(join(root, 'src/App.jsx'), 'utf8');
+  assert.match(source, new RegExp(`px-\\[14px\\] ${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} bg-white`));
+  assert.match(source, /gap-s1 rounded-\[5px\]/);
+  await noMark(page, 'rounded-[14px]');
+  await noMark(page, 'gap-[3px]');
+  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null && document.getElementById('beta-chip').getAttribute('style') === null, null, { timeout: 15000 });
+  assert.deepEqual(errors, []);
+});
+
+test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves nothing previewed', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await demo(t);
+  const { page, overlay } = await open(t, launched, url);
+  const before = await footprint(page);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+
+  await clickMark(page, overlay, 'gap-[10px]');
+  await pickStep(overlay, /s2/);
+  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
+  // the pressed step, clicked again, unpicks
+  await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').click();
+  await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
+  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
+  // Undo from the dock lifts picks on more than one element
+  await pickStep(overlay, /s2/);
+  await clickMark(page, overlay, 'gap-[3px]');
+  await pickStep(overlay, /s1/);
+  await say(overlay).filter({ hasText: /2 picked/ }).waitFor();
+  await dock(overlay).getByRole('button', { name: 'Undo' }).click();
+  await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
+  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
+  assert.equal(await page.locator('#beta-chip').getAttribute('style'), null);
+  // picks pending when the mode is left are lifted with it
+  await pickStep(overlay, /s1/);
+  await page.keyboard.press('Escape'); // closes the chooser
+  await chooser(overlay).waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape'); // leaves blueprint
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-field'));
+  assert.equal(await footprint(page), before, 'nothing is left on the page');
+  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written');
+});
+
+test('A write the server refuses as stale is said so; Read again recovers the pick and writes', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await clickMark(page, overlay, 'gap-[10px]');
+  await pickStep(overlay, /s2/);
+  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
+
+  // The first apply is answered as the server answers a file that changed since it was read (changing the file on
+  // disk here would make the dev server reload the page); the next apply reaches the real server.
+  let refused = 0;
+  await page.route('**/apply', (route) => {
+    if (refused++) return route.continue();
+    route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'The file changed since the overlay read it. Read it again.' }) });
+  });
+  const file = join(root, 'src/App.jsx');
+  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
+  await say(overlay).filter({ hasText: 'App.jsx changed since Plumb read it' }).waitFor({ timeout: 15000 });
+  assert.match(await readFile(file, 'utf8'), /gap-\[10px\] py-\[10px\]/, 'nothing was written');
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the preview stays');
+  await overlay.locator('.bp .hit[aria-label*="Picked gap-s2"]').waitFor();
+  await dock(overlay).getByRole('button', { name: 'Read again' }).click();
+  await dock(overlay).getByRole('button', { name: 'Write 1' }).waitFor({ timeout: 15000 });
+  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
+  await say(overlay).filter({ hasText: 'Wrote 1 edit to App.jsx' }).waitFor({ timeout: 15000 });
+  assert.match(await readFile(file, 'utf8'), /gap-s2 py-\[10px\]/);
+  assert.equal(refused, 2);
+});
+
+test('Keyboard only: Tab reaches a mark, Enter opens its chooser, a digit picks, Enter writes, Esc returns to the mark', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await demo(t);
+  const { page, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  const active = () => page.evaluate(() => { const a = document.querySelector('plumb-overlay').shadowRoot.activeElement; return a ? { cls: a.className.baseVal ?? a.className, label: a.getAttribute('aria-label') } : null; });
   let label = null;
   for (let i = 0; i < 40 && !label; i++) {
     await page.keyboard.press('Tab');
-    label = await page.evaluate(() => {
-      const a = document.querySelector('plumb-overlay').shadowRoot.activeElement;
-      return a?.classList.contains('hit') ? a.getAttribute('aria-label') : null;
-    });
+    const a = await active();
+    label = a?.cls === 'hit' && a.label.includes('gap-[3px]') ? a.label : null;
   }
-  assert.ok(label, 'Tab reaches a mark');
+  assert.ok(label, 'Tab reaches the chip’s gap mark');
   await page.keyboard.press('Enter');
-  await overlay.getByRole('dialog').waitFor();
+  await chooser(overlay).locator('.cmp .opt').first().waitFor();
+  // focus lands on a step; 1 picks the first live step
+  assert.match((await active())?.cls ?? '', /opt/);
+  await page.keyboard.press('1');
+  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
+  assert.equal(await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').count(), 1);
+  // Esc closes the chooser and puts focus back on the mark
+  await page.keyboard.press('Escape');
+  await chooser(overlay).waitFor({ state: 'hidden' });
+  assert.equal((await active())?.cls, 'hit');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true, 'one Esc closes the chooser only');
+  // Enter reopens it; Enter in the chooser writes the queue
+  await page.keyboard.press('Enter');
+  await chooser(overlay).locator('.cmp .opt').first().waitFor();
+  await page.keyboard.press('Enter');
+  await say(overlay).filter({ hasText: /Wrote 1 edit to App\.jsx/ }).waitFor({ timeout: 15000 });
+  assert.notEqual(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'));
 });
 
 test('The field shows on a page that paints both html and body, and both come back after', { timeout: 90000 }, async (t) => {
