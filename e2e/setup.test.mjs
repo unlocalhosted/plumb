@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { stripVTControlCharacters } from 'node:util';
 import { chromium } from 'playwright';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -210,7 +211,7 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
     const timer = setTimeout(() => reject(new Error('Fixture dev server timed out:\n' + logs)), 30000);
     const append = chunk => {
       logs += chunk.toString();
-      const match = /http:\/\/127\.0\.0\.1:\d+\//.exec(logs);
+      const match = /http:\/\/127\.0\.0\.1:\d+\//.exec(stripVTControlCharacters(logs));
       if (match) { clearTimeout(timer); resolve(match[0]); }
     };
     server.stdout.on('data', append); server.stderr.on('data', append);
