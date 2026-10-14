@@ -256,7 +256,7 @@ export function Hero() {
         </div>
         <Seal count={left} rest={8} delay={0.62} className="absolute top-4 right-4 z-(--z-sticker) max-sm:hidden" />
         {/* the receipt: the tokens written, stacked under the seal */}
-        <div className="absolute top-32 right-6 z-(--z-sticker) flex flex-col items-end gap-1.5 max-sm:hidden" aria-label="Tokens written">
+        <div className="pointer-events-none absolute top-32 right-6 z-(--z-sticker) flex flex-col items-end gap-1.5 max-sm:hidden" aria-label="Tokens written">
           <AnimatePresence>
             {zero >= 1 &&
               tokens.map((t, i) => (
