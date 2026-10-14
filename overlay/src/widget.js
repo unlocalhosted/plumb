@@ -370,7 +370,7 @@ class PlumbOverlay extends HTMLElement {
   get health() { return this.#health; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...(this.#fixer?.occluders() ?? [])];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.sheetRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? [])];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id) { return this.#fixer.open(element, mark, id); }

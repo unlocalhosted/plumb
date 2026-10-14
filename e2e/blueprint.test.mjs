@@ -71,10 +71,17 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
 
   await page.keyboard.press('Alt+B');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-plumb-blueprint')), true);
-  // the page is re-inked: fills cleared, words white
+  // the page is re-inked: fills cleared, words transparent with a bar per line in their place
   const row = await page.locator('#sync-row').evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color }));
   assert.equal(row.bg, 'rgba(0, 0, 0, 0)');
-  assert.equal(row.color, 'rgb(255, 255, 255)');
+  assert.equal(row.color, 'rgba(0, 0, 0, 0)');
+  const bars = overlay.locator('.bp svg.greek rect');
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.greek rect').length > 0, null, { timeout: 5000 });
+  const greeked = await bars.count();
+  const title = page.locator('#sync-row span').nth(1);
+  const titleBox = await title.boundingBox();
+  const barOnTitle = await bars.evaluateAll((rects, box) => rects.some((r) => { const b = r.getBoundingClientRect(); return Math.abs(b.left - box.x) < 2 && b.top >= box.y && b.bottom <= box.y + box.height; }), titleBox);
+  assert.ok(barOnTitle, 'the title has a bar where its words are');
   // reading, then the count
   await say(overlay).filter({ hasText: /\d+ off in view · Alt\+B/ }).waitFor({ timeout: 20000 });
   // the marks are drawn on the frame after the count, so wait for them rather than read once
@@ -87,6 +94,52 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
   for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
   const count = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
   assert.equal(count, labels.filter((l) => l.startsWith('Drift:')).length, 'the dock counts the drift marks drawn');
+  // beside a numeric break, the nearest token is ghosted in mint at its own size: the gap of 10 next to its token
+  const ghosts = await page.evaluate(() => {
+    const root = document.querySelector('plumb-overlay').shadowRoot;
+    const out = {};
+    for (const hit of root.querySelectorAll('.bp .hit')) {
+      const label = hit.getAttribute('aria-label');
+      const mint = hit.previousElementSibling.querySelector('g[stroke="#a8f0c6"]');
+      if (!mint) continue;
+      const line = mint.querySelector('line'), path = mint.querySelector('path');
+      out[label.match(/`([^`]+)`/)?.[1]] = line ? Math.abs(+line.getAttribute('x2') - +line.getAttribute('x1')) || Math.abs(+line.getAttribute('y2') - +line.getAttribute('y1')) : +path.getAttribute('d').match(/A([\d.]+)/)[1];
+    }
+    return out;
+  });
+  assert.ok([8, 12].includes(ghosts['gap-[10px]']), `the gap's ghost is a neighbouring step: ${JSON.stringify(ghosts)}`);
+  assert.ok([12, 16].includes(ghosts['rounded-[14px]']), `the corner's ghost is a neighbouring radius: ${JSON.stringify(ghosts)}`);
+  // the wash: the sync row, far from the system, is warmer than the import row; pointing at it lifts its wash
+  const washOf = (id) => page.evaluate((id) => {
+    const r = document.getElementById(id).getBoundingClientRect();
+    const rect = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.wash rect')].find((w) => Math.abs(+w.getAttribute('x') - r.left) < 1 && Math.abs(+w.getAttribute('y') - r.top) < 1);
+    return rect ? { heat: +rect.dataset.heat, opacity: +rect.getAttribute('fill-opacity') } : null;
+  }, id);
+  const sync = await washOf('sync-row'), chip = await washOf('beta-chip');
+  assert.ok(sync && chip, `both drifting elements are washed: ${JSON.stringify({ sync, chip })}`);
+  assert.equal(sync.heat, 0.42, 'five drifts including a raw shadow and colour: the warmest stop');
+  assert.ok(sync.opacity === sync.heat && chip.opacity === chip.heat, 'nothing is lifted before pointing');
+  await page.locator('#sync-row').hover();
+  await page.waitForFunction(() => { const r = document.getElementById('sync-row').getBoundingClientRect(); return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.wash rect')].some((w) => Math.abs(+w.getAttribute('x') - r.left) < 1 && Math.abs(+w.getAttribute('y') - r.top) < 1 && w.getAttribute('fill-opacity') === '0'); }, null, { timeout: 3000 });
+  assert.equal((await washOf('beta-chip')).opacity, chip.heat, 'only the pointed element and its ancestors lift');
+  await page.mouse.move(5, 700);
+  await page.waitForFunction((heat) => { const r = document.getElementById('sync-row').getBoundingClientRect(); return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.wash rect')].some((w) => Math.abs(+w.getAttribute('x') - r.left) < 1 && Math.abs(+w.getAttribute('y') - r.top) < 1 && +w.getAttribute('fill-opacity') === heat); }, sync.heat, { timeout: 3000 });
+  // pointing at a break shows one note in words: the finding, the nearest tokens, what a click does
+  const hint = overlay.locator('.bp .bp-hint[data-on]');
+  const gapMark = hits(overlay).and(overlay.locator('[aria-label*="gap-[10px]"]'));
+  const gb = await gapMark.boundingBox();
+  await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+  await hint.waitFor({ timeout: 3000 });
+  assert.match(await hint.innerText(), /gap-\[10px\] hardcodes 10px\s+nearest s\d 8 · s\d 12\s+click to fix/);
+  assert.equal(await hint.count(), 1, 'one note at a time');
+  await page.mouse.move(5, 700);
+  await overlay.locator('.bp .bp-hint:not([data-on])').waitFor({ timeout: 3000 });
+  // focus shows the note too (the keyboard test proves Tab reaches a break)
+  await gapMark.evaluate((hit) => hit.focus());
+  await hint.waitFor({ timeout: 3000 });
+  assert.match(await hint.innerText(), /gap-\[10px\]/);
+  await gapMark.evaluate((hit) => hit.blur());
+  await overlay.locator('.bp .bp-hint:not([data-on])').waitFor({ timeout: 3000 });
   // every mark is a button you can name and reach
   for (const rect of await hits(overlay).all()) {
     assert.equal(await rect.getAttribute('role'), 'button');
@@ -129,6 +182,72 @@ test('Leaving puts the page back exactly, and nothing keeps listening', { timeou
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-field'));
   assert.equal(await footprint(page), before);
+  assert.deepEqual(errors, []);
+});
+
+const dimensions = (overlay) => overlay.locator('.bp .structure g.dimension');
+
+test('Gaps on the system are drawn as quiet dimensions named by their token, under the marks; the sheet names the view', { timeout: 90000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const before = await footprint(page);
+
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /\d+ off in view · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await page.waitForFunction(() => {
+    const names = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .structure g.dimension text')].map((t) => t.textContent);
+    return names.includes('s3') && names.includes('s1');
+  }, null, { timeout: 5000 });
+  const names = await dimensions(overlay).locator('text').evaluateAll((ts) => ts.map((t) => t.textContent));
+  assert.ok(names.every((n) => /^s\d$/.test(n)), `dimensions are named by token, not pixels: ${names}`);
+  // a dimension is structure, not a finding: nothing to click, nothing in the count
+  const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
+  assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
+  assert.equal(Number((await say(overlay).innerText()).match(/(\d+) off/)[1]), labels.filter((l) => l.startsWith('Drift:')).length);
+  // the section's gap-s3 sits between its two cards, as a vertical dimension
+  const between = await page.evaluate(() => {
+    const [a, b] = [...document.querySelectorAll('main section > div')].map((c) => c.getBoundingClientRect());
+    const root = document.querySelector('plumb-overlay').shadowRoot;
+    return [...root.querySelectorAll('.bp .structure g.dimension')].map((g) => {
+      const l = g.querySelector('line');
+      return { text: g.querySelector('text').textContent, x1: +l.getAttribute('x1'), x2: +l.getAttribute('x2'), y1: +l.getAttribute('y1'), y2: +l.getAttribute('y2') };
+    }).find((d) => d.text === 's3' && d.x1 === d.x2 && d.y1 >= a.bottom - 1 && d.y2 <= b.top + 1);
+  });
+  assert.ok(between, 'the gap between the cards is dimensioned s3');
+  // structure paints first, so a mark is never under a dimension; the ink is quieter than drift
+  assert.equal(await overlay.locator('.bp svg[role="group"] > :first-child').getAttribute('class'), 'structure');
+  assert.equal(await dimensions(overlay).first().getAttribute('stroke'), 'rgb(255 255 255 / 0.55)');
+  assert.equal(await dimensions(overlay).first().evaluate((g) => getComputedStyle(g).opacity), '1');
+  // the title block: route, viewport with its breakpoint, and the tally
+  const sheet = overlay.locator('.bp .sheet[data-on]');
+  await sheet.waitFor();
+  assert.match((await sheet.innerText()).replace(/\s+/g, ' '), /^SHEET \/ VIEW 1200 × 800 · lg TALLY \d+ on system · \d+ off \d+ /);
+  // the causes: by count, the first is the decision that closes the most; pointing at one outlines what it touches
+  const causes = sheet.locator('.cause[data-k]');
+  const counts = await causes.locator('.n').allInnerTexts();
+  assert.ok(counts.length >= 3 && counts.every((n, i) => i === 0 || +n <= +counts[i - 1]), `causes by count: ${counts}`);
+  const text = (await causes.allInnerTexts()).join('\n');
+  assert.match(text, /Tailwind defaults, not your theme · font-/);
+  assert.match(text, /spacing values off the scale · /);
+  const first = causes.first();
+  await first.hover();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
+  const lit = await overlay.locator('.bp .light rect').count();
+  assert.ok(lit >= 1 && lit <= +counts[0], `the elements the cause touches are outlined (${lit} for ${counts[0]} marks)`);
+  await page.mouse.move(5, 300);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length === 0, null, { timeout: 3000 });
+  assert.equal(await sheet.locator('.off').innerText(), `${labels.filter((l) => l.startsWith('Drift:')).length} off`);
+  // the tally counts every gap on the system in view, drawn or yielding to a mark's label
+  assert.ok(Number((await sheet.innerText()).match(/(\d+) on system/)[1]) >= names.length, 'the tally counts at least the dimensions drawn');
+  await page.setViewportSize({ width: 700, height: 800 });
+  await sheet.filter({ hasText: '700 × 800 · sm' }).waitFor({ timeout: 5000 });
+  await page.keyboard.press('Alt+B');
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-field'));
+  assert.equal(await overlay.locator('.bp .sheet[data-on]').count(), 0);
+  assert.equal(await dimensions(overlay).count(), 0);
+  assert.equal(await footprint(page), before, 'the structure and the sheet live in the overlay; the page is untouched');
   assert.deepEqual(errors, []);
 });
 
@@ -239,7 +358,7 @@ test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves no
   // the pressed step, clicked again, unpicks
   await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').click();
   await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
-  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
+  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null, null, { timeout: 5000 });
   // Undo from the dock lifts picks on more than one element
   await pickStep(overlay, /s2/);
   await clickMark(page, overlay, 'gap-[3px]');
@@ -414,7 +533,7 @@ test('With motion: turning around mid-sweep and removing the overlay both leave 
 
   await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-developing'), null, { timeout: 5000 });
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).color), 'rgb(255, 255, 255)', 'the sweep finished re-inking');
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).color), 'rgba(0, 0, 0, 0)', 'the sweep finished re-inking: words greeked');
   assert.equal(await overlay.locator('.bp .scan').isHidden(), true);
 
   await page.evaluate(() => document.querySelector('plumb-overlay').remove());

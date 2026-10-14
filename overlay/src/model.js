@@ -78,11 +78,21 @@ export function reading(location, site, edits) {
       byKey.set(key, mark); marks.push(mark);
     }
   }
+  // What is on the system, as the blueprint draws its structure: one gap per element, named by its token. A gap that
+  // has a finding is a mark, not a dimension; padding is inside the outline the blueprint already draws.
+  const dims = [];
+  for (const d of site.declarations) {
+    if (!/^(gap|column-gap|row-gap)$/.test(d.prop) || !d.site || byKey.has(at(d.site)) || d.origin === 'arbitrary') continue;
+    const ref = (d.decisionRefs ?? d.refs ?? []).find(r => r.startsWith('--spacing-'));
+    if (!ref) continue;
+    dims.push({ key: at(d.site), props: [d.prop], token: short(ref, 'spacing'), value: d.resolved ?? d.value, n: number(d.resolved ?? d.value) });
+    break;
+  }
   // Reading order: new problems first, then by where they sit in the source.
   marks.sort((a, b) => (a.ledger === 'new' ? 0 : 1) - (b.ledger === 'new' ? 0 : 1) || a.line - b.line || a.column - b.column);
   // No declarations at all means nothing is written literally here (classes computed in code), not "on the system".
   return { location, file: location.file, line: location.line, column: location.column, tag: location.tag, component: location.component, via: location.via,
-    hash: edits?.hash, marks, notes, declared: site.declarations.length,
+    hash: edits?.hash, marks, dims, notes, declared: site.declarations.length,
     // The chain of authored JSX from this element up through its owners, innermost first, and which link is read.
     chain: location.chain ?? [], index: location.index ?? 0 };
 }

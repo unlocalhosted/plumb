@@ -11,7 +11,8 @@
  *             backoff (2s, 4s, 8s)
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
  *             previews are the card's own), re-read what changed; a write re-reads every element from that file
- *  progress   { read, total, drift } for what is in view, reported only when it changes
+ *  progress   { read, total, drift, on } for what is in view, reported only when it changes; `on` counts the gaps on
+ *             the system (drawn as quiet dimensions), `drift` the new findings (drawn as marks)
  * ───────────────────────────────────────────────────────── */
 
 const CONCURRENT = 6;
@@ -21,7 +22,7 @@ const THROTTLE = 150;
 
 export class Reader {
   #host; #onChange; #onProgress;
-  #items = new Map(); // id → { id, el, stamp, sig, state, marks, file, tries }
+  #items = new Map(); // id → { id, el, stamp, sig, state, marks, dims, file, tries }
   #ids = new WeakMap(); // element → id
   #byStamp = new Map(); // stamp → Promise<reading>
   #visible = new Set();
@@ -64,6 +65,7 @@ export class Reader {
     clearTimeout(this.#throttle);
     clearTimeout(this.#retry);
     this.#items.clear();
+    this.#ids = new WeakMap(); // the next start registers every element again
     this.#byStamp.clear();
     this.#visible.clear();
     this.#queue = [];
@@ -112,7 +114,7 @@ export class Reader {
       if (!id) {
         id = this.#next++;
         this.#ids.set(el, id);
-        this.#items.set(id, { id, el, stamp, sig, state: 'queued', marks: [], file: null, tries: 0 });
+        this.#items.set(id, { id, el, stamp, sig, state: 'queued', marks: [], dims: [], file: null, tries: 0 });
         this.#io.observe(el);
       } else if (changed) {
         const item = this.#items.get(id);
@@ -159,12 +161,15 @@ export class Reader {
             item.state = 'ready';
             item.file = state.file;
             item.marks = state.marks.filter((m) => m.ledger !== 'exception');
+            item.dims = state.dims ?? [];
           } else if (state?.status === 'unplaced') {
             item.state = 'ready'; // nothing to draw, and nothing to retry: Plumb can't place this element
             item.marks = [];
+            item.dims = [];
           } else {
             item.state = 'pending';
             item.marks = [];
+            item.dims = [];
             if (item.stamp) this.#byStamp.delete(item.stamp);
             if (item.tries < BACKOFF.length) {
               const wait = BACKOFF[item.tries++];
@@ -187,13 +192,14 @@ export class Reader {
   #report(order) {
     const read = order.filter((i) => i.state === 'ready').length;
     const drift = order.reduce((n, i) => n + i.marks.filter((m) => m.ledger === 'new').length, 0);
-    const key = `${read}/${order.length}/${drift}`;
+    const on = order.reduce((n, i) => n + i.dims.length, 0);
+    const key = `${read}/${order.length}/${drift}/${on}`;
     if (key !== this.#progress) {
       this.#progress = key;
-      this.#onProgress?.({ read, total: order.length, drift });
+      this.#onProgress?.({ read, total: order.length, drift, on });
     }
     // what to draw: everything read, in document order
-    const shown = order.filter((i) => i.marks.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
-    this.#onChange?.(shown.map(({ id, el, marks, file }) => ({ id, el, marks, file })));
+    const shown = order.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    this.#onChange?.(shown.map(({ id, el, marks, dims, file }) => ({ id, el, marks, dims, file })));
   }
 }
