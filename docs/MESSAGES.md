@@ -33,7 +33,7 @@ Paths are relative to the project root, everywhere, including ownership sources.
 
 ## Reasons quoted from tokens
 
-A token's reason is shown only when it is about that token. A reason string attached to more than three tokens is a group description (MetalUI's `$use` is one per recipe), not a reason for this value: keep it in JSON as `groupWhy`, do not show it. Shown reasons are cut to the sentence that mentions the token or its amount, at most 100 characters.
+A token's reason is shown only when it is about that token. A reason string attached to more than three tokens is a group description (MetalUI's `$use` is one per recipe), not a reason for this value: keep it in JSON as `groupWhy`, do not show it. Shown reasons are cut to the sentence that mentions the token or its amount, at most 72 characters.
 
 ## Suggestions
 
