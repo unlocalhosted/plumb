@@ -72,7 +72,7 @@ export default defineConfig({
 })
 ```
 
-Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumber --help` for flags. JSON reports follow [report.schema.json](schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumber init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
+Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumber --help` for flags. JSON reports follow [report.schema.json](https://github.com/unlocalhosted/plumb/blob/main/schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumber init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
 Init enables the `hover-gate`, `focus-outline`, `transition-named` and `no-ease-in` habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
 
@@ -100,7 +100,7 @@ Detection checks the project root, then its Git repository root. Instructions ar
 
 Plain Markdown targets receive the skill body without frontmatter between `<!-- plumb:start -->` and `<!-- plumb:end -->`. Only that block is replaced; surrounding bytes survive. Missing blocks are appended. Malformed or duplicate markers fail before install writes. Dedicated React Plumber skill/rule files are rewritten only when content differs; unrelated rules and hook settings survive. Every write is printed. Reinstallation preserves bytes. No agent detected creates only `AGENTS.md`; other agent selections don't create it unless Codex or generic is selected. Existing `CLAUDE.md` and `PLUMBER.md` are left alone; use `plumber agent-docs` to generate the optional project token reference.
 
-Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, and `alwaysApply: false`, as documented in [Cursor Rules](https://cursor.com/docs/rules). Windsurf rules use Markdown with `trigger: always_on` frontmatter, documented in [Cascade Rules](https://docs.windsurf.com/windsurf/cascade/memories). Agent application behavior remains unverified in the editors; [adoption notes](docs/roadmap/1-adoption.md#agent-format-notes) record format verification and limits.
+Cursor rules use `description`, comma-separated `globs` for tsx/jsx/ts/js/css, and `alwaysApply: false`, as documented in [Cursor Rules](https://cursor.com/docs/rules). Windsurf rules use Markdown with `trigger: always_on` frontmatter, documented in [Cascade Rules](https://docs.windsurf.com/windsurf/cascade/memories). Agent application behavior remains unverified in the editors; [adoption notes](https://github.com/unlocalhosted/plumb/blob/main/docs/roadmap/1-adoption.md#agent-format-notes) record format verification and limits.
 
 `--ci` additionally writes the existing GitHub Action workflow when absent. `install --hooks` keeps its explicit hooks-only behavior for Claude and Cursor; `install --hooks --list` previews those hooks.
 
@@ -203,7 +203,7 @@ Inputs: `base` defaults to the PR base SHA; `working-directory` defaults to `.`;
 
 Fetch the base history (`fetch-depth: 0`). Review events rerun the gate after approval or dismissal. Fork PRs have read-only default tokens, so posting comments requires a separately designed trusted workflow; this example needs a writable token. Use a reviewed Action SHA. Avoid running this dependency/compiler pipeline with privileged tokens on untrusted code through `pull_request_target`. Non-PR runs need an explicit `base` and produce annotations/summary without a PR comment.
 
-Verification and limits: [Layer 9 notes](docs/layers/9-surfaces.md). The Action runner and approval script are tested over disposable fixture PRs and GitHub API response fixtures, with a local REST server. This verifies create/update, approval failure/success and CLI execution; it is not a hosted GitHub run.
+Verification and limits: [Layer 9 notes](https://github.com/unlocalhosted/plumb/blob/main/docs/layers/9-surfaces.md). The Action runner and approval script are tested over disposable fixture PRs and GitHub API response fixtures, with a local REST server. This verifies create/update, approval failure/success and CLI execution; it is not a hosted GitHub run.
 
 ### Migrating older projects
 

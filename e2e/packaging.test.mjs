@@ -40,5 +40,12 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   await writeFile(join(consumer, 'package.json'), '{"name":"packed-consumer","private":true,"type":"module"}\n');
   command(consumer, 'npm', ['install', '--ignore-scripts', '--omit=peer', '--no-audit', '--no-fund', tarball]);
   const installed = join(consumer, 'node_modules/@unlocalhosted/react-plumber');
+  const readme = await readFile(join(installed, 'README.md'), 'utf8');
+  const links = [...readme.matchAll(/\]\(([^\s)]+)(?:\s+"[^"]*")?\)|^\[[^\]]+\]:\s*(\S+)/gm)].map(match => match[1] ?? match[2]);
+  for (const link of links.filter(link => !/^(?:[a-z][a-z\d+.-]*:|#)/i.test(link))) {
+    const path = link.split(/[?#]/)[0].replace(/^\.\//, '');
+    assert.ok(files.includes(path), `README link ${link} must exist in the tarball`);
+    assert.fail(`Repository README link ${link} must use an absolute repository URL`);
+  }
   assert.match(command(consumer, process.execPath, [join(installed, 'dist/cli.js'), '--help']), /plumber/);
 });
