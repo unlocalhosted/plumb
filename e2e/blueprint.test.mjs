@@ -280,7 +280,10 @@ test('A mark opens its chooser; a pick previews on the page; Write puts it in so
   await ch.waitFor();
   assert.match(await ch.getAttribute('aria-label'), /Choose a token for gap-\[10px\] hardcodes 10px/);
   assert.equal(await overlay.locator('.w:not([hidden])').count(), 0, 'the reading card stays closed');
-  const row = await page.locator('#sync-row').boundingBox(), box = await ch.boundingBox();
+  const row = await page.locator('#sync-row').boundingBox();
+  let box = null;
+  for (let i = 0; i < 40 && !box; i++) { box = await ch.boundingBox(); if (!box) await page.waitForTimeout(50); } // the chooser settles into place
+  assert.ok(box, 'the chooser has a place');
   assert.ok(box.x >= row.x + row.width || box.x + box.width <= row.x || box.y >= row.y + row.height || box.y + box.height <= row.y, 'the chooser stands beside the element, never over it');
   await ch.locator('.read .edit').filter({ hasText: /2 tokens fit/ }).waitFor();
 

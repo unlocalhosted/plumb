@@ -51,7 +51,7 @@ export const MARKS_CSS = `
   .bp .badge text { stroke: none; fill: #1f3fa6; font: 600 10px/1 var(--pl-mono); }
   .bp { position: fixed; inset: 0; pointer-events: none; }
   .bp svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .bp text { font: 500 11px/1 var(--pl-mono); paint-order: stroke; stroke: #1f3fa6; stroke-width: 3px; stroke-linejoin: round; }
+  .bp text { font: 500 11px/1 var(--pl-mono); paint-order: stroke; stroke: rgb(31 63 166 / 0.72); stroke-width: 3px; stroke-linejoin: round; } /* a halo that sits on the wash without boxing it */
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   .bp .hit:focus-visible { stroke: #fff; stroke-width: 2px; }
   .bp .hit[data-under] { pointer-events: none; }
