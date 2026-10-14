@@ -340,6 +340,114 @@ The blueprint already draws every drift in view where it lives and fixes it from
 - **Write tokens** under the panel shows the theme diff and writes it (through the Session, hash-checked, the same refusal on a changed file). **Accept** per family takes a why and writes the ledger lines (open question 1). Then the ordinary chooser takes over for multi-candidate sites, and the punch list's Write runs the morph for the files in view through the same `apply`.
 - Reduced motion, contrast on the paper, keyboard: as the blueprint already does (every row a button, `1–9` picks, Esc closes).
 
+## 8.5 Why the first layer is shadcn, colour and radius
+
+Every family reaches the preset by one of three paths, and only one of them needs new machinery.
+
+| Path | Families | What Plumber does | Code edits |
+| --- | --- | --- | --- |
+| **Filled from evidence** | colour, radius | Harvests every value in use, infers which one is `--primary`, `--muted-foreground`, `--border`, `--radius`, writes the theme, rewrites the code | yes |
+| **Adopted** | type, spacing, shadow, motion | `text-sm`, `gap-3`, `shadow-md` are already a scale; Plumber writes them as the project's own keys | none |
+| **Built on tokens** | atoms and molecules (Button, Input, Card) | Points hand-built elements at the preset's components | structural, via an agent |
+
+So the first layer is colour and radius because:
+
+1. **Colour is the hard part, and the payoff.** It is the one family where Plumber must infer meaning: which blue is the brand, which grey is muted text, which is a border. If that inference holds on a real app, everything after it is easier. AlgoRecall alone has 17,107 colour sites off any token.
+2. **Radius is the simplest slot.** One value (the most common corner on controls) with `sm`/`md`/`lg` derived from it. It proves the "one value, a ladder derived from it" shape at almost no extra cost.
+3. **Together they run the whole loop once.** `init → fill → fill --write → morph --write → check`. Every new piece (harvest, clustering, slot rules, the theme writer, the morph) is built once, on one fixture, closed by one end-to-end test. Later layers add slots and families to a loop that already works.
+4. **Adopted families can't prove the morph.** They change no code, so a slice made of them would ship without proving the part users care about: their code moving onto a system.
+5. **Components need the tokens first.** A shadcn `Button` is `bg-primary`, `rounded-md`; pointing raw buttons at it before those tokens exist means nothing.
+6. **Small enough to be right.** Smaller proves nothing end to end; bigger mixes three kinds of work and is hard to verify.
+
+### Worked example: one card through layer 1
+
+Example values, shaped like the run on AlgoRecall.
+
+**The app today** (a vibe-coded pricing card):
+
+```jsx
+<div className="rounded-[6px] border border-gray-200 bg-white p-5">
+  <p className="text-gray-500 text-sm">Everything in Free, plus unlimited projects.</p>
+  <div className="bg-gray-50 rounded-md text-xs text-gray-500">Billed yearly.</div>
+  <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-[6px]">Upgrade</button>
+  <button className="bg-gray-100 text-gray-900 rounded-md">Compare plans</button>
+</div>
+```
+
+**1. Pick.** `npx plumber init` recommends shadcn/ui because `components.json` exists; Enter keeps it (`--preset shadcn --yes` for CI and agents).
+
+**2. Harvest.** Every colour and corner in use, grouped (near-identical colours merge), each group remembering how it is used:
+
+| Value | Used as | Sites |
+| --- | --- | ---: |
+| `#2563eb` | fill on buttons and links | 214 |
+| `#111827` | text | 6,120 |
+| `#6b7280` | secondary text | 1,388 |
+| `#e5e7eb` | borders | 1,904 |
+| `#f3f4f6` | fill on quiet buttons | 88 |
+| `#f9fafb` | behind captions and code | 402 |
+| `#1d4ed8` | fill, only under `:hover` | 31 |
+| `6px` | corners on controls | 1,180 |
+
+**3. Fill.** Each shadcn token gets a value with its evidence and a contrast check; close candidates are offered as alternatives, never merged silently:
+
+| Token | Proposed | Evidence | Check |
+| --- | --- | --- | --- |
+| `--primary` | `#2563eb` | fill of 214 buttons and links in 31 files; alternatives `#1d4ed8` (hover only), `#7c3aed` (12 sites, Pricing.tsx) | white on it 5.2:1 |
+| `--foreground` | `#111827` | text, 6,120 sites | 14.9:1 |
+| `--muted-foreground` | `#6b7280` | second text colour | 4.8:1 |
+| `--muted` | `#f9fafb` | behind captions, 402 | |
+| `--secondary` | `#f3f4f6` | quiet buttons, 88 | 13.1:1 |
+| `--border` | `#e5e7eb` | borders, 1,904 | |
+| `--ring` | = primary | no focus colour of its own (fallback) | |
+| `--radius` | `6px` | `rounded-md` on 1,180 controls | |
+
+The person keeps each value, picks an alternative, or types a brand colour. Nothing is written yet.
+
+**4. Write.** `plumber fill --write` shows the diff, then writes the theme in shadcn's format:
+
+```css
+:root {
+  /* why: the fill of 214 buttons and links (drafted) */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --foreground: #111827;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --secondary: #f3f4f6;
+  --border: #e5e7eb;
+  --radius: 6px;
+}
+@theme inline {
+  --color-primary: var(--primary);
+  --radius-md: var(--radius);
+  /* … */
+}
+```
+
+The tokens are proposed, not accepted: `plumber baseline` records today's drift, and accepting a token takes a reason (drafted reasons count, marked as drafted).
+
+**5. Morph.** `plumber morph --write` rewrites every site with exactly one fitting token, file by file. The app looks the same; the code now speaks the system:
+
+```jsx
+<div className="rounded-md border border-border bg-card p-5">
+  <p className="text-muted-foreground text-sm">…</p>
+  <div className="bg-muted rounded-md text-xs text-muted-foreground">…</div>
+  <button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Upgrade</button>
+  <button className="bg-secondary text-secondary-foreground rounded-md">Compare plans</button>
+</div>
+```
+
+`hover:bg-blue-700` becomes `hover:bg-primary/90` by the shadcn preset's hover rule (owner decision 3). What can't be rewritten exactly is listed, never guessed:
+
+| Site | Why it needs a hand |
+| --- | --- |
+| `bg-gray-100/50` | has a modifier: check `bg-muted/50` still reads right |
+| `style={{ fill: color }}` | computed at runtime: pass it through a custom property |
+| `border: 1px solid #e5e7eb` | shorthand: write `border: 1px solid var(--border)` |
+
+It ends with the coverage change, the same numbers `check` prints: `colour 65% → 93% on tokens`.
+
 ## 9. Layers
 
 Owner's rules applied: one layer at a time, finished and verified before the next; integration and e2e tests only, through the real CLI on fixtures and real Chromium for the overlay; no unit tests. Engine, CLI and preset layers are Codex work (`gpt-6.1-sol`); the blueprint layer is Claude. Each layer ends with its e2e green, a `docs/layers/` note, and a read-only run on AlgoRecall recorded in the note (cache redirected; its untracked `.plumber/` and `plumber.config.ts` are never written).
