@@ -148,7 +148,7 @@ export async function locate(element, options = {}) {
   let confirmed;
   if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
     try {
-      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true });
+      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch });
       if (answer?.file && answer.line && answer.column) confirmed = answer;
     } catch (error) { if (error?.starting || error?.failed) throw error; }
   }
@@ -170,7 +170,7 @@ export async function locate(element, options = {}) {
       const found = typeof up.memoizedProps?.['data-plumb-source'] === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(up.memoizedProps['data-plumb-source']);
       if (!found) continue;
       try {
-        const answer = await request('resolve', { source: found[1], line: found[2], column: found[3], hash: found[4], tag: '*', stamp: '1' }, { explain: true });
+        const answer = await request('resolve', { source: found[1], line: found[2], column: found[3], hash: found[4], tag: '*', stamp: '1' }, { explain: true, batch: options.batch });
         if (answer?.usage && answer.file) {
           const at = { file: answer.file, line: answer.line, column: answer.column, component: answer.component, usage: true };
           return { ...at, tag: element.localName, via: 'stamp-owner', chain: [at], index: 0 };
@@ -216,7 +216,7 @@ async function locateOwner(element, options = {}) {
   const asked = new Map();
   const ask = params => {
     const key = JSON.stringify(params);
-    if (!asked.has(key)) asked.set(key, request('resolve', params, { explain: true })
+    if (!asked.has(key)) asked.set(key, request('resolve', params, { explain: true, batch: options.batch })
       .catch(error => { if (error?.starting || error?.failed) throw error; return { refused: error?.detail ?? error?.message }; }));
     return asked.get(key);
   };

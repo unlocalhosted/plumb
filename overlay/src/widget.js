@@ -358,12 +358,17 @@ class PlumbOverlay extends HTMLElement {
 
   // What blueprint mode needs from the widget: Plumb's findings for an element (not the card's edits and text, and
   // never in the card's cache), the server's health, the pinned element, and where the card and dock sit.
+  // how many times each stamped site was read: the tests prove a list's rows share one reading
+  #readCounts = new Map();
+  readsFor(stamp) { return this.#readCounts.get(stamp) ?? 0; }
   readMarks(element, fresh = false, { computed = true } = {}) {
     if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
+    const stamp = element.getAttribute?.('data-plumb-source')?.split('#')[0];
+    if (stamp) this.#readCounts.set(stamp, this.#readCounts.get(stamp) + 1 || 1);
     const promise = (async () => {
-      const found = await locate(element, { explain: true });
+      const found = await locate(element, { explain: true, batch: true });
       if (!found?.file) return { status: 'unplaced' };
-      return this.#readAt(found, element, { want: 'marks', computed });
+      return this.#readAt(found, element, { want: 'marks', computed, batch: true });
     })().catch(error => ({ status: error?.starting ? 'starting' : 'error' }));
     // an answer that still needs its classes traced is not the element's reading yet
     promise.then(state => { if (state?.computed && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
@@ -497,13 +502,13 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // The reading of one link in the chain: the JSX at that position, its declarations, findings and edits.
-  async #readAt(location, element = this.#pinned?.element, { want = 'full', computed = true } = {}) {
+  async #readAt(location, element = this.#pinned?.element, { want = 'full', computed = true, batch = false } = {}) {
     const params = { file: location.file, line: location.line, column: location.column };
     // Its text is read alongside: which runs are plain literals Plumb can write, or why it can't (an older server
     // without the endpoint answers nothing, and the card simply has no text row). Blueprint mode wants the findings
     // only; the edits and text are fetched when a reading is opened.
     const marksOnly = want === 'marks';
-    const [site, edits, text] = await Promise.all([request('site', params), marksOnly ? null : request('edits', params), marksOnly ? null : request('text', params).catch(() => null)]);
+    const [site, edits, text] = await Promise.all([request('site', params, { batch }), marksOnly ? null : request('edits', params), marksOnly ? null : request('text', params).catch(() => null)]);
     if (!site) return { status: 'error', tag: location.tag, location, message: "React Plumber couldn't read this element." };
     const rendered = element?.getAttribute('class')?.trim();
     // Nothing written here, but the element has classes: they are built in code. Read them where they are written.

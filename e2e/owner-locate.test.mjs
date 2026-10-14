@@ -195,11 +195,19 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
     assert.equal((await page.evaluate(() => window.ownerReady)).status, 'ready');
     const consoleErrors = [], resolutions = [];
     const onConsole = entry => { if (entry.type() === 'error') consoleErrors.push(entry.text()); };
+    // the overlay asks the resolver one question per request, or several in one batch; both count
     const onResponse = response => {
       const url = new URL(response.url());
+      if (url.pathname === '/__plumb/batch') {
+        const calls = response.request().postDataJSON()?.calls ?? [];
+        resolutions.push(response.json().then(results => calls.map((call, i) => ({ call, r: results[i] }))
+          .filter(({ call }) => call.method === 'resolve' && call.params?.line !== undefined)
+          .map(({ call, r }) => ({ status: 'error' in r ? (r.usage ? 400 : 500) : 200, body: 'error' in r ? { error: r.error } : r.value, flagged: 'component' in call.params || 'tag' in call.params }))));
+        return;
+      }
       if (url.pathname !== '/__plumb/resolve' || !url.searchParams.has('line')) return;
-      resolutions.push(response.json().then(body => ({ status: response.status(), body,
-        flagged: url.searchParams.has('component') || url.searchParams.has('tag') })));
+      resolutions.push(response.json().then(body => [{ status: response.status(), body,
+        flagged: url.searchParams.has('component') || url.searchParams.has('tag') }]));
     };
     page.on('console', onConsole); page.on('response', onResponse);
     for (const [id, [fragment, component, token, tag = 'button']] of Object.entries(anchors)) {
@@ -241,7 +249,7 @@ for (const [version, transform] of [[19, 'plugin-react'], [19, 'oxc'], [18, 'oxc
       if (id === 'orphan') assert.ok(Array.isArray(refusal.detail.frames), id);
       else { assert.ok(refusal.detail.source, id); assert.ok(refusal.detail.line > 0 && refusal.detail.column > 0, id); }
     }
-    const responses = await Promise.all(resolutions);
+    const responses = (await Promise.all(resolutions)).flat();
     page.off('console', onConsole); page.off('response', onResponse);
     assert.deepEqual(consoleErrors, [], 'browser locate emits zero console errors');
     assert.ok(responses.length, 'locate exercised HTTP resolver');

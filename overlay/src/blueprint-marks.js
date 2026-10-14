@@ -389,7 +389,10 @@ export class MarkLayer {
       if (!item.el.isConnected) continue;
       const r = item.el.getBoundingClientRect();
       rects.set(item, r);
-      const shown = r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0;
+      // in view, and visible: an element with visibility hidden has a box and is read, but there is nothing to see
+      const painted = item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true, contentVisibilityAuto: true }) : getComputedStyle(item.el).visibility !== 'hidden';
+      const shown = r.bottom > -40 && r.top < view.h + 40 && r.right > 0 && r.left < view.w && r.width > 0 && painted;
+      if (!shown) rects.delete(item);
       item.marks.forEach((mark, k) => {
         const g = shown ? dimensionsFor(item.el, mark.props) : null;
         plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g });

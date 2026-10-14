@@ -39,7 +39,8 @@ export class Greek {
     if (this.#running) return;
     this.#running = true;
     this.#mo = new MutationObserver(() => this.#remeasure());
-    this.#mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+    // attributes that change what is laid out: a class, an inline style, hidden, an opened details, a disabled control
+    this.#mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open', 'disabled', 'aria-expanded', 'data-state'] });
     addEventListener('scroll', this.invalidate, { passive: true, capture: true });
     addEventListener('resize', this.#resized);
     this.invalidate();
@@ -91,8 +92,10 @@ export class Greek {
     const range = document.createRange();
     for (let n = walker.nextNode(); n && lines.length < CAP; n = walker.nextNode()) {
       const el = n.parentElement;
+      // not painted: display none, visibility hidden, or inside a closed details (content-visibility), which still
+      // reports rects for its words
+      if (el.checkVisibility ? !el.checkVisibility({ visibilityProperty: true, contentVisibilityAuto: true }) : getComputedStyle(el).visibility === 'hidden') continue;
       const cs = getComputedStyle(el);
-      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const size = parseFloat(cs.fontSize) || 14, weight = parseInt(cs.fontWeight, 10) || 400;
       range.selectNodeContents(n);
       for (const r of range.getClientRects()) {

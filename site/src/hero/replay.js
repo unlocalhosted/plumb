@@ -140,6 +140,18 @@ window.fetch = async (input, init) => {
     catch { return answer({ error: 'Request body must be valid JSON.' }, 400); }
     if (!params || typeof params !== 'object' || Array.isArray(params)) return answer({ error: 'Parameters must be a JSON object.' }, 400);
   }
+  // A batch is several resolve or site questions in one request; each is answered the way it would be on its own,
+  // so the ones about the recorded card come from the recording and the rest from the live server in development.
+  if (method === 'batch' && verb === 'POST' && Array.isArray(params.calls)) {
+    const results = await Promise.all(params.calls.map(async call => {
+      const one = new URL('/__plumb/' + call.method, location.href);
+      for (const [key, value] of Object.entries(call.params ?? {})) one.searchParams.set(key, value);
+      const response = await window.fetch(one);
+      const body = await response.json().catch(() => ({}));
+      return response.ok ? { value: body } : { error: body.error ?? `React Plumber refused ${call.method}.`, usage: response.status === 400 };
+    }));
+    return answer(results, 200);
+  }
   const file = fileOf(params.file || params.source);
   if (!production && file !== fixture.file) return liveFetch(input, init);
   const expected = ['apply', 'apply-text'].includes(method) ? 'POST' : 'GET';

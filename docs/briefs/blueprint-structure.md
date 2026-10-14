@@ -59,7 +59,7 @@ and its read, write, occluder and order parts, `plumb:greek`, `plumb:greek-measu
 | marks frame | reads and writes interleaved | every read, then every write | one layout per frame however many marks |
 | hold D | ~700 ms each way | ~50 ms | the peek rules reach `[data-plumb-ink]` elements, never `*` |
 | svg internals | read, marked, badged | skipped; the `<svg>` is a hatched plate | an icon's paths are drawing, not decisions |
-| server reads | 261 requests, one per element, six in flight, each paying the engine's per-cohort reconciliation | a handful of batched POSTs (`batch`: resolve and site calls answered in one read cohort by `Session.many`) | in one cohort 40 site calls cost 18 ms; one at a time 21 ms each |
+| server reads | 261 requests, one per element, six in flight, each paying the engine's per-cohort reconciliation | a handful of batched POSTs (`batch`: resolve and site calls answered in one read cohort by `Session.many`), from the blueprint's reader only; the Alt card's single reading goes on its own as before | in one cohort 40 site calls cost 18 ms; one at a time 21 ms each |
 | readings | started as visibility arrived, one at a time | in waves, after visibility settles, classes built in code traced in a second pass | a wave is one batch of resolves and one of sites; a 3 s trace no longer holds the count |
 | entry to count, algorecall | 8.4 s | 4.0 s | the rest is per-element owner-chain resolves, which are sequential by nature, and ~7 ms per `site` on a report this size |
 | entry to count, docs site (490 elements) | 1.5 s, 131 requests | 0.9 s, 4 requests, no long frame | |

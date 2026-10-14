@@ -57,7 +57,7 @@ export class Reader {
       const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (r.type === 'childList' || r.attributeName === 'class'));
       if (relevant) this.#throttled(() => this.#scan(true));
     });
-    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden'] });
     this.#scan(false);
   }
 
@@ -155,8 +155,11 @@ export class Reader {
     this.#report(order);
   }
 
+  #waveAt = 0;
   #pump() {
-    if (this.#inflight) return; // the wave in flight lands first
+    // the wave in flight lands first; a wave that never lands (a reading that hangs) does not hold the page hostage
+    if (this.#inflight && performance.now() - this.#waveAt < 1500) return;
+    if (this.#queue.length) this.#waveAt = performance.now();
     while (this.#running && this.#inflight < WAVE && this.#queue.length) {
       const item = this.#queue.shift();
       if (item.state !== 'queued') continue;
