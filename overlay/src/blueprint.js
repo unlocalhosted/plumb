@@ -18,6 +18,9 @@
  *            and its breakpoint, the tally of what is drawn (on the system, off), and the causes of the drift by
  *            count, so the decision that closes the most is the first line; pointing at a cause outlines the
  *            elements it touches
+ *  peek      D held: every drift in view takes its nearest token at once (the fixer's previews), the page re-lays
+ *            out as it would after the fixes, and the ink turns mint; the breaks, badges and wash go, since there is
+ *            no drift to show. Release puts it back. A pick keeps its pick
  *  leaving   the line runs right to left and takes the blueprint with it
  *  reverse   toggling mid-sweep turns the same line around from where it is; there is never more than one sweep
  *  restore   leaving removes everything it added: the stylesheet, the attributes on <html> and on elements. It
@@ -54,6 +57,8 @@ html[data-plumb-blueprint] body [data-plumb-drawn] { box-shadow: inset 0 0 0 1px
 html[data-plumb-blueprint] body :is(img, video, canvas, picture, iframe) { opacity: 0.18 !important; }
 html[data-plumb-blueprint] body :is(input, textarea, select) { color: #fff !important; -webkit-text-fill-color: #fff !important; }
 html[data-plumb-blueprint] body svg:not([data-plumb-drawn]) { outline: 1px solid rgb(255 255 255 / 0.45) !important; outline-offset: -1px !important; }
+html[data-plumb-peek] body [data-plumb-drawn] { box-shadow: inset 0 0 0 1px rgb(168 240 198 / 0.75) !important; }
+html[data-plumb-peek] body * { border-color: rgb(168 240 198 / 0.6) !important; outline-color: rgb(168 240 198 / 0.6) !important; }
 ${cols.map((k) => `html[data-plumb-dir="in"] body [data-plumb-col="${k}"] { --plumb-k: ${k}; } html[data-plumb-dir="out"] body [data-plumb-col="${k}"] { --plumb-k: ${COLS - 1 - k}; }`).join('\n')}
 html[data-plumb-developing] body [data-plumb-col] {
   transition: color ${DEVELOP}ms ease-out, background-color ${DEVELOP}ms ease-out, border-color ${DEVELOP}ms ease-out, box-shadow ${DEVELOP}ms ease-out, opacity ${DEVELOP}ms ease-out !important;
@@ -80,6 +85,10 @@ const SHEET_CSS = `
   .bp .sheet .cause:hover .what { color: #fff; text-decoration: underline; text-decoration-color: #ffb347; text-underline-offset: 2px; }
   .bp .sheet .cause .more { color: rgb(255 255 255 / 0.55); }
   @media (prefers-reduced-motion: reduce) { .bp .sheet { transition: none; } }
+  .bp[data-peek] svg.greek rect { fill: #a8f0c6; }
+  .bp[data-peek] svg[role="group"], .bp[data-peek] svg.wash, .bp[data-peek] .bp-hint { visibility: hidden; }
+  .bp[data-peek] .sheet { border-color: #a8f0c6; }
+  .bp[data-peek] .sheet .tally { color: #a8f0c6; }
 `;
 export const BLUEPRINT_CSS = MARKS_CSS + SHEET_CSS + GREEK_CSS;
 
@@ -123,7 +132,7 @@ export class Blueprint {
   #sweep = null; // { dir: 'in' | 'out', p: 0..1 line progress along dir, t0, token, cols: Element[] }
   #token = 0;
   #vars = null; // a tiny <style> holding the sweep's custom properties, so no host element gets an inline style
-  #sheet; #progress = null; #greek; #items = []; #causes = [];
+  #sheet; #progress = null; #greek; #items = []; #causes = []; #peeking = false;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root
   constructor(host, root, { onState, onProgress } = {}) {
@@ -191,6 +200,7 @@ export class Blueprint {
 
   leave({ instant = false } = {}) {
     if (!this.active) return;
+    this.peek(false);
     document.documentElement.removeAttribute('data-plumb-blueprint');
     this.#sheet.removeAttribute('data-on');
     this.#greek.stop(); // the words are back the moment the ink goes
@@ -225,7 +235,7 @@ export class Blueprint {
     const p = this.#progress;
     const route = location.pathname + (location.search.length > 1 && location.search.length < 24 ? location.search : '');
     const view = `${innerWidth} × ${innerHeight} · ${breakpointOf(innerWidth)}`;
-    const tally = !p || !p.total ? 'reading…' : p.read < p.total ? `reading ${p.read} of ${p.total}…`
+    const tally = this.#peeking ? 'as designed · release D' : !p || !p.total ? 'reading…' : p.read < p.total ? `reading ${p.read} of ${p.total}…`
       : `${p.on} on system · ${p.drift ? `<span class="off">${p.drift} off</span>` : 'all true'}`;
     const reading = !p || !p.total || p.read < p.total;
     const [r, v, t] = ['.route', '.view', '.tally'].map((sel) => this.#sheet.querySelector(sel));
@@ -239,6 +249,17 @@ export class Blueprint {
       + (this.#causes.length > 4 ? `<span class="cause"><span class="n"></span><span class="what more">${this.#causes.length - 4} more kinds</span></span>` : '');
     const box = this.#sheet.querySelector('.causes');
     if (box.innerHTML !== rows) box.innerHTML = rows;
+  }
+
+  // Held: the view as designed. The host takes every drift to its nearest token; the ink turns mint.
+  peek(on) {
+    if (on === this.#peeking || (on && this.#state !== 'on')) return;
+    this.#peeking = on;
+    if (on) { this.#host.peekAll?.(this.#items); document.documentElement.setAttribute('data-plumb-peek', ''); this.#layer.setAttribute('data-peek', ''); }
+    else { this.#host.unpeekAll?.(); document.documentElement.removeAttribute('data-plumb-peek'); this.#layer.removeAttribute('data-peek'); }
+    this.#stamp();
+    this.#marks.invalidate();
+    this.#greek.invalidate();
   }
 
   // The title block's box, for marks that must not sit under it.
@@ -317,13 +338,14 @@ export class Blueprint {
 
   #teardown() {
     const html = document.documentElement;
+    this.peek(false);
     this.#reader.stop();
     this.#marks.clear();
     removeEventListener('scroll', this.#invalidate, { capture: true });
     removeEventListener('resize', this.#invalidate);
     removeEventListener('pointermove', this.#point);
     document.removeEventListener('pointerleave', this.#unpoint);
-    for (const name of ['data-plumb-blueprint', 'data-plumb-field', 'data-plumb-developing', 'data-plumb-dir']) html.removeAttribute(name);
+    for (const name of ['data-plumb-blueprint', 'data-plumb-field', 'data-plumb-developing', 'data-plumb-dir', 'data-plumb-peek']) html.removeAttribute(name);
     this.#setVars(null);
     for (const el of document.querySelectorAll('[data-plumb-drawn], [data-plumb-col]')) el.removeAttribute('data-plumb-drawn'), el.removeAttribute('data-plumb-col');
     this.#style?.remove();

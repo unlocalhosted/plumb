@@ -318,6 +318,7 @@ class PlumbOverlay extends HTMLElement {
     this.#poll();
     addEventListener('keydown', this.#onKeyDown, true);
     addEventListener('keyup', this.#onKeyUp, true);
+    addEventListener('blur', this.#onBlur);
     addEventListener('blur', this.#disarm);
     addEventListener('dblclick', this.#onDblClick, true);
     this.#resume();
@@ -345,6 +346,7 @@ class PlumbOverlay extends HTMLElement {
     this.close(); this.#disarm();
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
+    removeEventListener('blur', this.#onBlur);
     removeEventListener('blur', this.#disarm);
     removeEventListener('dblclick', this.#onDblClick, true);
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
@@ -374,6 +376,8 @@ class PlumbOverlay extends HTMLElement {
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id) { return this.#fixer.open(element, mark, id); }
+  peekAll(items) { this.#fixer?.peekAll(items); }
+  unpeekAll() { this.#fixer?.unpeekAll(); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
   changed() { this.#dock(); }
   ordered() { this.#fixer?.ordered(); }
@@ -566,6 +570,8 @@ class PlumbOverlay extends HTMLElement {
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
+    // D, held: the view as designed, every drift at its nearest token; release puts it back
+    if ((event.key === 'd' || event.key === 'D') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); if (!event.repeat) this.#blueprint.peek(true); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
@@ -575,12 +581,13 @@ class PlumbOverlay extends HTMLElement {
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
+  #onBlur = () => this.#blueprint?.peek(false); // a held key is lost with the window
   #typing(event) {
     const t = event.composedPath()[0];
     return !!t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.localName ?? ''));
   }
   // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
-  #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
+  #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); if (event.key === 'd' || event.key === 'D') this.#blueprint?.peek(false); };
 
   #arm(sticky = false) {
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }

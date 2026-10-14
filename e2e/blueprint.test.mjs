@@ -241,6 +241,17 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   assert.equal(await sheet.locator('.off').innerText(), `${labels.filter((l) => l.startsWith('Drift:')).length} off`);
   // the tally counts every gap on the system in view, drawn or yielding to a mark's label
   assert.ok(Number((await sheet.innerText()).match(/(\d+) on system/)[1]) >= names.length, 'the tally counts at least the dimensions drawn');
+  // D held: the view as designed, every drift at its nearest token, inked mint; release puts it back exactly
+  await page.keyboard.down('d');
+  await page.waitForFunction(() => document.documentElement.hasAttribute('data-plumb-peek'));
+  const designed = await page.locator('#sync-row').evaluate((el) => ({ gap: getComputedStyle(el).gap, radius: getComputedStyle(el).borderRadius }));
+  assert.ok(['8px', '12px'].includes(designed.gap), `the gap takes a neighbouring step: ${JSON.stringify(designed)}`);
+  assert.ok(['12px', '16px'].includes(designed.radius), `the corner takes a neighbouring radius: ${JSON.stringify(designed)}`);
+  assert.match(await sheet.innerText(), /as designed · release D/);
+  assert.equal(await overlay.locator('.bp svg.greek rect').first().evaluate((r) => getComputedStyle(r).fill), 'rgb(168, 240, 198)');
+  await page.keyboard.up('d');
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-peek'));
+  assert.deepEqual(await page.locator('#sync-row').evaluate((el) => ({ gap: getComputedStyle(el).gap, style: el.getAttribute('style') })), { gap: '10px', style: null });
   await page.setViewportSize({ width: 700, height: 800 });
   await sheet.filter({ hasText: '700 × 800 · sm' }).waitFor({ timeout: 5000 });
   await page.keyboard.press('Alt+B');

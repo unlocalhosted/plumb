@@ -337,6 +337,26 @@ export class Fixer {
     for (const pick of this.#byEl.get(el)?.values() ?? []) this.#set(el, pick.mark.props, pick.choice.value);
   }
 
+  // The whole view as designed, held: every new drift in view takes its nearest token at once (a pick keeps its
+  // pick), so the page re-lays out the way it would after the fixes. Release puts it back.
+  #peeked = null;
+  peekAll(items) {
+    if (this.#before || this.#peeked) return;
+    this.#peeked = new Set();
+    for (const { el, marks } of items) for (const m of marks) {
+      if (m.ledger !== 'new' || this.#byEl.get(el)?.get(m.key)) continue;
+      const fit = (m.choices ?? []).filter(c => c.n !== undefined);
+      const c = m.pick !== null && m.pick !== undefined ? m.choices[m.pick] : m.n !== undefined && fit.length ? fit.reduce((best, x) => Math.abs(x.n - m.n) < Math.abs(best.n - m.n) ? x : best) : undefined;
+      if (!c) continue;
+      this.#set(el, m.props, c.value);
+      this.#peeked.add(el);
+    }
+  }
+  unpeekAll() {
+    for (const el of this.#peeked ?? []) this.#repaint(el);
+    this.#peeked = null;
+  }
+
   peek(j) {
     const o = this.#open; if (!o?.full || this.#before) return;
     const c = o.full.choices[j]; if (!c) return;
