@@ -238,7 +238,8 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   const pinnedLocation = (await reading.locator('.top .file').getAttribute('title')).split(' · ')[0];
   assert.equal(pinnedLocation, `${located.file}:${located.line}:${located.column}`);
   assert.match(await reading.locator('.read .t').first().innerText(), /gap-\[10px\]/);
-  await reading.locator('.opt[data-pick]').filter({ hasText: 'compact related items' }).click();
+  await reading.locator('.opt[data-pick]').filter({ hasText: /s2/ }).first().click();
+  await reading.filter({ hasText: /gap-s2/ }).waitFor();
   assert.equal(await page.locator('#calendar-row').evaluate(element => getComputedStyle(element).gap), '8px');
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source, 'preview has not changed disk');
   await reading.getByRole('button', { name: 'Write 1 edit' }).click();
