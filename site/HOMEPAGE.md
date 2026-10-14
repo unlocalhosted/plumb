@@ -1,4 +1,4 @@
-# Plumb homepage: design doc
+# React Plumber homepage: design doc
 
 Status: **approved direction, revision 2**, 2026-10-13. Revision 1 was reviewed by Fable, and the owner adopted its recommendations. Build one section at a time, each reviewed before the next starts.
 
@@ -7,14 +7,14 @@ Status: **approved direction, revision 2**, 2026-10-13. Revision 1 was reviewed 
 ## 1. What the page has to do
 
 A front-end engineer or design-system owner lands here. In ten seconds they should get:
-1. **What Plumb is:** it catches UI that drifts from your design system, and fixes it from the page.
-2. **That it's real:** they fix drift themselves, with Plumb's real overlay, in the first viewport.
+1. **What React Plumber is:** it catches UI that drifts from your design system, and fixes it from the page.
+2. **That it's real:** they fix drift themselves, with React Plumber's real overlay, in the first viewport.
 3. **That it's safe to adopt:** it works on a messy repo today (only new drift fails), ships nothing to production, and judges compiled CSS rather than class spellings.
 4. **What to do next:** one command, always within reach.
 
 **How it should feel:** *"Oh, that's satisfying."* The snap of a token into place, a sticker flipping to ✓, a wrench seating a nut. A tool for careful people, built by people who enjoy being careful.
 
-**The signature moment:** you click a pixel and Plumb edits the file. The real reading card opens on a drifted part, the ruler shows your value between two steps, you pick one, press Write, and see the diff. That's the screenshot people share. Stickers and the mascot are garnish; this is the meal.
+**The signature moment:** you click a pixel and React Plumber edits the file. The real reading card opens on a drifted part, the ruler shows your value between two steps, you pick one, press Write, and see the diff. That's the screenshot people share. Stickers and the mascot are garnish; this is the meal.
 
 **Quality bar:** the overlay's reading card. It has solid surfaces, real type weight, colour as fill, and one clear action. Every section is held to it.
 
@@ -24,7 +24,7 @@ A front-end engineer or design-system owner lands here. In ten seconds they shou
 
 | # | Section | The visitor… | Feels |
 |---|---|---|---|
-| 1 | **Hero: fix it yourself** | fixes six drifts on a live card with Plumb's real overlay, then sees the diff | "I just used it, and it edited the file." |
+| 1 | **Hero: fix it yourself** | fixes six drifts on a live card with React Plumber's real overlay, then sees the diff | "I just used it, and it edited the file." |
 | 2 | **It reads your system** | drags a value and feels it detent onto your tokens; flips Tailwind defaults ↔ your theme | "It knows *our* scale." |
 | 3 | **One fix, every site** | drags the same handle; nine real components snap in a ripple | "That's hours of review comments, gone." |
 | 4 | **CI keeps it true** | watches PRs roll through a gate: only new drift gets stamped | "We can turn this on tomorrow on a messy repo." |
@@ -119,7 +119,7 @@ A front-end engineer or design-system owner lands here. In ten seconds they shou
 **The signature beat (first pin):**
 1. The page dims 8%.
 2. The pinned part lifts 2px.
-3. Plumb's real reading slides in.
+3. React Plumber's real reading slides in.
 4. Pick a step: the ruler's *yours* tick moves first (it's the cause), and the part follows 40ms later on `snap`.
 5. Write: the balloon flips to ✓, the count ticks, and the field calms one step within 300ms.
 
@@ -180,15 +180,15 @@ A front-end engineer or design-system owner lands here. In ten seconds they shou
 
 **Install** is four step cards. Copy flips a card (`rotateY` 180°, 320ms, perspective 900px), and the back shows ✓ and the next command:
 1. `npx @unlocalhosted/plumb`: report the drift
-2. `npx plumb init`: config and baseline
-3. `npx plumb install --overlay --write`: the overlay. Carries the **Ships 0 bytes to prod** sticker.
-4. `npx plumb install`: sets up your coding agent. Today that's Claude Code: it writes `.claude/skills/plumb/SKILL.md`, so the agent fixes drift the way Plumb says. Other agents are named only once the CLI supports them.
+2. `npx plumber init`: config and baseline
+3. `npx plumber install --overlay --write`: the overlay. Carries the **Ships 0 bytes to prod** sticker.
+4. `npx plumber install`: sets up your coding agent. Today that's Claude Code: it writes `.claude/skills/plumber/SKILL.md`, so the agent fixes drift the way React Plumber says. Other agents are named only once the CLI supports them.
 
 When all four are copied, the wrench in the title strip seats one last nut.
 
 ### 4.6 Footer
 
-- **A shader band:** the calm field, with a huge **Plumb** wordmark cut out of it and the wrench standing beside it.
+- **A shader band:** the calm field, with a huge **React Plumber** wordmark cut out of it and the wrench standing beside it.
 - **Click the wrench:** he fits and turns a nut, as many times as you like.
 - **Link columns:**
   - Product: Overlay, CLI, CI, Agents
@@ -209,7 +209,7 @@ Each step ships fully (every state, motion, reduced motion, phone, dark), gets a
 5. One fix, every site
 6. CI keeps it true
 7. Proof, then install
-8. Full-page pass: rhythm, performance budget, an accessibility audit, and Plumb on the page reporting no unintended drift.
+8. Full-page pass: rhythm, performance budget, an accessibility audit, and React Plumber on the page reporting no unintended drift.
 
 The docs site is the next project after the homepage.
 

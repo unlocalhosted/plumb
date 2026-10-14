@@ -1,4 +1,4 @@
-# Plumb docs: design doc
+# React Plumber docs: design doc
 
 Revision 1, 2026-10-13. Status: approved 2026-10-13; building layer 1.
 
@@ -17,7 +17,7 @@ People arrive with one of four questions. Each page answers one of them, fast, a
 
 **Three rules for truth:**
 1. **Every command output is recorded from the real CLI** on a fixture project, at build time. Nothing is hand-typed. If the CLI changes, the docs re-record and the diff shows it.
-2. **Plumb's real overlay runs on the docs**, the same way it does on the homepage hero. Alt-click any example element and the real reading opens. On the deployed site it replays.
+2. **React Plumber's real overlay runs on the docs**, the same way it does on the homepage hero. Alt-click any example element and the real reading opens. On the deployed site it replays.
 3. **Every rule has a page**, generated from the rule's real message (docs/MESSAGES.md), so a finding in your terminal always has somewhere to go.
 
 ## 2. Information architecture
@@ -25,7 +25,7 @@ People arrive with one of four questions. Each page answers one of them, fast, a
 ```
 Start
   Quick start              three commands, each with its recorded output
-  What Plumb is            one figure: class → compiled CSS → your decision → verdict
+  What React Plumber is            one figure: class → compiled CSS → your decision → verdict
 Concepts
   Decisions                where your scale comes from: theme, config, reasons
   How a value is judged    the pipeline, step by step (interactive)
