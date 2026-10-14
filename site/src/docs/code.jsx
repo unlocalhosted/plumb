@@ -118,7 +118,7 @@ export function CodeBlock({ children }) {
   );
 }
 
-// "npx plumb install   # print the wiring" → { cmd, comment }. A # inside quotes is not a comment.
+// "npx plumber install   # print the wiring" → { cmd, comment }. A # inside quotes is not a comment.
 function splitComment(line) {
   let q = null;
   for (let i = 0; i < line.length; i++) {

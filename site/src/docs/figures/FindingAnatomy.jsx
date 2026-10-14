@@ -24,7 +24,7 @@ const PARTS = [
 export function FindingAnatomy() {
   const [hot, setHot] = useState(null);
   const lit = new Set(recording.lines.filter((l) => l.part === hot).map((l) => l.line - 1));
-  const command = recording.runs[0].command.replace(/^node dist\/cli\.js/, 'npx plumb').replace(/ --root \S+/, '');
+  const command = recording.runs[0].command.replace(/^node dist\/cli\.js/, 'npx plumber').replace(/ --root \S+/, '');
 
   return (
     <figure className="my-10">
@@ -59,7 +59,7 @@ export function FindingAnatomy() {
         </ul>
       </div>
       <figcaption className="mt-3 text-sm text-muted-foreground">
-        Real output from <code className="font-mono">plumb check</code> on a small fixture. Point at a part to find it in the output.
+        Real output from <code className="font-mono">plumber check</code> on a small fixture. Point at a part to find it in the output.
       </figcaption>
     </figure>
   );

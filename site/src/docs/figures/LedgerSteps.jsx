@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────
- * LEDGER STEPS — a repo's history with Plumb, one recorded step at a time (site/DOCS.md §4.3)
+ * LEDGER STEPS — a repo's history with Plumber, one recorded step at a time (site/DOCS.md §4.3)
  *
  * Each step is a real command (or a file edit) run on a copy of fixtures/docs-judged, with its exit code, the
  * CLI's summary lines and the ledger's entries counted by kind (docs/recordings/ledger.json).
  *
  *  rest      step 1, the baseline
- *  step      pick a step, or ← →: the panel shows what was done and what Plumb said; the ledger below keeps one
+ *  step      pick a step, or ← →: the panel shows what was done and what Plumber said; the ledger below keeps one
  *            mark per entry, and marks arrive (pop) or leave (shrink) as the count changes, so you see debt fall and
  *            an exception join
  *  exit      0 in the quiet ink, 1 in the drift colour: the check that fails is the one with new drift
@@ -121,7 +121,7 @@ export function LedgerSteps() {
 
         {/* the ledger: one mark per entry */}
         <div className="border-t border-border bg-muted/50 px-5 py-4">
-          <div className="mb-3 font-mono text-xs text-muted-foreground">.plumb/ledger.jsonl</div>
+          <div className="mb-3 font-mono text-xs text-muted-foreground">.plumber/ledger.jsonl</div>
           <div className="flex flex-col gap-2">
             {KINDS.map(({ kind, name, tone }) => {
               const n = s.entryCounts?.[kind] ?? 0;

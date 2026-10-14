@@ -337,7 +337,7 @@ export function Shipping({ rest = -3, delay = 0, className, style }) {
 /* ── 4 · plumb | 0 new drift: a CI status badge ────────── */
 // The shields badge every engineer knows from a README. It carries the CI promise: with the baseline, the build
 // stays green on a messy repo, and only drift a branch adds fails.
-export function Badge({ label = 'plumb', value = '0 new drift', rest = 3, delay = 0, className, style }) {
+export function Badge({ label = 'plumber', value = '0 new drift', rest = 3, delay = 0, className, style }) {
   const m = useStickerMotion({ peel: 22 });
   const left = 74;
   const w = 196;

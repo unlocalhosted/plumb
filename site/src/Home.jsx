@@ -1,5 +1,5 @@
-// The homepage: the visitor fixes a drifted card with Plumb's real overlay, then sees how Plumb reads their system,
-// fixes a decision everywhere at once, keeps it true in CI, and installs. Plumb's overlay runs on the page, so any
+// The homepage: the visitor fixes a drifted card with Plumber's real overlay, then sees how Plumber reads their system,
+// fixes a decision everywhere at once, keeps it true in CI, and installs. Plumber's overlay runs on the page, so any
 // part of it can be pointed at (site/HOMEPAGE.md).
 import { PageState, usePageState } from './site/Sheet.jsx';
 import { TitleStrip } from './site/TitleStrip.jsx';

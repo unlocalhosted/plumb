@@ -1,4 +1,4 @@
-// The homepage: a page built on its own design system, with Plumb's overlay on it so a visitor can inspect it.
+// The homepage: a page built on its own design system, with Plumber's overlay on it so a visitor can inspect it.
 import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@mdx-js/rollup';

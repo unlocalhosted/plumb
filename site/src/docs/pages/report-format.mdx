@@ -1,10 +1,10 @@
 import { ReportReference } from '../reference.jsx'
 import data from '../recordings/reference/report.json'
 
-`plumb check --json` prints one report: what was read, every finding, coverage per family, and the ledger's state. This page lists every field, read from Plumb's report schema.
+`plumber check --json` prints one report: what was read, every finding, coverage per family, and the ledger's state. This page lists every field, read from Plumber's report schema.
 
 ```sh
-npx plumb check --json > plumb-report.json
+npx plumber check --json > plumber-report.json
 ```
 
 <ReportReference data={data} />

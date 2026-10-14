@@ -1,8 +1,8 @@
 /* ─────────────────────────────────────────────────────────
- * LIVE GAP — one real value, judged the way Plumb judges it (site/DOCS.md, "What Plumb is")
+ * LIVE GAP — one real value, judged the way Plumber judges it (site/DOCS.md, "What Plumber is")
  *
  * The specimen is the homepage hero's own card header, written `gap-[13px]` in hero/DriftedCard.jsx. The scale is
- * this site's spacing scale with the reasons from plumb.config. Nothing here is a metaphor: the card, the source
+ * this site's spacing scale with the reasons from plumber.config. Nothing here is a metaphor: the card, the source
  * line, the compiled value and the ruler are four views of one number, and they move together in every frame.
  *
  *  rest      13px between the avatar and the name, measured on the card in the drift colour; the source reads
@@ -22,7 +22,7 @@ import { SPRING } from '../../site/motion.js';
 import recording from '../recordings/decisions.json';
 
 const START = 13;
-// each step's own reason, as Plumb resolves it: a reason shared by more than three steps is the group's, not shown per step
+// each step's own reason, as Plumber resolves it: a reason shared by more than three steps is the group's, not shown per step
 const REASON = Object.fromEntries(recording.families.spacing.map((d) => [d.name, d.reason]));
 const reasonOf = (s) => REASON[`--spacing-${s.key}`] ?? null;
 const SOURCE = { file: 'hero/DriftedCard.jsx', line: 25 };
@@ -79,7 +79,7 @@ export function LiveGap() {
           </div>
         </div>
 
-        {/* the source, what it compiles to, and what Plumb says about it */}
+        {/* the source, what it compiles to, and what Plumber says about it */}
         <div className="bg-code px-5 py-4 font-mono text-sm text-code-foreground">
           <div className="mb-3 font-sans text-xs font-semibold text-code-comment">
             {SOURCE.file}:{SOURCE.line}

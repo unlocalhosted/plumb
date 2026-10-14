@@ -31,7 +31,7 @@ export function Everywhere() {
       n={1}
       stage
       title="One fix, every site."
-      lead="The same off-scale 10px sits in nine components across your app. You don't fix nine places. You make one decision, and Plumb finds every site it applies to."
+      lead="The same off-scale 10px sits in nine components across your app. You don't fix nine places. You make one decision, and Plumber finds every site it applies to."
     >
       <div className="relative overflow-hidden rounded-lg bg-stage p-6 text-stage-foreground shadow-lift md:p-8">
         <Field turbulence={step ? 0 : 1} />

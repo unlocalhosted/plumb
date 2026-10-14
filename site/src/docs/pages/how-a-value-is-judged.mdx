@@ -1,12 +1,12 @@
 import { ValueJourney } from '../figures/ValueJourney.jsx'
 
-Plumb doesn't guess from class names. It takes every value through five stages: it reads what you wrote, compiles it with your own Tailwind, resolves it to a number, measures it against your decisions, and gives a verdict. Below, one value is written five ways and run through the real CLI.
+Plumber doesn't guess from class names. It takes every value through five stages: it reads what you wrote, compiles it with your own Tailwind, resolves it to a number, measures it against your decisions, and gives a verdict. Below, one value is written five ways and run through the real CLI.
 
 <ValueJourney />
 
 ## Read
 
-Plumb reads your source, not the page in a browser. By default that's the JS, TS and CSS files under `src/` and `app/`; set `source` in your config to change it.
+Plumber reads your source, not the page in a browser. By default that's the JS, TS and CSS files under `src/` and `app/`; set `source` in your config to change it.
 
 - **Classes** in `className` and `class`, including both sides of a condition, arrays and object keys, and calls to `cn`, `clsx`, `cx`, `classNames`, `twMerge`, `twJoin`, `cva` and `tv`. Classes kept in a variable, an import or a function's return value are followed too.
 - **Stylesheets**: your Tailwind entry, everything it imports, CSS imported from your components, and CSS files in your sources.
@@ -26,9 +26,9 @@ Inline styles skip this stage: they're already CSS. A number like `gap: 13` beco
 
 ## Resolve
 
-Plumb works out what each declaration's value comes to. It follows `var()` through your tokens, including fallbacks, and folds `calc()` arithmetic. `rem` counts as 16px.
+Plumber works out what each declaration's value comes to. It follows `var()` through your tokens, including fallbacks, and folds `calc()` arithmetic. `rem` counts as 16px.
 
-Some values can't be pinned to one number, and Plumb doesn't pretend: `env()`, `light-dark()`, `em`, percentages and viewport units, and `min()`, `max()` or `clamp()`. A token that changes with the theme stays unresolved too.
+Some values can't be pinned to one number, and Plumber doesn't pretend: `env()`, `light-dark()`, `em`, percentages and viewport units, and `min()`, `max()` or `clamp()`. A token that changes with the theme stays unresolved too.
 
 ## Measure
 
@@ -41,7 +41,7 @@ The value is compared with your decisions for its family. How depends on the fam
 
 So `gap: 12px` passes when 12px is a step, but `color: #2f5be0` is flagged even if it matches your primary exactly, because it won't follow a theme change. You can change this per family with `identity` in your config.
 
-When a value misses, Plumb names the steps to choose from, each with its reason. For spacing that's the step just below and the step just above, if they're within 4px or half the value, whichever is more.
+When a value misses, Plumber names the steps to choose from, each with its reason. For spacing that's the step just below and the step just above, if they're within 4px or half the value, whichever is more.
 
 ## Verdict
 

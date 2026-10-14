@@ -23,10 +23,10 @@ const PROOF = [
 ];
 
 const STEPS = [
-  { cmd: 'npx @unlocalhosted/plumb', say: 'Report the drift. No config, nothing written.' },
-  { cmd: 'npm i -D @unlocalhosted/plumb && npx plumb init', say: 'Add a config and a baseline of the drift you have today.' },
-  { cmd: 'npx plumb install --overlay --write', say: 'Wire the overlay into your dev server.', sticker: true },
-  { cmd: 'npx plumb install', say: 'Set up your coding agent: for Claude Code it writes .claude/skills/plumb/SKILL.md, so the agent fixes drift the way Plumb says.' },
+  { cmd: 'npx @unlocalhosted/react-plumber', say: 'Report the drift. No config, nothing written.' },
+  { cmd: 'npm i -D @unlocalhosted/react-plumber && npx plumber init', say: 'Add a config and a baseline of the drift you have today.' },
+  { cmd: 'npx plumber install --overlay --write', say: 'Wire the overlay into your dev server.', sticker: true },
+  { cmd: 'npx plumber install', say: 'Set up your coding agent: for Claude Code it writes .claude/skills/plumber/SKILL.md, so the agent fixes drift the way Plumber says.' },
 ];
 
 export function Install() {

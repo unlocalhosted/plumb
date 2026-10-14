@@ -1,15 +1,15 @@
-Coding agents write a lot of styles, and they'll happily invent `p-[13px]` when nothing tells them otherwise. Plumb gives an agent your tokens with their reasons before it writes, checks its edits after, and tells it exactly what to change, or to stop and ask you.
+Coding agents write a lot of styles, and they'll happily invent `p-[13px]` when nothing tells them otherwise. Plumber gives an agent your tokens with their reasons before it writes, checks its edits after, and tells it exactly what to change, or to stop and ask you.
 
 ## Set it up
 
 ```sh
-npx plumb install --agent claude
+npx plumber install --agent claude
 ```
 
 For Claude Code that writes two things, keeping anything already in your settings:
 
-- **`.claude/skills/plumb/SKILL.md`**: how to use Plumb, written for agents.
-- **A hook in `.claude/settings.json`** that runs Plumb after every edit:
+- **`.claude/skills/plumber/SKILL.md`**: how to use Plumber, written for agents.
+- **A hook in `.claude/settings.json`** that runs Plumber after every edit:
 
 ```json
 {
@@ -17,7 +17,7 @@ For Claude Code that writes two things, keeping anything already in your setting
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "plumb check --changed --agent --strict-ledger" }]
+        "hooks": [{ "type": "command", "command": "plumber check --changed --agent --strict-ledger" }]
       }
     ]
   }
@@ -28,24 +28,24 @@ Other agents get instructions in the place they read them:
 
 | Agent | `--agent` | Writes | Hook after edits |
 | --- | --- | --- | --- |
-| Claude Code | `claude` | `.claude/skills/plumb/SKILL.md` | yes |
-| Cursor | `cursor` | `.cursor/rules/plumb.mdc` | yes |
+| Claude Code | `claude` | `.claude/skills/plumber/SKILL.md` | yes |
+| Cursor | `cursor` | `.cursor/rules/plumber.mdc` | yes |
 | Codex, and any other | `codex`, `generic` | a block in `AGENTS.md` | no |
 | Copilot | `copilot` | a block in `.github/copilot-instructions.md` | no |
 | Gemini CLI | `gemini` | a block in `GEMINI.md` | no |
-| Windsurf | `windsurf` | `.windsurf/rules/plumb.md` | no |
+| Windsurf | `windsurf` | `.windsurf/rules/plumber.md` | no |
 
-Pass `--agent` more than once to set up several. `npx plumb install --list` shows what it would write without writing it.
+Pass `--agent` more than once to set up several. `npx plumber install --list` shows what it would write without writing it.
 
 ## The loop
 
-1. **Before writing styles**, the agent looks up your tokens instead of guessing (`npx plumb decisions --family spacing`), and can try a snippet without touching a file:
+1. **Before writing styles**, the agent looks up your tokens instead of guessing (`npx plumber decisions --family spacing`), and can try a snippet without touching a file:
 
    ```sh
-   echo '<div className="gap-10 text-gray-500" />' | npx plumb try --agent
+   echo '<div className="gap-10 text-gray-500" />' | npx plumber try --agent
    ```
 
-2. **After each edit**, `plumb check --changed --agent` lists only new problems in the files it changed, each as one instruction. It repeats until the output is `0 new`.
+2. **After each edit**, `plumber check --changed --agent` lists only new problems in the files it changed, each as one instruction. It repeats until the output is `0 new`.
 
 Here's that output for a 13px gap:
 
@@ -81,11 +81,11 @@ This is where your `why:` comments pay off: they're what the agent chooses by.
 The skill and every `--agent` output say the same thing:
 
 - Never edit the config, the ledger or the theme to make a finding pass. A new token or an exception is your decision.
-- Never run `plumb accept`, `accept-decisions` or `baseline` unless you ask. If something should be an exception, it gives you the `plumb accept … --why` line to run.
+- Never run `plumber accept`, `accept-decisions` or `baseline` unless you ask. If something should be an exception, it gives you the `plumber accept … --why` line to run.
 - Never invent a nearby value, like `p-[13px]` or `p-3.25`, to get around a finding.
 
 The hook adds `--strict-ledger`, so if an agent does change the ledger, the check fails.
 
-<Callout kind="note" title="PLUMB.md">
-`npx plumb agent-docs` writes `PLUMB.md`: your tokens with their reasons, what callers may set on each component, and the habits in force, in one file an agent can read before it starts. Regenerate it when your decisions change.
+<Callout kind="note" title="PLUMBER.md">
+`npx plumber agent-docs` writes `PLUMBER.md`: your tokens with their reasons, what callers may set on each component, and the habits in force, in one file an agent can read before it starts. Regenerate it when your decisions change.
 </Callout>

@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────
  * HERO — fix it yourself (site/HOMEPAGE.md §4.1). One card that drifted, held on a blue stage. The visitor fixes it
- * with Plumb's real overlay. Drift is a loose nut: each one is marked with a red hex nut that tightens to green.
+ * with Plumber's real overlay. Drift is a loose nut: each one is marked with a red hex nut that tightens to green.
  *
  * STORYBOARD — load
  *      0ms   stage and field (restless: six drifts)
@@ -8,11 +8,11 @@
  *    300ms   card drops 16px, rotate −1.5° → 0, on `settle`
  *    560ms   six nuts pop onto the drifted parts, 60ms apart; the seal and the "off by 2px" sticker slap on
  *
- * STORYBOARD — reading a part (Plumb's reading opens on a part of the card)
+ * STORYBOARD — reading a part (Plumber's reading opens on a part of the card)
  *      0ms   the page dims 8% around the stage (200ms); the part lifts 2px on `settle`
  *   close    the page comes back; the part settles
  *
- * STORYBOARD — each fix (the visitor clicks a nut, or holds Alt and clicks a part; Plumb's reading opens; they pick
+ * STORYBOARD — each fix (the visitor clicks a nut, or holds Alt and clicks a part; Plumber's reading opens; they pick
  * a token and Write)
  *      0ms   that nut turns 60° and goes green, ✓; the seal's count steps down; the field calms one step (300ms);
  *            the wrench in the title strip fits and turns a nut of his own
@@ -23,7 +23,7 @@
  *    150ms   the receipt: each token written drops in under the seal as a chip, 50ms apart, on `settle`
  *    400ms   the field goes still; the caption reads "0 off · still"
  *    600ms   the closing line wipes in under the headline (clip-path, left to right)
- *    900ms   the diff opens: every edit Plumb wrote to the file, line by line, − before / + after
+ *    900ms   the diff opens: every edit Plumber wrote to the file, line by line, − before / + after
  *
  * The count is read from the page itself: a drift is fixed when its class is gone from the DOM, however it went.
  * ───────────────────────────────────────────────────────── */
@@ -76,7 +76,7 @@ function useDrifts(root) {
   return fixed;
 }
 
-// The part Plumb's reading is open on, if it's on this card (the overlay says when it pins and unpins).
+// The part Plumber's reading is open on, if it's on this card (the overlay says when it pins and unpins).
 function useReading(box) {
   const [part, setPart] = useState(null);
   useEffect(() => {
@@ -116,7 +116,7 @@ function useParts(box, deps) {
   return rects;
 }
 
-// Every edit Plumb writes to the card, as the replay reports it: the receipt and the diff are made of these, so they
+// Every edit Plumber writes to the card, as the replay reports it: the receipt and the diff are made of these, so they
 // show what was actually written, never a script.
 function useWritten() {
   const [written, setWritten] = useState([]);
@@ -140,7 +140,7 @@ function useZero(done) {
   return stage;
 }
 
-// Opens Plumb's own reading on a part, the same as Alt-clicking it.
+// Opens Plumber's own reading on a part, the same as Alt-clicking it.
 function inspect(el) {
   document.querySelector('plumb-overlay')?.pin?.(el);
 }
@@ -178,7 +178,7 @@ export function Hero() {
       <div className="flex flex-col gap-8 lg:col-span-5">
         <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-secondary-foreground">
           <span className="size-1.5 rounded-full bg-primary" />
-          Plumb for React and Tailwind
+          React Plumber, for Tailwind and CSS
         </span>
         <motion.h1
           id="hero-title"
@@ -201,17 +201,17 @@ export function Hero() {
           </motion.p>
         )}
         <p className="max-w-lg text-lg text-muted-foreground max-sm:text-base">
-          Plumb finds where your UI drifts from its design system, and fixes it from the page. The card here has drifted in six places. <b className="font-semibold text-foreground">Fix it.</b>
+          Plumber finds where your UI drifts from its design system, and fixes it from the page. The card here has drifted in six places. <b className="font-semibold text-foreground">Fix it.</b>
         </p>
 
         <AnimatePresence mode="wait" initial={false}>
           {done ? (
             <motion.div key="done" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING.settle} className="flex max-w-lg flex-col gap-4">
               <p className="text-base">
-                <b className="font-semibold text-success">That was Plumb.</b> In your app, Write edits the source file and your dev server reloads.
+                <b className="font-semibold text-success">That was Plumber.</b> In your app, Write edits the source file and your dev server reloads.
               </p>
               <Diff written={written} open={zero >= 4} />
-              <Copy text="npx @unlocalhosted/plumb" />
+              <Copy text="npx @unlocalhosted/react-plumber" />
             </motion.div>
           ) : (
             <motion.div key="try" exit={{ opacity: 0, y: -8 }} transition={SPRING.settle} className="flex max-w-lg flex-col gap-5">
@@ -224,13 +224,13 @@ export function Hero() {
                 ))}
               </ol>
               {!narrow && <p className="text-sm text-muted-foreground">Or hold Alt and click any part, the way you would in your own app.</p>}
-              <Copy text="npx @unlocalhosted/plumb" />
+              <Copy text="npx @unlocalhosted/react-plumber" />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* while Plumb reads a part, the page dims around the stage */}
+      {/* while Plumber reads a part, the page dims around the stage */}
       <AnimatePresence>
         {reading && (
           <motion.div
@@ -302,14 +302,14 @@ export function Hero() {
             <OffBy px={2} fix={written.find((w) => w.before === 'rounded-[10px]')?.after ?? 'rounded-lg'} flipped={fixed.has('radius')} rest={5} delay={0.66} className="absolute -right-10 -bottom-16 z-(--z-sticker) max-sm:hidden" />
           </motion.div>
         </div>
-        <p className="relative z-(--z-raised) text-sm text-stage-foreground/85">{zero >= 2 ? '0 off · still. Every value on this card now comes from a decision.' : 'Each nut is a value off this page’s scale. Click one to open Plumb’s reading.'}</p>
+        <p className="relative z-(--z-raised) text-sm text-stage-foreground/85">{zero >= 2 ? '0 off · still. Every value on this card now comes from a decision.' : 'Each nut is a value off this page’s scale. Click one to open Plumber’s reading.'}</p>
       </div>
     </section>
   );
 }
 
-// The diff: every edit Plumb wrote to the card's file, grouped by line, − before / + after. Built from the writes the
-// page saw, so it is exactly what happened (fixed some by hand in devtools? those don't appear: Plumb didn't write them).
+// The diff: every edit Plumber wrote to the card's file, grouped by line, − before / + after. Built from the writes the
+// page saw, so it is exactly what happened (fixed some by hand in devtools? those don't appear: Plumber didn't write them).
 function Diff({ written, open }) {
   if (!written.length) return null;
   const file = written[0].file;
@@ -325,7 +325,7 @@ function Diff({ written, open }) {
         >
           <figcaption className="flex items-center justify-between gap-3 border-b border-code-foreground/15 px-4 py-2 font-mono text-xs">
             <span>{file}</span>
-            <span className="shrink-0 opacity-70">{written.length} edits by Plumb</span>
+            <span className="shrink-0 opacity-70">{written.length} edits by Plumber</span>
           </figcaption>
           <div className="flex flex-col py-2 font-mono text-xs leading-5">
             {lines.map((line) => (

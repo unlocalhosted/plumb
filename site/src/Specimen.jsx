@@ -64,7 +64,7 @@ const type = [
   ['5xl', 'text-5xl font-semibold', 'Every pixel has a plumb line.'],
   ['2xl', 'text-2xl font-semibold', 'Primitives come first'],
   ['lg', 'text-lg text-muted-foreground', 'A design system is a set of decisions, and a page either uses them or drifts.'],
-  ['base', 'text-base', 'Because every value compiles to a declaration, Plumb can judge a class, a stylesheet and an inline style by one rule. Pretty neat.'],
+  ['base', 'text-base', 'Because every value compiles to a declaration, Plumber can judge a class, a stylesheet and an inline style by one rule. Pretty neat.'],
   ['sm', 'text-sm text-muted-foreground', 'Fig. 4 — the declaration a class compiles to, beside the token it should have used.'],
   ['xs', 'text-xs font-semibold text-primary', 'Top shell · dust liner · hub'],
 ];
@@ -120,14 +120,14 @@ export function Specimen() {
     <main className="mx-auto flex max-w-5xl flex-col gap-16 px-4 py-16 md:px-10">
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <Label>Plumb · primitives sheet · rev 2 · shadcn</Label>
+          <Label>Plumber · primitives sheet · rev 2 · shadcn</Label>
           <Button variant="ghost" size="sm" onClick={flip}>
             Day / night
           </Button>
         </div>
         <h1 className="text-5xl font-semibold">The foundations, before anything is built on them.</h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          One blue ink on drafting paper. Tints of that ink are the only fills. A book serif to read, a mono to point. Hold Alt over anything on this sheet and Plumb will tell you which of these decisions it came from.
+          One blue ink on drafting paper. Tints of that ink are the only fills. A book serif to read, a mono to point. Hold Alt over anything on this sheet and Plumber will tell you which of these decisions it came from.
         </p>
       </header>
 

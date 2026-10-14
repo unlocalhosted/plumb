@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
- * FAMILY — the mark for each of the seven families Plumb judges, wherever the docs name one
+ * FAMILY — the mark for each of the seven families Plumber judges, wherever the docs name one
  *
  *  rest      a small tile in the family's own hue (--family-*), the glyph drawing what the family is about
  *  hover     the glyph does its family's verb once, on --dur-move:

@@ -3,7 +3,7 @@
  *
  * Site mode is the page as built. Blueprint mode is the same page, read for real: every part's box, padding, gap,
  * corner and type size measured from the live DOM and matched against this site's tokens (the resolver's recording,
- * docs/recordings/decisions.json). Where Plumb's plugin stamps the page, a part also knows the file and line it was
+ * docs/recordings/decisions.json). Where Plumber's plugin stamps the page, a part also knows the file and line it was
  * written at. Nothing in the blueprint is drawn by hand.
  *
  *  switch    Site / Blueprint in the nav, or B. A scan line crosses the page (SWEEP); the blue field is laid
@@ -25,7 +25,7 @@ import './opening.css';
 
 const SWEEP = 700; // ms for the scan line to cross the page
 
-// ── this site's tokens, by resolved px, from Plumb's resolver ──
+// ── this site's tokens, by resolved px, from Plumber's resolver ──
 const byPx = (family, prefix) =>
   new Map(
     recording.families[family]
@@ -99,7 +99,7 @@ export function Opening() {
 
       <div className="relative mx-auto flex min-h-svh max-w-[75rem] flex-col px-12">
         <nav className="flex h-16 items-center justify-between">
-          <span className="text-lg font-semibold">Plumb</span>
+          <span className="text-lg font-semibold">Plumber</span>
           <span className="flex items-center gap-6 text-sm">
             <a href="/docs/quick-start">Docs</a>
             <a href="https://github.com/unlocalhosted/plumb">GitHub</a>
@@ -111,13 +111,13 @@ export function Opening() {
         <div className="grid flex-1 grid-cols-12 items-center gap-6 py-16">
           <div className="col-span-12 flex flex-col gap-6 md:col-span-6">
             <h1 className="text-5xl leading-none font-semibold text-balance">
-              Plumb sets your UI <span className="text-muted-foreground">true to its design system.</span>
+              Plumber sets your UI <span className="text-muted-foreground">true to its design system.</span>
             </h1>
             <p className="max-w-[32rem] text-lg text-muted-foreground">
               It reads your tokens and the reasons behind them, measures every value you ship against them, and fixes what’s off, right on the page.
             </p>
             <code data-solid className="inline-flex w-fit items-center gap-3 rounded-md bg-foreground px-4 py-2 font-mono text-sm text-background">
-              <span className="opacity-50 select-none">$</span> npx @unlocalhosted/plumb
+              <span className="opacity-50 select-none">$</span> npx @unlocalhosted/react-plumber
             </code>
           </div>
           <div className="col-span-12 flex justify-center md:col-span-5 md:col-start-8">

@@ -194,7 +194,7 @@ export function Ruler({ steps, max = 40, start = 13, prefix = 'gap', onSettle, v
         </div>
       </div>
 
-      {/* the readout: what Plumb would say */}
+      {/* the readout: what Plumber would say */}
       {readout && (
         <p className="min-h-6 text-sm" aria-live="polite">
           {on ? (

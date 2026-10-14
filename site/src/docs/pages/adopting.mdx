@@ -1,9 +1,9 @@
-A big repo has years of drift in it. You don't fix that before you can start. Plumb records what you have today as **debt**, fails only on what's new, and lets the debt fall as you fix it.
+A big repo has years of drift in it. You don't fix that before you can start. Plumber records what you have today as **debt**, fails only on what's new, and lets the debt fall as you fix it.
 
 ## 1. Look first
 
 ```sh
-npx plumb check
+npx plumber check
 ```
 
 With no config and no ledger this is advisory: it reports everything and exits 0, then suggests the next step. Read the summary to see where you stand, family by family:
@@ -19,18 +19,18 @@ A line like *"Your theme has no motion tokens"* means a family has nothing to ch
 ## 2. Set up and record today
 
 ```sh
-npx plumb init
+npx plumber init
 ```
 
 ```text
-Wrote plumb.config.ts with inferred token sources.
+Wrote plumber.config.ts with inferred token sources.
 Components: 2 found from directory:src/components/ui.
-Baseline: 9 debt entries (9 locations) in .plumb/ledger.jsonl.
+Baseline: 9 debt entries (9 locations) in .plumber/ledger.jsonl.
 Accepted 3 tokens as inferred.
-Next steps: run plumb install --ci.
+Next steps: run plumber install --ci.
 ```
 
-`init` finds where your tokens live, finds your components, turns on four habits, writes `plumb.config.ts`, and records every current finding as debt in `.plumb/ledger.jsonl`. It also counts how often each habit would break, so you can see the cost of the ones it leaves off:
+`init` finds where your tokens live, finds your components, turns on four habits, writes `plumber.config.ts`, and records every current finding as debt in `.plumber/ledger.jsonl`. It also counts how often each habit would break, so you can see the cost of the ones it leaves off:
 
 ```ts
 "habits": [
@@ -44,32 +44,32 @@ Next steps: run plumb install --ci.
 ]
 ```
 
-From here, `plumb check` passes until someone adds new drift.
+From here, `plumber check` passes until someone adds new drift.
 
 ## 3. Review your decisions
 
 `init` marks the tokens it found as inferred. Go through them with whoever owns the design system: are the sources right, do the tokens have [reasons](/docs/decisions)? Then accept them:
 
 ```sh
-npx plumb accept-decisions
+npx plumber accept-decisions
 ```
 
 ## 4. Turn on the guards
 
 ```sh
-npx plumb install --ci                # check every pull request
-npx plumb install --agent claude      # check every agent edit
+npx plumber install --ci                # check every pull request
+npx plumber install --agent claude      # check every agent edit
 ```
 
 See [CI and pull requests](/docs/ci) and [Agents](/docs/agents).
 
 ## 5. Pay the debt down
 
-Fix debt in small, reviewed slices: a component at a time, or a family at a time. `npx plumb check --verbose` lists the debt; the [overlay](/docs/overlay) shows it on the page and writes the fixes. Each fix lowers the count. Lock the progress in so it can't come back:
+Fix debt in small, reviewed slices: a component at a time, or a family at a time. `npx plumber check --verbose` lists the debt; the [overlay](/docs/overlay) shows it on the page and writes the fixes. Each fix lowers the count. Lock the progress in so it can't come back:
 
 ```sh
-npx plumb ledger --ratchet   # lower each debt count to what's left
-npx plumb ledger --prune     # drop entries for drift and tokens that are gone
+npx plumber ledger --ratchet   # lower each debt count to what's left
+npx plumber ledger --prune     # drop entries for drift and tokens that are gone
 ```
 
 Run them after a batch of fixes and commit the ledger with the fixes.
@@ -82,7 +82,7 @@ Run them after a batch of fixes and commit the ledger with the fixes.
   plumb: Baseline refuses debt growth (1 keys); fix new findings or use plumb baseline --force after review.
   ```
 
-- **Exceptions need a reason**, and in CI, an approver. `plumb accept --rule <rule> --site <file:line> --why "…"`.
+- **Exceptions need a reason**, and in CI, an approver. `plumber accept --rule <rule> --site <file:line> --why "…"`.
 - **`--strict-ledger` stops quiet growth.** In agent hooks it fails any change that adds an exception or a token, raises debt or adds config, while still letting debt fall.
 
 <Callout kind="note" title="Already have a config?">

@@ -51,7 +51,7 @@ function InstallPill() {
   );
 }
 
-const INSTALL = 'npm i -D @unlocalhosted/plumb';
+const INSTALL = 'npm i -D @unlocalhosted/react-plumber';
 
 export function TitleStrip() {
   const { sheet, drift, cheer } = usePage();
@@ -65,8 +65,8 @@ export function TitleStrip() {
   return (
     <header className="fixed inset-x-0 top-0 z-(--z-bar) border-b border-border bg-background/85 backdrop-blur-sm">
       <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-6 md:px-12">
-        <a href="#top" className="flex h-full items-center gap-2 pr-6 text-lg font-semibold">
-          Plumb
+        <a href="#top" className="flex h-full items-center gap-2 pr-6 text-lg font-semibold whitespace-nowrap">
+          React Plumber
           <Wrench mood={mood} cheer={cheer} scale={0.72} compact />
         </a>
         <nav aria-label="Sheets" className="hidden items-center gap-4 lg:flex">

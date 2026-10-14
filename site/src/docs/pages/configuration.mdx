@@ -1,10 +1,10 @@
 import { ConfigReference } from '../reference.jsx'
 import data from '../recordings/reference/config.json'
 
-Every option `plumb.config.ts` (or `.mjs`, `.js`) accepts, read from Plumb's config schema. Most projects need only `decisions` and `habits`; `plumb init` writes a starting config for you.
+Every option `plumber.config.ts` (or `.mjs`, `.js`) accepts, read from Plumber's config schema. Most projects need only `decisions` and `habits`; `plumber init` writes a starting config for you.
 
 ```ts
-// plumb.config.ts
+// plumber.config.ts
 export default {
   decisions: { spacing: { from: ['theme:--spacing-*'] } },
   habits: ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'],

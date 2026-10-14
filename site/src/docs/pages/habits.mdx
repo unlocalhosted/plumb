@@ -2,16 +2,16 @@ Decisions judge *values*: is 13px one of your steps? Habits judge *how styles ar
 
 ## Turning habits on
 
-List the habits you want in your config. `plumb init` proposes the first four; the rest are opt-in.
+List the habits you want in your config. `plumber init` proposes the first four; the rest are opt-in.
 
 ```js
-// plumb.config.mjs
+// plumber.config.mjs
 export default {
   habits: ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'],
 };
 ```
 
-With no `habits`, no habit runs. `npx plumb habits` lists all nine, how many times each would break in your project, and whether it's on, so you can see the cost before you turn one on.
+With no `habits`, no habit runs. `npx plumber habits` lists all nine, how many times each would break in your project, and whether it's on, so you can see the cost before you turn one on.
 
 ## The nine habits
 
@@ -36,7 +36,7 @@ A habit finding reads like any other, with the habit's reason and its fix:
   Touch can leave a hover style stuck after a tap.
   Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).
   src/styles.css:1:18  color: red
-  intended?  plumb accept --rule habits/hover-gate --site src/styles.css:1 --why "…"
+  intended?  plumber accept --rule habits/hover-gate --site src/styles.css:1 --why "…"
 ```
 
 ## Your own habits
@@ -68,5 +68,5 @@ export default {
 Severity defaults to `error`. A habit is data, not a function, so it can be checked and shared.
 
 <Callout kind="note" title="Habits read your source">
-Like everything Plumb checks, habits read the styles you wrote and the conditions around them, not the cascade in a browser.
+Like everything Plumber checks, habits read the styles you wrote and the conditions around them, not the cascade in a browser.
 </Callout>

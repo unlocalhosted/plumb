@@ -23,7 +23,7 @@ export function Reads() {
       id="reads"
       n={0}
       title="It reads your system."
-      lead="Plumb doesn't bring a scale of its own. It reads the one in your theme, with the reason you gave each step, and measures every value against it."
+      lead="Plumber doesn't bring a scale of its own. It reads the one in your theme, with the reason you gave each step, and measures every value against it."
     >
       <div className="plate flex flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -53,7 +53,7 @@ export function Reads() {
         <Ruler steps={ours ? THEME : DEFAULTS} start={13} prefix="gap" />
         <p className="text-sm text-muted-foreground">
           {ours
-            ? 'Eleven steps up to 40px, three with a reason written beside them. 13px lands between 3 and 4: Plumb offers both and says why each exists.'
+            ? 'Eleven steps up to 40px, three with a reason written beside them. 13px lands between 3 and 4: Plumber offers both and says why each exists.'
             : "Fifteen steps, none with a reason. 13px lands between 3 and 3.5, and a linter would happily suggest a step your team never chose."}
         </p>
       </div>

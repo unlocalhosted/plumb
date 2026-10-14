@@ -9,11 +9,11 @@
 /* The hero's fixes appear only after a visitor writes them, so Tailwind must generate them up front. */
 @source inline("rounded-lg rounded-md rounded-sm p-4 p-6 gap-3 gap-4 text-sm text-base px-3 px-4");
 
-/* Plumb's homepage primitives, in shadcn's vocabulary. The page is a technical manual: drafting paper, one blue
+/* Plumber's homepage primitives, in shadcn's vocabulary. The page is a technical manual: drafting paper, one blue
    ink for every line and callout, tints of that ink as fills, a book serif for reading and a mono for callouts.
    shadcn's semantic names (background, primary, muted…) carry our values, so its components draw in our hand;
    the drawing tokens shadcn has no word for (tints, grid, faint, verdicts) are added beside them.
-   Raw values live in :root and .dark; @theme inline turns them into utilities. Plumb judges the page against
+   Raw values live in :root and .dark; @theme inline turns them into utilities. Plumber judges the page against
    this file. */
 
 :root {
@@ -53,7 +53,7 @@
   /* why: focus ring, in the ink */
   --ring: #2f5be0;
 
-  /* ── verdicts, the marks Plumb gives, always paired with a shape ── */
+  /* ── verdicts, the marks Plumber gives, always paired with a shape ── */
   /* why: off the scale, broken, destructive */
   --destructive: #c8394a;
   /* why: uses a decision */
@@ -325,7 +325,7 @@
   --z-raised: 10;
   /* why: stickers, slapped over the stage */
   --z-sticker: 20;
-  /* why: the page dimmed while Plumb reads a part */
+  /* why: the page dimmed while Plumber reads a part */
   --z-dim: 30;
   /* why: the title strip, and the stage lifted over the dimmed page */
   --z-bar: 40;

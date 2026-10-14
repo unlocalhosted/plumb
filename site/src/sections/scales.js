@@ -1,4 +1,4 @@
-// This site's own spacing scale, the same ladder Plumb reads from site/plumb.config.mjs, beside Tailwind's default
+// This site's own spacing scale, the same ladder Plumber reads from site/plumber.config.mjs, beside Tailwind's default
 // one, both up to 40px. The reasons are the config's; Tailwind's steps have none, which is the point.
 const WHY = {
   3: 'related parts and compact controls',
@@ -9,7 +9,7 @@ const WHY = {
 const ladder = (keys, why) => keys.map((k) => ({ key: String(k), v: k * 4, why: why(k) }));
 
 // A step without its own reason has why: null. The config's shared 'manual spacing ladder' is a group reason, which
-// Plumb never shows against a single step; Tailwind's steps have none at all.
+// Plumber never shows against a single step; Tailwind's steps have none at all.
 export const THEME = ladder([0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10], (k) => WHY[k] ?? null);
 export const DEFAULTS = ladder([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10], () => null);
 

@@ -242,7 +242,7 @@ export function RulesReference({ data: rules }) {
                       </div>
                     ))}
                   <dt className="text-muted-foreground">Accept</dt>
-                  <dd>{r.accept ? <Code>{`plumb accept --rule ${r.id} --site <file:line> --why "…"`}</Code> : 'Not as an exception: fix the cause.'}</dd>
+                  <dd>{r.accept ? <Code>{`plumber accept --rule ${r.id} --site <file:line> --why "…"`}</Code> : 'Not as an exception: fix the cause.'}</dd>
                 </dl>
               </article>
             ))}
@@ -263,7 +263,7 @@ export function ReportReference({ data: report }) {
         A finding, as JSON
       </h2>
       <p className="my-3 text-base">
-        One real finding from <Code>plumb check --json</Code> on the docs fixture.
+        One real finding from <Code>plumber check --json</Code> on the docs fixture.
       </p>
       <pre className="my-3 max-h-[28rem] overflow-auto rounded-md bg-code px-4 py-3 font-mono text-sm text-code-foreground">
         {JSON.stringify(report.example, null, 2)}

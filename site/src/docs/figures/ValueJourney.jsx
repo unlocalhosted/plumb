@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
- * VALUE JOURNEY — one value, written five ways, through Plumb's real stages (site/DOCS.md §4.1)
+ * VALUE JOURNEY — one value, written five ways, through Plumber's real stages (site/DOCS.md §4.1)
  *
  * Every stage shows the recorded output of the real CLI on fixtures/docs-judged (docs/recordings/judged.json):
  * the authored text and its line, the compiled declaration, the resolved value, the steps it's measured against

@@ -45,7 +45,7 @@ export function Docs() {
   }, []);
   const Page = useMemo(() => lazy(page.load), [page.slug]);
   useEffect(() => {
-    document.title = `${page.title} · Plumb docs`;
+    document.title = `${page.title} · React Plumber docs`;
   }, [page.slug]);
 
   return (
@@ -79,8 +79,8 @@ function Header() {
     <header className="fixed inset-x-0 top-0 z-(--z-bar) border-b border-border bg-background/85 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-6 md:px-12">
         <span className="flex items-center gap-2">
-          <a href="/" className="flex items-center gap-2 text-lg font-semibold">
-            Plumb
+          <a href="/" className="flex items-center gap-2 text-lg font-semibold whitespace-nowrap">
+            React Plumber
           </a>
           <Wrench mood="idle" scale={0.72} compact />
           <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">Docs</span>

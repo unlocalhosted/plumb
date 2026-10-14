@@ -87,7 +87,7 @@ test('homepage text replay writes only DOM, validates refusals and commutes with
     const latest = (await read('name')).body;
     await page.locator('[data-drift="name"]').evaluate(node => { node.firstChild.data = 'tampered'; });
     assert.deepEqual(await call('apply-text', { ...params, hash: latest.hash, run: latest.runs[0].id, from: 'Final' }, 'POST'), {
-      status: 400, body: { error: 'The demo element changed since Plumb read it. Read it again.' },
+      status: 400, body: { error: 'The demo element changed since Plumber read it. Read it again.' },
     });
     assert.equal((await read('name')).body.hash, latest.hash);
     assert.equal((await call('apply-text', params)).status, 405);

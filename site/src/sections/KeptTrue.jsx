@@ -44,7 +44,7 @@ export function KeptTrue() {
       id="kept-true"
       n={2}
       title="CI keeps it true."
-      lead="Turn Plumb on in CI today, on a repo full of old drift. The baseline remembers what's already there, so only drift a pull request adds can fail it, and every fix shrinks the debt."
+      lead="Turn Plumber on in CI today, on a repo full of old drift. The baseline remembers what's already there, so only drift a pull request adds can fail it, and every fix shrinks the debt."
     >
       <div ref={ref} className="plate flex flex-col gap-6 overflow-hidden p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -68,7 +68,7 @@ export function KeptTrue() {
         <div className="relative h-52">
           {/* the gate */}
           <div className="pointer-events-none absolute inset-y-0 z-(--z-raised) flex flex-col items-center" style={{ left: `${GATE * 100}%` }}>
-            <span className="rounded-full bg-foreground px-3 py-0.5 font-mono text-xs font-semibold text-background">plumb check</span>
+            <span className="rounded-full bg-foreground px-3 py-0.5 font-mono text-xs font-semibold text-background">plumber check</span>
             <span className="w-0.5 flex-1 bg-foreground/20" />
           </div>
           <motion.ol className="absolute top-8 flex gap-4" style={{ x: reduce ? -(PRS.length - 1) * CARD : x, left: `calc(${GATE * 100}% + 24px)` }}>

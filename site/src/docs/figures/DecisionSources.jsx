@@ -26,7 +26,7 @@ const TOKENS = [
 ];
 const DRIFT = { file: 'hero/DriftedCard.jsx', line: 24, cls: 'rounded-[10px]', px: 10 };
 
-// the steps Plumb offers for a value: the nearest by distance, ties to the larger, two of them
+// the steps Plumber offers for a value: the nearest by distance, ties to the larger, two of them
 const offersFor = (px, steps) =>
   [...steps]
     .filter((s) => s.px < 1000)
@@ -122,10 +122,10 @@ export function DecisionSources() {
           </div>
         </div>
 
-        {/* where the reason comes back: Plumb's offer at a drifted value */}
+        {/* where the reason comes back: Plumber's offer at a drifted value */}
         <div className="border-t border-border bg-muted/50 px-5 py-4 text-sm" aria-live="polite">
           <div className="mb-2 font-mono text-xs text-muted-foreground">
-            {DRIFT.file}:{DRIFT.line} · <span className="font-semibold text-destructive">{DRIFT.cls}</span> is off your radius scale. Plumb offers:
+            {DRIFT.file}:{DRIFT.line} · <span className="font-semibold text-destructive">{DRIFT.cls}</span> is off your radius scale. Plumber offers:
           </div>
           <ul className="flex flex-col gap-1">
             {offers.map((s) => (
@@ -142,7 +142,7 @@ export function DecisionSources() {
       </div>
       <figcaption className="mt-3 text-sm text-muted-foreground">
         This site's radius tokens, from its real <code className="font-mono">styles.css</code>. Change <code className="font-mono">--radius</code> or
-        rewrite a reason: the scale and Plumb's offer for the homepage card's <code className="font-mono">rounded-[10px]</code> follow.
+        rewrite a reason: the scale and Plumber's offer for the homepage card's <code className="font-mono">rounded-[10px]</code> follow.
       </figcaption>
     </figure>
   );
