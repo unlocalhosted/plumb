@@ -21,18 +21,23 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
   const server = createServer(async (request, response) => {
     const path = resolve(root, '.' + new URL(request.url, 'http://localhost').pathname.replace(/\/$/, '/index.html'));
     if (!path.startsWith(root + '/')) return response.writeHead(404).end();
-    try { response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream' }).end(await readFile(path)); }
-    catch { response.writeHead(404).end(); }
+    try {
+      const body = await readFile(path);
+      response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream' }).end(body);
+    } catch { response.writeHead(404).end(); }
   });
   await new Promise(done => server.listen(0, '127.0.0.1', done));
-  t.after(() => new Promise(done => server.close(done)));
-  const browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
-  t.after(() => browser.close());
+  let browser, dev;
+  t.after(async () => {
+    await browser?.close();
+    await dev?.close();
+    await new Promise(done => server.close(done));
+  });
+  browser = await chromium.launch({ executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
   const drifts = fixture.groups.flatMap(group => group.drifts);
   assert.equal(drifts.length, 6);
-  const dev = await createViteServer({ configFile: resolve(repo, 'site/vite.config.mjs'),
+  dev = await createViteServer({ configFile: resolve(repo, 'site/vite.config.mjs'),
     logLevel: 'error', server: { port: 0, watch: null } });
-  t.after(() => dev.close());
   await dev.listen();
   const staticBase = `http://127.0.0.1:${server.address().port}`;
   const devBase = `http://127.0.0.1:${dev.httpServer.address().port}`;
@@ -51,6 +56,8 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
     await page.goto(run.base);
     await page.waitForFunction(() => window.__plumb?.overlay && document.querySelector('[data-drift="card"]'));
     await page.evaluate(() => window.__plumb.ready());
+    // Close the development tuner through its own header before using the hero.
+    if (run.dev) await page.locator('.dialkit-root .dialkit-panel-header').filter({ hasText: 'DialKit' }).click();
     assert.equal(await page.locator('vite-error-overlay').count(), 0);
     const overlay = page.locator('plumb-overlay');
     assert.equal(await overlay.count(), 1);
@@ -58,15 +65,17 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
       const drift = drifts[index];
       const control = page.getByRole('button', { name: new RegExp(`^${index + 1}:`) });
       // Hero controls pin the actual element in React Plumber; all choices and writes happen inside the real overlay.
-      await control.click();
+      await control.evaluate(node => node.scrollIntoView({ block: 'center' }));
+      // The hover label widens the button over neighboring marks; click its visible nut.
+      await control.click({ position: { x: 12, y: 12 } });
       const dialog = overlay.getByRole('dialog'); await dialog.waitFor();
       const markButton = dialog.getByRole('button', { name: new RegExp(drift.bad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).first();
       if (await markButton.isVisible()) await markButton.click();
       await dialog.locator('.read .t').filter({ hasText: drift.bad }).waitFor();
       const preferred = ['rounded-lg', 'p-6', 'gap-3', 'text-base', 'px-3', 'rounded-sm'];
-      const alternatives = ['rounded-lg', 'p-4', 'gap-4', 'text-base', 'px-4', 'rounded-md'];
+      const alternatives = ['rounded-md', 'p-5', 'gap-4', 'text-base', 'px-4', 'rounded-sm'];
       const desired = (run.alternate ? alternatives : preferred)[index];
-      await dialog.locator('.opt[data-pick]').filter({ hasText: desired }).click();
+      await dialog.getByRole('button', { name: new RegExp(`^${desired}(?:,|$)`) }).click();
       await dialog.getByRole('button', { name: 'Write 1 edit', exact: true }).click();
       await overlay.locator('.synced .state').filter({ hasText: /^Wrote 1 edit to/ }).waitFor();
       await page.waitForFunction(({ part, bad }) => !document.querySelector(`[data-drift="${part}"]`).classList.contains(bad), drift);
@@ -85,12 +94,14 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
         gap: read('header').gap, type: read('name').fontSize,
         buttonPadding: read('button').paddingLeft, buttonRadius: read('button').borderRadius };
     });
-    assert.deepEqual(css, { unit: css.unit, radius: '6px', padding: `${css.unit * (run.alternate ? 4 : 6)}px`,
-      gap: `${css.unit * (run.alternate ? 4 : 3)}px`, type: '18px', buttonPadding: `${css.unit * (run.alternate ? 4 : 3)}px`,
-      buttonRadius: run.alternate ? '4px' : '2px' });
+    assert.deepEqual(css, { unit: css.unit, radius: run.alternate ? '8px' : '12px', padding: `${css.unit * (run.alternate ? 5 : 6)}px`,
+      gap: `${css.unit * (run.alternate ? 4 : 3)}px`, type: '17px', buttonPadding: `${css.unit * (run.alternate ? 4 : 3)}px`,
+      buttonRadius: '5px' });
     for (const group of fixture.groups) {
       const index = drifts.findIndex(drift => drift.bad === group.drifts[0].bad);
-      await page.getByRole('button', { name: new RegExp(`^${index + 1}:`) }).click();
+      const control = page.getByRole('button', { name: new RegExp(`^${index + 1}:`) });
+      await control.evaluate(node => node.scrollIntoView({ block: 'center' }));
+      await control.click({ position: { x: 12, y: 12 } });
       await overlay.getByRole('dialog').getByText(/^(on system|on the scale)$/).waitFor();
       await overlay.getByRole('button', { name: 'Close the reading' }).click();
     }
