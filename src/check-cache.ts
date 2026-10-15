@@ -14,6 +14,7 @@ import { ignore } from './project.js';
 import type { CheckOptions } from './index.js';
 import type { Report } from './report.js';
 import { hasUntrackedPresetInputs } from './presets/index.js';
+import { profileProgress } from './profile.js';
 
 // Complete-result reuse is deliberately limited to literal CSS-only configs.
 // Executable configs, presets, plugins and git-scoped reports keep the normal
@@ -101,6 +102,7 @@ export class CheckCache {
   get jsonPath(): string { return join(this.directory, `${this.generation}.json`); }
   async report(): Promise<Report> { return deserialize(await readFile(join(this.directory, `${this.generation}.v8`))) as Report; }
   async save(report: Report, before: Map<string, string | null>): Promise<void> {
+    profileProgress('phase:cache-inventory');
     const inventory = await this.inventory();
     const after = new Map(inventory.filter(file => sourceFile.test(file)).map(file => [file, fileHash(file)]));
     if (JSON.stringify([...before]) !== JSON.stringify([...after])) return;
@@ -111,6 +113,7 @@ export class CheckCache {
     // Phase receipts already record independently changing imported evidence.
     // Copy their validation inputs, never trust their cached analysis at a hit.
     for (const kind of ['sources', 'components', 'modules'] as const) {
+      profileProgress(`phase:cache-${kind}`);
       for (const file of await glob(kind === 'modules' ? '*.json' : '*.v8', { cwd: join(base, kind), absolute: true })) {
         const data = kind === 'modules' ? JSON.parse(await readFile(file, 'utf8')) : deserialize(await readFile(file));
         if (kind === 'modules') {
@@ -163,22 +166,30 @@ export class CheckCache {
     // Ledger diagnostics and allowances are part of this result, too.
     const ledger = statePath(this.root, 'ledger.jsonl'); after.set(ledger, fileHash(ledger));
     const stamps: Receipt['stamps'] = [];
+    profileProgress('phase:cache-stamps');
     for (const [file, previous] of after) {
+      if (stamps.length % 32 === 0) profileProgress('phase:cache-stamps', { current: stamps.length, total: after.size });
       const current = stamp(file);
       if (fileHash(file) !== previous || stamp(file) !== current) return;
       stamps.push([file, current]);
     }
+    profileProgress('phase:cache-stamps', { current: stamps.length, total: after.size });
     const inputs = { inventory, files: [...after], stamps, directories, resolutions: [...uniqueResolutions.values()], compiler };
     const generation = hash(JSON.stringify(inputs));
     const receipt: Receipt = { generation, ...inputs };
     const temporary = `${this.directory}.${process.pid}.tmp`;
     await mkdir(temporary, { recursive: true }); await mkdir(this.directory, { recursive: true });
+    profileProgress('phase:cache-binary');
     await writeFile(join(temporary, 'report.v8'), serialize(report));
     // Timing is supplied by the current caller; reuse the expensive evidence
     // serialization rather than traversing hundreds of thousands of rows.
     const { timing: _timing, ...evidence } = report;
     evidence.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
-    await writeFile(join(temporary, 'report.json'), JSON.stringify(evidence).slice(0, -1));
+    profileProgress('phase:cache-json');
+    const json = JSON.stringify(evidence).slice(0, -1);
+    profileProgress('phase:cache-json-write');
+    await writeFile(join(temporary, 'report.json'), json);
+    profileProgress('phase:cache-publish');
     const timing = { ...report.timing, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])), cacheHits: report.classes.unique, cacheMisses: 0 };
     await writeFile(join(temporary, 'status.json'), JSON.stringify({ exit: report.findings.some(finding => finding.severity === 'error') ? 1 : 0, timing }));
     await writeFile(join(temporary, 'inputs.json'), JSON.stringify(receipt));

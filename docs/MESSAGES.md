@@ -45,12 +45,20 @@ One live line on stderr, erased before the report (also on Ctrl+C and errors):
 Use the existing analysis phases in their actual execution order. Before counts are
 known, say `Reading your project` or `Reading styles`. Step labels include
 `Reading styles: 812 of 1,748 files`, `Compiling Tailwind from src/index.css`,
+`Tracing computed classes: 448 of 1,748 files`,
+`Tracing stylesheet imports: 512 modules`, `Following stylesheet imports`,
 `Checking 292,104 values against your tokens`, `Checking tokens: 3 of 7 rule families`,
 `Matching components: 812 of 1,748 files`, `Checking component styles: 256 of 1,024 values`,
 `Checking unused tokens`, `Checking habits and component copies`, `Checking ledger`,
+`Checking project files for cache`, `Validating source cache`, `Validating component cache`,
+`Validating module cache`, `Validating cache inputs: 256 of 1,748 files`,
+`Saving analysis cache`, `Saving report cache`, `Writing report cache`, `Finishing cache`,
 `Reading cached report`, and `Done`.
-Source walking and computed-class tracing each count their own file pass. Matching
-counts scanned caller files; component-style checks count declarations matched
+Source walking and computed-class tracing use distinct labels for their file passes;
+a label's count never restarts. Cache validation counts verified file identities.
+Stylesheet import tracing counts visited modules without a denominator, since its
+graph grows during traversal. Report cache serialization and disk writes have
+separate steps. Matching counts scanned caller files; component-style checks count declarations matched
 against the component graph. Format counts with comma separators and show
 project-relative paths. At 3 seconds, append whole elapsed seconds (`· 3s`), updating
 once per second even during synchronous analysis. Redraw at most once per 70 ms;
@@ -66,7 +74,7 @@ must shrink to fit. `NO_COLOR` or a locale without UTF-8 uses `#`/`-` and `|` in
 of box drawing and `·`. Locale precedence is `LC_ALL`, `LC_CTYPE`, then `LANG`.
 Percentages never decrease; skipped/cache-hit steps grant their weight immediately
 when the next step starts. Step weights and calibration are in
-`docs/briefs/cli-progress-bar.result.md`.
+`docs/briefs/cli-progress-bar-fixups.result.md`.
 
 For a cold (absent or empty) cache, after 5 seconds print once on its own line:
 `First run builds a cache in .plumber/cache; later runs are faster.` Substitute the

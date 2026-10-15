@@ -7,6 +7,7 @@ import { performance } from 'node:perf_hooks';
 import { parseSync } from 'oxc-parser';
 import type { EcmaScriptModule } from 'oxc-parser';
 import { ResolverFactory } from 'oxc-resolver';
+import { profileProgress } from '../profile.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import type { Report } from '../report.js';
@@ -67,6 +68,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
     if (!limited++) notes.push(`Module graph limit reached at ${file}; CSS existence proof may be incomplete.`);
   };
   for (let index = 0; index < queue.length; index++) {
+    if (index % 32 === 0) profileProgress('phase:modules', { current: index });
     const file = queue[index]!;
     try {
       const external = !sources.has(file);
@@ -120,6 +122,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
     } catch (error) { diagnostics.push(unreadable(file, file, error)); }
   }
   if (limited) notes.push(`Module graph skipped ${limited} modules at its 20,000-module, 64 MiB total or 4 MiB per-file limit.`);
+  profileProgress('phase:modules', { current: queue.length });
   if (!readOnly) {
     await mkdir(directory, { recursive: true });
     const temporary = `${path}.${process.pid}.tmp`;

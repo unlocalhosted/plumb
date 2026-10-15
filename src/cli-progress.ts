@@ -79,16 +79,21 @@ if (!isMainThread) {
   let activePhase = '';
   // Non-overlapping execution steps; parse/inline are nested inside collection,
   // and provenance families/components are nested inside their parent timings.
-  // Calibration and the cold-run measurements live in cli-progress-bar.result.md.
+  // Calibration and cold-run measurements live in cli-progress-bar-fixups.result.md.
   const steps: Record<string, [number, number]> = {
-    'phase:config': [0, 2], 'phase:discover': [0, 2], 'phase:source-files': [0, 2],
-    'phase:parse': [2, 19], 'phase:collect': [19, 27],
-    'phase:load': [27, 39], 'phase:compile': [27, 39],
-    'phase:stylesheets': [39, 64], 'phase:declarations': [64, 65], 'phase:decisions': [64, 65],
-    'phase:provenance': [65, 65], 'rule:existence/dead-var': [65, 67],
-    'rule:provenance': [67, 81], 'rule:dead': [81, 83],
-    'phase:components': [83, 93], 'rule:ownership': [93, 98],
-    'phase:habits': [98, 99], 'phase:ledger': [99, 99],
+    'phase:config': [0, 7], 'phase:discover': [0, 7], 'phase:source-files': [0, 7],
+    'phase:parse': [7, 22], 'phase:collect': [22, 34],
+    'phase:load': [34, 37], 'phase:compile': [34, 37],
+    'phase:modules': [37, 46], 'phase:stylesheet-graph': [46, 47], 'phase:stylesheets': [47, 48],
+    'phase:declarations': [48, 49], 'phase:decisions': [48, 49],
+    'phase:provenance': [49, 49], 'rule:existence/dead-var': [49, 50],
+    'rule:provenance': [50, 58], 'rule:dead': [58, 59],
+    'phase:components': [59, 69], 'rule:ownership': [69, 70],
+    'phase:habits': [70, 70], 'phase:ledger': [70, 73],
+    'phase:cache-inventory': [73, 76], 'phase:cache-sources': [76, 79],
+    'phase:cache-components': [79, 81], 'phase:cache-modules': [81, 86],
+    'phase:cache-stamps': [86, 90], 'phase:cache-binary': [90, 94],
+    'phase:cache-json': [94, 97], 'phase:cache-json-write': [97, 99], 'phase:cache-publish': [99, 99],
   };
   const number = (value: number) => value.toLocaleString('en-US');
   const clean = (value: string) => value.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
@@ -154,10 +159,15 @@ if (!isMainThread) {
         text = message.files === undefined ? 'Reading your project' : `Reading your project: ${count(message.files, 'file')}`;
         if (message.cached) { percent = Math.max(percent, 99); text = 'Reading cached report'; }
         break;
-      case 'phase:parse': case 'phase:collect':
+      case 'phase:parse':
         text = message.current === undefined ? 'Reading styles' : `Reading styles: ${number(message.current)} of ${count(message.files!, 'file')}`; break;
+      case 'phase:collect':
+        text = message.current === undefined ? 'Tracing computed classes' : `Tracing computed classes: ${number(message.current)} of ${count(message.files!, 'file')}`; break;
       case 'phase:load': case 'phase:compile':
         text = message.entry ? `Compiling Tailwind from ${relative(options.root, message.entry)}` : 'Reading styles'; break;
+      case 'phase:modules':
+        text = message.current === undefined ? 'Tracing stylesheet imports' : `Tracing stylesheet imports: ${count(message.current, 'module')}`; break;
+      case 'phase:stylesheet-graph': text = 'Following stylesheet imports'; break;
       case 'phase:stylesheets':
         text = message.current === undefined ? 'Reading stylesheets' : `Reading stylesheets: ${number(message.current)} of ${count(message.total!, 'stylesheet')}`; break;
       case 'phase:declarations': case 'phase:decisions':
@@ -173,6 +183,16 @@ if (!isMainThread) {
       case 'rule:dead': text = 'Checking unused tokens'; break;
       case 'phase:habits': text = 'Checking habits and component copies'; break;
       case 'phase:ledger': text = 'Checking ledger'; break;
+      case 'phase:cache-inventory': text = 'Checking project files for cache'; break;
+      case 'phase:cache-sources': text = 'Validating source cache'; break;
+      case 'phase:cache-components': text = 'Validating component cache'; break;
+      case 'phase:cache-modules': text = 'Validating module cache'; break;
+      case 'phase:cache-stamps':
+        text = message.current === undefined ? 'Validating cache inputs' : `Validating cache inputs: ${number(message.current)} of ${count(message.total!, 'file')}`; break;
+      case 'phase:cache-binary': text = 'Saving analysis cache'; break;
+      case 'phase:cache-json': text = 'Saving report cache'; break;
+      case 'phase:cache-json-write': text = 'Writing report cache'; break;
+      case 'phase:cache-publish': text = 'Finishing cache'; break;
     }
     render();
   });

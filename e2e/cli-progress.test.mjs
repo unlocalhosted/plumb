@@ -29,10 +29,18 @@ function assertBar(result, columns = 120) {
   assert.deepEqual(percentages, [...percentages].sort((a, b) => a - b));
   assert.equal(percentages.at(-1), 100);
   assert.equal(percentages.filter(value => value === 100).length, 1);
+  const counts = new Map();
   for (const line of lines) {
     assert.ok([...line].length < columns, line);
     const bar = /^[━─#-]+/.exec(line)[0];
     if (columns >= 80) assert.ok(bar.length >= 24 && bar.length <= 36, line);
+    const counted = /% +([^:\r\n]+): ([\d,]+)(?= of [\d,]+ | modules?\b)/.exec(line);
+    if (counted) {
+      const [, label, current] = counted;
+      const value = Number(current.replaceAll(',', ''));
+      assert.ok(value >= (counts.get(label) ?? 0), `${label} count decreased: ${line}`);
+      counts.set(label, value);
+    }
   }
   assert.equal(finalScreen(result.stderr), '');
   return lines;
@@ -55,7 +63,7 @@ async function fixture(t, delay = 180, rows = 1) {
 
 function run(project, args = [], options = {}) {
   const env = { ...project.env, ...options.env };
-  const command = [process.execPath, cli, ...args, '--root', project.root];
+  const command = [process.execPath, ...(options.preload ? ['--import', options.preload] : []), cli, ...args, '--root', project.root];
   return new Promise((resolve, reject) => {
     const child = options.pipe ? spawn(command[0], command.slice(1), { cwd: repo, env }) : spawn('python3', [helper], { cwd: repo });
     let stdout = '', stderr = '';
@@ -76,6 +84,12 @@ test('real CLI bar advances monotonically, fits 80 columns, erases, preserves st
   // Presets can inspect components while config loads, before the actual step.
   await writeFile(project.config, `
 import { discoverComponents } from ${JSON.stringify(new URL('../dist/ownership/components.js', import.meta.url).href)};
+import { onProgress } from ${JSON.stringify(new URL('../dist/profile.js', import.meta.url).href)};
+// Keep both real file passes visible even on fast machines.
+onProgress(event => {
+  if (['phase:parse', 'phase:collect'].includes(event.phase) && event.current !== undefined)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 90);
+});
 await new Promise(resolve => setTimeout(resolve, 180));
 discoverComponents(${JSON.stringify(project.root)}, [${JSON.stringify(join(project.root, 'src/Extra0.tsx'))}], {}, new Map(), false, new Map(), true);
 export default {};
@@ -84,7 +98,9 @@ export default {};
   const lines = assertBar(tty, 80);
   const output = plain(tty.stderr);
   // Rendering samples current work at ~14 Hz, so short phases can be coalesced.
-  const phases = ['Reading your project', 'Reading styles:', 'Compiling Tailwind', 'Reading stylesheets', 'Checking tokens:', 'Matching components', 'Checking component styles', 'Checking ledger', 'Done'];
+  const phases = ['Reading your project', 'Reading styles:', 'Tracing computed classes', 'Compiling Tailwind',
+    'Tracing stylesheet imports', 'Following stylesheet imports', 'Reading stylesheets', 'Checking tokens:',
+    'Matching components', 'Checking component styles', 'Checking ledger', 'Done'];
   let previous = -1;
   for (const phase of phases) {
     const index = output.indexOf(phase);
@@ -94,7 +110,7 @@ export default {};
   }
   assert.match(output, /Reading styles: \d+ of/);
   const sourceFrame = lines.find(line => /Reading styles:/.test(line));
-  assert.ok(Number(/ +(\d+)%/.exec(sourceFrame)[1]) <= 27, sourceFrame);
+  assert.ok(Number(/ +(\d+)%/.exec(sourceFrame)[1]) <= 22, sourceFrame);
   assert.ok(lines.some(line => /\b(?:[1-9]|[1-8]\d|9[0-9])%/.test(line)), output);
   assert.match(lines[0], /^-{24} +0%/);
   assert.match(lines.at(-1), /^#{24} +100% +Done$/);
@@ -120,6 +136,41 @@ test('machine/CI/piped runs add no stderr bytes', async t => {
   }
   for (const CI of ['1', '']) assert.equal((await run(project, [], { env: { CI } })).stderr, '');
   assert.equal((await run(project, [], { pipe: true })).stderr, '');
+});
+
+test('cold result cache reports validation and serialization before completion', async t => {
+  const project = await fixture(t, 0);
+  await writeFile(project.config, "export default { css: 'src/styles.css' };\n");
+  const preload = join(project.root, 'observe-progress.mjs');
+  await writeFile(preload, `
+import { onProgress } from ${JSON.stringify(new URL('../dist/profile.js', import.meta.url).href)};
+onProgress(event => {
+  // Sample real work boundaries without relying on a slow disk or large report.
+  if (event.phase.startsWith('phase:cache-') && event.current === undefined ||
+      event.phase === 'phase:cache-stamps' && event.current !== undefined ||
+      ['phase:parse', 'phase:collect'].includes(event.phase) && event.current !== undefined)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 90);
+});
+`);
+  const args = ['--config', project.config];
+  const cold = await run(project, args, { preload });
+  const lines = assertBar(cold);
+  assert.match(plain(cold.stderr), /Tracing computed classes: \d+ of \d+ files/);
+  const labels = ['Checking project files for cache', 'Validating source cache', 'Validating component cache',
+    'Validating module cache', 'Validating cache inputs:', 'Saving analysis cache', 'Saving report cache',
+    'Writing report cache', 'Finishing cache', 'Done'];
+  let previous = -1;
+  for (const label of labels) {
+    const index = lines.findIndex(line => line.includes(label));
+    assert.ok(index > previous, `missing or out-of-order ${label}: ${cold.stderr}`);
+    previous = index;
+  }
+  assert.ok(lines.filter(line => /(?:Validating|Saving|Writing)/.test(line)).every(line => Number(/ +(\d+)%/.exec(line)[1]) < 99));
+  const warm = await run(project, args, { preload });
+  assertBar(warm);
+  assert.doesNotMatch(warm.stderr, /Tracing computed classes|Validating|Saving|Writing/);
+  assert.equal(cold.status, warm.status);
+  assert.equal(normalizeTiming(cold.stdout), normalizeTiming(warm.stdout));
 });
 
 test('cold-cache notice appears once, uses the actual override, stays after clearing', async t => {

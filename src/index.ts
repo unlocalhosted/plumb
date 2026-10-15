@@ -104,8 +104,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileProgress('phase:load', { entry: project.tailwind.entry });
   const lowered = await phase('tailwind', [root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true], () => lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true, !!input));
   const stylesheetStart = performance.now();
-  profileProgress('phase:stylesheets');
+  profileProgress('phase:modules');
   const modules = await phase('modules', [root, collected.modules], () => collectModules(root, collected.modules, !!input || !!runtime));
+  profileProgress('phase:stylesheet-graph');
   const graph = await phase('graph', [project.tailwind.entry, files, modules.imports, input], () => collectStylesheets(project.tailwind.entry, files, modules.imports,
     input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined));
   const moduleCss = new Set<string>();
@@ -116,6 +117,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   }
   for (const sheet of graph.files.values()) if (sheet.reached.some(reach => reach.kind === 'module')) reachedCss(sheet.file);
   modules.counts.cssFiles = moduleCss.size;
+  profileProgress('phase:stylesheets');
   const css = await phase('css', [root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets], () => lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input || !!runtime));
   const stylesheetsMs = performance.now() - stylesheetStart;
   const existenceStart = performance.now();
