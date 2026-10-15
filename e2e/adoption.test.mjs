@@ -45,7 +45,7 @@ test('three-command transcript: first look, init baseline, detected agents and C
   await file(directory, '.github/CODEOWNERS', '* @general\n/.plumber/ @designer @org/design\n/.plumber/ledger.jsonl @ledger-owner\n');
   const first = run(directory).stdout;
   assert.match(first, /gap|spacing/);
-  assert.match(first, /\nNext: run plumber init/);
+  assert.match(first, /This is your first run[\s\S]*plumber baseline[\s\S]*Alt\+B in dev/);
   const look = JSON.parse(run(directory, ['--json']).stdout);
   assert.ok(look.findings.some(finding => finding.severity === 'error'));
   assert.ok(!look.findings.some(finding => finding.rule.startsWith('habits/')));

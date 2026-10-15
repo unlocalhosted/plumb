@@ -9,7 +9,7 @@ Every finding is read by someone deciding what to change: a person in a terminal
 | Title | `title` | One line, under 80 characters. Names the authored code or amount and what is wrong with it. Specific to this finding. |
 | Because | `because` | One sentence on why it matters. Stable per rule; never a restatement of the title. |
 | Do | `choices` + per-site edits, or `action` | The tokens to use with their amounts, or one plain instruction. Exact edit per site when one choice fits. |
-| If intended | `accept` | The command that records it as a reasoned exception: `plumber accept <key> --why "…"`. Shown once per finding. |
+| If intended | `accept` | The command that records it as a reasoned exception: `plumber accept <key> --why "…"`. Human detail views show one real-site example at the end. |
 
 `why` and `fix` stay in JSON for compatibility: `why` = `because`, `fix` = the action text.
 
@@ -32,6 +32,57 @@ Readers know tokens, scales and Tailwind. They do not know React Plumber's inter
 Paths are relative to the project root, everywhere, including ownership sources. Amounts are shown as compiled (`10px`), with the authored form beside them (`gap-10`).
 
 Count-bearing messages use singular nouns and verbs for exactly one, and plural forms for zero or more than one. This applies to findings, summaries, ledger commands, setup, presets, parity and PR output: `1 colour value can't be checked`, `1 spacing token is never used`, `1 ledger entry`, `0 entries`, `2 entries`. Use the shared `count` and `plural` helpers in `src/messages.ts`; leave numeric table labels neutral.
+
+## CLI check report
+
+The default human check is summary-first. Header:
+
+```text
+React Plumber  {project directory name} · Tailwind {major.minor} · theme {relative path} · {n} files · {seconds}s
+```
+
+Seconds always have one decimal. Without Tailwind, replace the Tailwind/theme segment with `plain CSS`. The file breakdown and analysis diagnostics appear with `--verbose`.
+
+`On your tokens` lists each judged family with values, sorted by coverage ascending (stable family order breaks ties). Rows show `{percent}%  {count} off`; counts are declaration/site coverage, not finding-group counts. A terminal stdout adds a 20-cell bar unless `NO_COLOR` is set. Pipes and `NO_COLOR` print numbers only, with no ANSI escapes.
+
+`Fix first` lists only nonzero categories in this order. Counts are finding groups; setup also counts configuration hints:
+
+```text
+  ✗ {n} broken styles  plumber check --broken
+  ! {n} setup gaps  plumber check --rule config
+  · {n} component overrides  plumber check --rule ownership
+  · {n} values off your tokens  plumber check --rule provenance
+    {class/value} {sites} · {class/value} {sites} · {class/value} {sites} · {class/value} {sites}
+```
+
+Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.
+
+Without a ledger:
+
+```text
+This is your first run, so all of this counts as new.
+  plumber baseline      record today's drift as debt; from then on only new drift fails
+  Alt+B in dev          see every drift on the page and fix it there
+```
+
+With a ledger: `{n} new findings`, followed by only new, in-scope sites in at most 20 groups. Runtime notes and unused tokens stay quiet in this daily view and `--new`; explicit file/family/rule details still expose them. If capped, print `+{n} more: plumber check --new`. Then:
+
+```text
+Known debt: {n} findings, unchanged (plumber check --debt)
+Intended?  plumber accept --rule {rule} --site "{real relative file:line}" --why "…"
+```
+
+Omit the accept line when no displayed finding supplies one. Zero selected groups says `no findings`. An empty coverage table says `No token values to judge.`
+
+Footer:
+
+```text
+More: --all (every finding, {n} lines) · --family <name> · --file <path> · --json
+```
+
+The line count is the actual legacy `--all` output's logical line count, excluding the terminal newline. Filtered details retain the existing finding block shape, ordered broken, setup, new drift, overrides, remaining debt, then by sites descending. Move each rule's because-sentences to one row in a closing `Why` block and show one real-site accept command at the end. `--file` accepts a relative or absolute path or quoted glob; filters intersect at the site level. New/debt together select no sites. The exception is `--all` alone: exact pre-layer-2 output, including old ordering, repeated reasons, ledger context and quiet categories; `--all --verbose` preserves the old verbose output. Combined `--all` plus a selector uses the filtered detail view.
+
+Machine outputs and exit codes are unchanged; human selectors do not filter machine data. In particular, only the no-config/no-ledger check is advisory; an existing config still permits error findings to exit 1 before a baseline.
 
 ## CLI analysis progress
 
@@ -146,7 +197,7 @@ Other usage errors keep their explanation below, prefixed with `✗`, followed b
 
 | Explanation | Next command |
 | --- | --- |
-| --family requires plumber decisions and a known family. | plumber decisions --help |
+| --family requires plumber check or decisions and a known family. | plumber check --help |
 | plumber {command} prints text; remove --json. | plumber {command} |
 | Serve uses JSON responses. Omit --json and --verbose. | plumber serve |
 | --{flag} requires plumber {accepted commands}. | plumber {first accepted command} --help |
@@ -336,4 +387,4 @@ Logical-inline judges physical sides that would change under RTL. Equal left/rig
   intended? plumber accept 3fa9… --why "…"
 ```
 
-The rule id is shown with `--verbose`. Findings are ordered errors first, then by site count.
+The rule id is shown with `--verbose`. Filtered details use the priority order above; the legacy `--all` view keeps errors first, then site count.

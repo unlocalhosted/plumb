@@ -1,4 +1,4 @@
-"""Real CLI: stdout stays a pipe, stderr owns a PTY (macOS and Linux CI)."""
+"""Real CLI: stderr owns a PTY by default; stdoutTTY tests terminal reports."""
 import errno
 import fcntl
 import json
@@ -22,12 +22,14 @@ def session():
     fcntl.ioctl(slave, termios.TIOCSCTTY, 0)
 
 
+stdout_tty = options.get('stdoutTTY', False)
 child = subprocess.Popen(options['command'], cwd=options['cwd'], env=options['env'],
-                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=slave,
+                         stdin=subprocess.DEVNULL, stdout=slave if stdout_tty else subprocess.PIPE,
+                         stderr=subprocess.PIPE if stdout_tty else slave,
                          preexec_fn=session)
 os.close(slave)
 stdout, stderr = bytearray(), bytearray()
-streams = {master: stderr, child.stdout.fileno(): stdout}
+streams = {master: stdout, child.stderr.fileno(): stderr} if stdout_tty else {master: stderr, child.stdout.fileno(): stdout}
 deadline = time.monotonic() + options.get('timeout', 30)
 interrupted = False
 try:

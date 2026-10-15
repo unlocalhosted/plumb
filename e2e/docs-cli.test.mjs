@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import { commandFlags } from '../dist/cli-flags.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(repo, 'dist/cli.js');
@@ -26,13 +27,19 @@ test('every documented command flag reaches real CLI dispatch without command re
   }
   const values = {
     '--root': root, '--config': 'plumber.config.mjs', '--base': 'HEAD', '--since': 'HEAD',
-    '--family': 'spacing', '--format': 'github', '--lang': 'tsx', '--as': 'src/Snippet.tsx',
+    '--family': 'spacing', '--file': 'src/**', '--format': 'github', '--lang': 'tsx', '--as': 'src/Snippet.tsx',
     '--port': '0', '--origin': 'http://localhost:5555', '--served-root': root,
     '--why': 'Reviewed fixture exception', '--rule': 'provenance/spacing', '--site': 'src/App.jsx:1',
   };
   let count = 0;
   for (const command of reference.commands) {
-    for (const flag of command.flags) {
+    // Site recordings are refreshed separately. Exercise current accepted flags
+    // as well, so adding flags cannot silently escape this dispatch proof.
+    const flags = [...command.flags];
+    for (const name of commandFlags[command.name]) if (!flags.some(flag => flag.name === '--' + name)) {
+      flags.push({ name: '--' + name, type: ['root', 'config', 'base', 'format', 'family', 'file', 'rule'].includes(name) ? 'string' : 'boolean' });
+    }
+    for (const flag of flags) {
       const args = [command.name];
       if (command.name === 'explain') args.push('src/App.jsx');
       if (command.name === 'why') args.push('src/App.jsx:1');
@@ -78,7 +85,7 @@ test('every documented command flag reaches real CLI dispatch without command re
   }
   t.diagnostic(`${reference.commands.length} commands; ${count} listed flags invoked through real CLI.`);
   for (const command of reference.commands) {
-    if (command.name !== 'decisions') assert.ok(!command.flags.some(flag => flag.name === '--family'));
+    if (!['decisions', 'check'].includes(command.name)) assert.ok(!command.flags.some(flag => flag.name === '--family'));
     if (['install', 'doctor', 'serve'].includes(command.name)) assert.ok(!command.flags.some(flag => flag.name === '--json'));
     if (command.name === 'serve') assert.ok(!command.flags.some(flag => flag.name === '--verbose'));
   }

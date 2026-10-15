@@ -1,0 +1,28 @@
+React Plumber 0.1.0  /project  tailwind 4.3.3  theme src/styles.css
+files 1 tsx, 0 jsx, 1 css, 0 other  183.2ms
+
+10px isn't on your spacing scale  7 sites
+  Off-scale spacing makes layouts drift apart and can't be changed from the theme.
+  use  8px   step-small  var(--spacing-step-small)  related parts
+       12px  step-large  var(--spacing-step-large)  a group
+  src/App.tsx:3:46     gap-10
+  src/App.tsx:5:21     gap-10
+  src/App.tsx:6:21     gap-10
+  src/styles.css:9:8   margin: 10px
+  src/styles.css:9:33  padding: 10px
+  … 2 more sites  (--json lists every site)
+  intended?  plumber accept --rule provenance/spacing --site <file:line> --why "…"
+
+`madeup-ledger-class` does nothing: no CSS is generated for it  1 site
+  The style it was meant to apply is missing, and nothing warns you.
+  Remove it, or define `.madeup-ledger-class` in a stylesheet.
+  src/App.tsx:8:21  madeup-ledger-class
+  intended?  plumber accept --rule existence/dead-class --site src/App.tsx:8 --why "…"
+
+classes     4 classes read, 1 does nothing
+spacing     0 of 7 use your tokens (0%)   7 don't
+inline      1 of 1 style attribute has literal values
+unused      2 spacing tokens are never used in your source; if other apps use them, set decisions.<family>.exported
+2 findings: 1 value off your tokens, 1 broken style
+
+ledger  No ledger. Run plumber baseline to record current debt and accept the current decisions.

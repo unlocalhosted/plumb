@@ -95,7 +95,20 @@ export default defineConfig({
 })
 ```
 
-Use `--verbose` to include internal lowering/CSS notes in text output; JSON retains notes by default. Use `plumber --help` for flags. JSON reports follow [report.schema.json](https://github.com/unlocalhosted/plumb/blob/main/schema/report.schema.json). With no config and no ledger, a check exits 0 and prints findings plus instructions to run `plumber init`. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
+The default report starts with token coverage (lowest first), then commands for broken styles, setup gaps, component overrides and off-token values. Before a baseline, it shows counts and the four most common classes/values. With a ledger, it shows only new sites in detail (up to 20 finding groups), followed by the known debt count.
+
+```sh
+plumber check --all                         # previous full report
+plumber check --broken                      # styles the browser cannot apply
+plumber check --family color --file 'src/pages/**'
+plumber check --rule ownership              # component overrides
+plumber check --new                         # all new sites, without the default cap
+plumber check --debt                        # recorded debt sites
+```
+
+Detail flags combine and filter sites within each group. `--rule` accepts an exact rule id or a category (`existence`, `config`, `ownership`, `provenance`); `provenance` shows off-token values, while `--rule provenance/opaque-inline` shows runtime values that cannot be checked. Reasons appear once per rule in a closing Why block, with one accept command for a real site. `--all` alone preserves the previous report, including its order and repeated wording; `--all --verbose` also lists known findings and internal notes. `--verbose` includes the file breakdown and analysis notes. Coverage bars appear only on terminal stdout without `NO_COLOR`.
+
+Use `plumber --help` for flags. JSON reports follow [report.schema.json](https://github.com/unlocalhosted/plumb/blob/main/schema/report.schema.json). Machine output (`--json`, `--agent`, `--sarif`, `--format github`) is unchanged and ignores human detail filters. With no config and no ledger, a check exits 0 and suggests `plumber baseline` to record today's debt; `plumber init` also sets up token sources and habits. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 
 Init enables the `hover-gate`, `focus-outline`, `transition-named` and `no-ease-in` habits and records accepted tokens with the baseline. It refuses an existing config unless `--force` is supplied, which prints the replacement diff first.
 

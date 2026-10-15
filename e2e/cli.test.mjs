@@ -146,10 +146,10 @@ test('text mode prints header, counts, timing and layer status', () => {
   const result = run(['--root', fixture('tailwind-min')]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stderr, '');
-  assert.ok(result.stdout.startsWith(`React Plumber ${metadata.version}  ${fixture('tailwind-min')}  tailwind `));
+  assert.ok(result.stdout.startsWith('React Plumber  tailwind-min · Tailwind '));
   assert.match(result.stdout, /theme .*src\/styles\.css/);
-  assert.match(result.stdout, /files 3 tsx, 0 jsx, 1 css, 0 other\s+\d+\.\dms/);
-  assert.match(result.stdout, /no findings/);
+  assert.match(result.stdout, /4 files · \d+\.\ds/);
+  assert.match(result.stdout, /On your tokens/);
 });
 
 test('default cwd, relative root and both commands use the same harness', () => {

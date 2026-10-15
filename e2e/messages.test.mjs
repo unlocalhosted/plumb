@@ -243,7 +243,7 @@ test('count messages use zero, singular and plural grammar in actual CLI checks 
       ${Array.from({ length: n }, (_, i) => `--spacing-unused-${i}: ${8 + i}px;`).join('\n')}
     } ${Array.from({ length: n }, (_, i) => `.colour-${i} { color: #abcdef; }`).join('\n')}`);
     await writeFile(join(dir, 'src/App.tsx'), `import './styles.css'; export const App = ({n}) => <>${Array.from({ length: n }, (_, i) => `<div className="missing-${i}" style={{ padding: n, opacity: .5 }} />`).join('')}</>;`);
-    const report = cli(dir), output = text(dir);
+    const report = cli(dir), output = text(dir, ['--all']);
     const gaps = report.findings.filter(f => f.rule === 'config/no-tokens');
     if (n) {
       assert.equal(gaps.find(f => f.family === 'color').title, `Your theme has no colour tokens, so ${n} colour ${n === 1 ? 'value' : 'values'} can't be checked`);

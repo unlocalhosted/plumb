@@ -113,7 +113,7 @@ test('baseline records sorted authored keys, exact properties, nearest anchors a
   const first = run(directory, [], 1);
   assert.match(first.ledger.message, /Run plumber baseline/);
   const text = run(directory, [], 1, false).stdout;
-  assert.match(text, /Run plumber baseline/);
+  assert.match(text, /This is your first run[\s\S]*plumber baseline/);
   run(directory, ['baseline']);
   const entries = await ledger(directory);
   assert.deepEqual(entries.map(e => e.key), entries.map(e => e.key).sort());

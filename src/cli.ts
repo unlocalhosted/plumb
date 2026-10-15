@@ -22,8 +22,8 @@ import { formatParity, parity } from './parity.js';
 import { check, explain, trySnippet } from './index.js';
 import { formatUserError, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
+import { formatCheck } from './cli-report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
-import { formatDeadSummary } from './rules/dead.js';
 import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
@@ -60,6 +60,13 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
+  --all            Show the previous full human report
+  --broken         Show broken styles
+  --family <name>  Show findings in one token family
+  --file <path>    Show findings at a path or glob (quote globs)
+  --rule <id>      Show one rule or rule category
+  --new            Show only new sites
+  --debt           Show only recorded debt sites
   --root <dir>     Project directory (default: current directory)
   --config <path>  Config file (relative to root, or absolute)
   --version        Print the package version
@@ -76,6 +83,7 @@ async function main(): Promise<void> {
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
+          all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
@@ -108,7 +116,7 @@ async function main(): Promise<void> {
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
-  if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumber decisions and a known family.\n  → plumber decisions --help');
+  if (args.values.family !== undefined && (!(deciding || command === 'check') || !families.includes(args.values.family))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
   if ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
@@ -205,9 +213,10 @@ async function main(): Promise<void> {
       const commands = githubCommands(report, scope);
       process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
       if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
-    } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatText(report, args.values.verbose) + (args.values.verbose ? formatDeadSummary(report.deadDecisions) : '') +
-      Object.entries(report.configHints ?? {}).map(([family, hint]) => `\nconfig  ${family}: ${hint}\n`).join('') +
-      (!report.config.path && !report.ledger?.exists ? '\nNext: run plumber init to write your token sources and record today\'s findings as debt, so CI only fails on new ones.\n' : report.ledger ? `\nledger  ${report.ledger.message}\n` : ''));
+    } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatCheck(report, {
+      ...Object.fromEntries(['all', 'broken', 'family', 'file', 'rule', 'new', 'debt'].filter(flag => args.values[flag as keyof typeof args.values] !== undefined)
+        .map(flag => [flag, args.values[flag as keyof typeof args.values]])),
+    }, args.values.verbose));
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
   };
   if (args.values.watch) {

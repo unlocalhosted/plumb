@@ -43,9 +43,9 @@ test('zero-config follows the HTML module entry and dynamic imports to app Tailw
   assert.match(skipped[0].because, /Unexpected token/);
   assert.ok(!report.findings.some(f => f.rule === 'existence/dead-class' && f.declaration.value === '[&_.bg-error/5]:hidden'));
   assert.deepEqual(semantic(check(root).report), semantic(report), 'cold/warm caches retain the diagnostic');
-  const text = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root], { encoding: 'utf8' });
+  const text = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root, '--all'], { encoding: 'utf8' });
   assert.equal(text.status, 0); assert.match(text.stdout, /1 item skipped/); assert.doesNotMatch(text.stdout, /Unexpected token/);
-  const verbose = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root, '--verbose'], { encoding: 'utf8' });
+  const verbose = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), '--root', root, '--all', '--verbose'], { encoding: 'utf8' });
   assert.equal(verbose.status, 0); assert.match(verbose.stdout, /config\/unreadable/); assert.match(verbose.stdout, /Unexpected token/);
   await put(root, 'plumber.config.ts', "export default { css: 'src/index.css' };");
   const before = check(root).status;

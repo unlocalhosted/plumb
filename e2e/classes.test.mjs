@@ -79,7 +79,7 @@ test('class lowering and existence: real CLI over literals, helpers, maps, branc
   assert.doesNotMatch(explainText, /note:/);
   assert.match(run(directory, cache, ['explain', 'src/App.tsx', '--verbose']).stdout, /note: .*Kept --tw-/);
   assert.ok(report.notes.some(note => note.includes('Kept --tw-')), 'JSON keeps internal notes');
-  const text = run(directory, cache).stdout;
+  const text = run(directory, cache, ['--all']).stdout;
   assert.doesNotMatch(text, /note:/);
   assert.match(run(directory, cache, ['--verbose']).stdout, /note: .*Kept --tw-/);
   assert.match(text, /src\/sizes.ts:1:/);
@@ -229,5 +229,5 @@ test('warm collection keeps inline companion identity and revalidates imported c
   assert.ifError(guarded.error);
   assert.equal(guarded.stderr, '');
   assert.ok([0, 1].includes(guarded.status));
-  assert.match(guarded.stdout, /files .*tsx/);
+  assert.match(guarded.stdout, /React Plumber  .* · \d+ files · \d+\.\ds/);
 });

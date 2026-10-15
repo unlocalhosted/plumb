@@ -162,12 +162,12 @@ function brief(why: string, decision?: Decision): string {
 
 const share = (part: number, total: number) => total ? ` (${Math.round(part / total * 100)}%)` : '';
 
-function formatFinding(finding: Finding, path: (file: string) => string, verbose: boolean): string {
+export function formatFinding(finding: Finding, path: (file: string) => string, verbose: boolean, repeated = true): string {
   // What is wrong, why it matters, what to write instead, where, and how to keep it if it is intended (docs/MESSAGES.md).
   const title = finding.title || finding.why.replace(/\.$/, '');
   const lines = [`${title}${verbose ? `  [${finding.rule}]` : ''}  ${count(finding.sites.length, 'site')}`];
   const because = finding.because || '';
-  if (because && because !== title) lines.push(`  ${because}`);
+  if (repeated && because && because !== title) lines.push(`  ${because}`);
   const choices = finding.choices ?? finding.decisions;
   if (choices.length) {
     // One finding groups every syntax and property that wrote the same amount (gap-10, py-10, margin: 10px), so a
@@ -189,7 +189,7 @@ function formatFinding(finding: Finding, path: (file: string) => string, verbose
   const atWidth = Math.min(64, Math.max(...shown.map(site => site.at.length)));
   for (const site of shown) lines.push(`  ${site.at.padEnd(atWidth)}  ${site.text}`);
   if (finding.sites.length > SITES_SHOWN) lines.push(`  … ${count(finding.sites.length - SITES_SHOWN, 'more site')}  (--json lists every site)`);
-  if (finding.accept && finding.severity !== 'info') {
+  if (repeated && finding.accept && finding.severity !== 'info') {
     const accept = finding.sites.length > 1 ? finding.accept.replace(/--site \S+/, '--site <file:line>') : finding.accept;
     lines.push(`  intended?  ${accept}`);
   }
@@ -246,18 +246,23 @@ export function formatText(report: Report, verbose = false): string {
   const rules = verbose
     ? [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ')
     : kinds.map(([name, match]) => [name, shownFindings.filter(finding => match(finding.rule)).length] as const).filter(([, n]) => n).map(([name, n]) => `${n.toLocaleString('en-US')} ${n === 1 ? singular[name] ?? name : name}`).join(', ');
-  const details = verbose ? [
-    `declarations ${Object.entries(report.coverage.declarations).map(([origin, n]) => `${n} ${origin}`).join(', ')}`,
-    `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, n]) => `${n} ${reach}`).join(', ')}`,
-    `inline ${count(inline.opaque, 'opaque declaration')} (${inline.fullyOpaque} fully opaque)  classes ${report.classes.opaque} opaque`,
-    `modules ${report.moduleGraph.followed} followed outside source globs, ${count(report.moduleGraph.cssFiles, 'CSS file')} reached  ${report.moduleGraph.totalMs.toFixed(1)}ms  cache ${count(report.moduleGraph.cacheHits, 'hit')}, ${count(report.moduleGraph.cacheMisses, 'miss', 'misses')}`,
-    `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${count(report.timing.cacheHits, 'hit')}, ${count(report.timing.cacheMisses, 'miss', 'misses')}`,
-    ...report.notes.map(note => `note: ${note}`),
-  ].join('\n') + '\n' : '';
+  const details = verbose ? formatVerboseDetails(report) : '';
   return `React Plumber ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
     `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || (recorded.length ? 'no new findings' : 'no findings')}\n\n` +
     `${summary.join('\n')}\n` +
     `${shownFindings.length ? `${count(shownFindings.length, 'finding')}: ${rules}\n` : ''}` +
     details;
+}
+
+export function formatVerboseDetails(report: Report): string {
+  const { inline } = report.coverage;
+  return [
+    `declarations ${Object.entries(report.coverage.declarations).map(([origin, n]) => `${n} ${origin}`).join(', ')}`,
+    `stylesheets ${Object.entries(report.coverage.stylesheets).map(([reach, n]) => `${n} ${reach}`).join(', ')}`,
+    `inline ${count(inline.opaque, 'opaque declaration')} (${inline.fullyOpaque} fully opaque)  classes ${report.classes.opaque} opaque`,
+    `modules ${report.moduleGraph.followed} followed outside source globs, ${count(report.moduleGraph.cssFiles, 'CSS file')} reached  ${report.moduleGraph.totalMs.toFixed(1)}ms  cache ${count(report.moduleGraph.cacheHits, 'hit')}, ${count(report.moduleGraph.cacheMisses, 'miss', 'misses')}`,
+    `timing ${Object.entries(report.timing.phases).map(([phase, ms]) => `${phase} ${ms.toFixed(1)}ms`).join(', ')}  cache ${count(report.timing.cacheHits, 'hit')}, ${count(report.timing.cacheMisses, 'miss', 'misses')}`,
+    ...report.notes.map(note => `note: ${note}`),
+  ].join('\n') + '\n';
 }

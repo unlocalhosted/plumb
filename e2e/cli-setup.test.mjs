@@ -117,11 +117,12 @@ test('setup: Tailwind-looking classes advise once; plain CSS still checks broken
     'src/App.jsx': `import './styles.css'; export const App = () => <div className="${classes.join(' ')}"/>;`,
     'src/styles.css': '.card { color: var(--missing); }' });
   const advisory = '! These classes look like Tailwind, but Tailwind isn\'t set up: p-[13px], flex, gap-4 (+41 more).\n  → npm install tailwindcss @tailwindcss/vite, then @import "tailwindcss"; in your CSS entry\n  Checking plain CSS only for now.\n';
-  for (const args of [[], ['--json'], ['--agent']]) {
+  for (const args of [[], ['--broken'], ['--json'], ['--agent']]) {
     const result = await run(project, args, advisory, 0);
     assert.doesNotMatch(result.stdout, /does nothing|Tailwind never generates/);
     if (args.includes('--json')) assert.ok(JSON.parse(result.stdout).findings.some(f => f.rule === 'existence/dead-var'));
-    else assert.match(result.stdout, /--missing/);
+    else if (args.includes('--agent') || args.includes('--broken')) assert.match(result.stdout, /--missing/);
+    else assert.match(result.stdout, /1 broken style  plumber check --broken/);
   }
 });
 

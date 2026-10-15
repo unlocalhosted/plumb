@@ -39,7 +39,7 @@ test('equal literals warn once per family; every site has its own token, verbose
   assert.equal(each.length, 2); assert.deepEqual(sites(color), sites(each));
   assert.ok(each.every(f => f.severity === 'warn' && f.choices.length === 1));
   assert.deepEqual(color[0].ledgerKeys.sort(), each.flatMap(f => f.ledgerKeys).sort());
-  const text = run(dir, [], false);
+  const text = run(dir, ['--all'], false);
   assert.ok(!color[0].action.includes(dir)); assert.match(text, /4 colour values match tokens/);
   assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}:${e.site.column}`)));
   const agent = run(dir, ['--agent'], false);
@@ -113,7 +113,7 @@ test('elevation without named tokens gives one no-fit line per finding; semantic
   assert.equal(fs.length, 1); assert.equal(fs[0].sites.length, 2);
   assert.equal(fs[0].action, 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.');
   assert.equal(fs[0].fix, fs[0].action);
-  const text = run(dir, [], false);
+  const text = run(dir, ['--all'], false);
   assert.equal(text.split('No tokens fit:').length - 1, 1); assert.ok(!text.includes('NEEDS-DECISION'));
   await writeFile(join(dir, 'src/styles.css'), '@import "tailwindcss"; @theme { --*: initial; --shadow-low: 0 1px 2px #123456; --shadow-card: var(--shadow-low); } .a { box-shadow: 0 4px 8px #123456; }');
   const named = findings(run(dir), 'provenance/elevation');
@@ -127,7 +127,7 @@ test('type hint explains individual-token checks with a supported source selecto
   assert.match(r.configHints.type, /decisions.type.from.*theme:--text-\*/);
   assert.ok(!r.configHints.type.includes('utility:'));
   assert.equal(findings(r, 'provenance/type').length, 2);
-  const text = run(dir, [], false);
+  const text = run(dir, ['--all'], false);
   assert.equal(text.split('config  type:').length - 1, 1);
   await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { type: { from: 'theme:--text-*' } } };");
   assert.equal(findings(run(dir), 'provenance/type').length, 2);

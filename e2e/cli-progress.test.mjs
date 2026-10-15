@@ -20,7 +20,7 @@ const finalScreen = text => {
   }
   return screen + line.join('');
 };
-const normalizeTiming = text => text.replace(/(files [^\n]+  )[\d.]+ms/g, '$1<TIME>ms');
+const normalizeTiming = text => text.replace(/(files [^\n]+  )[\d.]+ms/g, '$1<TIME>ms').replace(/ · \d+\.\ds\n/, ' · <TIME>s\n');
 const frames = stderr => plain(stderr).split('\r\x1b[2K').filter(line => /^(?:[━─#-]+) +\d+%/.test(line));
 function assertBar(result, columns = 120) {
   const lines = frames(result.stderr);
