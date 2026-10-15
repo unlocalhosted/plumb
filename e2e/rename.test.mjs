@@ -141,7 +141,7 @@ test('packed install exposes only plumber and resolves renamed package exports',
   assert.equal(packed.name, '@unlocalhosted/react-plumber');
   npm(root, ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(root, packed.filename)]);
   const metadata = JSON.parse(await readFile(join(root, 'node_modules/@unlocalhosted/react-plumber/package.json'), 'utf8'));
-  assert.deepEqual(metadata.bin, { plumber: './dist/cli.js' });
+  assert.deepEqual(metadata.bin, { plumber: 'dist/cli.js' });
   assert.equal(await exists(join(root, 'node_modules/.bin/plumber')), true);
   assert.equal(await exists(join(root, 'node_modules/.bin/plumb')), false);
   const command = spawnSync(join(root, 'node_modules/.bin/plumber'), ['check', '--json'], { cwd: root, env: { ...env, PLUMBER_CACHE_DIR: join(root, '.cache') }, encoding: 'utf8' });
