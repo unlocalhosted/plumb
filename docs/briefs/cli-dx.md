@@ -176,3 +176,8 @@ Open questions for the owner:
 1. Walk up to the nearest `package.json` automatically (and say so), or stop and ask? (recommended: walk up)
 2. First run with no ledger: keep exit 0 (advisory) as today? (recommended: yes)
 3. Bars in the coverage table, or numbers only? (recommended: bars when the terminal supports it, numbers when piped)
+
+## Owner decisions (2026-10-15)
+1. Walk up to the nearest `package.json` automatically, and say so in one line.
+2. First run with no ledger stays exit 0 (advisory).
+3. Bars in the coverage table in a terminal; numbers only when piped or `NO_COLOR`.
