@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,4 +87,34 @@ test('site read-only human reports fit real 80/140-column PTYs', async t => {
     assert.match(output, /React Plumber/);
   }
   assert.deepEqual(spawnSync('git', ['diff', '--', 'site'], { cwd: repo }).stdout, before);
+});
+
+test('command tables share terminal budgets: decisions, habits, ledger moves and doctor', async t => {
+  const root = await reportFixture(t), cache = await mkdtemp(join(tmpdir(), 'plumber-list-'));
+  t.after(() => rm(cache, { recursive: true, force: true }));
+  const config = join(root, 'plumber.config.ts');
+  await writeFile(config, (await readFile(config, 'utf8')).replace('export default {', "export default { habits: ['hover-gate', 'focus-outline'],"));
+  await appendFile(join(root, 'src/styles.css'), '\n@theme { --color-extraordinarily-long-token-name-to-exercise-terminal-columns: #123456; }');
+  pty(root, ['baseline'], 100, cache, true);
+  let previous = 'Page0';
+  for (const columns of [80, 140]) {
+    const decisions = bounded(pty(root, ['decisions'], columns, cache, true), columns);
+    const decisionRows = decisions.split('\n').filter(line => /^(spacing|color|type|radius|motion|elevation|z)\s/.test(line));
+    assert.ok(decisionRows.length > 5);
+    const locations = decisionRows.map(line => line.lastIndexOf(line.trim().split(/ {2,}/).at(-1)));
+    assert.equal(new Set(locations).size, 1);
+    const habits = bounded(pty(root, ['habits'], columns, cache, true), columns);
+    assert.match(habits, /hover-gate/); assert.match(habits, /focus-outline/);
+    const habitRows = habits.split('\n').filter(line => /^\S/.test(line));
+    assert.equal(new Set(habitRows.map(line => line.search(/\b(?:warn|error|info)\b/))).size, 1);
+    const doctor = bounded(pty(root, ['doctor'], columns, cache, true), columns);
+    assert.equal(doctor.trimEnd().split('\n').length, 6);
+    assert.ok(doctor.trimEnd().split('\n').every(line => line.indexOf(':') < 15));
+    const next = `RenamedPage${columns}`;
+    await rename(join(root, `src/pages/${previous}.tsx`), join(root, `src/pages/${next}.tsx`)); previous = next;
+    const ledger = bounded(pty(root, ['ledger', '--rebase'], columns, cache, true), columns);
+    const moves = ledger.trimEnd().split('\n');
+    assert.ok(moves.length > 1); assert.ok(moves.every(line => line.startsWith('Moved')));
+    assert.equal(new Set(moves.map(line => line.indexOf('→'))).size, 1);
+  }
 });

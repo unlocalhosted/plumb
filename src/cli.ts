@@ -23,6 +23,7 @@ import { check, explain, trySnippet } from './index.js';
 import { formatUserError, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { formatCheck } from './cli-report.js';
+import { table, wrap } from './cli-table.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
@@ -60,7 +61,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
-  --all            Show the previous full human report
+  --all            Show the full human report
   --broken         Show broken styles
   --family <name>  Show findings in one token family
   --file <path>    Show findings at a path or glob (quote globs)
@@ -301,7 +302,9 @@ async function main(): Promise<void> {
     return;
   }
   if (listingHabits) {
-    process.stdout.write(args.values.json ? `${JSON.stringify(report.habits, null, 2)}\n` : report.habits!.map(habit => `${habit.id}  ${habit.breaks} breaks  ${habit.severity}  ${habit.enabled ? 'enabled' : 'disabled'}\n  ${habit.reason}\n`).join(''));
+    process.stdout.write(args.values.json ? `${JSON.stringify(report.habits, null, 2)}\n` : report.habits!.map(habit =>
+      table([[habit.id, habit.breaks === null ? 'not checked' : count(habit.breaks, 'break'), habit.severity, habit.enabled ? 'enabled' : 'disabled']],
+        [{ weight: 1 }, { width: 12, align: 'right' }, { width: 5 }, { width: 8 }], { indent: 0 }).join('\n') + '\n' + wrap(`  ${habit.reason}`) + '\n').join(''));
     return;
   }
   if (command === 'agent-docs') { process.stdout.write(await writeAgentDocs(report, (await loadConfig(report.root, options.config)).value)); return; }
@@ -316,7 +319,9 @@ async function main(): Promise<void> {
       ...(args.values.prune === undefined ? {} : { prune: args.values.prune }),
       ...(args.values.rebase === undefined ? {} : { rebase: args.values.rebase }),
     });
-    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : `${result.message}\n`);
+    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : command === 'ledger' ?
+      (result.moves.length ? table(result.moves.map(move => ['Moved', { text: move.from, path: true }, '→', { text: move.to, path: true }]),
+        [{ width: 5 }, { weight: 1 }, { width: 1 }, { weight: 1 }], { indent: 0 }) : table([[result.message]], [{ weight: 1 }], { indent: 0 })).join('\n') + '\n' : wrap(result.message) + '\n');
     return;
   }
   if (suggesting) {
@@ -338,7 +343,11 @@ async function main(): Promise<void> {
   }
   if (deciding) {
     const records = report.decisions.filter(record => args.values.family === undefined || record.family === args.values.family);
-    process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record => `${record.family}  ${record.name}: ${record.value}\n  resolved: ${record.resolved ?? 'unresolved'}  origin: ${record.origin}  tier: ${record.tier}\n  why: ${record.why || '(none)'}\n  ${relative(report.root, record.source.file)}:${record.source.line}\n`).join(''));
+    const columns = [{ width: 9 }, { weight: 3 }, { weight: 2 }, { weight: 3, path: true, ink: 'dim' as const }];
+    process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record =>
+      table([[record.family, record.name, record.value, `${relative(report.root, record.source.file)}:${record.source.line}`]], columns, { indent: 0 }).join('\n') + '\n' +
+      table([[`resolved: ${record.resolved ?? 'unresolved'} · ${record.origin === 'framework' ? "Tailwind's default" : record.origin === 'project' ? 'your theme' : 'inferred'} · ${record.tier === 'primitive' ? 'raw token' : 'named token'}`]], [{ weight: 1, ink: 'dim' }]).join('\n') + '\n' +
+      wrap(`  why: ${record.why || '(none)'}`) + '\n').join(''));
     return;
   }
   await emitCheck(report);

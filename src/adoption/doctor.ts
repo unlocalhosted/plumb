@@ -11,6 +11,8 @@ import { check } from '../index.js';
 import { userMessage } from '../errors.js';
 import { tailwindSetupProblem } from '../setup-messages.js';
 import { count } from '../messages.js';
+import { table } from '../cli-table.js';
+import type { Cell } from '../cli-table.js';
 
 async function size(path: string): Promise<number> {
   let total = 0;
@@ -24,11 +26,11 @@ async function size(path: string): Promise<number> {
 const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim();
 
 export async function doctor(root: string, configPath?: string): Promise<{ text: string; ok: boolean }> {
-  const lines: string[] = [];
+  const rows: Cell[][] = [];
   let ok = true;
   const line = (name: string, good: boolean, fact: string, fix: string) => {
     if (!good) ok = false;
-    lines.push(`${good ? 'ok' : 'fix'}  ${name}: ${oneLine(fact)}. ${oneLine(fix)}`);
+    rows.push([{ text: good ? 'ok' : 'fix', ...(good ? {} : { ink: 'amber' as const }) }, `${name}:`, oneLine(fact), oneLine(fix)]);
   };
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
   line('Node', major > 22 || major === 22 && minor >= 18, process.versions.node, major > 22 || major === 22 && minor >= 18 ? 'No change needed.' : 'Use Node 22.18 or later.');
@@ -48,7 +50,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     line('CSS entry', true, project.tailwind.entry ? relative(root, project.tailwind.entry) : 'plain CSS from source files', 'No change needed.');
   } catch (error) {
     line('Tailwind', false, 'version could not be checked', 'Fix the CSS entry and rerun plumber doctor.');
-    line('CSS entry', false, userMessage(error), 'Set css in plumber.config.ts to a readable entry file.');
+    line('CSS entry', false, `${config.css ? config.css + ': ' : ''}${userMessage(error)}`, 'Set css in plumber.config.ts to a readable entry file.');
   }
   try {
     const ledger = await readLedger(root);
@@ -61,7 +63,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
       const unaccepted = problems.some(finding => finding.rule === 'decisions/unaccepted');
       const noWhy = problems.some(finding => finding.rule === 'ledger/no-why');
       line('Ledger', !problems.length, `${count(ledger.entries.length, 'entry', 'entries')}, ${count(problems.length, 'issue')}`, problems.length ?
-        [noWhy && 'Record exception reasons with plumber accept <key> --why "reason".', unaccepted && 'Review tokens, then run plumber accept-decisions --why "reason".', stale && 'Run plumber ledger --ratchet --prune after reviewing removals.'].filter(Boolean).join(' ') : 'No change needed.');
+        [noWhy && 'plumber accept <key> --why "reason" (record exception reasons).', unaccepted && 'plumber accept-decisions --why "reason" (review tokens first).', stale && 'plumber ledger --ratchet --prune (review removals first).'].filter(Boolean).join(' ') : 'No change needed.');
     }
   } catch (error) { line('Ledger', false, userMessage(error), 'Repair .plumber/ledger.jsonl, then rerun plumber doctor.'); }
   const cache = cacheDirectory(root);
@@ -72,5 +74,5 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     await access(parent, constants.W_OK);
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
-  return { text: lines.join('\n') + '\n', ok };
+  return { text: table(rows, [{ width: 3 }, { width: 10 }, { weight: 1, path: true }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }

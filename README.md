@@ -98,7 +98,7 @@ export default defineConfig({
 The default report starts with token coverage (lowest first), then commands for broken styles, setup gaps, component overrides and off-token values. Before a baseline, it shows counts and the four most common classes/values. With a ledger, it shows only new sites in detail (up to 20 finding groups), followed by the known debt count.
 
 ```sh
-plumber check --all                         # previous full report
+plumber check --all                         # full human report
 plumber check --broken                      # styles the browser cannot apply
 plumber check --family color --file 'src/pages/**'
 plumber check --rule ownership              # component overrides
@@ -106,7 +106,7 @@ plumber check --new                         # all new sites, without the default
 plumber check --debt                        # recorded debt sites
 ```
 
-Detail flags combine and filter sites within each group. `--rule` accepts an exact rule id or a category (`existence`, `config`, `ownership`, `provenance`); `provenance` shows off-token values, while `--rule provenance/opaque-inline` shows runtime values that cannot be checked. Reasons appear once per rule in a closing Why block, with one accept command for a real site. `--all` alone preserves the previous report, including its order and repeated wording; `--all --verbose` also lists known findings and internal notes. `--verbose` includes the file breakdown and analysis notes. Coverage bars appear only on terminal stdout without `NO_COLOR`.
+Detail flags combine and filter sites within each group. `--rule` accepts an exact rule id or a category (`existence`, `config`, `ownership`, `provenance`); `provenance` shows off-token values, while `--rule provenance/opaque-inline` shows runtime values that cannot be checked. Reasons appear once per rule in a closing Why block, with one accept command for a real site. `--all` keeps its previous selection and order, with compact finding lines, merged subjects and once-only wording; `--all --verbose` also lists known findings and internal notes. `--verbose` includes the file breakdown and analysis notes. Findings use at most three lines, with aligned locations and compact suggestions. All human tables use terminal width (100 columns in pipes), shortening long cells; off-counts align on the right. Broken styles are red, drift amber and secondary text dim only in a terminal without `NO_COLOR`. Coverage bars follow the same terminal rule.
 
 Use `plumber --help` for flags. JSON reports follow [report.schema.json](https://github.com/unlocalhosted/plumb/blob/main/schema/report.schema.json). Machine output (`--json`, `--agent`, `--sarif`, `--format github`) is unchanged and ignores human detail filters. With no config and no ledger, a check exits 0 and suggests `plumber baseline` to record today's debt; `plumber init` also sets up token sources and habits. With config or a ledger, error findings exit 1. Usage or config errors exit 2.
 

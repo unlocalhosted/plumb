@@ -254,7 +254,7 @@ test('rebase moves renamed file/function entries and prints every move; ambiguou
   const text = run(directory, ['ledger', '--rebase'], 0, false).stdout;
   assert.match(text, /Ledger has/);
   await rename(join(directory, 'src/Renamed.tsx'), join(directory, 'src/Again.tsx'));
-  assert.match(run(directory, ['ledger', '--rebase'], 0, false).stdout, /Moved .*Renamed.tsx.* -> .*Again.tsx/);
+  assert.match(run(directory, ['ledger', '--rebase'], 0, false).stdout, /Moved .*Renamed.tsx.* → .*Again.tsx/);
   // Two identical target files make move ambiguous: no accidental acceptance.
   await rename(join(directory, 'src/Again.tsx'), join(directory, 'src/One.tsx'));
   await cp(join(directory, 'src/One.tsx'), join(directory, 'src/Two.tsx'));

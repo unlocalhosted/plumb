@@ -193,15 +193,15 @@ test('nested install puts workflow at git root, scopes approval to ledger owners
 test('doctor reports missing setup and broken config/ledger in independent check lines', async t => {
   const directory = await fixture(t);
   let output = run(directory, ['doctor'], 1).stdout;
-  assert.match(output, /fix  Config: no config. Run plumber init/);
-  assert.match(output, /fix  Ledger: no .plumber\/ledger.jsonl. Run plumber init/);
+  assert.match(output, /fix Config:\s+no config\s+Run plumber init/);
+  assert.match(output, /fix Ledger:\s+no .plumber\/ledger.jsonl\s+Run plumber init/);
   run(directory, ['init']);
   await file(directory, '.plumber/ledger.jsonl', '{broken\n');
   await file(directory, 'plumber.config.ts', 'export default { unknown: true };\n');
   output = run(directory, ['doctor'], 1).stdout;
   assert.equal(output.trim().split('\n').length, 6);
-  assert.match(output, /fix  Config:.*unknown/);
-  assert.match(output, /fix  Ledger:.*Invalid ledger JSON/);
+  assert.match(output, /fix Config:.*Fix the config/);
+  assert.match(output, /fix Ledger:.*Repair .plumber/);
   assert.match(output, /ok  Cache:.*\d+ bytes/);
 });
 
@@ -211,7 +211,7 @@ test('doctor detects accepted token changes and exception reasons needing repair
   const css = await readFile(join(directory, 'src/styles.css'), 'utf8');
   await file(directory, 'src/styles.css', css.replace('8px', '9px'));
   let output = run(directory, ['doctor'], 1).stdout;
-  assert.match(output, /fix  Ledger:.*plumber accept-decisions/);
+  assert.match(output, /fix Ledger:.*plumber accept-decisions/);
   const ledger = await entries(directory);
   ledger.push({ key: 'handwritten', kind: 'exception' });
   await file(directory, '.plumber/ledger.jsonl', ledger.map(JSON.stringify).join('\n') + '\n');
@@ -224,13 +224,13 @@ test('doctor reports unsupported Tailwind, missing CSS entry and unusable cache 
   await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
   await file(directory, 'node_modules/tailwindcss/package.json', '{"name":"tailwindcss","version":"3.4.0"}\n');
   let output = run(directory, ['doctor'], 1).stdout;
-  assert.match(output, /fix  Tailwind: 3.4.0. → upgrade: npx @tailwindcss\/upgrade/);
+  assert.match(output, /fix Tailwind:\s+3.4.0\s+→ upgrade: npx @tailwindcss\/upgrade/);
   await file(directory, 'plumber.config.ts', 'export default { css: "missing.css" };\n');
   await rm(join(directory, '.cache'), { recursive: true, force: true });
   await file(directory, '.cache', 'not a directory');
   output = run(directory, ['doctor'], 1).stdout;
-  assert.match(output, /fix  CSS entry:.*missing.css/);
-  assert.match(output, /fix  Cache:.*PLUMBER_CACHE_DIR/);
+  assert.match(output, /fix CSS entry:.*missing.css/);
+  assert.match(output, /fix Cache:.*PLUMBER_CACHE_DIR/);
   assert.equal(output.trim().split('\n').length, 6);
 });
 
