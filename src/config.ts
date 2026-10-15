@@ -4,7 +4,7 @@ import type { PresetSelection, PresetSummary } from './presets/index.js';
 import { stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { errorMessage, UsageError } from './errors.js';
+import { userMessage, UsageError } from './errors.js';
 import type { Decision, Family } from './report.js';
 import { validateHabits } from './habits/index.js';
 import type { CustomHabit } from './habits/predicates.js';
@@ -197,11 +197,11 @@ export async function loadConfig(root: string, explicitPath?: string): Promise<L
   try {
     module = await import(pathToFileURL(path).href) as { default?: unknown };
   } catch (error) {
-    throw new UsageError(`Fix or create config ${path}: ${errorMessage(error)}`);
+    throw new UsageError(`Fix or create config ${path}: ${userMessage(error)}\n  → \${EDITOR:-vi} ${JSON.stringify(path)}`);
   }
   try {
     return { path, ...await loadPresets(root, validateConfig(module.default)) };
   } catch (error) {
-    throw new UsageError(`Fix config ${path}: ${errorMessage(error)}`);
+    throw new UsageError(`Fix config ${path}: ${userMessage(error)}\n  → \${EDITOR:-vi} ${JSON.stringify(path)}`);
   }
 }

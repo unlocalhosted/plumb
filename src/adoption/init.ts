@@ -69,7 +69,7 @@ function componentSource(root: string): string | undefined {
 
 export async function initProject(root: string, options: { config?: string; force?: boolean }, print: (text: string) => void): Promise<{ message: string; entries: import('../ledger/types.js').LedgerEntry[]; moves: never[] }> {
   const loaded = await loadConfig(root, options.config);
-  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}. Run plumber init --force to replace it after reviewing the diff.`);
+  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}.\n  Review the diff before replacing it.\n  → plumber init --force`);
   const ledger = await readLedger(root); // Refuse malformed state before writing config.
   const scratch = await mkdtemp(join(tmpdir(), 'plumb-init-'));
   try {
@@ -115,7 +115,7 @@ export async function initProject(root: string, options: { config?: string; forc
       const previous = accepted.get(entry.key);
       // Init can propose config again, but cannot silently grow an adopted baseline.
       if (ledger.exists && (previous?.kind !== 'debt' && previous?.kind !== 'exception' || previous && entryCount(entry) > entryCount(previous))) {
-        throw new UsageError('Init refuses new debt in an existing ledger. Fix new findings or run plumber baseline --force after review.');
+        throw new UsageError('Init refuses new debt in an existing ledger.\n  Fix new findings, or review them before recording debt.\n  → plumber baseline --force');
       }
       if (previous?.kind !== 'exception') accepted.set(entry.key, { ...entry, ...stamp });
     }

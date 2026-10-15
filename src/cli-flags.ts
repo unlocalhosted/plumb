@@ -26,3 +26,24 @@ export const commandFlags: Record<string, readonly string[]> = {
   parity: [...report, 'format', 'strict'],
   serve: [...common, 'port', 'stdio', 'overlay', 'origin', 'served-root'],
 };
+
+/** Suggestions come from the accepted vocabulary, never a second command list. */
+export function closeName(input: string, names: readonly string[]): string | undefined {
+  let closest: string | undefined, best = Math.min(2, Math.floor(input.length / 3));
+  for (const name of names) {
+    let row = Array.from({ length: name.length + 1 }, (_, index) => index);
+    for (let i = 1; i <= input.length; i++) {
+      const next = [i];
+      for (let j = 1; j <= name.length; j++) next[j] = Math.min(next[j - 1]! + 1, row[j]! + 1, row[j - 1]! + Number(input[i - 1] !== name[j - 1]));
+      row = next;
+    }
+    const distance = row[name.length]!;
+    if (distance <= best && (closest === undefined || distance < best)) { closest = name; best = distance; }
+  }
+  return closest;
+}
+
+export function unknownName(kind: 'command' | 'option', input: string, names: readonly string[]): string {
+  const match = closeName(input, names);
+  return `Unknown ${kind} ${input}.${match ? ` Did you mean ${match}?` : '\n  → plumber --help'}`;
+}

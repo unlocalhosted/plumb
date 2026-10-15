@@ -36,7 +36,8 @@ function usage(result, pattern) {
   assert.equal(result.status, 2);
   assert.equal(result.stdout, '');
   assert.match(result.stderr, pattern);
-  assert.equal(result.stderr.trim().split('\n').length, 1, 'usage error must be one line');
+  assert.match(result.stderr, /^✗ /, 'usage error uses the shared format');
+  assert.doesNotMatch(result.stderr, /ENOENT|\n\s+at /);
 }
 
 // Validate emitted reports using the keywords used by our schema, without
@@ -75,7 +76,7 @@ function matchesSchema(value, node = schema, path = '$') {
 async function project(t, files) {
   const directory = await mkdtemp(join(tmpdir(), 'plumb-e2e-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  for (const [path, content] of Object.entries(files)) {
+  for (const [path, content] of Object.entries({ 'package.json': '{"type":"module"}', ...files })) {
     const absolute = join(directory, path);
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, content);
@@ -173,9 +174,9 @@ test('invalid CLI usage gives one actionable error', async t => {
   for (const args of [['wat'], ['check', 'check'], ['--unknown'], ['--root'], ['--config'], ['--root', ''], ['--config', '']]) {
     await t.test(args.join(' ') || 'empty', () => usage(run(args), /help|Provide/));
   }
-  usage(run(['--root', '/plumb-this-directory-does-not-exist']), /Set --root to an existing project directory/);
-  usage(run(['--root', 'package.json']), /Set --root/);
-  usage(run(['--config', 'missing.ts']), /Fix or create config/);
+  usage(run(['--root', '/plumb-this-directory-does-not-exist']), /--root .*: no such folder/);
+  usage(run(['--root', 'package.json']), /--root .*: not a folder/);
+  usage(run(['--root', fixture('plain-css'), '--config', 'missing.ts']), /Fix or create config/);
 });
 
 test('all supported config extensions load, with deterministic precedence', async t => {
@@ -183,16 +184,18 @@ test('all supported config extensions load, with deterministic precedence', asyn
     await t.test(extension, async t => {
       const directory = await project(t, {
         'package.json': '{"type":"module"}',
-        [`plumber.config.${extension}`]: `export default ${extension === 'ts' || extension === 'mts' ? '({ source: [] } satisfies { source: string[] })' : '{ source: [] }'};`,
+        'src/App.jsx': 'export const App = () => null;',
+        [`plumber.config.${extension}`]: `export default ${extension === 'ts' || extension === 'mts' ? "({ source: ['src/**'] } satisfies { source: string[] })" : "{ source: ['src/**'] }"};`,
       });
       const report = json(run(['--root', directory, '--json']));
       assert.deepEqual(report.config, { path: join(directory, `plumber.config.${extension}`), inferred: false });
-      assert.deepEqual(report.files, { tsx: 0, jsx: 0, css: 0, other: 0 });
+      assert.deepEqual(report.files, { tsx: 0, jsx: 1, css: 0, other: 0 });
     });
   }
   const directory = await project(t, {
     'plumber.config.ts': 'export default {};',
     'plumber.config.mjs': 'export default { wrong: true };',
+    'src/App.jsx': 'export const App = () => null;',
   });
   assert.equal(json(run(['--root', directory, '--json'])).config.path, join(directory, 'plumber.config.ts'));
 });

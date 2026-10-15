@@ -183,7 +183,7 @@ test('try rejects invalid language/path/flag combinations and syntax without wri
   for (const args of [['try', '--lang', 'html'], ['try', '--as', '../escape.tsx'], ['try', '--as', 'outside/a.tsx'], ['try', '--as', 'src/a.css', '--lang', 'tsx'], ['try', '--json', '--agent'], ['check', '--lang', 'css']]) {
     const result = spawnSync(process.execPath, [cli, ...args, '--root', directory], { input: '<div />', encoding: 'utf8' });
     assert.equal(result.status, 2, result.stdout + result.stderr);
-    assert.match(result.stderr, /plumber:/);
+    assert.match(result.stderr, /^✗ /);
   }
   assert.equal(spawnSync(process.execPath, [cli, 'try', '--lang', 'tsx', '--root', directory], { input: '<div', encoding: 'utf8' }).status, 2);
 });

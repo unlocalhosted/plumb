@@ -160,6 +160,7 @@ test('stylesheet and inline feature slice through real CLI and explain', async t
 test('package side-effect CSS uses style exports and retains framework provenance', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'plumb-package-css-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(join(directory, 'package.json'), '{"type":"module"}');
   await mkdir(join(directory, 'src'), { recursive: true });
   await mkdir(join(directory, 'node_modules/css-pkg'), { recursive: true });
   await writeFile(join(directory, 'src/App.tsx'), "import 'css-pkg/x.css'; import 'css-pkg'; <div className='package-class'/>");

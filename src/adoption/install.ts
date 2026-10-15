@@ -20,7 +20,7 @@ const detection: Partial<Record<AgentName, string[]>> = {
   copilot: ['.github/copilot-instructions.md'], gemini: ['GEMINI.md', '.gemini'], windsurf: ['.windsurf'],
 };
 export function validateAgents(names: (string | boolean)[] = []): AgentName[] {
-  for (const name of names) if (!agentNames.includes(name as AgentName)) throw new UsageError('Unknown agent ' + JSON.stringify(name) + '; choose ' + agentNames.join(', ') + '.');
+  for (const name of names) if (!agentNames.includes(name as AgentName)) throw new UsageError('Unknown agent ' + JSON.stringify(name) + '; choose ' + agentNames.join(', ') + '.\n  → plumber install --list');
   return [...new Set(names)] as AgentName[];
 }
 function instructions(before: string, body: string, file: string): string {
@@ -28,7 +28,7 @@ function instructions(before: string, body: string, file: string): string {
   const ends = before.split(markers.end).length - 1;
   if (!starts && !ends) return before + (before ? (before.endsWith('\n') ? '\n' : '\n\n') : '') + markers.start + '\n' + body + markers.end + '\n';
   const start = before.indexOf(markers.start), end = before.indexOf(markers.end);
-  if (starts !== 1 || ends !== 1 || end < start) throw new UsageError('Invalid React Plumber markers in ' + file + '; no install files changed.');
+  if (starts !== 1 || ends !== 1 || end < start) throw new UsageError('Invalid React Plumber markers in ' + file + '; no install files changed.\n  → ${EDITOR:-vi} ' + JSON.stringify(file));
   return before.slice(0, start + markers.start.length) + '\n' + body + before.slice(end);
 }
 

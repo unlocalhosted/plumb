@@ -9,6 +9,7 @@ async function project(t, css, jsx = '', config = {}) {
   const dir = await mkdtemp(join(root, 'fixtures/.noise-e2e-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await mkdir(join(dir, 'src'));
+  await writeFile(join(dir, 'package.json'), '{"type":"module"}');
   await writeFile(join(dir, 'src/styles.css'), css);
   await writeFile(join(dir, 'src/App.tsx'), jsx);
   await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)};`);

@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import { ResolverFactory } from 'oxc-resolver';
-import { errorMessage, UsageError } from '../errors.js';
+import { errorMessage, userMessage, UsageError } from '../errors.js';
 import { tool } from '../report.js';
 import type { Finding } from '../report.js';
 import { unreadable } from '../diagnostics.js';
@@ -14,7 +14,7 @@ import { lowerCss } from './css.js';
 import type { CandidateCss } from './css.js';
 import { hoverGated, positivePseudo, selector } from '../habits/css.js';
 import { cssCode, cssImports, resolveStylesheet } from '../collect/stylesheets.js';
-import { tailwindFix } from '../setup-messages.js';
+import { tailwindSetupProblem } from '../setup-messages.js';
 
 type ParsedCandidate = { kind: string; root?: string; value?: { kind: string; value: string } | null };
 type DesignSystem = {
@@ -83,7 +83,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
   const results = new Map<string, CandidateCss>();
   const diagnostics: Finding[] = [];
   if (entry === null) return { diagnostics, hoverVariants: [], theme: [], candidates: results, suggestions: [], loadMs: 0, compileMs: 0, cacheHits: 0, cacheMisses: 0 };
-  if (!version?.startsWith('4.')) throw new UsageError(`${version ? `Tailwind ${version} is not supported.` : 'Tailwind is not installed.'} ${tailwindFix}`);
+  if (!version?.startsWith('4.')) throw new UsageError((await tailwindSetupProblem(root, entry, version))!);
   const start = performance.now();
   function skipped(error: unknown) {
     const message = errorMessage(error);
@@ -290,6 +290,6 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     suggestions = suggestions?.filter(hint => !cached[hint.token]?.unreadable) ?? [];
     return { diagnostics, hoverVariants: hoverVariants ?? [], theme: theme ?? [], candidates: results, suggestions: suggestions ?? [], loadMs, compileMs, cacheHits: candidates.length - misses.length, cacheMisses: misses.length };
   } catch (error) {
-    throw new UsageError(`Load project Tailwind from ${dirname(entry)}: ${errorMessage(error)}`);
+    throw new UsageError(`Could not load project Tailwind from ${dirname(entry)}: ${userMessage(error)}\n  → plumber doctor`);
   }
 }

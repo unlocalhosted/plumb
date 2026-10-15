@@ -141,7 +141,7 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
     await file(root, `${host}.config.mjs`, config);
     const result = spawnSync(process.execPath, [cli, 'install', '--overlay', '--write'], { cwd: root, env, encoding: 'utf8' });
     assert.equal(result.status, 2, result.stderr);
-    assert.match(result.stderr, /refused.*\nNo install files changed/);
+    assert.match(result.stderr, /refused.*\n  No install files changed/);
     assert.match(result.stderr, new RegExp(`import \\{ ${host === 'vite' ? 'plumb' : 'withPlumb'} \\}`));
     assert.equal(await readFile(join(root, `${host}.config.mjs`), 'utf8'), config);
   }

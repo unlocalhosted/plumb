@@ -64,7 +64,7 @@ test('shared helper shapes cover config, mixed, legacy and imported aliases with
   }
 });
 
-test('unexpected startup failures preserve worker frames in Session, CLI and health diagnostic', async t => {
+test('startup failures preserve worker frames internally and keep CLI diagnostics concise', async t => {
   const root = await fixture(t);
   await writeFile(join(root, 'plumber.config.ts'), `export default { source: ['src/Nullable.tsx'], decisions: { spacing: { from: () => { throw new TypeError('startup-stack-sentinel'); } } } };`);
   const pending = Session.create({ root, watch: false });
@@ -79,7 +79,7 @@ test('unexpected startup failures preserve worker frames in Session, CLI and hea
   assert.match(health.diagnostic, /session\/worker\.js/);
   const cli = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), 'serve', '--stdio', '--root', root], { encoding: 'utf8', timeout: 10000 });
   assert.ifError(cli.error); assert.equal(cli.status, 2); assert.equal(cli.stdout, '');
-  assert.match(cli.stderr, /TypeError: startup-stack-sentinel\n\s+at/); assert.match(cli.stderr, /session\/worker\.js/);
+  assert.equal(cli.stderr, '✗ startup-stack-sentinel\n');
 });
 
 test('AlgoRecall malformed arbitrary selector leaves a diagnostic while valid classes remain judgeable', async t => {
