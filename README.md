@@ -1,6 +1,6 @@
 # React Plumber
 
-[![npm](https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm)](https://www.npmjs.com/package/@unlocalhosted/react-plumber) [![release](https://img.shields.io/github/v/release/unlocalhosted/plumb?label=release)](https://github.com/unlocalhosted/plumb/releases) [![license](https://img.shields.io/npm/l/@unlocalhosted/react-plumber)](LICENSE)
+[![npm](https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm)](https://www.npmjs.com/package/@unlocalhosted/react-plumber) [![release](https://img.shields.io/github/v/release/unlocalhosted/plumb?label=release)](https://github.com/unlocalhosted/plumb/releases) [![license](https://img.shields.io/npm/l/@unlocalhosted/react-plumber)](https://github.com/unlocalhosted/plumb/blob/main/LICENSE)
 
 ```sh
 npm install -D @unlocalhosted/react-plumber
