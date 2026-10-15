@@ -33,6 +33,36 @@ Paths are relative to the project root, everywhere, including ownership sources.
 
 Count-bearing messages use singular nouns and verbs for exactly one, and plural forms for zero or more than one. This applies to findings, summaries, ledger commands, setup, presets, parity and PR output: `1 colour value can't be checked`, `1 spacing token is never used`, `1 ledger entry`, `0 entries`, `2 entries`. Use the shared `count` and `plural` helpers in `src/messages.ts`; leave numeric table labels neutral.
 
+## CLI analysis progress
+
+One live line on stderr, erased before the report (also on Ctrl+C and errors):
+
+```
+Reading your project: 1,748 files…
+Compiling Tailwind from src/index.css…
+Reading styles: 812 of 1,748 files…
+Checking 292,104 values against your tokens…
+Matching components…
+```
+
+Use the existing analysis phases in their actual execution order. Before counts are
+known, say `Reading your project…` or `Reading styles…`. The moving styles count
+counts source files being collected. Format counts with comma separators and show
+project-relative paths. At 3 seconds, append whole elapsed seconds (`… 3s`), updating
+once per second even during synchronous analysis.
+
+Only show progress when stderr is a TTY, after 300 ms. Hide it for `--json`, `--agent`,
+`--sarif`, `--format github`, any set `CI` value, piped stderr, and serve/watch paths.
+Use dim text unless `NO_COLOR` is set, no spinner, and truncate to terminal width.
+
+For a cold (absent or empty) cache, after 5 seconds print once on its own line:
+`First run builds a cache in .plumber/cache; later runs are faster.` Substitute the
+actual project-relative cache path, including legacy `.plumb/cache` and
+`PLUMBER_CACHE_DIR` overrides. Keep this line after clearing the live status.
+
+E2E-only timing overrides: `PLUMBER_TEST_PROGRESS_DELAY_MS` replaces 300 ms and
+`PLUMBER_TEST_CACHE_NOTICE_MS` replaces 5,000 ms. These are test hooks, not user settings.
+
 ## Unsupported setups
 
 - A CSS entry needs Tailwind, but it is missing: `Tailwind is not installed. Use Tailwind 4 in the project containing the CSS entry.`

@@ -28,6 +28,7 @@ import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
 import { commandFlags } from './cli-flags.js';
+import { withCliProgress } from './cli-progress.js';
 
 const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -133,6 +134,8 @@ async function main(): Promise<void> {
     ...(args.values.root === undefined ? {} : { root: args.values.root }),
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  const analyzing = <T>(run: () => Promise<T>) => withCliProgress(resolve(options.root ?? process.cwd()),
+    !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), run);
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
@@ -154,13 +157,19 @@ async function main(): Promise<void> {
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
   if (command === 'doctor') {
-    const result = await doctor(resolve(options.root ?? process.cwd()), options.config);
+    const result = await analyzing(() => doctor(resolve(options.root ?? process.cwd()), options.config));
     process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;
   }
   if (command === 'init') {
-    const result = await initProject(resolve(options.root ?? process.cwd()), { ...options,
-      ...(args.values.force === undefined ? {} : { force: args.values.force }) },
-      text => args.values.json ? process.stderr.write(text) : process.stdout.write(text));
+    let preview = '';
+    let result: Awaited<ReturnType<typeof initProject>>;
+    try {
+      result = await analyzing(() => initProject(resolve(options.root ?? process.cwd()), { ...options,
+        ...(args.values.force === undefined ? {} : { force: args.values.force }) },
+        text => { preview += text; }));
+    } finally {
+      if (preview) (args.values.json ? process.stderr : process.stdout).write(preview);
+    }
     process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : `${result.message}\n`); return;
   }
   if (command === 'report' && args.values.since !== undefined) {
@@ -219,13 +228,13 @@ async function main(): Promise<void> {
     const tryOptions = { ...options,
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
       ...(args.values.as === undefined ? {} : { as: args.values.as }) };
-    const report = await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions);
+    const report = await analyzing(async () => await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions));
     process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? formatAgent(report) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
   }
   if (explaining) {
-    const result = await explain(args.positionals[1]!, options);
+    const result = await analyzing(() => explain(args.positionals[1]!, options));
     const text = result.sites.map(site => `${relative(result.root, site.file)}:${site.line}:${site.column}  ${site.token}  <${site.owner.name}>\n` +
       site.conditions.map(condition => `  ${condition.kind}: ${condition.text}\n`).join('') +
       (site.declarations.length ? site.declarations.map(declaration => `  ${declaration.origin}  ${declaration.prop}: ${declaration.value}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('') : '  no lowered declarations\n') +
@@ -245,12 +254,12 @@ async function main(): Promise<void> {
       process.exitCode = metadata.exit; return;
     }
   }
-  const report = await check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits && !suggesting && !comparingTokens,
+  const report = await analyzing(() => check({ ...options, ledger: !mutating && !inspecting && !deciding && !listingHabits && !suggesting && !comparingTokens,
     ...(listingHabits ? { listHabits: true } : {}),
     ...(suggesting ? { suggestImitation: true } : {}),
     ...(args.values.base === undefined ? {} : { base: args.values.base }),
     ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
-    ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) });
+    ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }));
   if (command === 'report') {
     const { record, trend } = await recordTrend(report);
     process.stdout.write(args.values.json ? `${JSON.stringify(record, null, 2)}\n` : args.values.markdown ? trendMarkdown(trend) : 'Wrote plumb/report.json and appended to plumb/trend.json.\n');

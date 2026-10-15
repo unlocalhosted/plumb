@@ -27,7 +27,7 @@ import type { LedgerOptions } from './ledger/types.js';
 import { deadDecisions } from './rules/dead.js';
 import { prepareSnippet } from './try.js';
 import type { TryOptions, Snippet } from './try.js';
-import { profileDuration } from './profile.js';
+import { profileDuration, profileProgress } from './profile.js';
 import { suggestionCache } from './rules/suggestions.js';
 import { uniqueDiagnostics } from './diagnostics.js';
 import { CheckCache } from './check-cache.js';
@@ -63,6 +63,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const sync = <T>(name: string, inputs: unknown[], compute: () => T): T => runtime ? runtime.sync(name, inputs, compute) : compute();
   const start = performance.now();
   const root = resolve(options.root ?? process.cwd());
+  profileProgress('phase:config');
   try {
     if (!(await stat(root)).isDirectory()) throw new Error('expected a directory');
   } catch (error) {
@@ -72,6 +73,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('phase:config', performance.now() - start);
   const input = snippet ? prepareSnippet(root, config.value, snippet) : undefined;
   const discoverStart = performance.now();
+  profileProgress('phase:discover');
   let project: Awaited<ReturnType<typeof discoverProject>>;
   try {
     project = await phase('project', [root, config.value], () => discoverProject(root, config.value, runtime?.inventory));
@@ -83,6 +85,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   if (input?.file === project.tailwind.entry) throw new UsageError('--as must name a source file other than the Tailwind entry.');
   if (input) project.files = { tsx: input.lang === 'tsx' ? 1 : 0, jsx: 0, css: input.lang === 'css' ? 1 : 0, other: 0 };
   const filesStart = performance.now();
+  profileProgress('phase:source-files', { files: Object.values(project.files).reduce((sum, count) => sum + count, 0) });
   const files = await phase('files', [root, config.value], () => projectSourceFiles(root, config.value, runtime?.inventory));
   profileDuration('phase:source-files', performance.now() - filesStart);
   if (input && !files.includes(input.file)) files.push(input.file);
@@ -90,6 +93,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const previousComponents = input || runtime ? undefined : cachedComponents(root, files, config.value, !!options.suggestImitation);
   const componentCacheMs = performance.now() - componentCacheStart;
   const programs = previousComponents || runtime ? undefined : new Map<string, SourceProgram>();
+  profileProgress('phase:collect');
   const collected = await phase('collect', [files, config.value.classHelpers, input], () => collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
     input ? new Map([[input.file, input.text]]) : undefined, input?.file, programs, input || runtime ? undefined : root));
   if (input) {
@@ -97,8 +101,10 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     collected.styles.sites = collected.styles.sites.filter(site => site.site.file === input.file);
   }
   const unique = [...new Set(collected.sites.filter(site => !site.opaque).map(site => site.token))].sort();
+  profileProgress('phase:load', { entry: project.tailwind.entry });
   const lowered = await phase('tailwind', [root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true], () => lowerTailwind(root, project.tailwind.entry, project.tailwind.version, unique, options.listHabits === true || config.value.habits?.includes('hover-gate') === true, !!input));
   const stylesheetStart = performance.now();
+  profileProgress('phase:stylesheets');
   const modules = await phase('modules', [root, collected.modules], () => collectModules(root, collected.modules, !!input || !!runtime));
   const graph = await phase('graph', [project.tailwind.entry, files, modules.imports, input], () => collectStylesheets(project.tailwind.entry, files, modules.imports,
     input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined));
@@ -126,6 +132,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   }
   profileDuration('rule:existence/classes', performance.now() - existenceStart);
   const prepareStart = performance.now();
+  profileProgress('phase:declarations');
   const sites = collected.sites.map(site => {
     const candidate = lowered.candidates.get(site.token);
     return sync('site', [site, candidate], () => ({ ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
@@ -142,9 +149,11 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     .filter(declaration => sourceFiles.has(declaration.site.file));
   profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
+  profileProgress('phase:decisions');
   const record = await phase('record', [root, config.value, graph, lowered.theme], () => readDecisions(root, config.value, graph, lowered.theme));
   const decisionsMs = performance.now() - decisionsStart;
   const provenanceStart = performance.now();
+  profileProgress('phase:provenance', { declarations: declarations.length });
   const defined = new Set([...record.defined, ...collected.styles.definedVariables,
     ...[...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations].filter(d => d.prop.startsWith('--')).map(d => d.prop)]);
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
@@ -160,6 +169,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;
   const ownershipStart = performance.now();
+  profileProgress('phase:components');
   const components = previousComponents ?? sync('components', [root, files, config.value, input], () => discoverComponents(root,
     files.filter(file => input?.file !== file || input.lang === 'tsx'), config.value,
     input?.lang === 'tsx' ? new Map([[input.file, input.text]]) : undefined, !!options.suggestImitation, programs, !!input || !!runtime));
@@ -229,6 +239,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
 
 export interface ExplainedClassSite extends ClassSite { declarations: import('./report.js').Declaration[]; notes: string[] }
 export async function check(options: CheckOptions = {}): Promise<Report> {
+  profileProgress('phase:config');
   const start = performance.now(), cache = await CheckCache.create(options);
   if (cache && await cache.hit()) {
     const report = await cache.report();

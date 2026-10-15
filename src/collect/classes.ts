@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
+import { profileProgress } from '../profile.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
@@ -101,6 +102,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   diagnostics: Finding[]; sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>; computedDependencies?: string[]; computedClassFiles?: string[];
 }> {
   const start = performance.now();
+  profileProgress('phase:collect', { current: 0, files: files.length });
   let parseMs = 0;
   let opaque = 0;
   let inlineMs = 0;
@@ -352,7 +354,8 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     }
   }
 
-  for (const file of files) {
+  for (const [index, file] of files.entries()) {
+    if (index % 32 === 0) profileProgress('phase:collect', { current: index, files: files.length });
     const src = source(file, true);
     const ast = src.ast!;
     const inlineStart = performance.now();
@@ -443,6 +446,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     exports(src);
     src.ast = null;
   }
+  profileProgress('phase:collect', { current: files.length, files: files.length });
   // Computed expressions retain their authored literals, never synthetic usage
   // locations. The same evidence feeds ordinary edits and apply revalidation.
   const authored = new Set([...sites.values()].map(classSiteKey));
