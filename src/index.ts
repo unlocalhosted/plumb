@@ -32,6 +32,7 @@ import { suggestionCache } from './rules/suggestions.js';
 import { uniqueDiagnostics } from './diagnostics.js';
 import { CheckCache } from './check-cache.js';
 import { finishMessages } from './messages.js';
+import { checkingPlainCss, looksLikeTailwind } from './setup-messages.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
 
@@ -122,7 +123,8 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const stylesheetsMs = performance.now() - stylesheetStart;
   const existenceStart = performance.now();
   const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
-  const findings = existence(collected.sites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
+  const existenceSites = await checkingPlainCss(root, project.tailwind.entry) ? collected.sites.filter(site => !looksLikeTailwind(site.token)) : collected.sites;
+  const findings = existence(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
   await ranking.save();
   const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value), runtime?.inventory));
   for (const finding of findings) {

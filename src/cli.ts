@@ -20,15 +20,17 @@ import { changedLines } from './surfaces/changed-lines.js';
 import { readTrend, recordTrend, trendMarkdown, trendSince } from './surfaces/trend.js';
 import { formatParity, parity } from './parity.js';
 import { check, explain, trySnippet } from './index.js';
-import { errorDiagnostic, errorMessage, UsageError } from './errors.js';
+import { formatUserError, UsageError } from './errors.js';
 import { formatText, tool } from './report.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { formatDeadSummary } from './rules/dead.js';
 import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { doctor } from './adoption/doctor.js';
-import { commandFlags } from './cli-flags.js';
+import { commandFlags, unknownName } from './cli-flags.js';
+import { cliProject, prepareCliAnalysis } from './cli-project.js';
 import { withCliProgress } from './cli-progress.js';
+import { profileProgress } from './profile.js';
 
 const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -87,7 +89,12 @@ async function main(): Promise<void> {
         strict: true,
       });
     } catch (error) {
-      throw new UsageError(`${errorMessage(error)}; run plumber --help for supported flags.`);
+      const problem = error as Error & { code?: string };
+      const flag = /['"](-[^'" =]+)/.exec(problem.message)?.[1];
+      if (problem.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION' && flag) {
+        throw new UsageError(unknownName('option', flag, [...new Set(Object.values(commandFlags).flat())].map(name => '--' + name)));
+      }
+      throw new UsageError(`${flag ? `Option ${flag} needs ${problem.message.includes('argument missing') ? 'a value' : 'a valid value'}.` : 'Could not read these options.'}\n  → plumber --help`);
     }
   })();
   if (args.values.help) { process.stdout.write(help); return; }
@@ -101,41 +108,51 @@ async function main(): Promise<void> {
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
-  if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumber decisions and a known family.');
-  if (!Object.hasOwn(commandFlags, command) ||
-      ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1)) {
-    throw new UsageError(`Unknown command ${JSON.stringify(args.positionals.join(' '))}; use plumber check or plumber explain <file> (see --help).`);
+  if (args.values.family !== undefined && (!deciding || !families.includes(args.values.family))) throw new UsageError('--family requires plumber decisions and a known family.\n  → plumber decisions --help');
+  if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
+  if ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
+    throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
   }
-  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.`);
-  if (command === 'serve' && (args.values.json || args.values.verbose)) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.');
+  if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
+  if (command === 'serve' && (args.values.json || args.values.verbose)) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.\n  → plumber serve');
   for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag)) {
     const commands = Object.keys(commandFlags).filter(name => commandFlags[name]!.includes(flag));
-    throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.`);
+    throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.\n  → plumber ${commands[0]} --help`);
   }
-  if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumber parity.' : '--format supports github.');
-  if ([args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.');
-  if (args.values.json && args.values.markdown) throw new UsageError('Choose --json or --markdown.');
-  if (args.values.since?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --since.');
-  if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumber parity.');
-  if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.');
+  if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumber parity.\n  → plumber parity tokens.json --format dtcg' : '--format supports github.\n  → plumber check --format github');
+  if ([args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.\n  → plumber check --json');
+  if (args.values.json && args.values.markdown) throw new UsageError('Choose --json or --markdown.\n  → plumber report --markdown');
+  if (args.values.since?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --since.\n  → plumber report --since HEAD');
+  if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumber parity.\n  → plumber parity tokens.json');
+  if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.\n  → plumber check --changed');
   const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
-  if (args.values.write && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.');
-  if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.');
-  if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.');
-  if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.');
-  if (suggesting && !args.values.suggest) throw new UsageError('Use plumber imitation --suggest to report candidate fingerprints.');
-  if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.');
+  if (args.values.write && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.\n  → plumber install --overlay --write');
+  if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.\n  → plumber install --overlay');
+  if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.\n  → plumber install --hooks');
+  if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.\n  → plumber install --ci');
+  if (suggesting && !args.values.suggest) throw new UsageError('Use plumber imitation --suggest to report candidate fingerprints.\n  → plumber imitation --suggest');
+  if (args.values.base?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --base.\n  → plumber check --base HEAD');
   for (const name of ['root', 'config', 'served-root'] as const) {
-    if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.`);
+    if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
+  const project = await cliProject(args.values.root);
+  if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.
     verbose: args.values.verbose === true || args.values.agent === true,
-    ...(args.values.root === undefined ? {} : { root: args.values.root }),
+    root: project.root,
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
-  const analyzing = <T>(run: () => Promise<T>) => withCliProgress(resolve(options.root ?? process.cwd()),
-    !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), run);
+  let prepared = false;
+  const prepare = async () => {
+    if (prepared || command === 'doctor') return;
+    profileProgress('phase:config');
+    const notice = await prepareCliAnalysis(options.root, options.config, command === 'try');
+    prepared = true;
+    if (notice) process.stderr.write(notice);
+  };
+  const analyzing = <T>(run: () => Promise<T>) => withCliProgress(options.root,
+    !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), async () => { await prepare(); return run(); });
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
@@ -150,7 +167,7 @@ async function main(): Promise<void> {
     catch (error) {
       if (!(error instanceof UsageError)) throw error;
       // Manual host wiring is copyable code: retain its line breaks.
-      process.stderr.write(`plumber: ${error.message}\n`); process.exitCode = 2;
+      process.stderr.write(formatUserError(error)); process.exitCode = 2;
     }
     return;
   }
@@ -194,21 +211,23 @@ async function main(): Promise<void> {
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
   };
   if (args.values.watch) {
+    await prepare();
     const controller = new AbortController();
     const stop = () => controller.abort();
     process.on('SIGINT', stop); process.on('SIGTERM', stop);
     try { await watchReports({ ...options, ...(args.values.base === undefined ? {} : { base: args.values.base }),
       ...(args.values.changed === undefined ? {} : { changed: args.values.changed }),
-      ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }, emitCheck, controller.signal, error => process.stderr.write(`plumber: ${errorMessage(error)}\n`)); }
+      ...(args.values['strict-ledger'] === undefined ? {} : { strictLedger: args.values['strict-ledger'] }) }, emitCheck, controller.signal, error => process.stderr.write(formatUserError(error))); }
     finally { process.off('SIGINT', stop); process.off('SIGTERM', stop); }
     return;
   }
   if (command === 'serve') {
-    if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.');
-    if (args.values['served-root'] !== undefined && !args.values.overlay) throw new UsageError('--served-root requires serve --overlay.');
-    if (args.values.stdio && (args.values.overlay || args.values.origin !== undefined)) throw new UsageError('Serve --overlay requires HTTP; omit --stdio.');
+    if (args.values.stdio && args.values.port !== undefined) throw new UsageError('Choose --stdio or --port.\n  → plumber serve --stdio');
+    if (args.values['served-root'] !== undefined && !args.values.overlay) throw new UsageError('--served-root requires serve --overlay.\n  → plumber serve --overlay');
+    if (args.values.stdio && (args.values.overlay || args.values.origin !== undefined)) throw new UsageError('Serve --overlay requires HTTP; omit --stdio.\n  → plumber serve --overlay');
+    await prepare();
     if (args.values.stdio) { await serveStdio(options); return; }
-    if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.');
+    if (args.values.port !== undefined && !/^\d+$/.test(args.values.port)) throw new UsageError('Port must be an integer from 0 to 65535.\n  → plumber serve --port 0');
     const daemon = await serve({ ...options, overlay: args.values.overlay ?? false,
       ...(args.values['served-root'] === undefined ? {} : { servedRoot: args.values['served-root'] }),
       ...(args.values.origin === undefined ? {} : { origin: args.values.origin }),
@@ -221,8 +240,8 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'try') {
-    if (args.values.lang !== undefined && !['tsx', 'css'].includes(args.values.lang)) throw new UsageError('--lang must be tsx or css.');
-    if (args.values.as?.trim() === '') throw new UsageError('Provide a non-empty path for --as.');
+    if (args.values.lang !== undefined && !['tsx', 'css'].includes(args.values.lang)) throw new UsageError('--lang must be tsx or css.\n  → plumber try --lang tsx');
+    if (args.values.as?.trim() === '') throw new UsageError('Provide a non-empty path for --as.\n  → plumber try --help');
     let text = '';
     for await (const chunk of process.stdin) text += chunk.toString();
     const tryOptions = { ...options,
@@ -244,6 +263,7 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'check' && args.values.json && !args.values.agent && !args.values.sarif && !args.values.format && !args.values.watch && args.values.base === undefined && !args.values.changed && !args.values['strict-ledger']) {
+    await prepare();
     const started = performance.now(), cache = await CheckCache.create(options);
     if (cache && await cache.hit()) {
       for await (const chunk of createReadStream(cache.jsonPath, { highWaterMark: 1024 * 1024 })) {
@@ -318,6 +338,6 @@ async function main(): Promise<void> {
 try {
   await main();
 } catch (error) {
-  process.stderr.write(`plumber: ${errorDiagnostic(error)}\n`);
+  process.stderr.write(formatUserError(error));
   process.exitCode = 2;
 }

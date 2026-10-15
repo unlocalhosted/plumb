@@ -84,13 +84,110 @@ actual project-relative cache path, including legacy `.plumb/cache` and
 E2E-only timing overrides: `PLUMBER_TEST_PROGRESS_DELAY_MS` replaces 300 ms and
 `PLUMBER_TEST_CACHE_NOTICE_MS` replaces 5,000 ms. These are test hooks, not user settings.
 
-## Unsupported setups
+## CLI setup and errors
 
-- A CSS entry needs Tailwind, but it is missing: `Tailwind is not installed. Use Tailwind 4 in the project containing the CSS entry.`
-- A CSS entry resolves Tailwind v3: `Tailwind {version} is not supported. Use Tailwind 4 in the project containing the CSS entry.`
-- Overlay installation cannot resolve React: `React is not installed. Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.` Show this before host wiring, including with `--write`.
+Setup errors go to stderr and exit 2. Start with `✗ what happened`; keep useful context on an indented line, then a copyable next step with `  →`. No stack traces, filesystem errno text, or Node argument-parser prose. Unknown commands/options suggest only a close accepted spelling, using the vocabulary in `src/cli-flags.ts`.
 
-Tailwind errors keep exit 2 and use the same fix as `plumber doctor`. Overlay guidance keeps the install command's existing exit code. Do not print compiler internals, require stacks or stack traces for these cases.
+Project discovery:
+
+```text
+✗ No project here. React Plumber reads a React app: a folder with package.json.
+  → cd into your app, or: npx plumber --root path/to/app
+Using the project at ../.. (site, package.json).
+This is a workspace with 3 apps. Pick one:
+  npx plumber --root apps/docs    Vite · Tailwind 4
+  npx plumber --root apps/web    Next.js · Tailwind 4
+  npx plumber --root packages/ui    library · Tailwind 4
+✗ Found no .tsx, .jsx or .css files under src/. Is this the right folder?
+  Looked in: src/** (from plumber.config.ts `source`)
+  → change `source`, or run in your app's folder
+✗ --root does-not-exist: no such folder (from {cwd}).
+✗ --root package.json: not a folder (from {cwd}).
+```
+
+Use the actual relative path, project-folder name, source globs and selected config filename. With no config, say `default source globs`; for an empty list, say `(empty source list)`. Workspace rows say Next.js, Vite or library and the Tailwind major version, or `no Tailwind`. Quote paths containing spaces for the shell. An empty workspace still offers `npx plumber --root path/to/app`. Count apps with the singular for one.
+
+Install and version problems:
+
+```text
+✗ Tailwind 4 is in package.json but not installed.
+  → npm install
+✗ Tailwind is not installed.
+  → npm install
+✗ React Plumber needs Tailwind 4; this project has 3.4.17.
+  → upgrade: npx @tailwindcss/upgrade   (https://tailwindcss.com/docs/upgrade-guide)
+! These classes look like Tailwind, but Tailwind isn't set up: p-[13px], flex, gap-4 (+41 more).
+  → npm install tailwindcss @tailwindcss/vite, then @import "tailwindcss"; in your CSS entry
+  Checking plain CSS only for now.
+```
+
+Use the declared major in the missing-installation message, and the resolved full version in the upgrade message. Detect npm, pnpm, yarn or bun from the nearest lockfile (including workspace parents); installation guidance never runs the package manager. The advisory lists up to three distinct authored utility classes, then the remaining count, and continues checking CSS. For pnpm/yarn/bun the advisory uses `add`. Do not report those utility classes as dead when Tailwind is absent. Unknown CSS class names still get normal existence checks. `doctor` keeps its diagnostic report and exit codes, with the same install/upgrade command and clean file errors.
+
+Arguments:
+
+```text
+✗ Unknown command chek. Did you mean check?
+✗ Unknown option --jsno. Did you mean --json?
+✗ Unknown command {name}.
+  → plumber --help
+✗ Unknown option {flag}.
+  → plumber --help
+✗ Option --root needs a value.
+  → plumber --help
+✗ Option {flag} needs a valid value.
+  → plumber --help
+✗ Could not read these options.
+  → plumber --help
+✗ Unexpected arguments for plumber {command}.
+  → plumber --help
+```
+
+Other usage errors keep their explanation below, prefixed with `✗`, followed by the listed command:
+
+| Explanation | Next command |
+| --- | --- |
+| --family requires plumber decisions and a known family. | plumber decisions --help |
+| plumber {command} prints text; remove --json. | plumber {command} |
+| Serve uses JSON responses. Omit --json and --verbose. | plumber serve |
+| --{flag} requires plumber {accepted commands}. | plumber {first accepted command} --help |
+| --format supports dtcg for plumber parity. | plumber parity tokens.json --format dtcg |
+| --format supports github. | plumber check --format github |
+| Choose one of --json, --sarif, --agent, or --format github. | plumber check --json |
+| Choose --json or --markdown. | plumber report --markdown |
+| Provide a non-empty Git ref for --since. | plumber report --since HEAD |
+| Provide a token export path for plumber parity. | plumber parity tokens.json |
+| Choose --changed (HEAD) or --base. | plumber check --changed |
+| --write requires install --overlay; omit --list. | plumber install --overlay --write |
+| Install --overlay sets up host wiring only; omit --hooks, --ci and --agent. | plumber install --overlay |
+| Use install --agent for selected agents and their hooks; --hooks installs both hooks only. | plumber install --hooks |
+| Choose install --hooks for hooks only, or install --ci for agents, docs and CI. | plumber install --ci |
+| Use plumber imitation --suggest to report candidate fingerprints. | plumber imitation --suggest |
+| Provide a non-empty Git ref for --base. | plumber check --base HEAD |
+| Provide a non-empty path for --{root/config/served-root}. | plumber --help |
+| Choose --stdio or --port. | plumber serve --stdio |
+| --served-root requires serve --overlay. | plumber serve --overlay |
+| Serve --overlay requires HTTP; omit --stdio. | plumber serve --overlay |
+| Port must be an integer from 0 to 65535. | plumber serve --port 0 |
+| --lang must be tsx or css. | plumber try --lang tsx |
+| Provide a non-empty path for --as. | plumber try --help |
+
+Config, project files and adoption:
+
+- `✗ Fix or create config {path}: {reason}` or `✗ Fix config {path}: {reason}`, then `→ ${EDITOR:-vi} "{path}"`. Preserve config validation explanations (invalid type, unknown key, allowed keys), but remove loader/errno prose.
+- `✗ Set css to a readable .css file in plumber.config.ts: {path}.`, then an indented `{reason}`, then `→ ${EDITOR:-vi} plumber.config.ts`.
+- `✗ Multiple Tailwind entry files: {files}; set css in plumber.config.ts to one of them.`, then the same editor command.
+- `✗ Could not read package.json at {root}.`, then `The file is not valid JSON.` or a readable reason, then `→ plumber doctor --root "{root}"`.
+- `✗ Could not read pnpm-workspace.yaml: {reason}`, then `→ ${EDITOR:-vi} pnpm-workspace.yaml`.
+- `✗ Tailwind package.json has no version.`, then `→ {package manager} install`.
+- `✗ Could not load project Tailwind from {folder}: {reason}`, then `→ plumber doctor`.
+- `✗ Config already exists: {path}.`, then `Review the diff before replacing it.`, then `→ plumber init --force`.
+- `✗ Init refuses new debt in an existing ledger.`, then `Fix new findings, or review them before recording debt.`, then `→ plumber baseline --force`.
+- `✗ Unknown agent "{name}"; choose claude, cursor, codex, copilot, gemini, windsurf, generic.`, then `→ plumber install --list`.
+- `✗ Invalid React Plumber markers in {file}; no install files changed.`, then `→ ${EDITOR:-vi} "{file}"`.
+- Overlay refusal starts `✗ Overlay setup refused: {specific reason}`. Indent `No install files changed. Add this wiring manually:` and preserve the manual host-wiring code's line breaks.
+- Other errors use the same `✗` boundary. Missing paths say `{path}: no such file or folder.`; permissions say `{path}: permission denied.`; a directory used as a file says `{path} is a folder; choose a file.`. Nested filesystem failures say `{path}: could not read this file or folder`; missing imports say `Could not load '{module}'`. Read-only files say `{path} is on a read-only filesystem.`; a full disk says `There is no disk space left to write this file.`; file limits say `Too many files are open. Close unused processes and try again.`; occupied ports say `The port is already in use.` then `→ plumber serve --port 0`. Keep frames out of CLI diagnostics; retain existing internal worker and health crash diagnostics.
+
+Overlay installation's existing advisory is unchanged: `React is not installed. Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.`
 
 ## Reasons quoted from tokens
 

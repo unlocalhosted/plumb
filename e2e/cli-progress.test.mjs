@@ -236,7 +236,7 @@ test('analysis errors erase progress before the diagnostic; nested init and doct
   const failed = await run(project, ['decisions']);
   assert.equal(failed.status, 2);
   assert.match(failed.stderr, /Reading your project/);
-  assert.match(finalScreen(failed.stderr), /^plumber: .*broken progress fixture/);
+  assert.match(finalScreen(failed.stderr), /^✗ .*broken progress fixture/);
   assert.doesNotMatch(failed.stderr, /100%/);
   await rm(project.config);
   const initialized = await run(project, ['init']);

@@ -18,6 +18,7 @@ async function project(t, css, jsx = '', config = { habits: ['hover-gate'] }) {
   const dir = await mkdtemp(join(root, 'fixtures/.habits-e2e-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await mkdir(join(dir, 'src'));
+  await writeFile(join(dir, 'package.json'), '{"type":"module"}');
   await writeFile(join(dir, 'src/styles.css'), css);
   await writeFile(join(dir, 'src/App.tsx'), jsx);
   await writeFile(join(dir, 'plumber.config.ts'), `export default ${JSON.stringify(config)};`);

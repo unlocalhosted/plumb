@@ -120,7 +120,7 @@ test('init refuses overwrite, force prints diff and records baseline under repla
   const directory = await fixture(t);
   await file(directory, 'plumber.config.mjs', 'export default { habits: ["logical-inline"] };\n');
   const original = await readFile(join(directory, 'plumber.config.mjs'), 'utf8');
-  assert.match(run(directory, ['init'], 2).stderr, /Config already exists.*--force/);
+  assert.match(run(directory, ['init'], 2).stderr, /Config already exists[\s\S]*--force/);
   assert.equal(await readFile(join(directory, 'plumber.config.mjs'), 'utf8'), original);
   const forced = run(directory, ['init', '--force']).stdout;
   assert.match(forced, /--- plumber.config.mjs\n\+\+\+ plumber.config.mjs/);
@@ -224,7 +224,7 @@ test('doctor reports unsupported Tailwind, missing CSS entry and unusable cache 
   await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
   await file(directory, 'node_modules/tailwindcss/package.json', '{"name":"tailwindcss","version":"3.4.0"}\n');
   let output = run(directory, ['doctor'], 1).stdout;
-  assert.match(output, /fix  Tailwind: 3.4.0. Use Tailwind 4/);
+  assert.match(output, /fix  Tailwind: 3.4.0. → upgrade: npx @tailwindcss\/upgrade/);
   await file(directory, 'plumber.config.ts', 'export default { css: "missing.css" };\n');
   await rm(join(directory, '.cache'), { recursive: true, force: true });
   await file(directory, '.cache', 'not a directory');
@@ -240,12 +240,11 @@ for (const version of [null, '3.4.19']) {
     await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
     if (version) await file(directory, 'node_modules/tailwindcss/package.json', JSON.stringify({ name: 'tailwindcss', version }));
     const doctor = run(directory, ['doctor'], 1).stdout;
-    const fix = /fix  Tailwind: [^.]+(?:\.[\d]+)*\. (Use Tailwind 4[^\n]+)/.exec(doctor)?.[1];
-    assert.equal(fix, 'Use Tailwind 4 in the project containing the CSS entry.');
+    assert.match(doctor, version ? /npx @tailwindcss\/upgrade/ : /npm install/);
     for (const args of [[], ['check'], ['check', '--json']]) {
       const result = run(directory, args, 2);
       assert.equal(result.stdout, '');
-      assert.equal(result.stderr, `plumber: ${version ? `Tailwind ${version} is not supported.` : 'Tailwind is not installed.'} ${fix}\n`);
+      assert.equal(result.stderr, version ? `✗ React Plumber needs Tailwind 4; this project has ${version}.\n  → upgrade: npx @tailwindcss/upgrade   (https://tailwindcss.com/docs/upgrade-guide)\n` : '✗ Tailwind is not installed.\n  → npm install\n');
       assert.doesNotMatch(result.stderr, /Require stack|Cannot find module|Layer 1|Load project Tailwind|\n\s+at /);
     }
   });
