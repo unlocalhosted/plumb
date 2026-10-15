@@ -1,6 +1,8 @@
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { count, plural } from './messages.js';
+import { findingContext, findingLines, renderFindingLines } from './cli-findings.js';
+import { table, wrap } from './cli-table.js';
 
 export const tool = {
   name: 'react-plumber' as const,
@@ -145,56 +147,10 @@ export interface Report {
 
 // The text report is read by a person deciding what to change, so it leads with what is wrong and what to write
 // instead, keeps each reason to the sentence that matters, and shows a few sites per finding. JSON keeps everything.
-const SITES_SHOWN = 5;
-const WHY_WIDTH = 72;
-
-function brief(why: string, decision?: Decision): string {
-  if (!why) return '';
-  const sentences = why.split(/(?<=[.!?])\s+/).filter(Boolean);
-  const amount = decision?.resolved?.match(/^-?[\d.]+/)?.[0];
-  const tail = decision?.name.split('-').at(-1);
-  const pick = sentences.find(sentence => amount !== undefined && new RegExp(`(^|\\D)${amount.replace('.', '\\.')}(\\D|$)`).test(sentence))
-    ?? sentences.find(sentence => tail !== undefined && new RegExp(`\\b${tail}\\b`, 'i').test(sentence))
-    ?? sentences[0]!;
-  const text = pick.replace(/\.$/, '');
-  return text.length > WHY_WIDTH ? `${text.slice(0, WHY_WIDTH - 1).trimEnd()}…` : text;
-}
-
-const share = (part: number, total: number) => total ? ` (${Math.round(part / total * 100)}%)` : '';
-
 export function formatFinding(finding: Finding, path: (file: string) => string, verbose: boolean, repeated = true): string {
-  // What is wrong, why it matters, what to write instead, where, and how to keep it if it is intended (docs/MESSAGES.md).
-  const title = finding.title || finding.why.replace(/\.$/, '');
-  const lines = [`${title}${verbose ? `  [${finding.rule}]` : ''}  ${count(finding.sites.length, 'site')}`];
-  const because = finding.because || '';
-  if (repeated && because && because !== title) lines.push(`  ${because}`);
-  const choices = finding.choices ?? finding.decisions;
-  if (choices.length) {
-    // One finding groups every syntax and property that wrote the same amount (gap-10, py-10, margin: 10px), so a
-    // row names the token once: its utility suffix, which each site prefixes as it already does, and its variable.
-    const rows = choices.map(decision => {
-      const css = decision.use?.css.replace(/^[\w-]+:\s*/, '');
-      const suffix = decision.use?.class?.replace(/^.*?-(?=mu-|[^-]*$)/, '') ?? undefined;
-      const token = decision.use?.class && decision.name.startsWith('--spacing-') ? decision.name.slice('--spacing-'.length) : suffix;
-      return { amount: decision.resolved ?? decision.value, token: token ?? (css ? '' : decision.name), css: css ?? '', why: brief(decision.why, decision) };
-    });
-    const width = (key: 'amount' | 'token' | 'css') => Math.max(...rows.map(row => row[key].length));
-    const [amountWidth, tokenWidth, cssWidth] = [width('amount'), width('token'), width('css')];
-    rows.forEach((row, i) => lines.push(`  ${i ? '   ' : 'use'}  ${row.amount.padEnd(amountWidth)}  ${tokenWidth ? `${row.token.padEnd(tokenWidth)}  ` : ''}${row.css.padEnd(cssWidth)}${row.why ? `  ${row.why}` : ''}`.trimEnd()));
-  } else {
-    const action = finding.action ?? finding.fix;
-    if (action) lines.push(`  ${action}`);
-  }
-  const shown = finding.sites.slice(0, SITES_SHOWN).map(site => ({ at: `${path(site.file)}:${site.line}:${site.column}`, text: site.text }));
-  const atWidth = Math.min(64, Math.max(...shown.map(site => site.at.length)));
-  for (const site of shown) lines.push(`  ${site.at.padEnd(atWidth)}  ${site.text}`);
-  if (finding.sites.length > SITES_SHOWN) lines.push(`  … ${count(finding.sites.length - SITES_SHOWN, 'more site')}  (--json lists every site)`);
-  if (repeated && finding.accept && finding.severity !== 'info') {
-    const accept = finding.sites.length > 1 ? finding.accept.replace(/--site \S+/, '--site <file:line>') : finding.accept;
-    lines.push(`  intended?  ${accept}`);
-  }
-  return lines.join('\n');
+  return renderFindingLines(findingLines([finding]), path, verbose) + (repeated ? '\n\n' + findingContext([finding], path, verbose) : '');
 }
+const share = (part: number, total: number) => total ? ' (' + Math.round(part / total * 100) + '%)' : '';
 
 export function formatText(report: Report, verbose = false): string {
   const path = (file: string) => relative(report.root, file) || '.';
@@ -209,7 +165,7 @@ export function formatText(report: Report, verbose = false): string {
   const unused = report.findings.filter(finding => finding.rule.startsWith('dead/'));
   const unusedTokens = unused.reduce((n, f) => n + f.sites.length, 0);
   const runtimeStyles = runtime.reduce((n, f) => n + f.sites.length, 0);
-  // With a ledger, the daily view is what is new; recorded debt and exceptions are one summary line (--verbose lists them).
+  // With a ledger, the daily view is what is new; recorded debt and exceptions are one summary line (plumber check --debt lists them).
   const known = (finding: Finding) => finding.sites.length > 0 && finding.sites.every(site => site.ledger !== undefined && site.ledger.status !== 'new');
   const recorded = report.findings.filter(known);
   const quiet = (finding: Finding) => ['config/unreadable', 'config/tailwind-entry'].includes(finding.rule) || finding.rule === 'provenance/opaque-inline' || finding.rule.startsWith('dead/') || known(finding);
@@ -221,12 +177,12 @@ export function formatText(report: Report, verbose = false): string {
   const families = (['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as const)
     .map(family => [family, (report.coverage as unknown as Record<string, FamilyCoverage | undefined>)[family]] as const)
     .filter((entry): entry is readonly [typeof entry[0], FamilyCoverage] => entry[1] !== undefined && entry[1].total > 0);
-  const numberWidth = Math.max(0, ...families.map(([, c]) => c.total.toLocaleString('en-US').length));
+
   const summary = [
     ...(diagnostics.length && !verbose ? [`unreadable  ${count(diagnostics.length, 'item')} skipped (--verbose lists parser diagnostics)`] : []),
     ...(!verbose ? choices.map(finding => `entry       ${finding.title}; ${finding.because}`) : []),
     `classes     ${count(existence.total, 'class', 'classes')} read, ${existence.dead} ${plural(existence.dead, 'does', 'do')} nothing${existence.deadVars ? `, ${count(existence.deadVars, 'undefined variable')}` : ''}`,
-    ...families.map(([family, c]) => `${family.padEnd(11)} ${c.fromDecisions.toLocaleString('en-US').padStart(numberWidth)} of ${c.total.toLocaleString('en-US').padStart(numberWidth)} ${plural(c.fromDecisions, 'uses', 'use')} your tokens${share(c.fromDecisions, c.total).padEnd(7)} ${c.findings.toLocaleString('en-US')} ${plural(c.findings, "doesn't", "don't")}`),
+    ...table(families.map(([family, c]) => [family, c.fromDecisions.toLocaleString('en-US') + ' of ' + c.total.toLocaleString('en-US') + ' use your tokens' + share(c.fromDecisions, c.total), c.findings.toLocaleString('en-US') + ' off']), [{ width: 9 }, { weight: 3 }, { weight: 1, align: 'right', ink: 'dim' }], { indent: 0 }),
     `inline      ${inline.literalSites} of ${count(inline.sites, 'style attribute')} ${plural(inline.literalSites, 'has', 'have')} literal values`,
     ...(unused.length && !verbose ? [`unused      ${unused.map(f => count(f.sites.length, `${f.family === 'color' ? 'colour' : f.family === 'elevation' ? 'shadow' : f.family} token`)).join(', ')} ${plural(unusedTokens, 'is', 'are')} never used in your source; if other apps use them, set decisions.<family>.exported`] : []),
     ...(recorded.length && !verbose ? [`known       ${count(recorded.length, 'finding')} at ${count(recorded.reduce((n, f) => n + f.sites.length, 0), 'site')} ${plural(recorded.length, 'is', 'are')} recorded in the ledger (--verbose lists ${plural(recorded.length, 'it', 'them')})`] : []),
@@ -238,21 +194,21 @@ export function formatText(report: Report, verbose = false): string {
     ['broken styles', rule => rule.startsWith('existence/')],
     ['component overrides', rule => rule.startsWith('ownership/')],
     ['hand-built components', rule => rule.startsWith('imitation/')],
-    ['config gaps', rule => rule.startsWith('config/')],
+    ['setup gaps', rule => rule.startsWith('config/')],
     ['ledger and token changes', rule => rule.startsWith('ledger/') || rule.startsWith('decisions/')],
   ];
   const shownFindings = report.findings.filter(finding => verbose || !quiet(finding));
-  const singular: Record<string, string> = { 'values off your tokens': 'value off your tokens', 'habit breaks': 'habit break', 'broken styles': 'broken style', 'component overrides': 'component override', 'hand-built components': 'hand-built component', 'config gaps': 'config gap', 'ledger and token changes': 'ledger or token change' };
+  const singular: Record<string, string> = { 'values off your tokens': 'value off your tokens', 'habit breaks': 'habit break', 'broken styles': 'broken style', 'component overrides': 'component override', 'hand-built components': 'hand-built component', 'setup gaps': 'setup gap', 'ledger and token changes': 'ledger or token change' };
   const rules = verbose
     ? [...byRule].sort((a, b) => b[1] - a[1]).map(([rule, n]) => `${rule} ${n}`).join(', ')
     : kinds.map(([name, match]) => [name, shownFindings.filter(finding => match(finding.rule)).length] as const).filter(([, n]) => n).map(([name, n]) => `${n.toLocaleString('en-US')} ${n === 1 ? singular[name] ?? name : name}`).join(', ');
   const details = verbose ? formatVerboseDetails(report) : '';
-  return `React Plumber ${report.tool.version}  ${report.root}  ${tailwind}\n` +
+  return wrap(`React Plumber ${report.tool.version}  ${report.root}  ${tailwind}\n` +
     `files ${tsx} tsx, ${jsx} jsx, ${css} css, ${other} other  ${report.timing.totalMs.toFixed(1)}ms\n\n` +
-    `${ordered.map(finding => formatFinding(finding, path, verbose)).join('\n\n') || (recorded.length ? 'no new findings' : 'no findings')}\n\n` +
+    `${renderFindingLines(findingLines(ordered), path, verbose) || (recorded.length ? 'no new findings' : 'no findings')}${ordered.length ? '\n\n' + findingContext(ordered, path, verbose) : ''}\n\n` +
     `${summary.join('\n')}\n` +
     `${shownFindings.length ? `${count(shownFindings.length, 'finding')}: ${rules}\n` : ''}` +
-    details;
+    details);
 }
 
 export function formatVerboseDetails(report: Report): string {

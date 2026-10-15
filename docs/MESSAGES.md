@@ -1,6 +1,6 @@
 # Messages
 
-Every finding is read by someone deciding what to change: a person in a terminal or PR, or an agent. It has to say what is wrong with this code, why that matters, and exactly what to do, in words the reader already uses. This file is the contract for what every rule says. Rule ids stay in JSON and in `--verbose`; people read titles.
+Every finding is read by someone deciding what to change: a person in a terminal or PR, or an agent. It has to say what is wrong with this code, why that matters, and exactly what to do, in words the reader already uses. This file is the contract for what every rule says. Rule ids stay in machine output, `--verbose`, explicit `--rule` details and the accept example. Human findings use plain phrases.
 
 ## The four parts of a finding
 
@@ -43,19 +43,19 @@ React Plumber  {project directory name} · Tailwind {major.minor} · theme {rela
 
 Seconds always have one decimal. Without Tailwind, replace the Tailwind/theme segment with `plain CSS`. The file breakdown and analysis diagnostics appear with `--verbose`.
 
-`On your tokens` lists each judged family with values, sorted by coverage ascending (stable family order breaks ties). Rows show `{percent}%  {count} off`; counts are declaration/site coverage, not finding-group counts. A terminal stdout adds a 20-cell bar unless `NO_COLOR` is set. Pipes and `NO_COLOR` print numbers only, with no ANSI escapes.
+`On your tokens` lists each judged family with values, sorted by coverage ascending (stable family order breaks ties). Rows show `{percent}%  {count} off`, with comma-separated off-counts right-aligned in one column; counts are declaration/site coverage, not finding-group counts. A terminal stdout adds a 20-cell bar unless `NO_COLOR` is set. Pipes and `NO_COLOR` print numbers only, with no ANSI escapes.
 
 `Fix first` lists only nonzero categories in this order. Counts are finding groups; setup also counts configuration hints:
 
 ```text
-  ✗ {n} broken styles  plumber check --broken
-  ! {n} setup gaps  plumber check --rule config
-  · {n} component overrides  plumber check --rule ownership
-  · {n} values off your tokens  plumber check --rule provenance
+  ✗ {n} broken styles          the browser drops them          plumber check --broken
+  ! {n} setup gaps             type roles aren't configured    plumber check --rule config
+  · {n} component overrides    callers restyle your components plumber check --rule ownership
+  · {n} values off your tokens most in {family}                plumber check --rule provenance
     {class/value} {sites} · {class/value} {sites} · {class/value} {sites} · {class/value} {sites}
 ```
 
-Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.
+All Fix first rows use three shared, width-budgeted columns: count and category, short reason, copyable command. Setup without a type-role hint says `tokens are missing or unreadable`. The largest off-token family supplies `most in {family}`. Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.
 
 Without a ledger:
 
@@ -80,7 +80,7 @@ Footer:
 More: --all (every finding, {n} lines) · --family <name> · --file <path> · --json
 ```
 
-The line count is the actual legacy `--all` output's logical line count, excluding the terminal newline. Filtered details retain the existing finding block shape, ordered broken, setup, new drift, overrides, remaining debt, then by sites descending. Move each rule's because-sentences to one row in a closing `Why` block and show one real-site accept command at the end. `--file` accepts a relative or absolute path or quoted glob; filters intersect at the site level. New/debt together select no sites. The exception is `--all` alone: exact pre-layer-2 output, including old ordering, repeated reasons, ledger context and quiet categories; `--all --verbose` preserves the old verbose output. Combined `--all` plus a selector uses the filtered detail view.
+The line count is the actual `--all` output at the current width, excluding the terminal newline. Filtered details keep the layer-2 priority order: broken, setup, new drift, overrides, remaining debt; site count descending within each section. `--all` retains its previous selection and ordering but uses the new compact drawing, once-only reasons and accept example. Combined `--all` plus a selector uses filtered detail selection. `--file` accepts relative or absolute paths or quoted globs; filters intersect at site level. New/debt together select no sites.
 
 Machine outputs and exit codes are unchanged; human selectors do not filter machine data. In particular, only the no-config/no-ledger check is advisory; an existing config still permits error findings to exit 1 before a baseline.
 
@@ -319,7 +319,7 @@ Scale names: spacing scale, radius scale, type scale, motion tokens, shadow toke
 - Action: Pass the number through a CSS variable and set {property} from a class or stylesheet.
 - Grouped per file: one finding per file with a site count, not one per property.
 
-**No tokens in a family** (config gap, replaces per-value findings)
+**No tokens in a family** (setup gap, replaces per-value findings)
 - Rule: `config/no-tokens`, severity warn, one finding per family.
 - Title: `` Your theme has no {family} tokens, so {n} {property} value(s) can't be checked ``
 - Because: React Plumber judges values against the tokens your theme declares.
@@ -377,14 +377,32 @@ Logical-inline judges physical sides that would change under RTL. Equal left/rig
 
 ## Text layout
 
-```
-10px isn't on your spacing scale                           70 sites
-  Off-scale spacing makes layouts drift apart and can't be changed from the theme.
-  use  8px   mu-space-8   var(--spacing-mu-space-8)
-       12px  mu-related   var(--spacing-mu-related)   Related content uses 12
-  apps/docs/src/blocks/ai-composer/ai-composer.tsx:119:76  py-10
-  …
-  intended? plumber accept 3fa9… --why "…"
+Every human finding is a projection, not a mutation of the analyzer report. Merge identical subjects within a rule family, union authored sites, and combine reasons. Type size plus line-height says `off your type scale (size and line-height)`. Split mixed-syntax groups into their actual subjects; each gets its own applicable suggestions. Keep first-appearance order. JSON and agent findings remain separate and byte-identical.
+
+A group has at most three physical lines: subject / short reason / location; optional fix; optional compact sites row when there are multiple sites. Source expressions collapse whitespace and truncate with `…`; never print their bodies on separate lines.
+
+```text
+  !  p-[21px]     off your spacing scale       src/hero/DriftedCard.jsx:24
+     → p-5 (20px) · p-6 (24px, card padding)
+
+  !  font-mono    off your type scale          9,350 sites in 312 files
+     → No token is close to this font; pick a named role
+     js-core.tsx:492 · js-core.tsx:502 · mini-system.tsx:204 · +9,347
+
+  ✗  var(--gone)  never defined; browser drops it  src/styles.css:12
+     → Define --gone, or use a token instead
 ```
 
-The rule id is shown with `--verbose`. Filtered details use the priority order above; the legacy `--all` view keeps errors first, then site count.
+Short phrases:
+- Off-token: `off your spacing scale`, `off your radius scale`, `off your type scale`, `off your motion tokens`, `off your shadow tokens`, `off your z-index layers`; colour says `raw colour`.
+- A copy: `matches a token; uses a copy`. Raw tokens say `raw {family}; use a named token`.
+- Broken class: `no CSS; browser applies nothing`. Runtime class: `runtime class; no CSS generated`.
+- Undefined variable: `never defined; browser drops it`, or `never defined; falls back to {fallback}`.
+- Missing tokens: `setup gap; no tokens configured`. Runtime values: `computed at runtime; cannot check`.
+- Unused tokens: `never used in your source`. Other rules retain their specific effect, without repeating the subject.
+
+Suggestions name the utility at class sites, or `var(--token)` at CSS/inline sites, followed by the amount. Include a token reason only when at most 28 characters and all alternatives still fit. Inventory tokens are never presented as interchangeable fixes. Sites use basenames, or the shortest unique path tail when basenames collide; show up to four fitting sites and a `+{remaining}` count.
+
+Each rule's because text appears once in the closing Why block. No rule id unless verbose or explicitly filtered with --rule. One accept example uses a displayed site; shell continuations preserve copyability at narrow widths.
+
+All human tables share `src/cli-table.ts`: terminal width from the output stream, fallback 100 for pipes; fixed/weighted column budgets independent of data. Long paths shorten in the middle, text at the end. Prose wraps intentionally. Terminal-only colour: broken marker/reason red, drift amber, secondary text and suggestion amounts dim; subject default. NO_COLOR disables all escapes and coverage bars. Machine outputs bypass these helpers.

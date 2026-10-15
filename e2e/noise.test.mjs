@@ -40,8 +40,11 @@ test('equal literals warn once per family; every site has its own token, verbose
   assert.ok(each.every(f => f.severity === 'warn' && f.choices.length === 1));
   assert.deepEqual(color[0].ledgerKeys.sort(), each.flatMap(f => f.ledgerKeys).sort());
   const text = run(dir, ['--all'], false);
-  assert.ok(!color[0].action.includes(dir)); assert.match(text, /4 colour values match tokens/);
-  assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}:${e.site.column}`)));
+  assert.ok(!color[0].action.includes(dir)); assert.match(text, /matches a token; uses a copy/);
+  assert.match(text, /→ bg-brand \(/);
+  assert.match(text, /→ var\(--color-ink\) \(/);
+  assert.doesNotMatch(text, /Use the matching token at each site/);
+  assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}`)));
   const agent = run(dir, ['--agent'], false);
   assert.ok(!agent.includes('values in your color')); assert.match(agent, /background-color: var\(--color-ink\)/);
   await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { color: { byValue: 'each' } } };");
@@ -128,7 +131,7 @@ test('type hint explains individual-token checks with a supported source selecto
   assert.ok(!r.configHints.type.includes('utility:'));
   assert.equal(findings(r, 'provenance/type').length, 2);
   const text = run(dir, ['--all'], false);
-  assert.equal(text.split('config  type:').length - 1, 1);
+  assert.equal((text.match(/Setup\s+type:/g) ?? []).length, 1);
   await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { type: { from: 'theme:--text-*' } } };");
   assert.equal(findings(run(dir), 'provenance/type').length, 2);
   const schema = JSON.parse(await readFile(join(root, 'schema/report.schema.json')));

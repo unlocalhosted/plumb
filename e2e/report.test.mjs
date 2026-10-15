@@ -18,10 +18,19 @@ function run(root, args = [], options = {}) {
   assert.equal(result.stderr, '');
   return result;
 }
-const titles = output => output.split('\n').filter(line => /^\S.*  \d+ sites?$/.test(line)).map(line => line.replace(/  \d+ sites?$/, '')).sort();
+const titles = output => [...output.matchAll(/^  [!✗·]  (.*?) {2,}/gm)].map(match => match[1]).sort();
 const expectSubset = (root, args, findings) => {
   const result = run(root, args);
-  assert.deepEqual(titles(result.stdout), findings.map(f => f.title).sort(), args.join(' '));
+  const labelsForFamily = {color:'colour',elevation:'shadow',z:'z-index'};
+  const subjects = new Map();
+  for (const f of findings) {
+    const family = labelsForFamily[f.family] ?? f.family;
+    const values = f.rule.startsWith('config/') ? [family + ' setup'] : f.rule.startsWith('dead/') ? [family + ' tokens'] : f.rule === 'provenance/opaque-inline' ? ['runtime styles'] : f.rule === 'existence/dead-var' ? [f.title.match(/^`([^`]+)`/)[1]] : f.sites.map(s => s.text.replace(/\s+/g, ' ').trim());
+    for (const value of values) subjects.set(f.rule.split('/')[0] + ':' + f.family + ':' + value, value);
+  }
+  const labels = titles(result.stdout);
+  assert.equal(labels.length, subjects.size, args.join(' '));
+  for (const label of labels) assert.ok([...subjects.values()].some(subject => subject === label || label.endsWith('…') && subject.startsWith(label.slice(0, -1))), label);
   return result.stdout;
 };
 const wrappedLines = output => output.trimEnd().split('\n').reduce((n, line) => n + Math.max(1, Math.ceil([...line].length / 100)), 0);
@@ -54,7 +63,7 @@ test('large first-run summary fits one screen and every detail command selects i
   for (const command of commands) {
     assert.ok(subsets[command], command);
     const detail = expectSubset(root, command.split(' '), subsets[command]);
-    if (command === '--rule config') for (const hint of Object.values(report.configHints)) assert.ok(detail.includes(hint));
+    if (command === '--rule config') for (const hint of Object.values(report.configHints)) assert.ok(detail.replace(/\s+/g, ' ').includes(hint));
   }
   const color = report.findings.filter(f => f.family === 'color');
   expectSubset(root, ['--family', 'color'], color);
@@ -70,8 +79,8 @@ test('large first-run summary fits one screen and every detail command selects i
   assert.doesNotMatch(blocks[0], /intended\?|Your theme defines its own/);
   const whyRules = [...blocks[1].matchAll(/^  ([^:]+):/gm)].map(match => match[1]);
   assert.equal(new Set(whyRules).size, whyRules.length);
-  assert.ok(detail.indexOf('does nothing') < detail.indexOf('Your theme has no'));
-  assert.ok(detail.indexOf('Your theme has no') < detail.indexOf('isn\'t on your'));
+  assert.ok(detail.indexOf('browser applies nothing') < detail.indexOf('setup gap'));
+  assert.ok(detail.indexOf('setup gap') < detail.indexOf('off your'));
   assert.match(run(root, ['--verbose']).stdout, /files 33 tsx, 0 jsx, 1 css, 0 other/);
   const noColor = run(root, [], { env: { NO_COLOR: '1' } }).stdout;
   assert.doesNotMatch(noColor, /\x1b|[█░]/);
@@ -112,20 +121,24 @@ test('ledger default shows only new sites, caps groups, and keeps debt available
   expectSubset(root, ['--new'], fresh);
   expectSubset(root, ['--debt'], debt);
   const mixed = run(root, ['--family', 'spacing', '--file', 'src/pages/Page0.tsx', '--new']).stdout;
-  assert.match(mixed, /  1 site\n/);
+  assert.equal(titles(mixed).length, 1);
+  assert.match(mixed, /src\/pages\/Page0.tsx:\d+/);
   assert.match(mixed, /p-\[13px\]/);
   assert.doesNotMatch(mixed, /padding:13/);
   const old = run(root, ['--family', 'spacing', '--file', 'src/pages/Page0.tsx', '--debt']).stdout;
-  assert.equal((old.match(/  1 site\n/g) ?? []).length, 3);
-  assert.match(old, /left:measured/, 'explicit debt details retain runtime information');
+  assert.equal(titles(old).length, 3);
+  assert.match(old, /runtime styles/, 'explicit debt details retain runtime information');
   const both = run(root, ['--new', '--debt']).stdout;
   assert.match(both, /no findings/);
 });
 
-test('frozen pre-change analyzer report preserves --all and every machine output byte', async () => {
+test('frozen analyzer report changes human drawing and preserves every machine output byte', async () => {
   const root = join(repo, 'fixtures/ledger');
   const snapshot = join(repo, 'e2e/fixtures/report-before');
-  assert.equal(run(root, ['--all'], { replay: true }).stdout, await readFile(join(snapshot, 'all.txt'), 'utf8'));
+  const all = run(root, ['--all'], { replay: true }).stdout;
+  assert.notEqual(all, await readFile(join(snapshot, 'all.txt'), 'utf8'));
+  assert.match(all, /gap-10\s+off your spacing scale\s+3 sites in 1 file/);
+  assert.equal((all.match(/Intended\?/g) ?? []).length, 1);
   const expected = JSON.parse(await readFile(join(snapshot, 'sha256.json'), 'utf8'));
   for (const [format, args] of Object.entries({ json: ['--json'], agent: ['--agent'], sarif: ['--sarif'], github: ['--format', 'github'] })) {
     const output = run(root, args, { replay: true }).stdout;
