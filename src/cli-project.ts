@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { table } from './cli-table.js';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, dirname, relative, resolve } from 'node:path';
@@ -64,7 +65,7 @@ export async function cliProject(argument?: string): Promise<{ root: string; not
   }
   if (explicit || apps.length > 1) {
     throw new UsageError(`This is a workspace with ${apps.length} ${apps.length === 1 ? 'app' : 'apps'}. Pick one:\n` +
-      (apps.length ? apps.map(app => `  npx plumber --root ${shellPath(app.path)}    ${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`).join('\n') :
+      (apps.length ? table(apps.map(app => [{ text: `npx plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n') :
         '  → npx plumber --root path/to/app'));
   }
   return { root, notice: root === start ? '' : `Using the project at ${relative(start, root)} (${basename(root)}, package.json).\n` };

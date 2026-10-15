@@ -43,6 +43,7 @@ async function run(project, args, stderr, status = 2, cwd = project.root) {
   return result;
 }
 const app = { 'package.json': { name: 'site', type: 'module' }, 'src/App.jsx': 'export const App = () => <div />;' };
+const workspaceRow = (path, description) => `  ${`npx plumber --root ${path}`.padEnd(64)}  ${description}\n`;
 
 test('setup: no project here (also stops at home)', async t => {
   const project = await fixture(t);
@@ -76,7 +77,20 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
     'apps/docs/package.json': { dependencies: { vite: '*', react: '*', tailwindcss: '^4' } },
     'packages/ui/package.json': { peerDependencies: { react: '*', tailwindcss: '^4' } },
   });
-  await run(project, [], 'This is a workspace with 3 apps. Pick one:\n  npx plumber --root apps/docs    Vite · Tailwind 4\n  npx plumber --root apps/web    Next.js · Tailwind 4\n  npx plumber --root packages/ui    library · Tailwind 4\n');
+  await run(project, [], 'This is a workspace with 3 apps. Pick one:\n' + workspaceRow('apps/docs', 'Vite · Tailwind 4') + workspaceRow('apps/web', 'Next.js · Tailwind 4') + workspaceRow('packages/ui', 'library · Tailwind 4'));
+  for (const columns of [80, 140]) {
+    const result = spawnSync('python3', [fileURLToPath(new URL('./helpers/cli-pty.py', import.meta.url))], {
+      encoding: 'utf8', input: JSON.stringify({ command: [process.execPath, cli], cwd: project.root, columns,
+        env: { ...process.env, NO_COLOR: '1', PLUMBER_CACHE_DIR: project.cache } }),
+    });
+    assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.status, 2);
+    const rows = output.stderr.replaceAll('\r', '').trimEnd().split('\n').slice(1);
+    assert.ok(rows.every(line => [...line].length <= columns));
+    const offsets = rows.map(line => line.search(/(?:Vite|Next.js|library) ·/));
+    assert.ok(offsets[0] > 0); assert.equal(new Set(offsets).size, 1);
+  }
   await put(project.root, { 'apps/docs/package.json': { dependencies: { vite: '*', react: '*' } }, 'apps/docs/src/App.jsx': 'export const App = () => <div/>;' });
   await run(project, ['--root', 'apps/docs', '--json'], '', 0);
   for (const workspace of ['pnpm', 'implicit']) {
@@ -85,7 +99,7 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
       'apps/web/package.json': { dependencies: { next: '*', react: '*' } },
       'packages/ui/package.json': { peerDependencies: { react: '*' } },
     });
-    await run(other, [], 'This is a workspace with 2 apps. Pick one:\n  npx plumber --root apps/web    Next.js · no Tailwind\n  npx plumber --root packages/ui    library · no Tailwind\n');
+    await run(other, [], 'This is a workspace with 2 apps. Pick one:\n' + workspaceRow('apps/web', 'Next.js · no Tailwind') + workspaceRow('packages/ui', 'library · no Tailwind'));
   }
 });
 
