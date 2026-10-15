@@ -67,9 +67,9 @@ async function browser(t) {
     t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return null;
   }
 }
-async function project(t) {
+async function project(t, beforeCleanup = async () => {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.locate-'));
-  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(async () => { await beforeCleanup(); await rm(root, { recursive: true, force: true }); });
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   await writeFile(join(root, 'src/App.jsx'), source);
   await writeFile(join(root, 'src/react-dom-helper.jsx'), 'export function renderLeaf() { return <span id="helper-leaf" className="gap-[13px]">leaf</span>; }');
@@ -260,7 +260,10 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
 
 for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: installed route.plumb.ts locates exact JSX sites`, { timeout: 120000 }, async t => {
   const launched = await browser(t); if (!launched) return;
-  const root = await project(t);
+  let stop = async () => {};
+  // after hooks run in registration order. Stop Next before removing its live
+  // Turbopack cache, rather than letting fixture removal race background writes.
+  const root = await project(t, () => stop());
   await writeFile(join(root, 'src/Large.jsx'), '"use client"; export default function Large() { return <div hidden>' + Array.from({ length: 4000 }, (_, i) => `<span className="gap-[13px]">${i}</span>`).join('') + '</div>; }');
   const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
   await mkdir(installed, { recursive: true });
@@ -271,10 +274,20 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   await writeFile(join(root, 'app/page.jsx'), `import App from '../src/App.jsx'; import Large from '../src/Large.jsx'; export default function Page() { return <><App /><Large /></>; }\n`);
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
   const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
-  const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  const grouped = process.platform !== 'win32';
+  const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, detached: grouped, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; child.stdout.on('data', chunk => output += chunk); child.stderr.on('data', chunk => output += chunk);
   const done = once(child, 'exit');
-  t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill('SIGTERM'); await done; } });
+  stop = async () => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const signal = value => {
+      try { if (grouped) process.kill(-child.pid, value); else child.kill(value); }
+      catch (error) { if (error.code !== 'ESRCH') throw error; }
+    };
+    signal('SIGTERM');
+    const fallback = setTimeout(() => signal('SIGKILL'), 5000);
+    try { await done; } finally { clearTimeout(fallback); }
+  };
   let url;
   for (let i = 0; i < 600; i++) {
     assert.equal(child.exitCode, null, output);
