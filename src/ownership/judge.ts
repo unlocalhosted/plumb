@@ -1,4 +1,5 @@
 import { componentConfigs } from '../presets/index.js';
+import { profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
 import { makeFinding } from '../messages.js';
 import { relative } from 'node:path';
@@ -126,7 +127,8 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
       because: `${component.name} controls its ${{ paint: 'colour', type: 'type', radius: 'corners', elevation: 'shadow', padding: 'padding' }[family] ?? family}; outside overrides break when its design changes.`,
       action: `${variants ? `Use a variant: ${variants}.` : `${component.name} has no variant for this. Ask for one, or wrap it in an element you style.`} Defined in ${source}.` }));
   }
-  for (const original of declarations) {
+  for (const [index, original] of declarations.entries()) {
+    if (index % 256 === 0) profileProgress('rule:ownership', { current: index, total: declarations.length });
     if (original.origin === 'keyframes' || original.sourceOrigin === 'framework') continue;
     const component = graph.caller(original);
     if (component) for (const declaration of properties(original)) {
@@ -171,5 +173,6 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
       }
     }
   }
+  profileProgress('rule:ownership', { current: declarations.length, total: declarations.length });
   return { findings: [...groups.values()].sort((a, b) => a.rule.localeCompare(b.rule) || a.key.localeCompare(b.key)), coverage };
 }

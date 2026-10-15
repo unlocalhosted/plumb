@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks';
-import { profileDuration } from '../profile.js';
+import { profileDuration, profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
 import { matchesGlob } from 'node:path';
 import { makeFinding, familyReasons, familyNames, scales, noFit, choiceText, sourceEdit, count } from '../messages.js';
@@ -364,13 +364,15 @@ export function provenance(declarations: Declaration[], record: DecisionRecord, 
   const definitions = indexDefinitions(declarations, record);
   const resolution = resolutionContext(declarations, record);
   const coverage = {} as Record<JudgedFamily, Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>>;
-  for (const family of judgedFamilies) {
+  for (const [index, family] of judgedFamilies.entries()) {
+    profileProgress('rule:provenance', { current: index, total: judgedFamilies.length });
     const start = performance.now();
     const result = familyProvenance(family, declarations, record, config, sourceFiles, definitions, resolution);
     for (const name of result.usedNumericSpacing) usedNumericSpacing.add(name);
     profileDuration(`rule:provenance/${family}`, performance.now() - start);
     findings.push(...(verbose || config.decisions?.[family]?.byValue === 'each' ? result.findings : groupByValue(family, result.findings))); coverage[family] = result.coverage;
   }
+  profileProgress('rule:provenance', { current: judgedFamilies.length, total: judgedFamilies.length });
   return { findings: presentProvenance(findings), coverage, usedNumericSpacing: [...usedNumericSpacing].sort() };
 }
 

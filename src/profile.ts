@@ -12,6 +12,8 @@ export interface Progress {
   phase: string;
   files?: number;
   current?: number;
+  total?: number;
+  cached?: boolean;
   entry?: string | null;
   declarations?: number;
 }

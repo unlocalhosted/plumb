@@ -21,14 +21,30 @@ const finalScreen = text => {
   return screen + line.join('');
 };
 const normalizeTiming = text => text.replace(/(files [^\n]+  )[\d.]+ms/g, '$1<TIME>ms');
+const frames = stderr => plain(stderr).split('\r\x1b[2K').filter(line => /^(?:[━─#-]+) +\d+%/.test(line));
+function assertBar(result, columns = 120) {
+  const lines = frames(result.stderr);
+  assert.ok(lines.length >= 2, result.stderr);
+  const percentages = lines.map(line => Number(/ +(\d+)%/.exec(line)[1]));
+  assert.deepEqual(percentages, [...percentages].sort((a, b) => a - b));
+  assert.equal(percentages.at(-1), 100);
+  assert.equal(percentages.filter(value => value === 100).length, 1);
+  for (const line of lines) {
+    assert.ok([...line].length < columns, line);
+    const bar = /^[━─#-]+/.exec(line)[0];
+    if (columns >= 80) assert.ok(bar.length >= 24 && bar.length <= 36, line);
+  }
+  assert.equal(finalScreen(result.stderr), '');
+  return lines;
+}
 
-async function fixture(t, delay = 180) {
+async function fixture(t, delay = 180, rows = 1) {
   const root = await mkdtemp(join(repo, 'fixtures/.cli-progress-'));
   const cache = await mkdtemp(join(tmpdir(), 'plumber-progress-cache-'));
   t.after(async () => { await rm(root, { recursive: true, force: true }); await rm(cache, { recursive: true, force: true }); });
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
   await Promise.all(Array.from({ length: 65 }, (_, index) => writeFile(join(root, `src/Extra${index}.tsx`),
-    `export const Extra${index} = () => <div className="gap-[13px]"/>;\n`)));
+    `export const Extra${index} = () => <>${'<div className="gap-[13px]"/>'.repeat(rows)}</>;\n`)));
   const config = join(root, 'plumber.config.mjs');
   await rm(join(root, 'plumber.config.ts'));
   await writeFile(config, `await new Promise(resolve => setTimeout(resolve, ${delay}));\nexport default {};\n`);
@@ -55,19 +71,33 @@ function run(project, args = [], options = {}) {
   });
 }
 
-test('real CLI shows ordered phases on stderr, erases them, preserves stdout', async t => {
-  const project = await fixture(t);
-  const tty = await run(project);
+test('real CLI bar advances monotonically, fits 80 columns, erases, preserves stdout', async t => {
+  const project = await fixture(t, 180, 256);
+  // Presets can inspect components while config loads, before the actual step.
+  await writeFile(project.config, `
+import { discoverComponents } from ${JSON.stringify(new URL('../dist/ownership/components.js', import.meta.url).href)};
+await new Promise(resolve => setTimeout(resolve, 180));
+discoverComponents(${JSON.stringify(project.root)}, [${JSON.stringify(join(project.root, 'src/Extra0.tsx'))}], {}, new Map(), false, new Map(), true);
+export default {};
+`);
+  const tty = await run(project, [], { columns: 80 });
+  const lines = assertBar(tty, 80);
   const output = plain(tty.stderr);
-  const phases = ['Reading your project', 'Reading styles: 0 of', 'Compiling Tailwind from src/styles.css', 'Checking ', 'Matching components'];
+  // Rendering samples current work at ~14 Hz, so short phases can be coalesced.
+  const phases = ['Reading your project', 'Reading styles:', 'Compiling Tailwind', 'Reading stylesheets', 'Checking tokens:', 'Matching components', 'Checking component styles', 'Checking ledger', 'Done'];
   let previous = -1;
   for (const phase of phases) {
     const index = output.indexOf(phase);
-    assert.ok(index > previous, `missing/out-of-order ${phase}: ${output}`);
+    if (index === -1) continue;
+    assert.ok(index > previous, `out-of-order ${phase}: ${output}`);
     previous = index;
   }
-  assert.match(output, /Reading styles: 32 of/);
-  assert.equal(finalScreen(tty.stderr), '');
+  assert.match(output, /Reading styles: \d+ of/);
+  const sourceFrame = lines.find(line => /Reading styles:/.test(line));
+  assert.ok(Number(/ +(\d+)%/.exec(sourceFrame)[1]) <= 27, sourceFrame);
+  assert.ok(lines.some(line => /\b(?:[1-9]|[1-8]\d|9[0-9])%/.test(line)), output);
+  assert.match(lines[0], /^-{24} +0%/);
+  assert.match(lines.at(-1), /^#{24} +100% +Done$/);
   assert.doesNotMatch(tty.stderr, /\x1b\[2m/);
   const piped = await run(project, [], { pipe: true });
   assert.equal(piped.stderr, '');
@@ -102,10 +132,16 @@ test('cold-cache notice appears once, uses the actual override, stays after clea
   assert.equal((cold.stderr.match(/First run builds a cache/g) ?? []).length, 1);
   const warm = await run(project, ['decisions'], options);
   assert.doesNotMatch(warm.stderr, /First run builds a cache/);
-  assert.equal(finalScreen(warm.stderr), '');
+  assertBar(warm);
+  // A whole-report cache hit skips all inner phases and still completes.
+  const check = await run(project);
+  assertBar(check);
+  const cached = await run(project);
+  assertBar(cached);
+  assert.doesNotMatch(cached.stderr, /Reading styles:|Matching components|Checking tokens:/);
 });
 
-test('short runs never flash; narrow terminals truncate; default text can be dim', async t => {
+test('short runs never flash; terminal width, Unicode and locale fallbacks hold', async t => {
   const project = await fixture(t, 0);
   await run(project, ['decisions'], { pipe: true });
   const fast = await run(project, ['decisions'], { env: { PLUMBER_TEST_PROGRESS_DELAY_MS: '300' } });
@@ -114,20 +150,33 @@ test('short runs never flash; narrow terminals truncate; default text can be dim
   assert.match(narrow.stderr, /\x1b\[2m/);
   for (const line of plain(narrow.stderr).split('\r\x1b[2K').filter(Boolean)) assert.ok([...line].length < 18, line);
   assert.equal(finalScreen(narrow.stderr), '');
+  const unicode = await run(project, ['decisions'], { columns: 120, env: { NO_COLOR: undefined, LC_ALL: 'en_US.UTF-8' } });
+  assertBar(unicode);
+  assert.match(unicode.stderr, /━{36} +100%/);
+  assert.match(unicode.stderr, /\x1b\[2m/);
+  for (const env of [{ NO_COLOR: '1', LC_ALL: 'en_US.UTF-8' }, { NO_COLOR: undefined, LC_ALL: 'C' },
+    { NO_COLOR: undefined, LC_ALL: '', LC_CTYPE: 'C', LANG: 'en_US.UTF-8' }]) {
+    const ascii = await run(project, ['decisions'], { columns: 80, env });
+    assertBar(ascii, 80);
+    assert.doesNotMatch(ascii.stderr, /[━─]/);
+    assert.match(ascii.stderr, /#{24} +100%/);
+  }
 });
 
 test('elapsed clock advances during synchronous analysis and Ctrl+C clears the line', async t => {
   const project = await fixture(t);
   await writeFile(project.config, `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 4150); export default {};\n`);
   const slow = await run(project, ['decisions']);
-  assert.match(slow.stderr, /… 3s/);
-  assert.match(slow.stderr, /… 4s/);
+  assert.match(slow.stderr, /\| 3s/);
+  assert.match(slow.stderr, /\| 4s/);
+  assertBar(slow);
   assert.equal(finalScreen(slow.stderr), '');
   await writeFile(project.config, `await new Promise(resolve => setTimeout(resolve, 30000)); export default {};\n`);
   const interrupted = await run(project, ['decisions'], { interruptOn: 'Reading your project' });
   assert.equal(interrupted.status, 130);
   assert.equal(interrupted.stdout, '');
   assert.equal(finalScreen(interrupted.stderr), '');
+  assert.doesNotMatch(interrupted.stderr, /100%/);
 });
 
 test('analysis errors erase progress before the diagnostic; nested init and doctor share the display', async t => {
@@ -137,13 +186,13 @@ test('analysis errors erase progress before the diagnostic; nested init and doct
   assert.equal(failed.status, 2);
   assert.match(failed.stderr, /Reading your project/);
   assert.match(finalScreen(failed.stderr), /^plumber: .*broken progress fixture/);
+  assert.doesNotMatch(failed.stderr, /100%/);
   await rm(project.config);
   const initialized = await run(project, ['init']);
   assert.equal(initialized.status, 0, initialized.stderr);
   assert.match(initialized.stdout, /Wrote plumber.config.ts/);
-  assert.equal(finalScreen(initialized.stderr), '');
+  assertBar(initialized);
   const doctor = await run(project, ['doctor']);
-  assert.match(doctor.stderr, /Checking .*values/);
-  assert.equal(finalScreen(doctor.stderr), '');
+  assertBar(doctor);
   assert.match(doctor.stdout, /Cache/);
 });

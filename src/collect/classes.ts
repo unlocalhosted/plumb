@@ -102,7 +102,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   diagnostics: Finding[]; sites: ClassSite[]; opaque: number; parseMs: number; collectMs: number; inlineMs: number; styles: SourceStyles; modules: Map<string, ModuleImport[]>; computedDependencies?: string[]; computedClassFiles?: string[];
 }> {
   const start = performance.now();
-  profileProgress('phase:collect', { current: 0, files: files.length });
+  profileProgress('phase:parse', { current: 0, files: files.length, total: files.length });
   let parseMs = 0;
   let opaque = 0;
   let inlineMs = 0;
@@ -355,7 +355,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   }
 
   for (const [index, file] of files.entries()) {
-    if (index % 32 === 0) profileProgress('phase:collect', { current: index, files: files.length });
+    if (index % 32 === 0) profileProgress('phase:parse', { current: index, files: files.length, total: files.length });
     const src = source(file, true);
     const ast = src.ast!;
     const inlineStart = performance.now();
@@ -446,7 +446,9 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     exports(src);
     src.ast = null;
   }
-  profileProgress('phase:collect', { current: files.length, files: files.length });
+  profileProgress('phase:parse', { current: files.length, files: files.length, total: files.length });
+  profileProgress('phase:collect');
+  profileProgress('phase:collect', { current: 0, files: files.length, total: files.length });
   // Computed expressions retain their authored literals, never synthetic usage
   // locations. The same evidence feeds ordinary edits and apply revalidation.
   const authored = new Set([...sites.values()].map(classSiteKey));
@@ -456,7 +458,8 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   };
   const computed = new ComputedClasses(computedText, classHelpers, shared.programs);
   const computedClassFiles = new Set<string>();
-  for (const file of files) {
+  for (const [index, file] of files.entries()) {
+    if (index % 32 === 0) profileProgress('phase:collect', { current: index, files: files.length, total: files.length });
     if (onlyFile && file !== onlyFile) continue;
     // Collection runs off the UI thread. Bound work by steps/depth, not wall
     // time: a descheduled worker must retain the same declaration evidence.
@@ -470,6 +473,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   }
   for (const file of computed.dependencies) dependencies.set(file, sourceHash(computedText(file)));
   for (const [key, path] of computed.resolutions) resolutions.set(key, path);
+  profileProgress('phase:collect', { current: files.length, files: files.length, total: files.length });
   const result = { diagnostics, sites: [...sites.values()], opaque, styles, modules: [...modules], computedDependencies: [...computed.dependencies], computedClassFiles: [...computedClassFiles] };
   if (!diagnostics.length) await cache?.write(result, dependencies, resolutions);
   return { ...result, modules, parseMs, collectMs: performance.now() - start - parseMs - inlineMs, inlineMs };

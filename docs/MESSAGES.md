@@ -38,22 +38,35 @@ Count-bearing messages use singular nouns and verbs for exactly one, and plural 
 One live line on stderr, erased before the report (also on Ctrl+C and errors):
 
 ```
-Reading your project: 1,748 files…
-Compiling Tailwind from src/index.css…
-Reading styles: 812 of 1,748 files…
-Checking 292,104 values against your tokens…
-Matching components…
+━━━━━━━━━━━━━━────────────────  48%  Reading stylesheets: 2 of 4 stylesheets
+━━━━━━━━━━━━━━━━━━━━━━━━──────  81%  Checking unused tokens · 9s
 ```
 
 Use the existing analysis phases in their actual execution order. Before counts are
-known, say `Reading your project…` or `Reading styles…`. The moving styles count
-counts source files being collected. Format counts with comma separators and show
-project-relative paths. At 3 seconds, append whole elapsed seconds (`… 3s`), updating
-once per second even during synchronous analysis.
+known, say `Reading your project` or `Reading styles`. Step labels include
+`Reading styles: 812 of 1,748 files`, `Compiling Tailwind from src/index.css`,
+`Checking 292,104 values against your tokens`, `Checking tokens: 3 of 7 rule families`,
+`Matching components: 812 of 1,748 files`, `Checking component styles: 256 of 1,024 values`,
+`Checking unused tokens`, `Checking habits and component copies`, `Checking ledger`,
+`Reading cached report`, and `Done`.
+Source walking and computed-class tracing each count their own file pass. Matching
+counts scanned caller files; component-style checks count declarations matched
+against the component graph. Format counts with comma separators and show
+project-relative paths. At 3 seconds, append whole elapsed seconds (`· 3s`), updating
+once per second even during synchronous analysis. Redraw at most once per 70 ms;
+completion renders 100% immediately, then clears. Brief phases may be coalesced.
+Only successful completion earns 100%; findings still count as a completed check.
 
 Only show progress when stderr is a TTY, after 300 ms. Hide it for `--json`, `--agent`,
 `--sarif`, `--format github`, any set `CI` value, piped stderr, and serve/watch paths.
-Use dim text unless `NO_COLOR` is set, no spinner, and truncate to terminal width.
+Use dim text unless `NO_COLOR` is set, no spinner. The bar uses 24–36 cells at normal
+terminal widths. Truncate the label first, preserving the percentage and clock;
+reserve the last terminal cell to prevent wrapping. Below 31 columns the bar itself
+must shrink to fit. `NO_COLOR` or a locale without UTF-8 uses `#`/`-` and `|` instead
+of box drawing and `·`. Locale precedence is `LC_ALL`, `LC_CTYPE`, then `LANG`.
+Percentages never decrease; skipped/cache-hit steps grant their weight immediately
+when the next step starts. Step weights and calibration are in
+`docs/briefs/cli-progress-bar.result.md`.
 
 For a cold (absent or empty) cache, after 5 seconds print once on its own line:
 `First run builds a cache in .plumber/cache; later runs are faster.` Substitute the

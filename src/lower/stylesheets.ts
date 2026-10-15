@@ -1,4 +1,5 @@
 import { environment, cacheDirectory } from '../paths.js';
+import { profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -190,6 +191,11 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
 
 export async function lowerStylesheets(root: string, entry: string | null, version: string | null, graph: StylesheetGraph, embedded: EmbeddedStylesheet[], readOnly = false): Promise<LoweredStylesheets> {
   const diagnostics: Finding[] = [...graph.diagnostics];
+  const completed = new Set<string>();
+  let embeddedDone = 0;
+  const progress = () => profileProgress('phase:stylesheets', { current: completed.size + embeddedDone, total: graph.files.size + embedded.length });
+  const finished = (files: Iterable<string>) => { for (const file of files) completed.add(file); progress(); };
+  progress();
   const failedGraphs = new Set<string>();
   async function dependency(file: string, css?: string): Promise<string> {
     try { return (await tailwindGraph(file, css)).hash; }
@@ -286,6 +292,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
       } catch (error) { report(file, error); continue; }
       for (const path of files) covered.add(path);
       processed.add(file);
+      finished(files);
     }
   }
   function plain(file: string, when: Condition[], stack: Set<string>): void {
@@ -310,6 +317,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
       if (tail) conditions.push({ kind: 'media', text: tail });
       plain(item.file, conditions, next);
     }
+    finished([file]);
   }
   for (const file of graph.roots) if (!processed.has(file) && (!covered.has(file) || independent(file))) {
     try { plain(file, [], new Set()); }
@@ -326,8 +334,11 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
         catch (error) { report(file, error); }
       } else result.declarations.push(...lower(sheet.css, file, (offset, raw) => ({ site: sourceSite(sheet.source, sheet.offsets[offset] ?? 0, raw.text) })));
     } catch (error) { report(file, error); }
+    embeddedDone++; progress();
   }
   result.classes = [...classes];
+  // Reference-only and failed sheets are finished too: neither has more work.
+  finished(graph.files.keys());
   for (const declaration of result.declarations) {
     const sheet = graph.files.get(declaration.site.file);
     if (!sheet) continue;

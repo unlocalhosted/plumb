@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { profileProgress } from '../profile.js';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
@@ -481,7 +482,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const elements: ElementIdentity[] = [], elementsByFile = new Map<string, ElementIdentity[]>();
   const elementLocations = new Map<string, Map<number, ElementIdentity | undefined>>();
   const callerLocations = new Map<string, Map<number, ComponentIdentity | undefined>>();
-  for (const file of files.filter(file => /\.[jt]sx?$/.test(file))) {
+  const sourceFiles = files.filter(file => /\.[jt]sx?$/.test(file));
+  for (const [index, file] of sourceFiles.entries()) {
+    if (index % 32 === 0) profileProgress('phase:components', { current: index, total: sourceFiles.length });
     const value = module(file), ranges: Usage[] = [];
     function scan(node: Node, inherited?: ComponentIdentity, shadowed = new Set<string>(), ancestors: ComponentMount['ancestors'] = []): void {
       // Block/function bindings shadow imports; don't infer ownership from a name.
@@ -522,6 +525,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     if (value.text.includes('<')) scan(value.ast);
     usages.set(file, ranges);
   }
+  profileProgress('phase:components', { current: sourceFiles.length, total: sourceFiles.length });
   // Imitation needs identities even when every caller hand-builds the component.
   // Walk selected exports only on request; ownership's normal discovery stays unchanged.
   const fingerprints = Object.keys(config.imitation ?? {});

@@ -93,7 +93,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const previousComponents = input || runtime ? undefined : cachedComponents(root, files, config.value, !!options.suggestImitation);
   const componentCacheMs = performance.now() - componentCacheStart;
   const programs = previousComponents || runtime ? undefined : new Map<string, SourceProgram>();
-  profileProgress('phase:collect');
+  profileProgress('phase:parse');
   const collected = await phase('collect', [files, config.value.classHelpers, input], () => collectClasses(files.filter(file => input?.file === file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file)), config.value.classHelpers,
     input ? new Map([[input.file, input.text]]) : undefined, input?.file, programs, input || runtime ? undefined : root));
   if (input) {
@@ -159,11 +159,14 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
   const variablesStart = performance.now();
+  profileProgress('rule:existence/dead-var');
   findings.push(...sync('deadVariables', [declarations, defined, record.theme], () => deadVariables(declarations, defined, record.theme)));
   profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
+  profileProgress('rule:provenance');
   const judged = sync('provenance', [declarations, record, config.value, sourceFiles, options.verbose], () => provenance(declarations, record, config.value, sourceFiles, options.verbose));
   findings.push(...judged.findings);
   const deadStart = performance.now();
+  profileProgress('rule:dead');
   const dead = input ? undefined : sync('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing));
   if (dead) findings.push(...dead.findings);
   profileDuration('rule:dead', performance.now() - deadStart);
@@ -176,11 +179,13 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   programs?.clear();
   profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
   const ownershipJudgeStart = performance.now();
+  profileProgress('rule:ownership');
   const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;
   const habitsStart = performance.now();
+  profileProgress('phase:habits');
   const contexts = new Map<Declaration, string>();
   for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
   for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
@@ -242,6 +247,7 @@ export async function check(options: CheckOptions = {}): Promise<Report> {
   profileProgress('phase:config');
   const start = performance.now(), cache = await CheckCache.create(options);
   if (cache && await cache.hit()) {
+    profileProgress('phase:config', { cached: true });
     const report = await cache.report();
     report.timing = { ...report.timing, totalMs: performance.now() - start, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])) as Report['timing']['phases'], cacheHits: report.classes.unique, cacheMisses: 0 };
     report.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
@@ -249,6 +255,7 @@ export async function check(options: CheckOptions = {}): Promise<Report> {
   }
   const before = await cache?.snapshot();
   const { report } = await analyze(options);
+  profileProgress('phase:ledger');
   const result = options.ledger === false ? report : finishMessages(await applyLedger(report, options));
   if (cache && before) await cache.save(result, before);
   return result;
