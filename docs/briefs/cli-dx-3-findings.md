@@ -40,3 +40,8 @@ how each finding and every table is drawn; it does not change what is shown or t
 
 Rules: atomic commits ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Don't touch overlay/src,
 site/src, or the unstaged site/src/hero/Hero.jsx. Work on main. Write docs/briefs/cli-dx-3-findings.result.md and commit it.
+
+## Also (seen in layer 2's AlgoRecall output)
+- "Fix first" rows: three aligned columns, `count + what` · a short reason (`the browser drops them`, `type roles
+  aren't configured`, `callers restyle your components`, `most in type`) · the command. Today the commands are ragged.
+- "On your tokens": the off-counts right-aligned with thousands separators in one column.
