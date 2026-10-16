@@ -82,7 +82,7 @@ test('class lowering and existence: real CLI over literals, helpers, maps, branc
   const text = run(directory, cache, ['--all']).stdout;
   assert.doesNotMatch(text, /note:/);
   assert.match(run(directory, cache, ['--verbose']).stdout, /note: .*Kept --tw-/);
-  assert.match(text, /sizes.ts:1 · App.tsx:15/);
+  assert.match(text, /App.tsx:15 · sizes.ts:1/);
   assert.ok(!text.includes(`${directory}/src/`), 'text site paths relative to root');
   assert.match(run(directory, cache, ['--verbose']).stdout, /cache \d+ hits, 0 misses/);
 
