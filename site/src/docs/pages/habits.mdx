@@ -29,15 +29,15 @@ With no `habits`, no habit runs. `npx plumber habits` lists all nine, how many t
 
 The first four are the ones `init` proposes.
 
-A habit finding reads like any other, with the habit's reason and its fix:
+A habit finding reads like any other: what it is, the habit's reason, the fix, and where. `plumber check --rule habits` lists just these:
 
 ```text
-`.ungated:hover` also applies on touch screens  1 site
-  Touch can leave a hover style stuck after a tap.
-  Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).
-  src/styles.css:1:18  color: red
-  intended?  plumber accept --rule habits/hover-gate --site src/styles.css:1 --why "…"
+  !  color: red                                            styles.css:1
+     also applies on touch screens [habits/hover-gate]
+     → Use pointer-hover: (or wrap the rule in @media (hover: hover) and (pointer: fine))
 ```
+
+If one is intended, accept it with a reason: `plumber accept --rule habits/hover-gate --site src/styles.css:1 --why "…"`.
 
 ## Your own habits
 

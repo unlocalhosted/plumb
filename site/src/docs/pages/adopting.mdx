@@ -6,13 +6,29 @@ A big repo has years of drift in it. You don't fix that before you can start. Pl
 npx plumber check
 ```
 
-With no config and no ledger this is advisory: it reports everything and exits 0, then suggests the next step. Read the summary to see where you stand, family by family:
+With no config and no ledger this is advisory: it exits 0 and fits on one screen. It shows where you stand family by family, what to fix first with the command that lists it, and the next step:
 
 ```text
-spacing     0 of 2 use your tokens (0%)   2 don't
-color       2 of 2 use your tokens (100%) 0 don't
-motion      0 of 1 use your tokens (0%)   1 don't
+React Plumber  my-app · Tailwind 4.1 · theme src/index.css · 214 files · 2.3s
+
+On your tokens
+  spacing    ██████████████████░░   91%     38 off
+  color      █████████████░░░░░░░   64%    412 off
+  motion     ░░░░░░░░░░░░░░░░░░░░    0%      9 off
+
+Fix first
+  ✗ 3 broken styles              the browser drops them        plumber check --broken
+  ! 1 setup gap                  no motion tokens yet          plumber check --rule config
+  · 459 values off your tokens   most in color                 plumber check --rule provenance
+
+This is your first run, so all of this counts as new.
+  plumber baseline      record today's drift as debt; from then on only new drift fails
+  Alt+B in dev          see every drift on the page and fix it there
+
+More: --all (every finding) · --family <name> · --file <path> · --json
 ```
+
+Every row in **Fix first** ends with the command that lists just those findings. `--all` prints every finding.
 
 A line like *"Your theme has no motion tokens"* means a family has nothing to check against yet. That's a gap in your decisions, not in your code.
 
