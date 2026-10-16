@@ -249,11 +249,18 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
   }
   await writeFile(join(root, 'index.html'), '<html><head></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
   await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';\nimport { createRoot } from 'react-dom/client';\nimport App from './App.jsx';\nconst root = createRoot(document.getElementById('root')); root.render(<App />);\nif (import.meta.hot) import.meta.hot.accept('./App.jsx', module => root.render(React.createElement(module.default)));\n`);
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false })],
+    // The JSX runtime and React DOM must share the initial bundle. Late discovery on
+    // a cold React 18 start can change common chunks and reload during locate().
+    optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
+    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
+  let navigations = 0;
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations++; });
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
   await assertions(page, version);
+  assert.equal(navigations, 1, 'dependency optimization must not reload the document during locate');
   if (version === 19) await hmrAssertions(page, root, true);
   await editSlice(page, root);
 });
