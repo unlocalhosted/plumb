@@ -206,7 +206,7 @@ async function hmrAssertions(page, root, vite, bundler) {
     assert.notEqual(stale.explain.detail.mapHash, stale.explain.detail.currentHash);
     assert.notEqual(oldSnapshot.hash, (await snapshot()).hash, 'stale and current source snapshots differ');
   }
-  await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Updated');
+  await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Updated', null, { polling: vite ? 1 : 'raf' });
   if (vite) {
     const after = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
     assert.ok(after > before, 'Vite host HMR boundary invalidates map caches');
@@ -241,7 +241,7 @@ async function warmBudget(page, t) {
   assert.ok(Math.max(...samples) < 16, 'warm Next locate main-thread ms: ' + samples.join(', '));
 }
 
-for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate exact JSX sites`, { timeout: 90000 }, async t => {
+for (const [version, rapid] of [[19, false], [19, true], [18, false]]) test(`Vite React ${version}${rapid ? ' (rapid watcher)' : ''}: real fibers locate exact JSX sites`, { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const root = await project(t);
   if (version === 18) {
@@ -253,7 +253,15 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
     // The JSX runtime and React DOM must share the initial bundle. Late discovery on
     // a cold React 18 start can change common chunks and reload during locate().
     optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
-    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0,
+      watch: version === 19 ? {
+        // Exercise rapid delivery on macOS too, without fsevents batching.
+        ...(rapid ? { useFsEvents: false, usePolling: true, interval: 1 } : {}),
+        // Chokidar otherwise drops a second save inside its 50ms change throttle.
+        // Emit after the write settles, including truncate/write events from writeFile.
+        awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },
+      } : undefined,
+    } });
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
   let navigations = 0;
@@ -261,7 +269,10 @@ for (const version of [19, 18]) test(`Vite React ${version}: real fibers locate 
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
   await assertions(page, version);
   assert.equal(navigations, 1, 'dependency optimization must not reload the document during locate');
-  if (version === 19) await hmrAssertions(page, root, true);
+  if (version === 19) {
+    await hmrAssertions(page, root, true);
+    assert.equal(navigations, 1, 'source updates must use HMR without reloading the document');
+  }
   await editSlice(page, root);
 });
 
