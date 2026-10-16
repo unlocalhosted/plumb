@@ -1,0 +1,1166 @@
+{
+  "date": "2026-10-16",
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M1 Pro",
+  "logicalCpus": 8,
+  "notes": [
+    "Local contention, not a controlled 2-vCPU GitHub runner.",
+    "All profiled runs use --cpu-prof; CPU-profile sample durations include scheduling delays, not pure CPU consumption.",
+    "cpuMs and gap cpuMs use process.threadCpuUsage; these exclude worker-thread CPU.",
+    "16-hog runs used the initial temporary harness; 6-hog runs use bench/session-health/measure.mjs.",
+    "Raw logs and CPU profiles are scratch artifacts under /tmp/plumb-ci-health; regenerate with the committed harness."
+  ],
+  "runs": [
+    {
+      "name": "baseline",
+      "log": "baseline.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 13193,
+          "threadId": 0,
+          "startUs": 319381479796,
+          "endUs": 319381942398,
+          "wallMs": 462.61145899999997,
+          "cpuMs": 352.788,
+          "loop": {
+            "idle": 79.418243,
+            "active": 383.1721320061988,
+            "utilization": 0.8283184275095741
+          },
+          "delay": {
+            "maxMs": 17.989631,
+            "p99Ms": 16.580607,
+            "meanMs": 2.7941072592592593,
+            "count": 162
+          }
+        },
+        {
+          "label": "HTTP host",
+          "pid": 13194,
+          "threadId": 0,
+          "startUs": 319383295305,
+          "endUs": 319384014085,
+          "wallMs": 718.788,
+          "cpuMs": 322.256,
+          "loop": {
+            "idle": 340.81829600000003,
+            "active": 377.9466210160292,
+            "utilization": 0.5258278639768399
+          },
+          "delay": {
+            "maxMs": 12.492799,
+            "p99Ms": 4.444159,
+            "meanMs": 1.577309397802198,
+            "count": 455
+          }
+        }
+      ],
+      "hostProfiles": [
+        {
+          "label": "in-process",
+          "filename": "CPU.20261016.174316.13193.0.001.cpuprofile",
+          "sha256": "00be0ff0f1378ac925ebcba795b9b90ec30be5014c0fecc6e28820b4fee1f90a",
+          "scope": "whole process (marker not sampled)",
+          "samples": 2655,
+          "comparisonSelfSampleMs": 146.708,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 2886.538999999995
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 241.291
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 111.417
+            },
+            {
+              "frame": "objectComparisonStart node:internal/util/comparisons:282",
+              "ms": 61.245999999999995
+            },
+            {
+              "frame": "keyCheck node:internal/util/comparisons:470",
+              "ms": 56.170000000000016
+            },
+            {
+              "frame": "compileForInternalLoader node:internal/bootstrap/realm:383",
+              "ms": 30.790999999999997
+            },
+            {
+              "frame": "decode node:internal/encoding:482",
+              "ms": 27.251
+            },
+            {
+              "frame": "innerDeepEqual node:internal/util/comparisons:238",
+              "ms": 24.709000000000007
+            },
+            {
+              "frame": "decodeUTF8 :0",
+              "ms": 21.794
+            },
+            {
+              "frame": "parseChannelMessages node:internal/child_process/serialization:100",
+              "ms": 15.667
+            },
+            {
+              "frame": "registerDestroyHook :0",
+              "ms": 15.625
+            },
+            {
+              "frame": "init node:internal/test_runner/harness:235",
+              "ms": 15.126
+            }
+          ]
+        },
+        {
+          "label": "HTTP host",
+          "filename": "CPU.20261016.174317.13194.0.001.cpuprofile",
+          "sha256": "52fe1ab81ebad3acae25f48cf58bea6561c1be65f5816e431bb68272ccae020b",
+          "scope": "whole process (marker not sampled)",
+          "samples": 1336,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 1482.6579999999985
+            },
+            {
+              "frame": "writevGeneric node:internal/stream_base_commons:121",
+              "ms": 113.04400000000001
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 86.12800000000001
+            },
+            {
+              "frame": "(anonymous) :0",
+              "ms": 61.04800000000002
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 45.78999999999999
+            },
+            {
+              "frame": "writev :0",
+              "ms": 33.875
+            },
+            {
+              "frame": "writeChannelMessage node:internal/child_process/serialization:121",
+              "ms": 28.625000000000004
+            },
+            {
+              "frame": "(anonymous) file:///private/tmp/plumb-ci-health/host.mjs:14",
+              "ms": 9.124
+            },
+            {
+              "frame": "compileForInternalLoader node:internal/bootstrap/realm:383",
+              "ms": 7.166
+            },
+            {
+              "frame": "writeUtf8String :0",
+              "ms": 4.542
+            },
+            {
+              "frame": "encode node:internal/encoding:355",
+              "ms": 4.5
+            },
+            {
+              "frame": "encodeUtf8String :0",
+              "ms": 3.042
+            }
+          ]
+        }
+      ],
+      "httpDiagnostics": [
+        {
+          "bytes": [
+            521820,
+            102175
+          ],
+          "probes": [
+            {
+              "ms": 28.023916999999983,
+              "outstanding": 300
+            },
+            {
+              "ms": 5.4477920000003905,
+              "outstanding": 294
+            },
+            {
+              "ms": 0.5435419999998885,
+              "outstanding": 290
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "16 hogs, assertions during burst",
+      "log": "original-continuous.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 13730,
+          "threadId": 0,
+          "startUs": 319546271281,
+          "endUs": 319547808947,
+          "wallMs": 1537.671667,
+          "cpuMs": 530.963,
+          "loop": {
+            "idle": 5.652083000000005,
+            "active": 1531.985916951839,
+            "utilization": 0.9963241783825731
+          },
+          "gaps": [
+            {
+              "wallMs": 923.2048750000004,
+              "cpuMs": 308.074
+            },
+            {
+              "wallMs": 377.05899999999974,
+              "cpuMs": 124.613
+            },
+            {
+              "wallMs": 50.0300000000002,
+              "cpuMs": 26.954
+            },
+            {
+              "wallMs": 33.275666999999885,
+              "cpuMs": 13.773
+            },
+            {
+              "wallMs": 26.902208999999857,
+              "cpuMs": 0.154
+            }
+          ],
+          "delay": {
+            "maxMs": 923.795455,
+            "p99Ms": 923.795455,
+            "meanMs": 43.573021257142855,
+            "count": 35
+          }
+        },
+        {
+          "label": "HTTP host",
+          "pid": 13733,
+          "threadId": 0,
+          "startUs": 319551348785,
+          "endUs": 319553489988,
+          "wallMs": 2141.213041,
+          "cpuMs": 588.548,
+          "loop": {
+            "idle": 994.858067,
+            "active": 1146.3210169433669,
+            "utilization": 0.5353690522850664
+          },
+          "gaps": [
+            {
+              "wallMs": 27.112791000000016,
+              "cpuMs": 4.737
+            },
+            {
+              "wallMs": 21.609333999999762,
+              "cpuMs": 0.044
+            },
+            {
+              "wallMs": 19.990291999999954,
+              "cpuMs": 7.616
+            },
+            {
+              "wallMs": 16.801916999999776,
+              "cpuMs": 2.946
+            },
+            {
+              "wallMs": 13.580291000000216,
+              "cpuMs": 7.922
+            }
+          ],
+          "delay": {
+            "maxMs": 27.148287,
+            "p99Ms": 9.846783,
+            "meanMs": 1.8253892763045336,
+            "count": 1169
+          }
+        }
+      ],
+      "hostProfiles": [
+        {
+          "label": "in-process",
+          "filename": "CPU.20261016.174559.13730.0.001.cpuprofile",
+          "sha256": "6b901e6afaa1715eab39a9174b0cc42e7b9d7d35bf43c353443591970f641bdc",
+          "scope": "between marker subtrees",
+          "samples": 498,
+          "comparisonSelfSampleMs": 576.6239999999998,
+          "topSelfSamples": [
+            {
+              "frame": "(program) :0",
+              "ms": 580.8780000000002
+            },
+            {
+              "frame": "keyCheck node:internal/util/comparisons:470",
+              "ms": 367.0429999999999
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 209.958
+            },
+            {
+              "frame": "(idle) :0",
+              "ms": 115.16499999999999
+            },
+            {
+              "frame": "objEquiv node:internal/util/comparisons:985",
+              "ms": 83.502
+            },
+            {
+              "frame": "innerDeepEqual node:internal/util/comparisons:238",
+              "ms": 67.998
+            },
+            {
+              "frame": "objectComparisonStart node:internal/util/comparisons:282",
+              "ms": 53.998000000000005
+            },
+            {
+              "frame": "endReadableNT node:internal/streams/readable:1752",
+              "ms": 5.75
+            },
+            {
+              "frame": "_Request node:internal/deps/undici/undici:12090",
+              "ms": 5.417
+            },
+            {
+              "frame": "slowHasUnequalTag node:internal/util/comparisons:275",
+              "ms": 4.083
+            },
+            {
+              "frame": "remove node:internal/linkedlist:16",
+              "ms": 2.792
+            },
+            {
+              "frame": "get removed node:internal/event_target:527",
+              "ms": 2.666
+            }
+          ]
+        },
+        {
+          "label": "HTTP host",
+          "filename": "CPU.20261016.174603.13733.0.001.cpuprofile",
+          "sha256": "9840c0931781ee96407bba6484053a37abe9a6a288437a28f28c248f8e2b2a86",
+          "scope": "between marker subtrees",
+          "samples": 1306,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 1355.1249999999998
+            },
+            {
+              "frame": "writevGeneric node:internal/stream_base_commons:121",
+              "ms": 214.62900000000002
+            },
+            {
+              "frame": "(anonymous) :0",
+              "ms": 154.165
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 137.167
+            },
+            {
+              "frame": "writev :0",
+              "ms": 100.95599999999999
+            },
+            {
+              "frame": "threadCpuUsage :0",
+              "ms": 42.37600000000002
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 32.792
+            },
+            {
+              "frame": "(anonymous) file:///Users/vijaysingh/unlocalhosted/plumb/dist/session/server.js:257",
+              "ms": 7.042
+            },
+            {
+              "frame": "(anonymous) node:internal/worker:333",
+              "ms": 5.708
+            },
+            {
+              "frame": "parserOnHeadersComplete node:_http_common:77",
+              "ms": 5.583
+            },
+            {
+              "frame": "resume_ node:internal/streams/readable:1270",
+              "ms": 5.125
+            },
+            {
+              "frame": "OutgoingMessage node:_http_outgoing:109",
+              "ms": 5.042
+            }
+          ]
+        }
+      ],
+      "httpDiagnostics": [
+        {
+          "bytes": [
+            521820,
+            102175
+          ],
+          "probes": [
+            {
+              "ms": 80.7305409999999,
+              "outstanding": 300
+            },
+            {
+              "ms": 4.947709000000032,
+              "outstanding": 290
+            },
+            {
+              "ms": 7.458082999999533,
+              "outstanding": 290
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "16 hogs, assertions after burst",
+      "log": "variant-continuous.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 13763,
+          "threadId": 0,
+          "startUs": 319574319112,
+          "endUs": 319575713672,
+          "wallMs": 1394.5709159999997,
+          "cpuMs": 513.419,
+          "loop": {
+            "idle": 276.02667900000006,
+            "active": 1118.3701119812927,
+            "utilization": 0.8020458159504591
+          },
+          "gaps": [
+            {
+              "wallMs": 51.053957999999966,
+              "cpuMs": 2.54
+            },
+            {
+              "wallMs": 50.18187499999976,
+              "cpuMs": 1.245
+            },
+            {
+              "wallMs": 36.893916999999874,
+              "cpuMs": 0.501
+            },
+            {
+              "wallMs": 35.075124999999844,
+              "cpuMs": 3.244
+            },
+            {
+              "wallMs": 33.154875000000175,
+              "cpuMs": 21.089
+            }
+          ],
+          "delay": {
+            "maxMs": 51.085311,
+            "p99Ms": 32.636927,
+            "meanMs": 2.668652441005803,
+            "count": 517
+          }
+        },
+        {
+          "label": "HTTP host",
+          "pid": 13771,
+          "threadId": 0,
+          "startUs": 319579476198,
+          "endUs": 319581624425,
+          "wallMs": 2148.2421670000003,
+          "cpuMs": 584.275,
+          "loop": {
+            "idle": 971.362966,
+            "active": 1176.7958260188907,
+            "utilization": 0.5478160322184144
+          },
+          "gaps": [
+            {
+              "wallMs": 67.48720800000001,
+              "cpuMs": 9.842
+            },
+            {
+              "wallMs": 33.38933399999996,
+              "cpuMs": 4.845
+            },
+            {
+              "wallMs": 19.318707999999788,
+              "cpuMs": 0.068
+            },
+            {
+              "wallMs": 15.509292000000187,
+              "cpuMs": 0.274
+            },
+            {
+              "wallMs": 15.061291999999867,
+              "cpuMs": 5.862
+            }
+          ],
+          "delay": {
+            "maxMs": 67.567615,
+            "p99Ms": 11.313151,
+            "meanMs": 1.9589824995425433,
+            "count": 1093
+          }
+        }
+      ],
+      "hostProfiles": [
+        {
+          "label": "in-process",
+          "filename": "CPU.20261016.174627.13763.0.001.cpuprofile",
+          "sha256": "90fcd6e26a8d7822d818c22e7564df8986c650309fc570cfce2532f7ed95a4fe",
+          "scope": "between marker subtrees",
+          "samples": 687,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 563.5010000000002
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 525.1639999999995
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 123.836
+            },
+            {
+              "frame": "threadCpuUsage :0",
+              "ms": 13.667
+            },
+            {
+              "frame": "setStreamTimeout node:internal/stream_base_commons:240",
+              "ms": 7.5
+            },
+            {
+              "frame": "writev :0",
+              "ms": 7.333
+            },
+            {
+              "frame": "(anonymous) node:internal/per_context/messageport:19",
+              "ms": 6.8740000000000006
+            },
+            {
+              "frame": "writeLatin1String :0",
+              "ms": 6.041
+            },
+            {
+              "frame": "parse :0",
+              "ms": 6.0009999999999994
+            },
+            {
+              "frame": "listOnTimeout node:internal/timers:623",
+              "ms": 4.834
+            },
+            {
+              "frame": "getLibuvNow :0",
+              "ms": 4.5
+            },
+            {
+              "frame": "(anonymous) file:///private/tmp/plumb-ci-health/meter.mjs:10",
+              "ms": 4.333
+            }
+          ]
+        },
+        {
+          "label": "HTTP host",
+          "filename": "CPU.20261016.174632.13771.0.001.cpuprofile",
+          "sha256": "731ffccfbc7ced7e32d5ae6ec807c805e40eb7741a5bbce98959b6f91a7c417d",
+          "scope": "whole process (marker not sampled)",
+          "samples": 3203,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 4147.337999999994
+            },
+            {
+              "frame": "writevGeneric node:internal/stream_base_commons:121",
+              "ms": 210.748
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 167.11999999999998
+            },
+            {
+              "frame": "(anonymous) :0",
+              "ms": 155.41899999999998
+            },
+            {
+              "frame": "writev :0",
+              "ms": 111.248
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 81.167
+            },
+            {
+              "frame": "threadCpuUsage :0",
+              "ms": 48.458000000000006
+            },
+            {
+              "frame": "writeChannelMessage node:internal/child_process/serialization:121",
+              "ms": 39.458000000000006
+            },
+            {
+              "frame": "compileForInternalLoader node:internal/bootstrap/realm:383",
+              "ms": 23.041999999999994
+            },
+            {
+              "frame": "(anonymous) file:///private/tmp/plumb-ci-health/host.mjs:14",
+              "ms": 21.583000000000002
+            },
+            {
+              "frame": "wrappedFn node:internal/errors:538",
+              "ms": 11.459
+            },
+            {
+              "frame": "__require node:internal/deps/undici/undici:5",
+              "ms": 10.583
+            }
+          ]
+        }
+      ],
+      "httpDiagnostics": [
+        {
+          "bytes": [
+            521820,
+            102175
+          ],
+          "probes": [
+            {
+              "ms": 46.42950000000019,
+              "outstanding": 300
+            },
+            {
+              "ms": 0.5775830000002316,
+              "outstanding": 297
+            },
+            {
+              "ms": 0.7510830000001079,
+              "outstanding": 296
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6 hogs, assertions during burst",
+      "log": "repro-before.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 15434,
+          "wallMs": 1501.337042,
+          "cpuMs": 596.095,
+          "loop": {
+            "idle": 105.86774599999998,
+            "active": 1395.2082539752041,
+            "utilization": 0.929472094682915
+          },
+          "probes": 48,
+          "healthMaxMs": 337.9815840000001,
+          "gaps": [
+            {
+              "wallMs": 281.97004100000004,
+              "cpuMs": 100.513
+            },
+            {
+              "wallMs": 110.05299999999988,
+              "cpuMs": 41.286
+            },
+            {
+              "wallMs": 87.76150000000007,
+              "cpuMs": 29.124
+            },
+            {
+              "wallMs": 77.05454199999986,
+              "cpuMs": 39.234
+            },
+            {
+              "wallMs": 55.65279199999986,
+              "cpuMs": 0.296
+            }
+          ],
+          "delay": {
+            "maxMs": 282.066943,
+            "p99Ms": 81.264639,
+            "samples": 226
+          }
+        },
+        {
+          "label": "HTTP host",
+          "pid": 15460,
+          "wallMs": 2080.2355830000006,
+          "cpuMs": 553.285,
+          "loop": {
+            "idle": 923.076327,
+            "active": 1157.0999640485265,
+            "utilization": 0.5562509144190286
+          },
+          "probes": 0,
+          "gaps": [
+            {
+              "wallMs": 28.734334000000217,
+              "cpuMs": 7.98
+            },
+            {
+              "wallMs": 16.77345800000012,
+              "cpuMs": 8.116
+            },
+            {
+              "wallMs": 16.34595900000022,
+              "cpuMs": 0.253
+            },
+            {
+              "wallMs": 16.30133300000034,
+              "cpuMs": 4.067
+            },
+            {
+              "wallMs": 15.597334000000046,
+              "cpuMs": 0.151
+            }
+          ],
+          "delay": {
+            "maxMs": 28.737535,
+            "p99Ms": 11.051007,
+            "samples": 1069
+          }
+        }
+      ],
+      "hostProfiles": [
+        {
+          "label": "in-process",
+          "filename": "CPU.20261016.174943.15434.0.001.cpuprofile",
+          "sha256": "b23e8b818f89361d7240a3a7de9a0db7b62fcd10e431c05ceb0849244ce4ced4",
+          "scope": "between marker subtrees",
+          "samples": 573,
+          "comparisonSelfSampleMs": 275.003,
+          "topSelfSamples": [
+            {
+              "frame": "(program) :0",
+              "ms": 508.5000000000003
+            },
+            {
+              "frame": "(idle) :0",
+              "ms": 345.2079999999999
+            },
+            {
+              "frame": "keyCheck node:internal/util/comparisons:470",
+              "ms": 137.21
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 132.165
+            },
+            {
+              "frame": "compareTimersLists node:internal/timers:507",
+              "ms": 54.125
+            },
+            {
+              "frame": "objEquiv node:internal/util/comparisons:985",
+              "ms": 43.54
+            },
+            {
+              "frame": "innerDeepEqual node:internal/util/comparisons:238",
+              "ms": 42.125
+            },
+            {
+              "frame": "writev :0",
+              "ms": 38.334
+            },
+            {
+              "frame": "slowHasUnequalTag node:internal/util/comparisons:275",
+              "ms": 28.834
+            },
+            {
+              "frame": "objectComparisonStart node:internal/util/comparisons:282",
+              "ms": 23.294000000000004
+            },
+            {
+              "frame": "get pathname node:internal/url:1137",
+              "ms": 15.5
+            },
+            {
+              "frame": "addAbortListener node:internal/deps/undici/undici:1608",
+              "ms": 11.583
+            }
+          ]
+        },
+        {
+          "label": "HTTP host",
+          "filename": "CPU.20261016.174948.15460.0.001.cpuprofile",
+          "sha256": "d9b7ea425b9cee7f76e8cda05bc727869c7dbcd243f4507a0ff548a9ab57df81",
+          "scope": "between marker subtrees",
+          "samples": 1203,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 1368.4999999999984
+            },
+            {
+              "frame": "writevGeneric node:internal/stream_base_commons:121",
+              "ms": 173.499
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 138.044
+            },
+            {
+              "frame": "(anonymous) :0",
+              "ms": 115.33800000000001
+            },
+            {
+              "frame": "writev :0",
+              "ms": 89.57999999999998
+            },
+            {
+              "frame": "threadCpuUsage :0",
+              "ms": 46.080999999999996
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 37.583000000000006
+            },
+            {
+              "frame": "(anonymous) file:///private/tmp/plumb-ci-health/repro-before/meter.mjs:10",
+              "ms": 16.709999999999997
+            },
+            {
+              "frame": "listOnTimeout node:internal/timers:623",
+              "ms": 12.126
+            },
+            {
+              "frame": "(anonymous) node:_http_outgoing:658",
+              "ms": 6.417
+            },
+            {
+              "frame": "processTimers node:internal/timers:603",
+              "ms": 4.166
+            },
+            {
+              "frame": "resume_ node:internal/streams/readable:1270",
+              "ms": 3.666
+            }
+          ]
+        }
+      ],
+      "httpDiagnostics": [
+        {
+          "bytes": [
+            521820,
+            102175
+          ],
+          "probes": [
+            {
+              "ms": 49.305333000000246,
+              "outstanding": 300
+            },
+            {
+              "ms": 10.350625000000036,
+              "outstanding": 298
+            },
+            {
+              "ms": 4.201875000000655,
+              "outstanding": 295
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6 hogs, fixed test (startup hang before HTTP workload)",
+      "log": "repro-after.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 15534,
+          "wallMs": 1281.136167,
+          "cpuMs": 632.719,
+          "loop": {
+            "idle": 264.476045,
+            "active": 1016.5632050162126,
+            "utilization": 0.7935457129852557
+          },
+          "probes": 123,
+          "healthMaxMs": 25.213250000000244,
+          "gaps": [
+            {
+              "wallMs": 24.620499999999993,
+              "cpuMs": 8.965
+            },
+            {
+              "wallMs": 24.108084000000417,
+              "cpuMs": 9.33
+            },
+            {
+              "wallMs": 20.647749999999633,
+              "cpuMs": 11.081
+            },
+            {
+              "wallMs": 19.809375000000273,
+              "cpuMs": 8.428
+            },
+            {
+              "wallMs": 19.022541999999703,
+              "cpuMs": 6.427
+            }
+          ],
+          "delay": {
+            "maxMs": 24.805375,
+            "p99Ms": 13.582335,
+            "samples": 614
+          }
+        }
+      ],
+      "hostProfiles": [],
+      "httpDiagnostics": []
+    },
+    {
+      "name": "6 hogs, fixed test, complete retry",
+      "log": "repro-after-2.log",
+      "measurements": [
+        {
+          "label": "in-process",
+          "pid": 15843,
+          "wallMs": 1109.159542,
+          "cpuMs": 573.357,
+          "loop": {
+            "idle": 301.637253,
+            "active": 807.4654970033378,
+            "utilization": 0.7280348885627663
+          },
+          "probes": 126,
+          "healthMaxMs": 11.021416999999929,
+          "gaps": [
+            {
+              "wallMs": 17.273709000000053,
+              "cpuMs": 7.243
+            },
+            {
+              "wallMs": 13.761999999999944,
+              "cpuMs": 12.378
+            },
+            {
+              "wallMs": 13.682791999999608,
+              "cpuMs": 8.4
+            },
+            {
+              "wallMs": 12.523040999999921,
+              "cpuMs": 5.207
+            },
+            {
+              "wallMs": 8.150166999999783,
+              "cpuMs": 0.476
+            }
+          ],
+          "delay": {
+            "maxMs": 17.432575,
+            "p99Ms": 7.553023,
+            "samples": 640
+          }
+        },
+        {
+          "label": "HTTP host",
+          "pid": 15851,
+          "wallMs": 1704.7984580000002,
+          "cpuMs": 603.532,
+          "loop": {
+            "idle": 790.222701,
+            "active": 914.524882031654,
+            "utilization": 0.5364576498799313
+          },
+          "probes": 0,
+          "gaps": [
+            {
+              "wallMs": 13.472208999999566,
+              "cpuMs": 12.315
+            },
+            {
+              "wallMs": 9.576791999999841,
+              "cpuMs": 4.913
+            },
+            {
+              "wallMs": 7.927083000000039,
+              "cpuMs": 3.785
+            },
+            {
+              "wallMs": 7.23541699999987,
+              "cpuMs": 0.153
+            },
+            {
+              "wallMs": 6.985957999999755,
+              "cpuMs": 4.036
+            }
+          ],
+          "delay": {
+            "maxMs": 13.475839,
+            "p99Ms": 6.406143,
+            "samples": 983
+          }
+        }
+      ],
+      "hostProfiles": [
+        {
+          "label": "in-process",
+          "filename": "CPU.20261016.175142.15843.0.001.cpuprofile",
+          "sha256": "75c289e116f4cbba2c76448f64a50ade151f580c7cf0c1f5b05804d3b06cf550",
+          "scope": "whole process (marker not sampled)",
+          "samples": 4446,
+          "comparisonSelfSampleMs": 193.24999999999997,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 5383.751000000006
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 489.29699999999974
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 250.748
+            },
+            {
+              "frame": "keyCheck node:internal/util/comparisons:470",
+              "ms": 84.792
+            },
+            {
+              "frame": "objectComparisonStart node:internal/util/comparisons:282",
+              "ms": 57.91900000000001
+            },
+            {
+              "frame": "innerDeepEqual node:internal/util/comparisons:238",
+              "ms": 41.331999999999994
+            },
+            {
+              "frame": "registerDestroyHook :0",
+              "ms": 39.96
+            },
+            {
+              "frame": "init node:internal/test_runner/harness:235",
+              "ms": 29.122999999999998
+            },
+            {
+              "frame": "decode node:internal/encoding:482",
+              "ms": 25.123
+            },
+            {
+              "frame": "decodeUTF8 :0",
+              "ms": 24.041
+            },
+            {
+              "frame": "compileForInternalLoader node:internal/bootstrap/realm:383",
+              "ms": 22.206999999999997
+            },
+            {
+              "frame": "lstat :0",
+              "ms": 19.456999999999997
+            }
+          ]
+        },
+        {
+          "label": "HTTP host",
+          "filename": "CPU.20261016.175146.15851.0.001.cpuprofile",
+          "sha256": "ce810fb68f807793115c8d63447394b42fa108f32e14d2ebcbb5164e93987ed0",
+          "scope": "between marker subtrees",
+          "samples": 1053,
+          "comparisonSelfSampleMs": 0,
+          "topSelfSamples": [
+            {
+              "frame": "(idle) :0",
+              "ms": 1050.9659999999997
+            },
+            {
+              "frame": "writevGeneric node:internal/stream_base_commons:121",
+              "ms": 166
+            },
+            {
+              "frame": "(program) :0",
+              "ms": 128.164
+            },
+            {
+              "frame": "(anonymous) :0",
+              "ms": 126.99799999999999
+            },
+            {
+              "frame": "writev :0",
+              "ms": 68.957
+            },
+            {
+              "frame": "threadCpuUsage :0",
+              "ms": 39.332
+            },
+            {
+              "frame": "(garbage collector) :0",
+              "ms": 17.458
+            },
+            {
+              "frame": "processTimers node:internal/timers:603",
+              "ms": 9.584999999999999
+            },
+            {
+              "frame": "listOnTimeout node:internal/timers:623",
+              "ms": 8.123000000000001
+            },
+            {
+              "frame": "resOnFinish node:_http_server:1096",
+              "ms": 6.083
+            },
+            {
+              "frame": "(anonymous) file:///private/tmp/plumb-ci-health/repro-after-2/meter.mjs:10",
+              "ms": 6.041
+            },
+            {
+              "frame": "(anonymous) node:internal/event_target:793",
+              "ms": 4.625
+            }
+          ]
+        }
+      ],
+      "httpDiagnostics": [
+        {
+          "bytes": [
+            521820,
+            102175
+          ],
+          "probes": [
+            {
+              "ms": 21.370457999999417,
+              "outstanding": 300
+            },
+            {
+              "ms": 5.998583999999937,
+              "outstanding": 300
+            },
+            {
+              "ms": 2.5606249999991633,
+              "outstanding": 297
+            }
+          ],
+          "loop": {
+            "maxMs": 13.475839,
+            "p99Ms": 6.406143,
+            "samples": 1004
+          }
+        }
+      ]
+    }
+  ]
+}

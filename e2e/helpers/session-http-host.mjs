@@ -4,13 +4,14 @@ import { Session } from '../../dist/session/index.js';
 import { createHandler, createWebHandler } from '../../dist/session/server.js';
 import { Session as Inspector } from 'node:inspector/promises';
 import { writeFile } from 'node:fs/promises';
+import { startEventLoopMeasurement, finishEventLoopMeasurement } from './event-loop.mjs';
 
 const session = await Session.create({ root: process.argv[2], watch: false, readQueueMs: 15000 });
 const server = createServer(createHandler(session));
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const web = createWebHandler(session, { peerAddress: '127.0.0.1' });
-let inspector;
+let inspector, histogram;
 process.on('message', async ({ id, type, queries, path }) => {
   try {
     let result;
@@ -22,6 +23,10 @@ process.on('message', async ({ id, type, queries, path }) => {
         result.push({ object: typeof value === 'object', body: JSON.stringify(value),
           web: await (await web(new Request(origin + route))).text() });
       }
+    } else if (type === 'measure-loop-start') {
+      histogram = await startEventLoopMeasurement();
+    } else if (type === 'measure-loop-stop') {
+      result = await finishEventLoopMeasurement(histogram);
     } else if (type === 'profile-start') {
       inspector = new Inspector(); inspector.connect();
       await inspector.post('Profiler.enable');
@@ -32,6 +37,7 @@ process.on('message', async ({ id, type, queries, path }) => {
       await writeFile(path, JSON.stringify(profile));
       inspector.disconnect();
     } else if (type === 'close') {
+      histogram?.disable();
       server.closeAllConnections();
       await new Promise(resolve => server.close(resolve));
       await session.close();

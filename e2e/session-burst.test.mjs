@@ -8,6 +8,7 @@ import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Session } from '../dist/session/index.js';
 import { createHandler, createWebHandler } from '../dist/session/server.js';
+import { startEventLoopMeasurement, finishEventLoopMeasurement } from './helpers/event-loop.mjs';
 
 async function fixture(t) {
   const root = await mkdtemp(new URL('../fixtures/.burst-', import.meta.url).pathname);
@@ -38,19 +39,31 @@ test('1000-file Session: 300 overlapping reads share reconciliation and leave he
   // An unrelated save must not change results at queried sites.
   await writeFile(join(root, 'src/bulk/File999.tsx'), 'export const Item999 = () => <div className="gap-[17px]" />;');
   const reconciliations = (await session.health()).work.reconciliations;
+  const histogram = await startEventLoopMeasurement();
+  t.after(() => histogram.disable());
   const start = performance.now();
-  const burst = Promise.all(Array.from({ length: 300 }, (_, i) => calls[i % calls.length]().then(value => {
-    assert.deepEqual(value, sequential[i % calls.length]);
-  })));
+  // Compare after measuring: synchronous deep comparisons on this same host
+  // otherwise stall health themselves, especially on a contended CI runner.
+  const burst = Promise.all(Array.from({ length: 300 }, (_, i) => calls[i % calls.length]()));
+  let settled = false;
+  burst.then(() => { settled = true; }, () => { settled = true; });
   await delay(5);
-  for (let i = 0; i < 3; i++) {
+  const probes = [];
+  for (let i = 0; i < 3 || !settled; i++) {
     const at = performance.now(), response = await fetch(health), value = await response.json();
     assert.equal(response.status, 200); assert.equal(value.status, 'ready');
-    assert.ok(performance.now() - at < 50, `health blocked ${performance.now() - at}ms`);
+    probes.push(performance.now() - at);
+    if (!settled) await delay(5);
   }
-  await burst;
+  const results = await burst, elapsed = performance.now() - start;
+  const loop = await finishEventLoopMeasurement(histogram);
+  t.diagnostic(JSON.stringify({ probes: probes.length, healthMaxMs: Math.max(...probes), loop, elapsed }));
+  assert.ok(loop.samples > 0, 'event-loop monitor sampled the burst');
+  assert.ok(loop.maxMs < 50, `host event loop blocked ${loop.maxMs.toFixed(2)}ms`);
+  for (const ms of probes) assert.ok(ms < 50, `health blocked ${ms.toFixed(2)}ms`);
+  assert.ok(elapsed < 5000, `burst took ${elapsed}ms`);
+  for (const [i, value] of results.entries()) assert.deepEqual(value, sequential[i % calls.length]);
   assert.ok((await session.health()).work.reconciliations - reconciliations <= 2, 'burst uses at most two overlapping cohorts, not 300 reconciliations');
-  assert.ok(performance.now() - start < 5000, `burst took ${performance.now() - start}ms`);
   assert.ok((await session.site('src/bulk/File999.tsx', 1)).declarations.some(d => d.value === '17px'));
 });
 
@@ -105,6 +118,7 @@ test('HTTP: health stays under 100ms during 300 large site/edits reads, preservi
     assert.equal(await response.text(), result.body, 'Node response matches programmatic JSON byte for byte');
   }
   await fetch(origin + '/__plumb/health').then(response => response.text());
+  await command('measure-loop-start');
   if ((process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE)) await command('profile-start');
   let settled = 0;
   const burst = Promise.all(Array.from({ length: 300 }, (_, i) => fetch(origin + queries[i % 2].route)
@@ -123,8 +137,11 @@ test('HTTP: health stays under 100ms during 300 large site/edits reads, preservi
     if (i < 2) await delay(5);
   }
   await burst;
+  const loop = await command('measure-loop-stop');
   if ((process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE)) await command('profile-stop', { path: (process.env.PLUMBER_BURST_PROFILE ?? process.env.PLUMB_BURST_PROFILE) });
-  t.diagnostic(JSON.stringify({ bytes: baseline.slice(0, 2).map(result => Buffer.byteLength(result.body)), probes }));
+  t.diagnostic(JSON.stringify({ bytes: baseline.slice(0, 2).map(result => Buffer.byteLength(result.body)), probes, loop }));
+  assert.ok(loop.samples > 0, 'HTTP host event-loop monitor sampled the burst');
+  assert.ok(loop.maxMs < 50, `HTTP host event loop blocked ${loop.maxMs.toFixed(2)}ms`);
   assert.ok(probes.every(probe => probe.outstanding > 0), 'all health probes overlap reads');
   for (const probe of probes) assert.ok(probe.ms < 100, `health blocked ${probe.ms.toFixed(2)}ms with ${probe.outstanding} reads outstanding`);
 });
