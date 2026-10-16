@@ -241,7 +241,7 @@ async function warmBudget(page, t) {
   assert.ok(Math.max(...samples) < 16, 'warm Next locate main-thread ms: ' + samples.join(', '));
 }
 
-for (const [version, rapid] of [[19, false], [19, true], [18, false]]) test(`Vite React ${version}${rapid ? ' (rapid watcher)' : ''}: real fibers locate exact JSX sites`, { timeout: 90000 }, async t => {
+for (const [version, polling] of [[19, false], [19, true], [18, false]]) test(`Vite React ${version}${polling ? ' (polling watcher)' : ''}: real fibers locate exact JSX sites`, { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const root = await project(t);
   if (version === 18) {
@@ -255,8 +255,9 @@ for (const [version, rapid] of [[19, false], [19, true], [18, false]]) test(`Vit
     optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0,
       watch: version === 19 ? {
-        // Exercise rapid delivery on macOS too, without fsevents batching.
-        ...(rapid ? { useFsEvents: false, usePolling: true, interval: 1 } : {}),
+        // Exercise the documented Docker/WSL fallback at Chokidar's default interval.
+        // Keep polling above Chokidar's internal 5ms input throttle.
+        ...(polling ? { useFsEvents: false, usePolling: true, interval: 100 } : {}),
         // Chokidar otherwise drops a second save inside its 50ms change throttle.
         // Emit after the write settles, including truncate/write events from writeFile.
         awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },

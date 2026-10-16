@@ -154,6 +154,23 @@ export default { plugins: [plumb()] }
 
 The plugin shares Vite's development server, analyzes its configured root, serves `/__plumb/*`, and injects the module script into HTML. Vite builds omit the plugin and overlay script. A process registry keyed by root and Session options keeps the worker and revision warm across Vite restarts, including plugin reloads. Final server shutdown releases the Session, including middleware mode; concurrent hosts with identical options share ownership.
 
+If source saves do not reach Vite in Docker or WSL, configure its host watcher:
+
+```ts
+export default {
+  plugins: [plumb()],
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 100,
+      awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },
+    },
+  },
+}
+```
+
+Polling checks files every 100ms; write stabilization waits for completed saves before HMR. Avoid 1ms polling: Chokidar also throttles incoming file notifications for 5ms. When using environment overrides, use `CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=100` and retain `awaitWriteFinish` in Vite's config. These settings control Vite's HMR watcher; `PLUMBER_POLLING` controls React Plumber's separate analysis watcher. Enable host polling only where needed because it increases CPU use. See [Vite's watcher guidance](https://vite.dev/config/server-options#server-watch).
+
 For Next.js App Router, wrap your existing `next.config.mjs` export:
 
 ```ts
