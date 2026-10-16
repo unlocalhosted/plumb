@@ -1,7 +1,7 @@
 import { cacheDirectory } from '../paths.js';
 import { serialize as serializeReceipt, deserialize } from 'node:v8';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { globSync } from 'tinyglobby';
 import type { PlumbConfig } from '../config.js';
@@ -81,8 +81,12 @@ export function componentCache(root: string, files: string[], config: PlumbConfi
     write(graph: ComponentGraph, lines: Map<string, number[]>, files: Map<string, string | null>, directories: Map<string, string[]>, resolutions: Map<string, string | undefined>, contexts: Map<string, string | undefined>): void {
       const receipt: Receipt = { graph: serialize(graph, lines), files: [...files], directories: [...directories], resolutions: [...resolutions], contexts: [...contexts] };
       mkdirSync(dirname(path), { recursive: true });
-      const temporary = `${path}.${process.pid}.tmp`;
-      writeFileSync(temporary, serializeReceipt(receipt)); renameSync(temporary, path);
+      // Worker threads share a PID, even though each write is synchronous.
+      const temporary = `${path}.${randomUUID()}.tmp`;
+      try {
+        writeFileSync(temporary, serializeReceipt(receipt), { flag: 'wx' });
+        renameSync(temporary, path);
+      } finally { rmSync(temporary, { force: true }); }
     },
   };
 }

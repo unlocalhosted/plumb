@@ -5,6 +5,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { Worker } from 'node:worker_threads';
 import { check } from '../dist/index.js';
 import { serve } from '../dist/session/server.js';
 
@@ -116,4 +117,29 @@ test('concurrent cold checks publish reusable complete caches in one process', a
   const warm = await check({ root, config });
   assert.deepEqual(stable(warm), stable(reports[0]));
   assert.ok(Object.values(warm.timing.phases).every(ms => ms === 0), 'published receipt enables a complete cache hit');
+});
+
+test('concurrent worker checks share complete ownership receipts', async t => {
+  const root = await project(t);
+  await cp(join(repo, 'fixtures/ownership'), root, { recursive: true });
+  const workers = Array.from({ length: 4 }, () => new Worker(`
+    const { parentPort, workerData } = require('node:worker_threads');
+    (async () => {
+      const { check } = await import(workerData.entry);
+      parentPort.once('message', async () => parentPort.postMessage(await check({ root: workerData.root })));
+      parentPort.postMessage('ready');
+    })();
+  `, { eval: true, workerData: { root, entry: new URL('../dist/index.js', import.meta.url).href } }));
+  t.after(async () => { await Promise.all(workers.map(worker => worker.terminate())); });
+  await Promise.all(workers.map(worker => once(worker, 'message')));
+  const pending = workers.map(worker => once(worker, 'message'));
+  for (const worker of workers) worker.postMessage('check');
+  const reports = (await Promise.all(pending)).map(([report]) => report);
+  const cold = JSON.parse(run(root, 'check', '--json').stdout);
+  assert.ok(cold.findings.some(finding => finding.rule.startsWith('ownership/')));
+  assert.ok(cold.coverage.ownership);
+  for (const report of reports) {
+    assert.deepEqual(report.findings, cold.findings);
+    assert.deepEqual(report.coverage.ownership, cold.coverage.ownership);
+  }
 });
