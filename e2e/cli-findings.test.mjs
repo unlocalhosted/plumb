@@ -76,6 +76,22 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
   const pipe = spawnSync(process.execPath, [cli, '--root', root, '--family', 'type'], { encoding: 'utf8', env: { ...process.env, COLUMNS: '80', PLUMBER_CACHE_DIR: cache } });
   assert.ifError(pipe.error); assert.doesNotMatch(pipe.stdout, /\x1b/); bounded(pipe.stdout, 100);
   assert.ok(pipe.stdout.split('\n').some(line => [...line].length > 80), 'pipes use fallback 100');
+  const longFolder = `src/${'long-folder-'.repeat(9)}`;
+  await mkdir(join(root, longFolder), { recursive: true });
+  const file = `${longFolder}/LongPath.tsx`;
+  await writeFile(join(root, file), 'export const LongPath = () => <div className="p-[13px]" />;');
+  const longPath = bounded(pty(root, ['--file', file], 80, cache, true), 80);
+  const command = longPath.split('Intended?  ')[1].trim();
+  assert.ok(command.includes('\\\n'));
+  const accepted = spawnSync('/bin/sh', ['-c', command.replace(/^plumber/, '"$PLUMBER_NODE" "$PLUMBER_CLI"') + ' --root "$PLUMBER_ROOT"'], {
+    encoding: 'utf8', env: { ...process.env, PLUMBER_NODE: process.execPath, PLUMBER_CLI: cli, PLUMBER_ROOT: root, PLUMBER_CACHE_DIR: cache },
+  });
+  assert.ifError(accepted.error); assert.equal(accepted.status, 0, accepted.stderr);
+  assert.match(accepted.stdout, /Accepted 1 exception entry/);
+  await writeFile(join(root, 'src/styles.css'), '@import "tailwindcss"; @theme { --*: initial; } .broken { color: var(--missing); }');
+  const brokenOnly = pty(root, [], 80, cache);
+  assert.doesNotMatch(strip(brokenOnly), /values off your tokens/);
+  assert.match(brokenOnly.split('Fix first')[1], /\x1b\[31m/);
 });
 
 test('site read-only human reports fit real 80/140-column PTYs', async t => {

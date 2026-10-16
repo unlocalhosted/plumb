@@ -53,21 +53,27 @@ function phrase(group: FindingLine): string {
 /** Basenames unless ambiguous, then the shortest distinguishing path suffix. */
 function siteNames(groups: FindingLine[], path: (file: string) => string): Map<string, string> {
   const files = [...new Set(groups.flatMap(group => group.sites.map(site => site.file)))];
+  const parts = new Map(files.map(file => [file, path(file).replaceAll('\\', '/').split('/')]));
+  const counts = new Map<string, number>();
+  for (const segments of parts.values()) for (let size = 1; size <= segments.length; size++) {
+    const tail = segments.slice(-size).join('/'); counts.set(tail, (counts.get(tail) ?? 0) + 1);
+  }
   return new Map(files.map(file => {
-    const parts = path(file).replaceAll('\\', '/').split('/');
+    const segments = parts.get(file)!;
     let size = 1;
-    while (size < parts.length && files.some(other => other !== file && path(other).replaceAll('\\', '/').split('/').slice(-size).join('/') === parts.slice(-size).join('/'))) size++;
-    return [file, parts.slice(-size).join('/') || basename(file)];
+    while (size < segments.length && counts.get(segments.slice(-size).join('/')) !== 1) size++;
+    return [file, segments.slice(-size).join('/') || basename(file)];
   }));
 }
 
 function choices(group: FindingLine): Decision[] {
   const result = new Map<string, Decision>();
+  const siteIds = new Set(group.sites.map(identity));
   for (const finding of group.findings) {
     // Inventory tokens are not fixes. Copy-by-value groups carry per-site edits.
-    const relevant = (finding.edits ?? []).filter(edit => group.sites.some(site => identity(site) === identity(edit.site))).map(edit => edit.token);
-    for (const decision of finding.choices?.length ? finding.choices : finding.rule.endsWith('/by-value') ? finding.decisions.filter(d => relevant.includes(d.name)) : []) {
-      if (finding.rule.endsWith('/by-value') && relevant.length && !relevant.includes(decision.name)) continue;
+    const relevant = new Set((finding.edits ?? []).filter(edit => siteIds.has(identity(edit.site))).map(edit => edit.token));
+    for (const decision of finding.choices?.length ? finding.choices : finding.rule.endsWith('/by-value') ? finding.decisions.filter(d => relevant.has(d.name)) : []) {
+      if (finding.rule.endsWith('/by-value') && relevant.size && !relevant.has(decision.name)) continue;
       const key = `${decision.name}:${decision.use?.class ?? decision.use?.css ?? ''}`;
       result.set(key, decision);
     }
@@ -145,7 +151,17 @@ export function findingContext(findings: Finding[], path: (file: string) => stri
     const commandLines: string[] = [];
     for (const part of parts) {
       if (visibleWidth(line + part) > terminalWidth() - 2) { commandLines.push(line.trimEnd() + ' \\'); line = '  '; }
-      line += part + ' ';
+      let rest = part;
+      while (visibleWidth(line + rest) > terminalWidth() - 2) {
+        // A long quoted path can continue inside its quotes with backslash-newline.
+        let chunk = '';
+        for (const char of rest) {
+          if (visibleWidth(line + chunk + char) > terminalWidth() - 2) break;
+          chunk += char;
+        }
+        commandLines.push(line + chunk + '\\'); rest = rest.slice(chunk.length); line = '';
+      }
+      line += rest + ' ';
     }
     commandLines.push(line.trimEnd());
     lines.push('', ...commandLines);

@@ -119,7 +119,7 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     if (fix.length) lines.push('', 'Fix first', ...table(fix.map(row => row.map((text, i) => ({ text, ...(i === 0 ? { ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const } : {}) }))), [{ weight: 1 }, { weight: 1 }, { width: 32 }]));
     lines.push(...table([[top.map(([text, sites]) => `${shorten(text, 32)} ${number(sites.size)}`).join(' · ')]], [{ weight: 1, ink: 'dim' }], { indent: 4 }));
   }
-  if (!off.length && fix.length) lines.push('', 'Fix first', ...table(fix, [{ weight: 1 }, { weight: 1 }, { width: 32 }]));
+  if (!off.length && fix.length) lines.push('', 'Fix first', ...table(fix.map(row => row.map((text, i) => ({ text, ...(i === 0 ? { ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const } : {}) }))), [{ weight: 1 }, { weight: 1 }, { width: 32 }]));
   if (!report.ledger?.exists) {
     lines.push('', 'This is your first run, so all of this counts as new.',
       '  plumber baseline      record today\'s drift as debt; from then on only new drift fails',
