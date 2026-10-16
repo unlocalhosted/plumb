@@ -56,7 +56,7 @@ test('zero config/disabled habits judge nothing; habits command counts all built
   assert.equal(list.find(h => h.id === 'transition-named').breaks, 1);
   assert.equal(list.length, 9);
   const text = spawnSync(process.execPath, [cli, 'habits', '--root', dir], { encoding: 'utf8' });
-  assert.match(text.stdout, /hover-gate  1 breaks/);
+  assert.match(text.stdout, /hover-gate\s+1 break\s/);
 });
 
 test('Tailwind oracle finds alternate custom variant, honors cache invalidation, and falls back to declaration', async t => {

@@ -136,7 +136,7 @@ test('setup: Tailwind-looking classes advise once; plain CSS still checks broken
     assert.doesNotMatch(result.stdout, /does nothing|Tailwind never generates/);
     if (args.includes('--json')) assert.ok(JSON.parse(result.stdout).findings.some(f => f.rule === 'existence/dead-var'));
     else if (args.includes('--agent') || args.includes('--broken')) assert.match(result.stdout, /--missing/);
-    else assert.match(result.stdout, /1 broken style  plumber check --broken/);
+    else assert.match(result.stdout, /1 broken style\s+the browser drops them\s+plumber check --broken/);
   }
 });
 
