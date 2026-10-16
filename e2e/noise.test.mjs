@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, rm, writeFile, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -40,11 +40,11 @@ test('equal literals warn once per family; every site has its own token, verbose
   assert.ok(each.every(f => f.severity === 'warn' && f.choices.length === 1));
   assert.deepEqual(color[0].ledgerKeys.sort(), each.flatMap(f => f.ledgerKeys).sort());
   const text = run(dir, ['--all'], false);
-  assert.ok(!color[0].action.includes(dir)); assert.match(text, /matches a token; uses a copy/);
+  assert.ok(!color[0].action.includes(dir)); assert.match(text, /token copy/);
   assert.match(text, /→ bg-brand \(/);
   assert.match(text, /→ var\(--color-ink\) \(/);
   assert.doesNotMatch(text, /Use the matching token at each site/);
-  assert.ok(color[0].edits.every(e => text.includes(`src/${e.site.file.split('/src/')[1]}:${e.site.line}`)));
+  assert.ok(color[0].edits.every(e => text.includes(`${basename(e.site.file)}:${e.site.line}`)));
   const agent = run(dir, ['--agent'], false);
   assert.ok(!agent.includes('values in your color')); assert.match(agent, /background-color: var\(--color-ink\)/);
   await writeFile(join(dir, 'plumber.config.ts'), "export default { decisions: { color: { byValue: 'each' } } };");

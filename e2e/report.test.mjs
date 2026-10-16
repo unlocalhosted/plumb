@@ -19,13 +19,18 @@ function run(root, args = [], options = {}) {
   return result;
 }
 const titles = output => [...output.matchAll(/^  [!✗·]  (.*?) {2,}/gm)].map(match => match[1]).sort();
+const declarationSubject = text => text.replace(/^([\w'"-]+):\s*(.*)$/s, (_, prop, value) =>
+  `${prop.replace(/["']/g, '').replace(/[A-Z]/g, char => `-${char.toLowerCase()}`)}: ${value.replace(/;$/, '').replace(/^(['"`])(.*)\1$/, '$2')}`);
 const expectSubset = (root, args, findings) => {
   const result = run(root, args);
   const labelsForFamily = {color:'colour',elevation:'shadow',z:'z-index'};
   const subjects = new Map();
   for (const f of findings) {
     const family = labelsForFamily[f.family] ?? f.family;
-    const values = f.rule.startsWith('config/') ? [family + ' setup'] : f.rule.startsWith('dead/') ? [family + ' tokens'] : f.rule === 'provenance/opaque-inline' ? ['runtime styles'] : f.rule === 'existence/dead-var' ? [f.title.match(/^`([^`]+)`/)[1]] : f.sites.map(s => s.text.replace(/\s+/g, ' ').trim());
+    const values = f.rule.startsWith('config/') ? [family + ' setup'] : f.rule.startsWith('dead/') ? [family + ' tokens'] : f.rule === 'provenance/opaque-inline' ? ['runtime styles'] : f.rule === 'existence/dead-var' ? [f.title.match(/^`([^`]+)`/)[1]] : f.sites.map(s => {
+      const text = s.text.replace(/\s+/g, ' ').trim();
+      return ['inline', 'stylesheet', 'custom-property', 'keyframes'].includes(f.declaration.origin) ? declarationSubject(text) : text;
+    });
     for (const value of values) subjects.set((f.rule.startsWith('provenance/') ? 'provenance' : f.rule) + ':' + f.family + ':' + value, value);
   }
   const labels = titles(result.stdout);
@@ -122,7 +127,7 @@ test('ledger default shows only new sites, caps groups, and keeps debt available
   expectSubset(root, ['--debt'], debt);
   const mixed = run(root, ['--family', 'spacing', '--file', 'src/pages/Page0.tsx', '--new']).stdout;
   assert.equal(titles(mixed).length, 1);
-  assert.match(mixed, /src\/pages\/Page0.tsx:\d+/);
+  assert.match(mixed, /Page0.tsx:\d+/);
   assert.match(mixed, /p-\[13px\]/);
   assert.doesNotMatch(mixed, /padding:13/);
   const old = run(root, ['--family', 'spacing', '--file', 'src/pages/Page0.tsx', '--debt']).stdout;

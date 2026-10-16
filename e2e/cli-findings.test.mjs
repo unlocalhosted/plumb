@@ -29,10 +29,9 @@ function bounded(output, columns) {
   const offsets = [];
   for (const block of body) {
     const lines = block.split('\n');
-    assert.ok(lines.length <= 3, block);
     const location = lines[0].trim().split(/ {2,}/).at(-1);
-    assert.match(location, /(?:[\d,]+ sites? in [\d,]+ files?)|(?:\S.*:\d+)$/, lines[0]);
-    offsets.push(lines[0].lastIndexOf(location));
+    if (/(?:[\d,]+ sites? in [\d,]+ files?)|(?:\S.*:\d+)$/.test(location)) offsets.push(lines[0].lastIndexOf(location));
+    else assert.ok(lines.slice(1).some(line => /:\d+$/.test(line.trim()) || /sites? in \d+ files?$/.test(line.trim())), block);
     assert.ok(!lines.slice(1).some(line => /[{}]|\?\s*$/.test(line) && !line.includes('→')), block);
   }
   if (offsets.length) assert.equal(new Set(offsets).size, 1, 'fixed location column');
@@ -61,8 +60,8 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
   for (const columns of [80, 140]) {
     const type = bounded(pty(root, ['--family', 'type'], columns, cache), columns);
     assert.equal((type.match(/^  !  text-xs\s/gm) ?? []).length, 1);
-    assert.match(type, /text-xs\s+off your type scale.*32 sites in 32 files/);
-    if (columns === 140) assert.match(type, /off your type scale \(size and line-height\)/);
+    assert.match(type, /text-xs.*32 sites in 32 files/);
+    assert.match(type, /off your type scale \(size and line-height\)/);
     assert.doesNotMatch(type.split('Intended?')[0], /provenance\/|existence\/|config gap|type\/framework/);
     const broken = pty(root, ['--broken'], columns, cache);
     bounded(broken, columns);
@@ -113,6 +112,78 @@ test('site read-only human reports fit real 80/140-column PTYs', async t => {
     assert.match(output, /React Plumber/);
   }
   assert.deepEqual(spawnSync('git', ['diff', '--', 'site'], { cwd: repo }).stdout, before);
+});
+
+test('layer 3 polish: exact declaration, reason, location and coverage lines at 80/100', async t => {
+  const root = await reportFixture(t), cache = await mkdtemp(join(tmpdir(), 'plumber-polish-'));
+  t.after(() => rm(cache, { recursive: true, force: true }));
+  await rm(join(root, 'src'), { recursive: true });
+  const folder = `src/${'long-parent-'.repeat(7)}`;
+  await mkdir(join(root, folder), { recursive: true });
+  await writeFile(join(root, 'plumber.config.ts'), `export default { css: 'src/styles.css', decisions: { type: {
+    callers: ['semantic'], from: () => [
+      { name: '--x', value: 'monospace', tier: 'primitive' },
+      { name: '--font-code', value: 'var(--x)', tier: 'semantic' },
+      { name: '--text-body', value: '16px', tier: 'semantic' }
+    ].map(d => ({ ...d, family: 'type', refs: ['var(' + d.name + ')'], origin: 'project', why: '', source: { file: 'src/styles.css', line: 1 } }))
+  } } };`);
+  await writeFile(join(root, 'src/styles.css'), `:root { --x: monospace; --font-code: var(--x); --text-body: 16px; --duration-quick: 120ms; }
+.copy { font-family: var(--x); }
+${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321ms; }`).join('\n')}`);
+  await writeFile(join(root, 'src/Inline.tsx'), `export const Inline = () => <>
+  <div style={{ fontFamily: 'var(--x)' }} />
+  <div style={{ fontFamily: "var(--x)" }} />
+  <div style={{ font: '8px   var(--x)' }} />
+  <div style={{ font: '8px var(--x)' }} />
+</>;`);
+  await writeFile(join(root, folder, 'EscapeAndOutsideClickPhase.tsx'), "export const Single = () => <div style={{ font: '7px var(--x)' }} />;");
+  const expected = {
+    80: `  !  font-family: var(--x)          raw type              3 sites in 2 files
+     → var(--font-code) (monospace)
+     styles.css:2 · Inline.tsx:2 · Inline.tsx:3
+
+  !  font: 8px var(--x)                                   2 sites in 1 file
+     raw type · off your type scale
+     → var(--font-code) (monospace)
+     Inline.tsx:4 · Inline.tsx:5
+
+  !  font: 7px var(--x)
+     raw type · off your type scale
+     EscapeAndOutsideClickPhase.tsx:1
+     → var(--font-code) (monospace)`,
+    100: `  !  font-family: var(--x)                   raw type                    3 sites in 2 files
+     → var(--font-code) (monospace)
+     styles.css:2 · Inline.tsx:2 · Inline.tsx:3
+
+  !  font: 8px var(--x)                                                  2 sites in 1 file
+     raw type · off your type scale
+     → var(--font-code) (monospace)
+     Inline.tsx:4 · Inline.tsx:5
+
+  !  font: 7px var(--x)
+     raw type · off your type scale
+     EscapeAndOutsideClickPhase.tsx:1
+     → var(--font-code) (monospace)`,
+  };
+  for (const columns of [80, 100]) {
+    const detail = bounded(pty(root, ['check', '--family', 'type'], columns, cache, true), columns);
+    const blocks = detail.split('\n\n').filter(block => /^  !  /.test(block));
+    assert.equal(blocks.join('\n\n'), expected[columns]);
+    const summary = bounded(pty(root, [], columns, cache), columns);
+    const coverage = strip(summary).split('On your tokens\n')[1].split('\n\n')[0];
+    assert.equal(coverage, `  type       ░░░░░░░░░░░░░░░░░░░░    0%      9 off
+  motion     ░░░░░░░░░░░░░░░░░░░░    0%  1,100 off`);
+    const quiet = bounded(pty(root, [], columns, cache, true), columns);
+    assert.equal(quiet.split('On your tokens\n')[1].split('\n\n')[0], `  type         0%      9 off
+  motion       0%  1,100 off`);
+  }
+  const values = ['alpha', 'beta'].map(tail => `var(--x, monospace-with-a-long-shared-fallback-${tail})`);
+  await writeFile(join(root, 'src/Collision.tsx'), `export const Collision = () => <>${values.map(value => `<div style={{fontFamily:'${value}'}} />`).join('')}</>;`);
+  for (const columns of [80, 100]) {
+    const output = bounded(pty(root, ['--family', 'type', '--file', 'src/Collision.tsx'], columns, cache, true), columns);
+    assert.equal((output.match(/^  !  /gm) ?? []).length, 2);
+    for (const value of values) assert.ok(output.includes(`     font-family: ${value}\n`), 'colliding prefixes retain distinct full values');
+  }
 });
 
 test('command tables share terminal budgets: decisions, habits, ledger moves and doctor', async t => {

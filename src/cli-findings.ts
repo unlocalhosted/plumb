@@ -1,8 +1,9 @@
 import { basename } from 'node:path';
 import type { Decision, Finding, Site } from './report.js';
 import { count, familyNames, scales, sourceEdit } from './messages.js';
-import { oneLine, paint, shorten, table, terminalWidth, visibleWidth, wrap } from './cli-table.js';
+import { oneLine, paint, shorten, table, terminalWidth, visibleWidth, wrap, type Ink } from './cli-table.js';
 import { useFor } from './rules/provenance.js';
+import { atSite } from './surfaces/sites.js';
 
 export interface FindingLine { subject: string; findings: Finding[]; sites: Site[] }
 const identity = (site: Site) => `${site.file}:${site.line}:${site.column}`;
@@ -11,6 +12,15 @@ function subject(finding: Finding, site: Site): string {
   if (finding.rule.startsWith('config/')) return `${familyNames[finding.family] ?? finding.family} setup`;
   if (finding.rule.startsWith('dead/')) return `${familyNames[finding.family] ?? finding.family} tokens`;
   if (finding.rule === 'provenance/opaque-inline') return 'runtime styles';
+  const declaration = atSite(finding, site);
+  if (['inline', 'stylesheet', 'custom-property', 'keyframes'].includes(declaration.origin)) {
+    // Keep authored shorthands (font, padding, etc.), even when the judge expands them.
+    const authored = /^\s*([\w$'"-]+)\s*:\s*([\s\S]*)$/.exec(site.text);
+    const key = authored?.[1]?.replace(/^(['"])(.*)\1$/, '$2');
+    const prop = key?.startsWith('--') ? key : key?.replace(/[A-Z]/g, char => `-${char.toLowerCase()}`).replace(/^ms-/, '-ms-') ?? declaration.prop;
+    const value = (authored?.[2] ?? declaration.value).replace(/;\s*$/, '').trim().replace(/^(['"`])([\s\S]*)\1$/, '$2');
+    return `${prop}: ${oneLine(value)}`;
+  }
   return oneLine(site.text || finding.declaration.value);
 }
 /** Human-only projection. Original findings, occurrence identities and machine reports stay intact. */
@@ -41,13 +51,13 @@ function phrase(group: FindingLine): string {
   if (first.rule.startsWith('config/')) return first.rule === 'config/no-tokens' ? 'setup gap; no tokens configured' : oneLine(first.title);
   if (first.rule.startsWith('dead/')) return 'never used in your source';
   if (first.rule.startsWith('provenance/')) {
-    const reasons = new Set(group.findings.map(finding => finding.rule.endsWith('/by-value') ? 'matches a token; uses a copy' :
-      finding.family === 'color' ? 'raw colour' : finding.rule.endsWith('/tier') ? `raw ${familyNames[finding.family] ?? finding.family}; use a named token` :
+    const reasons = new Set(group.findings.map(finding => finding.rule.endsWith('/by-value') ? 'token copy' :
+      finding.family === 'color' ? 'raw colour' : finding.rule.endsWith('/tier') ? `raw ${familyNames[finding.family] ?? finding.family}` :
       `off your ${scales[finding.family] ?? finding.family}`));
     const siteIds = new Set(group.sites.map(identity));
     const properties = new Set(group.findings.flatMap(finding => (finding.occurrences ?? [finding.declaration]).filter(d => siteIds.has(identity(d.site))).map(d => d.prop)));
-    const type = first.family === 'type' && properties.has('font-size') && properties.has('line-height') ? ' (size and line-height)' : '';
-    return [...reasons].join('; ') + type;
+    const type = reasons.size === 1 && first.family === 'type' && properties.has('font-size') && properties.has('line-height') ? ' (size and line-height)' : '';
+    return [...reasons].join(' · ') + type;
   }
   return oneLine(first.title).replace(/`[^`]+`\s*/, '').replace(/\.$/, '');
 }
@@ -111,15 +121,48 @@ function suggestion(group: FindingLine, width: number): string {
 
 export function renderFindingLines(groups: FindingLine[], path: (file: string) => string, showRules = false): string {
   const width = terminalWidth(), names = siteNames(groups, path);
-  const rows = table(groups.map(group => {
+  const declarations = groups.some(group => /^[\w-]+: /.test(group.subject));
+  const budget = Math.max(3, width - 9); // indent, marker and three column gaps
+  const subjectWidth = Math.max(1, Math.floor(budget * (declarations ? .42 : .22)));
+  const reasonWidth = Math.max(1, Math.floor(budget * (declarations ? .29 : .49)));
+  const locationWidth = Math.max(1, budget - subjectWidth - reasonWidth);
+  const subjects = new Map<string, Set<string>>();
+  for (const group of groups) {
+    const text = shorten(group.subject, subjectWidth), originals = subjects.get(text) ?? new Set<string>();
+    originals.add(group.subject); subjects.set(text, originals);
+  }
+  const details = groups.map(group => {
     const first = group.findings[0]!, broken = first.rule.startsWith('existence/');
-    const location = group.sites.length === 1 ? `${path(group.sites[0]!.file)}:${group.sites[0]!.line}` : `${count(group.sites.length, 'site')} in ${count(new Set(group.sites.map(site => site.file)).size, 'file')}`;
-    return [{ text: broken ? '✗' : first.severity === 'info' ? '·' : '!', ink: broken ? 'red' as const : 'amber' as const }, group.subject,
-      { text: phrase(group) + (showRules ? ` [${[...new Set(group.findings.map(f => f.rule))].join(', ')}]` : ''), ink: broken ? 'red' as const : first.severity === 'info' ? 'dim' as const : 'amber' as const },
-      { text: location, path: group.sites.length === 1, ink: 'dim' as const }];
-  }), [{ width: 1 }, { weight: 22 }, { weight: 49 }, { weight: 29 }]);
+    const location = group.sites.length === 1 ? `${names.get(group.sites[0]!.file)}:${group.sites[0]!.line}` : `${count(group.sites.length, 'site')} in ${count(new Set(group.sites.map(site => site.file)).size, 'file')}`;
+    return { marker: broken ? '✗' : first.severity === 'info' ? '·' : '!', ink: broken ? 'red' as const : first.severity === 'info' ? 'dim' as const : 'amber' as const,
+      reason: phrase(group) + (showRules ? ` [${[...new Set(group.findings.map(f => f.rule))].join(', ')}]` : ''), location,
+      collision: subjects.get(shorten(group.subject, subjectWidth))!.size > 1 };
+  });
+  const rows = table(groups.map((group, i) => {
+    const { marker, ink, reason, location } = details[i]!;
+    return [{ text: marker, ink: marker === '✗' ? 'red' as const : 'amber' as const }, group.subject,
+      { text: visibleWidth(reason) <= reasonWidth ? reason : '', ink },
+      { text: visibleWidth(location) <= locationWidth ? location : '', ink: 'dim' as const }];
+  }), [{ width: 1 }, { width: subjectWidth }, { width: reasonWidth }, { width: locationWidth }]);
   return groups.map((group, i) => {
+    const { ink, reason, location, collision } = details[i]!;
     const lines = [rows[i]!], fix = suggestion(group, width - 7);
+    // Continuations are lossless, including CSS values or paths wider than a line.
+    const continued = (text: string, ink?: Ink) => {
+      let line = '     ';
+      for (const word of text.split(' ')) {
+        if (line.trim() && visibleWidth(line + word) > width) { lines.push(paint(line.trimEnd(), ink)); line = '     '; }
+        for (const char of word) {
+          if (visibleWidth(line + char) > width) { lines.push(paint(line, ink)); line = '     '; }
+          line += char;
+        }
+        line += ' ';
+      }
+      lines.push(paint(line.trimEnd(), ink));
+    };
+    if (collision) continued(group.subject);
+    if (visibleWidth(reason) > reasonWidth) continued(reason, ink);
+    if (visibleWidth(location) > locationWidth) continued(location, 'dim');
     if (fix) lines.push(`     ${paint('→', 'dim')} ${fix}`);
     if (group.sites.length > 1) {
       const shown: string[] = [];

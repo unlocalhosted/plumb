@@ -379,32 +379,32 @@ Logical-inline judges physical sides that would change under RTL. Equal left/rig
 
 Every human finding is a projection, not a mutation of the analyzer report. Merge identical subjects within a rule family, union authored sites, and combine reasons. Type size plus line-height says `off your type scale (size and line-height)`. Split mixed-syntax groups into their actual subjects; each gets its own applicable suggestions. Keep first-appearance order. JSON and agent findings remain separate and byte-identical.
 
-A group has at most three physical lines: subject / short reason / location; optional fix; optional compact sites row when there are multiple sites. Source expressions collapse whitespace and truncate with `…`; never print their bodies on separate lines.
+A group starts with subject / short reason / location, followed by an optional fix and compact sites row. Reasons that exceed their column move intact below the subject and wrap at word boundaries. Declaration subjects use CSS property names and unquoted values with collapsed whitespace (`font-family: var(--font-mono)`, `font: 8px var(--font-mono)`); their section borrows width from the reason column. Values shorten at the end with `…`. If distinct subjects still share a shortened prefix, print their complete values on continuation lines. Equivalent declaration subjects merge within the same rule family.
 
 ```text
-  !  p-[21px]     off your spacing scale       src/hero/DriftedCard.jsx:24
+  !  p-[21px]     off your spacing scale       DriftedCard.jsx:24
      → p-5 (20px) · p-6 (24px, card padding)
 
   !  font-mono    off your type scale          9,350 sites in 312 files
      → No token is close to this font; pick a named role
      js-core.tsx:492 · js-core.tsx:502 · mini-system.tsx:204 · +9,347
 
-  ✗  var(--gone)  never defined; browser drops it  src/styles.css:12
+  ✗  var(--gone)  never defined; browser drops it  styles.css:12
      → Define --gone, or use a token instead
 ```
 
 Short phrases:
 - Off-token: `off your spacing scale`, `off your radius scale`, `off your type scale`, `off your motion tokens`, `off your shadow tokens`, `off your z-index layers`; colour says `raw colour`.
-- A copy: `matches a token; uses a copy`. Raw tokens say `raw {family}; use a named token`.
+- A copy: `token copy`. Raw tokens say `raw {family}`. Combine distinct reasons with ` · `, for example `raw type · off your type scale`.
 - Broken class: `no CSS; browser applies nothing`. Runtime class: `runtime class; no CSS generated`.
 - Undefined variable: `never defined; browser drops it`, or `never defined; falls back to {fallback}`.
 - Missing tokens: `setup gap; no tokens configured`. Runtime values: `computed at runtime; cannot check`.
 - Unused tokens: `never used in your source`. Other rules retain their specific effect, without repeating the subject.
 
-Suggestions name the utility at class sites, or `var(--token)` at CSS/inline sites, followed by the amount. Include a token reason only when at most 28 characters and all alternatives still fit. Inventory tokens are never presented as interchangeable fixes. Sites use basenames, or the shortest unique path tail when basenames collide; show up to four fitting sites and a `+{remaining}` count.
+Suggestions name the utility at class sites, or `var(--token)` at CSS/inline sites, followed by the amount. Include a token reason only when at most 28 characters and all alternatives still fit. Inventory tokens are never presented as interchangeable fixes. Single and multiple sites use basenames, or the shortest unique path tail when basenames collide. A single location that exceeds its column moves intact below the subject. Multiple sites show up to four fitting sites and a `+{remaining}` count.
 
 Each rule's because text appears once in the closing Why block. No rule id unless verbose or explicitly filtered with --rule. One accept example uses a displayed site; shell continuations preserve copyability at narrow widths.
 
-All human tables share `src/cli-table.ts`: terminal width from the output stream, fallback 100 for pipes; fixed/weighted column budgets independent of data. Long paths shorten in the middle, text at the end. Prose wraps intentionally. Terminal-only colour: broken marker/reason red, drift amber, secondary text and suggestion amounts dim; subject default. NO_COLOR disables all escapes and coverage bars. Machine outputs bypass these helpers.
+All human tables share `src/cli-table.ts`: terminal width from the output stream, fallback 100 for pipes; fixed/weighted column budgets. Coverage off-counts use only the largest count's width, right-aligned two spaces after the percentage. Other command tables shorten long paths in the middle and text at the end; finding locations stay intact. Prose wraps intentionally. Terminal-only colour: broken marker/reason red, drift amber, secondary text and suggestion amounts dim; subject default. NO_COLOR disables all escapes and coverage bars. Machine outputs bypass these helpers.
 
 Command tables use the same helper: workspace command / app type; decisions family / token / authored value / source, with resolved value, origin (your theme or Tailwind default), raw/named status and reason below; habits id / break count / severity / enabled status, then reason; ledger moves old key / new key, middle-shortened; doctor status / check / fact / next step. Doctor puts ledger repair commands before explanation so the command survives narrowing. JSON command results retain their existing fields and strings.

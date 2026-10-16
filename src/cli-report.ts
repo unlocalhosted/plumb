@@ -3,7 +3,7 @@ import picomatch from 'picomatch';
 import { count } from './messages.js';
 import { formatText, formatVerboseDetails } from './report.js';
 import { findingContext, findingLines, renderFindingLines } from './cli-findings.js';
-import { shorten, table, wrap } from './cli-table.js';
+import { shorten, table, visibleWidth, wrap } from './cli-table.js';
 import type { Finding, Report, Site } from './report.js';
 import { formatDeadSummary } from './rules/dead.js';
 
@@ -92,9 +92,11 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     return [family, bar.trimEnd(), `${percent}%`, `${number(coverage.findings)} off`];
   });
   const bars = process.stdout.isTTY && process.env.NO_COLOR === undefined;
+  const offWidth = Math.max(1, ...coverageRows.map(row => visibleWidth(row[3]!)));
   lines.push(...table(coverageRows.map(row => bars ? row : [row[0]!, row[2]!, row[3]!]), bars
-    ? [{ width: 9 }, { width: 20 }, { width: 4, align: 'right' }, { weight: 1, align: 'right', ink: 'dim' }]
-    : [{ width: 9 }, { width: 4, align: 'right' }, { weight: 1, align: 'right', ink: 'dim' }], { width: bars ? 58 : 36 }));
+    ? [{ width: 9 }, { width: 20 }, { width: 4, align: 'right' }, { width: offWidth, align: 'right', ink: 'dim' }]
+    : [{ width: 9 }, { width: 4, align: 'right' }, { width: offWidth, align: 'right', ink: 'dim' }],
+  { width: 2 + 9 + 4 + offWidth + (bars ? 26 : 4) }));
   if (!judged.length) lines.push('  No token values to judge.');
   const fix: string[][] = [];
   const findings = report.findings;
