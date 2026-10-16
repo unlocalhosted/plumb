@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import { reportFixture } from './report-fixture.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(repo, 'dist/cli.js');
@@ -46,4 +47,15 @@ test('Fix first reasons stay whole in pipes and PTYs; narrow tables omit reasons
   assert.ok(narrow.split('\n').filter(line => line.includes('plumber check')).every(line => line.trim().split(/ {2,}/).length === 2));
   assert.match(narrow, /plumber check --rule config\n/);
   assert.match(narrow, /plumber check --rule provenance/);
+});
+
+test('top declarations and classes mark counts with × in pipes and PTYs', async t => {
+  const root = await adoption(t), classes = await reportFixture(t);
+  await writeFile(join(classes, 'src/Many.tsx'), `export const Many = () => <>${'<div className="font-mono text-xs" />'.repeat(1024)}</>;`);
+  for (const tty of [false, true]) {
+    assert.match(run(root, [], 80, tty), /gap: 10px ×1 · margin-left: 10px ×1/);
+    const output = run(classes, [], 140, tty);
+    assert.match(output, /font-mono ×1,056/);
+    assert.match(output, /text-xs ×1,056/, 'size and line-height count each authored class site once');
+  }
 });

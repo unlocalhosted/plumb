@@ -52,7 +52,7 @@ Seconds always have one decimal. Without Tailwind, replace the Tailwind/theme se
   ! {n} setup gaps             type roles not set              plumber check --rule config
   · {n} component overrides    callers restyle them            plumber check --rule ownership
   · {n} values off your tokens most in {family}                plumber check --rule provenance
-    {class/value} {sites} · {class/value} {sites} · {class/value} {sites} · {class/value} {sites}
+    {class/value} ×{sites} · {class/value} ×{sites} · {class/value} ×{sites} · {class/value} ×{sites}
 ```
 
 All Fix first rows share width-budgeted columns: count and category, short reason, copyable command. Short reasons are `browser drops them`, `type roles not set`, `tokens missing` (setup without a type-role hint), `callers restyle them`, and `most in {family}`. Reasons are never truncated: if any reason cannot fit its column, omit the reason column for the whole table at that width. The family with the most off-token sites in coverage supplies `most in {family}`. Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.

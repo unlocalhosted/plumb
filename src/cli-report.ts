@@ -128,7 +128,7 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     fix.push([`· ${count(off.length, 'value')} off your tokens`, `most in ${most}`, 'plumber check --rule provenance']);
     const top = [...sites].sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0])).slice(0, 4);
     if (fix.length) lines.push('', 'Fix first', ...fixTable(fix));
-    lines.push(...table([[top.map(([text, sites]) => `${shorten(text, 32)} ${number(sites.size)}`).join(' · ')]], [{ weight: 1, ink: 'dim' }], { indent: 4 }));
+    lines.push(...table([[top.map(([text, sites]) => `${shorten(text, 32)} ×${number(sites.size)}`).join(' · ')]], [{ weight: 1, ink: 'dim' }], { indent: 4 }));
   }
   if (!off.length && fix.length) lines.push('', 'Fix first', ...fixTable(fix));
   if (!report.ledger?.exists) {
