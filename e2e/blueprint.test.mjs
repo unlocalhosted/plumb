@@ -258,7 +258,13 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   assert.ok(['8px', '12px'].includes(designed.gap), `the gap takes a neighbouring step: ${JSON.stringify(designed)}`);
   assert.ok(['12px', '16px'].includes(designed.radius), `the corner takes a neighbouring radius: ${JSON.stringify(designed)}`);
   assert.match(await sheet.innerText(), /as designed · release D/);
-  assert.equal(await overlay.locator('.bp svg.greek rect').first().evaluate((r) => getComputedStyle(r).fill), 'rgb(168, 240, 198)');
+  // Peek changes layout; Greek repaints its rects on a later frame. A locator
+  // can resolve a rect that detaches before evaluate(), yielding an empty fill.
+  // Query and read the live bar together, polling the actual rendered condition.
+  await page.waitForFunction(() => {
+    const bar = document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp svg.greek rect');
+    return bar?.isConnected && getComputedStyle(bar).fill === 'rgb(168, 240, 198)';
+  });
   await page.keyboard.up('d');
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-peek'));
   assert.deepEqual(await page.locator('#sync-row').evaluate((el) => ({ gap: getComputedStyle(el).gap, style: el.getAttribute('style') })), { gap: '10px', style: null });
