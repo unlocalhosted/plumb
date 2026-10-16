@@ -388,6 +388,13 @@ test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves no
   // the pressed step, clicked again, unpicks
   await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').click();
   await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
+  // Unpick redraws the chooser under the pointer. Chromium can enter the new step on a later frame:
+  // zero queued picks still permits a hover preview. Exercise that state, then leave before checking cleanup.
+  const unpicked = chooser(overlay).locator('.cmp .opt[data-pick]').filter({ hasText: /s2/ }).first();
+  await unpicked.hover();
+  assert.equal(await unpicked.getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
+  await page.mouse.move(5, 5);
   await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null, null, { timeout: 5000 });
   // Undo from the dock lifts picks on more than one element
   await pickStep(overlay, /s2/);
