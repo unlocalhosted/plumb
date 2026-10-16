@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -185,11 +185,27 @@ test('cold-cache notice appears once, uses the actual override, stays after clea
   assert.doesNotMatch(warm.stderr, /First run builds a cache/);
   assertBar(warm);
   // A whole-report cache hit skips all inner phases and still completes.
-  const check = await run(project);
+  // Executable configs (including the notice fixture's delay) bypass this cache.
+  await writeFile(project.config, "export default { css: 'src/styles.css' };\n");
+  const args = ['--config', project.config];
+  const events = join(project.cache, 'progress.jsonl');
+  const preload = join(project.cache, 'observe-progress.mjs');
+  await writeFile(preload, `
+import { appendFileSync } from 'node:fs';
+import { onProgress } from ${JSON.stringify(new URL('../dist/profile.js', import.meta.url).href)};
+onProgress(event => appendFileSync(${JSON.stringify(events)}, JSON.stringify(event) + '\\n'));
+`);
+  const check = await run(project, args, { preload });
   assertBar(check);
-  const cached = await run(project);
+  await writeFile(events, '');
+  const cached = await run(project, args, { preload });
   assertBar(cached);
+  const progress = (await readFile(events, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
+  assert.ok(progress.some(event => event.phase === 'phase:config' && event.cached), 'whole-report cache hit');
+  assert.ok(progress.every(event => event.phase === 'phase:config'), JSON.stringify(progress));
   assert.doesNotMatch(cached.stderr, /Reading styles:|Matching components|Checking tokens:/);
+  assert.equal(check.status, cached.status);
+  assert.equal(normalizeTiming(check.stdout), normalizeTiming(cached.stdout));
 });
 
 test('short runs never flash; terminal width, Unicode and locale fallbacks hold', async t => {
