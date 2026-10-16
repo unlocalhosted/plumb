@@ -336,12 +336,14 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 
 - hover-gate: `` `{class or selector}` also applies on touch screens `` · Touch can leave a hover style stuck after a tap. · `` Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)). ``
 - focus-outline: `` `{class}` removes the focus outline on {owner} `` · Keyboard users lose track of focus, and forced-colors mode shows nothing. · Restore an outline on :focus-visible.
-- logical-inline: `` `{class or property}` is a physical side `` · It doesn't mirror in right-to-left layouts. · `` Use `{logical}`. ``
-- viewport-dynamic: `` `{value}` uses vh, which jumps on mobile `` · Mobile toolbars change the viewport height. · Use dvh for a changing viewport, svh for the smallest, lvh for the largest.
-- overflow-clip: `` `overflow-hidden` on {owner} creates a scroll container `` · It breaks position: sticky inside and still allows script scrolling. · Use overflow-clip if nothing scrolls it.
-- overscroll-contain: `` {owner} scrolls, and its scroll leaks to the page `` · Reaching its edge scrolls the page behind it. · Add overscroll-contain.
+- logical-inline: `` `{class or property}` is a physical side `` · It doesn't mirror in right-to-left layouts. · Human fix: `` Use `{logical-property}: {value}`. `` Alignment says `Use text-align: start`; float/clear use `inline-start` or `inline-end`. Asymmetric four-side shorthands show all four logical declarations with their values.
+- viewport-dynamic: `` `{value}` uses vh, which jumps on mobile `` · Mobile toolbars change the viewport height. · Human fixes show the complete declaration for dynamic, smallest and largest viewports, preserving expressions and choosing the matching height/width unit (`height: 100dvh`, `width: 100dvw`).
+- overflow-clip: `` `overflow-hidden` on {owner} creates a scroll container `` · It breaks position: sticky inside and still allows script scrolling. · Use overflow-clip if nothing scrolls it; at declaration sites, name the full declaration (`Use overflow: clip if nothing scrolls it`).
+- overscroll-contain: `` {owner} scrolls, and its scroll leaks to the page `` · Reaching its edge scrolls the page behind it. · Add overscroll-contain; at declaration sites, name the matching property and value (`Add overscroll-behavior-y: contain`).
 - transition-named, no-ease-in, safe-area-fallback: same shape from the habit's reason.
 - Custom habits: Title = `` `{site}` breaks {habit id} ``, Because = the habit's message.
+
+Human safe-area fixes show the complete declaration with `0px` fallbacks, preserving surrounding expressions. Hover gating, focus restoration, transition-property selection and easing selection retain their structural or design advice: they have no universally correct replacement declaration. Custom messages stay author-defined. Human habit fixes wrap intact at word boundaries; machine action/fix/edit strings remain unchanged.
 
 Focus-outline judges actual outline suppression. A visible focus-visible/focus-within ring, or a ring utility on the same element, is a valid companion. Zero/transparent rings, pseudo-elements, other elements, conditional branches and narrower media do not certify the base. Setting box-shadow alone does not remove an outline.
 

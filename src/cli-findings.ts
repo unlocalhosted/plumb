@@ -4,6 +4,8 @@ import { count, familyNames, scales, sourceEdit } from './messages.js';
 import { oneLine, paint, shorten, table, terminalWidth, visibleWidth, wrap, type Ink } from './cli-table.js';
 import { useFor } from './rules/provenance.js';
 import { atSite } from './surfaces/sites.js';
+import { logicalProperty } from './habits/index.js';
+import { tokens } from './rules/families.js';
 
 export interface FindingLine { subject: string; findings: Finding[]; sites: Site[] }
 const identity = (site: Site) => `${site.file}:${site.line}:${site.column}`;
@@ -94,6 +96,38 @@ function choices(group: FindingLine): Decision[] {
   return [...result.values()];
 }
 
+/** Complete CSS suggestions belong to the human projection; machine actions stay unchanged. */
+function habitAction(finding: Finding): string {
+  const { prop, value, origin } = finding.declaration;
+  const important = /\s*!important\s*$/i.test(value) ? ' !important' : '';
+  const amount = value.replace(/\s*!important\s*$/i, '').trim();
+  switch (finding.rule) {
+    case 'habits/logical-inline': {
+      if (['padding', 'margin', 'inset'].includes(prop)) {
+        const parts = tokens(amount, /\s/);
+        if (parts.length === 4) return 'Use ' + ['block-start', 'inline-end', 'block-end', 'inline-start']
+          .map((side, i) => `${prop}-${side}: ${parts[i]}${important}`).join('; ') + '.';
+      }
+      const property = logicalProperty(prop, amount.toLowerCase());
+      const replacement = ['text-align', 'float', 'clear'].includes(prop)
+        ? `${prop}: ${prop === 'text-align' ? property : `inline-${property}`}${important}` : `${property}: ${value}`;
+      return `Use ${replacement}.`;
+    }
+    case 'habits/viewport-dynamic':
+      return 'Use ' + [['d', 'changing viewport'], ['s', 'smallest'], ['l', 'largest']].map(([unit, why]) =>
+        `${prop}: ${value.replace(/(?<![\w.])([-+]?(?:\d*\.)?\d+)v([hw])\b/gi, `$1${unit}v$2`)} (${why})`).join(' · ') + '.';
+    case 'habits/safe-area-fallback':
+      return `Use ${prop}: ${value.replace(/env\(\s*(safe-area-inset-[\w-]+)\s*\)/gi, 'env($1, 0px)')}, alongside the element’s own spacing.`;
+    case 'habits/overflow-clip':
+      if (!['class', 'arbitrary'].includes(origin)) return `Use ${prop}: ${value.replace(/\bhidden\b/gi, 'clip')} if nothing scrolls it.`;
+      break;
+    case 'habits/overscroll-contain':
+      if (!['class', 'arbitrary'].includes(origin)) return `Add ${prop.replace('overflow', 'overscroll-behavior')}: contain.`;
+      break;
+  }
+  return finding.action ?? finding.fix;
+}
+
 function suggestion(group: FindingLine, width: number): string {
   const tokens = choices(group);
   if (tokens.length) {
@@ -115,9 +149,10 @@ function suggestion(group: FindingLine, width: number): string {
     const compact = shorten(text(visibleWidth(text(true)) <= width), width);
     return compact.split(/( \([^)]*\))/).map((part, i) => i % 2 ? paint(part, 'dim') : part).join('');
   }
-  const actions = [...new Set(group.findings.map(finding => finding.action ?? finding.fix).filter(Boolean))];
+  const habits = group.findings.every(finding => finding.rule.startsWith('habits/'));
+  const actions = [...new Set(group.findings.map(finding => habits ? habitAction(finding) : finding.action ?? finding.fix).filter(Boolean))];
   const action = actions.join(' · ').replaceAll('`', '').replace(/\.$/, '');
-  return action ? paint(shorten(action, width), 'dim') : '';
+  return action ? paint(habits ? action : shorten(action, width), 'dim') : '';
 }
 
 export function renderFindingLines(groups: FindingLine[], path: (file: string) => string, showRules = false): string {
@@ -163,7 +198,7 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
     };
     if (collision) continued(group.subject);
     if (visibleWidth(reason) > reasonWidth) continued(reason, ink);
-    if (fix) lines.push(`     ${paint('→', 'dim')} ${fix}`);
+    if (fix) lines.push(wrap(`     ${paint('→', 'dim')} ${fix}`, width));
     if (visibleWidth(location) > locationWidth) continued(location, 'dim');
     if (group.sites.length > 1) {
       const shown: string[] = [];

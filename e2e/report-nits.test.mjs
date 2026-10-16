@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { appendFile, cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -71,5 +71,32 @@ test('compact sites sort by file then numeric line before taking four, in pipes 
   await writeFile(join(root, 'src/z.css'), '.z:hover { color: red; }');
   for (const tty of [false, true]) {
     assert.match(run(root, ['--rule', 'habits'], 80, tty), /A.css:1 · styles.css:1 · styles.css:3 · styles.css:5 · \+4/);
+  }
+});
+
+test('habit fixes name complete declarations and wrap without losing replacements in pipes and PTYs', async t => {
+  const root = await fixture(t, 'habits');
+  await appendFile(join(root, 'src/styles.css'), '\n.extra { text-align: right; float: left; clear: right; margin: 1px 2px 3px 4px; inset: 1px 2px 3px 4px; }\n');
+  await appendFile(join(root, 'src/App.tsx'), '\nexport const Inline = () => <div style={{textAlign: "left", marginRight: 2}} />;\n');
+  const expected = [
+    'Use text-align: start', 'Use text-align: end', 'Use float: inline-start', 'Use clear: inline-end',
+    'Use inset-inline-start: 10px', 'Use margin-inline-end: 2px',
+    'Use border-inline-start-width: 1px', 'Use border-start-start-radius: 2px',
+    ...['padding', 'margin', 'inset'].map(prop => `Use ${prop}-block-start: 1px; ${prop}-inline-end: 2px; ${prop}-block-end: 3px; ${prop}-inline-start: 4px`),
+    'Use height: calc(100dvh - 2px) (changing viewport) · height: calc(100svh - 2px) (smallest) · height: calc(100lvh - 2px) (largest)',
+    'Use width: 100dvw (changing viewport) · width: 100svw (smallest) · width: 100lvw (largest)',
+    'Use padding: env(safe-area-inset-top, 0px)', 'Use margin: var(--space, env(safe-area-inset-bottom, 0px))',
+    'Use overflow: clip if nothing scrolls it', 'Add overscroll-behavior-y: contain', 'Add overscroll-behavior: contain',
+  ];
+  for (const tty of [false, true]) {
+    const output = run(root, ['--rule', 'habits'], 80, tty);
+    const text = output.replace(/\s+/g, ' ');
+    for (const action of expected) assert.ok(text.includes('→ ' + action), action);
+    assert.doesNotMatch(output, /→ Use (?:start|end|inset-inline-start|margin-inline-end)\n/);
+    const lines = output.split('\n');
+    for (const line of lines) assert.ok([...line].length <= (tty ? 80 : 100), line);
+    for (let i = 0; i < lines.length; i++) if (lines[i].includes('→')) {
+      do { assert.ok(!lines[i].includes('…'), lines[i]); i++; } while (lines[i]?.trim() && !lines[i].includes('→'));
+    }
   }
 });

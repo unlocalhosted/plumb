@@ -188,7 +188,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
   return { findings: [...findings.values()], summaries };
 }
 
-function logicalProperty(prop: string, value: string): string {
+export function logicalProperty(prop: string, value: string): string {
   if (['text-align', 'float', 'clear'].includes(prop)) return value === 'left' ? 'start' : 'end';
   if (prop === 'left' || prop === 'right') return prop === 'left' ? 'inset-inline-start' : 'inset-inline-end';
   const corner = /^border-(top|bottom)-(left|right)-radius$/.exec(prop);
