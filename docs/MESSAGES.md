@@ -401,7 +401,7 @@ Short phrases:
 - Missing tokens: `setup gap; no tokens configured`. Runtime values: `computed at runtime; cannot check`.
 - Unused tokens: `never used in your source`. Other rules retain their specific effect, without repeating the subject.
 
-Suggestions name the utility at class sites, or `var(--token)` at CSS/inline sites, followed by the amount. Include a token reason only when at most 28 characters and all alternatives still fit. Inventory tokens are never presented as interchangeable fixes. Single and multiple sites use basenames, or the shortest unique path tail when basenames collide. A single location that exceeds its column moves intact below the subject. Multiple sites show up to four fitting sites and a `+{remaining}` count.
+Suggestions name the utility at class sites, or `var(--token)` at CSS/inline sites, followed by the amount. Include a token reason only when at most 28 characters and all alternatives still fit. Inventory tokens are never presented as interchangeable fixes. Single and multiple sites use basenames, or the shortest unique path tail when basenames collide. A single location that exceeds its column moves intact below the subject. Multiple sites sort by file, then numeric line and column, before showing up to four fitting sites and a `+{remaining}` count.
 
 Each rule's because text appears once in the closing Why block. No rule id unless verbose or explicitly filtered with --rule. One accept example uses a displayed site; shell continuations preserve copyability at narrow widths.
 

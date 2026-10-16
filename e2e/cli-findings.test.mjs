@@ -140,7 +140,7 @@ ${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321
   const expected = {
     80: `  !  font-family: var(--x)          raw type              3 sites in 2 files
      → var(--font-code) (monospace)
-     styles.css:2 · Inline.tsx:2 · Inline.tsx:3
+     Inline.tsx:2 · Inline.tsx:3 · styles.css:2
 
   !  font: 8px var(--x)                                   2 sites in 1 file
      raw type · off your type scale
@@ -153,7 +153,7 @@ ${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321
      EscapeAndOutsideClickPhase.tsx:1`,
     100: `  !  font-family: var(--x)                   raw type                    3 sites in 2 files
      → var(--font-code) (monospace)
-     styles.css:2 · Inline.tsx:2 · Inline.tsx:3
+     Inline.tsx:2 · Inline.tsx:3 · styles.css:2
 
   !  font: 8px var(--x)                                                  2 sites in 1 file
      raw type · off your type scale

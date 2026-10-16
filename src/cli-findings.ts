@@ -36,6 +36,7 @@ export function findingLines(findings: Finding[]): FindingLine[] {
     if (!group.findings.includes(finding)) group.findings.push(finding);
     if (!seen.get(key)!.has(identity(site))) { group.sites.push(site); seen.get(key)!.add(identity(site)); }
   }
+  for (const group of groups.values()) group.sites.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column);
   return [...groups.values()];
 }
 

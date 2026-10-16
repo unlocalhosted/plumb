@@ -10,11 +10,11 @@ import { reportFixture } from './report-fixture.mjs';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(repo, 'dist/cli.js');
 const strip = text => text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '').replaceAll('\r', '');
-async function adoption(t) {
+async function fixture(t, name = 'adoption') {
   const root = await mkdtemp(join(tmpdir(), 'plumb-report-nits-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  await cp(join(repo, 'fixtures/adoption'), root, { recursive: true });
-  for (const file of ['plumber.config.ts', '.plumber']) await rm(join(root, file), { recursive: true, force: true });
+  await cp(join(repo, 'fixtures', name), root, { recursive: true });
+  if (name === 'adoption') for (const file of ['plumber.config.ts', '.plumber']) await rm(join(root, file), { recursive: true, force: true });
   return root;
 }
 function run(root, args = [], columns = 80, tty = false) {
@@ -34,7 +34,7 @@ function run(root, args = [], columns = 80, tty = false) {
 }
 
 test('Fix first reasons stay whole in pipes and PTYs; narrow tables omit reasons', async t => {
-  const root = await adoption(t);
+  const root = await fixture(t);
   for (const tty of [false, true]) {
     const rows = run(root, [], 80, tty).split('Fix first\n')[1].split('\n\n')[0].split('\n').filter(line => line.includes('plumber check'));
     assert.equal(rows.length, 2);
@@ -50,12 +50,26 @@ test('Fix first reasons stay whole in pipes and PTYs; narrow tables omit reasons
 });
 
 test('top declarations and classes mark counts with × in pipes and PTYs', async t => {
-  const root = await adoption(t), classes = await reportFixture(t);
+  const root = await fixture(t), classes = await reportFixture(t);
   await writeFile(join(classes, 'src/Many.tsx'), `export const Many = () => <>${'<div className="font-mono text-xs" />'.repeat(1024)}</>;`);
   for (const tty of [false, true]) {
     assert.match(run(root, [], 80, tty), /gap: 10px ×1 · margin-left: 10px ×1/);
     const output = run(classes, [], 140, tty);
     assert.match(output, /font-mono ×1,056/);
     assert.match(output, /text-xs ×1,056/, 'size and line-height count each authored class site once');
+  }
+});
+
+test('compact sites sort by file then numeric line before taking four, in pipes and PTYs', async t => {
+  const root = await fixture(t, 'habits');
+  for (const tty of [false, true]) {
+    const output = run(root, ['--rule', 'habits'], 80, tty);
+    assert.match(output, /styles.css:1 · styles.css:3 · styles.css:5 · styles.css:6 · \+2/);
+    assert.match(output, /styles.css:30 · styles.css:32/);
+  }
+  await writeFile(join(root, 'src/A.css'), '.a:hover { color: red; }');
+  await writeFile(join(root, 'src/z.css'), '.z:hover { color: red; }');
+  for (const tty of [false, true]) {
+    assert.match(run(root, ['--rule', 'habits'], 80, tty), /A.css:1 · styles.css:1 · styles.css:3 · styles.css:5 · \+4/);
   }
 });
