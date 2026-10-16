@@ -149,8 +149,8 @@ ${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321
 
   !  font: 7px var(--x)
      raw type · off your type scale
-     EscapeAndOutsideClickPhase.tsx:1
-     → var(--font-code) (monospace)`,
+     → var(--font-code) (monospace)
+     EscapeAndOutsideClickPhase.tsx:1`,
     100: `  !  font-family: var(--x)                   raw type                    3 sites in 2 files
      → var(--font-code) (monospace)
      styles.css:2 · Inline.tsx:2 · Inline.tsx:3
@@ -162,13 +162,19 @@ ${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321
 
   !  font: 7px var(--x)
      raw type · off your type scale
-     EscapeAndOutsideClickPhase.tsx:1
-     → var(--font-code) (monospace)`,
+     → var(--font-code) (monospace)
+     EscapeAndOutsideClickPhase.tsx:1`,
   };
   for (const columns of [80, 100]) {
     const detail = bounded(pty(root, ['check', '--family', 'type'], columns, cache, true), columns);
     const blocks = detail.split('\n\n').filter(block => /^  !  /.test(block));
     assert.equal(blocks.join('\n\n'), expected[columns]);
+    for (const block of blocks) {
+      const lines = block.split('\n'), fix = lines.findIndex(line => line.includes('→'));
+      assert.ok(fix > 0, block);
+      assert.ok(lines.slice(fix + 1).some(line => /\.tsx?:\d|\.css:\d/.test(line)), 'sites follow the fix: ' + block);
+      assert.ok(!lines.slice(1, fix).some(line => /\.tsx?:\d|\.css:\d/.test(line)), 'no location before the fix: ' + block);
+    }
     const summary = bounded(pty(root, [], columns, cache), columns);
     const coverage = strip(summary).split('On your tokens\n')[1].split('\n\n')[0];
     assert.equal(coverage, `  type       ░░░░░░░░░░░░░░░░░░░░    0%      9 off

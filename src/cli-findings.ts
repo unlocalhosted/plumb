@@ -162,8 +162,8 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
     };
     if (collision) continued(group.subject);
     if (visibleWidth(reason) > reasonWidth) continued(reason, ink);
-    if (visibleWidth(location) > locationWidth) continued(location, 'dim');
     if (fix) lines.push(`     ${paint('→', 'dim')} ${fix}`);
+    if (visibleWidth(location) > locationWidth) continued(location, 'dim');
     if (group.sites.length > 1) {
       const shown: string[] = [];
       for (const site of group.sites.slice(0, 4)) {
