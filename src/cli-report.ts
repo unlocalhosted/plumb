@@ -3,7 +3,7 @@ import picomatch from 'picomatch';
 import { count } from './messages.js';
 import { formatText, formatVerboseDetails } from './report.js';
 import { findingContext, findingLines, renderFindingLines } from './cli-findings.js';
-import { shorten, table, visibleWidth, wrap } from './cli-table.js';
+import { shorten, table, terminalWidth, visibleWidth, wrap } from './cli-table.js';
 import type { Finding, Report, Site } from './report.js';
 import { formatDeadSummary } from './rules/dead.js';
 
@@ -73,6 +73,15 @@ function header(report: Report): string {
   return wrap(`React Plumber  ${basename(report.root)} · ${theme} · ${number(Object.values(report.files).reduce((sum, n) => sum + n, 0))} files · ${(report.timing.totalMs / 1000).toFixed(1)}s`);
 }
 
+function fixTable(rows: string[][]): string[] {
+  const reasonWidth = Math.max(1, Math.floor((terminalWidth() - 2 - 4 - 32) / 2));
+  const showReason = rows.every(row => visibleWidth(row[1]!) <= reasonWidth);
+  return table(rows.map(row => [
+    { text: row[0]!, ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const },
+    ...(showReason ? [row[1]!] : []), row[2]!,
+  ]), showReason ? [{ weight: 1 }, { weight: 1 }, { width: 32 }] : [{ weight: 1 }, { width: 32 }]);
+}
+
 export function formatCheck(report: Report, filters: DetailFilters = {}, verbose = false): string {
   if (filters.all && Object.entries(filters).every(([key, value]) => key === 'all' || value === undefined || value === false)) return formatAll(report, verbose);
   if (Object.values(filters).some(value => value !== undefined && value !== false)) {
@@ -103,9 +112,9 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
   const brokenCount = findings.filter(broken).length;
   const gapCount = findings.filter(setup).length + Object.keys(report.configHints ?? {}).length;
   const overrides = findings.filter(override).length;
-  if (brokenCount) fix.push([`✗ ${count(brokenCount, 'broken style')}`, 'the browser drops them', 'plumber check --broken']);
-  if (gapCount) fix.push([`! ${count(gapCount, 'setup gap')}`, report.configHints?.type ? "type roles aren't configured" : 'tokens are missing or unreadable', 'plumber check --rule config']);
-  if (overrides) fix.push([`· ${count(overrides, 'component override')}`, 'callers restyle your components', 'plumber check --rule ownership']);
+  if (brokenCount) fix.push([`✗ ${count(brokenCount, 'broken style')}`, 'browser drops them', 'plumber check --broken']);
+  if (gapCount) fix.push([`! ${count(gapCount, 'setup gap')}`, report.configHints?.type ? 'type roles not set' : 'tokens missing', 'plumber check --rule config']);
+  if (overrides) fix.push([`· ${count(overrides, 'component override')}`, 'callers restyle them', 'plumber check --rule ownership']);
   const off = findings.filter(offToken);
   if (off.length) {
     // Class/value counts use distinct authored sites, so text-xs isn't counted twice for size and leading.
@@ -118,10 +127,10 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     const most = families.reduce((best, family) => report.coverage[family].findings > report.coverage[best].findings ? family : best, families[0]);
     fix.push([`· ${count(off.length, 'value')} off your tokens`, `most in ${most}`, 'plumber check --rule provenance']);
     const top = [...sites].sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0])).slice(0, 4);
-    if (fix.length) lines.push('', 'Fix first', ...table(fix.map(row => row.map((text, i) => ({ text, ...(i === 0 ? { ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const } : {}) }))), [{ weight: 1 }, { weight: 1 }, { width: 32 }]));
+    if (fix.length) lines.push('', 'Fix first', ...fixTable(fix));
     lines.push(...table([[top.map(([text, sites]) => `${shorten(text, 32)} ${number(sites.size)}`).join(' · ')]], [{ weight: 1, ink: 'dim' }], { indent: 4 }));
   }
-  if (!off.length && fix.length) lines.push('', 'Fix first', ...table(fix.map(row => row.map((text, i) => ({ text, ...(i === 0 ? { ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const } : {}) }))), [{ weight: 1 }, { weight: 1 }, { width: 32 }]));
+  if (!off.length && fix.length) lines.push('', 'Fix first', ...fixTable(fix));
   if (!report.ledger?.exists) {
     lines.push('', 'This is your first run, so all of this counts as new.',
       '  plumber baseline      record today\'s drift as debt; from then on only new drift fails',
