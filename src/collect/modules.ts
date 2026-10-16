@@ -1,7 +1,8 @@
 import { cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync, statSync } from 'node:fs';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseSync } from 'oxc-parser';
@@ -125,9 +126,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
   profileProgress('phase:modules', { current: queue.length });
   if (!readOnly) {
     await mkdir(directory, { recursive: true });
-    const temporary = `${path}.${process.pid}.tmp`;
-    await writeFile(temporary, JSON.stringify(nextCache));
-    await rename(temporary, path);
+    await atomicWrite(path, JSON.stringify(nextCache));
   }
   counts.totalMs = performance.now() - start;
   return { diagnostics, imports, notes, counts };

@@ -1,5 +1,6 @@
 import { statePath } from '../paths.js';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { dirname, join } from 'node:path';
 import { UsageError } from '../errors.js';
 import type { LedgerEntry } from './types.js';
@@ -37,7 +38,5 @@ export async function writeLedger(root: string, entries: LedgerEntry[]): Promise
   const text = sorted.map(entry => JSON.stringify(entry)).join('\n') + (sorted.length ? '\n' : '');
   parseLedger(text, path);
   await mkdir(dirname(path), { recursive: true });
-  const temporary = `${path}.${process.pid}.tmp`;
-  await writeFile(temporary, text);
-  await rename(temporary, path);
+  await atomicWrite(path, text);
 }

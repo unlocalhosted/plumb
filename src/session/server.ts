@@ -2,7 +2,7 @@ import { statePath, stateDirectory } from '../paths.js';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
@@ -13,7 +13,10 @@ import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.
 import { isIP } from 'node:net';
 import { overlayClient, overlayModules } from '../hosts/client.js';
 
-export interface ServeInfo { port: number; pid: number; token: string; root: string; config: string | null; protocol: 1; overlay?: boolean; origin?: string }
+import { atomicWrite } from '../atomic-write.js';
+import { readDiscovery } from './discovery.js';
+import type { ServeInfo } from './discovery.js';
+export type { ServeInfo } from './discovery.js';
 export interface HandlerOptions {
   token?: string; prefix?: string;
   /** Absolute directory the host serves browser source paths from. */ servedRoot?: string;
@@ -251,11 +254,13 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
   const root = resolve(options.root ?? process.cwd()), path = statePath(root, 'serve.json');
   // A live PID owns its discovery file. Never overwrite another daemon.
   try {
-    const old = JSON.parse(await readFile(path, 'utf8')) as ServeInfo;
-    let alive = false;
-    if (Number.isSafeInteger(old.pid) && old.pid > 0) try { process.kill(old.pid, 0); alive = true; } catch (error) { alive = (error as NodeJS.ErrnoException).code === 'EPERM'; }
-    if (alive) throw new UsageError(`A server is already running for this project. Use its ${statePath(root, 'serve.json')} connection.`);
-    await rm(path);
+    const old = await readDiscovery(root);
+    if (old) {
+      let alive = false;
+      try { process.kill(old.pid, 0); alive = true; } catch (error) { alive = (error as NodeJS.ErrnoException).code === 'EPERM'; }
+      if (alive) throw new UsageError(`A server is already running for this project. Use its ${statePath(root, 'serve.json')} connection.`);
+      await rm(path);
+    }
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, ...sessionOptions } = options;
   const session = await Session.create({ ...sessionOptions, root });
@@ -271,12 +276,12 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
     const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1,
       ...(options.overlay ? { overlay: true, origin: origin! } : {}) };
     await mkdir(stateDirectory(root), { recursive: true, mode: 0o700 });
-    await writeFile(path, JSON.stringify(info) + '\n', { flag: 'wx', mode: 0o600 });
+    await atomicWrite(path, JSON.stringify(info) + '\n', { exclusive: true, mode: 0o600 });
     let closed = false;
     return { session, server, info, async close() {
       if (closed) return; closed = true;
       server.closeAllConnections(); await new Promise<void>(done => server.close(() => done())); await session.close();
-      try { const current = JSON.parse(await readFile(path, 'utf8')) as ServeInfo; if (current.token === token) await rm(path); }
+      try { const current = await readDiscovery(root); if (current?.token === token) await rm(path); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
     } };
   } catch (error) { server.close(); await session.close(); throw error; }

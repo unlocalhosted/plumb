@@ -1,6 +1,7 @@
 import { cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { join, resolve } from 'node:path';
 import type { CandidateCss } from '../lower/css.js';
 
@@ -19,8 +20,7 @@ export async function suggestionCache(root: string, candidates: Map<string, Cand
     async save(): Promise<void> {
       if (readOnly || size === rankings.size) return;
       await mkdir(directory, { recursive: true });
-      const temporary = `${path}.${process.pid}.tmp`;
-      await writeFile(temporary, JSON.stringify([...rankings])); await rename(temporary, path);
+      await atomicWrite(path, JSON.stringify([...rankings]));
     },
   };
 }

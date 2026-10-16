@@ -1,7 +1,8 @@
 import { environment, cacheDirectory } from '../paths.js';
 import { profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -369,9 +370,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   result.diagnostics = uniqueDiagnostics([diagnostics]);
   if (!readOnly && !result.diagnostics.length) {
     await mkdir(directory, { recursive: true });
-    const temporary = join(directory, `${hash}-${process.pid}.json`);
-    await writeFile(temporary, JSON.stringify(result));
-    await rename(temporary, path);
+    await atomicWrite(path, JSON.stringify(result));
   }
   return result;
 }

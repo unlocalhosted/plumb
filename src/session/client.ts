@@ -1,5 +1,4 @@
-import { statePath } from '../paths.js';
-import { readFile } from 'node:fs/promises';
+import { readDiscovery } from './discovery.js';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import type { CheckOptions } from '../index.js';
@@ -8,17 +7,13 @@ import type { TryOptions } from '../try.js';
 import { BusyError, errorMessage, UsageError } from '../errors.js';
 import { Session } from './index.js';
 import { tokenHeader } from './server.js';
-import type { ServeInfo } from './server.js';
+import type { ServeInfo } from './discovery.js';
 
 async function connection(options: Pick<CheckOptions, 'root' | 'config'>): Promise<ServeInfo | undefined> {
   const root = resolve(options.root ?? process.cwd());
-  try {
-    const info = JSON.parse(await readFile(statePath(root, 'serve.json'), 'utf8')) as ServeInfo;
-    if (info.protocol !== 1 || info.root !== root || !Number.isSafeInteger(info.port) || info.port < 1 || info.port > 65535 ||
-        !Number.isSafeInteger(info.pid) || info.pid < 1 || typeof info.token !== 'string' || !/^[a-f0-9]{64}$/.test(info.token) ||
-        info.config !== (options.config === undefined ? null : resolve(root, options.config))) return;
-    return info;
-  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) return; throw error; }
+  const info = await readDiscovery(root);
+  if (!info || info.root !== root || info.config !== (options.config === undefined ? null : resolve(root, options.config))) return;
+  return info;
 }
 export async function serverRequest<T>(method: string, params: Record<string, unknown>, options: Pick<CheckOptions, 'root' | 'config'> = {}): Promise<T | undefined> {
   const info = await connection(options); if (!info) return;

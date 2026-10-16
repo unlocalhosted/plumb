@@ -1,7 +1,8 @@
 import { cacheDirectory } from '../paths.js';
 import { serialize, deserialize } from 'node:v8';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { join, resolve } from 'node:path';
 import type { ClassSite } from './classes.js';
 import type { SourceStyles } from './inline.js';
@@ -43,8 +44,7 @@ export function collectionCache(root: string, helpers: ClassHelperInput[], texts
       const stored: SerializedData = { ...data, styles: { ...data.styles, sites: data.styles.sites.map(site => ({ ...site, declarations: site.declarations.map(declaration => ids.get(declaration)!) })) } };
       const receipt: Receipt = { data: stored, dependencies: [...dependencies], resolutions: [...resolutions].map(([key, path]) => [key, path ?? null]) };
       await mkdir(directory, { recursive: true });
-      const temporary = `${path}.${process.pid}.tmp`;
-      await writeFile(temporary, serialize(receipt)); await rename(temporary, path);
+      await atomicWrite(path, serialize(receipt));
     },
   };
 }

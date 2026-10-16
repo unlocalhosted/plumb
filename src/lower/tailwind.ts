@@ -1,6 +1,7 @@
 import { environment, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { atomicWrite } from '../atomic-write.js';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -277,12 +278,10 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     }
     if (!readOnly && (misses.length || system)) {
       await mkdir(directory, { recursive: true });
-      const temporary = join(directory, `candidates-${process.pid}.json`);
-      await writeFile(temporary, JSON.stringify(cached));
-      await rename(temporary, join(directory, 'candidates.json'));
-      if (!hintsFailed) await writeFile(suggestionPath, JSON.stringify(suggestions));
-      await writeFile(join(directory, 'theme.json'), JSON.stringify(theme));
-      if (probeHover && !hoverFailed) await writeFile(hoverPath, JSON.stringify(hoverVariants));
+      await atomicWrite(join(directory, 'candidates.json'), JSON.stringify(cached));
+      if (!hintsFailed) await atomicWrite(suggestionPath, JSON.stringify(suggestions));
+      await atomicWrite(join(directory, 'theme.json'), JSON.stringify(theme));
+      if (probeHover && !hoverFailed) await atomicWrite(hoverPath, JSON.stringify(hoverVariants));
     }
     if (memory) { memory.cached = cached; memory.cachedCount = cachedCount; if (system) memory.system = system; memory.theme = theme ?? []; if (hoverFailed) delete memory.hoverVariants; else memory.hoverVariants = hoverVariants ?? []; }
     for (const candidate of candidates) if (!results.has(candidate)) results.set(candidate, cached[candidate]!);

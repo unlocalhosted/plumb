@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve, matchesGlob } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { planHooks, writeHooks } from '../surfaces/hooks.js';
 import { UsageError } from '../errors.js';
-import type { ServeInfo } from '../session/server.js';
+import { readDiscovery } from '../session/discovery.js';
 import { writeOverlay } from './overlay.js';
 import { overlaySetupNotice } from '../setup-messages.js';
 
@@ -134,8 +134,7 @@ async function overlayWiring(root: string, write = false): Promise<string> {
     'plumb()',
     '',
   ].join('\n');
-  const discovery = await content(statePath(root, 'serve.json'));
-  const info = discovery === undefined ? undefined : JSON.parse(discovery) as ServeInfo;
+  const info = await readDiscovery(root);
   const ready = info?.overlay === true && info.root === resolve(root) && Number.isSafeInteger(info.port) && info.port > 0 && info.port <= 65535 && /^[a-f\d]{64}$/.test(info.token);
   return [
     ...(ready ? [] : ['Start your overlay server (replace the origin with your development page origin):',

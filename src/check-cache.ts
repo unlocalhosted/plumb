@@ -1,7 +1,7 @@
 import { cacheDirectory, statePath } from './paths.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { deserialize, serialize } from 'node:v8';
@@ -177,26 +177,27 @@ export class CheckCache {
     const inputs = { inventory, files: [...after], stamps, directories, resolutions: [...uniqueResolutions.values()], compiler };
     const generation = hash(JSON.stringify(inputs));
     const receipt: Receipt = { generation, ...inputs };
-    const temporary = `${this.directory}.${process.pid}.tmp`;
-    await mkdir(temporary, { recursive: true }); await mkdir(this.directory, { recursive: true });
-    profileProgress('phase:cache-binary');
-    await writeFile(join(temporary, 'report.v8'), serialize(report));
-    // Timing is supplied by the current caller; reuse the expensive evidence
-    // serialization rather than traversing hundreds of thousands of rows.
-    const { timing: _timing, ...evidence } = report;
-    evidence.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
-    profileProgress('phase:cache-json');
-    const json = JSON.stringify(evidence).slice(0, -1);
-    profileProgress('phase:cache-json-write');
-    await writeFile(join(temporary, 'report.json'), json);
-    profileProgress('phase:cache-publish');
-    const timing = { ...report.timing, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])), cacheHits: report.classes.unique, cacheMisses: 0 };
-    await writeFile(join(temporary, 'status.json'), JSON.stringify({ exit: report.findings.some(finding => finding.severity === 'error') ? 1 : 0, timing }));
-    await writeFile(join(temporary, 'inputs.json'), JSON.stringify(receipt));
-    await rename(join(temporary, 'report.v8'), join(this.directory, `${generation}.v8`));
-    await rename(join(temporary, 'report.json'), join(this.directory, `${generation}.json`));
-    await rename(join(temporary, 'status.json'), join(this.directory, `${generation}.status.json`));
-    await rename(join(temporary, 'inputs.json'), join(this.directory, 'inputs.json'));
-    await rm(temporary, { recursive: true, force: true });
+    await mkdir(this.directory, { recursive: true });
+    const temporary = await mkdtemp(`${this.directory}.tmp-`);
+    try {
+      profileProgress('phase:cache-binary');
+      await writeFile(join(temporary, 'report.v8'), serialize(report));
+      // Timing is supplied by the current caller; reuse the expensive evidence
+      // serialization rather than traversing hundreds of thousands of rows.
+      const { timing: _timing, ...evidence } = report;
+      evidence.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
+      profileProgress('phase:cache-json');
+      const json = JSON.stringify(evidence).slice(0, -1);
+      profileProgress('phase:cache-json-write');
+      await writeFile(join(temporary, 'report.json'), json);
+      profileProgress('phase:cache-publish');
+      const timing = { ...report.timing, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])), cacheHits: report.classes.unique, cacheMisses: 0 };
+      await writeFile(join(temporary, 'status.json'), JSON.stringify({ exit: report.findings.some(finding => finding.severity === 'error') ? 1 : 0, timing }));
+      await writeFile(join(temporary, 'inputs.json'), JSON.stringify(receipt));
+      await rename(join(temporary, 'report.v8'), join(this.directory, `${generation}.v8`));
+      await rename(join(temporary, 'report.json'), join(this.directory, `${generation}.json`));
+      await rename(join(temporary, 'status.json'), join(this.directory, `${generation}.status.json`));
+      await rename(join(temporary, 'inputs.json'), join(this.directory, 'inputs.json'));
+    } finally { await rm(temporary, { recursive: true, force: true }); }
   }
 }

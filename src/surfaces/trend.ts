@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { UsageError } from '../errors.js';
 import { readLedger } from '../ledger/store.js';
@@ -98,15 +98,15 @@ export async function recordTrend(report: Report): Promise<{ record: TrendRecord
   const directory = join(report.root, 'plumb');
   await mkdir(directory, { recursive: true });
   // Prepare both complete files before replacing either. Each rename is atomic.
-  const temporary = (name: string) => join(directory, `${name}.${process.pid}.tmp`);
+  const staging = await mkdtemp(join(directory, '.trend-'));
+  const temporary = (name: string) => join(staging, name);
   try {
     await writeFile(temporary('report.json'), JSON.stringify(record, null, 2) + '\n');
     await writeFile(temporary('trend.json'), JSON.stringify(trend, null, 2) + '\n');
     await rename(temporary('report.json'), join(directory, 'report.json'));
     await rename(temporary('trend.json'), join(directory, 'trend.json'));
   } finally {
-    await rm(temporary('report.json'), { force: true });
-    await rm(temporary('trend.json'), { force: true });
+    await rm(staging, { recursive: true, force: true });
   }
   return { record, trend };
 }
