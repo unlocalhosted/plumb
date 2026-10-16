@@ -113,7 +113,7 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
       const entries = sites.get(text) ?? new Set<string>();
       entries.add(`${site.file}:${site.line}:${site.column}`); sites.set(text, entries);
     }
-    const most = families.reduce((best, family) => off.filter(f => f.family === family).length > off.filter(f => f.family === best).length ? family : best, families[0]);
+    const most = families.reduce((best, family) => report.coverage[family].findings > report.coverage[best].findings ? family : best, families[0]);
     fix.push([`· ${count(off.length, 'value')} off your tokens`, `most in ${most}`, 'plumber check --rule provenance']);
     const top = [...sites].sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0])).slice(0, 4);
     if (fix.length) lines.push('', 'Fix first', ...table(fix.map(row => row.map((text, i) => ({ text, ...(i === 0 ? { ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const } : {}) }))), [{ weight: 1 }, { weight: 1 }, { width: 32 }]));

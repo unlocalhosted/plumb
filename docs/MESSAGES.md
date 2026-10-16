@@ -55,7 +55,7 @@ Seconds always have one decimal. Without Tailwind, replace the Tailwind/theme se
     {class/value} {sites} · {class/value} {sites} · {class/value} {sites} · {class/value} {sites}
 ```
 
-All Fix first rows use three shared, width-budgeted columns: count and category, short reason, copyable command. Setup without a type-role hint says `tokens are missing or unreadable`. The largest off-token family supplies `most in {family}`. Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.
+All Fix first rows use three shared, width-budgeted columns: count and category, short reason, copyable command. Setup without a type-role hint says `tokens are missing or unreadable`. The family with the most off-token sites in coverage supplies `most in {family}`. Use singular nouns for one. The top four class/value counts deduplicate the same authored site across rules (for example, text-xs font size and line height). Collapse whitespace in these labels and limit each to 32 characters. `provenance` as a category excludes opaque runtime information; its exact `provenance/opaque-inline` rule remains selectable. `--rule config` also prints configHints in a closing `Setup` block; other filters intersect with findings and their sites.
 
 Without a ledger:
 

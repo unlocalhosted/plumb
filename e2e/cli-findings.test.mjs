@@ -49,6 +49,8 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
   await writeFile(join(root, 'src/Expression.tsx'), `export const Expression = ({ready}) => <div style={{ color: ready ?
     'var(--never-defined-with-a-long-name)' :
     'var(--never-defined-with-another-long-name)' }} />;`);
+  // More distinct colour groups, but more off-token authored sites in type.
+  await appendFile(join(root, 'src/styles.css'), Array.from({ length: 50 }, (_, i) => `\n.extra${i} { color: #${i.toString(16).padStart(6, '0')}; }`).join(''));
   for (const columns of [80, 140]) {
     const type = bounded(pty(root, ['--family', 'type'], columns, cache), columns);
     assert.equal((type.match(/^  !  text-xs\s/gm) ?? []).length, 1);
@@ -61,6 +63,7 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
     assert.doesNotMatch(strip(broken), /^\s+'var|^\s+['"]\s*}/m);
     const summary = pty(root, [], columns, cache);
     bounded(summary, columns); assert.match(summary, /\x1b\[33m/);
+    assert.match(strip(summary), /most in type/);
     const fixRows = strip(summary).split('Fix first\n')[1].split('\n').filter(line => line.includes('plumber check'));
     assert.equal(fixRows.length, 4);
     assert.equal(new Set(fixRows.map(line => line.indexOf('plumber check'))).size, 1);
