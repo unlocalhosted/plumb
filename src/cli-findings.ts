@@ -19,7 +19,8 @@ export function findingLines(findings: Finding[]): FindingLine[] {
   const seen = new Map<string, Set<string>>();
   for (const finding of findings) for (const site of finding.sites) {
     const text = subject(finding, site);
-    const key = JSON.stringify([finding.rule.split('/')[0], finding.family, text]);
+    const ruleFamily = finding.rule.startsWith('provenance/') ? 'provenance' : finding.rule;
+    const key = JSON.stringify([ruleFamily, finding.family, text]);
     let group = groups.get(key);
     if (!group) { group = { subject: text, findings: [], sites: [] }; groups.set(key, group); seen.set(key, new Set()); }
     if (!group.findings.includes(finding)) group.findings.push(finding);
@@ -43,7 +44,8 @@ function phrase(group: FindingLine): string {
     const reasons = new Set(group.findings.map(finding => finding.rule.endsWith('/by-value') ? 'matches a token; uses a copy' :
       finding.family === 'color' ? 'raw colour' : finding.rule.endsWith('/tier') ? `raw ${familyNames[finding.family] ?? finding.family}; use a named token` :
       `off your ${scales[finding.family] ?? finding.family}`));
-    const properties = new Set(group.findings.flatMap(finding => (finding.occurrences ?? [finding.declaration]).map(d => d.prop)));
+    const siteIds = new Set(group.sites.map(identity));
+    const properties = new Set(group.findings.flatMap(finding => (finding.occurrences ?? [finding.declaration]).filter(d => siteIds.has(identity(d.site))).map(d => d.prop)));
     const type = first.family === 'type' && properties.has('font-size') && properties.has('line-height') ? ' (size and line-height)' : '';
     return [...reasons].join('; ') + type;
   }
@@ -100,7 +102,7 @@ function suggestion(group: FindingLine, width: number): string {
     // Keep names and amounts before optional reasons. Avoid losing the second alternative to prose.
     const text = (withWhy: boolean) => entries.map(entry => `${entry.name} (${entry.value}${withWhy && entry.why ? `, ${entry.why}` : ''})`).join(' · ');
     const compact = shorten(text(visibleWidth(text(true)) <= width), width);
-    return compact.split(/(\([^)]*\))/).map((part, i) => i % 2 ? paint(part, 'dim') : part).join('');
+    return compact.split(/( \([^)]*\))/).map((part, i) => i % 2 ? paint(part, 'dim') : part).join('');
   }
   const actions = [...new Set(group.findings.map(finding => finding.action ?? finding.fix).filter(Boolean))];
   const action = actions.join(' · ').replaceAll('`', '').replace(/\.$/, '');

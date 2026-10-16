@@ -26,7 +26,7 @@ const expectSubset = (root, args, findings) => {
   for (const f of findings) {
     const family = labelsForFamily[f.family] ?? f.family;
     const values = f.rule.startsWith('config/') ? [family + ' setup'] : f.rule.startsWith('dead/') ? [family + ' tokens'] : f.rule === 'provenance/opaque-inline' ? ['runtime styles'] : f.rule === 'existence/dead-var' ? [f.title.match(/^`([^`]+)`/)[1]] : f.sites.map(s => s.text.replace(/\s+/g, ' ').trim());
-    for (const value of values) subjects.set(f.rule.split('/')[0] + ':' + f.family + ':' + value, value);
+    for (const value of values) subjects.set((f.rule.startsWith('provenance/') ? 'provenance' : f.rule) + ':' + f.family + ':' + value, value);
   }
   const labels = titles(result.stdout);
   assert.equal(labels.length, subjects.size, args.join(' '));

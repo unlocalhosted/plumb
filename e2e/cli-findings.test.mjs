@@ -51,6 +51,13 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
     'var(--never-defined-with-another-long-name)' }} />;`);
   // More distinct colour groups, but more off-token authored sites in type.
   await appendFile(join(root, 'src/styles.css'), Array.from({ length: 50 }, (_, i) => `\n.extra${i} { color: #${i.toString(16).padStart(6, '0')}; }`).join(''));
+  await appendFile(join(root, 'src/Control.tsx'), '\nexport const OtherControl = ({className}) => <button className={`bg-brand rounded-control ${className}`} />;');
+  await appendFile(join(root, 'src/pages/Page0.tsx'), '\nimport { OtherControl } from "../Control"; export const Other = () => <OtherControl className="bg-[#abcdef]" />;');
+  const ownership = bounded(pty(root, ['--rule', 'ownership'], 140, cache, true), 140);
+  assert.equal((ownership.match(/^  !  bg-\[#abcdef\]/gm) ?? []).length, 2, 'separate component contracts');
+  assert.match(ownership, /changes Control/); assert.match(ownership, /changes OtherControl/);
+  const tokenColours = pty(root, ['--file', 'src/pages/Page0.tsx'], 140, cache);
+  assert.doesNotMatch(tokenColours, /var\x1b/, 'suggested variable names keep default colour');
   for (const columns of [80, 140]) {
     const type = bounded(pty(root, ['--family', 'type'], columns, cache), columns);
     assert.equal((type.match(/^  !  text-xs\s/gm) ?? []).length, 1);

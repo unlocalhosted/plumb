@@ -30,7 +30,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   let ok = true;
   const line = (name: string, good: boolean, fact: string, fix: string) => {
     if (!good) ok = false;
-    rows.push([{ text: good ? 'ok' : 'fix', ...(good ? {} : { ink: 'amber' as const }) }, `${name}:`, oneLine(fact), oneLine(fix)]);
+    rows.push([{ text: good ? 'ok' : 'fix', ...(good ? {} : { ink: 'amber' as const }) }, `${name}:`, { text: oneLine(fact), path: name === 'Cache' || name === 'CSS entry' }, oneLine(fix)]);
   };
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
   line('Node', major > 22 || major === 22 && minor >= 18, process.versions.node, major > 22 || major === 22 && minor >= 18 ? 'No change needed.' : 'Use Node 22.18 or later.');
@@ -74,5 +74,5 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     await access(parent, constants.W_OK);
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
-  return { text: table(rows, [{ width: 3 }, { width: 10 }, { weight: 1, path: true }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
+  return { text: table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }
