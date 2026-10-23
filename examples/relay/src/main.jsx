@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import { Specimen } from './Specimen.jsx';
+import { Shell } from './app/Shell';
 
-createRoot(document.getElementById('root')).render(<Specimen />);
+createRoot(document.getElementById('root')).render(<Shell />);
