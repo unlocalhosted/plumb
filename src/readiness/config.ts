@@ -97,7 +97,14 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
     else {
       const array = unwrap(plugins.value);
       if (array.type === 'ArrayExpression' && array.elements.every(item => item && item.type !== 'SpreadElement')) {
-        const plumb = imported(ast, '@unlocalhosted/react-plumber/vite', 'plumb');
+        // Configs often import the host from a local build or a package alias.
+        // Follow the imported plumb binding (including `as inspect`), rather
+        // than treating the published package specifier as its identity.
+        const plumbBindings = ast.body.flatMap(item => item.type === 'ImportDeclaration' && item.importKind !== 'type'
+          ? item.specifiers.filter(specifier => specifier.type === 'ImportSpecifier' && specifier.importKind !== 'type' && nodeName(specifier.imported) === 'plumb' ||
+            specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === 'plumb').map(specifier => specifier.local.name) : []);
+        const canonical = imported(ast, '@unlocalhosted/react-plumber/vite', 'plumb');
+        if (canonical) plumbBindings.push(canonical);
         const refresh = ast.body.filter(item => item.type === 'ImportDeclaration' && reactModules.includes(item.source.value)).flatMap(item => item.type === 'ImportDeclaration' ? item.specifiers.filter(item => item.type === 'ImportDefaultSpecifier').map(item => item.local.name) : []);
         const calls = array.elements.map(item => item?.type === 'CallExpression' && item.callee.type === 'Identifier' ? item.callee.name : undefined);
         // Unknown expressions may hide either plugin, so absence isn't proof.
@@ -110,7 +117,8 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
           (['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc', '@preact/preset-vite'].includes(item.source.value) ||
             /(?:^|[/\-])babel(?:$|[/\-])/.test(item.source.value)))
           .flatMap(item => item.type === 'ImportDeclaration' ? item.specifiers.map(specifier => specifier.local.name) : []);
-        const plumbIndex = plumb ? calls.indexOf(plumb) : -1;
+        const plumbIndex = calls.findIndex(name => name && plumbBindings.includes(name));
+        const plumb = calls[plumbIndex];
         if (plumbIndex >= 0) {
           result.plugin = true;
           const before = calls.slice(0, plumbIndex);

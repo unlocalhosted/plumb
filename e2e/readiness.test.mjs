@@ -202,6 +202,64 @@ test('JSX order allows Tailwind first; React first offers a minimal diff that st
   }
 });
 
+test('live-style path and alias imports recognize Plumber order and offer Refresh immediately after it', async t => {
+  for (const [specifier, binding, plugins, expected] of [
+    ['../../dist/hosts/vite.js', 'plumb', 'plumb({ watch: false }), tailwindcss()', 'ok'],
+    ['../../dist/hosts/vite.js', 'plumb as inspect', 'tailwindcss(), inspect({ watch: false })', 'ok'],
+    ['plumber-vite-alias', 'plumb as inspect', 'inspect({ watch: false }), tailwindcss()', 'ok'],
+    ['../../dist/hosts/vite.js', 'plumb', 'react(), plumb({ watch: false }), tailwindcss()', 'missing'],
+  ]) await t.test(`${binding} from ${specifier}: ${plugins}`, async t => {
+    const root = await mkdtemp(join(repo, 'fixtures/.apply-live-style-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+    await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
+    await writeFile(join(root, 'package.json'), '{"type":"module"}');
+    if (specifier === 'plumber-vite-alias') {
+      const alias = join(root, 'node_modules/plumber-vite-alias');
+      await mkdir(alias, { recursive: true });
+      await writeFile(join(alias, 'package.json'), '{"type":"module","exports":"./vite.js"}');
+      await writeFile(join(alias, 'vite.js'), `export { plumb } from '${join(repo, 'dist/hosts/vite.js')}';`);
+    }
+    const original = `import { ${binding} } from '${specifier}';\nimport tailwindcss from '@tailwindcss/vite';\n${expected === 'missing' ? "import react from '@vitejs/plugin-react';\n" : ''}export default {\n  plugins: [${plugins}],\n  oxc: { jsx: { runtime: 'automatic', development: true } },\n  server: { host: '127.0.0.1', port: 0, hmr: false }\n};\n`;
+    const file = join(root, 'vite.config.mjs');
+    await writeFile(file, original);
+    run(root, ['init', '--force']);
+    const { report, request } = await api(t, root);
+    const before = await report();
+    assert.equal(item(before, 'locate.plugin').status, 'ok');
+    assert.equal(item(before, 'locate.order').status, expected);
+    const id = expected === 'missing' ? 'locate.order' : 'write.refresh';
+    const fix = item(before, id).fix;
+    assert.equal(fix.kind, 'diff');
+    assert.equal(await readFile(file, 'utf8'), original, 'preview is read-only');
+    const response = await request('readiness/fix', { id, hash: fix.hash, confirm: true, allowDirty: true });
+    assert.equal(response.status, 200, await response.clone().text());
+    const written = await readFile(file, 'utf8');
+    if (id === 'write.refresh') {
+      assert.match(written, /import \w+ from '@vitejs\/plugin-react'/);
+      assert.match(written, /(?:plumb|inspect)\(\{ watch: false \}\), \w+\(\)/);
+      assert.equal(item(await report(), 'write.refresh').status, 'ok');
+    }
+    assert.equal(item(await report(), 'locate.order').status, 'ok');
+    const server = await createServer({ root, logLevel: 'silent', server: { watch: null } });
+    try {
+      await server.listen();
+      const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+      assert.equal((await fetch(`${base}/src/App.jsx`)).status, 200);
+      let response;
+      for (let i = 0; i < 100; i++) {
+        response = await fetch(`${base}/__plumb/readiness`);
+        if (response.status !== 503) break;
+        await new Promise(done => setTimeout(done, 30));
+      }
+      assert.equal(response.status, 200);
+      const ready = await response.json();
+      assert.equal(item(ready, 'locate.order').status, 'ok');
+      assert.equal(item(ready, 'write.refresh').status, 'ok');
+    } finally { await server.close(); }
+  });
+});
+
 test('Babel JSX plugins block order; MDX pre plugins do not', async t => {
   for (const [module, expected] of [['vite-plugin-babel', 'missing'], ['@mdx-js/rollup', 'ok'], ['@vitejs/plugin-react-swc', 'missing']]) {
     await t.test(module, async t => {
