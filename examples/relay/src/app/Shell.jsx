@@ -2,6 +2,7 @@
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Specimen } from '@/Specimen';
 import { Board } from '@/screens/Board';
+import { Issues } from '@/screens/Issues';
 import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -27,7 +28,7 @@ export function Shell() {
         <Sidebar route={route} />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopBar title={title} />
-          {route === 'board' ? <Board /> : <Placeholder title={title} />}
+          {route === 'board' ? <Board /> : route === 'issues' ? <Issues /> : <Placeholder title={title} />}
         </main>
       </div>
     </TooltipProvider>

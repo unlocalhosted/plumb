@@ -14,4 +14,9 @@ export const planted = [
   { screen: 'board', file: 'screens/Board.jsx', what: 'overdue date text-[#d23a3a]', wrong: 'raw colour for a meaning the theme names', rule: 'provenance/color', fix: 'text-destructive' },
   { screen: 'board', file: 'screens/Board.jsx', what: 'In review column rounded-[10px]', wrong: 'off the radius scale, on one column only', rule: 'provenance/arbitrary', fix: 'rounded-lg' },
   { screen: 'board', file: 'screens/Board.jsx', what: 'column count bg-[#e9ebef]', wrong: 'raw colour; a light chip on a dark column in dark mode', rule: 'provenance/color', fix: 'bg-secondary' },
+  { screen: 'issues', file: 'screens/Issues.jsx', what: 'column headers text-[11px] tracking-[.06em]', wrong: 'below the type scale, tracking off the token', rule: 'provenance/arbitrary', fix: 'text-xs tracking-wide' },
+  { screen: 'issues', file: 'screens/Issues.jsx', what: 'selected row bg-[#eaf6f1]', wrong: 'raw colour; a pale mint row in dark mode', rule: 'provenance/color', fix: 'bg-primary/10 or bg-accent' },
+  { screen: 'issues', file: 'screens/Issues.jsx', what: 'updated time text-[#8a8f99]', wrong: 'raw grey where the theme names muted text', rule: 'provenance/color', fix: 'text-muted-foreground' },
+  { screen: 'issues', file: 'screens/Issues.jsx', what: 'points cell style={{ paddingRight: 14 }}', wrong: 'inline literal, off the ladder', rule: 'provenance (inline)', fix: 'pr-3.5 or pr-4' },
+  { screen: 'issues', file: 'screens/Issues.jsx', what: 'bulk bar rounded-[12px]', wrong: 'equals rounded-xl but bypasses the token', rule: 'provenance/radius by value', fix: 'rounded-xl' },
 ];
