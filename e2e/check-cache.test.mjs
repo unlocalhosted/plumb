@@ -189,4 +189,9 @@ test('init-written data config reuses the whole report and invalidates selected 
   await writeFile(join(root, 'tokens.json'), JSON.stringify({ small: { $type: 'dimension', $value: '9px' } }));
   const changed = await check({ root, config });
   assert.notDeepEqual(stable(changed), stable(tokens));
+  await writeFile(join(root, 'src/Only.jsx'), 'export default () => <div className="gap-[55px]" />;');
+  await writeFile(config, (await readFile(config, 'utf8')).replace("source: ['src/**']", "source: ['src/Only.jsx']"));
+  const selected = await check({ root, config });
+  assert.equal(selected.classes.unique, 1, 'data config edits are read afresh after cache invalidation');
+  assert.ok(Object.values((await check({ root, config })).timing.phases).every(ms => ms === 0));
 });

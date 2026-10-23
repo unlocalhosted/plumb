@@ -1,3 +1,4 @@
+import { dataConfig } from './data-config.js';
 import { allConfigNames, migrationNotice } from './paths.js';
 import { loadPresets, validatePresetSelection } from './presets/index.js';
 import type { PresetSelection, PresetSummary } from './presets/index.js';
@@ -193,6 +194,10 @@ export async function loadConfig(root: string, explicitPath?: string): Promise<L
     }
   }
   if (path === null) return { path: null, ...await loadPresets(root, {}) };
+  // Read data afresh: module-import memoization must not hide a config edit
+  // when a whole-report cache receipt has correctly invalidated.
+  const data = await dataConfig(path);
+  if (data) return { path, ...await loadPresets(root, data.value) };
   let module: { default?: unknown };
   try {
     module = await import(pathToFileURL(path).href) as { default?: unknown };
