@@ -1,5 +1,6 @@
-// Walking the tree with two fingers: hold Alt over an element, scroll up to widen to its parents, scroll down to come
-// back, see the path in the tag, and click to pin the level walked to. The page itself doesn't scroll meanwhile.
+// Walking the tree with two fingers: hold Alt over an element, move fingers up (positive deltaY, natural scrolling) to
+// widen to its parents and down to come back, see the path in the tag with components named, and click to pin the
+// level walked to. The page itself doesn't scroll meanwhile.
 // Real Vite, real React, real Chromium (real wheel events), the overlay's own demo app.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, rm } from 'node:fs/promises';
@@ -63,37 +64,37 @@ test('two-finger scroll walks the tree under Alt: up to parents, down back, the 
   assert.equal(s.here, null, 'no path before walking');
   assert.deepEqual(s.at.map(Math.round), [Math.round(box.x), Math.round(box.y)], 'the reticle starts on the button');
 
-  // One notch up: the reticle widens to the button's parent row and the tag shows the path, the row highlighted.
-  await page.mouse.wheel(0, -48);
+  // One notch up: the reticle widens to the button's parent row, and the path names it by its component, SyncRow.
+  await page.mouse.wheel(0, 48);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here'));
   s = await around(page);
-  assert.equal(s.here, 'div#sync-row');
+  assert.equal(s.here, 'SyncRow');
   assert.deepEqual(s.at.map(Math.round), [Math.round(row.x), Math.round(row.y)], 'the reticle is around the row');
   assert.equal(s.scrollY, 0, 'the page did not scroll');
 
   // Small trackpad deltas add up: a 20px nudge doesn't move a level; the rest of the step does.
-  await page.mouse.wheel(0, -20);
+  await page.mouse.wheel(0, 20);
   await page.waitForTimeout(60);
-  assert.equal((await around(page)).here, 'div#sync-row');
-  await page.mouse.wheel(0, -28);
+  assert.equal((await around(page)).here, 'SyncRow');
+  await page.mouse.wheel(0, 28);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'section');
 
   // Down retraces the path: back to the row, then to the button, where the path goes away.
   await page.waitForTimeout(300);
-  await page.mouse.wheel(0, 48);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'div#sync-row');
+  await page.mouse.wheel(0, -48);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'SyncRow');
   await page.waitForTimeout(300);
-  await page.mouse.wheel(0, 48);
+  await page.mouse.wheel(0, -48);
   await page.waitForFunction(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path'));
   // Past the element under the pointer there's nowhere further down.
-  await page.mouse.wheel(0, 200);
+  await page.mouse.wheel(0, -200);
   await page.waitForTimeout(60);
   assert.equal((await around(page)).here, null);
 
   // Walk up to the row again and click: the row is pinned, not the button under the pointer.
   await page.waitForTimeout(300);
-  await page.mouse.wheel(0, -48);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'div#sync-row');
+  await page.mouse.wheel(0, 48);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'SyncRow');
   await page.mouse.down(); await page.mouse.up();
   await page.keyboard.up('Alt');
   const card = page.locator('plumb-overlay').locator('.w .card[role="dialog"]');

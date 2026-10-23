@@ -20,7 +20,7 @@
 const WALK = { step: 48, pause: 260 }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000 };
 
-import { locate } from './locate.js';
+import { locate, componentOf } from './locate.js';
 import { request, post } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
@@ -117,6 +117,7 @@ const css = `
   .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-ink-2); }
   .tag .path { display: inline-flex; align-items: center; gap: 4px; color: var(--pl-ink-2); font-weight: 500; }
   .tag .path .here { color: var(--pl-ink); font-weight: 600; }
+  .tag .path .cmp { color: var(--pl-accent); }
   .tag .path .sep, .tag .path .more { color: var(--pl-ink-3); }
 
   /* the lit place on the real element: hatching over exactly the region the active mark is about */
@@ -674,8 +675,9 @@ class PlumbOverlay extends HTMLElement {
   }
 
   /* ── WALKING THE TREE ──────────────────────────────────────
-   * With Alt held, two-finger scroll moves the reading up and down the DOM: up widens to the parent, then the
-   * grandparent, up to the last element under <body>; down retraces the path back to the element under the pointer.
+   * With Alt held, two-finger scroll moves the reading up and down the DOM: fingers up widen to the parent, then the
+   * grandparent, up to the last element under <body>; fingers down retrace the path back to the element under the
+   * pointer. The path names an element by the component it is the outermost element of, where there is one.
    * The page doesn't scroll meanwhile. Scroll adds up and moves one level per STEP of travel, so one swipe of a
    * trackpad doesn't fly ten levels; a pause resets the travel. The tag shows the path while walked. A click pins
    * the walked level. */
@@ -698,7 +700,7 @@ class PlumbOverlay extends HTMLElement {
     w.travel += dy;
     let moved = false;
     while (Math.abs(w.travel) >= WALK.step) {
-      const up = w.travel < 0, next = w.at + (up ? 1 : -1);
+      const up = w.travel > 0, next = w.at + (up ? 1 : -1); // fingers up on a trackpad (natural scrolling) = parent
       w.travel -= Math.sign(w.travel) * WALK.step;
       if (next < 0 || next >= w.chain.length) { w.travel = 0; break; }
       w.at = next; moved = true;
@@ -709,11 +711,11 @@ class PlumbOverlay extends HTMLElement {
   #crumbs() {
     const w = this.#walk;
     if (!w || w.at === 0) return '';
-    const name = el => el.localName + (el.id ? `#${el.id}` : '');
+    const tag = el => el.localName + (el.id ? `#${el.id}` : '');
     // two levels above the current one, the current one, and one back toward the element under the pointer
     const from = Math.min(w.chain.length - 1, w.at + 2), to = Math.max(0, w.at - 1), parts = [];
     if (from < w.chain.length - 1) parts.push('<span class="more">…</span>');
-    for (let i = from; i >= to; i--) parts.push(`<span class="${i === w.at ? 'here' : ''}">${esc(name(w.chain[i]))}</span>`);
+    for (let i = from; i >= to; i--) { const c = componentOf(w.chain[i]); parts.push(`<span class="${[i === w.at ? 'here' : '', c ? 'cmp' : ''].join(' ').trim()}" title="${esc(tag(w.chain[i]))}">${esc(c ?? tag(w.chain[i]))}</span>`); }
     if (to > 0) parts.push('<span class="more">…</span>');
     return `<span class="path" title="Two-finger scroll walks up and down the tree">${parts.join('<span class="sep">›</span>')}</span>`;
   }
