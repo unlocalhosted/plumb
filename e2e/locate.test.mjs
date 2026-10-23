@@ -291,7 +291,7 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   await writeFile(join(route, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
   await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({children}) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
   await writeFile(join(root, 'app/page.jsx'), `import App from '../src/App.jsx'; import Large from '../src/Large.jsx'; export default function Page() { return <><App /><Large /></>; }\n`);
-  await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
+  await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ experimental: { agentUpgrade: false }, watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
   const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
   const grouped = process.platform !== 'win32';
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, detached: grouped, stdio: ['ignore', 'pipe', 'pipe'] });

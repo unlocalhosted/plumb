@@ -88,7 +88,7 @@ export default function Layout({ children }) { return <html><body>{children}<Plu
 `);
   await writeFile(join(servedRoot, 'app/page.jsx'), `import App from '../src/App.jsx'; export default function Page() { return <App />; }\n`);
   await writeFile(join(servedRoot, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
-export default withPlumb({ watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(servedRoot)} } });
+export default withPlumb({ experimental: { agentUpgrade: false }, watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(servedRoot)} } });
 `);
   const running = await child(t, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', '0'], servedRoot);
   let url;
