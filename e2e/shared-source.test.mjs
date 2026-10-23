@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
@@ -11,13 +11,13 @@ import { createServer } from 'vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-for (const host of ['vite', 'next']) test(`${host}: shared authored source never borrows ancestor location`, { timeout: 120000 }, async t => {
+for (const host of ['vite', 'next']) for (const checked of [false, true]) test(`${host}: shared source ${checked ? 'reads and applies within workspace' : 'never borrows ancestor location'}`, { timeout: 120000 }, async t => {
   const parent = await mkdtemp(join(repo, 'fixtures/.shared-source-'));
   let stop = async () => {};
   t.after(async () => { await stop(); await rm(parent, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); });
   await cp(join(repo, 'fixtures/shared-source'), parent, { recursive: true });
   const root = join(parent, host);
-  await writeFile(join(root, 'plumber.config.mjs'), "export default { css: '../src/styles.css', source: ['app/**'], decisions: { spacing: { from: 'css:../src/styles.css' } } };\n");
+  await writeFile(join(root, 'plumber.config.mjs'), `export default { css: '../src/styles.css', source: ${JSON.stringify(checked ? ['app/**', '../src/**'] : ['app/**'])}, decisions: { spacing: { from: 'css:../src/styles.css' } } };\n`);
   let url;
   if (host === 'vite') {
     const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false, stamp: false })],
@@ -45,6 +45,33 @@ for (const host of ['vite', 'next']) test(`${host}: shared authored source never
   await page.waitForFunction(() => window.__plumb && document.getElementById('card'));
   await page.evaluate(() => window.__plumb.ready());
   const found = await page.$eval('#card', element => window.__plumb.locate(element, { explain: true }));
+  if (checked) {
+    assert.equal(found.file, '../src/screens/Board.jsx', JSON.stringify(found));
+    const site = await page.$eval('#card', element => window.__plumb.site(element));
+    assert.ok(site.findings.length, JSON.stringify(site));
+    await page.keyboard.press('Alt+B');
+    await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.total && p.read === p.total; });
+    assert.ok((await page.evaluate(() => window.__plumb.overlay.progress)).drift > 0, JSON.stringify({ site, progress: await page.evaluate(() => window.__plumb.overlay.progress), marks: await page.$eval('#card', el => window.__plumb.overlay.readMarks(el)) }));
+    const api = (method, params, post = false) => page.evaluate(async ({ method, params, post }) => {
+      const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
+      const response = await fetch('/__plumb/' + method + (post ? '' : '?' + new URLSearchParams(params)), { method: post ? 'POST' : 'GET', headers: { ...(token ? { 'x-plumb-token': token } : {}), ...(post ? { 'Content-Type': 'application/json' } : {}) }, ...(post ? { body: JSON.stringify(params) } : {}) });
+      return { status: response.status, body: await response.json() };
+    }, { method, params, post });
+    const edits = await api('edits', { file: found.file, line: found.line, column: found.column });
+    assert.equal(edits.status, 200, JSON.stringify(edits));
+    assert.ok(edits.body.edits.length, JSON.stringify(edits));
+    const before = await readFile(join(parent, 'src/screens/Board.jsx'), 'utf8');
+    const applied = await api('apply', { file: found.file, hash: edits.body.hash, edits: [{ id: edits.body.edits[0].id }] }, true);
+    assert.equal(applied.status, 200, JSON.stringify(applied));
+    assert.notEqual(await readFile(join(parent, 'src/screens/Board.jsx'), 'utf8'), before);
+    const windows = await api('site', { file: '..\\src\\screens\\Board.jsx', line: found.line, column: found.column });
+    assert.equal(windows.status, 200, JSON.stringify(windows));
+    for (const file of ['../../../../package.json', '..\\..\\..\\..\\package.json', 'C:\\outside\\Board.jsx', '\\\\server\\share\\Board.jsx']) {
+      const refused = await api('edits', { file, line: 1, column: 1 });
+      assert.equal(refused.status, 400, JSON.stringify({ file, refused }));
+    }
+    return;
+  }
   assert.equal(found.location, null, JSON.stringify(found));
   assert.equal(found.reason, 'resolve-refusal');
   assert.equal(found.detail.file, '../src/screens/Board.jsx');
@@ -66,4 +93,25 @@ for (const host of ['vite', 'next']) test(`${host}: shared authored source never
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .say').textContent.includes('not checked'));
   const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.tally').textContent]; });
   for (const text of blueprint) { assert.match(text, /not checked · outside source/); assert.doesNotMatch(text, /all true/); }
+});
+
+test('source globs refuse workspace escapes and symlinks; Windows selectors select shared files', async t => {
+  const { Session, check } = await import('../dist/index.js');
+  const parent = await mkdtemp(join(repo, 'fixtures/.source-boundary-'));
+  t.after(() => rm(parent, { recursive: true, force: true }));
+  await cp(join(repo, 'fixtures/shared-source'), parent, { recursive: true });
+  const root = join(parent, 'vite'), config = join(root, 'plumber.config.mjs');
+  for (const pattern of ['../../**/*.jsx', '..\\..\\**\\*.jsx', '../src/**/../../**', 'C:\\outside\\**', '\\\\host\\share\\**']) {
+    await writeFile(config, `export default { source: ${JSON.stringify([pattern])} };`);
+    await assert.rejects(Session.create({ root, watch: false }), /repository\/workspace root/, pattern);
+  }
+  await symlink(join(repo, 'src'), join(parent, 'src/escape'));
+  await writeFile(config, `export default { source: ['app/**', '..\\\\src\\\\**'] };`);
+  const report = await check({ root });
+  assert.ok(report.declarations.some(d => d.site.file === join(parent, 'src/screens/Board.jsx')));
+  assert.ok(!report.declarations.some(d => d.site.file.includes('/escape/')));
+  const session = await Session.create({ root, watch: false }); t.after(() => session.close());
+  assert.deepEqual(await session.resolveSource('file://' + join(parent, 'src/escape/index.ts')), { library: true, untracked: '../src/escape/index.ts' });
+  await assert.rejects(session.edits('../src/escape/index.ts', 1), /inside the project root/);
+  await assert.rejects(session.apply({ file: '../src/escape/index.ts', hash: 'unproved', edits: [{ id: 'unproved' }] }), /inside the project root/);
 });

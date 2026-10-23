@@ -361,7 +361,7 @@ test('finding 9: Web adapter shares route validation and dispatch with Node midd
   assert.equal((await send('../host')).status, 404);
 });
 
-test('overlay review 1: configured sibling sources cannot be edited through native traversal paths', async t => {
+test('selected sibling source in repository accepts native paths; directories stay refused', async t => {
   // Runs with backslash traversal on Windows and slash traversal on POSIX.
   const root = await project(t), sibling = await project(t), file = join(sibling, 'src/App.tsx');
   const { relative, sep } = await import('node:path');
@@ -372,12 +372,13 @@ test('overlay review 1: configured sibling sources cannot be edited through nati
   const offered = await session.request('edits', { file, line: 1 });
   assert.ok(offered.edits.length, 'configured sibling is analyzed and has legitimate edit ids');
   const before = await readFile(file, 'utf8');
-  for (const target of [outside, file, '..', root]) {
-    await assert.rejects(session.apply({ ...selection(offered), file: target }), /inside the project root/);
-  }
-  // Guard is repeated at the write boundary, independent of public path parsing.
-  await assert.rejects(session.editableFile(file), /inside the project root/);
-  assert.equal(await readFile(file, 'utf8'), before);
+  for (const target of ['..', root]) await assert.rejects(session.apply({ ...selection(offered), file: target }), /inside the project root/);
+  await session.apply({ ...selection(offered), file: outside });
+  assert.notEqual(await readFile(file, 'utf8'), before);
+  await writeFile(file, before);
+  const fresh = await session.edits(file, 1);
+  await session.apply(selection(fresh));
+  assert.notEqual(await readFile(file, 'utf8'), before);
 });
 
 test('overlay review 5: warm apply visits changed slices/consumers and updates local views without full materialization', async t => {

@@ -13,6 +13,7 @@ import type { Declaration } from '../report.js';
 import { RankingState } from './ranking.js';
 import { references } from '../collect/source.js';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { sourceSelectors } from '../source-boundary.js';
 import { collectStylesheets, cssImports } from '../collect/stylesheets.js';
 import { lowerStylesheets, lowerStylesheet } from '../lower/stylesheets.js';
 import { declaredClasses } from '../lower/css.js';
@@ -180,7 +181,7 @@ export class WarmState implements AnalysisRuntime {
       const value = await this.memo(name, inputs, compute);
       const loaded = value as { value: PlumbConfig; path: string | null };
       this.config = loaded.value;
-      for (const pattern of this.config.source ?? defaultSource) {
+      for (const pattern of sourceSelectors(this.root, this.config.source ?? defaultSource).filter(pattern => !pattern.startsWith('!'))) {
         const file = resolve(this.root, pattern), path = relative(this.root, file);
         if (path === '..' || path.startsWith('..' + sep) || isAbsolute(path)) this.patterns.add(file);
       }

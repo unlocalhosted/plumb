@@ -79,7 +79,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
       if (pattern.startsWith('dtcg:')) return false;
       const selector = pattern.replace(/^css:/, ''), fragment = /^(.*)#(--[^#]+)$/.exec(selector);
       const path = fragment?.[1] ?? selector;
-      return (!fragment || matches(name, fragment[2]!)) && (matches(file, path) || matches(file.slice(root.length + 1), path));
+      return (!fragment || matches(name, fragment[2]!)) && (matches(file, path) || matches(relative(root, file).replaceAll('\\', '/'), path));
     });
   }
   for (const item of theme) {

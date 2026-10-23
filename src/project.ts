@@ -6,6 +6,7 @@ import { unreadable } from './diagnostics.js';
 import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
+import { ownSourcePath, sourceSelectors } from './source-boundary.js';
 import { userMessage, UsageError } from './errors.js';
 import type { PlumbConfig } from './config.js';
 import type { FileCounts, Report } from './report.js';
@@ -83,7 +84,7 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
 }> {
   const diagnostics: Finding[] = [], inputs: string[] = [];
   const entry = await entryCss(root, diagnostics, inputs, config.css, known);
-  const files = await matchProjectFiles(root, config.source ?? defaultSource, known);
+  const files = await projectSourceFiles(root, config, known);
   const counts: FileCounts = { tsx: 0, jsx: 0, css: 0, other: 0 };
   for (const file of files) {
     const extension = extname(file).slice(1);
@@ -94,7 +95,9 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
 }
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {
-  return (await matchProjectFiles(root, config.source ?? defaultSource, known)).sort();
+  const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? defaultSource), known);
+  const owned = await Promise.all(files.map(file => ownSourcePath(root, file)));
+  return files.filter((_, index) => owned[index]).sort();
 }
 
 export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {

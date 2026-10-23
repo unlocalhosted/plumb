@@ -18,6 +18,7 @@ import type { StructuredEdit } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { readText, textSites } from './text.js';
+import { containsPath, sourceBoundary, sourcePath } from '../source-boundary.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
 export type { TextRun, TextResult } from './text.js';
@@ -382,7 +383,7 @@ export class Session extends EventEmitter {
     if (!inside || ignoredDirectory(inside) || !/\.[cm]?[jt]sx?$/.test(file)) return { library: true };
     // Authored shared code is a source boundary, never permission to use an
     // ancestor's JSX. Classification does not read bytes outside the project.
-    if (inside === '..' || inside.startsWith('../') || isAbsolute(inside)) return { library: true, untracked: inside };
+    if (!containsPath(this.root, file) && (!containsPath(sourceBoundary(this.root), file) || !this.sourceFiles.has(file))) return { library: true, untracked: inside };
     // Classify before reading source: linked packages and symlinked directories
     // must never introduce external snapshots into this project's Session.
     try {
@@ -609,8 +610,8 @@ export class Session extends EventEmitter {
   get stats(): unknown { return this.lastStats; }
   private file(file: string): string {
     if (typeof file !== 'string' || !file.trim()) throw new UsageError('File must be a non-empty source path.');
-    const path = resolve(this.root, file), inside = relative(this.root, path);
-    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
+    const path = sourcePath(this.root, file), inside = relative(this.root, path);
+    if (!inside || !containsPath(sourceBoundary(this.root), path) || !containsPath(this.root, path) && !this.sourceFiles.has(path)) throw new UsageError('File must be inside the project root.');
     return path;
   }
   private async editableFile(file: string): Promise<{ dev: number; ino: number }> {

@@ -273,7 +273,7 @@ async function locateOwner(element, options = {}) {
       return { reason: 'resolve-refusal', detail: { ...at, response: result.refused } };
     }
     // An authored source boundary must not borrow a checked ancestor's reading.
-    if (result?.untracked) return { reason: 'resolve-refusal', detail: { source: at.source, file: result.untracked, response: 'Source is not a tracked project source.' } };
+    if (result?.untracked) return chain.length ? { proven: false } : { reason: 'resolve-refusal', detail: { source: at.source, file: result.untracked, response: 'Source is not a tracked project source.' } };
     const proven = !!(result?.file && result.line && result.column);
     seen.set(key, proven);
     if (proven && !chain.some(link => link.file === result.file && link.line === result.line && link.column === result.column)) chain.push({ file: result.file, line: result.line, column: result.column, component: result.component ?? named(frame.functionName) });

@@ -1,16 +1,17 @@
 import { fileURLToPath } from 'node:url';
-import { isAbsolute, resolve, sep } from 'node:path';
+import { isAbsolute, sep } from 'node:path';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
+import { sourcePath } from '../source-boundary.js';
 
 /** Decode host spellings only. Membership and real-path checks belong to Session. */
 export function sourcePaths(root: string, source: string, servedRoot?: string, stamped = false): string[] {
   // A stamp is an encoded project-relative path, not a bundler URL. Decode
   // once, preserving literal colons, query/hash delimiters and percent signs.
   if (stamped) {
-    try { return [resolve(root, decodeURIComponent(source))]; }
+    try { return [sourcePath(root, decodeURIComponent(source))]; }
     catch { throw new UsageError('Source must have valid URL encoding.'); }
   }
   let path = source;
@@ -33,7 +34,7 @@ export function sourcePaths(root: string, source: string, servedRoot?: string, s
   else if (!fileURL && (browserPath || /^\/(?:src|app)\//.test(path) || servedRoot !== undefined && path.startsWith('/') && !path.startsWith(root + sep))) path = path.replace(/^\//, '');
   path = path.replace(/[?#].*$/, '');
   const roots = absolute || isAbsolute(path) || servedRoot === undefined ? [root] : [servedRoot, root];
-  return [...new Set(roots.map(base => resolve(base, path)))];
+  return [...new Set(roots.map(base => sourcePath(base, path)))];
 }
 
 export interface JSXLocation { line: number; column: number; start: number; end: number; tag: string }

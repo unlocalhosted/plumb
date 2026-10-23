@@ -85,7 +85,7 @@ for (const workspace of [false, true]) {
     for (const source of [libraryPath, pathToFileURL(join(library, 'src/Button.jsx')).href]) {
       const response = await resolve(source, { ...libraryAt, component: '1', hash: 'stale' });
       assert.equal(response.status, workspace ? 400 : 200, source);
-      if (!workspace) assert.deepEqual(await response.json(), { library: true });
+      if (!workspace) assert.deepEqual(await response.json(), { library: true, untracked: '../library/src/Button.jsx' });
     }
     for (const source of ['src/linked-source/Button.jsx', '/@fs/' + join(library, 'dist/index.js'), 'node_modules/plumb-linked-library/dist/index.js', 'src/NotSource.txt']) {
       const response = await resolve(source, { snapshot: '1' }); assert.equal(response.status, 200, source);
@@ -106,7 +106,7 @@ for (const workspace of [false, true]) {
     const mapped = await new SourceMapStore().mapFrame(scriptURL, generated.line, generated.column);
     assert.ok(mapped?.hash, JSON.stringify({ mapped, script }));
     const response = await resolve(mapped.source, { ...mapped, component: '1' }); assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), workspace ? { file: 'library/src/Button.jsx', ...libraryAt, component: 'Button' } : { library: true });
+    assert.deepEqual(await response.json(), workspace ? { file: 'library/src/Button.jsx', ...libraryAt, component: 'Button' } : { library: true, untracked: '../library/src/Button.jsx' });
     const location = await (await resolve(workspace ? libraryPath : 'src/App.jsx', { ...(workspace ? libraryAt : appAt), component: '1' })).json();
     await edit(fixture, location, workspace ? 'gap-[17px]' : 'gap-[13px]');
     // Library classification never grants writes, even for a source-selected external file.
@@ -128,25 +128,23 @@ for (const workspace of [false, true]) {
     await page.waitForFunction(() => window.__plumb && document.getElementById('linked'));
     assert.equal((await page.evaluate(() => window.__plumb.ready())).status, 'ready');
     const location = await page.$eval('#linked', element => window.__plumb.locate(element, { explain: true }));
+    if (!workspace) {
+      assert.equal(location.location, null); assert.equal(location.detail.file, '../library/src/Button.jsx');
+      assert.equal(await page.$eval('#linked', element => window.__plumb.site(element)), null);
+      for (const id of ['#unchecked-owner', '#unchecked-only']) {
+        const unchecked = await page.$eval(id, element => window.__plumb.locate(element, { explain: true }));
+        assert.equal(unchecked.location, null); assert.equal(unchecked.detail.file, '../library/src/Button.jsx');
+      }
+      await page.locator('#unchecked-only').click({ modifiers: ['Alt'] });
+      await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.textContent.includes('not checked: ../library/src/Button.jsx'));
+      assert.deepEqual(errors, []);
+      return;
+    }
     const owner = { file: workspace ? 'app/src/App.jsx' : 'src/App.jsx', ...position(appSource, '<LibButton'), component: 'LibButton' };
     const chain = workspace ? [{ file: 'library/src/Button.jsx', ...position(librarySource, '<Button'), component: 'Button' }, owner] : [owner];
     assert.deepEqual(location, { ...chain[0], tag: 'button', via: 'owner-stack', chain, index: 0 });
     const site = await page.$eval('#linked', element => window.__plumb.site(element));
     assert.deepEqual(site.declarations.map(d => d.site.text), [workspace ? 'gap-[17px]' : 'gap-[13px]']);
-    if (!workspace) {
-      const wrapped = await page.$eval('#unchecked-owner', element => window.__plumb.locate(element, { explain: true }));
-      const unchecked = { file: 'src/App.jsx', ...position(appSource, '<Unchecked'), component: 'Unchecked' };
-      assert.deepEqual(wrapped, { ...unchecked, tag: 'button', via: 'owner-stack', chain: [unchecked], index: 0 });
-      const unowned = await page.$eval('#unchecked-only', element => window.__plumb.locate(element, { explain: true }));
-      assert.equal(unowned.location, null); assert.equal(unowned.reason, 'resolve-refusal');
-      assert.equal(unowned.detail.file, 'src/Unchecked.jsx'); assert.match(unowned.detail.response, /not a tracked project source/);
-      assert.equal(await page.$eval('#unchecked-only', element => window.__plumb.site(element)), null);
-      await page.locator('#unchecked-only').click({ modifiers: ['Alt'] });
-      await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.textContent.includes('src/Unchecked.jsx'));
-      const reading = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.textContent);
-      assert.match(reading, /not checked/); assert.match(reading, /src\/Unchecked\.jsx/);
-      await page.keyboard.press('Escape');
-    }
     await edit(fixture, location, workspace ? 'gap-[17px]' : 'gap-[13px]');
     assert.deepEqual(errors, []);
   });

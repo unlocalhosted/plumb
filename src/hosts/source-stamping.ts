@@ -9,6 +9,7 @@ import { lineStarts, nodeName, sourceSite } from '../collect/source.js';
 import { loadConfig } from '../config.js';
 import { projectSourceFiles } from '../project.js';
 import type { SessionOptions } from '../session/index.js';
+import { containsPath, sourceBoundary } from '../source-boundary.js';
 
 /** Inserts only props; authored bytes and their positions remain in the map. */
 export function stampJSX(code: string, file: string, path: string) {
@@ -60,7 +61,7 @@ export function sourceStamping(options: SessionOptions, production = false): Plu
     async transform(code, id) {
       if (disabled || id.includes('\0') || id.startsWith('virtual:')) return null;
       const file = id.replace(/[?#].*$/, ''), path = relative(root, file).replaceAll('\\', '/');
-      if (!isAbsolute(file) || !/\.[cm]?[jt]sx?$/.test(file) || !path || path === '..' || path.startsWith('../') || isAbsolute(path) ||
+      if (!isAbsolute(file) || !/\.[cm]?[jt]sx?$/.test(file) || !path || !containsPath(sourceBoundary(root), file) ||
         /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(path) || !code.includes('<')) return null;
       // The same source selectors as analysis, without a project crawl. Real
       // paths exclude linked packages even when an alias lives under src/.

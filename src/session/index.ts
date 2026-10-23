@@ -1,6 +1,6 @@
 import { migrationNotice } from '../paths.js';
 import { EventEmitter } from 'node:events';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
@@ -94,8 +94,8 @@ export class Session extends EventEmitter {
     const [file, line, column, classes] = args;
     if (typeof classes !== 'string' || classes.length > 65536) throw new UsageError('classes must be a string of at most 65536 characters.');
     if (typeof file !== 'string' || !file.trim()) throw new UsageError('File must be a non-empty source path.');
-    const inside = relative(this.root, resolve(this.root, file));
-    if (!inside || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) throw new UsageError('File must be inside the project root.');
+    // Membership of shared source is checked in the coordinator with its
+    // current config; this layer only validates argument shape synchronously.
     for (const value of [line, column]) if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.');
   }
   classes(...args: Parameters<Engine['classes']>) { this.validateClasses(args); return this.call('classes', args); }
