@@ -61,7 +61,7 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   // Pinned: the click is swallowed by the overlay and opens the reading for that element.
   await page.mouse.click(point.x, point.y);
   await page.keyboard.up('Alt');
-  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for div in SyncRow' });
+  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for SyncRow (div)' });
   await reading.waitFor();
   assert.match(await reading.locator('.top').innerText(), /App\.jsx:4/);
   assert.match(await reading.locator('.top .file').getAttribute('title'), /^src\/App\.jsx:4:/);
@@ -108,7 +108,7 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
   await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
   await page.evaluate(() => window.__plumb.overlay.pin(document.getElementById('beta-chip')));
-  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for span in Chip' });
+  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for Chip (span)' });
   await reading.waitFor();
 
   // Preview applies every mark that has exactly one fitting token; the rest wait for a pick.

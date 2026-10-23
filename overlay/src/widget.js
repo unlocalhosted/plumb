@@ -744,8 +744,12 @@ class PlumbOverlay extends HTMLElement {
 
   #label(element, state) {
     const crumbs = this.#crumbs();
-    const name = crumbs || `<span class="el">${esc(state?.tag ?? element.localName)}</span>`;
-    const who = state?.component ? `<span class="who" title="${state.via === 'owner' ? 'Rendered by a library inside this component' : ''}">${esc(state.component)}</span>` : '';
+    // One naming rule everywhere (tag, card, path): an element that is a component's outermost element is named by
+    // the component, its tag quiet beside it; any other element is its tag and where it's written ("div in App").
+    const tag = state?.tag ?? element.localName, root = componentOf(element);
+    const name = crumbs || (root ? `<span class="el">${esc(root)}</span><span class="who">${esc(tag)}</span>` : `<span class="el">${esc(tag)}</span>`);
+    const owner = state?.component && state.component !== root ? state.component : null;
+    const who = owner ? `<span class="who" title="${state.via === 'owner' ? 'Rendered by a library inside this component' : `Written in ${esc(owner)}`}">in ${esc(owner)}</span>` : '';
     if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
     if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
@@ -858,7 +862,8 @@ class PlumbOverlay extends HTMLElement {
     const p = this.#pinned, s = p.state, w = this.#$('.w'), ready = s.status === 'ready';
     const b = p.element.getBoundingClientRect();
     const width = Math.round(Math.min(480, Math.max(360, b.width + 24)));
-    const label = ready ? `${s.tag}${s.component ? ' in ' + s.component : ''}` : p.element.localName;
+    const root = componentOf(p.element);
+    const label = root ? `${root} (${ready ? s.tag : p.element.localName})` : ready ? `${s.tag}${s.component ? ' in ' + s.component : ''}` : p.element.localName;
     p.regions = ready ? s.marks.map(m => regionFor(p.element, m.props)) : [];
     w.hidden = false;
     w.style.width = width + 'px';

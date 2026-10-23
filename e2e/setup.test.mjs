@@ -279,9 +279,10 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   const point = { x: box.x + box.width / 2, y: box.y + 3 };
   await page.keyboard.down('Alt'); await page.mouse.move(point.x, point.y);
   // Init accepted today's drift as debt: the tag need not call it "new/off".
-  await overlay.locator('.tag .el').filter({ hasText: /^div$/ }).waitFor();
+  // A component's outermost div is named by the component, its tag beside it; any other div by its tag.
+  await overlay.locator('.tag').filter({ has: page.locator('.el, .who').filter({ hasText: /^div$/ }) }).waitFor();
   await page.mouse.click(point.x, point.y); await page.keyboard.up('Alt');
-  const reading = overlay.getByRole('dialog', { name: /^React Plumber reading for div/ });
+  const reading = overlay.getByRole('dialog', { name: /^React Plumber reading for (div|\w+ \(div\))/ });
   await reading.waitFor();
   const pinnedLocation = (await reading.locator('.top .file').getAttribute('title')).split(' · ')[0];
   assert.equal(pinnedLocation, `${located.file}:${located.line}:${located.column}`);

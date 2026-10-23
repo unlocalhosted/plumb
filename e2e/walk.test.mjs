@@ -99,7 +99,7 @@ test('two-finger scroll walks the tree under Alt: up to parents, down back, the 
   await page.keyboard.up('Alt');
   const card = page.locator('plumb-overlay').locator('.w .card[role="dialog"]');
   await card.waitFor();
-  assert.match(await card.getAttribute('aria-label'), /div in SyncRow/, 'the walked level is pinned');
+  assert.match(await card.getAttribute('aria-label'), /SyncRow \(div\)/, 'the walked level is pinned');
   assert.equal(await page.evaluate(() => scrollY), 0);
   assert.deepEqual(errors, []);
 });
