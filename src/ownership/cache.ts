@@ -64,7 +64,7 @@ function hydrate(data: GraphData): ComponentGraph {
 interface Receipt { graph: GraphData; files: [string, string | null][]; directories: [string, string[]][]; resolutions: [string, string | undefined][]; contexts: [string, string | undefined][] }
 export function componentCache(root: string, files: string[], config: PlumbConfig, includeUnused: boolean) {
   const directory = resolve(cacheDirectory(root), 'components');
-  const path = join(directory, hash(JSON.stringify(['components-v3-isolated', root, files, config.components, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
+  const path = join(directory, hash(JSON.stringify(['components-v6-directory-recipes', root, files, config.components, config.classHelpers, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
   return {
     read(resolveImport: (file: string, specifier: string) => string | undefined, resolveContext: (file: string, specifier: string) => string | undefined): ComponentGraph | undefined {
       let receipt: Receipt;

@@ -22,7 +22,8 @@ export function classHelperRegistry(extensions: ClassHelperInput[] = []): Readon
   return new Map([...knownHelpers, ...extensions.map(item => typeof item === 'string' ? { name: item, args: 'classes' as const } : item)].map(helper => [helper.name, helper]));
 }
 
-export function argumentMode(helper: ClassHelper, index: number): ClassArgument {
+export function argumentMode(helper: ClassHelper, index: number, objectSignature = false): ClassArgument {
+  if (helper.name === 'cva' && index === 0 && objectSignature) return 'config';
   return helper.configFrom !== undefined && index >= helper.configFrom ? 'config' : helper.args;
 }
 

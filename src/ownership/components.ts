@@ -12,12 +12,16 @@ import type { SourceText, SourceProgram } from '../collect/source.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import { UsageError } from '../errors.js';
+import { classHelperRegistry } from '../collect/class-helpers.js';
+import { readClassRecipes } from '../collect/class-recipes.js';
+import type { ClassRecipe } from '../collect/class-recipes.js';
 
 export interface ComponentIdentity {
   name: string;
   source: { file: string; line: number };
   variants: Record<string, string[]>;
   roots: { elements: string[]; classes: string[] };
+  recipes?: ClassRecipe[];
 }
 interface Binding { node: Node }
 interface Import { file: string; name: string }
@@ -346,6 +350,10 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       const tag = nodeName(item.name);
       if (/^[a-z]/.test(tag)) elements.add(tag);
       else {
+        const host = bindings.get(tag);
+        if (host && ['Literal', 'ConditionalExpression'].includes(host.type)) walk(host, part => {
+          if (part.type === 'Literal' && typeof part.value === 'string' && /^[a-z][a-z0-9-]*$/.test(part.value)) elements.add(part.value);
+        });
         const found = implementation(value, tag);
         if (found) walk(found.node, part => {
           if (part.type === 'JSXOpeningElement' && /^[a-z]/.test(nodeName(part.name))) elements.add(nodeName(part.name));
@@ -363,39 +371,19 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     visited.clear();
     dependency(node, false);
     const at = sourceSite(value, node.start, name);
-    const identity = { name, source: { file: value.file, line: at.line }, variants, roots: { elements: [...elements].sort(), classes: [...classes].sort() } };
+    const identity: ComponentIdentity = { name, source: { file: value.file, line: at.line }, variants, roots: { elements: [...elements].sort(), classes: [...classes].sort() } };
     rootRanges.set(identity, rootOpenings.flatMap(item => item.type === 'JSXOpeningElement' ? item.attributes.flatMap(attr =>
       attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name)) ? [{ file: value.file, start: attr.start, end: attr.end }] : []) : []));
-    const fingerprint = new Set<string>(), followed = new Set<string>();
-    const tokens = (text: string) => { for (const token of text.split(/\s+/)) if (token) fingerprint.add(token); };
-    function rootClasses(item: Node): void {
-      item = unwrap(item);
-      if (item.type === 'Literal' && typeof item.value === 'string') { tokens(item.value); return; }
-      if (item.type === 'Identifier') {
-        if (followed.has(item.name)) return; followed.add(item.name);
-        const binding = bindings.get(item.name); if (binding) rootClasses(binding);
-        return;
-      }
-      if (item.type === 'TemplateLiteral') {
-        item.quasis.forEach((quasi, index) => {
-          const text = quasi.value.cooked ?? '';
-          // A glued hole is opaque, not a partial class fingerprint.
-          for (const match of text.matchAll(/\S+/g)) if ((index === 0 || match.index > 0) && (index === item.quasis.length - 1 || match.index + match[0].length < text.length)) tokens(match[0]);
-        });
-        for (const expression of item.expressions) rootClasses(expression);
-        return;
-      }
-      if (item.type === 'ConditionalExpression') { rootClasses(item.consequent); rootClasses(item.alternate); return; }
-      if (item.type === 'LogicalExpression') { rootClasses(item.left); rootClasses(item.right); return; }
-      if (item.type === 'MemberExpression') { rootClasses(item.object); return; }
-      if (item.type === 'ObjectExpression') { for (const property of item.properties) if (property.type === 'Property') rootClasses(property.value); return; }
-      if (item.type === 'ArrayExpression') { for (const element of item.elements) if (element) rootClasses(element); return; }
-      if (item.type === 'JSXExpressionContainer') { rootClasses(item.expression); return; }
-      if (item.type === 'CallExpression' && /(?:^|\.)(?:cn|clsx|cx|classNames|twMerge|twJoin|cva|tv)$/.test(memberName(item.callee))) for (const argument of item.arguments) rootClasses(argument);
-    }
+    const fingerprint = new Set<string>(), recipes: ClassRecipe[] = [];
+    const helpers = classHelperRegistry(config.classHelpers);
     for (const opening of rootOpenings) if (opening.type === 'JSXOpeningElement') for (const attr of opening.attributes) {
-      if (attr.type === 'JSXAttribute' && ['className', 'class'].includes(nodeName(attr.name)) && attr.value) rootClasses(attr.value);
+      if (attr.type !== 'JSXAttribute' || !['className', 'class'].includes(nodeName(attr.name)) || !attr.value) continue;
+      const read = readClassRecipes(attr.value, helpers, id => bindings.get(id), id => value.imports.get(id)?.name ?? id);
+      const defaults = read.filter(recipe => recipe.default);
+      for (const recipe of defaults.length ? defaults : read) for (const token of recipe.classes) fingerprint.add(token);
+      recipes.push(...read.filter(recipe => Object.keys(recipe.variants).length));
     }
+    if (recipes.length) identity.recipes = recipes;
     fingerprintClasses.set(identity, [...fingerprint].sort());
     return identity;
   }
@@ -527,14 +515,16 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   }
   profileProgress('phase:components', { current: sourceFiles.length, total: sourceFiles.length });
   // Imitation needs identities even when every caller hand-builds the component.
-  // Walk selected exports only on request; ownership's normal discovery stays unchanged.
+  // Local UI directories also supply static recipes, even without a resolved
+  // caller import (e.g. a Vite-only alias). Keep other unused identities opt-in.
+  const knownIdentities = new Set(identities.values());
   const fingerprints = Object.keys(config.imitation ?? {});
   if ((includeUnused || fingerprints.length) && files[0]) for (const specifier of [...packages, ...prefixes]) { const path = target(files[0], specifier); if (path) module(path); }
-  if (includeUnused || fingerprints.length) for (const directory of discoveryDirectories) {
+  for (const directory of discoveryDirectories) {
     const discovered = componentFiles(directory); watchedDirectories.set(directory, discovered);
     for (const file of discovered) module(file);
   }
-  if (includeUnused) {
+  if (includeUnused || discoveryDirectories.length) {
     for (const value of modules.values()) if (selectedFile(value.file)) {
       for (const name of value.exports.keys()) if (name !== '*') exported(value.file, name, new Set());
       for (const star of value.stars) { const path = target(value.file, star); if (path) { selected.add(path); module(path); } }
@@ -542,7 +532,10 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   } else if (fingerprints.length) {
     for (const value of modules.values()) if (selectedFile(value.file)) for (const name of fingerprints) exported(value.file, name, new Set());
   }
-  const components = [...new Map([...identities.values()].flatMap(value => value ? [[`${value.source.file}:${value.name}`, value] as const] : [])).values()];
+  const components = [...new Map([...identities.values()].flatMap(value => value && (includeUnused || fingerprints.length || knownIdentities.has(value) || value.recipes?.length) ? [[`${value.source.file}:${value.name}`, value] as const] : [])).values()];
+  const retained = new Set(components);
+  for (const identity of rootRanges.keys()) if (!retained.has(identity)) rootRanges.delete(identity);
+  for (const identity of fingerprintClasses.keys()) if (!retained.has(identity)) fingerprintClasses.delete(identity);
   const sourceTokens = new Map<string, { classes: Set<string>; variables: Set<string> }>();
   if (includeUnused) for (const file of new Set(components.map(component => component.source.file))) {
     const inventory = { classes: new Set<string>(), variables: new Set<string>() };

@@ -16,6 +16,7 @@ export interface ImitationSuggestion {
   fingerprint: string[];
   rawElements: number;
   notes?: string[];
+  recipes?: { variants: Record<string, string>; fingerprint: string[] }[];
 }
 interface Evidence { element: ElementIdentity; classes: Set<string>; declarations: Declaration[] }
 type Fingerprint = NonNullable<PlumbConfig['imitation']>[string];
@@ -85,9 +86,39 @@ function representative(item: Evidence, matches: string[]): Declaration {
     refs: [], when: [], site, owner: { kind: 'element', name: item.element.tag }, origin: 'class',
   };
 }
+function recipeMatch(item: Evidence, component: ComponentIdentity) {
+  const matches = (component.recipes ?? []).flatMap(recipe => {
+    const fingerprint = recipe.classes.filter(token => !token.includes(':'));
+    const matched = fingerprint.filter(token => item.classes.has(token));
+    const axes = Object.values(recipe.signature).filter(tokens => tokens.length);
+    const signature = axes.flat().filter(token => item.classes.has(token));
+    const fitsAxes = axes.every(tokens => tokens.filter(token => item.classes.has(token)).length >= Math.ceil(tokens.length / 2));
+    return fitsAxes && signature.length >= 2 && matched.length >= 6 && matched.length / fingerprint.length >= .5 ? [{ recipe, matched, score: matched.length / fingerprint.length }] : [];
+  }).sort((a, b) => b.score - a.score || b.matched.length - a.matched.length || Number(b.recipe.default) - Number(a.recipe.default));
+  return matches[0];
+}
+
 export function judgeImitation(graph: ComponentGraph, classes: ClassSite[], declarations: Declaration[], config: PlumbConfig): Finding[] {
-  if (!config.imitation) return [];
   const items = evidence(graph, classes, declarations), groups = new Map<string, Finding>();
+  // Inferred recipes need combined evidence. Explicit configured fingerprints
+  // keep their existing OR semantics; one shared utility cannot infer a copy.
+  for (const component of graph.components) {
+    if (!component.recipes?.length || config.imitation?.[component.name] || !component.roots.elements.length) continue;
+    for (const item of items) {
+      if (!raw(item, component, { elements: component.roots.elements, fingerprint: [] })) continue;
+      const best = recipeMatch(item, component); if (!best) continue;
+      const variants = Object.entries(best.recipe.variants).map(([axis, choice]) => `${axis}=${JSON.stringify(choice)}`).join(' ');
+      const declaration = representative(item, best.matched);
+      const key = `imitation:${component.name}:${createHash('sha256').update(JSON.stringify([relative(graph.root, component.source.file), variants, best.matched])).digest('hex').slice(0, 16)}`;
+      const previous = groups.get(key);
+      if (previous) { previous.sites.push(declaration.site); previous.occurrences!.push(declaration); continue; }
+      groups.set(key, makeFinding({ key, rule: `imitation/${component.name}`, family: 'imitation', severity: 'error', sites: [declaration.site], declaration,
+        occurrences: [declaration], decisions: [], component,
+        title: `This <${item.element.tag}> rebuilds ${component.name} by hand (${variants})`,
+        because: `A copy misses ${component.name}'s states, focus ring and future fixes.`,
+        action: `Use <${component.name} ${variants}> from ${relative(graph.root, component.source.file)}.` }));
+    }
+  }
   for (const { name, entry, directories } of presetImitation(config)) {
     const identities = graph.components.filter(component => presetComponentMatches(directories, component) && (component.name === name || component.name.startsWith(name + '.')));
     const component = identities.find(component => component.name === name) ?? identities[0];
@@ -147,10 +178,11 @@ export async function suggestImitation(graph: ComponentGraph, classes: ClassSite
     for (const token of rootClasses) for (const d of declarationsFor(token)) for (const name of declarationVars(d)) rootVars.add(name);
     for (const d of collected.styles.declarations.filter(d => isRoot(d.site))) for (const name of declarationVars(d)) rootVars.add(name);
     const others = graph.components.filter(other => other !== component);
-    const fingerprint = [...[...rootClasses].filter(token => !others.some(other => sourceClasses.get(other.source.file)?.has(token))),
+    const fingerprint = [...[...rootClasses].filter(token => component.recipes?.length || !others.some(other => other.source.file === component.source.file ? graph.fingerprintClasses.get(other)?.includes(token) : sourceClasses.get(other.source.file)?.has(token))),
       ...[...rootVars].filter(name => !others.some(other => sourceVars.get(other.source.file)?.has(name))).map(name => `var(${name})`)].sort();
     const unsupported = [...rootClasses].filter(token => incomplete.has(token));
-    return { component, fingerprint, rawElements: items.filter(item => raw(item, component, { fingerprint }) && matched(item, fingerprint).length).length,
+    return { component, fingerprint, rawElements: items.filter(item => raw(item, component, { fingerprint, ...(component.recipes?.length ? { elements: component.roots.elements } : {}) }) && (component.recipes?.length ? recipeMatch(item, component) : matched(item, fingerprint).length)).length,
+      ...(component.recipes?.length ? { recipes: component.recipes.map(recipe => ({ variants: recipe.variants, fingerprint: recipe.classes })) } : {}),
       ...(unsupported.length ? { notes: [`Custom-property proposals from ${unsupported.join(', ')} omitted: compiler CSS could not be lowered. Class proposals and conservative source-reference inventory remain available.`] } : {}) };
   }).sort((a, b) => a.component.name.localeCompare(b.component.name) || a.component.source.file.localeCompare(b.component.source.file));
 }

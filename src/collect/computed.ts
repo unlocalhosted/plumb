@@ -243,7 +243,7 @@ export class ComputedClasses {
         const importedName = binding?.import?.name ?? helper;
         const shape = this.helpers.get(importedName);
         if (shape) {
-          for (const [i, child] of node.arguments.entries()) recur(child, argumentMode(shape, i), shape);
+          for (const [i, child] of node.arguments.entries()) recur(child, argumentMode(shape, i, child.type === 'ObjectExpression'), shape);
           break;
         }
         if (node.callee.type === 'MemberExpression' && nodeName(node.callee.property) === 'join' && node.arguments[0]?.type === 'Literal' && node.arguments[0].value === ' ') { recur(node.callee.object); break; }

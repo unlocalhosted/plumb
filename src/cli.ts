@@ -352,6 +352,7 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(proposals, null, 2)}\n` :
       'Candidate fingerprints (report only; none enabled):\n' + proposals.map(proposal =>
         `${proposal.component.name}  ${proposal.rawElements} raw elements\n  fingerprint: ${JSON.stringify(proposal.fingerprint)}\n  source: ${relative(report.root, proposal.component.source.file)}:${proposal.component.source.line}\n` +
+        (proposal.recipes ?? []).map(recipe => `  recipe ${Object.entries(recipe.variants).map(([axis, choice]) => `${axis}=${JSON.stringify(choice)}`).join(' ')}: ${JSON.stringify(recipe.fingerprint)}\n`).join('') +
         (proposal.notes ?? []).map(note => `  note: ${note}\n`).join('')).join(''));
     return;
   }

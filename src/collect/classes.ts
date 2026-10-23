@@ -317,7 +317,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
           return;
         }
         for (const [index, arg] of node.arguments.entries()) {
-          recur(arg, conditions, argumentMode(shape, index), shape);
+          recur(arg, conditions, argumentMode(shape, index, arg.type === 'ObjectExpression'), shape);
         }
         return;
       }
