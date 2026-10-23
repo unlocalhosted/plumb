@@ -114,3 +114,43 @@ test('your setup: the note, a first open that steps aside, ticks, and Copy for a
   assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.className), 'ready');
   assert.deepEqual(errors, []);
 });
+
+// Apply, through a real click: a project whose vite.config turns hot updates off. The panel shows the change, Apply
+// writes it to the file on disk, the row says so, and nothing else in the config moves.
+test('your setup: Apply writes the ticked change to the project config, shown first', { timeout: 120000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const root = await mkdtemp(join(repo, 'fixtures/.ready-apply-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+  await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
+  const { writeFile, readFile } = await import('node:fs/promises');
+  await writeFile(join(root, 'package.json'), '{"name":"ready-apply","private":true,"type":"module"}\n');
+  const before = `import tailwindcss from '@tailwindcss/vite';\nimport { plumb } from '${join(repo, 'dist/hosts/vite.js')}';\n\nexport default {\n  plugins: [plumb({ watch: false }), tailwindcss()],\n  oxc: { jsx: { runtime: 'automatic', development: true } },\n  server: { watch: null, host: '127.0.0.1', port: 0, hmr: false },\n};\n`;
+  await writeFile(join(root, 'vite.config.mjs'), before);
+  const server = await createServer({ root, configFile: join(root, 'vite.config.mjs'), cacheDir: join(root, '.vite-cache'), logLevel: 'silent' });
+  t.after(() => server.close()); await server.listen();
+  const page = await launched.newPage({ viewport: { width: 1000, height: 900 } });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/`);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  const overlay = page.locator('plumb-overlay');
+  await overlay.locator('.rd').waitFor();
+
+  const row = overlay.locator('.rd .req[data-id="write.hmr"]');
+  await row.waitFor();
+  assert.match(await row.locator('.what').textContent(), /Hot updates are off/);
+  // Show the change first: the diff removes hmr: false.
+  await row.locator('[data-act="show"]').click();
+  assert.match(await row.locator('pre').textContent(), /-.*hmr: false/);
+  // Tick only this one, so Apply writes exactly it.
+  for (const box of await overlay.locator('.rd input.box').all()) if (await box.getAttribute('data-id') !== 'write.hmr') await box.uncheck();
+  const apply = overlay.locator('.rd [data-act="apply"]');
+  assert.equal((await apply.textContent()).trim(), 'Apply 1');
+  await apply.click();
+  await row.locator('.chip', { hasText: 'Fixed' }).waitFor();
+  const after = await readFile(join(root, 'vite.config.mjs'), 'utf8');
+  assert.doesNotMatch(after, /hmr: false/);
+  assert.equal(after.replace(/,\s*hmr: false/, ''), before.replace(/,\s*hmr: false/, ''), 'nothing else in the config moved');
+  assert.deepEqual(errors, []);
+});
