@@ -177,7 +177,7 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
   const rows = table(groups.map((group, i) => {
     const { marker, ink, reason, location } = details[i]!;
     return [{ text: marker, ink: marker === '✗' ? 'red' as const : 'amber' as const }, group.subject,
-      { text: visibleWidth(reason) <= reasonWidth ? reason : '', ink },
+      { text: group.findings[0]!.rule.startsWith('habits/') || visibleWidth(reason) <= reasonWidth ? reason : '', ink },
       { text: visibleWidth(location) <= locationWidth ? location : '', ink: 'dim' as const }];
   }), [{ width: 1 }, { width: subjectWidth }, { width: reasonWidth }, { width: locationWidth }]);
   return groups.map((group, i) => {

@@ -100,3 +100,16 @@ test('habit fixes name complete declarations and wrap without losing replacement
     }
   }
 });
+
+test('habit detail rows keep reason columns populated in pipes and 80/100-column PTYs', async t => {
+  const root = await fixture(t, 'habits');
+  for (const [tty, columns] of [[false, 100], [true, 80], [true, 100]]) {
+    const output = run(root, ['--rule', 'habits'], columns, tty);
+    assert.match(output, /^\s+!\s+color: red {2,}also applies/m);
+    assert.match(output, /^\s+!\s+outline: none {2,}removes the focus/m);
+    assert.match(output, /^\s+!\s+transition: all 1s ease-in {2,}transitions/m);
+    const text = output.replace(/\s+/g, ' ');
+    for (const reason of ['also applies on touch screens [habits/hover-gate]', 'removes the focus outline on .removed [habits/focus-outline]', 'transitions every property [habits/transition-named]']) assert.ok(text.includes(reason), reason);
+    assert.ok(output.split('\n').every(line => [...line].length <= columns));
+  }
+});
