@@ -224,6 +224,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     habits: habits.summaries,
     presets: config.presets ?? [],
     decisions: record.decisions,
+    ...(record.numericSpacing ? { numericSpacing: record.numericSpacing } : {}),
     decisionInventory: record.inventory ?? [],
     ...(dead ? { deadDecisions: dead.counts } : {}),
     declarations,

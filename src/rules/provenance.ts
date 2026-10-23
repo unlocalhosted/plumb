@@ -6,6 +6,7 @@ import { makeFinding, familyReasons, familyNames, scales, noFit, choiceText, sou
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Decision, Finding, FamilyCoverage } from '../report.js';
 import type { DecisionRecord } from '../decisions/index.js';
+import { projectDecision } from '../decisions/availability.js';
 import { pixels, resolveValue } from '../decisions/resolve.js';
 import type { Variable } from '../decisions/resolve.js';
 import { references } from '../collect/source.js';
@@ -305,7 +306,6 @@ export interface ProvenanceEntry {
 
 /** Same grouping and messages for cold checks and cached incremental judgements. */
 export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry[], record: DecisionRecord): Finding[] {
-  const decisions = record.decisions.filter(d => d.family === family);
   const grouped = new Map<string, Finding>(), locations = new Map<string, Set<string>>();
   const fixProperties = new Map<string, Set<string>>();
   const editLocations = new Map<string, Set<string>>();
@@ -341,7 +341,7 @@ export function findingsForFamily(family: JudgedFamily, entries: ProvenanceEntry
     if (!locations.get(key)!.has(location)) { finding.sites.push(declaration.site); locations.get(key)!.add(location); }
   }
   const findings = [...grouped.values()];
-  if (!decisions.some(d => d.origin !== 'framework') && !(family === 'spacing' && record.numericSpacing && !record.numericSpacing.replaced && entries.some(entry => !entry.rule.endsWith('/framework')))) {
+  if (!projectDecision(record, family, entries.some(entry => !entry.rule.endsWith('/framework')))) {
     const unchecked = findings.filter(f => f.rule !== 'provenance/opaque-inline');
     if (unchecked.length) {
       const occurrences = unchecked.flatMap(f => f.occurrences ?? [f.declaration]);

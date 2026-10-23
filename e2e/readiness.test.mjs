@@ -21,11 +21,12 @@ function run(root, args, input = '', expected = 0, env = {}) {
   assert.equal(result.status, expected, result.stderr + result.stdout);
   return result.stdout;
 }
-async function fixture(t, host = config) {
+async function fixture(t, host = config, sources = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.readiness-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
   await writeFile(join(root, 'vite.config.mjs'), host);
+  for (const [file, source] of Object.entries(sources)) await writeFile(join(root, file), source);
   run(root, ['init', '--force']);
   return root;
 }
@@ -302,6 +303,72 @@ test('doctor and read-only route cover every capability and token family with ev
   assert.match(output, /React development build needs verification/);
   assert.match(output, /unavailable\s+System panel/);
   for (const requirement of ready.requirements) assert.equal(output.includes(`[${requirement.id}]`), !requirement.derived && requirement.capability !== 'system', requirement.id);
+});
+
+test('numeric spacing base agrees in doctor, readiness GET and check coverage', async t => {
+  const root = await fixture(t, config, {
+    'src/styles.css': '@import "tailwindcss";\n@theme {\n  --spacing: 4px;\n}\n',
+    'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="p-4 gap-2" />; }',
+  });
+  const checked = JSON.parse(run(root, ['check', '--json']));
+  assert.ok(checked.coverage.spacing.total > 0);
+  assert.equal(checked.coverage.spacing.fromDecisions, checked.coverage.spacing.total);
+  assert.equal(checked.coverage.spacing.findings, 0);
+  assert.ok(!checked.decisions.some(token => token.family === 'spacing'), 'base alone, no named spacing tokens');
+  const { report } = await api(t, root);
+  const spacing = item(await report(), 'read.tokens.spacing');
+  assert.equal(spacing.status, 'ok');
+  assert.equal(spacing.fix, null);
+  assert.deepEqual(spacing.evidence, [{ file: 'src/styles.css', line: 3, text: '--spacing' }]);
+  assert.match(run(root, ['doctor']), /ok spacing tokens are ready \[read\.tokens\.spacing\]/);
+});
+
+test('framework-only tokens stay missing across every judged family', async t => {
+  const root = await fixture(t, config, {
+    'src/styles.css': `@import "tailwindcss";
+@theme { --spacing: initial; }
+.box { padding: 13px; color: #123456; border-radius: 11px; font-size: 19px; transition: opacity 137ms; box-shadow: 1px 1px 3px #123; z-index: 7; }
+`,
+    'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="box" />; }',
+  });
+  const checked = JSON.parse(run(root, ['check', '--json']));
+  const { report } = await api(t, root);
+  const ready = await report(), doctor = run(root, ['doctor'], '', 1);
+  for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) {
+    assert.ok(checked.coverage[family].total > 0, family);
+    assert.equal(checked.coverage[family].fromDecisions, 0, family);
+    assert.ok(checked.findings.some(finding => finding.rule === 'config/no-tokens' && finding.family === family), family);
+    assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
+    assert.match(doctor, new RegExp(`fix Your theme has no ${family} tokens \\[read\\.tokens\\.${family}\\]`));
+  }
+});
+
+test('project tokens agree across every judged family', async t => {
+  const root = await fixture(t, config, {
+    'src/styles.css': `@import "tailwindcss";
+@theme {
+  --spacing-comfy: 16px;
+  --color-brand: #123456;
+  --radius-card: 11px;
+  --text-copy: 19px;
+  --duration-quick: 137ms;
+  --shadow-card: 1px 1px 3px #123;
+  --z-modal: 7;
+}
+.box { padding: var(--spacing-comfy); color: var(--color-brand); border-radius: var(--radius-card); font-size: var(--text-copy); transition: opacity var(--duration-quick); box-shadow: var(--shadow-card); z-index: var(--z-modal); }
+`,
+    'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="box" />; }',
+  });
+  const checked = JSON.parse(run(root, ['check', '--json']));
+  const { report } = await api(t, root);
+  const ready = await report(), doctor = run(root, ['doctor']);
+  for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) {
+    assert.ok(checked.coverage[family].total > 0, family);
+    assert.equal(checked.coverage[family].fromDecisions, checked.coverage[family].total, family);
+    assert.equal(item(ready, `read.tokens.${family}`).status, 'ok', family);
+    assert.equal(item(ready, `read.tokens.${family}`).evidence[0].file, 'src/styles.css', family);
+    assert.match(doctor, new RegExp(`ok ${family} tokens are ready \\[read\\.tokens\\.${family}\\]`));
+  }
 });
 
 test('derived causes stay in route JSON; doctor counts causes and excludes unavailable system gaps', async t => {

@@ -130,6 +130,8 @@ export interface Report {
   findings: Finding[];
   habits?: import('./habits/index.js').HabitSummary[];
   decisions: Decision[];
+  /** Numeric spacing is a base, not a named token; replaced bases do not govern values. */
+  numericSpacing?: import('./decisions/spacing.js').NumericSpacing;
   notes: string[];
   /** Project theme decisions, including keys outside configured judging ladders. */
   decisionInventory?: Decision[];

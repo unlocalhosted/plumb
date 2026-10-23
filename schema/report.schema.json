@@ -48,6 +48,11 @@
       }
     },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "numericSpacing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unit", "replaced"],
+      "properties": { "unit": { "$ref": "#/$defs/decision" }, "replaced": { "type": "boolean" } }
+    },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "deadDecisions": {
       "type": "object", "additionalProperties": false,

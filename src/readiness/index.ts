@@ -5,6 +5,7 @@ import { readFile, realpath, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { check } from '../index.js';
+import { projectDecision } from '../decisions/availability.js';
 import type { Report, JudgedFamily } from '../report.js';
 import { loadConfig } from '../config.js';
 import { allConfigNames, statePath } from '../paths.js';
@@ -95,11 +96,11 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   } catch (error) { analysisError = userMessage(error); }
   if (!requirements.some(item => item.id === 'read.styles')) add('read.styles', 'read', 'unknown', 'Styles could not be checked', configEvidence, 'Drift cannot be judged.', step(`Review the CSS entry and validation errors in ${configFile}, then run plumber doctor.`, 'plumber doctor'));
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as JudgedFamily[]) {
-    const tokens = report?.decisions.filter(item => item.family === family) ?? [];
+    const token = report ? projectDecision(report, family) : undefined;
     const needed = report ? (report.coverage[family].total > 0 || !!report.configHints?.[family]) : false;
-    add(`read.tokens.${family}`, 'read', report ? tokens.length || !needed ? 'ok' : 'missing' : 'unknown',
-      !report ? `${family} tokens need verification` : tokens.length ? `${family} tokens are ready` : needed ? `Your theme has no ${family} tokens` : `${family}: no values to judge`,
-      tokens.length ? tokens.slice(0, 1).map(item => ({ file: relative(root, item.source.file), line: item.source.line, text: item.name })) : configEvidence,
+    add(`read.tokens.${family}`, 'read', report ? token || !needed ? 'ok' : 'missing' : 'unknown',
+      !report ? `${family} tokens need verification` : token ? `${family} tokens are ready` : needed ? `Your theme has no ${family} tokens` : `${family}: no values to judge`,
+      token ? [{ file: relative(root, token.source.file), line: token.source.line, text: token.name }] : configEvidence,
       `${family} values cannot be judged against your tokens.`, step(`Add ${family} tokens to your theme, or set decisions.${family}.from in ${configFile}.`, 'plumber doctor'));
   }
   let baseline: Status = 'unknown', ledgerText = 'Ledger could not be read';
