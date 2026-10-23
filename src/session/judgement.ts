@@ -186,9 +186,9 @@ export class JudgementState {
     }
     return { findings: mergeFindings(results.map(r => r.findings), declarations).sort((a, b) => a.rule.localeCompare(b.rule) || a.key.localeCompare(b.key)), coverage };
   }
-  habits(declarations: Declaration[], config: PlumbConfig, contexts: Map<Declaration, string>, hover: string[], list?: boolean) {
+  habits(declarations: Declaration[], config: PlumbConfig, contexts: Map<Declaration, string>, hover: string[], list?: boolean, managedFocus: ReadonlySet<Declaration> = new Set()) {
     const files = byFile(declarations); this.habitCache.keep(new Set(files.keys()));
-    const results = [...files].map(([file, ds]) => this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list)));
+    const results = [...files].map(([file, ds]) => this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d)), ...ds.map(d => managedFocus.has(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list, managedFocus)));
     const summaries = judgeHabits([], config.habits ?? [], new Map(), hover, list).summaries;
     for (const result of results) for (const summary of summaries) if (summary.breaks !== null) summary.breaks += result.summaries.find(s => s.id === summary.id)?.breaks ?? 0;
     const customIds = new Set((config.habits ?? []).flatMap(entry => typeof entry === 'string' ? [] : [entry.id]));

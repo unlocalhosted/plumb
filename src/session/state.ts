@@ -334,7 +334,7 @@ export class WarmState implements AnalysisRuntime {
     if (this.snippet && ['provenance', 'ownership', 'habits', 'imitation'].includes(name)) return compute();
     if (name === 'provenance') return this.judgement.provenance(...inputs as Parameters<JudgementState['provenance']>) as T;
     if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config) as T;
-    if (name === 'habits') return this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined) as T;
+    if (name === 'habits') return this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined, inputs[5] as ReadonlySet<Declaration>) as T;
     if (name === 'imitation') return this.judgement.imitation(inputs[0] as ComponentGraph, this.shards, inputs[1] as Parameters<JudgementState['imitation']>[2], inputs[2] as Declaration[], this.config) as T;
     return compute();
   }
