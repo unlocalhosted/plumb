@@ -41,8 +41,33 @@ function child(ast: ReturnType<typeof parse>, node: ObjectNode, key: string): Ob
 }
 function remove(text: MagicString, source: string, node: ObjectNode, entry: Property): void {
   const index = node.properties.indexOf(entry), next = node.properties[index + 1], previous = node.properties[index - 1];
-  const separator = comma(source, entry.end, next?.start ?? node.end - 1) ?? (previous ? comma(source, previous.end, entry.start) : undefined);
+  const after = comma(source, entry.end, next?.start ?? node.end - 1);
+  const before = previous ? comma(source, previous.end, entry.start) : undefined;
+  const end = after === undefined ? entry.end : after + 1;
+  const lineStart = source.lastIndexOf('\n', entry.start - 1) + 1;
+  const newline = source.indexOf('\n', end);
+  // Remove a property on its own line with its indentation and newline, while
+  // leaving comments and all unrelated lines in place (including CRLF files).
+  if (newline >= 0 && /^[\t ]*$/.test(source.slice(lineStart, entry.start)) && /^[\t \r]*$/.test(source.slice(end, newline))) {
+    text.remove(lineStart, newline + 1);
+    if (!next && before !== undefined) text.remove(before, before + 1);
+    return;
+  }
+  if (next && /^[\s,]*$/.test(source.slice(entry.end, next.start))) {
+    text.remove(entry.start, next.start);
+    return;
+  }
+  if (!next && before !== undefined && /^[\s,]*$/.test(source.slice(before, entry.start))) {
+    text.remove(before, end);
+    return;
+  }
+  if (!previous && !next && /^\s*$/.test(source.slice(node.start + 1, entry.start)) && /^\s*$/.test(source.slice(end, node.end - 1))) {
+    text.remove(node.start + 1, node.end - 1);
+    return;
+  }
+  // Comments between properties belong to the author, not to the removed key.
   text.remove(entry.start, entry.end);
+  const separator = after ?? before;
   if (separator !== undefined) text.remove(separator, separator + 1);
 }
 

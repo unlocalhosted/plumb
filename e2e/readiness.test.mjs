@@ -147,6 +147,32 @@ test('HMR and polling diffs survive Vite startup for every writable server shape
   });
 });
 
+test('HMR removal preserves surrounding config without whitespace or comma debris', async t => {
+  const cases = [
+    ["{ hmr: false, host: '127.0.0.1', port: 0 }", "{ host: '127.0.0.1', port: 0 }"],
+    ["{ host: '127.0.0.1', hmr: false, port: 0 }", "{ host: '127.0.0.1', port: 0 }"],
+    ["{ host: '127.0.0.1', port: 0, hmr: false }", "{ host: '127.0.0.1', port: 0 }"],
+    ["{ host: '127.0.0.1', port: 0, hmr: false, }", "{ host: '127.0.0.1', port: 0 }"],
+    ['{ hmr: false }', '{}'],
+    ['{\n    hmr: false,\n    port: 0\n  }', '{\n    port: 0\n  }'],
+    ["{\n    host: '127.0.0.1',\n    hmr: false,\n    port: 0\n  }", "{\n    host: '127.0.0.1',\n    port: 0\n  }"],
+    ['{\n    port: 0,\n    hmr: false\n  }', '{\n    port: 0\n  }'],
+    ['{\n    port: 0,\n    hmr: false,\n  }', '{\n    port: 0\n  }'],
+    ['{\n    hmr: false,\n  }', '{\n  }'],
+    ['{\r\n    port: 0,\r\n    hmr: false,\r\n  }', '{\r\n    port: 0\r\n  }'],
+  ];
+  for (const [before, after] of cases) await t.test(JSON.stringify(before), async t => {
+    const original = config.replace('server: { hmr: true, watch: { usePolling: true, awaitWriteFinish: true } }', `server: ${before}`);
+    const root = await fixture(t, original), { report, request } = await api(t, root);
+    const fix = item(await report(), 'write.hmr').fix;
+    assert.equal(fix.kind, 'diff');
+    const response = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
+    assert.equal(response.status, 200, await response.clone().text());
+    assert.equal(await readFile(join(root, 'vite.config.mjs'), 'utf8'), original.replace(`server: ${before}`, `server: ${after}`));
+    assert.equal(item(await report(), 'write.hmr').status, 'ok');
+  });
+});
+
 test('JSX order allows Tailwind first; React first offers a minimal diff that starts Vite', async t => {
   const imports = "import tailwindcss from '@tailwindcss/vite';\n";
   for (const [plugins, expected] of [['tailwindcss(), inspect(), react()', 'ok'], ['tailwindcss(), react(), inspect()', 'missing']]) {
