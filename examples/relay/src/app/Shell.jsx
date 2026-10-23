@@ -1,6 +1,7 @@
 // Relay's frame: sidebar, top bar and the current screen. Screens arrive one layer at a time (docs/briefs/demo-relay.md).
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Specimen } from '@/Specimen';
+import { Board } from '@/screens/Board';
 import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -26,7 +27,7 @@ export function Shell() {
         <Sidebar route={route} />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopBar title={title} />
-          <Placeholder title={title} />
+          {route === 'board' ? <Board /> : <Placeholder title={title} />}
         </main>
       </div>
     </TooltipProvider>
