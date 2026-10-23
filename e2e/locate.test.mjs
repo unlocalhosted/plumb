@@ -247,7 +247,8 @@ for (const [version, polling] of [[19, false], [19, true], [18, false]]) test(`V
   if (version === 18) {
     await cp(join(repo, 'fixtures/react18/node_modules'), join(root, 'node_modules'), { recursive: true });
   }
-  await writeFile(join(root, 'index.html'), '<html><head></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>');
+  const html = '<html><head></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>';
+  await writeFile(join(root, 'index.html'), html);
   await writeFile(join(root, 'src/entry.jsx'), `import React from 'react';\nimport { createRoot } from 'react-dom/client';\nimport App from './App.jsx';\nconst root = createRoot(document.getElementById('root')); root.render(<App />);\nif (import.meta.hot) import.meta.hot.accept('./App.jsx', module => root.render(React.createElement(module.default)));\n`);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [unstamped({ watch: false })],
     // The JSX runtime and React DOM must share the initial bundle. Late discovery on
@@ -261,7 +262,12 @@ for (const [version, polling] of [[19, false], [19, true], [18, false]]) test(`V
         // Chokidar otherwise drops a second save inside its 50ms change throttle.
         // Emit after the write settles, including truncate/write events from writeFile.
         awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },
-      } : undefined,
+      } : {
+        // FSEvents can replay construction writes after this watcher starts.
+        // Vite buffers the HTML reload for the first WebSocket. Native fs.watch
+        // observes saves from subscription onward; HMR remains enabled.
+        useFsEvents: false,
+      },
     } });
   t.after(() => server.close()); await server.listen();
   const page = await launched.newPage();
@@ -273,6 +279,15 @@ for (const [version, polling] of [[19, false], [19, true], [18, false]]) test(`V
   if (version === 19) {
     await hmrAssertions(page, root, true);
     assert.equal(navigations, 1, 'source updates must use HMR without reloading the document');
+  } else {
+    // Keep the native watcher and real reload path exercised: an HTML save
+    // after startup must reload, unlike the fixture's initial publication.
+    const reloaded = page.waitForEvent('framenavigated', { predicate: frame => frame === page.mainFrame() });
+    await writeFile(join(root, 'index.html'), html.replace('<body>', '<body data-saved="true">'));
+    await reloaded;
+    await page.waitForFunction(() => document.body?.dataset.saved === 'true' && window.__plumb && document.querySelector('#nested'));
+    await page.evaluate(() => window.__plumb.ready());
+    assert.equal(navigations, 2, 'a real HTML save still reloads through the native watcher');
   }
   await editSlice(page, root);
 });
