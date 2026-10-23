@@ -18,7 +18,7 @@ interface SerializedData extends Omit<Data, 'styles'> {
 }
 interface Receipt { data: SerializedData; dependencies: [string, string][]; resolutions: [string, string | null][] }
 export function collectionCache(root: string, helpers: ClassHelperInput[], texts: Map<string, string>) {
-  const key = sourceHash(JSON.stringify(['classes-inline-v11-recipes', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
+  const key = sourceHash(JSON.stringify(['classes-inline-v12-managed-focus', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
   const directory = resolve(cacheDirectory(root), 'sources');
   const path = join(directory, `${key}.v8`);
   return {

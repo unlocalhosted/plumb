@@ -24,6 +24,8 @@ export interface ClassSite extends Site {
   token: string;
   /** Shared expression/element context for declaration companions. */
   context?: string;
+  /** Library-managed composite focus or a script-only container. */
+  managedFocus?: boolean;
   owner: Declaration['owner'];
   conditions: Condition[];
   opaque?: 'dynamic-class';
@@ -139,6 +141,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   if (cached) return { ...cached, modules: new Map(cached.modules), parseMs: 0, inlineMs: 0, collectMs: performance.now() - start };
   const sites = new Map<string, ClassSite>();
   let classContext: string | undefined;
+  let managedFocus = false;
 
   function source(file: string, fullAst = false): Source {
     const cached = sources.get(file);
@@ -212,8 +215,11 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
       const token = match[0];
       const locations = [site(src, offsets?.[match.index] ?? offset + match.index, token), ...(usage ? [{ ...usage, text: token }] : [])];
       for (const location of locations) {
-        const entry: ClassSite = { ...location, token, owner, conditions, ...(classContext ? { context: classContext } : {}), ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
+        const entry: ClassSite = { ...location, token, owner, conditions, ...(classContext ? { context: classContext } : {}), ...(managedFocus ? { managedFocus: true } : {}), ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
         const key = `${location.file}\0${location.line}:${location.column}\0${token}\0${context}`;
+        // Shared literals cannot become exempt because their last use happens
+        // to be a script-focused container.
+        if (sites.has(key) && !sites.get(key)!.managedFocus) delete entry.managedFocus;
         sites.set(key, entry);
       }
     }
@@ -373,12 +379,22 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     for (const key of ['declarations', 'sites', 'stylesheets', 'imports', 'definedVariables'] as const) (styles[key] as unknown[]).push(...inline[key]);
     inlineMs += performance.now() - inlineStart - (parseMs - inlineParseStart);
     const imports: Scope = new Map();
+    const dialogContents = new Set<string>(), commandInputs = new Set<string>();
     for (const statement of ast.body) {
       if (statement.type !== 'ImportDeclaration') continue;
       // Resolve only imports read as class values. Component/helper imports
       // cannot contribute literal maps and need no AST deserialization.
       for (const specifier of statement.specifiers) {
         const key = specifier.type === 'ImportSpecifier' ? name(specifier.imported) : 'default';
+        const namespace = specifier.type === 'ImportNamespaceSpecifier';
+        if (statement.source.value === '@radix-ui/react-dialog') {
+          if (namespace) dialogContents.add(`${specifier.local.name}.Content`);
+          else if (key === 'Content' || key === 'DialogContent') dialogContents.add(specifier.local.name);
+        }
+        if (statement.source.value === 'cmdk') {
+          if (key === 'Command') commandInputs.add(`${specifier.local.name}.Input`);
+          else if (key === 'CommandInput') commandInputs.add(specifier.local.name);
+        }
         imports.set(specifier.local.name, () => {
           const path = resolveImport(file, statement.source.value);
           if (!path || !/\.(?:[jt]sx?|[mc][jt]s)$/.test(path)) return null;
@@ -418,11 +434,29 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
       if (node.type === 'JSXOpeningElement') {
         const element = name(node.name);
         owner = { kind: /^[A-Z]/.test(element) ? 'component' : 'element', name: element };
+        const attribute = (key: string) => node.attributes.find(attr => attr.type === 'JSXAttribute' && name(attr.name) === key);
+        const literal = (key: string): unknown => {
+          const attr = attribute(key);
+          if (attr?.type !== 'JSXAttribute') return undefined;
+          if (!attr.value) return true;
+          const value = attr.value.type === 'JSXExpressionContainer' ? unwrap(attr.value.expression) : attr.value;
+          if (value.type === 'Literal') return value.value;
+          if (value.type === 'UnaryExpression' && value.operator === '-' && value.argument.type === 'Literal' && typeof value.argument.value === 'number') return -value.argument.value;
+          return undefined;
+        };
+        const tabIndex = literal('tabIndex');
+        const scriptContainer = /^(div|span|section|article|main|aside|header|footer|nav|dialog)$/.test(element) &&
+          !attribute('role') && !attribute('contentEditable') && (tabIndex === -1 || tabIndex === '-1');
+        const importedFocus = !next.slice(1).some(scope => scope.has(element.split('.')[0]!));
+        const dialogContainer = importedFocus && dialogContents.has(element) && (!attribute('tabIndex') || tabIndex === -1 || tabIndex === '-1');
+        const commandInput = importedFocus && commandInputs.has(element) && literal('autoFocus') === true;
         for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && attr.value) {
           if (['className', 'class'].includes(name(attr.name))) {
             classContext = `${file}:${node.start}`;
+            managedFocus = scriptContainer || dialogContainer || commandInput;
             evaluate(attr.value, src, next, owner);
             classContext = undefined;
+            managedFocus = false;
           }
           else if (attr.value.type === 'JSXExpressionContainer') walk(attr.value.expression, next, owner);
         }

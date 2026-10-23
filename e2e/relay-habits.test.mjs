@@ -56,3 +56,18 @@ test('Relay planted habits include compiled ease-in and retain overridden theme 
   await appendFile(join(dir, 'src/styles.css'), '\n@theme { --ease-in: cubic-bezier(0, 0, .2, 1); }\n');
   assert.ok(!planted(check(dir)).some(([rule]) => rule === 'habits/no-ease-in'), 'class spelling cannot override actual project curve');
 });
+
+test('Relay dropdown, dialog, sheet and command palette keep managed focus while unsafe suppressions still fail', async t => {
+  const dir = await fixture(t);
+  for (let run = 0; run < 2; run++) {
+    const report = check(dir);
+    const sites = report.findings.filter(f => f.rule === 'habits/focus-outline').flatMap(f => f.sites);
+    assert.deepEqual(sites.filter(s => s.file.includes('/reference/')), [], 'unmodified Relay component fixtures retain visible or managed focus');
+    const attributes = sites.filter(s => s.file.endsWith('AttributeStates.jsx'));
+    assert.equal(attributes.filter(s => s.anchor === 'MissingAttributeFocus').length, 16, JSON.stringify(attributes));
+    assert.equal(attributes.filter(s => s.anchor === 'MissingManagedFocus').length, 7, JSON.stringify(attributes));
+    assert.ok(attributes.every(s => s.anchor?.startsWith('Missing')), JSON.stringify(attributes));
+    assert.ok(sites.some(s => s.file.endsWith('Drift.jsx') && s.text === 'focus:outline-none'), 'planted Settings input stays caught');
+    if (run) assert.equal(report.timing.cacheMisses, 0);
+  }
+});

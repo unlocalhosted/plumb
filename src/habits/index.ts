@@ -51,7 +51,19 @@ const visibleRing = (d: Declaration) => d.prop === 'box-shadow' && tokens(d.valu
     (lengths[0] !== 0 || lengths[1] !== 0 || (lengths[2] ?? 0) > 0 || (lengths[3] ?? 0) > 0) &&
     !parts.slice(4).some(part => part === 'transparent' || oklab(part)?.[3] === 0);
 });
-const focusBase = (s: string) => s.replace(/(?<!\\):focus(?:-(?:visible|within))?(?![\w-])/gi, '');
+const highlightAttribute = /(?<!\\)\[\s*(?:data-highlighted(?:\s*=\s*(?:"true"|'true'|true))?|(?:data-selected|aria-selected)\s*=\s*(?:"true"|'true'|true)|data-state\s*=\s*(?:"(?:open|active)"|'(?:open|active)'|open|active))\s*\]/gi;
+const stateAttribute = /(?<!\\)\[\s*(?:data-(?:highlighted|selected|state)|aria-selected)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\]\s]+))?\s*\]/gi;
+const focusBase = (s: string) => s.replace(/(?<!\\):focus(?:-(?:visible|within))?(?![\w-])/gi, '').replace(highlightAttribute, '');
+/** Only attributes on this target count; ancestors, descendants and negations don't. */
+function highlighted(s: string, utility = false): boolean {
+  const branches = tokens(s, /,/);
+  return branches.length > 0 && branches.every(branch => {
+    const nested = ['not', 'has', 'is', 'where'].flatMap(name => calls(branch, name));
+    for (const call of nested.filter(call => !nested.some(parent => parent.start < call.start && parent.end >= call.end)).sort((a, b) => b.start - a.start)) branch = branch.slice(0, call.start) + branch.slice(call.end);
+    const compounds = tokens(branch, /[\s>+~]/);
+    return (!utility || compounds.length === 1) && !!compounds.at(-1)?.match(highlightAttribute);
+  });
+}
 const visibleColor = (value: string) => value !== 'transparent' && oklab(value)?.[3] !== 0;
 const borderParts = (d: Declaration) => /^border(?:-(top|right|bottom|left|inline(?:-start|-end)?|block(?:-start|-end)?))?(?:-(width|style|color))?$/.exec(d.prop);
 const easeIn = (value: string) => tokens(value.toLowerCase()).some(token => token === 'ease-in' || calls(token, 'cubic-bezier').some(call => {
@@ -61,7 +73,7 @@ const easeIn = (value: string) => tokens(value.toLowerCase()).some(token => toke
 }));
 
 /** This receives only source-glob declarations. Companions never certify a computed cascade. */
-export function judgeHabits(declarations: Declaration[], entries: (string | CustomHabit)[], classContexts: ReadonlyMap<Declaration, string>, hoverVariants: string[] = [], list = false): { findings: Finding[]; summaries: HabitSummary[] } {
+export function judgeHabits(declarations: Declaration[], entries: (string | CustomHabit)[], classContexts: ReadonlyMap<Declaration, string>, hoverVariants: string[] = [], list = false, managedFocus: ReadonlySet<Declaration> = new Set()): { findings: Finding[]; summaries: HabitSummary[] } {
   const selected = new Map(entries.map(entry => [typeof entry === 'string' ? entry : entry.id, entry]));
   const active = new Set(list ? builtins.map(habit => habit.id) : [...selected.keys()].filter(id => !['z-named', 'motion-tokens'].includes(id)));
   if (!active.size) return { findings: [], summaries: builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: habit.severity, enabled: false, breaks: null })) };
@@ -89,14 +101,15 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
     if ((!part || part === 'color') && !tokens(v, /\s/).every(visibleColor)) return false;
     const companions = focusGroups.get(focusKey(d))!.filter(other => {
       const match = borderParts(other);
-      return match && (!match[1] || match[1] === border[1]) && !/(?<!\\)::?(before|after)(?![\w-])/.test(selector(other.when)) && covers(other, d);
+      return match && (!match[1] || match[1] === border[1]) && !/(?<!\\)::?(before|after)(?![\w-])/.test(selector(other.when)) && covers(other, d) &&
+        (selector(other.when).match(stateAttribute) ?? []).every(attribute => selector(d.when).includes(attribute));
     });
     const hasWidth = (v: string) => tokens(v, /\s/).some(part => /^(thin|medium|thick)$/.test(part) || (pixels(part) ?? 0) > 0);
     const hasStyle = (v: string) => tokens(v, /\s/).some(part => /^(solid|dashed|dotted|double|groove|ridge|inset|outset)$/.test(part));
     const widths = companions.filter(other => !borderParts(other)![2] || borderParts(other)![2] === 'width');
     const styles = companions.filter(other => !borderParts(other)![2] || borderParts(other)![2] === 'style');
     const colors = companions.filter(other => !borderParts(other)![2] || borderParts(other)![2] === 'color');
-    const focusedColors = colors.filter(other => positive(selector(other.when), 'focus') || positive(selector(other.when), 'focus-visible') || positive(selector(other.when), 'focus-within'));
+    const focusedColors = colors.filter(other => positive(selector(other.when), 'focus') || positive(selector(other.when), 'focus-visible') || positive(selector(other.when), 'focus-within') || highlighted(selector(other.when), isClass(other)));
     // A color alone cannot draw a border; zero widths and none/hidden styles
     // cannot certify a visible replacement even if another utility sets them.
     return (focusedColors.length ? focusedColors : colors).every(other => tokens(value(other), /\s/).every(visibleColor)) &&
@@ -105,14 +118,19 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
       !styles.some(other => /^(none|hidden)$/.test(value(other)));
   };
   for (const d of eligible) {
-    if (!outline(d) && d.prop !== 'box-shadow' && !borderParts(d)) continue;
+    if (!outline(d) && d.prop !== 'box-shadow' && !borderParts(d) && !/^(background(?:-color)?|color)$/.test(d.prop)) continue;
     const s = selector(d.when);
     const focus = positive(s, 'focus') || positive(s, 'focus-visible') || positive(s, 'focus-within');
+    const highlight = highlighted(s, isClass(d));
+    const highlightColor = highlight && /^(background(?:-color)?|color)$/.test(d.prop) && visibleColor(value(d)) &&
+      !/^(none|inherit|initial|unset|revert(?:-layer)?)$/.test(value(d)) &&
+      !focusGroups.get(focusKey(d))!.some(other => other !== d && other.prop === d.prop && value(other) === value(d) &&
+        !highlighted(selector(other.when), isClass(other)) && !['focus', 'focus-visible', 'focus-within', 'hover', 'active'].some(name => positive(selector(other.when), name)) && covers(other, d));
     const ringUtility = isClass(d) && /(?:^|:)(?:inset-)?ring(?:-|$)/.test(d.site.text);
     const transparentRing = d.prop === 'box-shadow' && groups.get(groupKey(d))!.some(other => /^(--tw-ring-color|--tw-inset-ring-color)$/.test(other.prop) &&
       JSON.stringify(other.when.filter(c => ['pseudo', 'branch'].includes(c.kind))) === JSON.stringify(d.when.filter(c => ['pseudo', 'branch'].includes(c.kind))) &&
       (value(other) === 'transparent' || oklab(value(other))?.[3] === 0));
-    if (!/(?<!\\)::?(before|after)(?![\w-])/.test(s) && (visibleOutline(d) && focus || visibleRing(d) && !transparentRing && (focus || ringUtility) || focus && visibleBorder(d))) {
+    if (!/(?<!\\)::?(before|after)(?![\w-])/.test(s) && (visibleOutline(d) && focus || visibleRing(d) && !transparentRing && (focus || ringUtility) || (focus || highlight) && visibleBorder(d) || highlightColor)) {
       const key = focusKey(d);
       const matches = rings.get(key) ?? []; matches.push(d); rings.set(key, matches);
     }
@@ -161,7 +179,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
           // Primitive utility definitions need companions at their class sites.
           if (!isClass(d) && ['.outline-none', '.focus-visible\\:outline-none', '.focus-visible\\:outline-none:focus-visible'].includes(s)) break;
           const restored = (rings.get(focusKey(d)) ?? []).some(ring => covers(ring, d));
-          broken = outline(d) && none(d) && !restored;
+          broken = outline(d) && none(d) && !restored && !managedFocus.has(d);
           break;
         }
         case 'transition-named': broken = /^transition(?:-property)?$/.test(p) && tokens(v.toLowerCase()).includes('all'); break;

@@ -8,6 +8,7 @@
 @media not (hover: hover) { .negated-hover:hover { opacity: .5; } }
 @media (hover: hover) or (pointer: fine) { .disjunction:hover { opacity: .5; } }
 @theme { --color-ring: #12805c; }
+@theme { --color-accent: #e9ebef; --color-accent-foreground: #182029; --color-background: #fff; --color-foreground: #182029; --color-muted-foreground: #8a8f99; }
 .css-focus { outline: none; } .css-focus:focus { box-shadow: 0 0 0 2px #12805c; }
 .css-border { outline: none; border: 1px solid transparent; } .css-border:focus-visible { border-color: #12805c; }
 .css-focus-border { outline: none; } .css-focus-border:focus { border: 2px solid #12805c; }

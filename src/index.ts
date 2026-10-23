@@ -191,9 +191,11 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const habitsStart = performance.now();
   profileProgress('phase:habits');
   const contexts = new Map<Declaration, string>();
+  const managedFocus = new Set<Declaration>();
   for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
+  for (const site of sites) if (site.managedFocus) for (const declaration of site.declarations) managedFocus.add(declaration);
   for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
-  const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits));
+  const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus));
   findings.push(...habits.findings);
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
