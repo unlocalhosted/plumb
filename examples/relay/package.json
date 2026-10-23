@@ -24,9 +24,11 @@
     "tailwind-merge": "3.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "4.1.14",
     "@unlocalhosted/react-plumber": "file:../..",
     "@vitejs/plugin-react": "5.0.4",
+    "next": "^16.0.1",
     "tailwindcss": "4.1.14",
     "vite": "7.1.9"
   }
