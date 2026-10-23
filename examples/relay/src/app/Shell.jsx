@@ -10,6 +10,7 @@ import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CommandPalette, useCommandPalette } from './CommandPalette';
+import { DriftLegend } from './DriftLegend';
 
 function Placeholder({ title }) {
   return (
@@ -37,6 +38,7 @@ export function Shell() {
         </main>
         <IssueDrawer issueKey={issue} screen={route} />
         <CommandPalette open={palette} onOpenChange={setPalette} />
+        <DriftLegend screen={route} drawer={!!issue} />
       </div>
     </TooltipProvider>
   );
