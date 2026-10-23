@@ -1,0 +1,297 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { test } from 'node:test';
+import { createServer } from 'vite';
+import { plumb } from '../dist/hosts/vite.js';
+import { Session } from '../dist/session/index.js';
+import { createWebHandler } from '../dist/session/server.js';
+
+const repo = resolve('.');
+const config = `import { defineConfig } from 'vite';
+import { plumb as inspect } from '@unlocalhosted/react-plumber/vite';
+import react from '@vitejs/plugin-react';
+export default defineConfig({ plugins: [inspect(), react()], server: { hmr: true, watch: { usePolling: true, awaitWriteFinish: true } } });
+`;
+function run(root, args, input = '', expected = 0, env = {}) {
+  const result = spawnSync(process.execPath, ['dist/cli.js', ...args, '--root', root], { cwd: repo, encoding: 'utf8', input, env: { ...process.env, PLUMBER_WATCH_ENV: 'wsl', ...env }, maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(result.status, expected, result.stderr + result.stdout);
+  return result.stdout;
+}
+async function fixture(t, host = config) {
+  const root = await mkdtemp(join(repo, 'fixtures/.readiness-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
+  await writeFile(join(root, 'vite.config.mjs'), host);
+  run(root, ['init', '--force']);
+  return root;
+}
+async function api(t, root, runtime) {
+  const session = await Session.create({ root, watch: false });
+  t.after(() => session.close());
+  const handler = createWebHandler(session, { token: 'readiness-secret', ...(runtime ? { readiness: runtime } : {}) });
+  const request = (path, body, auth = true, method = body === undefined ? 'GET' : 'POST') => handler(new Request(`http://localhost/__plumb/${path}`, { method, headers: { ...(auth ? { 'x-plumb-token': 'readiness-secret' } : {}), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }));
+  const report = async () => { const response = await request('readiness'); assert.equal(response.status, 200, await response.clone().text()); return response.json(); };
+  return { request, report };
+}
+const item = (report, id) => { const requirement = report.requirements.find(item => item.id === id); assert.ok(requirement, id); return requirement; };
+const runtime = { host: 'vite', development: true, plugin: true, fastRefresh: true, hmr: true, polling: true };
+
+test('doctor and read-only route cover every capability and token family with evidence and copyable fixes', async t => {
+  const root = await fixture(t), { request, report } = await api(t, root, runtime);
+  const before = await readFile(join(root, 'vite.config.mjs'), 'utf8');
+  const ready = await report();
+  assert.equal(ready.schemaVersion, 1);
+  assert.deepEqual(ready.capabilities.map(item => item.id), ['read', 'remember', 'fast', 'locate', 'preview', 'write', 'blueprint', 'system']);
+  for (const requirement of ready.requirements) {
+    assert.deepEqual(Object.keys(requirement), ['id', 'capability', 'status', 'title', 'evidence', 'loses', 'fix']);
+    assert.ok(['ok', 'missing', 'unknown'].includes(requirement.status));
+    assert.ok(requirement.evidence.every(item => typeof item.file === 'string' && Number.isInteger(item.line) && item.line > 0 && typeof item.text === 'string'));
+    assert.ok(requirement.loses);
+    if (requirement.status !== 'ok') assert.ok(requirement.fix?.kind && (requirement.fix.command || requirement.fix.diff));
+  }
+  for (const id of ['read.styles', 'remember.baseline', 'fast.config', 'locate.plugin', 'locate.order', 'locate.react-dev', 'locate.host', 'preview.locate', 'write.locate', 'write.refresh', 'write.hmr', 'blueprint.locate', 'blueprint.host', 'system.blueprint']) assert.equal(item(ready, id).status, 'ok', id);
+  for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'ok');
+  assert.equal(item(ready, 'system.preset').status, 'missing');
+  assert.equal(await readFile(join(root, 'vite.config.mjs'), 'utf8'), before, 'GET cannot edit config');
+  assert.equal((await request('readiness', undefined, false)).status, 401);
+  assert.equal((await request('readiness', {})).status, 405);
+  assert.equal((await request('readiness/fix', undefined)).status, 405);
+  assert.equal((await request('readiness/anything')).status, 404);
+  const output = run(root, ['doctor'], '', 1);
+  assert.match(output, /^Readiness: \d+ setup gaps? ·/);
+  assert.ok(output.indexOf('Readiness:') < output.indexOf('Diagnostics'));
+  assert.match(output, /React development build needs verification/);
+  for (const requirement of ready.requirements) assert.ok(output.includes(`[${requirement.id}]`), requirement.id);
+});
+
+test('every config diff is previewed, consent-gated, dirty-checked and applied one at a time', async t => {
+  const root = await fixture(t, config.replace('[inspect(), react()]', '[react(), inspect()]').replace('hmr: true', 'hmr: false').replace('usePolling: true', 'usePolling: false'));
+  const file = join(root, 'vite.config.mjs'), { request, report } = await api(t, root);
+  const original = await readFile(file, 'utf8');
+  let ready = await report();
+  for (const id of ['locate.order', 'write.hmr']) assert.equal(item(ready, id).status, 'missing');
+  assert.equal(item(ready, 'locate.react-dev').status, 'unknown');
+  const fix = item(ready, 'write.hmr').fix;
+  assert.equal(fix.kind, 'diff');
+  assert.equal(fix.file, 'vite.config.mjs');
+  assert.match(fix.diff, /-.*hmr: false/);
+  assert.equal((await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true }, false)).status, 401);
+  assert.equal((await request('readiness/fix', { id: 'write.hmr', hash: fix.hash })).status, 400);
+  assert.equal((await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: false })).status, 400);
+  const dirty = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true });
+  assert.equal(dirty.status, 400); assert.match((await dirty.json()).error, /uncommitted/);
+  assert.equal(await readFile(file, 'utf8'), original);
+  const applied = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
+  assert.equal(applied.status, 200, await applied.clone().text());
+  assert.equal((await applied.json()).diff, fix.diff);
+  assert.doesNotMatch(await readFile(file, 'utf8'), /hmr: false/);
+  assert.match(await readFile(file, 'utf8'), /\[react\(\), inspect\(\)\]/, 'one diff only');
+  assert.equal((await request('readiness/fix', { id: 'locate.order', hash: fix.hash, confirm: true, allowDirty: true })).status, 400, 'stale hash refused');
+  assert.equal(item(await report(), 'write.hmr').status, 'ok');
+  const diff = run(root, ['fix', 'locate.order'], 'n\n');
+  assert.match(diff, /--- vite.config.mjs/); assert.match(diff, /Apply this diff to the dirty config\? \[y\/N\]/); assert.match(diff, /No files changed/);
+  assert.match(await readFile(file, 'utf8'), /\[react\(\), inspect\(\)\]/);
+  assert.match(run(root, ['fix', 'locate.order'], 'yes\n'), /Wrote vite.config.mjs/);
+  assert.match(await readFile(file, 'utf8'), /\[inspect\(\),\s*react\(\)/);
+  assert.match(run(root, ['fix', 'write.hmr']), /No change needed/);
+  run(root, ['fix', '../../outside', '--yes'], '', 2);
+});
+
+test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includes awaitWriteFinish', async t => {
+  const root = await fixture(t, config.replace('plugins: [inspect(), react()]', 'plugins: []').replace('watch: { usePolling: true, awaitWriteFinish: true }', 'watch: {}'));
+  const file = join(root, 'vite.config.mjs'), { request, report } = await api(t, root);
+  let ready = await report();
+  assert.equal(item(ready, 'locate.plugin').status, 'missing');
+  assert.equal(item(ready, 'write.refresh').status, 'missing');
+  run(root, ['fix', 'locate.plugin', '--yes']);
+  ready = await report();
+  assert.equal(item(ready, 'locate.plugin').status, 'ok');
+  assert.equal(item(ready, 'locate.order').status, 'ok');
+  assert.equal(item(ready, 'write.refresh').fix.kind, 'diff');
+  run(root, ['fix', 'write.refresh', '--yes']);
+  assert.match(await readFile(file, 'utf8'), /inspect\(\), react\(\)/);
+  const doctor = run(root, ['doctor'], '', 1);
+  assert.match(doctor, /wsl needs file polling/);
+  assert.match(doctor, /plumber fix write.watcher/);
+  // API environment explicitly simulates WSL; no filesystem/platform assumption.
+  const previous = process.env.PLUMBER_WATCH_ENV;
+  process.env.PLUMBER_WATCH_ENV = 'wsl';
+  try {
+    ready = await report();
+    assert.equal(item(ready, 'write.watcher').status, 'missing');
+    const fix = item(ready, 'write.watcher').fix;
+    assert.match(fix.diff, /awaitWriteFinish/);
+    const applied = await request('readiness/fix', { id: 'write.watcher', hash: fix.hash, confirm: true, allowDirty: true });
+    assert.equal(applied.status, 200, await applied.clone().text());
+    assert.equal(item(await report(), 'write.watcher').status, 'ok');
+    assert.match(await readFile(file, 'utf8'), /usePolling: true, awaitWriteFinish:/);
+  } finally { if (previous === undefined) delete process.env.PLUMBER_WATCH_ENV; else process.env.PLUMBER_WATCH_ENV = previous; }
+});
+
+test('no baseline, no tokens, executable config, unobserved host are named without unsafe diffs', async t => {
+  const root = await fixture(t);
+  await rm(join(root, '.plumber/ledger.jsonl'));
+  await rm(join(root, 'vite.config.mjs'));
+  await writeFile(join(root, 'plumber.config.ts'), `const css = 'src/styles.css'; export default { css };`);
+  await writeFile(join(root, 'src/styles.css'), '.box { padding: 13px; color: #123456; border-radius: 11px; font-size: 19px; transition: opacity 137ms; box-shadow: 1px 1px 3px #123; z-index: 7; }');
+  const { report } = await api(t, root);
+  const ready = await report();
+  assert.equal(item(ready, 'read.styles').status, 'ok');
+  assert.equal(item(ready, 'remember.baseline').status, 'missing');
+  assert.equal(item(ready, 'remember.baseline').fix.command, 'plumber baseline');
+  assert.equal(item(ready, 'fast.config').status, 'missing');
+  assert.equal(item(ready, 'locate.host').status, 'unknown');
+  for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
+  const output = run(root, ['doctor'], '', 1);
+  assert.match(output, /Every finding counts as new/);
+  assert.match(output, /plumber baseline/);
+  assert.match(output, /no spacing tokens/);
+  assert.match(output, /cannot reuse the whole report/);
+});
+
+test('composed configs stay unknown; symlinked config can never become a writable diff', async t => {
+  const root = await fixture(t, `import { defineConfig } from 'vite'; export default defineConfig(() => ({ plugins: [] }));`);
+  const { request, report } = await api(t, root);
+  let ready = await report();
+  for (const id of ['locate.plugin', 'locate.order', 'write.refresh', 'write.hmr']) assert.equal(item(ready, id).status, 'unknown');
+  await rm(join(root, 'vite.config.mjs'));
+  const outside = join(root, '..', `${root.split('/').at(-1)}-outside.mjs`);
+  t.after(() => rm(outside, { force: true }));
+  await writeFile(outside, config.replace('hmr: true', 'hmr: false'));
+  await symlink(outside, join(root, 'vite.config.mjs'));
+  ready = await report();
+  assert.equal(item(ready, 'write.hmr').status, 'missing');
+  assert.equal(item(ready, 'write.hmr').fix.kind, 'step');
+  const response = await request('readiness/fix', { id: 'write.hmr', hash: 'anything', confirm: true, allowDirty: true, file: outside, diff: 'malicious' });
+  assert.equal(response.status, 400);
+  assert.equal(await readFile(outside, 'utf8'), config.replace('hmr: true', 'hmr: false'));
+});
+
+test('live Vite route uses resolved HMR and refresh settings through the same allow-list and origin checks', async t => {
+  const root = await fixture(t, config.replace('hmr: true', 'hmr: false'));
+  const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], server: { port: 0, hmr: false } });
+  t.after(() => server.close());
+  await server.listen();
+  const address = server.httpServer.address(), base = `http://localhost:${address.port}`;
+  let response;
+  for (let i = 0; i < 100; i++) {
+    response = await fetch(`${base}/__plumb/readiness`);
+    if (response.status !== 503) break;
+    await new Promise(done => setTimeout(done, 30));
+  }
+  assert.equal(response.status, 200);
+  const ready = await response.json();
+  assert.equal(item(ready, 'write.hmr').status, 'missing');
+  assert.equal(item(ready, 'write.refresh').status, 'missing', 'resolved plugins override static react import');
+  assert.equal(item(ready, 'locate.react-dev').status, 'ok');
+  assert.equal((await fetch(`${base}/__plumb/readiness`, { headers: { Origin: 'http://evil.test' } })).status, 403);
+  const fix = item(ready, 'write.hmr').fix;
+  const response2 = await fetch(`${base}/__plumb/readiness/fix`, { method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true }) });
+  assert.equal(response2.status, 200, await response2.clone().text());
+  assert.equal((await fetch(`${base}/__plumb/readiness/fix/anything`)).status, 404);
+});
+
+test('chosen preset completes the system prerequisites; clean config applies without dirty approval', async t => {
+  const root = await fixture(t, config.replace('hmr: true', 'hmr: false'));
+  const plumberConfig = join(root, 'plumber.config.ts');
+  await writeFile(plumberConfig, (await readFile(plumberConfig, 'utf8')).replace('export default {', `export default { presets: [{ name: 'fixture', decisions: [] }],`));
+  const git = args => {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr); return result.stdout;
+  };
+  git(['init', '-q']); git(['add', 'vite.config.mjs']);
+  git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '-qm', 'host config']);
+  const { request, report } = await api(t, root, { ...runtime, hmr: false });
+  const ready = await report(), fix = item(ready, 'write.hmr').fix;
+  assert.equal(item(ready, 'system.preset').status, 'ok');
+  assert.equal(item(ready, 'system.blueprint').status, 'ok');
+  assert.equal(ready.capabilities.find(item => item.id === 'system').status, 'full');
+  assert.equal(fix.dirty, false);
+  const applicable = spawnSync('git', ['apply', '--check', '-p0'], { cwd: root, input: fix.diff, encoding: 'utf8' });
+  assert.equal(applicable.status, 0, applicable.stderr);
+  const response = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true });
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.doesNotMatch(await readFile(join(root, 'vite.config.mjs'), 'utf8'), /hmr: false/);
+});
+
+test('uninstalled React, unsupported host and unsupported Tailwind are independently diagnosed', async t => {
+  const { tmpdir } = await import('node:os');
+  const root = await mkdtemp(join(tmpdir(), 'plumber-readiness-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, 'src'));
+  await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module', scripts: { dev: 'react-scripts start' } }));
+  await writeFile(join(root, 'plumber.config.mjs'), `export default { source: ['src/**'] };`);
+  await writeFile(join(root, 'src/styles.css'), '.box { padding: 13px; }');
+  const { report } = await api(t, root);
+  let ready = await report();
+  assert.equal(item(ready, 'read.styles').status, 'ok');
+  assert.equal(item(ready, 'locate.react-dev').status, 'missing');
+  assert.equal(item(ready, 'locate.host').status, 'missing');
+  assert.equal(item(ready, 'blueprint.host').status, 'missing');
+  const output = run(root, ['doctor'], '', 1);
+  assert.match(output, /React does not resolve/);
+  assert.match(output, /npm install react react-dom/);
+  await mkdir(join(root, 'node_modules/tailwindcss'), { recursive: true });
+  await writeFile(join(root, 'node_modules/tailwindcss/package.json'), JSON.stringify({ name: 'tailwindcss', version: '3.4.19' }));
+  await writeFile(join(root, 'src/styles.css'), '@import "tailwindcss";');
+  ready = await report();
+  assert.equal(item(ready, 'read.styles').status, 'missing');
+  assert.equal(item(ready, 'read.styles').fix.command, 'npx @tailwindcss/upgrade');
+  assert.match(run(root, ['doctor'], '', 1), /needs Tailwind 4; this project has 3.4.19/);
+});
+
+test('live readiness survives failed analysis startup and never widens the route allow-list', async t => {
+  const root = await fixture(t);
+  await mkdir(join(root, 'node_modules/tailwindcss'), { recursive: true });
+  await writeFile(join(root, 'node_modules/tailwindcss/package.json'), '{"name":"tailwindcss","version":"3.4.19"}');
+  const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], server: { port: 0, watch: null } });
+  t.after(() => server.close()); await server.listen();
+  const base = `http://localhost:${server.httpServer.address().port}`;
+  let response;
+  for (let i = 0; i < 100; i++) {
+    response = await fetch(`${base}/__plumb/readiness`);
+    if (response.status !== 503) break;
+    await new Promise(done => setTimeout(done, 30));
+  }
+  assert.equal(response.status, 200, await response.clone().text());
+  const ready = await response.json();
+  assert.equal(item(ready, 'read.styles').status, 'missing');
+  assert.equal(item(ready, 'write.watcher').status, 'missing');
+  assert.match(item(ready, 'read.styles').title, /3.4.19/);
+  assert.equal((await fetch(`${base}/__plumb/readiness/nope`)).status, 404);
+});
+
+test('new React import avoids local bindings; shown diff applies without a trailing newline', async t => {
+  const root = await fixture(t, config.replace("import react from '@vitejs/plugin-react';\n", 'const plumberReact = 1;\n').replace('inspect(), react()', 'inspect()').trimEnd());
+  const { report } = await api(t, root);
+  const ready = await report(), fix = item(ready, 'write.refresh').fix;
+  assert.equal(fix.kind, 'diff');
+  assert.match(fix.diff, /import plumberReact_ from '@vitejs\/plugin-react'/);
+  assert.match(fix.diff, /\\ No newline at end of file/);
+  const applicable = spawnSync('git', ['apply', '--check', '-p0'], { cwd: root, input: fix.diff, encoding: 'utf8' });
+  assert.equal(applicable.status, 0, applicable.stderr);
+  run(root, ['fix', 'write.refresh', '--yes']);
+  const written = await readFile(join(root, 'vite.config.mjs'), 'utf8');
+  assert.match(written, /plugins: \[inspect\(\), plumberReact_\(\)\]/);
+  assert.ok(!written.endsWith('\n'));
+});
+
+test('default plumb imports are recognized and reorderable; ignored untracked configs need dirty consent', async t => {
+  const root = await fixture(t, config.replace('import { plumb as inspect }', 'import inspect').replace('[inspect(), react()]', '[react(), inspect()]'));
+  await writeFile(join(root, '.gitignore'), 'vite.config.mjs\n');
+  for (const args of [['init', '-q'], ['add', '.gitignore'], ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '-qm', 'ignore local host config']]) {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' }); assert.equal(result.status, 0, result.stderr);
+  }
+  const { request, report } = await api(t, root);
+  const ready = await report(), fix = item(ready, 'locate.order').fix;
+  assert.equal(item(ready, 'locate.plugin').status, 'ok');
+  assert.equal(item(ready, 'locate.order').status, 'missing');
+  assert.equal(fix.kind, 'diff'); assert.equal(fix.dirty, true);
+  assert.equal((await request('readiness/fix', { id: 'locate.order', hash: fix.hash, confirm: true })).status, 400);
+  run(root, ['fix', 'locate.order', '--yes']);
+  const written = await readFile(join(root, 'vite.config.mjs'), 'utf8');
+  assert.match(written, /plugins: \[inspect\(\),\s*react\(\)/);
+  assert.equal((written.match(/react-plumber\/vite/g) ?? []).length, 1);
+});

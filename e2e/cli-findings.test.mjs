@@ -210,7 +210,7 @@ test('command tables share terminal budgets: decisions, habits, ledger moves and
     assert.match(habits, /hover-gate/); assert.match(habits, /focus-outline/);
     const habitRows = habits.split('\n').filter(line => /^\S/.test(line));
     assert.equal(new Set(habitRows.map(line => line.search(/\b(?:warn|error|info)\b/))).size, 1);
-    const doctor = bounded(pty(root, ['doctor'], columns, cache, true), columns);
+    const doctor = bounded(pty(root, ['doctor'], columns, cache, true), columns).split('Diagnostics\n')[1];
     assert.equal(doctor.trimEnd().split('\n').length, 6);
     assert.ok(doctor.trimEnd().split('\n').every(line => line.indexOf(':') < 15));
     const next = `RenamedPage${columns}`;

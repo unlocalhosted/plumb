@@ -1,3 +1,5 @@
+import { readiness, formatReadiness } from '../readiness/index.js';
+import type { Report } from '../report.js';
 import { cacheDirectory } from '../paths.js';
 import { existsSync } from 'node:fs';
 import { access, readdir, stat } from 'node:fs/promises';
@@ -28,6 +30,7 @@ const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim();
 export async function doctor(root: string, configPath?: string): Promise<{ text: string; ok: boolean }> {
   const rows: Cell[][] = [];
   let ok = true;
+  let checked: Report | undefined;
   const line = (name: string, good: boolean, fact: string, fix: string) => {
     if (!good) ok = false;
     rows.push([{ text: good ? 'ok' : 'fix', ...(good ? {} : { ink: 'amber' as const }) }, `${name}:`, { text: oneLine(fact), path: name === 'Cache' || name === 'CSS entry' }, oneLine(fix)]);
@@ -58,6 +61,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     else if (!valid) line('Ledger', false, `${count(ledger.entries.length, 'entry', 'entries')} parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
     else {
       const report = await check({ root, ...(configPath === undefined ? {} : { config: configPath }) });
+      checked = report;
       const problems = report.findings.filter(finding => /^(ledger|decisions)\//.test(finding.rule));
       const stale = problems.some(finding => /stale|vanished/.test(finding.rule));
       const unaccepted = problems.some(finding => finding.rule === 'decisions/unaccepted');
@@ -74,5 +78,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     await access(parent, constants.W_OK);
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
-  return { text: table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
+  const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
+  ok &&= !ready.requirements.some(item => item.status === 'missing');
+  return { text: formatReadiness(ready) + '\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }

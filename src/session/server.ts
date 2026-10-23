@@ -1,3 +1,5 @@
+import { readiness, applyReadinessFix } from '../readiness/index.js';
+import type { Runtime, ReadinessOptions } from '../readiness/index.js';
 import { statePath, stateDirectory } from '../paths.js';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
@@ -18,6 +20,9 @@ import { readDiscovery } from './discovery.js';
 import type { ServeInfo } from './discovery.js';
 export type { ServeInfo } from './discovery.js';
 export interface HandlerOptions {
+  readiness?: Runtime;
+  /** Host root remains available when analysis startup fails. */
+  readinessProject?: Pick<ReadinessOptions, 'root' | 'config'>;
   token?: string; prefix?: string;
   /** Absolute directory the host serves browser source paths from. */ servedRoot?: string;
   /** Additional trusted Host authorities, including port when present. */ allowedHosts?: string[];
@@ -43,14 +48,18 @@ function position(params: Record<string, unknown>, name: string, optional = fals
   if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 1) throw new UsageError(`${name} must be a positive integer.`);
   return n;
 }
-export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot'> = {}): Promise<unknown> {
+export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
-async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot'>, json: boolean): Promise<unknown> {
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
   const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
     json ? session.readJSON(method, args) : Reflect.apply(session[method], session, args);
+  if (method === 'readiness' || method === 'readiness/fix') return dispatchReadiness({
+    root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
+    ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
+  }, method, params);
   if (method === 'report') {
     const options: Pick<CheckOptions, 'base' | 'changed' | 'strictLedger' | 'verbose' | 'ledger'> = {};
     if (params.base !== undefined) options.base = text(params, 'base')!;
@@ -102,6 +111,13 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   throw new UsageError(`Unknown method: ${method}.`);
 }
 
+async function dispatchReadiness(context: ReadinessOptions, method: string, params: Record<string, unknown>): Promise<unknown> {
+  if (method === 'readiness') return readiness(context);
+  if (params.confirm !== true || params.allowDirty !== undefined && typeof params.allowDirty !== 'boolean') throw new UsageError('confirm must be true; allowDirty must be a boolean.');
+  return applyReadinessFix(context, { id: text(params, 'id')!, hash: text(params, 'hash')!, confirm: true,
+    ...(params.allowDirty === undefined ? {} : { allowDirty: params.allowDirty as boolean }) });
+}
+
 interface TransportRequest {
   url: URL;
   method: string;
@@ -138,8 +154,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text', 'batch'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['report', 'site', 'classes', 'resolve', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'apply', 'apply-text', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -178,10 +194,10 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
       if (!trusted) return refuse(403, 'A same-origin request from a trusted loopback host is required.');
     }
     try {
-      if (current && !known) return refuse(404, 'Endpoint not found.');
+      if (!known && (current || method.startsWith('readiness'))) return refuse(404, 'Endpoint not found.');
       if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
       if (client) { headers['Content-Type'] = method === 'THIRD_PARTY_NOTICES' ? 'text/plain; charset=utf-8' : method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
-      if (!current) {
+      if (!current && !(diagnostic !== undefined && options.readinessProject && ['readiness', 'readiness/fix'].includes(method))) {
         const state = diagnostic === undefined ? { status: 'starting' } : { status: 'failed', diagnostic };
         if (method !== 'health') headers['Retry-After'] = '1';
         return respond(method === 'health' ? 200 : 503, state);
@@ -200,8 +216,14 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['apply', 'apply-text', 'try', 'health', 'refresh'].includes(method);
-      const result = await dispatchRequest(current, method, params, options, json);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'try', 'health', 'refresh'].includes(method);
+      let result: unknown;
+      if (current) result = await dispatchRequest(current, method, params, options, json);
+      else {
+        const context = { ...options.readinessProject!, ...(options.readiness ? { runtime: options.readiness } : {}) };
+        if (!object(params)) throw new UsageError('Parameters must be a JSON object.');
+        result = await dispatchReadiness(context, method, params);
+      }
       return json ? { status: 200, headers, body: result as string } : respond(200, result);
     } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
   };

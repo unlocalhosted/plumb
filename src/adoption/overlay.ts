@@ -65,6 +65,10 @@ function walk(node: Node, visit: (node: Node) => void): void {
 }
 function imported(ast: Program, module: string, name: string): string | undefined {
   for (const item of ast.body) if (item.type === 'ImportDeclaration' && item.source.value === module && item.importKind !== 'type') {
+    if (module === viteModule && name === 'plumb') {
+      const defaultImport = item.specifiers.find(specifier => specifier.type === 'ImportDefaultSpecifier');
+      if (defaultImport) return defaultImport.local.name;
+    }
     for (const specifier of item.specifiers) if (specifier.type === 'ImportSpecifier' && specifier.importKind !== 'type' && nodeName(specifier.imported) === name) return specifier.local.name;
   }
   for (const item of ast.body) if (item.type === 'VariableDeclaration') {
@@ -230,7 +234,7 @@ function diff(edit: Edit, root: string): string {
   while (start < before.length && start < after.length && before[start] === after[start]) start++;
   while (end < before.length - start && end < after.length - start && before[before.length - end - 1] === after[after.length - end - 1]) end++;
   const old = before.slice(start, before.length - end), next = after.slice(start, after.length - end);
-  return `--- ${edit.before === undefined ? '/dev/null' : file}\n+++ ${file}\n@@ -${old.length ? start + 1 : start},${old.length} +${next.length ? start + 1 : start},${next.length} @@\n` + [...old.map(line => '-' + line), ...next.map(line => '+' + line)].join('\n') + '\n';
+  return `--- ${edit.before === undefined ? '/dev/null' : file}\n+++ ${file}\n@@ -${old.length ? start + 1 : start},${old.length} +${next.length ? start + 1 : start},${next.length} @@\n` + [...old.flatMap((line, index) => ['-' + line, ...(start + index === before.length - 1 && !edit.before?.endsWith('\n') ? ['\\ No newline at end of file'] : [])]), ...next.flatMap((line, index) => ['+' + line, ...(start + index === after.length - 1 && !edit.after.endsWith('\n') ? ['\\ No newline at end of file'] : [])])].join('\n') + '\n';
 }
 
 /** Plan and validate all files before writing; no package manager or parent-repo discovery. */
@@ -260,3 +264,6 @@ export async function writeOverlay(project: string, host: 'vite' | 'next' | unde
   }
   return changed.length ? changed.map(edit => diff(edit, root) + `Wrote ${relative(root, edit.file)}.\n`).join('\n') : 'Overlay already set up; no files changed.\n';
 }
+
+// Shared structural config editing; readiness uses the same conservative parser.
+export { parse, walk, imported, importName, constant, exported, object, firstEntry, comma, viteConfig, diff };

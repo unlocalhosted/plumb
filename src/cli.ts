@@ -27,6 +27,8 @@ import { table, wrap } from './cli-table.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { initProject } from './adoption/init.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
+import { readiness, applyReadinessFix } from './readiness/index.js';
+import { createInterface } from 'node:readline';
 import { doctor } from './adoption/doctor.js';
 import { commandFlags, unknownName } from './cli-flags.js';
 import { cliProject, prepareCliAnalysis } from './cli-project.js';
@@ -57,6 +59,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
+       plumber fix <id> [--yes] [--root <dir>] [--config <path>]
        plumber doctor [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
@@ -80,7 +83,7 @@ async function main(): Promise<void> {
   const args = (() => {
     try {
       const options = {
-          json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
+          yes: { type: 'boolean' }, json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
@@ -119,7 +122,7 @@ async function main(): Promise<void> {
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!(deciding || command === 'check') || !families.includes(args.values.family))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
-  if ((explaining || inspecting || comparingTokens) ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
+  if ((explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
@@ -182,6 +185,26 @@ async function main(): Promise<void> {
   }
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
+  if (command === 'fix') {
+    const ready = await readiness(options), id = args.positionals[1]!;
+    const requirement = ready.requirements.find(item => item.id === id);
+    if (!requirement) throw new UsageError(`Unknown readiness requirement ${id}.\n  → plumber doctor`);
+    if (!requirement.fix) { process.stdout.write('No change needed.\n'); return; }
+    const fix = requirement.fix;
+    if (fix.kind === 'step') { process.stdout.write(`${fix.instruction}\n  ${fix.command}\n`); return; }
+    process.stdout.write(fix.diff);
+    if (fix.dirty) process.stdout.write(`${fix.file} has uncommitted changes. Applying includes these changes.\n`);
+    let yes = args.values.yes === true;
+    if (!yes) {
+      const input = createInterface({ input: process.stdin });
+      process.stdout.write(`Apply this diff${fix.dirty ? ' to the dirty config' : ''}? [y/N] `);
+      const answer = await new Promise<string>(done => { input.once('line', done); input.once('close', () => done('')); });
+      input.close(); yes = /^(?:y|yes)$/i.test(answer.trim());
+    }
+    if (!yes) { process.stdout.write('No files changed.\n'); return; }
+    const applied = await applyReadinessFix(options, { id, hash: fix.hash, confirm: true, allowDirty: true });
+    process.stdout.write(`Wrote ${applied.file}. Restart the dev server if its config requires it.\n`); return;
+  }
   if (command === 'doctor') {
     const result = await analyzing(() => doctor(resolve(options.root ?? process.cwd()), options.config));
     process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;

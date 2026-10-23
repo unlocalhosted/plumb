@@ -22,6 +22,7 @@ export const commandFlags: Record<string, readonly string[]> = {
   'agent-docs': report,
   install: [...text, 'agent', 'list', 'hooks', 'ci', 'overlay', 'write'],
   doctor: text,
+  fix: [...common, 'yes'],
   report: [...report, 'markdown', 'since'],
   parity: [...report, 'format', 'strict'],
   serve: [...common, 'port', 'stdio', 'overlay', 'origin', 'served-root'],

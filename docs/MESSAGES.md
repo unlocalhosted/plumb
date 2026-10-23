@@ -410,3 +410,31 @@ Each rule's because text appears once in the closing Why block. No rule id unles
 All human tables share `src/cli-table.ts`: terminal width from the output stream, fallback 100 for pipes; fixed/weighted column budgets. Coverage off-counts use only the largest count's width, right-aligned two spaces after the percentage. Other command tables shorten long paths in the middle and text at the end; finding locations stay intact. Prose wraps intentionally. Terminal-only colour: broken marker/reason red, drift amber, secondary text and suggestion amounts dim; subject default. NO_COLOR disables all escapes and coverage bars. Machine outputs bypass these helpers.
 
 Command tables use the same helper: workspace command / app type; decisions family / token / authored value / source, with resolved value, origin (your theme or Tailwind default), raw/named status and reason below; habits id / break count / severity / enabled status, then reason; ledger moves old key / new key, middle-shortened; doctor status / check / fact / next step. Doctor puts ledger repair commands before explanation so the command survives narrowing. JSON command results retain their existing fields and strings.
+
+## Readiness (layer 1)
+
+`plumber doctor` starts with `Readiness: {n} setup gaps · {n} checks need verification`
+(singular for one), then the eight capabilities as `full`, `degraded` or `off`.
+Each requirement says `ok`, `fix` or `?`, names the setup fact, and shows its
+project-relative `file:line` evidence. A gap or unknown check also says what the
+user loses and prints a copyable command. Applicable config edits use
+`plumber fix <id>`; manual steps print their own command. Requirement ids identify
+fixes, not drift rules. The existing Node/config/Tailwind/CSS/ledger/cache table
+follows under `Diagnostics`. Doctor exits 1 for a missing requirement or a failed
+diagnostic; unknown requirements alone do not fail it.
+
+Use concrete consequences: `Writes reload the page instead of swapping the
+component.`, `Every finding counts as new.`, `The dev server may miss writes,
+leaving the page unchanged.` An unknown check must say what needs verification;
+a stopped server or an unreadable/composed config is never proof of readiness.
+
+`plumber fix <id>` shows the exact unified diff, names any uncommitted config
+changes, and asks `Apply this diff [to the dirty config]? [y/N]`. Only `y` or `yes`
+applies it. `--yes` supplies both apply and dirty-file consent; it still prints
+the diff and dirty-file notice. A step prints its instruction and command without
+running that command. A satisfied requirement says `No change needed.` Refusals
+explain the cause and leave files unchanged. Successful writes say
+`Wrote {file}. Restart the dev server if its config requires it.`
+
+Readiness has its own HTTP model. Existing command JSON and agent report shapes,
+wording, selectors and serializers do not gain readiness fields.

@@ -13,6 +13,7 @@ interface Pending { resolve(value: unknown): void; reject(error: Error): void; t
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
 export class Session extends EventEmitter {
   readonly root: string;
+  readonly config?: string;
   private worker: Worker;
   private pending = new Map<number, Pending>();
   private id = 0;
@@ -21,7 +22,7 @@ export class Session extends EventEmitter {
   private lastStats: unknown;
   private snapshot: Awaited<ReturnType<Engine['health']>>;
   private constructor(options: SessionOptions) {
-    super(); this.optionsBudget = options.readQueueMs; this.root = resolve(options.root ?? process.cwd());
+    super(); if (options.config !== undefined) this.config = options.config; this.optionsBudget = options.readQueueMs; this.root = resolve(options.root ?? process.cwd());
     this.snapshot = { status: 'starting', root: this.root, revision: 0, pid: process.pid, rss: 0, caches: {}, work: { reconciliations: 0 } };
     this.worker = new Worker(new URL('./coordinator.js', import.meta.url), { workerData: { ...options, root: this.root } });
   }

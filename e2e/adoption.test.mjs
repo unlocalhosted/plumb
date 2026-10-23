@@ -98,7 +98,7 @@ test('three-command transcript: first look, init baseline, detected agents and C
   const contents = await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8')));
   assert.match(run(directory, ['install', '--ci']).stdout, /Kept .claude\/skills\/plumber\/SKILL.md/);
   assert.deepEqual(await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8'))), contents);
-  const healthy = run(directory, ['doctor']).stdout;
+  const healthy = run(directory, ['doctor'], 1).stdout.split('Diagnostics\n')[1];
   assert.equal(healthy.trim().split('\n').length, 6);
   assert.ok(healthy.trim().split('\n').every(line => /^ok  /.test(line)));
   t.diagnostic('First run: exit 0; init: inferred config, four habits, baseline; install --ci: preserved agents, hooks, docs, pinned action; check: 0 new.');
@@ -199,7 +199,7 @@ test('doctor reports missing setup and broken config/ledger in independent check
   await file(directory, '.plumber/ledger.jsonl', '{broken\n');
   await file(directory, 'plumber.config.ts', 'export default { unknown: true };\n');
   output = run(directory, ['doctor'], 1).stdout;
-  assert.equal(output.trim().split('\n').length, 6);
+  assert.equal(output.split('Diagnostics\n')[1].trim().split('\n').length, 6);
   assert.match(output, /fix Config:.*Fix the config/);
   assert.match(output, /fix Ledger:.*Repair .plumber/);
   assert.match(output, /ok  Cache:.*\d+ bytes/);
@@ -231,7 +231,7 @@ test('doctor reports unsupported Tailwind, missing CSS entry and unusable cache 
   output = run(directory, ['doctor'], 1).stdout;
   assert.match(output, /fix CSS entry:.*missing.css/);
   assert.match(output, /fix Cache:.*PLUMBER_CACHE_DIR/);
-  assert.equal(output.trim().split('\n').length, 6);
+  assert.equal(output.split('Diagnostics\n')[1].trim().split('\n').length, 6);
 });
 
 for (const version of [null, '3.4.19']) {
