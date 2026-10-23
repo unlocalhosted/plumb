@@ -42,6 +42,7 @@ const buildHash = hash(globSync('**/*.js', { cwd: codeDirectory, absolute: true 
 
 export class CheckCache {
   private generation?: string;
+  private selected = new Set<string>();
   private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[]) {}
   static async create(options: CheckOptions): Promise<CheckCache | undefined> {
     if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation) return;
@@ -80,11 +81,12 @@ export class CheckCache {
   }
   private async inventory(): Promise<string[]> {
     const options = { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**', '**/.cache/**'] };
-    return [...new Set([...await glob('**/*', options), ...await glob(this.patterns, options)])].sort();
+    this.selected = new Set(await glob(this.patterns, options));
+    return [...new Set([...await glob('**/*', options), ...this.selected])].sort();
   }
   async snapshot(): Promise<Map<string, string | null>> {
     const files = await this.inventory();
-    return new Map(files.filter(file => sourceFile.test(file) || this.patterns.length > 0).map(file => [file, fileHash(file)]));
+    return new Map(files.filter(file => sourceFile.test(file) || this.selected.has(file)).map(file => [file, fileHash(file)]));
   }
   private resolver(kind: Receipt['resolutions'][number][3]): ResolverFactory {
     if (kind === 'contexts') return new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
@@ -115,7 +117,7 @@ export class CheckCache {
   async save(report: Report, before: Map<string, string | null>): Promise<void> {
     profileProgress('phase:cache-inventory');
     const inventory = await this.inventory();
-    const after = new Map(inventory.filter(file => sourceFile.test(file) || this.patterns.length > 0).map(file => [file, fileHash(file)]));
+    const after = new Map(inventory.filter(file => sourceFile.test(file) || this.selected.has(file)).map(file => [file, fileHash(file)]));
     if (JSON.stringify([...before]) !== JSON.stringify([...after])) return;
     after.set(this.config, fileHash(this.config));
     const directories: Receipt['directories'] = [], resolutions: Receipt['resolutions'] = [];
