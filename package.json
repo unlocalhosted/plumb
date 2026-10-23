@@ -41,7 +41,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && npm run notices",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/executable-cli.mjs && npm run notices",
     "notices": "node scripts/third-party-notices.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node scripts/test.mjs",
