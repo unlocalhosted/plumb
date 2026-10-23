@@ -115,7 +115,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     const suggestionPath = join(directory, `suggestions-${hash(JSON.stringify(candidates))}.json`);
     let suggestions: { token: string; prefix: string }[] | null = null;
     if (!memory?.system) try { suggestions = JSON.parse(await readFile(suggestionPath, 'utf8')); } catch { /* Optional hint index. */ }
-    const hoverPath = join(directory, 'hover-variants-v3.json');
+    const hoverPath = join(directory, 'hover-variants-v4.json');
     let hoverVariants: string[] | null = probeHover ? memory?.hoverVariants ?? null : [];
     if (probeHover && !memory?.hoverVariants) try { hoverVariants = JSON.parse(await readFile(hoverPath, 'utf8')); } catch { /* Oracle proof cache follows compiler/graph identity. */ }
     // A fully warm run doesn't even load the design system.

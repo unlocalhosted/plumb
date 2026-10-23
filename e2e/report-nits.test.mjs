@@ -64,13 +64,13 @@ test('compact sites sort by file then numeric line before taking four, in pipes 
   const root = await fixture(t, 'habits');
   for (const tty of [false, true]) {
     const output = run(root, ['--rule', 'habits'], 80, tty);
-    assert.match(output, /styles.css:1 · styles.css:3 · styles.css:5 · styles.css:6 · \+2/);
+    assert.match(output, /styles.css:1 · styles.css:5 · styles.css:8 · styles.css:10/);
     assert.match(output, /styles.css:30 · styles.css:32/);
   }
   await writeFile(join(root, 'src/A.css'), '.a:hover { color: red; }');
   await writeFile(join(root, 'src/z.css'), '.z:hover { color: red; }');
   for (const tty of [false, true]) {
-    assert.match(run(root, ['--rule', 'habits'], 80, tty), /A.css:1 · styles.css:1 · styles.css:3 · styles.css:5 · \+4/);
+    assert.match(run(root, ['--rule', 'habits'], 80, tty), /A.css:1 · styles.css:1 · styles.css:5 · styles.css:8 · \+2/);
   }
 });
 

@@ -24,7 +24,7 @@ export function positivePseudo(selector: string, name: string): boolean {
 export function hoverGated(when: Condition[]): boolean {
   const requires = (feature: RegExp) => when.some(condition => condition.kind === 'media' &&
     tokens(condition.text, /,/).every(branch => !/\b(not|or)\b/i.test(branch) && feature.test(branch)));
-  return requires(/\(\s*hover\s*:\s*hover\s*\)/i) && requires(/\(\s*pointer\s*:\s*fine\s*\)/i);
+  return requires(/\(\s*hover\s*:\s*hover\s*\)/i);
 }
 export const selector = (when: Condition[]) => when.filter(condition => condition.kind === 'selector').map(condition => condition.text).join(', ');
 

@@ -124,7 +124,7 @@ test('try TSX names nearest decisions, passes named gap, supports agent/text, us
 test('try shares per-site agent instructions and preserves hover oracle and ownership without cache writes', async t => {
   const directory = await project(t);
   const css = join(directory, 'src/styles.css');
-  await writeFile(css, (await readFile(css, 'utf8')) + '\n@custom-variant fine-hover { &:hover { @media (hover: hover) and (pointer: fine) { @slot; } } }');
+  await writeFile(css, (await readFile(css, 'utf8')) + '\n@custom-variant hover (&:hover);\n@custom-variant fine-hover { &:hover { @media (hover: hover) and (pointer: fine) { @slot; } } }');
   await writeFile(join(directory, 'src/Button.tsx'), 'export function Button(props: { className?: string }) { return <button className={props.className} />; }');
   await writeFile(join(directory, 'plumber.config.ts'), "export default { css: 'src/styles.css', habits: ['hover-gate'], components: { from: 'src/Button.tsx' }, decisions: { spacing: { identity: 'value', callers: ['primitive', 'semantic'] } } };");
   const snippet = 'import { Button } from "./Button"; <><div className="gap-10" /><div className="gap-10" /><Button className="hover:opacity-50 bg-base" /></>;';

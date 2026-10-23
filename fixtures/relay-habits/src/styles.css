@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@theme { --color-primary: #12805c; --color-muted: #8a8f99; --color-sidebar-accent: #e9ebef; }
+.legacy:hover { opacity: .5; }
+@media (pointer: fine) { .pointer-only:hover { opacity: .5; } }
+@media (hover: hover) { .hover-capable:hover { opacity: .5; } }
+@media (hover: hover) and (pointer: fine) { .fine-hover:hover { opacity: .5; } }
+@media (hover: hover), (pointer: fine) { .alternative:hover { opacity: .5; } }
+@media not (hover: hover) { .negated-hover:hover { opacity: .5; } }
+@media (hover: hover) or (pointer: fine) { .disjunction:hover { opacity: .5; } }
