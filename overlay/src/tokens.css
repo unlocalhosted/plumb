@@ -1,41 +1,50 @@
-/* Plumb overlay primitives. The overlay is a surveying instrument held over someone else's page: one neutral
-   field-book card, one instrument brass for the reticle and plumb line, and colour quarantined to verdict marks.
-   Every value the components use comes from here. Scoped to :host so nothing leaks into or out of the host page. */
+/* React Plumber overlay primitives. The overlay is an instrument held over someone else's page: a neutral card,
+   one accent for actions and the instrument lines, and colour otherwise kept to verdicts. Every value the components
+   use comes from here (approved 2026-10-23, docs/briefs/readiness.md). Scoped to :host so nothing leaks either way. */
 
 :host {
-  /* ground and ink: the field-book card */
-  --pl-paper: #f5f7fa;          /* card ground */
-  --pl-paper-2: #eaeff5;        /* header strip, pressed row */
-  --pl-rule: #dbe2ec;           /* ruled lines between rows, card edge */
-  --pl-ink: #26354d;            /* readings, titles: 15.6:1 on paper */
-  --pl-ink-2: #5d6b80;          /* labels, secondary text: 6.6:1 on paper */
-  --pl-ink-3: #a9b4c3;          /* ticks and dividers only, never text */
+  /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
+     with the one accent. Every surface and every word comes from these. */
+  --pl-paper: #fcfcfb;          /* card ground */
+  --pl-paper-2: #f3f2ef;        /* inset strip, footer, pressed row */
+  --pl-rule: #e4e2dd;           /* row outlines, dividers, card edge */
+  --pl-ink: #1c1b19;            /* titles, readings: 16.9:1 on paper */
+  --pl-ink-2: #5c5a55;          /* body that supports, meta, labels: 6.9:1 on paper */
+  --pl-ink-3: #a19e97;          /* ticks and dividers only, never text */
 
-  /* the instrument: reticle, plumb line, bob */
-  --pl-instrument: #4f7bc9;          /* instrument lines: reticle, leaders; on any host it rides on a halo */
+  /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
+  --pl-instrument: #2c64d4;          /* 5.3:1 on paper; on any host it rides on a halo */
+  --pl-accent: var(--pl-instrument);
+  --pl-on-accent: #ffffff;           /* text on a filled accent */
   --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
 
-  /* verdicts: the only other colour, always paired with a mark shape */
-  --pl-on: #3f8a68;             /* uses a token */
-  --pl-off: #bb4654;            /* off the scale, override, imitation, broken */
-  --pl-soft: #a87a3c;           /* Tailwind default, wrong tier, matches a token but doesn't use it */
-  --pl-unknown: #75839a;        /* computed at runtime, inherited */
+  /* verdicts: the only other colour, always paired with a mark shape or a word; each has a tinted ground so a
+     state reads at a glance */
+  --pl-on: #2a7d52;             /* uses a token */
+  --pl-off: #c03a46;            /* off the scale, override, imitation, broken, setup that turns a capability off */
+  --pl-soft: #a8690f;           /* Tailwind default, wrong tier, setup that limits a capability */
+  --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
+  --pl-on-bg: color-mix(in oklab, var(--pl-on) 12%, var(--pl-paper));
+  --pl-off-bg: color-mix(in oklab, var(--pl-off) 10%, var(--pl-paper));
+  --pl-soft-bg: color-mix(in oklab, var(--pl-soft) 12%, var(--pl-paper));
 
-  /* type: system faces only, the overlay never fetches a font */
+  /* type: system faces only, the overlay never fetches a font. Five steps; mono only for code (classes, values,
+     diffs, commands, file:line), never for prose */
   --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --pl-text-label: 500 10.5px/14px var(--pl-sans);   /* tag, column labels */
-  --pl-text-row: 400 12px/16px var(--pl-sans);       /* row text */
-  --pl-text-reading: 400 11.5px/16px var(--pl-mono); /* readings and code: measurement, not costume */
-  --pl-text-title: 600 12.5px/18px var(--pl-sans);   /* card title */
-  /* the reading card has its own four steps, each with one job */
-  --pl-card-title: 600 14px/20px var(--pl-sans);        /* what is off, in words */
-  --pl-card-code: 500 12.5px/18px var(--pl-mono);       /* classes and values: the change itself */
-  --pl-card-body: 400 12.5px/18px var(--pl-sans);       /* reasons and guidance */
-  --pl-card-meta: 400 11.5px/16px var(--pl-mono);       /* pixel values, file and line */
+  --pl-card-title: 600 14px/20px var(--pl-sans);        /* title: what is off, in words */
+  --pl-card-body: 400 13px/19px var(--pl-sans);         /* body: reasons and guidance */
+  --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, where */
+  --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, the change itself */
+  --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
   --pl-tracking-label: 0.02em;
+  --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
+  /* older role names, each now one of the five */
+  --pl-text-title: 600 13px/18px var(--pl-sans);
+  --pl-text-row: 400 13px/18px var(--pl-sans);
+  --pl-text-reading: var(--pl-card-code);
 
-  /* space: one ladder */
+  /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */
   --pl-space-1: 2px;
   --pl-space-2: 4px;
   --pl-space-3: 6px;
@@ -43,13 +52,14 @@
   --pl-space-5: 12px;
   --pl-space-6: 16px;
   --pl-space-7: 20px;
+  --pl-space-8: 24px;
 
   /* instrument geometry */
   --pl-line: 1px;               /* every instrument line, snapped to device pixels in code */
   --pl-tick: 8px;               /* reticle corner arm */
   --pl-drop: 16px;              /* plumb line from box edge to tag */
   --pl-tag-h: 22px;
-  --pl-row-h: 40px;           /* two lines: property and amount, then the reading */
+  --pl-row-h: 40px;             /* two lines: property and amount, then the reading */
   --pl-card-w: 360px;
   --pl-card-pad: 16px;          /* card inset and the gap between its sections */
   --pl-choice-h: 48px;          /* a choice row: specimen, token, reason */
@@ -57,12 +67,13 @@
 
   /* corners: the instrument is square, the card is a held object */
   --pl-radius-mark: 2px;
-  --pl-radius-tag: 3px;
-  --pl-radius-card: 6px;
+  --pl-radius-tag: 4px;
+  --pl-radius-row: 6px;
+  --pl-radius-card: 8px;
 
   /* depth: the card is the only lifted thing */
-  --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(20 22 21 / 0.06), 0 10px 28px -10px rgb(20 22 21 / 0.32);
-  --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(20 22 21 / 0.28);
+  --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
+  --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(28 27 25 / 0.24);
 
   /* motion: one authored moment, the reticle travelling and the plumb line dropping */
   --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
@@ -80,19 +91,20 @@
 
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
-    --pl-paper: #141c2a;
-    --pl-paper-2: #1b2536;
-    --pl-rule: #273349;
-    --pl-ink: #d9e0ea;          /* 14.9:1 on paper */
-    --pl-ink-2: #99a6ba;        /* 7.6:1 on paper */
-    --pl-ink-3: #4f5d74;
-    --pl-instrument: #7d9fd8;        /* lines only */
-    --pl-halo: rgb(10 14 22 / 0.85);
-    --pl-on: #7fbf9c;
-    --pl-off: #de7f89;
-    --pl-soft: #d2aa6f;
-    --pl-unknown: #7b889c;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
+    --pl-paper: #1a1a1c;
+    --pl-paper-2: #232326;
+    --pl-rule: #323236;
+    --pl-ink: #eeede9;          /* 15.4:1 on paper */
+    --pl-ink-2: #a9a7a0;        /* 7.4:1 on paper */
+    --pl-ink-3: #5d5c58;
+    --pl-instrument: #79a2f2;
+    --pl-on-accent: #0e1422;
+    --pl-halo: rgb(10 10 12 / 0.85);
+    --pl-on: #6fc59a;
+    --pl-off: #f0848e;
+    --pl-soft: #e3b062;
+    --pl-unknown: #8f8d86;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
@@ -100,19 +112,20 @@
 
 /* An explicit scheme wins over the OS, both ways. */
 :host([data-scheme="dark"]) {
-    --pl-paper: #141c2a;
-    --pl-paper-2: #1b2536;
-    --pl-rule: #273349;
-    --pl-ink: #d9e0ea;          /* 14.9:1 on paper */
-    --pl-ink-2: #99a6ba;        /* 7.6:1 on paper */
-    --pl-ink-3: #4f5d74;
-    --pl-instrument: #7d9fd8;        /* lines only */
-    --pl-halo: rgb(10 14 22 / 0.85);
-    --pl-on: #7fbf9c;
-    --pl-off: #de7f89;
-    --pl-soft: #d2aa6f;
-    --pl-unknown: #7b889c;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 12px 32px -10px rgb(0 0 0 / 0.7);
+    --pl-paper: #1a1a1c;
+    --pl-paper-2: #232326;
+    --pl-rule: #323236;
+    --pl-ink: #eeede9;
+    --pl-ink-2: #a9a7a0;
+    --pl-ink-3: #5d5c58;
+    --pl-instrument: #79a2f2;
+    --pl-on-accent: #0e1422;
+    --pl-halo: rgb(10 10 12 / 0.85);
+    --pl-on: #6fc59a;
+    --pl-off: #f0848e;
+    --pl-soft: #e3b062;
+    --pl-unknown: #8f8d86;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;
 }

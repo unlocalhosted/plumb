@@ -74,6 +74,23 @@ const nameOf = fiber => { const type = fiber?.type; return typeof type === 'stri
 const named = name => name && !/^(?:eval|anonymous|<anonymous>|Array\.map|Object\.\w+)$/.test(name) ? name : null;
 const fiberKey = node => Object.keys(node).find(key => key.startsWith('__reactFiber$'));
 
+// The component an element is the outermost element of, or null. Walking up from the element's fiber through the
+// components wrapping it, the element must be each one's first rendered child; the innermost named one wins (Card,
+// not the Dashboard that renders Card). Providers, fragments and other unnamed wrappers are passed through.
+export function componentOf(element) {
+  const key = element && fiberKey(element);
+  let fiber = key ? element[key] : null;
+  for (let n = 0; fiber?.return && n < 32; n++) {
+    const parent = fiber.return;
+    if (typeof parent.type === 'string' || parent.tag === 3) return null; // reached the next element, or the root
+    if (parent.child !== fiber) return null;                              // not its first child, so not its outermost
+    const name = typeof parent.type === 'function' || typeof parent.type === 'object' ? named(nameOf(parent)) : null;
+    if (name && /^[A-Z]/.test(name)) return name;
+    fiber = parent;
+  }
+  return null;
+}
+
 // The nearest element React rendered. Markup injected into an element (an icon's SVG) belongs to the element holding it.
 function currentFiber(fiber) {
   // DOM keys are stable across React's double buffer. Follow the committed
