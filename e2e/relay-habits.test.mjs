@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { appendFile, cp, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
@@ -43,4 +43,16 @@ test('Relay focus replacements follow compiled focus/ring/border rules on same t
     const css = report.findings.filter(f => f.rule === 'habits/focus-outline' && f.declaration.origin === 'stylesheet');
     assert.deepEqual(css.map(f => f.declaration.owner.name), ['.css-invisible']);
   }
+});
+
+test('Relay planted habits include compiled ease-in and retain overridden theme semantics', async t => {
+  const dir = await fixture(t);
+  const planted = report => report.findings.filter(f => f.rule.startsWith('habits/')).flatMap(f => f.sites.filter(s => s.file.endsWith('Drift.jsx')).map(s => [f.rule, s.text])).sort();
+  assert.deepEqual(planted(check(dir)), [
+    ['habits/focus-outline', 'focus:outline-none'],
+    ['habits/no-ease-in', 'ease-in'],
+    ['habits/transition-named', 'transition-all'],
+  ]);
+  await appendFile(join(dir, 'src/styles.css'), '\n@theme { --ease-in: cubic-bezier(0, 0, .2, 1); }\n');
+  assert.ok(!planted(check(dir)).some(([rule]) => rule === 'habits/no-ease-in'), 'class spelling cannot override actual project curve');
 });

@@ -13,3 +13,4 @@
 .css-focus-border { outline: none; } .css-focus-border:focus { border: 2px solid #12805c; }
 .css-invisible { outline: none; } .css-invisible:focus { border: 0 solid transparent; }
 .css-shadow { outline: none; } .css-shadow:focus { box-shadow: 0 2px 4px #12805c; }
+@theme { --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }

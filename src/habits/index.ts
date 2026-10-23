@@ -54,6 +54,11 @@ const visibleRing = (d: Declaration) => d.prop === 'box-shadow' && tokens(d.valu
 const focusBase = (s: string) => s.replace(/(?<!\\):focus(?:-(?:visible|within))?(?![\w-])/gi, '');
 const visibleColor = (value: string) => value !== 'transparent' && oklab(value)?.[3] !== 0;
 const borderParts = (d: Declaration) => /^border(?:-(top|right|bottom|left|inline(?:-start|-end)?|block(?:-start|-end)?))?(?:-(width|style|color))?$/.exec(d.prop);
+const easeIn = (value: string) => tokens(value.toLowerCase()).some(token => token === 'ease-in' || calls(token, 'cubic-bezier').some(call => {
+  const points = call.args.split(',').map(Number);
+  // CSS ease-in and Tailwind's default ease-in have these respective curves.
+  return points.length === 4 && [0.42, 0.4].includes(points[0]!) && points[1] === 0 && points[2] === 1 && points[3] === 1;
+}));
 
 /** This receives only source-glob declarations. Companions never certify a computed cascade. */
 export function judgeHabits(declarations: Declaration[], entries: (string | CustomHabit)[], classContexts: ReadonlyMap<Declaration, string>, hoverVariants: string[] = [], list = false): { findings: Finding[]; summaries: HabitSummary[] } {
@@ -160,7 +165,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
           break;
         }
         case 'transition-named': broken = /^transition(?:-property)?$/.test(p) && tokens(v.toLowerCase()).includes('all'); break;
-        case 'no-ease-in': broken = /^(transition|animation)(-|$)/.test(p) && tokens(v.toLowerCase()).includes('ease-in'); break;
+        case 'no-ease-in': broken = /^(transition|animation)(-|$)/.test(p) && easeIn(d.resolved ?? v); break;
         case 'logical-inline': {
           if (s && directionSpecific(s)) break;
           const centered = /^(?:calc\()?\s*(?:50%|1\s*\/\s*2\s*\*\s*100%)/.test(v);
