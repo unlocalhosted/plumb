@@ -291,7 +291,7 @@ export class Blueprint {
     const route = location.pathname + (location.search.length > 1 && location.search.length < 24 ? location.search : '');
     const view = `${innerWidth} × ${innerHeight} · ${breakpointOf(innerWidth)}`;
     const tally = this.#peeking ? 'as designed · release D' : !p || !p.total ? 'reading…' : p.read < p.total ? `reading ${p.read} of ${p.total}…`
-      : `${p.on} on system · ${p.drift ? `<span class="off">${p.drift} off</span>` : 'all true'}`;
+      : `${p.on} on system · ${p.drift ? `<span class="off">${p.drift} off</span>` : p.notChecked ? '' : 'all true'}${p.notChecked ? `${p.drift ? ' · ' : ''}${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : ''}`;
     const reading = !p || !p.total || p.read < p.total;
     const [r, v, t] = ['.route', '.view', '.tally'].map((sel) => this.#sheet.querySelector(sel));
     if (r.textContent !== route) r.textContent = route;

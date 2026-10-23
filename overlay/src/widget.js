@@ -313,7 +313,7 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
-      onProgress: progress => { this.#bp.progress = progress; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(progress.drift ? `${progress.drift} off in view` : 'All true in view'); },
+      onProgress: progress => { this.#bp.progress = progress; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
     });
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     this.#fixer = new Fixer(this, this.#root, { marks: this.#blueprint.marks, invalidate: change => this.#blueprint.invalidate(change), scale: family => this.#scaleOf(family) });
@@ -377,7 +377,7 @@ class PlumbOverlay extends HTMLElement {
     if (stamp) this.#readCounts.set(stamp, this.#readCounts.get(stamp) + 1 || 1);
     const promise = (async () => {
       const found = await locate(element, { explain: true, batch: true });
-      if (!found?.file) return { status: 'unplaced' };
+      if (!found?.file) return { status: 'unplaced', outsideSource: found?.reason === 'resolve-refusal' && !!found.detail?.file, file: found?.detail?.file };
       return this.#readAt(found, element, { want: 'marks', computed, batch: true });
     })().catch(error => ({ status: error?.starting ? 'starting' : 'error' }));
     // an answer that still needs its classes traced is not the element's reading yet
@@ -387,6 +387,7 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
   get health() { return this.#health; }
+  get progress() { return this.#bp.progress; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.sheetRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
@@ -448,7 +449,9 @@ class PlumbOverlay extends HTMLElement {
     if (status) return esc(status.text);
     if (!p || !p.total) return 'reading…';
     if (p.read < p.total) return `reading ${p.read} of ${p.total}…`;
-    const count = p.drift ? `${p.drift} off in view` : 'all true in view';
+    const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
+    const count = [p.drift ? `${p.drift} off in view` : !p.notChecked ? 'all true in view' : '', unchecked].filter(Boolean).join(' · ');
+    if (p.notChecked) return `${count} · Alt+B`;
     if (f?.count) return `${p.drift ? `${p.drift} off` : 'all true'} · ${f.count} picked${f.before ? ' · before' : ''}`;
     return `${count} · Alt+B`;
   }

@@ -56,4 +56,14 @@ for (const host of ['vite', 'next']) test(`${host}: shared authored source never
   const explained = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), 'explain', '../src/screens/Board.jsx', '--root', root], { encoding: 'utf8' });
   assert.equal(explained.status, 0, explained.stderr);
   assert.match(explained.stdout, /not checked: Written in ..\/src\/screens\/Board.jsx, outside/);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Alt+B');
+  await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.total && p.read === p.total; });
+  const progress = await page.evaluate(() => window.__plumb.overlay.progress);
+  assert.ok(progress.outsideSource >= 2, JSON.stringify(progress));
+  assert.equal(progress.checked + progress.notChecked, progress.total);
+  assert.equal(progress.drift, 0); assert.equal(progress.on, 0);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .say').textContent.includes('not checked'));
+  const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.tally').textContent]; });
+  for (const text of blueprint) { assert.match(text, /not checked · outside source/); assert.doesNotMatch(text, /all true/); }
 });

@@ -181,11 +181,13 @@ export class Reader {
             item.state = 'queued'; item.computed = true; // read again, with its classes traced
           } else if (state?.status === 'ready') {
             item.state = 'ready';
+            item.checked = true; item.outsideSource = false;
             item.file = state.file;
             item.marks = state.marks.filter((m) => m.ledger !== 'exception');
             item.dims = state.dims ?? [];
           } else if (state?.status === 'unplaced') {
             item.state = 'ready'; // nothing to draw, and nothing to retry: Plumb can't place this element
+            item.checked = false; item.outsideSource = state.outsideSource === true; item.file = state.file;
             item.marks = [];
             item.dims = [];
           } else {
@@ -213,12 +215,15 @@ export class Reader {
 
   #report(order) {
     const read = order.filter((i) => i.state === 'ready').length;
+    const checked = order.filter((i) => i.state === 'ready' && i.checked).length;
+    const notChecked = read - checked;
+    const outsideSource = order.filter((i) => i.state === 'ready' && i.outsideSource).length;
     const drift = order.reduce((n, i) => n + i.marks.filter((m) => m.ledger === 'new').length, 0);
     const on = order.reduce((n, i) => n + i.dims.length, 0);
-    const key = `${read}/${order.length}/${drift}/${on}`;
+    const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}`;
     if (key !== this.#progress) {
       this.#progress = key;
-      this.#onProgress?.({ read, total: order.length, drift, on });
+      this.#onProgress?.({ read, total: order.length, drift, on, checked, notChecked, outsideSource });
     }
     // what to draw: everything read, in document order
     const shown = order.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
