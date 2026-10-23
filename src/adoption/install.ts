@@ -122,7 +122,7 @@ async function overlayWiring(root: string, write = false): Promise<string> {
     'export const { GET, POST } = createPlumbRoute();',
     '',
     'Add to your root layout:',
-    "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';",
+    "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next/overlay';",
     '// Inside <body>:',
     '<PlumbOverlay />',
     '',

@@ -23,6 +23,10 @@
     "./next/config": {
       "types": "./dist/hosts/next-config.d.ts",
       "default": "./dist/hosts/next-config.js"
+    },
+    "./next/overlay": {
+      "types": "./dist/hosts/next-overlay.d.ts",
+      "default": "./dist/hosts/next-overlay.js"
     }
   },
   "files": [

@@ -125,6 +125,10 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
     assert.match(install(root), /already set up/);
     assert.equal(await readFile(join(root, `next.config.${extension}`), 'utf8'), config);
     assert.equal(await readFile(join(root, `${app}/layout.jsx`), 'utf8'), nextLayout);
+    const legacyLayout = nextLayout.replace('/next/overlay', '/next');
+    await file(root, `${app}/layout.jsx`, legacyLayout);
+    assert.match(install(root), /already set up/);
+    assert.equal(await readFile(join(root, `${app}/layout.jsx`), 'utf8'), legacyLayout);
   }
 
   for (const [host, config] of [

@@ -9,7 +9,7 @@ import { UsageError } from '../errors.js';
 interface Edit { file: string; before: string | undefined; after: string }
 const viteModule = '@unlocalhosted/react-plumber/vite';
 const nextModule = '@unlocalhosted/react-plumber/next/config';
-const overlayModule = '@unlocalhosted/react-plumber/next';
+const overlayModule = '@unlocalhosted/react-plumber/next/overlay';
 const route = "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\n\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute();\n";
 
 function refuse(message: string): never { throw new UsageError(`Overlay setup refused: ${message}`); }
@@ -211,7 +211,10 @@ function nextConfig(file: string, source: string): string {
   return result;
 }
 function nextLayout(file: string, source: string): string {
-  const ast = parse(file, source, true), name = importName(ast, overlayModule, 'PlumbOverlay'), text = new MagicString(source);
+  const ast = parse(file, source, true), text = new MagicString(source);
+  // Keep existing installations idempotent; the legacy export is still safe.
+  const module = imported(ast, '@unlocalhosted/react-plumber/next', 'PlumbOverlay') ? '@unlocalhosted/react-plumber/next' : overlayModule;
+  const name = importName(ast, module, 'PlumbOverlay');
   const bodies: Extract<Node, { type: 'JSXElement' }>[] = [];
   walk(ast, node => { if (node.type === 'JSXElement' && nodeName(node.openingElement.name) === 'body') bodies.push(node); });
   if (!ast.body.some(item => item.type === 'ExportDefaultDeclaration') || bodies.length !== 1 || !bodies[0]!.closingElement) refuse('root layout needs one explicit <body> in a default-exported layout.');
@@ -222,7 +225,7 @@ function nextLayout(file: string, source: string): string {
     const at = body.closingElement!.start, indentation = source.slice(source.lastIndexOf('\n', at - 1) + 1, at);
     text.appendLeft(at, /^[\t ]*$/.test(indentation) ? `  <${name} />${newline(source)}${indentation}` : `<${name} />`);
   }
-  addImport(text, ast, source, overlayModule, 'PlumbOverlay');
+  addImport(text, ast, source, module, 'PlumbOverlay');
   const result = text.toString();
   parse(file, result, true);
   return result;
