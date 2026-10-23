@@ -4,14 +4,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { people, workspace } from '@/data';
 import { AvatarStack } from './PersonAvatar';
 
-export function TopBar({ title, onCommand }) {
+export function TopBar({ title, team, onCommand }) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b px-4">
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-sm">
         <span className="text-muted-foreground">{workspace.name}</span>
         <ChevronRight className="size-3.5 text-muted-foreground" />
-        <span className="text-muted-foreground">Web</span>
-        <ChevronRight className="size-3.5 text-muted-foreground" />
+        {team && <><span className="text-muted-foreground">{team}</span><ChevronRight className="size-3.5 text-muted-foreground" /></>}
         <span className="truncate font-medium">{title}</span>
       </nav>
 

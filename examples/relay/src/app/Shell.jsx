@@ -9,6 +9,7 @@ import { Settings } from '@/screens/Settings';
 import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { CommandPalette, useCommandPalette } from './CommandPalette';
 
 function Placeholder({ title }) {
   return (
@@ -23,6 +24,7 @@ function Placeholder({ title }) {
 
 export function Shell() {
   const { screen: route, issue } = useRoute();
+  const [palette, setPalette] = useCommandPalette();
   if (route === 'specimen') return <Specimen />;
   const title = routes.find((r) => r.path === route)?.title ?? 'Board';
   return (
@@ -30,10 +32,11 @@ export function Shell() {
       <div className="flex h-full bg-background text-foreground">
         <Sidebar route={route} />
         <main className="flex min-w-0 flex-1 flex-col">
-          <TopBar title={title} />
+          <TopBar title={title} team={['board', 'issues', 'automations'].includes(route) ? 'Web' : null} onCommand={() => setPalette(true)} />
           {route === 'board' ? <Board /> : route === 'issues' ? <Issues /> : route === 'automations' ? <Automations /> : route === 'settings' ? <Settings /> : <Placeholder title={title} />}
         </main>
         <IssueDrawer issueKey={issue} screen={route} />
+        <CommandPalette open={palette} onOpenChange={setPalette} />
       </div>
     </TooltipProvider>
   );
