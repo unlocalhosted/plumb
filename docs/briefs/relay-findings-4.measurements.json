@@ -1,0 +1,131 @@
+{
+  "route": "#/board",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "browser": "Google Chrome headless",
+  "reducedMotion": true,
+  "method": "Fresh browser contexts; warm dev hosts/session ready; elapsed from Alt+B to reader read === total; full suite completed before capture. Request durations overlap and are not additive wall time.",
+  "sameDriftLabelsIncludingMultiplicity": true,
+  "results": [
+    {
+      "host": "vite",
+      "elapsedMs": 668.7349999999999,
+      "progress": {
+        "read": 260,
+        "total": 260,
+        "drift": 79,
+        "on": 0,
+        "checked": 260,
+        "notChecked": 0,
+        "outsideSource": 0
+      },
+      "sourceStamps": 575,
+      "dock": "Blueprint · 79 off in view · Alt+B",
+      "titleBlock": "0 on system · 79 off",
+      "driftMarks": 79,
+      "traffic": {
+        "Plumber batches": {
+          "requests": 37,
+          "maxRequestMs": 79.70383399999992
+        },
+        "script/chunk reads": {
+          "requests": 167,
+          "maxRequestMs": 61.21479199999999
+        },
+        "source maps": {
+          "requests": 38,
+          "maxRequestMs": 145.99454200000014
+        },
+        "Plumber other": {
+          "requests": 11,
+          "maxRequestMs": 10.538708999999926
+        }
+      },
+      "repeatedRequests": [
+        {
+          "path": "/src/screens/Board.jsx",
+          "requests": 75
+        },
+        {
+          "path": "/__plumb/batch",
+          "requests": 37
+        },
+        {
+          "path": "/src/app/Shell.jsx",
+          "requests": 19
+        },
+        {
+          "path": "/node_modules/.vite/deps/lucide-react.js",
+          "requests": 14
+        },
+        {
+          "path": "/node_modules/.vite/deps/lucide-react.js.map",
+          "requests": 14
+        }
+      ],
+      "marksDrawingMs": 13.899999856948853,
+      "browserErrors": []
+    },
+    {
+      "host": "next",
+      "elapsedMs": 17768.350083,
+      "progress": {
+        "read": 260,
+        "total": 260,
+        "drift": 79,
+        "on": 0,
+        "checked": 260,
+        "notChecked": 0,
+        "outsideSource": 0
+      },
+      "sourceStamps": 0,
+      "dock": "Blueprint · 79 off in view · Alt+B",
+      "titleBlock": "0 on system · 79 off",
+      "driftMarks": 79,
+      "traffic": {
+        "Plumber other": {
+          "requests": 14,
+          "maxRequestMs": 77.02187500000036
+        },
+        "script/chunk reads": {
+          "requests": 423,
+          "maxRequestMs": 9612.802
+        },
+        "source maps": {
+          "requests": 243,
+          "maxRequestMs": 1068.3764579999988
+        },
+        "Plumber batches": {
+          "requests": 948,
+          "maxRequestMs": 190.98733300000094
+        }
+      },
+      "repeatedRequests": [
+        {
+          "path": "/__plumb/batch",
+          "requests": 948
+        },
+        {
+          "path": "/_next/static/chunks/examples_relay_src_3ec7569e._.js",
+          "requests": 251
+        },
+        {
+          "path": "/_next/static/chunks/examples_relay_5720dd3b._.js",
+          "requests": 132
+        },
+        {
+          "path": "/_next/static/chunks/examples_relay_src_3ec7569e._.js.map",
+          "requests": 116
+        },
+        {
+          "path": "/_next/static/chunks/examples_relay_5720dd3b._.js.map",
+          "requests": 115
+        }
+      ],
+      "marksDrawingMs": 185.80000019073486,
+      "browserErrors": []
+    }
+  ]
+}
