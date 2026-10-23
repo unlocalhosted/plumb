@@ -39,11 +39,10 @@ const sourceFile = /\.(?:[cm]?[jt]sx?|css|jsonl?)$/;
 const codeDirectory = dirname(fileURLToPath(import.meta.url));
 const buildHash = hash(globSync('**/*.js', { cwd: codeDirectory, absolute: true }).sort().map(file => readFileSync(file, 'utf8')).join('\0'));
 
-
 export class CheckCache {
   private generation?: string;
   private selected = new Set<string>();
-  private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[]) {}
+  private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[], private tokenPatterns: string[]) {}
   static async create(options: CheckOptions): Promise<CheckCache | undefined> {
     if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation) return;
     const root = resolve(options.root ?? process.cwd());
@@ -63,9 +62,9 @@ export class CheckCache {
       if (css && (await tailwindGraph(css)).files.some(file => !file.endsWith('.css'))) return;
     } catch { return; }
     // Track membership and bytes for data-selected inputs outside the root too.
-    const patterns: string[] = [];
+    const patterns: string[] = [], tokenPatterns: string[] = [];
     const inputs = (entry: unknown, key = ''): void => {
-      if (typeof entry === 'string' && ['source', 'from', 'exported'].includes(key) && !entry.startsWith('theme:')) patterns.push(entry.replace(/^(?:css|dtcg):/, '').split('#')[0]!);
+      if (typeof entry === 'string' && ['source', 'from', 'exported'].includes(key) && !entry.startsWith('theme:')) (key === 'from' ? tokenPatterns : patterns).push(entry.replace(/^(?:css|dtcg):/, '').split('#')[0]!);
       else if (Array.isArray(entry)) entry.forEach(item => inputs(item, key));
       else if (entry && typeof entry === 'object') Object.entries(entry).forEach(([name, item]) => inputs(item, name));
     };
@@ -77,11 +76,13 @@ export class CheckCache {
     try { compilerPackage = createRequire(css ?? join(root, 'package.json')).resolve('tailwindcss/package.json'); } catch { /* Plain CSS can have no Tailwind package. */ }
     const key = hash(JSON.stringify(['checked-v3', buildHash, process.versions.v8, root, config, text, !!options.verbose,
       compilerPackage, compilerPackage ? fileHash(compilerPackage) : null]));
-    return new CheckCache(root, join(base, 'checked', key), config, css, patterns);
+    return new CheckCache(root, join(base, 'checked', key), config, css, patterns, tokenPatterns);
   }
   private async inventory(): Promise<string[]> {
     const options = { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**', '**/.cache/**'] };
-    this.selected = new Set(await glob(this.patterns, options));
+    // Explicit token/component selectors may point into dependency packages,
+    // which source discovery intentionally ignores. Their bytes still matter.
+    this.selected = new Set([...await glob(this.patterns, options), ...await glob(this.tokenPatterns, { ...options, ignore: [] })]);
     return [...new Set([...await glob('**/*', options), ...this.selected])].sort();
   }
   async snapshot(): Promise<Map<string, string | null>> {

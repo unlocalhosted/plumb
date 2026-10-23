@@ -182,7 +182,7 @@ test('init-written data config reuses the whole report and invalidates selected 
   assert.deepEqual(stable(warm), stable(cold));
   assert.ok(Object.values(warm.timing.phases).every(ms => ms === 0), 'init config hits whole-report cache without an explicit config argument');
   const config = join(root, 'tokens.config.mjs');
-  await writeFile(config, `// data with comments, nested arrays and booleans\nexport default { css: 'src/styles.css', source: ['src/**'], decisions: { spacing: { from: 'dtcg:tokens.json', exported: false } }, habits: [], markers: ['https://example.test/*data*/'] };`);
+  await writeFile(config, `// data with comments, nested arrays and booleans\nexport default { css: \`src/styles.css\`, source: ['src/**'], decisions: { spacing: { from: 'dtcg:tokens.json', exported: false } }, habits: [], markers: ['https://example.test/*data*/'] };`);
   await writeFile(join(root, 'tokens.json'), JSON.stringify({ small: { $type: 'dimension', $value: '7px' } }));
   const tokens = await check({ root, config });
   assert.ok(Object.values((await check({ root, config })).timing.phases).every(ms => ms === 0));
@@ -194,4 +194,12 @@ test('init-written data config reuses the whole report and invalidates selected 
   const selected = await check({ root, config });
   assert.equal(selected.classes.unique, 1, 'data config edits are read afresh after cache invalidation');
   assert.ok(Object.values((await check({ root, config })).timing.phases).every(ms => ms === 0));
+  const dependencyTokens = join(root, 'node_modules/data-tokens/theme.data');
+  await mkdir(join(root, 'node_modules/data-tokens'), { recursive: true });
+  await writeFile(dependencyTokens, JSON.stringify({ small: { $type: 'dimension', $value: '6px' } }));
+  await writeFile(config, (await readFile(config, 'utf8')).replace('dtcg:tokens.json', 'dtcg:node_modules/data-tokens/theme.data'));
+  assert.equal((await check({ root, config })).decisions.find(item => item.name === 'small').value, '6px');
+  assert.ok(Object.values((await check({ root, config })).timing.phases).every(ms => ms === 0));
+  await writeFile(dependencyTokens, JSON.stringify({ small: { $type: 'dimension', $value: '8px' } }));
+  assert.equal((await check({ root, config })).decisions.find(item => item.name === 'small').value, '8px', 'dependency token inputs invalidate even without a source extension');
 });

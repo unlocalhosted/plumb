@@ -10,6 +10,7 @@ import type { PlumbConfig } from './config.js';
 function data(input: Node): unknown {
   const node = unwrap(input);
   if (node.type === 'Literal' && (node.value === null || ['string', 'number', 'boolean'].includes(typeof node.value))) return node.value;
+  if (node.type === 'TemplateLiteral' && node.expressions.length === 0 && typeof node.quasis[0]?.value.cooked === 'string') return node.quasis[0].value.cooked;
   if (node.type === 'UnaryExpression' && ['-', '+'].includes(node.operator) && node.argument.type === 'Literal' && typeof node.argument.value === 'number') return node.operator === '-' ? -node.argument.value : node.argument.value;
   if (node.type === 'ArrayExpression') return node.elements.map(item => { if (!item || item.type === 'SpreadElement') throw Error(); return data(item); });
   if (node.type === 'ObjectExpression') {
