@@ -26,6 +26,7 @@ import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './ge
 import { GLYPH_CSS, glyph } from './glyphs.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
+import { Readiness, READY_CSS } from './readiness.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -86,7 +87,7 @@ const css = `
   .dock :is(.pick, .bp-toggle, .list):disabled { color: var(--pl-ink-3); cursor: default; }
   .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
-  .dock .act.write { color: #fff; background: var(--pl-instrument); }
+  .dock .act.write { color: var(--pl-on-accent); background: var(--pl-accent); }
   @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 88%, var(--pl-ink)); } }
   .dock .act:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   .dock .act:disabled { opacity: .55; cursor: default; }
@@ -188,7 +189,7 @@ const css = `
   .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-paper)); }
   .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-ink-2); pointer-events: none; }
   .dim { position: absolute; z-index: 1; translate: -50% -50%; padding: 0 3px; border-radius: 3px; font: 600 10px/14px var(--pl-mono); font-variant-numeric: tabular-nums;
-         color: #fff; background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
+         color: var(--pl-paper); background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
   .dim.left { translate: 0 -50%; } .dim.right { translate: -100% -50%; }
   .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-ink-2); }
   .dim[data-active] { opacity: 1; scale: 1; }
@@ -264,7 +265,7 @@ const css = `
   .btn[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
   .btn:disabled { opacity: .4; cursor: default; }
   .btn.copy { margin-inline-start: auto; }
-  .btn.primary { color: #fff; background: var(--pl-instrument); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
+  .btn.primary { color: var(--pl-on-accent); background: var(--pl-accent); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
   @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 88%, var(--pl-ink)); } }
   .btn.primary:active:not(:disabled) { transform: translateY(1px); }
   .btn.primary:disabled { opacity: 1; color: var(--pl-ink-2); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); cursor: default; }
@@ -286,11 +287,11 @@ const ICON = {
 
 class PlumbOverlay extends HTMLElement {
   #blueprint; #fixer; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap();
-  #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map();
+  #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -313,7 +314,9 @@ class PlumbOverlay extends HTMLElement {
     this.#fixer = new Fixer(this, this.#root, { marks: this.#blueprint.marks, invalidate: change => this.#blueprint.invalidate(change), scale: family => this.#scaleOf(family) });
     this.#$('.dock .undo').addEventListener('click', () => this.#fixer.undo());
     this.#$('.dock .write').addEventListener('click', () => this.#fixer.write());
-    this.#$('.dock .list').addEventListener('click', () => this.#fixer.toggleList());
+    this.#$('.dock .list').addEventListener('click', () => { this.#ready?.close(); this.#fixer.toggleList(); });
+    // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
+    this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
     addEventListener('keydown', this.#onKeyDown, true);
@@ -343,6 +346,7 @@ class PlumbOverlay extends HTMLElement {
 
   disconnectedCallback() {
     this.#blueprint?.destroy();
+    this.#ready?.destroy();
     this.close(); this.#disarm();
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
@@ -353,6 +357,7 @@ class PlumbOverlay extends HTMLElement {
   }
 
   #toggleBlueprint(options) {
+    this.#ready?.dismiss();
     this.#blueprint.toggle(options);
   }
 
@@ -379,7 +384,7 @@ class PlumbOverlay extends HTMLElement {
   get health() { return this.#health; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.sheetRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? [])];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.sheetRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id) { return this.#fixer.open(element, mark, id); }
@@ -428,6 +433,7 @@ class PlumbOverlay extends HTMLElement {
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
+    if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
     this.#healthTimer = setTimeout(() => this.#poll(), next === 'ready' || next === 'failed' ? TIMING.healthReady : TIMING.healthStarting);
   }
@@ -586,7 +592,7 @@ class PlumbOverlay extends HTMLElement {
     else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
     else if (event.key === 'Escape' && this.#fixer?.isOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.close(); }
     // L: the punch list, when nothing on the page is being typed into
-    else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#fixer.toggleList(); }
+    else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#ready?.close(); this.#fixer.toggleList(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
@@ -599,6 +605,7 @@ class PlumbOverlay extends HTMLElement {
   #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); if (event.key === 'd' || event.key === 'D') this.#blueprint?.peek(false); };
 
   #arm(sticky = false) {
+    this.#ready?.dismiss();
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
     this.#armed = true; this.#sticky = sticky;
     addEventListener('pointermove', this.#onMove, true);
@@ -732,6 +739,7 @@ class PlumbOverlay extends HTMLElement {
   // ── pinned ───────────────────────────────────────────────
   async pin(element) {
     if (this.#pinned?.element === element) return;
+    this.#ready?.dismiss();
     this.close();
     this.#fixer?.close({ focus: false });
     this.#focusBack = document.activeElement;
