@@ -24,4 +24,11 @@ export const planted = [
   { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'inline code bg-[#f3f4f6]', wrong: 'raw colour; a light patch in dark mode', rule: 'provenance/color', fix: 'bg-muted' },
   { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'comment bubbles rounded-[6px]', wrong: 'equals rounded-md but bypasses the token', rule: 'provenance/radius by value', fix: 'rounded-md' },
   { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'comment focus ring-[#12805c]/30', wrong: "Relay's primary written as a raw colour", rule: 'provenance/color', fix: 'ring-ring/30' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'canvas dot grid #d9dce3', wrong: 'raw colour (it is --input) in an arbitrary background', rule: 'provenance/color', fix: 'a gradient from var(--input)' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'connectors stroke-[#9aa0ac]', wrong: 'equals --status-backlog but bypasses the token', rule: 'provenance/color by value', fix: 'stroke-status-backlog (or stroke-border)' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'node padding px-[14px]', wrong: 'off the 4px ladder', rule: 'provenance/arbitrary', fix: 'px-3.5 or px-4' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'node corners rounded-[14px]', wrong: 'off the radius scale', rule: 'provenance/arbitrary', fix: 'rounded-xl' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'node type tag text-[11px]', wrong: 'below the type scale', rule: 'provenance/arbitrary', fix: 'text-xs' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'node type colour oklch(0.55 0.13 hue)', wrong: 'a hand-written colour formula (the hue is data, the formula is not a token)', rule: 'provenance/color', fix: 'a token per node kind (--node-trigger, …)' },
+  { screen: 'automations', file: 'screens/Automations.jsx', what: 'canvas inset style={{ margin: 24 }}', wrong: 'inline literal, on the ladder by value but not by token', rule: 'provenance (inline)', fix: 'm-6' },
 ];
