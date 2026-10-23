@@ -379,7 +379,10 @@ export class Session extends EventEmitter {
       catch (error) { if (!missing(error)) throw error; }
     }
     const inside = relative(this.root, file).replaceAll('\\', '/');
-    if (!inside || inside === '..' || inside.startsWith('../') || isAbsolute(inside) || ignoredDirectory(inside) || !/\.[cm]?[jt]sx?$/.test(file)) return { library: true };
+    if (!inside || ignoredDirectory(inside) || !/\.[cm]?[jt]sx?$/.test(file)) return { library: true };
+    // Authored shared code is a source boundary, never permission to use an
+    // ancestor's JSX. Classification does not read bytes outside the project.
+    if (inside === '..' || inside.startsWith('../') || isAbsolute(inside)) return { library: true, untracked: inside };
     // Classify before reading source: linked packages and symlinked directories
     // must never introduce external snapshots into this project's Session.
     try {

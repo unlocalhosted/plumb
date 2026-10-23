@@ -46,7 +46,7 @@ function unplaced(found) {
   if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(response)) {
     let file = String(detail.file ?? detail.source ?? '');
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
-    return { short: `not checked: ${file}`, message: `This element is written in \`${file}\`, which React Plumber doesn’t check. Add it to \`source\` in your React Plumber config to read it here.` };
+    return { short: `not checked: ${file}`, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
   if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'This element wasn’t rendered by React (HTML written at runtime, or outside your app), so it has no line in your source.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')

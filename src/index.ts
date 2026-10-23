@@ -1,6 +1,6 @@
 import type { AnalysisRuntime } from './session/runtime.js';
 import { stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { loadConfig } from './config.js';
 import { errorMessage, UsageError } from './errors.js';
@@ -273,9 +273,12 @@ export async function trySnippet(text: string, options: TryOptions = {}): Promis
   report.notes.push('Dead decisions skipped: try judges a snippet, not whole-project usage. Ledger allowances are not applied.');
   return report;
 }
-export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; declarations: Declaration[]; opaque: number }> {
+export async function explain(file: string, options: CheckOptions = {}): Promise<{ root: string; file: string; sites: ExplainedClassSite[]; declarations: Declaration[]; opaque: number; status?: 'not checked'; message?: string }> {
   const { report, sites } = await analyze(options);
   const absolute = resolve(report.root, file);
+  const config = await loadConfig(report.root, options.config);
+  if (!(await projectSourceFiles(report.root, config.value)).includes(absolute)) return { root: report.root, file: absolute, sites: [], declarations: [], opaque: 0,
+    status: 'not checked', message: `Written in ${relative(report.root, absolute).replaceAll('\\', '/')}, outside this project's source. Add it to \`source\` to check it.` };
   return { root: report.root, file: absolute, sites: sites.filter(site => site.file === absolute), declarations: report.declarations.filter(declaration => declaration.site.file === absolute), opaque: report.classes.opaque };
 }
 

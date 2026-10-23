@@ -178,7 +178,8 @@ export async function locate(element, options = {}) {
     const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: nameOf(fiber._debugOwner) };
     return { ...at, tag: element.localName, via: 'stamp', chain: [at], index: 0, partial: true };
   }
-  const owner = await locateOwner(element, options);
+  const owner = await locateOwner(element, { ...options, explain: true });
+  if (owner?.reason === 'resolve-refusal' && owner.detail?.file) return options.explain ? owner : null;
   if (!confirmed && !match && fiber && (!owner || owner.location === null) && !options.signal?.aborted) {
     // A host a library drew (an icon's <path>, a primitive's inner <div>) carries no stamp of its own. The component that
     // drew it was stamped where it is used, in its props, so the nearest stamped owner is the usage site: exact, and no
@@ -196,7 +197,7 @@ export async function locate(element, options = {}) {
       break;
     }
   }
-  if (!confirmed || options.signal?.aborted) return owner;
+  if (!confirmed || options.signal?.aborted) return owner?.location === null && !options.explain ? null : owner;
   const chain = [...(owner?.chain ?? [])];
   const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);
   if (confirmed.usage) {
@@ -238,7 +239,7 @@ async function locateOwner(element, options = {}) {
     return asked.get(key);
   };
   const chain = [], seen = new Map();
-  let last = [], unchecked;
+  let last = [];
   const tryFrame = async frame => {
     if (frame?.failure) {
       if (frame.rawSource) {
@@ -271,9 +272,8 @@ async function locateOwner(element, options = {}) {
       }
       return { reason: 'resolve-refusal', detail: { ...at, response: result.refused } };
     }
-    // An untracked file is not the project's checked source: pass through it like library code, and only report it
-    // ("not checked") when nothing tracked is found further up.
-    if (result?.untracked) { unchecked ??= { source: at.source, file: result.untracked, response: 'Source is not a tracked project source.' }; return { proven: false }; }
+    // An authored source boundary must not borrow a checked ancestor's reading.
+    if (result?.untracked) return { reason: 'resolve-refusal', detail: { source: at.source, file: result.untracked, response: 'Source is not a tracked project source.' } };
     const proven = !!(result?.file && result.line && result.column);
     seen.set(key, proven);
     if (proven && !chain.some(link => link.file === result.file && link.line === result.line && link.column === result.column)) chain.push({ file: result.file, line: result.line, column: result.column, component: result.component ?? named(frame.functionName) });
@@ -359,7 +359,6 @@ async function locateOwner(element, options = {}) {
   }
   if (options.signal?.aborted) return refuse('map', { step: 'cancelled' });
   if (!chain.length) {
-    if (unchecked) return refuse('resolve-refusal', unchecked);
     return refuse('runtime-only-frames', { step: 'no-project-frame', frames: last.slice(0, 6).map(frame => frame.fileName) });
   }
   const index = Math.max(0, chain.findIndex(link => !shared(link.file)));

@@ -292,7 +292,7 @@ async function main(): Promise<void> {
       (site.declarations.length ? site.declarations.map(declaration => `  ${declaration.origin}  ${declaration.prop}: ${declaration.value}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('') : '  no lowered declarations\n') +
       (args.values.verbose ? site.notes.map(note => `  note: ${note}\n`).join('') : '')).join('\n');
     const other = result.declarations.filter(declaration => !['class', 'arbitrary'].includes(declaration.origin)).map(declaration => `${relative(result.root, declaration.site.file)}:${declaration.site.line}:${declaration.site.column}  ${declaration.origin}  <${declaration.owner.name}>\n  ${declaration.prop}: ${declaration.value}${declaration.opaque ? ` (${declaration.opaque})` : ''}${declaration.dynamic ? ` (${declaration.dynamic.kind} by ${declaration.dynamic.by})` : ''}\n` + declaration.when.map(condition => `    ${condition.kind}: ${condition.text}\n`).join('')).join('\n');
-    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : text + other);
+    process.stdout.write(args.values.json ? `${JSON.stringify(result, null, 2)}\n` : result.status ? `${result.status}: ${result.message}\n` : text + other);
     return;
   }
   if (command === 'check' && args.values.json && !args.values.agent && !args.values.sarif && !args.values.format && !args.values.watch && args.values.base === undefined && !args.values.changed && !args.values['strict-ledger']) {
