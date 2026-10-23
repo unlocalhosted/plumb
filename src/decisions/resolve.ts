@@ -2,6 +2,8 @@ import { references } from '../collect/source.js';
 
 export interface Variable { value: string; dynamic?: boolean }
 const absolute: Record<string, number> = { px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6, pt: 96 / 72, pc: 16 };
+// Match pixels(): rem comparisons use the CSS initial root size.
+const lengths: Record<string, number> = { ...absolute, rem: 16 };
 export function pixels(value: string): number | undefined {
   const match = /^(-?(?:\d*\.)?\d+)([a-z]*)$/i.exec(value.trim());
   if (!match) return;
@@ -57,9 +59,9 @@ function fold(expression: string): string | undefined {
       const op = tokens[index++]; let right = product();
       if (!right) return;
       if (left.unit !== right.unit) {
-        if (!(left.unit in absolute && right.unit in absolute)) return;
-        left = { number: left.number * absolute[left.unit]!, unit: 'px' };
-        right = { number: right.number * absolute[right.unit]!, unit: 'px' };
+        if (!(left.unit in lengths && right.unit in lengths)) return;
+        left = { number: left.number * lengths[left.unit]!, unit: 'px' };
+        right = { number: right.number * lengths[right.unit]!, unit: 'px' };
       }
       left = { number: left.number + (op === '+' ? right.number : -right.number), unit: left.unit };
     }

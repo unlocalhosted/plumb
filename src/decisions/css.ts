@@ -7,6 +7,8 @@ export interface CssVariable {
   name: string;
   value: string;
   theme: boolean;
+  inline?: boolean;
+  dark?: boolean;
   root: boolean;
   themeScope: boolean;
   /** Declared in a block that also styles something: a component's variable, not a theme token. */
@@ -39,7 +41,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
     active.add(file);
     const css = sheet.css, imports = cssImports(css);
     const source = { file, text: css, lineStarts: lineStarts(css) };
-    function walk(start: number, theme: boolean, root: boolean, dynamic: boolean, themeScope: boolean): number {
+    function walk(start: number, theme: boolean, root: boolean, dynamic: boolean, themeScope: boolean, inline = false, dark = false): number {
       let index = start;
       // Variables declared directly in this block, and whether the block also styles anything.
       const own: CssVariable[] = []; let styles = false;
@@ -68,7 +70,8 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
         if (delimiter === '{') {
           const isTheme = /^@theme\b/.test(text);
           const isRoot = !text.startsWith('@') && /(?:^|,)\s*(?::root|html)\s*(?:,|$)/.test(text);
-          index = walk(index + 1, theme || isTheme, isRoot || (root && text === '&'), dynamic || /^@(media|container|supports)\b/.test(text), themeScopeFor(text, themeScope));
+          index = walk(index + 1, theme || isTheme, isRoot || (root && text === '&'), dynamic || /^@(media|container|supports)\b/.test(text), themeScopeFor(text, themeScope),
+            inline || isTheme && /\binline\b/.test(text), /^\.dark$/.test(text) || dark && (text === '&' || text.startsWith('@')));
           continue;
         }
         if (/^@(import|reference)\b/.test(text)) {
@@ -83,7 +86,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
         if (match) {
           const tier = /\btier:\s*(primitive|semantic)\b/.exec(comment)?.[1] as Tier | undefined;
           const trailingWhy = delimiter === ';' ? /^[\t ]*\/\*([^\r\n]*?)\*\//.exec(css.slice(index + 1))?.[1]?.trim() ?? '' : '';
-          result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, root, dynamic, themeScope, trailingWhy,
+          result.push({ name: match[1]!, value: match[2]!.replace(/\s*!important$/, '').trim(), theme, inline, dark, root, dynamic, themeScope, trailingWhy,
             origin: sheet.sourceOrigin, why: comment.startsWith('why:') ? comment.slice(4).replace(/\s*tier:\s*(primitive|semantic)\b/, '').trim() : '',
             ...(tier ? { tier } : {}), source: { file, line: sourceSite(source, offset, '').line }, site: sourceSite(source, offset, text) });
           own.push(result.at(-1)!);

@@ -369,7 +369,7 @@ async function main(): Promise<void> {
     const columns = [{ width: 9 }, { weight: 3 }, { weight: 2 }, { weight: 3, path: true, ink: 'dim' as const }];
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record =>
       table([[record.family, record.name, record.value, `${relative(report.root, record.source.file)}:${record.source.line}`]], columns, { indent: 0 }).join('\n') + '\n' +
-      table([[`resolved: ${record.resolved ?? 'unresolved'} · ${record.origin === 'framework' ? "Tailwind's default" : record.origin === 'project' ? 'your theme' : 'inferred'} · ${record.tier === 'primitive' ? 'raw token' : 'named token'}`]], [{ weight: 1, ink: 'dim' }]).join('\n') + '\n' +
+      table([[`resolved: ${record.resolved ?? 'unresolved'}${record.resolvedModes?.dark ? ` · dark: ${record.resolvedModes.dark}` : ''} · ${record.origin === 'framework' ? "Tailwind's default" : record.origin === 'project' ? 'your theme' : 'inferred'} · ${record.tier === 'primitive' ? 'raw token' : 'named token'}`]], [{ weight: 1, ink: 'dim' }]).join('\n') + '\n' +
       wrap(`  why: ${record.why || '(none)'}`) + '\n').join(''));
     return;
   }

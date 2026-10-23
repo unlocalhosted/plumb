@@ -57,6 +57,8 @@ export interface Declaration {
 
 export interface Decision {
   exported?: boolean;
+  /** Inline theme aliases resolve against :root; retain known mode values too. */
+  resolvedModes?: { dark?: string };
   resolved?: string;
   family: Family;
   name: string;

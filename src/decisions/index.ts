@@ -52,7 +52,9 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
       variables.set(item.name, { value: item.value, dynamic: item.dynamic || !!previous && (previous.dynamic || previous.value !== item.value) });
     }
   }
-  for (const item of theme) variables.set(item.name, { value: item.value, dynamic: metadata.get(item.name)?.dynamic ?? false });
+  // A framework theme default (e.g. Tailwind's --radius) cannot replace the
+  // authored :root backing value used by an inline alias.
+  for (const item of theme) if (!variables.has(item.name)) variables.set(item.name, { value: item.value, dynamic: metadata.get(item.name)?.dynamic ?? false });
   const decisions = new Map<string, Decision>(), overrides = new Set<string>();
   function add(record: Decision, explicit = false, projectOverride = false): void {
     if (record.name === '--spacing') return;
@@ -113,6 +115,16 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   // Theme backing values can change outside :root too. Never resolve an alias
   // to just its light value when another scope supplies a different definition.
   const themeSources = themeSourceGraph({ definitions: raw, theme: new Set(theme.map(item => item.name)), variables, decisions: [...decisions.values()] });
+  const lightVariables = new Map([...variables].map(([name, value]) => [name, { ...value }]));
+  const darkVariables = new Map([...lightVariables].map(([name, value]) => [name, { ...value }]));
+  for (const item of raw) if (!item.theme && themeSources.names.has(item.name)) {
+    if (item.dark && !item.dynamic) darkVariables.set(item.name, { value: cssValue(item.value) });
+    else if (!item.root || item.dynamic) {
+      const light = lightVariables.get(item.name), dark = darkVariables.get(item.name);
+      if (light && (item.dynamic || cssValue(item.value) !== light.value)) light.dynamic = true;
+      if (dark && (item.dynamic || cssValue(item.value) !== dark.value)) dark.dynamic = true;
+    }
+  }
   const motionNames = new Set<string>();
   for (const item of motionDefinitions(raw, graph)) {
     // Backing definitions already belong to their theme decision (Layer 1).
@@ -126,6 +138,17 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     if (variable && (item.dynamic || item.value !== variable.value)) variable.dynamic = true;
   }
   const refIndex = new Map([...decisions.values()].flatMap(record => record.refs.map(ref => [ref, record] as const)));
+  function resolveRecord(record: Decision): void {
+    const inline = metadata.get(record.name)?.inline;
+    const values = inline ? lightVariables : variables;
+    const resolved = resolveValue(cssValue(record.value), values, new Set([record.name]));
+    if (resolved !== undefined && !values.get(record.name)?.dynamic) record.resolved = resolved;
+    else delete record.resolved;
+    if (inline) {
+      const dark = resolveValue(cssValue(record.value), darkVariables, new Set([record.name]));
+      if (dark !== undefined && dark !== resolved && !darkVariables.get(record.name)?.dynamic) record.resolvedModes = { dark };
+    }
+  }
   for (const record of decisions.values()) {
     if (!overrides.has(`${record.family}:${record.name}`)) {
       record.tier = [...references(record.value), ...[...record.value.matchAll(/\{([\w.-]+)\}/g)].map(match => match[1]!)].some(name => {
@@ -133,9 +156,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
         return other?.family === record.family && other.name !== record.name;
       }) ? 'semantic' : 'primitive';
     }
-    const resolved = resolveValue(cssValue(record.value), variables, new Set([record.name]));
-    if (resolved !== undefined && !variables.get(record.name)?.dynamic) record.resolved = resolved;
-    else delete record.resolved;
+    resolveRecord(record);
   }
   const themeNames = new Set(theme.map(item => item.name));
   const defined = new Set([...presetDecisions(config).map(record => record.name), ...raw.filter(item => !item.theme).map(item => item.name), ...themeNames]);
@@ -149,8 +170,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const selected = decisions.get(`${family}:${item.name}`);
     if (selected) return [selected];
     const record = defineDecisions([{ family, name: item.name, value: item.value, why: meta.why, source: meta.source }])[0]!;
-    const resolved = resolveValue(cssValue(record.value), variables, new Set([record.name]));
-    if (resolved !== undefined && !variables.get(record.name)?.dynamic) record.resolved = resolved;
+    resolveRecord(record);
     return [record];
   });
   tokenReasons([...decisions.values(), ...inventory]);

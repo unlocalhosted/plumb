@@ -63,7 +63,11 @@ test('shadcn theme sources are definitions; utility coverage and deliberate drif
   assert.ok(report.findings.some(f => f.rule === 'provenance/color' && f.variable?.name === '--orphan-ink'));
   assert.ok(report.findings.some(f => f.rule === 'provenance/arbitrary' && f.family === 'spacing' && f.sites.some(s => s.text === 'p-[13px]')));
   assert.ok(report.findings.some(f => f.rule === 'provenance/motion' && f.sites.some(s => s.text === 'transition: opacity 333ms')));
-  for (const name of ['--color-primary', '--color-source', '--color-scoped', '--duration-source']) {
+  assert.equal(report.decisions.find(d => d.name === '--color-primary').resolved, '#2c50e8');
+  assert.ok(report.decisions.find(d => d.name === '--color-primary').resolvedModes.dark);
+  assert.equal(report.decisions.find(d => d.name === '--color-source').resolved, '#2468ac');
+  assert.equal(report.decisions.find(d => d.name === '--color-source').resolvedModes.dark, '#abcdef');
+  for (const name of ['--color-scoped', '--duration-source']) {
     const decision = report.decisions.find(d => d.name === name);
     assert.ok(decision, name); assert.equal(decision.resolved, undefined, name);
   }

@@ -166,7 +166,8 @@ test('bounded static resolution and per-property fixes keep nondecision units se
   const report = run(directory);
   assert.ok(report.declarations.some(d => d.value === 'calc((var(--alias-8) + 4px) * 1)' && d.resolved === '16px'));
   assert.ok(report.declarations.some(d => d.value === 'var(--tw-measure)' && d.resolved === '12px'));
-  for (const value of ['var(--alias-0)', 'calc(12px + 1rem)']) assert.ok(report.findings.some(f => f.declaration.value === value && f.declaration.resolved === undefined));
+  assert.ok(report.findings.some(f => f.declaration.value === 'var(--alias-0)' && f.declaration.resolved === undefined));
+  assert.ok(report.declarations.some(d => d.value === 'calc(12px + 1rem)' && d.resolved === '28px'));
   const drift = report.findings.find(f => f.rule === 'provenance/spacing' && f.declaration.resolved === '13px');
   assert.match(drift.fix, /pt-small/);
   assert.match(drift.fix, /gap-x-small/);
