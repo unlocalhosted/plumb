@@ -1,4 +1,4 @@
-import { readiness, formatReadiness } from '../readiness/index.js';
+import { readiness, formatReadiness, actionableRequirements } from '../readiness/index.js';
 import type { Report } from '../report.js';
 import { cacheDirectory } from '../paths.js';
 import { existsSync } from 'node:fs';
@@ -79,6 +79,6 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
-  ok &&= !ready.requirements.some(item => item.status === 'missing');
+  ok &&= !actionableRequirements(ready).some(item => item.status === 'missing');
   return { text: formatReadiness(ready) + '\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }

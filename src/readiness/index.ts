@@ -28,10 +28,11 @@ export type Fix = { kind: 'diff'; file: string; hash: string; diff: string; dirt
 export interface Requirement {
   id: string; capability: Capability; status: Status; title: string;
   evidence: Evidence[]; loses: string; fix: Fix | null;
+  derived?: boolean; cause?: string;
 }
 export interface ReadinessReport {
   schemaVersion: 1;
-  capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off'; requirements: string[] }[];
+  capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off'; requirements: string[]; available?: boolean }[];
   requirements: Requirement[];
 }
 /** Trusted host observations only. HTTP input cannot set these facts. */
@@ -66,8 +67,8 @@ async function ownConfig(root: string, file: string): Promise<void> {
 
 export async function readiness(options: ReadinessOptions): Promise<ReadinessReport> {
   const root = resolve(options.root), runtime = options.runtime, requirements: Requirement[] = [];
-  const add = (id: string, capability: Capability, state: Status, title: string, evidence: Evidence[], loses: string, fix: Fix | null) => {
-    requirements.push({ id, capability, status: state, title, evidence, loses, fix: state === 'ok' ? null : fix });
+  const add = (id: string, capability: Capability, state: Status, title: string, evidence: Evidence[], loses: string, fix: Fix | null, derived: Pick<Requirement, 'derived' | 'cause'> = {}) => {
+    requirements.push({ id, capability, status: state, title, evidence, loses, fix: state === 'ok' ? null : fix, ...derived });
   };
   const config = options.config ? resolve(root, options.config) : allConfigNames.map(file => join(root, file)).find(existsSync);
   let loaded: Awaited<ReturnType<typeof loadConfig>> | undefined, configError = '';
@@ -143,8 +144,9 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const dependency = (id: string, capability: Capability, prefix: Capability, title: string, loses: string) => {
     const checks = requirements.filter(item => item.capability === prefix);
     const state = checks.some(item => item.status === 'missing') ? 'missing' : checks.some(item => item.status === 'unknown') ? 'unknown' : 'ok';
-    const blocked = checks.find(item => item.status !== 'ok');
-    add(id, capability, state, title, blocked?.evidence ?? evidence('plugin', title), loses, step(`Resolve ${labels[prefix]} requirements first.`, blocked ? `plumber fix ${blocked.id}` : 'plumber doctor'));
+    const blocked = state === 'ok' ? undefined : checks.find(item => item.status === state);
+    const cause = blocked?.cause ?? blocked?.id;
+    add(id, capability, state, title, blocked?.evidence ?? evidence('plugin', title), loses, step(`Resolve ${labels[prefix]} requirements first.`, cause ? `plumber fix ${cause}` : 'plumber doctor'), { derived: true, ...(cause ? { cause } : {}) });
   };
   dependency('preview.locate', 'preview', 'locate', 'Preview needs source locations', 'Tokens cannot be previewed at the selected source.');
   dependency('write.locate', 'write', 'locate', 'Writing needs source locations', 'The selected component cannot be written safely.');
@@ -177,7 +179,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   return { schemaVersion: 1, capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.some(item => item.status === 'unknown');
     const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
-    return { id, label: labels[id], status: essentialMissing ? 'off' : missing || unknown ? 'degraded' : 'full', requirements: checks.map(item => item.id) };
+    return { id, label: labels[id], status: essentialMissing ? 'off' : missing || unknown ? 'degraded' : 'full', requirements: checks.map(item => item.id), ...(id === 'system' ? { available: false } : {}) };
   }), requirements };
 }
 
@@ -206,11 +208,18 @@ export async function applyReadinessFix(options: ReadinessOptions, request: { id
   } finally { applying.delete(root); }
 }
 
+/** Causes for capabilities that exist today; shared by doctor counts and exit status. */
+export function actionableRequirements(report: ReadinessReport): Requirement[] {
+  const unavailable = new Set(report.capabilities.filter(item => item.available === false).map(item => item.id));
+  return report.requirements.filter(item => !item.derived && !unavailable.has(item.capability));
+}
+
 export function formatReadiness(report: ReadinessReport): string {
-  const missing = report.requirements.filter(item => item.status === 'missing'), unknown = report.requirements.filter(item => item.status === 'unknown');
+  const requirements = actionableRequirements(report);
+  const missing = requirements.filter(item => item.status === 'missing'), unknown = requirements.filter(item => item.status === 'unknown');
   let output = `Readiness: ${count(missing.length, 'setup gap')} · ${count(unknown.length, 'check needs verification', 'checks need verification')}\n`;
-  output += table(report.capabilities.map(item => [item.status, item.label]), [{ width: 8 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
-  for (const item of report.requirements) {
+  output += table(report.capabilities.map(item => [item.available === false ? 'unavailable' : item.status, item.label]), [{ width: 11 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
+  for (const item of requirements) {
     output += wrap(`\n  ${item.status === 'ok' ? 'ok' : item.status === 'missing' ? 'fix' : '?'} ${item.title} [${item.id}]`) + '\n';
     output += wrap(`     ${item.evidence.map(evidence => `${evidence.file}:${evidence.line} ${evidence.text}`).join(' · ')}`) + '\n';
     if (item.status !== 'ok') {

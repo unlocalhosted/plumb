@@ -415,10 +415,21 @@ Command tables use the same helper: workspace command / app type; decisions fami
 
 `plumber doctor` starts with `Readiness: {n} setup gaps · {n} checks need verification`
 (singular for one), then the eight capabilities as `full`, `degraded` or `off`.
-Each requirement says `ok`, `fix` or `?`, names the setup fact, and shows its
+The system panel is not implemented: its capability has `available: false` in
+JSON and says `unavailable` in doctor. Its requirements remain in JSON but do
+not count as setup gaps, appear as doctor requirements, or affect doctor's exit.
+Derived requirements (`preview.locate`, `write.locate`, `blueprint.locate`,
+`system.blueprint`) have `derived: true` and, when blocked, a `cause` naming the
+underlying requirement. Missing causes take precedence over unknown checks;
+chained dependencies point to the original cause. Doctor lists and counts the
+causes, excluding derived repetitions. These fields are additive; schemaVersion
+remains 1.
+
+Each actionable requirement says `ok`, `fix` or `?`, names the setup fact, and shows its
 project-relative `file:line` evidence. A gap or unknown check also says what the
 user loses and prints a copyable command. Applicable config edits use
-`plumber fix <id>`; manual steps print their own command. Requirement ids identify
+`plumber fix <id>`; manual steps print their instruction and command. Readiness
+fixes never offer an `$EDITOR` command. Requirement ids identify
 fixes, not drift rules. The existing Node/config/Tailwind/CSS/ledger/cache table
 follows under `Diagnostics`. Doctor exits 1 for a missing requirement or a failed
 diagnostic; unknown requirements alone do not fail it.
@@ -427,6 +438,15 @@ Use concrete consequences: `Writes reload the page instead of swapping the
 component.`, `Every finding counts as new.`, `The dev server may miss writes,
 leaving the page unchanged.` An unknown check must say what needs verification;
 a stopped server or an unreadable/composed config is never proof of readiness.
+
+Plugin order means `plumb()` precedes JSX/TSX transformers, including the official
+React plugins and Babel plugins. Tailwind or MDX before Plumber is not an order
+gap. An order diff moves Plumber before the first JSX transformer and preserves
+earlier unrelated plugins. An installed React Fast Refresh plugin gets an import
+and a call immediately after Plumber. An absent package gets a lockfile-selected
+install command and an instruction to rerun doctor for the config diff. Polling
+diffs set `usePolling: true`, `interval: 100` and `awaitWriteFinish`, preserving
+other watcher options.
 
 `plumber fix <id>` shows the exact unified diff, names any uncommitted config
 changes, and asks `Apply this diff [to the dirty config]? [y/N]`. Only `y` or `yes`

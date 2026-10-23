@@ -156,7 +156,7 @@ test('JSX order allows Tailwind first; React first offers a minimal diff that st
       let ready = await report();
       const order = item(ready, 'locate.order');
       assert.equal(order.status, expected);
-      const doctor = run(root, ['doctor'], '', 1);
+      const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
       assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
       assert.doesNotMatch(doctor, /must be first/);
       if (expected === 'missing') {
@@ -182,7 +182,7 @@ test('Babel JSX plugins block order; MDX pre plugins do not', async t => {
       const root = await fixture(t, `import transform from '${module}';\n` + config.replace('inspect(), react()', "transform({ enforce: 'pre' }), inspect(), react()"));
       const { report } = await api(t, root);
       assert.equal(item(await report(), 'locate.order').status, expected);
-      const doctor = run(root, ['doctor'], '', 1);
+      const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
       assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
     });
   }
@@ -195,12 +195,14 @@ test('doctor and read-only route cover every capability and token family with ev
   assert.equal(ready.schemaVersion, 1);
   assert.equal(ready.requirements.length, 23);
   assert.deepEqual(ready.capabilities.map(item => item.id), ['read', 'remember', 'fast', 'locate', 'preview', 'write', 'blueprint', 'system']);
+  assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   for (const requirement of ready.requirements) {
-    assert.deepEqual(Object.keys(requirement), ['id', 'capability', 'status', 'title', 'evidence', 'loses', 'fix']);
+    assert.deepEqual(Object.keys(requirement), ['id', 'capability', 'status', 'title', 'evidence', 'loses', 'fix', ...(requirement.derived ? ['derived'] : [])]);
     assert.ok(['ok', 'missing', 'unknown'].includes(requirement.status));
     assert.ok(requirement.evidence.every(item => typeof item.file === 'string' && Number.isInteger(item.line) && item.line > 0 && typeof item.text === 'string'));
     assert.ok(requirement.loses);
     if (requirement.status !== 'ok') assert.ok(requirement.fix?.kind && (requirement.fix.command || requirement.fix.diff));
+    assert.doesNotMatch(JSON.stringify(requirement.fix), /\$\{EDITOR|\$EDITOR/);
   }
   for (const id of ['read.styles', 'remember.baseline', 'fast.config', 'locate.plugin', 'locate.order', 'locate.react-dev', 'locate.host', 'preview.locate', 'write.locate', 'write.refresh', 'write.hmr', 'blueprint.locate', 'blueprint.host', 'system.blueprint']) assert.equal(item(ready, id).status, 'ok', id);
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'ok');
@@ -210,11 +212,44 @@ test('doctor and read-only route cover every capability and token family with ev
   assert.equal((await request('readiness', {})).status, 405);
   assert.equal((await request('readiness/fix', undefined)).status, 405);
   assert.equal((await request('readiness/anything')).status, 404);
-  const output = run(root, ['doctor'], '', 1);
+  const output = run(root, ['doctor']);
   assert.match(output, /^Readiness: \d+ setup gaps? ·/);
   assert.ok(output.indexOf('Readiness:') < output.indexOf('Diagnostics'));
   assert.match(output, /React development build needs verification/);
-  for (const requirement of ready.requirements) assert.ok(output.includes(`[${requirement.id}]`), requirement.id);
+  assert.match(output, /unavailable\s+System panel/);
+  for (const requirement of ready.requirements) assert.equal(output.includes(`[${requirement.id}]`), !requirement.derived && requirement.capability !== 'system', requirement.id);
+});
+
+test('derived causes stay in route JSON; doctor counts causes and excludes unavailable system gaps', async t => {
+  const root = await fixture(t, config.replace('inspect(), react()', 'react(), inspect()').replace('hmr: true', 'hmr: false'));
+  const { report } = await api(t, root, runtime);
+  let ready = await report();
+  const derived = ['preview.locate', 'write.locate', 'blueprint.locate', 'system.blueprint'];
+  for (const id of derived) {
+    const requirement = item(ready, id);
+    assert.equal(requirement.derived, true);
+    assert.equal(requirement.status, 'missing');
+    assert.equal(requirement.cause, 'locate.order');
+    assert.equal(requirement.fix.command, 'plumber fix locate.order');
+  }
+  assert.equal(ready.schemaVersion, 1);
+  assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
+  assert.equal(item(ready, 'system.preset').status, 'missing');
+  let doctor = run(root, ['doctor'], '', 1);
+  assert.match(doctor, /^Readiness: 2 setup gaps · 1 check needs verification/);
+  for (const id of [...derived, 'system.preset']) assert.ok(!doctor.includes(`[${id}]`), id);
+  run(root, ['fix', 'locate.order', '--yes']);
+  ready = await report();
+  for (const id of derived) {
+    assert.equal(item(ready, id).status, 'ok');
+    assert.equal(item(ready, id).derived, true);
+    assert.ok(!Object.hasOwn(item(ready, id), 'cause'));
+  }
+  run(root, ['fix', 'write.hmr', '--yes']);
+  doctor = run(root, ['doctor']);
+  assert.match(doctor, /^Readiness: 0 setup gaps · 1 check needs verification/);
+  assert.match(doctor, /unavailable\s+System panel/);
+  assert.equal(item(await report(), 'system.preset').status, 'missing');
 });
 
 test('every config diff is previewed, consent-gated, dirty-checked and applied one at a time', async t => {
@@ -260,7 +295,8 @@ test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includ
   assert.equal(item(ready, 'locate.plugin').status, 'missing');
   assert.equal(item(ready, 'write.refresh').status, 'missing');
   for (const id of ['locate.order', 'preview.locate', 'write.locate', 'blueprint.locate', 'system.blueprint']) assert.equal(item(ready, id).status, 'missing', id);
-  for (const id of ['locate', 'preview', 'write', 'blueprint', 'system']) assert.equal(ready.capabilities.find(item => item.id === id).status, 'off', id);
+  for (const id of ['locate', 'preview', 'write', 'blueprint']) assert.equal(ready.capabilities.find(item => item.id === id).status, 'off', id);
+  assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   run(root, ['fix', 'locate.plugin', '--yes']);
   ready = await report();
   assert.equal(item(ready, 'locate.plugin').status, 'ok');
@@ -389,6 +425,13 @@ test('uninstalled React, unsupported host and unsupported Tailwind are independe
   const output = run(root, ['doctor'], '', 1);
   assert.match(output, /React does not resolve/);
   assert.match(output, /npm install react react-dom/);
+  await writeFile(join(root, 'vite.config.mjs'), 'export default (() => ({ plugins: [] }))();');
+  ready = await report();
+  assert.equal(item(ready, 'locate.plugin').status, 'unknown');
+  for (const id of ['preview.locate', 'write.locate', 'blueprint.locate', 'system.blueprint']) {
+    assert.equal(item(ready, id).status, 'missing');
+    assert.equal(item(ready, id).cause, 'locate.react-dev', 'missing cause wins over earlier unknown requirements');
+  }
   await mkdir(join(root, 'node_modules/tailwindcss'), { recursive: true });
   await writeFile(join(root, 'node_modules/tailwindcss/package.json'), JSON.stringify({ name: 'tailwindcss', version: '3.4.19' }));
   await writeFile(join(root, 'src/styles.css'), '@import "tailwindcss";');
