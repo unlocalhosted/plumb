@@ -18,7 +18,7 @@ import type { StructuredEdit } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { readText, textSites } from './text.js';
-import { containsPath, sourceBoundary, sourcePath } from '../source-boundary.js';
+import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
 export type { TextRun, TextResult } from './text.js';
@@ -61,6 +61,7 @@ export class Session extends EventEmitter {
   private dependencies = new Set<string>();
   private patterns: string[] = [];
   private sourceFiles = new Set<string>();
+  private outsideSources = new Set<string>();
   private configurationFiles = new Set<string>();
   private inputs: string[] = [];
   private inputPatterns: string[] = [];
@@ -357,6 +358,7 @@ export class Session extends EventEmitter {
     do {
       const local = method === 'site' || method === 'why' || method === 'edits' || method === 'classes';
       const query = local ? [(params as { file: string }).file] : undefined;
+      if (query) await this.readableSource(query[0]!);
       try { if (!this.batchRead) await this.reconcile(query); }
       catch (error) {
         const as = (params as { as?: string }).as, target = resolve(this.root, as ?? 'src/__plumb_try__.tsx');
@@ -412,6 +414,7 @@ export class Session extends EventEmitter {
     }
     if (['site', 'edits', 'text', 'why', 'classes'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
+      await this.readableSource(file);
       if (method === 'classes') this.validateClasses(args[3]);
       if (method === 'classes' || args[2] !== undefined) this.position(args[2] as number);
       return [file];
@@ -437,10 +440,16 @@ export class Session extends EventEmitter {
   resolveSource(source: string, line?: number, column?: number, expected: { tag?: string; component?: boolean; hash?: string; snapshot?: boolean; owner?: boolean; servedRoot?: string; stamp?: boolean } = {}): Promise<SourceResolution> {
     return this.serializeRead(async () => {
       const classified = await this.resolveFile(source, expected.servedRoot, expected.stamp);
-      if (typeof classified !== 'string') return classified;
+      if (typeof classified !== 'string') {
+        if ('untracked' in classified && classified.untracked && this.outsideSources.size < 64) this.outsideSources.add(sourcePath(this.root, classified.untracked));
+        return classified;
+      }
       const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
       if (!this.batchRead) await this.reconcile([file]);
-      if (!this.sourceFiles.has(file)) return { library: true, untracked: inside };
+      if (!this.sourceFiles.has(file)) {
+        if (this.outsideSources.size < 64) this.outsideSources.add(file);
+        return { library: true, untracked: inside };
+      }
       // Hash-bound browser evidence must compare with the file on disk, even
       // if a save races reconciliation or preserves the cached stat stamp.
       const text = expected.snapshot || expected.hash !== undefined ? await readFile(file, 'utf8') : this.sourceTexts.get(file) ?? await readFile(file, 'utf8');
@@ -474,6 +483,7 @@ export class Session extends EventEmitter {
   text(file: string, line: number, column: number): Promise<TextResult> {
     const path = this.file(file); this.position(line); this.position(column);
     return this.serializeRead(async () => {
+      await this.readableSource(path);
       if (!this.batchRead) await this.reconcile([path]);
       if (!this.sourceFiles.has(path) || !/\.[cm]?[jt]sx?$/.test(path)) throw new UsageError('Text edits require a tracked JSX source file.');
       const source = await readFile(path, 'utf8');
@@ -604,6 +614,7 @@ export class Session extends EventEmitter {
   private healthSnapshot: { caches: object; work?: object } = { caches: {} };
   health() {
     return Promise.resolve({ ...this.healthSnapshot, work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations }, status: this.failure ? 'invalid' : 'ready', root: this.root,
+      ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
       revision: this.revision, pid: process.pid, rss: process.memoryUsage().rss,
       ...(this.failure ? { diagnostic: this.failure.message } : {}) });
   }
@@ -613,6 +624,9 @@ export class Session extends EventEmitter {
     const path = sourcePath(this.root, file), inside = relative(this.root, path);
     if (!inside || !containsPath(sourceBoundary(this.root), path) || !containsPath(this.root, path) && !this.sourceFiles.has(path)) throw new UsageError('File must be inside the project root.');
     return path;
+  }
+  private async readableSource(file: string): Promise<void> {
+    if (!containsPath(this.root, file) && !await ownSourcePath(this.root, file)) throw new UsageError('Shared source cannot read symbolic links or paths outside the repository/workspace root.');
   }
   private async editableFile(file: string): Promise<{ dev: number; ino: number }> {
     this.file(file);

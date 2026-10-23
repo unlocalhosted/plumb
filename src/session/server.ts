@@ -58,6 +58,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'readiness' || method === 'readiness/fix') return dispatchReadiness({
     root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
     ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
+    sourceEvidence: async () => (await session.health()).outsideSource ?? [],
   }, method, params);
   if (method === 'report') {
     const options: Pick<CheckOptions, 'base' | 'changed' | 'strictLedger' | 'verbose' | 'ledger'> = {};

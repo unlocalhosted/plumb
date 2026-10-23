@@ -278,7 +278,7 @@ test('doctor and read-only route cover every capability and token family with ev
   const before = await readFile(join(root, 'vite.config.mjs'), 'utf8');
   const ready = await report();
   assert.equal(ready.schemaVersion, 1);
-  assert.equal(ready.requirements.length, 23);
+  assert.equal(ready.requirements.length, 24);
   assert.deepEqual(ready.capabilities.map(item => item.id), ['read', 'remember', 'fast', 'locate', 'preview', 'write', 'blueprint', 'system']);
   assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   for (const requirement of ready.requirements) {

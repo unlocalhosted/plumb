@@ -195,3 +195,19 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
   } catch { /* No inferred facts for the portion which could not be read. */ }
   return result;
 }
+
+/** Only a statically owned default object can receive an automatic source edit. */
+export function addSourceGlobs(file: string, source: string, globs: string[], defaults: string[]): string | undefined {
+  try {
+    const ast = parse(file, source), config = object(ast, exported(ast));
+    const entry = property(config, 'source');
+    const value = entry && constant(ast, entry.value);
+    if (value && (value.type !== 'ArrayExpression' || value.elements.some(item => item?.type !== 'Literal' || typeof item.value !== 'string'))) return;
+    const before = value?.type === 'ArrayExpression' ? value.elements.map(item => (item as { value: string }).value) : defaults;
+    const after = [...new Set([...before, ...globs])];
+    const text = new MagicString(source);
+    set(text, source, config, 'source', JSON.stringify(after));
+    parse(file, text.toString());
+    return text.toString();
+  } catch { return; }
+}

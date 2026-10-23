@@ -11,14 +11,15 @@ import { loadConfig } from '../config.js';
 import { allConfigNames, statePath } from '../paths.js';
 import { dataConfig } from '../data-config.js';
 import { CheckCache } from '../check-cache.js';
-import { discoverProject } from '../project.js';
+import { defaultSource, discoverProject, projectSourceFiles } from '../project.js';
+import { containsPath, sourceBoundary } from '../source-boundary.js';
 import { tailwindSetupProblem, packageManager } from '../setup-messages.js';
 import { readLedger } from '../ledger/store.js';
 import { UsageError, userMessage } from '../errors.js';
 import { diff, parse, walk } from '../adoption/overlay.js';
 import { nodeName } from '../collect/source.js';
 import { atomicWrite } from '../atomic-write.js';
-import { hostConfig, installedRefresh } from './config.js';
+import { addSourceGlobs, hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
 
@@ -46,7 +47,7 @@ export interface Runtime {
   polling?: boolean;
   watching?: boolean;
 }
-export interface ReadinessOptions { root: string; config?: string; runtime?: Runtime; report?: () => Promise<Report> }
+export interface ReadinessOptions { root: string; config?: string; runtime?: Runtime; report?: () => Promise<Report>; sourceEvidence?: () => Promise<string[]> }
 const labels: Record<Capability, string> = { read: 'Read', remember: 'Remember', fast: 'Fast', locate: 'Locate', preview: 'Preview', write: 'Write in place', blueprint: 'Blueprint', system: 'System panel' };
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const status = (value: boolean | undefined): Status => value === undefined ? 'unknown' : value ? 'ok' : 'missing';
@@ -60,10 +61,31 @@ function dirty(root: string, file: string): boolean {
 }
 async function ownConfig(root: string, file: string): Promise<void> {
   const own = await realpath(root), target = await realpath(file), path = relative(own, target);
-  if (!/^(?:vite|next)\.config\.(?:ts|mts|js|mjs|cjs)$/.test(relative(root, file)) || path.startsWith('..') || isAbsolute(path) || target !== join(own, basename(file))) {
-    throw new UsageError('Readiness fixes only write the project’s own host config files; symlinks are refused.');
+  if (!/^(?:vite|next|plumb|plumber)\.config\.(?:ts|mts|js|mjs|cjs)$/.test(relative(root, file)) || path.startsWith('..') || isAbsolute(path) || target !== join(own, basename(file))) {
+    throw new UsageError('Readiness fixes only write the project’s own config files; symlinks are refused.');
   }
   if (!(await stat(target)).isFile()) throw new UsageError('Readiness fix needs a regular config file.');
+}
+
+async function sourceChange(options: ReadinessOptions, config: string): Promise<{ before: string; after: string } | undefined> {
+  const root = resolve(options.root), observed = await options.sourceEvidence?.() ?? [];
+  if (!observed.length || observed.some(file => !containsPath(sourceBoundary(root), file))) return;
+  const loaded = await loadConfig(root, options.config), selected = new Set(await projectSourceFiles(root, loaded.value));
+  const missing = observed.filter(file => !selected.has(file));
+  if (!missing.length) return;
+  const globs = [...new Set(missing.map(file => {
+    const parts = relative(root, file).replaceAll('\\', '/').split('/');
+    if (parts.length === 1) return parts[0]!;
+    const first = parts.findIndex(part => part !== '..');
+    return parts.slice(0, Math.min(first + 1, parts.length - 1)).join('/') + '/**';
+  }))];
+  const before = await readFile(config, 'utf8'), after = addSourceGlobs(config, before, globs, defaultSource);
+  if (!after || after === before) return;
+  // Exclusions and symlinks may still prevent checking. Never offer a diff
+  // which fails to include the evidence it promises to resolve.
+  const proposed = await projectSourceFiles(root, { ...loaded.value, source: [...(loaded.value.source ?? defaultSource), ...globs] });
+  if (missing.some(file => !proposed.includes(file))) return;
+  return { before, after };
 }
 
 export async function readiness(options: ReadinessOptions): Promise<ReadinessReport> {
@@ -133,6 +155,18 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('locate.host', 'locate', hostState, runtime ? `${runtime.host} dev server is running` : host ? `${host.host} config found; runtime not observed` : declaredHost ? `${declaredHost} is declared in package.json` : 'Host could not be established', evidence('plugin', runtime?.host ?? host?.host ?? declaredHost ?? 'No single supported host config found'),
     'Clicking an element may not locate its source.', step('Run the app with Vite or Next.js in development.', `${packageManager(root)} run dev`));
   const plugin = runtime?.plugin ?? host?.plugin;
+  const observed = await options.sourceEvidence?.() ?? [];
+  const selected = loaded ? new Set(await projectSourceFiles(root, loaded.value).catch(() => [])) : new Set<string>();
+  const unchecked = observed.filter(file => !selected.has(file));
+  let sourceFix: Fix = step(`Add the shared files to source in ${configFile}, within the repository/workspace root.`, 'plumber doctor');
+  if (config && unchecked.length) try {
+    await ownConfig(root, config);
+    const change = await sourceChange(options, config);
+    if (change) sourceFix = { kind: 'diff', file: configFile, hash: hash(change.before), diff: diff({ file: config, before: change.before, after: change.after }, root), dirty: dirty(root, config) };
+  } catch { /* Opaque, excluded or unowned source needs manual config review. */ }
+  add('locate.source', 'locate', !loaded ? 'unknown' : unchecked.length ? 'missing' : 'ok', unchecked.length ? 'Rendered source is outside source' : 'No observed rendered source outside source',
+    unchecked.length ? unchecked.slice(0, 3).map(file => ({ file: relative(root, file).replaceAll('\\', '/'), line: 1, text: 'Rendered element: outside source' })) : configEvidence,
+    'These rendered elements are not checked; Blueprint cannot judge them.', sourceFix);
   add('locate.plugin', 'locate', status(plugin), plugin ? 'React Plumber dev plugin is present' : 'React Plumber dev plugin is not established', evidence('plugin', plugin ? 'plumb() / withPlumb()' : 'Dev plugin not established'),
     'Clicking an element cannot locate its source.', await configFix('locate.plugin', step('Add React Plumber to the dev host.', 'plumber install --overlay --write')));
   add('locate.order', 'locate', status(host?.ordered), host?.ordered ? 'React Plumber precedes JSX transforms' : host?.ordered === false ? 'React Plumber must precede JSX transforms' : 'JSX plugin order needs verification', evidence('plugin', 'Plugin order relative to JSX transforms'),
@@ -200,8 +234,10 @@ export async function applyReadinessFix(options: ReadinessOptions, request: { id
     if (dirty(root, file) && request.allowDirty !== true) throw new UsageError('Config has uncommitted changes. Confirm the dirty file before applying (allowDirty: true).');
     const current = await readFile(file, 'utf8');
     if (hash(current) !== request.hash) throw new UsageError('Config changed since the diff was shown. Read readiness again.');
-    const host = await hostConfig(root), after = host?.changes[request.id];
-    if (!after || host?.source !== current) throw new UsageError('Config changed. Read readiness again.');
+    const host = request.id === 'locate.source' ? undefined : await hostConfig(root);
+    const source = request.id === 'locate.source' ? await sourceChange(options, file) : undefined;
+    const after = source?.after ?? host?.changes[request.id];
+    if (!after || (source?.before ?? host?.source) !== current) throw new UsageError('Config changed. Read readiness again.');
     await ownConfig(root, file);
     if (hash(await readFile(file, 'utf8')) !== request.hash) throw new UsageError('Config changed. Read readiness again.');
     await atomicWrite(file, after, { mode: (await stat(file)).mode & 0o777 });
