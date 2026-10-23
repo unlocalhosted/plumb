@@ -1,4 +1,4 @@
-# Brief: two packaging bugs found by running Relay on Next.js
+# Brief: two packaging bugs found by running Relay on Next.js, and one habit follow-up
 
 1. **React Plumber in Next.js from a linked install bundles its own server code.** examples/relay/next depends on
    `"@unlocalhosted/react-plumber": "file:../../.."` (a symlink to the repo, like any `npm link`/`file:` install, the
@@ -17,6 +17,15 @@
    written without +x; `node_modules/.bin/plumber` in any linked install (and in this repo after a rebuild) fails with
    "Permission denied". Make the build leave dist/cli.js executable (and keep the shebang). E2E: after `npm run build`,
    the linked bin runs.
+
+3. **focus-outline, second round** (after relay-findings-2). On examples/relay the habit still flags `outline-none` at
+   6 sites, all shadcn/Radix/cmdk patterns whose focus is visible another way: DropdownMenuItem and cmdk Command.Item
+   show the focused row with a background on `data-[highlighted]` / `data-[selected=true]` (also accept `aria-selected`
+   and `data-[state=open|active]` styling); DialogContent / SheetContent are containers focused programmatically when
+   they open (Radix sets tabindex=-1); Command.Input is the dialog's focused text field. Treat an attribute-driven
+   highlight (background, colour or border change on those attributes) as a visible focus replacement, and exempt
+   containers that are only focused by script. The planted `focus:outline-none` input in src/screens/Settings.jsx must
+   still be caught. E2E on fixtures copied from Relay's dropdown-menu.jsx, dialog.jsx, sheet.jsx and CommandPalette.jsx.
 
 Don't modify examples/ (Relay is the reference; you may read it), overlay/src or site/src. Note: another job may be
 rebuilding dist/; coordinate by waiting for it, don't race it. Focused tests, then the full suite once:
