@@ -39,4 +39,5 @@ export const planted = [
   { screen: 'settings', file: 'screens/Settings.jsx', what: 'notification rows transition-all', wrong: 'animates every property, including layout', rule: 'habits/transition-named', fix: 'transition-colors' },
   { screen: 'settings', file: 'screens/Settings.jsx', what: 'confirm input focus:outline-none', wrong: 'removes the focus outline with nothing in its place', rule: 'habits/focus-outline', fix: 'use <Input> (it has a focus ring)' },
   { screen: 'settings', file: 'screens/Settings.jsx', what: 'confirm dialog ease-in', wrong: 'feedback that starts slowly', rule: 'habits/no-ease-in', fix: 'drop it (the default eases out)' },
+  { screen: 'settings', file: 'components/ui/tabs.jsx', what: 'tab panel outline-none (shadcn TabsContent)', wrong: 'Radix makes the panel focusable; outline-none leaves keyboard focus invisible (found by the habit, not planted: shadcn ships it)', rule: 'habits/focus-outline', fix: 'focus-visible:ring-2 focus-visible:ring-ring/40 on TabsContent' },
 ];
