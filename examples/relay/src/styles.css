@@ -1,6 +1,8 @@
 /* Relay's design system. shadcn/ui's semantic tokens with Relay's own values, as a shadcn app would ship them.
    React Plumber judges the app against these (plumber.config.ts points here). */
 @import "tailwindcss";
+/* scan Relay's sources from wherever the host runs Tailwind (Vite scans its module graph; Next's PostCSS needs this) */
+@source "./";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
