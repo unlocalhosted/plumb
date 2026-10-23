@@ -10,7 +10,7 @@ type ObjectNode = Extract<Node, { type: 'ObjectExpression' }>;
 type Property = Extract<ObjectNode['properties'][number], { type: 'Property' }>;
 export interface HostConfig {
   file: string; source: string; host: 'vite' | 'next';
-  plugin?: boolean | undefined; first?: boolean | undefined; refresh?: boolean | undefined; hmr?: boolean | undefined; polling?: boolean | undefined; watching?: boolean | undefined;
+  plugin?: boolean | undefined; ordered?: boolean | undefined; refresh?: boolean | undefined; hmr?: boolean | undefined; polling?: boolean | undefined; watching?: boolean | undefined;
   offsets: Record<string, number>;
   changes: Record<string, string>;
 }
@@ -51,14 +51,14 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
     let value = constant(ast, exported(ast));
     const wrapper = host === 'vite' ? imported(ast, 'vite', 'defineConfig') : imported(ast, '@unlocalhosted/react-plumber/next/config', 'withPlumb');
     if (value.type === 'CallExpression' && value.callee.type === 'Identifier' && value.callee.name === wrapper && value.arguments.length === 1) {
-      if (host === 'next') { result.plugin = true; result.first = true; }
+      if (host === 'next') { result.plugin = true; result.ordered = true; }
       value = constant(ast, value.arguments[0]!);
     } else if (host === 'next' && value.type === 'ObjectExpression') result.plugin = false;
     const config = object(ast, value);
     if (host === 'next') return result;
     const plugins = property(config, 'plugins');
     result.offsets.plugin = plugins?.start ?? config.start;
-    if (!plugins) { result.plugin = false; result.first = false; result.refresh = false; }
+    if (!plugins) { result.plugin = false; result.ordered = false; result.refresh = false; }
     else {
       const array = unwrap(plugins.value);
       if (array.type === 'ArrayExpression' && array.elements.every(item => item && item.type !== 'SpreadElement')) {
@@ -71,11 +71,30 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
           const name = item.callee.name;
           return ast.body.some(statement => statement.type === 'ImportDeclaration' && statement.specifiers.some(specifier => specifier.local.name === name));
         });
-        if (plumb && calls.includes(plumb)) { result.plugin = true; result.first = calls[0] === plumb; }
-        else if (known || !array.elements.length) { result.plugin = false; result.first = false; }
+        const transformers = ast.body.filter(item => item.type === 'ImportDeclaration' && item.importKind !== 'type' &&
+          (['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc', '@preact/preset-vite'].includes(item.source.value) ||
+            /(?:^|[/\-])babel(?:$|[/\-])/.test(item.source.value)))
+          .flatMap(item => item.type === 'ImportDeclaration' ? item.specifiers.map(specifier => specifier.local.name) : []);
+        const plumbIndex = plumb ? calls.indexOf(plumb) : -1;
+        if (plumbIndex >= 0) {
+          result.plugin = true;
+          const before = calls.slice(0, plumbIndex);
+          const transformIndex = before.findIndex(name => name && transformers.includes(name));
+          result.ordered = transformIndex >= 0 ? false : before.every(Boolean) ? true : undefined;
+          if (transformIndex >= 0 && calls.filter(name => name === plumb).length === 1) {
+            const previous = array.elements[plumbIndex]!, target = array.elements[transformIndex]!;
+            const edit = new MagicString(source);
+            edit.appendLeft(target.start, `${source.slice(previous.start, previous.end)}, `);
+            const separator = comma(source, previous.end, array.elements[plumbIndex + 1]?.start ?? array.end - 1) ??
+              comma(source, array.elements[plumbIndex - 1]!.end, previous.start);
+            edit.remove(previous.start, previous.end);
+            if (separator !== undefined) edit.remove(separator, separator + 1);
+            result.changes['locate.order'] = edit.toString();
+          }
+        } else if (known || !array.elements.length) { result.plugin = false; result.ordered = false; }
         if (calls.some(name => name && refresh.includes(name))) result.refresh = true;
         else if (known || !array.elements.length) result.refresh = false;
-        if (result.refresh === false && result.plugin && result.first) {
+        if (result.refresh === false && result.plugin && result.ordered) {
           // Use the installed official plugin. Never edit package.json or install.
           let module: string | undefined;
           for (const candidate of ['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc']) {
@@ -90,14 +109,17 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
               name = 'plumberReact'; while (names.has(name)) name += '_';
               edit.appendLeft(ast.body[0]?.start ?? 0, `import ${name} from '${module}';\n`);
             }
-            const first = array.elements[0]!;
-            edit.appendLeft(first.end, `, ${name}()`);
+            const plumber = array.elements[plumbIndex]!;
+            edit.appendLeft(plumber.end, `, ${name}()`);
             result.changes['write.refresh'] = edit.toString();
           }
         }
       }
     }
-    try { result.changes['locate.plugin'] = viteConfig(file, source); result.changes['locate.order'] = result.changes['locate.plugin']!; } catch {}
+    try {
+      result.changes['locate.plugin'] = viteConfig(file, source);
+      if (result.plugin === false) result.changes['locate.order'] = result.changes['locate.plugin']!;
+    } catch {}
     // Check and edit each server setting independently; an opaque watcher must
     // not hide an explicit hmr:false, and no nested object is guessed.
     const server = child(ast, config, 'server');

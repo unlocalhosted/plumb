@@ -39,6 +39,67 @@ async function api(t, root, runtime) {
 const item = (report, id) => { const requirement = report.requirements.find(item => item.id === id); assert.ok(requirement, id); return requirement; };
 const runtime = { host: 'vite', development: true, plugin: true, fastRefresh: true, hmr: true, polling: true };
 
+async function startConfig(t, root) {
+  await mkdir(join(root, 'node_modules/@unlocalhosted'), { recursive: true });
+  await symlink(repo, join(root, 'node_modules/@unlocalhosted/react-plumber')).catch(error => { if (error.code !== 'EEXIST') throw error; });
+  const server = await createServer({ root, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+  t.after(() => server.close());
+  await server.listen();
+  const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const transformed = await fetch(`${base}/src/App.tsx`);
+  assert.equal(transformed.status, 200, await transformed.clone().text());
+  assert.match(await transformed.text(), /createElement|jsx|jsxDEV/);
+  let response;
+  for (let i = 0; i < 100; i++) {
+    response = await fetch(`${base}/__plumb/readiness`);
+    if (response.status !== 503) break;
+    await new Promise(done => setTimeout(done, 30));
+  }
+  assert.equal(response.status, 200, await response.clone().text());
+  return { server, ready: await response.json() };
+}
+
+test('JSX order allows Tailwind first; React first offers a minimal diff that starts Vite', async t => {
+  const imports = "import tailwindcss from '@tailwindcss/vite';\n";
+  for (const [plugins, expected] of [['tailwindcss(), inspect(), react()', 'ok'], ['tailwindcss(), react(), inspect()', 'missing']]) {
+    await t.test(plugins, async t => {
+      const root = await fixture(t, imports + config.replace('inspect(), react()', plugins));
+      const { report, request } = await api(t, root, runtime);
+      let ready = await report();
+      const order = item(ready, 'locate.order');
+      assert.equal(order.status, expected);
+      const doctor = run(root, ['doctor'], '', 1);
+      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
+      assert.doesNotMatch(doctor, /must be first/);
+      if (expected === 'missing') {
+        assert.equal(order.fix.kind, 'diff');
+        assert.match(doctor, /plumber fix locate.order/);
+        const applied = await request('readiness/fix', { id: order.id, hash: order.fix.hash, confirm: true, allowDirty: true });
+        assert.equal(applied.status, 200, await applied.clone().text());
+        const written = await readFile(join(root, 'vite.config.mjs'), 'utf8');
+        assert.match(written, /\[tailwindcss\(\), inspect\(\), react\(\)/);
+        ready = await report();
+      }
+      for (const id of ['locate', 'preview', 'blueprint']) assert.equal(ready.capabilities.find(item => item.id === id).status, 'full', id);
+      assert.notEqual(ready.capabilities.find(item => item.id === 'write').status, 'off');
+      const live = await startConfig(t, root);
+      assert.equal(item(live.ready, 'locate.order').status, 'ok');
+    });
+  }
+});
+
+test('Babel JSX plugins block order; MDX pre plugins do not', async t => {
+  for (const [module, expected] of [['vite-plugin-babel', 'missing'], ['@mdx-js/rollup', 'ok'], ['@vitejs/plugin-react-swc', 'missing']]) {
+    await t.test(module, async t => {
+      const root = await fixture(t, `import transform from '${module}';\n` + config.replace('inspect(), react()', "transform({ enforce: 'pre' }), inspect(), react()"));
+      const { report } = await api(t, root);
+      assert.equal(item(await report(), 'locate.order').status, expected);
+      const doctor = run(root, ['doctor'], '', 1);
+      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
+    });
+  }
+});
+
 test('doctor and read-only route cover every capability and token family with evidence and copyable fixes', async t => {
   const root = await fixture(t), { request, report } = await api(t, root, runtime);
   const before = await readFile(join(root, 'vite.config.mjs'), 'utf8');

@@ -134,8 +134,8 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const plugin = runtime?.plugin ?? host?.plugin;
   add('locate.plugin', 'locate', status(plugin), plugin ? 'React Plumber dev plugin is present' : 'React Plumber dev plugin is not established', evidence('plugin', plugin ? 'plumb() / withPlumb()' : 'Dev plugin not established'),
     'Clicking an element cannot locate its source.', await configFix('locate.plugin', step('Add React Plumber to the dev host.', 'plumber install --overlay --write')));
-  add('locate.order', 'locate', status(host?.first), host?.first ? 'React Plumber is first in the plugin list' : 'React Plumber must be first in the plugin list', evidence('plugin', 'Plugin order'),
-    'Source locations may point at transformed code.', await configFix('locate.order', manual('Move plumb() first in the plugin list.')));
+  add('locate.order', 'locate', status(host?.ordered), host?.ordered ? 'React Plumber precedes JSX transforms' : host?.ordered === false ? 'React Plumber must precede JSX transforms' : 'JSX plugin order needs verification', evidence('plugin', 'Plugin order relative to JSX transforms'),
+    'Source locations may point at transformed code.', await configFix('locate.order', manual('Move plumb() before plugins that transform JSX/TSX.')));
   let react = false;
   try { createRequire(join(root, 'package.json')).resolve('react'); react = true; } catch {}
   const reactDev = !react ? 'missing' : runtime ? status(runtime.development) : 'unknown';
