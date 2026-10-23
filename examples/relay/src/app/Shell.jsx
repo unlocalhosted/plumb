@@ -3,6 +3,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Specimen } from '@/Specimen';
 import { Board } from '@/screens/Board';
 import { Issues } from '@/screens/Issues';
+import { IssueDrawer } from '@/screens/IssueDrawer';
 import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -19,7 +20,7 @@ function Placeholder({ title }) {
 }
 
 export function Shell() {
-  const route = useRoute();
+  const { screen: route, issue } = useRoute();
   if (route === 'specimen') return <Specimen />;
   const title = routes.find((r) => r.path === route)?.title ?? 'Board';
   return (
@@ -30,6 +31,7 @@ export function Shell() {
           <TopBar title={title} />
           {route === 'board' ? <Board /> : route === 'issues' ? <Issues /> : <Placeholder title={title} />}
         </main>
+        <IssueDrawer issueKey={issue} screen={route} />
       </div>
     </TooltipProvider>
   );

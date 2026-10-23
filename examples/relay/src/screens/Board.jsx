@@ -31,7 +31,7 @@ function SubProgress({ done, total }) {
 
 export function IssueCard({ issue }) {
   return (
-    <a href={`#/issues/${issue.key}`}
+    <a href={`#/board/${issue.key}`}
       className="group flex flex-col gap-2 rounded-lg border bg-card p-[10px] shadow-[0_1px_3px_rgba(0,0,0,.12)] transition-shadow duration-[250ms] hover:border-input hover:shadow-sm">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className="font-medium tabular-nums">{issue.key}</span>

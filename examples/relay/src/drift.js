@@ -19,4 +19,9 @@ export const planted = [
   { screen: 'issues', file: 'screens/Issues.jsx', what: 'updated time text-[#8a8f99]', wrong: 'raw grey where the theme names muted text', rule: 'provenance/color', fix: 'text-muted-foreground' },
   { screen: 'issues', file: 'screens/Issues.jsx', what: 'points cell style={{ paddingRight: 14 }}', wrong: 'inline literal, off the ladder', rule: 'provenance (inline)', fix: 'pr-3.5 or pr-4' },
   { screen: 'issues', file: 'screens/Issues.jsx', what: 'bulk bar rounded-[12px]', wrong: 'equals rounded-xl but bypasses the token', rule: 'provenance/radius by value', fix: 'rounded-xl' },
+  { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'drawer padding px-[22px]', wrong: 'off the 4px ladder (header, body and footer)', rule: 'provenance/arbitrary', fix: 'px-5 or px-6' },
+  { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'property labels text-[12.5px]', wrong: 'between two type steps', rule: 'provenance/arbitrary', fix: 'text-xs' },
+  { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'inline code bg-[#f3f4f6]', wrong: 'raw colour; a light patch in dark mode', rule: 'provenance/color', fix: 'bg-muted' },
+  { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'comment bubbles rounded-[6px]', wrong: 'equals rounded-md but bypasses the token', rule: 'provenance/radius by value', fix: 'rounded-md' },
+  { screen: 'drawer', file: 'screens/IssueDrawer.jsx', what: 'comment focus ring-[#12805c]/30', wrong: "Relay's primary written as a raw colour", rule: 'provenance/color', fix: 'ring-ring/30' },
 ];

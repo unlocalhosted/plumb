@@ -98,7 +98,7 @@ export function Issues() {
             {rows.map((issue, i) => {
               const on = selected.has(issue.key);
               return (
-                <TableRow key={issue.key} data-state={on ? 'selected' : undefined} className={cn(on && 'bg-[#eaf6f1] hover:bg-[#eaf6f1]')}>
+                <TableRow key={issue.key} data-state={on ? 'selected' : undefined} onClick={(e) => { if (!e.target.closest('input')) location.hash = `#/issues/${issue.key}`; }} className={cn('cursor-pointer', on && 'bg-[#eaf6f1] hover:bg-[#eaf6f1]')}>
                   <TableCell className="pl-4">
                     <input type="checkbox" aria-label={`Select ${issue.key}`} checked={on} onChange={() => toggle(issue.key)} className="size-3.5 accent-primary" />
                   </TableCell>
