@@ -10,7 +10,7 @@ import { projectDecision } from '../decisions/availability.js';
 import { pixels, resolveValue } from '../decisions/resolve.js';
 import type { Variable } from '../decisions/resolve.js';
 import { references } from '../collect/source.js';
-import { numericStep, numericUse } from '../decisions/spacing.js';
+import { numericExpression, numericStep, numericUse } from '../decisions/spacing.js';
 import { callerPolicy } from '../decisions/callers.js';
 import { attribution, indexDefinitions } from './attribution.js';
 
@@ -243,15 +243,15 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         const length = value === undefined ? undefined : pixels(value);
         // Preserve the authored unit expression; do not accept unrelated arithmetic
         // merely because it mentions --spacing somewhere.
-        const numericExpression = family === 'spacing' && length !== undefined && /^(?:calc\(\s*(?:var\(--spacing\)\s*\*\s*[-+]?(?:\d*\.)?\d+|[-+]?(?:\d*\.)?\d+\s*\*\s*var\(--spacing\))\s*\)|var\(--spacing\))$/.test(part);
-        if (numeric && numericExpression) continue;
+        const numericMultiple = family === 'spacing' && length !== undefined && numericExpression(part);
+        if (numeric && numericMultiple) continue;
         const match = value === undefined ? undefined : matching(value, declaration.prop);
         // Tailwind folds step zero to a literal. Reuse the actionable utility
         // mapping to distinguish that use from an equal raw CSS/inline value.
         if (match && numericUse(match) && callers.allows(match) && identityFor(declaration.prop) === 'value') {
           const utility = useFor(match, declaration.prop, record.theme).class;
           const numericUtility = declaration.origin === 'class' && utility && (declaration.site.text === utility || declaration.site.text.endsWith(`:${utility}`));
-          if (numericExpression || numericUtility) usedNumericSpacing.add(match.name);
+          if (numericMultiple || numericUtility) usedNumericSpacing.add(match.name);
         }
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;

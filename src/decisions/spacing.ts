@@ -2,8 +2,24 @@ import type { Decision } from '../report.js';
 import type { CssVariable } from './css.js';
 import { pixels, resolveValue } from './resolve.js';
 import type { Variable } from './resolve.js';
+import { references } from '../collect/source.js';
 
 export interface NumericSpacing { unit: Decision; replaced: boolean }
+
+/** Recognize homogeneous multiples, including Tailwind's nested sibling/reverse
+ * arithmetic. The length resolver permits only scalar products/divisors: a zero
+ * intercept proves this is a spacing multiple, not a token plus a raw offset. */
+export function numericExpression(value: string): boolean {
+  // Most emitted utilities need no arithmetic probes.
+  if (/^(?:calc\(\s*(?:var\(--spacing\)\s*\*\s*[-+]?(?:\d*\.)?\d+|[-+]?(?:\d*\.)?\d+\s*\*\s*var\(--spacing\))\s*\)|var\(--spacing\))$/.test(value)) return true;
+  const refs = references(value);
+  if (!refs.includes('--spacing') || refs.some(name => name !== '--spacing')) return false;
+  const at = (base: string) => {
+    const resolved = resolveValue(value, new Map([['--spacing', { value: base }]]));
+    return resolved === undefined ? undefined : pixels(resolved);
+  };
+  return at('0px') === 0 && at('1px') !== undefined;
+}
 
 /** Layout geometry is not a reusable ladder, even when three dimensions are small. */
 const layoutRole = /(?:^|-)(?:page|rail|content|reader|safe|tab|sidebar|header|footer|panel|shell|viewport|screen|container|width|height|max|min)(?:-|$)/;
