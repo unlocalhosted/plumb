@@ -1,7 +1,7 @@
 // bippy remains the overlay's source layer. Retain the standalone mapping API
 // for existing HTTP consumers and sourcemap-worker.js; both share HMR invalidation.
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-const limit = 64, lifetime = 60_000;
+const limit = 256;
 const pause = () => new Promise(resolve => setTimeout(resolve, 0));
 function fields(segment) {
   const values = []; let value = 0, shift = 0;
@@ -31,12 +31,15 @@ export class SourceMapStore {
   scripts = new Map(); maps = new Map(); modules = new Map(); decoded = new Map(); generation = 0;
   refresh = '';
   queue = Promise.resolve();
+  traces = new Map();
   invalidate() { this.generation++; this.refresh = Date.now() + '-' + this.generation; for (const cache of [this.scripts, this.maps, this.modules, this.decoded]) cache.clear(); }
   async cached(cache, key, run) {
-    const now = Date.now(), old = cache.get(key);
-    if (old && now - old.time < lifetime) return old.value;
+    // Module URLs include their content version. Keep successful evidence across
+    // reader waves; elapsed time is not a new module version.
+    const old = cache.get(key);
+    if (old) return old.value;
     if (cache.size >= limit) cache.delete(cache.keys().next().value);
-    const entry = { time: now, value: null };
+    const entry = { value: null };
     entry.value = run().then(value => { if (!value && cache.get(key) === entry) cache.delete(key); return value; }, error => { if (cache.get(key) === entry) cache.delete(key); throw error; });
     cache.set(key, entry); return entry.value;
   }
@@ -74,7 +77,7 @@ export class SourceMapStore {
     if (Array.isArray(map.sections)) return { base, sections: map.sections.map(section => ({ ...section })) };
     if (!Array.isArray(map.sources) || typeof map.mappings !== 'string') throw new Error('Invalid source map.');
     return { map, base, rows: map.mappings.split(';'), decodedRows: new Map(), hashes: new Map(),
-      checkpoints: [{ source: 0, line: 0, column: 0 }] };
+      checkpoints: [{ source: 0, line: 0, column: 0, name: 0 }] };
   }
   fromText(text, base) {
     const reference = directive(text, 'sourceMappingURL');
@@ -133,9 +136,9 @@ export class SourceMapStore {
       for (const match of text.matchAll(pattern)) {
         if (cancelled()) return null;
         const value = fields(match[0]); generated += value[0];
-        if (value.length > 1) { state.source += value[1]; state.line += value[2]; state.column += value[3]; }
+        if (value.length > 1) { state.source += value[1]; state.line += value[2]; state.column += value[3]; if (value.length === 5) state.name += value[4]; }
         if (generated < 0 || state.source < 0 || state.source >= decoded.map.sources.length || state.line < 0 || state.column < 0) throw new Error('Invalid source map position.');
-        if (segments) segments.push(value.length === 1 ? { generated } : { generated, ...state });
+        if (segments) segments.push(value.length === 1 ? { generated } : { generated, ...state, named: value.length === 5 });
         if (performance.now() - slice > 4) { await pause(); slice = performance.now(); }
       }
       decoded.checkpoints[row + 1] = { ...state };
@@ -165,7 +168,34 @@ export class SourceMapStore {
       if (!decoded.hashes.has(segment.source)) decoded.hashes.set(segment.source, crypto.subtle.digest('SHA-256', new TextEncoder().encode(content)).then(bytes => [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('')));
       hash = await decoded.hashes.get(segment.source);
     }
-    return { source, line: segment.line + 1, column: segment.column + 1, ...(hash ? { hash } : {}) };
+    const ignored = (map.ignoreList ?? map.x_google_ignoreList)?.includes(segment.source);
+    const name = segment.named ? map.names?.[segment.name] : undefined;
+    return { source, line: segment.line + 1, column: segment.column + 1, ...(hash ? { hash } : {}),
+      ...(ignored ? { ignored: true } : {}), ...(name ? { name } : {}) };
+  }
+  traceFrame(url, line, column, options) {
+    const key = JSON.stringify([this.generation, url, options.contentVersion]);
+    let wave = this.traces.get(key);
+    if (!wave) {
+      wave = [];
+      this.traces.set(key, wave);
+      setTimeout(async () => {
+        this.traces.delete(key);
+        try {
+          const response = await fetch(new URL('/__nextjs_original-stack-frames', url), {
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ frames: wave.map(entry => entry.frame), isServer: false, isEdgeServer: false, isAppDirectory: true }),
+          });
+          if (!response.ok) refused('map', { step: 'next-module-frame', url, status: response.status });
+          const results = await response.json();
+          wave.forEach((entry, i) => {
+            const frame = results?.[i]?.value?.originalStackFrame;
+            entry.resolve(frame?.file && frame.line1 && frame.column1 && frame.file !== url && !frame.file.startsWith('/_next/') ? { source: frame.file, line: frame.line1, column: frame.column1 } : null);
+          });
+        } catch (error) { for (const entry of wave) entry.reject(error); }
+      }, 8);
+    }
+    return new Promise((resolve, reject) => wave.push({ frame: { file: options.traceFile ?? url, line1: line, column1: column }, resolve, reject }));
   }
   async mapFrame(url, line, column, chunks = [], cancelled = () => false, options = {}) {
     const generation = this.generation;
@@ -177,20 +207,14 @@ export class SourceMapStore {
       // that identity. Keep its exact positions, without inventing a content
       // hash from a formatted code frame (the response exposes no source bytes).
       if (/^https?:$/.test(moduleURL.protocol) && moduleURL.pathname.startsWith('/_next/static/chunks/') && moduleURL.searchParams.has('id')) {
-        const mapped = await this.cached(this.decoded, JSON.stringify([url, line, column]), async () => {
-          const response = await fetch(new URL('/__nextjs_original-stack-frames', moduleURL.origin), {
-            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ frames: [{ file: options.traceFile ?? url, line1: line, column1: column }], isServer: false, isEdgeServer: false, isAppDirectory: true }),
-          });
-          if (!response.ok) refused('map', { step: 'next-module-frame', url, status: response.status });
-          const frame = (await response.json())?.[0]?.value?.originalStackFrame;
-          return frame?.file && frame.line1 && frame.column1 && frame.file !== url && !frame.file.startsWith('/_next/') ? { source: frame.file, line: frame.line1, column: frame.column1 } : null;
-        });
+        const mapped = await this.cached(this.decoded, JSON.stringify([url, options.contentVersion, line, column]),
+          () => this.traceFrame(url, line, column, options));
         return obsolete() ? options.explain ? failure('map', { step: 'cancelled', url }) : null :
           options.explain ? mapped ? { location: mapped } : failure('map', { step: 'unmapped-position', url, line, column }) : mapped;
       }
       // Cached fetch/index work belongs to the generation, not its first caller.
-      const decoded = await this.cached(this.decoded, url, () => this.forScript(url, chunks, () => generation !== this.generation));
+      const key = /^webpack(?:-internal)?:/.test(url) ? JSON.stringify([url, chunks.filter(chunk => /\.hot-update\.js(?:\?|$)/.test(chunk))]) : url;
+      const decoded = await this.cached(this.decoded, key, () => this.forScript(url, chunks, () => generation !== this.generation));
       // A yielded row must finish before another request advances its checkpoints.
       const work = this.queue.then(() => this.original(decoded, line - 1, column - 1, obsolete));
       this.queue = work.catch(() => {});
@@ -218,7 +242,7 @@ function finish(entry, result) {
   entry.callers.clear();
 }
 function decode(entry) {
-  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true, traceFile: entry.traceFile })
+  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true, traceFile: entry.traceFile, contentVersion: entry.contentVersion })
     .then(result => finish(entry, fallbackDetail ? { ...result, detail: { ...result.detail, fallback: fallbackDetail } } : result));
 }
 function useFallback(detail) {
@@ -264,10 +288,10 @@ export async function mapFrame(url, line, column, options = {}) {
   // Webpack removes loaded update tags, so resource timing keeps their URLs.
   const updates = typeof document === 'undefined' ? [] : performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\/_next\/static\/.*\.hot-update\.js(?:\?|$)/.test(name)).reverse();
   const chunks = typeof document === 'undefined' ? [] : [...new Set([...updates, ...[...document.querySelectorAll('script[src]')].map(script => script.src)])];
-  const key = JSON.stringify([version, url, line, column, chunks]);
+  const key = JSON.stringify([version, options.contentVersion, url, line, column, chunks]);
   let entry = flights.get(key), fresh = !entry;
   if (!entry) {
-    entry = { id: ++next, key, url, line, column, chunks, traceFile: traceFile(url), callers: new Set(), cancelled: false };
+    entry = { id: ++next, key, url, line, column, chunks, contentVersion: options.contentVersion, traceFile: traceFile(url), callers: new Set(), cancelled: false };
     pending.set(entry.id, entry); flights.set(key, entry);
   }
   const result = new Promise(resolve => {
@@ -284,7 +308,7 @@ export async function mapFrame(url, line, column, options = {}) {
   });
   if (fresh) {
     if (worker) {
-      try { worker.postMessage({ id: entry.id, url, line, column, chunks, traceFile: entry.traceFile, explain: true }); }
+      try { worker.postMessage({ id: entry.id, url, line, column, chunks, traceFile: entry.traceFile, contentVersion: entry.contentVersion, explain: true }); }
       catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
     } else decode(entry);
   }

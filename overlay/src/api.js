@@ -8,11 +8,18 @@ const token = script?.dataset.plumbToken;
 // has. A server that refuses batches answers once, and every question goes on its own from then on.
 const BATCH = 128;
 let batched = true, queued = [], flushing = 0;
+const flights = new Map();
 function enqueue(method, params, options) {
-  return new Promise((resolve, reject) => {
+  const key = JSON.stringify([method, Object.entries(params).sort(([a], [b]) => a.localeCompare(b)), !!options.explain]);
+  if (flights.has(key)) return flights.get(key);
+  const pending = new Promise((resolve, reject) => {
     queued.push({ method, params, options, resolve, reject });
-    if (!flushing) flushing = setTimeout(flush, 0);
-  });
+    // Worker messages for a wave arrive as separate tasks. Coalesce those
+    // tasks too, rather than starting a round trip for every mapped element.
+    if (!flushing) flushing = setTimeout(flush, 8);
+  }).finally(() => flights.delete(key));
+  flights.set(key, pending);
+  return pending;
 }
 async function flush() {
   flushing = 0;

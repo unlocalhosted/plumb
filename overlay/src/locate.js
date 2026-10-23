@@ -8,11 +8,36 @@
 // the first frame in feature code, with shared UI (a design-system package, components/ui) ranked after it.
 import { getOwnerStack, getRawOwnerStack, isSourceFile } from '../vendor/bippy/source.js';
 import { request } from './api.js';
-import { invalidateSourceMaps, sourceMapVersion, mapFrame } from './sourcemap.js';
+import { sourceMapVersion, mapFrame } from './sourcemap.js';
+
+// Next's ?id names an eval module, and some versions reuse that id on later
+// saves. Only new Error evidence checks its current source version; retained
+// Errors keep their old mapping. A save changes one module key, never the store.
+const nextModules = new Map();
+async function mappedFrame(url, line, column, options = {}) {
+  let identity;
+  try { const at = new URL(url); identity = at.pathname.startsWith('/_next/static/chunks/') && at.searchParams.has('id'); } catch {}
+  let module = identity ? nextModules.get(url) : null;
+  const snapshot = source => request('resolve', { source, snapshot: '1' }, { explain: true, batch: true });
+  if (module) {
+    const current = await snapshot(module.source);
+    if (current?.hash && current.hash !== module.hash) {
+      module = { source: module.source, hash: current.hash, version: current.hash };
+      nextModules.set(url, module);
+    }
+  }
+  const result = await mapFrame(url, line, column, { ...options, contentVersion: module?.version });
+  const at = options.explain ? result?.location : result;
+  if (identity && !module && at?.source) {
+    const current = await snapshot(at.source);
+    if (!nextModules.has(url)) nextModules.set(url, { source: at.source, hash: current?.hash });
+  }
+  return result;
+}
 
 // The first frame of a fiber's own creation stack (where its element was created) that is not a dependency, mapped
 // through the module's source map. Used when bippy has no raw stack for an owner (forwardRef and memo in library builds).
-const creationEvidence = new WeakMap(), ownerEvidence = new WeakMap(), committedStacks = new WeakMap();
+const creationEvidence = new WeakMap(), ownerEvidence = new WeakMap();
 // React keeps a fiber's initial _debugStack when reconciling new elements.
 // Observe the actual dev element record instead: React defines _debugStack
 // after assigning props, and committed memoizedProps identify that element.
@@ -33,7 +58,7 @@ const stackOf = fiber => elementStacks.get(fiber?.memoizedProps) ?? fiber?._debu
 // The server's hash of a file when a creation stack was first read from it. Seeing the same stack after the file
 // changed means the element was kept from before the edit: its positions describe code that no longer exists.
 const stackHashes = new WeakMap();
-const runtime = url => /\/node_modules\/|\/(?:dist|deps)\/|\/\.vite\/deps\/|\/_next\/static\/chunks\/(?:framework|main|webpack)|^about:|\/\((?:rsc|ssr|action-browser)\)\//.test(url);
+const runtime = url => /\/node_modules\/|\/(?:dist|deps)\/|\/\.vite\/deps\/|\/_next\/static\/chunks\/(?:framework|main|webpack|node_modules_next_dist_)|^about:|\/\((?:rsc|ssr|action-browser)\)\//.test(url);
 function creationFrame(fiber) {
   const evidence = stackOf(fiber);
   if (!evidence || typeof evidence !== 'object') return Promise.resolve(null);
@@ -57,7 +82,7 @@ async function readCreationFrame(fiber) {
   for (const line of stack.split('\n').slice(1)) {
     const m = /\(?((?:https?|file|webpack(?:-internal)?):\/\/[^\s]+):(\d+):(\d+)\)?\s*$/.exec(line);
     if (!m || runtime(m[1])) continue;
-    const mapped = await mapFrame(m[1], Number(m[2]), Number(m[3]), { explain: true }).catch(() => null);
+    const mapped = await mappedFrame(m[1], Number(m[2]), Number(m[3]) + 1, { explain: true }).catch(() => null);
     const at = mapped?.location;
     if (!at) return { rawSource: m[1], failure: { reason: mapped?.reason ?? 'map', detail: mapped?.detail ?? { step: 'unmapped-creation-frame', source: m[1] } } };
     // Turbopack flattens dependency paths in generated chunk names. Classify
@@ -139,7 +164,17 @@ async function readFrames(fiber) {
     }
     return frames;
   }
-  const [mapped, raw] = await Promise.all([getOwnerStack(fiber, false), getRawOwnerStack(fiber)]);
+  const raw = getRawOwnerStack(fiber);
+  // Bippy owns stack extraction; every raw frame uses the same worker/store as
+  // creation evidence. Calling getOwnerStack(..., false) fetched whole chunks
+  // and maps again for every element. Its column convention is zero-based at
+  // symbolication, so adapt once at the standalone mapper's one-based boundary.
+  const mapped = raw.length ? await Promise.all(raw.map(async frame => {
+    if (!frame.fileName || /\/_next\/static\/chunks\/node_modules_next_dist_/.test(frame.fileName) || !frame.lineNumber || frame.columnNumber === undefined) return frame;
+    const at = await mappedFrame(frame.fileName, frame.lineNumber, frame.columnNumber + 1);
+    return at ? { ...frame, fileName: at.source, lineNumber: at.line, columnNumber: at.column - 1,
+      functionName: at.name ?? frame.functionName, isSymbolicated: true, isIgnoreListed: at.ignored === true } : frame;
+  })) : await getOwnerStack(fiber, true);
   const urls = raw.map(frame => frame.fileName).filter(Boolean);
   const pathOf = url => { try { return decodeURIComponent(new URL(url).pathname); } catch { return url; } };
   // bippy may prepend a component definition inferred from an owned child.
@@ -224,12 +259,7 @@ async function locateOwner(element, options = {}) {
   const fiber = hostOf(element);
   if (!fiber) return refuse('no-fiber');
   if (options.signal?.aborted) return refuse('map', { step: 'cancelled' });
-  // Next uses stable chunk URLs. A different committed creation stack on the
-  // same DOM node starts new module evidence; old Errors retain their own maps.
-  const previous = committedStacks.get(fiber.stateNode);
   const stack = stackOf(fiber);
-  if (stack && previous && previous !== stack && !creationEvidence.has(stack)) invalidateSourceMaps();
-  if (stack && fiber.stateNode) committedStacks.set(fiber.stateNode, stack);
   // One answer per question within a locate: frames are asked about together, then read in order.
   const asked = new Map();
   const ask = params => {
@@ -282,7 +312,20 @@ async function locateOwner(element, options = {}) {
   // Maps without source content (Turbopack) cannot prove a kept element's positions still describe the file. For
   // those only: the first sight of a creation stack records the file's hash; the same stack after the file changed is
   // an element kept from before the edit, and its positions describe code that no longer exists.
+  // Start both mapping paths together. Their frames share chunk/map flights.
+  const firstFrames = framesOf(fiber).then(frames => ({ frames }), error => ({ error }));
   const first = stack ? await creationFrame(fiber) : null;
+  const initial = await firstFrames;
+  if (initial.error) return refuse('map', { step: 'owner-stack', error: String(initial.error?.message ?? initial.error) });
+  const initialFrames = initial.frames;
+  const prime = frame => {
+    if (!frame?.fileName || !frame.lineNumber || frame.fileName.startsWith('about:')) return;
+    if (frame.hash || frame === first && !frame.failure) ask({ source: frame.fileName, snapshot: '1' }).catch(() => {});
+    ask({ source: frame.fileName, line: frame.lineNumber, column: (frame.columnNumber ?? 0) + 1,
+      ...(frame.hash ? { hash: frame.hash } : {}) }).catch(() => {});
+  };
+  prime(first);
+  for (const frame of initialFrames.filter(frame => isSourceFile(frame.fileName))) prime(frame);
   if (first?.fileName && !first.failure && !first.hash) {
     const snapshot = await ask({ source: first.fileName, snapshot: '1' });
     const known = stackHashes.get(stack);
@@ -319,10 +362,10 @@ async function locateOwner(element, options = {}) {
     // in authored code is a boundary, even when an ancestor has valid JSX.
     const own = await creationFrame(owner);
     let frames;
-    try { frames = await framesOf(owner); }
+    try { frames = owner === fiber ? initialFrames : await framesOf(owner); }
     catch (error) { return refuse('map', { step: 'owner-stack', error: String(error?.message ?? error) }); }
-    // Plumb's reader maps to the nearest preceding segment, which can land before the JSX (even on the line above,
-    // the component's name); bippy's symbolication of the same raw frame is exact. Keep Plumb's hash, take bippy's position.
+    // Match the creation boundary to Bippy's exact raw record, preserving its
+    // source-content hash. Both paths now use the same symbolication store.
     const same = own?.raw && frames.find(frame => frame.raw === own.raw && frame.lineNumber);
     if (same) Object.assign(own, { lineNumber: same.lineNumber, columnNumber: same.columnNumber });
     // When Plumb's reader cannot map the element's own frame (a Turbopack chunk), bippy's first frame is that frame.
