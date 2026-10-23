@@ -171,3 +171,22 @@ test('Session ledger views preserve raw evidence across ordinary and strict repo
   await session.report({ strictLedger: true });
   assert.deepEqual(stable(await session.report({ ledger: false })), stable(expected));
 });
+
+test('init-written data config reuses the whole report and invalidates selected token files', async t => {
+  const root = await mkdtemp(join(repo, 'fixtures/.checked-init-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
+  const init = spawnSync(process.execPath, ['dist/cli.js', 'init', '--force', '--root', root], { cwd: repo, encoding: 'utf8' });
+  assert.equal(init.status, 0, init.stderr);
+  const cold = await check({ root }), warm = await check({ root });
+  assert.deepEqual(stable(warm), stable(cold));
+  assert.ok(Object.values(warm.timing.phases).every(ms => ms === 0), 'init config hits whole-report cache without an explicit config argument');
+  const config = join(root, 'tokens.config.mjs');
+  await writeFile(config, `// data with comments, nested arrays and booleans\nexport default { css: 'src/styles.css', source: ['src/**'], decisions: { spacing: { from: 'dtcg:tokens.json', exported: false } }, habits: [], markers: ['https://example.test/*data*/'] };`);
+  await writeFile(join(root, 'tokens.json'), JSON.stringify({ small: { $type: 'dimension', $value: '7px' } }));
+  const tokens = await check({ root, config });
+  assert.ok(Object.values((await check({ root, config })).timing.phases).every(ms => ms === 0));
+  await writeFile(join(root, 'tokens.json'), JSON.stringify({ small: { $type: 'dimension', $value: '9px' } }));
+  const changed = await check({ root, config });
+  assert.notDeepEqual(stable(changed), stable(tokens));
+});

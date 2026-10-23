@@ -1,4 +1,4 @@
-import { cacheDirectory, statePath } from './paths.js';
+import { allConfigNames, cacheDirectory, statePath } from './paths.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
@@ -10,13 +10,14 @@ import { glob, globSync } from 'tinyglobby';
 import { ResolverFactory } from 'oxc-resolver';
 import { componentFiles, fileHash } from './ownership/cache.js';
 import { tailwindGraph } from './lower/tailwind.js';
-import { ignore } from './project.js';
+import { discoverProject, ignore } from './project.js';
+import { dataConfig } from './data-config.js';
 import type { CheckOptions } from './index.js';
 import type { Report } from './report.js';
 import { hasUntrackedPresetInputs } from './presets/index.js';
 import { profileProgress } from './profile.js';
 
-// Complete-result reuse is deliberately limited to literal CSS-only configs.
+// Complete-result reuse accepts data-only default exports.
 // Executable configs, presets, plugins and git-scoped reports keep the normal
 // pipeline. Fresh source bytes, membership and import resolution are proof;
 // Content hashes are retained behind inode/size/mtime/ctime identities.
@@ -28,7 +29,7 @@ interface Receipt {
   stamps: [string, string | null][];
   directories: [string, string[]][];
   resolutions: [string, string, string | null, 'classes' | 'components' | 'modules' | 'contexts'][];
-  compiler: { entry: string; hash: string };
+  compiler: { entry: string; hash: string } | null;
 }
 const stamp = (file: string): string | null => {
   try { const info = statSync(file, { bigint: true }); return `${info.dev}:${info.ino}:${info.size}:${info.mtimeNs}:${info.ctimeNs}`; } catch { return null; }
@@ -37,43 +38,53 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const sourceFile = /\.(?:[cm]?[jt]sx?|css|jsonl?)$/;
 const codeDirectory = dirname(fileURLToPath(import.meta.url));
 const buildHash = hash(globSync('**/*.js', { cwd: codeDirectory, absolute: true }).sort().map(file => readFileSync(file, 'utf8')).join('\0'));
-const codeOnly = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').trim();
+
 
 export class CheckCache {
   private generation?: string;
-  private constructor(readonly root: string, private directory: string, private config: string, private css: string) {}
+  private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[]) {}
   static async create(options: CheckOptions): Promise<CheckCache | undefined> {
     if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation) return;
     const root = resolve(options.root ?? process.cwd());
-    const config = options.config ? resolve(root, options.config) : undefined;
+    const config = options.config ? resolve(root, options.config) : allConfigNames.map(name => join(root, name)).find(existsSync);
     if (!config) return;
-    let text: string;
-    try { text = codeOnly(await readFile(config, 'utf8')); } catch { return; }
-    const literal = /^export\s+default\s*\{\s*css\s*:\s*(['"])([^'"\r\n]+)\1\s*,?\s*\}\s*;?$/.exec(text);
+    const literal = await dataConfig(config);
     if (!literal) return;
-    // A literal project config can still autoload executable package presets.
-    // Discover those afresh before admitting a complete-result cache hit.
+    const { text, value } = literal;
+    // Data may reference executable package presets. Keep those on the normal
+    // path, including explicit module selections not present in package.json.
+    const selections = value.presets;
+    if (selections && (Array.isArray(selections) ? selections.some(item => typeof item === 'string') : Object.values(selections).some(item => item === true || typeof item === 'string'))) return;
     if (await hasUntrackedPresetInputs(root)) return;
-    const css = resolve(root, literal[2]!);
-    let graph: Awaited<ReturnType<typeof tailwindGraph>>;
-    try { graph = await tailwindGraph(css); } catch { return; }
-    // Module plugins/configs can read arbitrary runtime inputs.
-    if (graph.files.some(file => !file.endsWith('.css'))) return;
+    let css: string | null;
+    try {
+      css = (await discoverProject(root, value)).tailwind.entry;
+      if (css && (await tailwindGraph(css)).files.some(file => !file.endsWith('.css'))) return;
+    } catch { return; }
+    // Track membership and bytes for data-selected inputs outside the root too.
+    const patterns: string[] = [];
+    const inputs = (entry: unknown, key = ''): void => {
+      if (typeof entry === 'string' && ['source', 'from', 'exported'].includes(key) && !entry.startsWith('theme:')) patterns.push(entry.replace(/^(?:css|dtcg):/, '').split('#')[0]!);
+      else if (Array.isArray(entry)) entry.forEach(item => inputs(item, key));
+      else if (entry && typeof entry === 'object') Object.entries(entry).forEach(([name, item]) => inputs(item, name));
+    };
+    inputs(value);
     const base = cacheDirectory(root);
     // Package metadata determines the reported compiler version even when
     // every stylesheet byte stays the same. Resolve it afresh at admission.
     let compilerPackage: string | undefined;
-    try { compilerPackage = createRequire(css).resolve('tailwindcss/package.json'); } catch { /* Plain CSS can have no Tailwind package. */ }
+    try { compilerPackage = createRequire(css ?? join(root, 'package.json')).resolve('tailwindcss/package.json'); } catch { /* Plain CSS can have no Tailwind package. */ }
     const key = hash(JSON.stringify(['checked-v3', buildHash, process.versions.v8, root, config, text, !!options.verbose,
       compilerPackage, compilerPackage ? fileHash(compilerPackage) : null]));
-    return new CheckCache(root, join(base, 'checked', key), config, css);
+    return new CheckCache(root, join(base, 'checked', key), config, css, patterns);
   }
   private async inventory(): Promise<string[]> {
-    return (await glob('**/*', { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**', '**/.cache/**'] })).sort();
+    const options = { cwd: this.root, absolute: true, dot: true, followSymbolicLinks: false, ignore: [...ignore, '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**', '**/.cache/**'] };
+    return [...new Set([...await glob('**/*', options), ...await glob(this.patterns, options)])].sort();
   }
   async snapshot(): Promise<Map<string, string | null>> {
     const files = await this.inventory();
-    return new Map(files.filter(file => sourceFile.test(file)).map(file => [file, fileHash(file)]));
+    return new Map(files.filter(file => sourceFile.test(file) || this.patterns.length > 0).map(file => [file, fileHash(file)]));
   }
   private resolver(kind: Receipt['resolutions'][number][3]): ResolverFactory {
     if (kind === 'contexts') return new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
@@ -95,7 +106,7 @@ export class CheckCache {
       if (!resolver) { resolver = this.resolver(kind); resolvers.set(kind, resolver); }
       if ((resolver.resolveFileSync(file, specifier).path ?? null) !== previous) return false;
     }
-    try { if ((await tailwindGraph(receipt.compiler.entry)).hash !== receipt.compiler.hash) return false; } catch { return false; }
+    try { if (receipt.compiler && (await tailwindGraph(receipt.compiler.entry)).hash !== receipt.compiler.hash) return false; } catch { return false; }
     this.generation = receipt.generation;
     return existsSync(join(this.directory, `${receipt.generation}.v8`)) && existsSync(join(this.directory, `${receipt.generation}.json`)) && existsSync(join(this.directory, `${receipt.generation}.status.json`));
   }
@@ -104,7 +115,7 @@ export class CheckCache {
   async save(report: Report, before: Map<string, string | null>): Promise<void> {
     profileProgress('phase:cache-inventory');
     const inventory = await this.inventory();
-    const after = new Map(inventory.filter(file => sourceFile.test(file)).map(file => [file, fileHash(file)]));
+    const after = new Map(inventory.filter(file => sourceFile.test(file) || this.patterns.length > 0).map(file => [file, fileHash(file)]));
     if (JSON.stringify([...before]) !== JSON.stringify([...after])) return;
     after.set(this.config, fileHash(this.config));
     const directories: Receipt['directories'] = [], resolutions: Receipt['resolutions'] = [];
@@ -162,7 +173,7 @@ export class CheckCache {
       if (previous && previous[2] !== edge[2]) return;
       uniqueResolutions.set(key, edge);
     }
-    const compiler = { entry: this.css, hash: (await tailwindGraph(this.css)).hash };
+    const compiler = this.css ? { entry: this.css, hash: (await tailwindGraph(this.css)).hash } : null;
     // Ledger diagnostics and allowances are part of this result, too.
     const ledger = statePath(this.root, 'ledger.jsonl'); after.set(ledger, fileHash(ledger));
     const stamps: Receipt['stamps'] = [];
