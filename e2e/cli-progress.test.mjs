@@ -113,7 +113,8 @@ export default {};
   assert.ok(Number(/ +(\d+)%/.exec(sourceFrame)[1]) <= 22, sourceFrame);
   assert.ok(lines.some(line => /\b(?:[1-9]|[1-8]\d|9[0-9])%/.test(line)), output);
   assert.match(lines[0], /^-{24} +0%/);
-  assert.match(lines.at(-1), /^#{24} +100% +Done$/);
+  // Long runs keep the documented elapsed clock on the completion frame.
+  assert.match(lines.at(-1), /^#{24} +100% +Done(?: \| (?:[3-9]|[1-9]\d+)s)?$/);
   assert.doesNotMatch(tty.stderr, /\x1b\[2m/);
   const piped = await run(project, [], { pipe: true });
   assert.equal(piped.stderr, '');
