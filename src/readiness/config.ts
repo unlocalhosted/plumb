@@ -1,13 +1,23 @@
 import { readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import MagicString from 'magic-string';
+import { ResolverFactory } from 'oxc-resolver';
 import type { Node } from 'oxc-parser';
 import { nodeName, unwrap } from '../collect/source.js';
 import { parse, walk, imported, constant, exported, object, firstEntry, comma, viteConfig } from '../adoption/overlay.js';
 
 type ObjectNode = Extract<Node, { type: 'ObjectExpression' }>;
 type Property = Extract<ObjectNode['properties'][number], { type: 'Property' }>;
+const reactModules = ['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc'];
+export function installedRefresh(file: string): string | undefined {
+  // Readiness runs again after installs in a live process. Node's package lookup
+  // caches missing packages; a fresh resolver must observe newly installed files.
+  const resolver = new ResolverFactory({ conditionNames: ['node', 'import', 'default'] });
+  for (const module of reactModules) {
+    if (resolver.sync(dirname(file), module).path) return module;
+  }
+  return undefined;
+}
 export interface HostConfig {
   file: string; source: string; host: 'vite' | 'next';
   plugin?: boolean | undefined; ordered?: boolean | undefined; refresh?: boolean | undefined; hmr?: boolean | undefined; polling?: boolean | undefined; watching?: boolean | undefined;
@@ -63,7 +73,7 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
       const array = unwrap(plugins.value);
       if (array.type === 'ArrayExpression' && array.elements.every(item => item && item.type !== 'SpreadElement')) {
         const plumb = imported(ast, '@unlocalhosted/react-plumber/vite', 'plumb');
-        const refresh = ast.body.filter(item => item.type === 'ImportDeclaration' && ['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc'].includes(item.source.value)).flatMap(item => item.type === 'ImportDeclaration' ? item.specifiers.filter(item => item.type === 'ImportDefaultSpecifier').map(item => item.local.name) : []);
+        const refresh = ast.body.filter(item => item.type === 'ImportDeclaration' && reactModules.includes(item.source.value)).flatMap(item => item.type === 'ImportDeclaration' ? item.specifiers.filter(item => item.type === 'ImportDefaultSpecifier').map(item => item.local.name) : []);
         const calls = array.elements.map(item => item?.type === 'CallExpression' && item.callee.type === 'Identifier' ? item.callee.name : undefined);
         // Unknown expressions may hide either plugin, so absence isn't proof.
         const known = array.elements.every(item => {
@@ -94,12 +104,9 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
         } else if (known || !array.elements.length) { result.plugin = false; result.ordered = false; }
         if (calls.some(name => name && refresh.includes(name))) result.refresh = true;
         else if (known || !array.elements.length) result.refresh = false;
-        if (result.refresh === false && result.plugin && result.ordered) {
+        if (result.refresh === false && result.plugin && calls.filter(name => name === plumb).length === 1) {
           // Use the installed official plugin. Never edit package.json or install.
-          let module: string | undefined;
-          for (const candidate of ['@vitejs/plugin-react', '@vitejs/plugin-react-swc', '@vitejs/plugin-react-oxc']) {
-            try { createRequire(file).resolve(candidate); module = candidate; break; } catch {}
-          }
+          const module = installedRefresh(file);
           if (module) {
             const existing = ast.body.find(item => item.type === 'ImportDeclaration' && item.source.value === module);
             let name = existing?.type === 'ImportDeclaration' ? existing.specifiers.find(item => item.type === 'ImportDefaultSpecifier')?.local.name : undefined;
@@ -133,7 +140,7 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
     if (watchSetting?.value.type === 'Literal' && watchSetting.value.value === null) {
       result.watching = false; result.polling = false; result.offsets.watcher = watchSetting.start;
       const edit = new MagicString(source);
-      set(edit, source, server!, 'watch', '{ usePolling: true, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }');
+      set(edit, source, server!, 'watch', '{ usePolling: true, interval: 100, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }');
       result.changes['write.watcher'] = edit.toString();
     }
     try {
@@ -141,12 +148,12 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
       const polling = watch && property(watch, 'usePolling');
       result.polling = polling ? boolean(unwrap(polling.value)) : false;
       result.offsets.watcher = polling?.start ?? watch?.start ?? server?.start ?? config.start;
-      const edit = new MagicString(source), setting = 'watch: { usePolling: true, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }';
-      if (!server) set(edit, source, config, 'server', `{ ${setting} }`);
-      else if (!watch) set(edit, source, server, 'watch', '{ usePolling: true, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }');
-      else if (!watch.properties.length) set(edit, source, server!, 'watch', '{ usePolling: true, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }');
+      const edit = new MagicString(source), pollingOptions = '{ usePolling: true, interval: 100, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } }';
+      if (!server) set(edit, source, config, 'server', `{ watch: ${pollingOptions} }`);
+      else if (!watch || !watch.properties.length) set(edit, source, server, 'watch', pollingOptions);
       else {
         set(edit, source, watch, 'usePolling', 'true');
+        set(edit, source, watch, 'interval', '100');
         if (!property(watch, 'awaitWriteFinish') || boolean(property(watch, 'awaitWriteFinish')!.value) === false) set(edit, source, watch, 'awaitWriteFinish', '{ stabilityThreshold: 200, pollInterval: 100 }');
       }
       result.changes['write.watcher'] = edit.toString();

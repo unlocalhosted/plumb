@@ -17,7 +17,7 @@ import { UsageError, userMessage } from '../errors.js';
 import { diff, parse, walk } from '../adoption/overlay.js';
 import { nodeName } from '../collect/source.js';
 import { atomicWrite } from '../atomic-write.js';
-import { hostConfig } from './config.js';
+import { hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
 
@@ -49,7 +49,6 @@ const labels: Record<Capability, string> = { read: 'Read', remember: 'Remember',
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const status = (value: boolean | undefined): Status => value === undefined ? 'unknown' : value ? 'ok' : 'missing';
 const step = (instruction: string, command: string): Fix => ({ kind: 'step', instruction, command });
-const editor = (file: string) => `\${EDITOR:-vi} ${JSON.stringify(file)}`;
 function dirty(root: string, file: string): boolean {
   const git = spawnSync('git', ['-C', root, 'status', '--porcelain=v1', '--untracked-files=all', '--', file], { encoding: 'utf8' });
   // Without Git there is no clean baseline to prove; confirmation is required.
@@ -93,29 +92,29 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
       if (readStatus === 'ok') report = await (options.report ? options.report() : check({ root, ...(options.config ? { config: options.config } : {}) }));
     }
   } catch (error) { analysisError = userMessage(error); }
-  if (!requirements.some(item => item.id === 'read.styles')) add('read.styles', 'read', 'unknown', 'Styles could not be checked', configEvidence, 'Drift cannot be judged.', step(configError || analysisError || 'Review the CSS entry in your config.', editor(configFile)));
+  if (!requirements.some(item => item.id === 'read.styles')) add('read.styles', 'read', 'unknown', 'Styles could not be checked', configEvidence, 'Drift cannot be judged.', step(`Review the CSS entry and validation errors in ${configFile}, then run plumber doctor.`, 'plumber doctor'));
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as JudgedFamily[]) {
     const tokens = report?.decisions.filter(item => item.family === family) ?? [];
     const needed = report ? (report.coverage[family].total > 0 || !!report.configHints?.[family]) : false;
     add(`read.tokens.${family}`, 'read', report ? tokens.length || !needed ? 'ok' : 'missing' : 'unknown',
       !report ? `${family} tokens need verification` : tokens.length ? `${family} tokens are ready` : needed ? `Your theme has no ${family} tokens` : `${family}: no values to judge`,
       tokens.length ? tokens.slice(0, 1).map(item => ({ file: relative(root, item.source.file), line: item.source.line, text: item.name })) : configEvidence,
-      `${family} values cannot be judged against your tokens.`, step(`Add ${family} tokens to your theme, or set decisions.${family}.from.`, editor(configFile)));
+      `${family} values cannot be judged against your tokens.`, step(`Add ${family} tokens to your theme, or set decisions.${family}.from in ${configFile}.`, 'plumber doctor'));
   }
   let baseline: Status = 'unknown', ledgerText = 'Ledger could not be read';
   try { const ledger = await readLedger(root); baseline = ledger.exists ? 'ok' : 'missing'; ledgerText = ledger.exists ? 'Ledger baseline exists' : 'No ledger baseline'; } catch (error) { ledgerText = userMessage(error); }
-  add('remember.baseline', 'remember', baseline, ledgerText, [{ file: relative(root, statePath(root, 'ledger.jsonl')), line: 1, text: ledgerText }], 'Every finding counts as new.', baseline === 'unknown' ? step('Repair the ledger, then run plumber doctor.', editor(relative(root, statePath(root, 'ledger.jsonl')))) : step('Review today’s drift, then record it as debt.', 'plumber baseline'));
+  add('remember.baseline', 'remember', baseline, ledgerText, [{ file: relative(root, statePath(root, 'ledger.jsonl')), line: 1, text: ledgerText }], 'Every finding counts as new.', baseline === 'unknown' ? step(`Repair ${relative(root, statePath(root, 'ledger.jsonl'))}, then run plumber doctor.`, 'plumber doctor') : step('Review today’s drift, then record it as debt.', 'plumber baseline'));
   const plain = config ? await dataConfig(config) : undefined;
   let eligible = false, cacheUnknown = false;
   try { eligible = plain ? !!await CheckCache.create({ root, ...(config ? { config } : {}) }) : false; } catch { cacheUnknown = true; }
   add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Warm runs reuse the whole report' : 'Warm runs cannot reuse the whole report', configEvidence,
-    'Each run repeats analysis instead of reusing the whole report.', step(plain ? 'Remove executable presets or CSS plugins, or keep the normal analysis path.' : 'Use a plain-data default export: no imports, calls or functions.', config ? editor(configFile) : 'plumber init'));
+    'Each run repeats analysis instead of reusing the whole report.', step(plain ? 'Remove executable presets or CSS plugins, or keep the normal analysis path.' : `Use a plain-data default export in ${configFile}: no imports, calls or functions.`, config ? 'plumber doctor' : 'plumber init'));
 
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root); } catch { /* An unreadable host config is unknown. */ }
   const hostFile = host ? relative(root, host.file) : 'package.json';
   const evidence = (key: string, text: string): Evidence[] => [{ file: hostFile, line: host ? host.source.slice(0, host.offsets[key] ?? 0).split('\n').length : 1, text }];
-  const manual = (instruction: string) => step(instruction, editor(hostFile));
+  const manual = (instruction: string) => step(`${instruction} Review ${hostFile}, then run plumber doctor.`, 'plumber doctor');
   const configFix = async (id: string, fallback: Fix): Promise<Fix> => {
     const after = host?.changes[id];
     if (!host || !after || after === host.source) return fallback;
@@ -152,8 +151,11 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const next = runtime?.host.startsWith('next-');
   const refresh = runtime?.fastRefresh ?? (next ? true : host?.refresh);
   const manager = packageManager(root);
+  const refreshStep = installedRefresh(join(root, 'package.json'))
+    ? manual('Add the installed React Fast Refresh plugin immediately after plumb(); this config needs manual review.')
+    : step('Install the React Fast Refresh plugin, then rerun plumber doctor to review the config diff.', `${manager} ${manager === 'npm' ? 'install' : 'add'} -D @vitejs/plugin-react`);
   add('write.refresh', 'write', status(refresh), refresh ? 'React Fast Refresh is present' : 'React Fast Refresh is not established', evidence('plugin', 'React Fast Refresh plugin'),
-    'Writes reload the page instead of swapping the component.', await configFix('write.refresh', step('Install the React Fast Refresh plugin, then add react() after plumb().', `${manager} ${manager === 'npm' ? 'install' : 'add'} -D @vitejs/plugin-react`)));
+    'Writes reload the page instead of swapping the component.', await configFix('write.refresh', refreshStep));
   const hmr = runtime?.hmr ?? host?.hmr;
   add('write.hmr', 'write', status(hmr), hmr === false ? 'Hot updates are off' : hmr ? 'Hot updates are enabled' : 'Hot updates could not be checked', evidence('hmr', `server.hmr: ${hmr === undefined ? 'not established' : hmr}`),
     'Writes reload the page instead of updating it in place.', await configFix('write.hmr', manual('Remove server.hmr: false from the dev config.')));
@@ -165,7 +167,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const watching = runtime?.watching ?? host?.watching;
   const watcherStatus: Status = watching === false ? 'missing' : needsPolling ? status(polling) : 'unknown';
   add('write.watcher', 'write', watcherStatus, watching === false ? 'File watching is disabled' : needsPolling ? polling ? `Polling is enabled for ${watchEnvironment}` : `${watchEnvironment} needs file polling` : 'File watching needs a real save to verify', evidence('watcher', `server.watch.usePolling: ${polling ?? 'not established'}; environment: ${watchEnvironment}`),
-    'The dev server may miss writes, leaving the page unchanged.', await configFix('write.watcher', manual('Set server.watch.usePolling: true with awaitWriteFinish, then verify a source save.')));
+    'The dev server may miss writes, leaving the page unchanged.', await configFix('write.watcher', manual('Set server.watch.usePolling: true, interval: 100 and awaitWriteFinish, then verify a source save.')));
   dependency('blueprint.locate', 'blueprint', 'locate', 'Blueprint needs source locations', 'Alt+B cannot connect drift to its source.');
   add('blueprint.host', 'blueprint', hostState, 'Blueprint needs a supported host', evidence('plugin', runtime?.host ?? host?.host ?? declaredHost ?? 'Host not established'), 'Alt+B may not show every drift in view.', step('Run a supported Vite or Next.js development app.', `${manager} run dev`));
   dependency('system.blueprint', 'system', 'blueprint', 'System panel needs Blueprint', 'The system panel cannot connect tokens to the page.');
@@ -213,6 +215,7 @@ export function formatReadiness(report: ReadinessReport): string {
     output += wrap(`     ${item.evidence.map(evidence => `${evidence.file}:${evidence.line} ${evidence.text}`).join(' · ')}`) + '\n';
     if (item.status !== 'ok') {
       output += wrap(`     ${item.loses}`) + '\n';
+      if (item.fix?.kind === 'step') output += wrap(`     ${item.fix.instruction}`) + '\n';
       if (item.fix) output += wrap(`     ${item.fix.kind === 'diff' ? `plumber fix ${item.id}` : item.fix.command}`) + '\n';
     }
   }

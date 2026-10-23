@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { test } from 'node:test';
 import { createServer } from 'vite';
 import { plumb } from '../dist/hosts/vite.js';
@@ -42,22 +43,109 @@ const runtime = { host: 'vite', development: true, plugin: true, fastRefresh: tr
 async function startConfig(t, root) {
   await mkdir(join(root, 'node_modules/@unlocalhosted'), { recursive: true });
   await symlink(repo, join(root, 'node_modules/@unlocalhosted/react-plumber')).catch(error => { if (error.code !== 'EEXIST') throw error; });
+  await symlink(join(repo, 'node_modules/vite'), join(root, 'node_modules/vite')).catch(error => { if (error.code !== 'EEXIST') throw error; });
   const server = await createServer({ root, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  t.after(() => server.close());
-  await server.listen();
-  const base = `http://127.0.0.1:${server.httpServer.address().port}`;
-  const transformed = await fetch(`${base}/src/App.tsx`);
-  assert.equal(transformed.status, 200, await transformed.clone().text());
-  assert.match(await transformed.text(), /createElement|jsx|jsxDEV/);
-  let response;
-  for (let i = 0; i < 100; i++) {
-    response = await fetch(`${base}/__plumb/readiness`);
-    if (response.status !== 503) break;
-    await new Promise(done => setTimeout(done, 30));
+  try {
+    await server.listen();
+    const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+    const transformed = await fetch(`${base}/src/App.tsx`);
+    assert.equal(transformed.status, 200, await transformed.clone().text());
+    assert.match(await transformed.text(), /createElement|jsx|jsxDEV/);
+    let response;
+    for (let i = 0; i < 100; i++) {
+      response = await fetch(`${base}/__plumb/readiness`);
+      if (response.status !== 503) break;
+      await new Promise(done => setTimeout(done, 30));
+    }
+    assert.equal(response.status, 200, await response.clone().text());
+    return { server, ready: await response.json() };
+  } finally {
+    // Close before fixture deletion; deleting a watched config can restart Vite.
+    await server.close();
   }
-  assert.equal(response.status, 200, await response.clone().text());
-  return { server, ready: await response.json() };
 }
+
+test('Refresh install follows lockfile; rerun offers import diff immediately after Plumber', async t => {
+  for (const [manager, lock] of [['npm', 'package-lock.json'], ['pnpm', 'pnpm-lock.yaml'], ['yarn', 'yarn.lock'], ['bun', 'bun.lock']]) {
+    await t.test(manager, async t => {
+      // Outside the repo: its installed React plugin must not leak into resolution.
+      const root = await mkdtemp(join(tmpdir(), 'plumber-refresh-'));
+      t.after(() => rm(root, { recursive: true, force: true }));
+      await mkdir(join(root, 'src'));
+      await mkdir(join(root, 'node_modules/@tailwindcss'), { recursive: true });
+      await symlink(join(repo, 'node_modules/react'), join(root, 'node_modules/react'));
+      await symlink(join(repo, 'node_modules/@tailwindcss/vite'), join(root, 'node_modules/@tailwindcss/vite'));
+      await writeFile(join(root, 'package.json'), '{"type":"module"}');
+      await writeFile(join(root, lock), manager === 'npm' ? '{}' : '');
+      await writeFile(join(root, 'plumber.config.mjs'), "export default { source: ['src/**'] };");
+      await writeFile(join(root, 'src/styles.css'), '.box { padding: 13px; }');
+      await writeFile(join(root, 'src/App.tsx'), 'export default function App() { return <div className="box">Ready</div>; }');
+      const file = join(root, 'vite.config.mjs');
+      await writeFile(file, config.replace("import react from '@vitejs/plugin-react';", "import tailwindcss from '@tailwindcss/vite';").replace('inspect(), react()', 'tailwindcss(), inspect()'));
+      const { report, request } = await api(t, root);
+      let ready = await report(), fix = item(ready, 'write.refresh').fix;
+      assert.equal(item(ready, 'write.refresh').status, 'missing');
+      assert.equal(fix.kind, 'step');
+      assert.equal(fix.command, `${manager} ${manager === 'npm' ? 'install' : 'add'} -D @vitejs/plugin-react`);
+      assert.match(fix.instruction, /rerun plumber doctor.*config diff/);
+      const before = await readFile(file, 'utf8');
+      assert.match(run(root, ['fix', 'write.refresh']), /config diff/);
+      assert.equal(await readFile(file, 'utf8'), before);
+      const doctor = run(root, ['doctor'], '', 1);
+      assert.ok(doctor.includes(fix.command));
+      assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
+      // Simulate completed install without invoking any package manager.
+      await mkdir(join(root, 'node_modules/@vitejs'), { recursive: true });
+      await symlink(join(repo, 'node_modules/@vitejs/plugin-react'), join(root, 'node_modules/@vitejs/plugin-react'));
+      ready = await report(); fix = item(ready, 'write.refresh').fix;
+      assert.equal(fix.kind, 'diff', JSON.stringify(fix));
+      assert.match(fix.diff, /import plumberReact from '@vitejs\/plugin-react'/);
+      assert.match(fix.diff, /tailwindcss\(\), inspect\(\), plumberReact\(\)/);
+      assert.match(run(root, ['doctor'], '', 1), /plumber fix write.refresh/);
+      const applied = await request('readiness/fix', { id: 'write.refresh', hash: fix.hash, confirm: true, allowDirty: true });
+      assert.equal(applied.status, 200, await applied.clone().text());
+      assert.equal(item(await report(), 'write.refresh').status, 'ok');
+      const live = await startConfig(t, root);
+      assert.equal(item(live.ready, 'write.refresh').status, 'ok');
+    });
+  }
+});
+
+test('HMR and polling diffs survive Vite startup for every writable server shape', async t => {
+  for (const setting of ['', 'server: {}', 'server: { watch: null }', 'server: { watch: {} }', 'server: { watch: { ignored: ["**/generated/**"], interval: 900, awaitWriteFinish: false } }']) {
+    await t.test(setting || 'no server', async t => {
+      const root = await fixture(t, config.replace('server: { hmr: true, watch: { usePolling: true, awaitWriteFinish: true } }', setting));
+      const { request, report } = await api(t, root);
+      const fix = item(await report(), 'write.watcher').fix;
+      assert.equal(fix.kind, 'diff');
+      assert.match(fix.diff, /interval: 100/);
+      assert.match(fix.diff, /usePolling: true/);
+      assert.match(fix.diff, /awaitWriteFinish/);
+      const doctor = run(root, ['doctor'], '', 1);
+      assert.match(doctor, /plumber fix write.watcher/);
+      assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
+      const applied = await request('readiness/fix', { id: 'write.watcher', hash: fix.hash, confirm: true, allowDirty: true });
+      assert.equal(applied.status, 200, await applied.clone().text());
+      const live = await startConfig(t, root);
+      assert.equal(live.server.config.server.watch.usePolling, true);
+      assert.equal(live.server.config.server.watch.interval, 100);
+      assert.deepEqual(live.server.config.server.watch.awaitWriteFinish, { stabilityThreshold: 200, pollInterval: 100 });
+      if (setting.includes('ignored')) assert.deepEqual(live.server.config.server.watch.ignored, ['**/generated/**']);
+    });
+  }
+  await t.test('hmr false', async t => {
+    const root = await fixture(t, config.replace('hmr: true', 'hmr: false'));
+    const { report, request } = await api(t, root);
+    const fix = item(await report(), 'write.hmr').fix;
+    assert.equal(fix.kind, 'diff');
+    assert.match(run(root, ['doctor'], '', 1), /plumber fix write.hmr/);
+    const applied = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
+    assert.equal(applied.status, 200, await applied.clone().text());
+    const live = await startConfig(t, root);
+    assert.equal(item(live.ready, 'write.hmr').status, 'ok');
+    assert.notEqual(live.server.config.server.hmr, false);
+  });
+});
 
 test('JSX order allows Tailwind first; React first offers a minimal diff that starts Vite', async t => {
   const imports = "import tailwindcss from '@tailwindcss/vite';\n";
@@ -194,7 +282,7 @@ test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includ
     const applied = await request('readiness/fix', { id: 'write.watcher', hash: fix.hash, confirm: true, allowDirty: true });
     assert.equal(applied.status, 200, await applied.clone().text());
     assert.equal(item(await report(), 'write.watcher').status, 'ok');
-    assert.match(await readFile(file, 'utf8'), /usePolling: true, awaitWriteFinish:/);
+    assert.match(await readFile(file, 'utf8'), /usePolling: true, interval: 100, awaitWriteFinish:/);
   } finally { if (previous === undefined) delete process.env.PLUMBER_WATCH_ENV; else process.env.PLUMBER_WATCH_ENV = previous; }
 });
 
