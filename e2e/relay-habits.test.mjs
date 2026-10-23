@@ -30,3 +30,17 @@ test('Relay hover utilities use compiled media gates; legacy and genuinely ungat
     if (run) assert.equal(report.timing.cacheMisses, 0);
   }
 });
+
+test('Relay focus replacements follow compiled focus/ring/border rules on same target, branch and media', async t => {
+  const dir = await fixture(t);
+  for (let run = 0; run < 2; run++) {
+    const report = check(dir);
+    const sites = report.findings.filter(f => f.rule === 'habits/focus-outline').flatMap(f => f.sites);
+    const jsx = sites.filter(s => s.file.endsWith('Focus.jsx'));
+    assert.equal(jsx.length, 12, JSON.stringify(jsx));
+    assert.ok(jsx.every(s => s.anchor === 'Missing'), 'Input, TabsTrigger, Switch and valid replacements retain visible focus');
+    assert.equal(jsx.filter(s => s.text === 'focus:outline-none').length, 1, 'planted unpaired suppression stays caught');
+    const css = report.findings.filter(f => f.rule === 'habits/focus-outline' && f.declaration.origin === 'stylesheet');
+    assert.deepEqual(css.map(f => f.declaration.owner.name), ['.css-invisible']);
+  }
+});
