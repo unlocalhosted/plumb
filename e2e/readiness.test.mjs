@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -43,6 +44,7 @@ test('doctor and read-only route cover every capability and token family with ev
   const before = await readFile(join(root, 'vite.config.mjs'), 'utf8');
   const ready = await report();
   assert.equal(ready.schemaVersion, 1);
+  assert.equal(ready.requirements.length, 23);
   assert.deepEqual(ready.capabilities.map(item => item.id), ['read', 'remember', 'fast', 'locate', 'preview', 'write', 'blueprint', 'system']);
   for (const requirement of ready.requirements) {
     assert.deepEqual(Object.keys(requirement), ['id', 'capability', 'status', 'title', 'evidence', 'loses', 'fix']);
@@ -85,7 +87,10 @@ test('every config diff is previewed, consent-gated, dirty-checked and applied o
   assert.equal(await readFile(file, 'utf8'), original);
   const applied = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
   assert.equal(applied.status, 200, await applied.clone().text());
-  assert.equal((await applied.json()).diff, fix.diff);
+  const result = await applied.json();
+  assert.deepEqual(Object.keys(result), ['id', 'file', 'diff', 'hash']);
+  assert.equal(result.diff, fix.diff);
+  assert.equal(result.hash, createHash('sha256').update(await readFile(file, 'utf8')).digest('hex'));
   assert.doesNotMatch(await readFile(file, 'utf8'), /hmr: false/);
   assert.match(await readFile(file, 'utf8'), /\[react\(\), inspect\(\)\]/, 'one diff only');
   assert.equal((await request('readiness/fix', { id: 'locate.order', hash: fix.hash, confirm: true, allowDirty: true })).status, 400, 'stale hash refused');
@@ -105,6 +110,8 @@ test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includ
   let ready = await report();
   assert.equal(item(ready, 'locate.plugin').status, 'missing');
   assert.equal(item(ready, 'write.refresh').status, 'missing');
+  for (const id of ['locate.order', 'preview.locate', 'write.locate', 'blueprint.locate', 'system.blueprint']) assert.equal(item(ready, id).status, 'missing', id);
+  for (const id of ['locate', 'preview', 'write', 'blueprint', 'system']) assert.equal(ready.capabilities.find(item => item.id === id).status, 'off', id);
   run(root, ['fix', 'locate.plugin', '--yes']);
   ready = await report();
   assert.equal(item(ready, 'locate.plugin').status, 'ok');

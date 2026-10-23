@@ -1,4 +1,3 @@
-import { readiness, applyReadinessFix } from '../readiness/index.js';
 import type { Runtime, ReadinessOptions } from '../readiness/index.js';
 import { statePath, stateDirectory } from '../paths.js';
 import { createServer } from 'node:http';
@@ -112,6 +111,8 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
 }
 
 async function dispatchReadiness(context: ReadinessOptions, method: string, params: Record<string, unknown>): Promise<unknown> {
+  // Keep analysis modules off the existing Session host's startup/hot routes.
+  const { readiness, applyReadinessFix } = await import('../readiness/index.js');
   if (method === 'readiness') return readiness(context);
   if (params.confirm !== true || params.allowDirty !== undefined && typeof params.allowDirty !== 'boolean') throw new UsageError('confirm must be true; allowDirty must be a boolean.');
   return applyReadinessFix(context, { id: text(params, 'id')!, hash: text(params, 'hash')!, confirm: true,
