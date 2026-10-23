@@ -10,9 +10,10 @@
  *  panel     above the dock, where the punch list opens. One row per cause: a checkbox, a chip with its state and
  *            the capability it hits ("Off · Write in place", on a tinted ground), what it costs, what else it
  *            limits, where it's set (file:line) and its fix. Checks that can't tell yet sit last, without a box.
- *            Opens by itself once per project the first time anything is missing, without taking focus, and
- *            steps aside the moment the person starts working (a click or Alt anywhere else, blueprint, a pin);
- *            after that it opens only from the note
+ *            Opens only from the note or the callout, never by itself: it would cover the page being worked on
+ *  callout   the first time anything is missing in a project: one line beside the dock ("2 setup gaps · Writes
+ *            reload the page…", the whole sentence on hover) with Review and ✕. It never takes focus and covers no more
+ *            than the dock's corner; a click or Alt anywhere else, blueprint or a pin puts it away. Once per project
  *  row fix   diff: Show change → the diff · step: the instruction and the command, with Copy → Copied
  *  row state applying → applied (the dev server restarts; the list reads again) · refused → why, Read again
  *  footer    "n selected" · Copy for agent (every ticked cause, diffs and steps, plain enough for a person, exact
@@ -96,7 +97,18 @@ export const READY_CSS = `
   .rd .foot { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-5) var(--pl-space-6); border-top: 1px solid var(--pl-rule); background: var(--pl-paper-2); }
   .rd .foot .count { margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .rd .foot .count[data-tone="on"] { color: var(--pl-on); }
-  @media (prefers-reduced-motion: reduce) { .rd .card { transition: none; } .rd .btn[aria-busy="true"]::before { animation: none; } }
+  .rd-callout { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); max-width: min(380px, calc(100vw - 2 * var(--pl-space-6)));
+    display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); pointer-events: auto;
+    background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
+    opacity: 0; transform: translateY(4px); transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
+  .rd-callout[data-in] { opacity: 1; transform: none; }
+  .rd-callout .text { flex: 1; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rd-callout .text b { font-weight: 600; color: var(--pl-ink); }
+  .rd-callout .btn { all: unset; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-on-accent); background: var(--pl-accent); cursor: pointer; white-space: nowrap; }
+  .rd-callout .btn:focus-visible, .rd-callout .x:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
+  .rd-callout .x { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  @media (hover: hover) and (pointer: fine) { .rd-callout .x:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  @media (prefers-reduced-motion: reduce) { .rd .card, .rd-callout { transition: none; } .rd .btn[aria-busy="true"]::before { animation: none; } }
 `;
 
 const DOT = '<span class="dot" aria-hidden="true"></span>';
@@ -121,7 +133,7 @@ export class Readiness {
   }
 
   get open() { return this.#open; }
-  rect() { return this.#panel?.querySelector('.card')?.getBoundingClientRect() ?? null; }
+  rect() { return (this.#panel?.querySelector('.card') ?? this.#callout)?.getBoundingClientRect() ?? null; }
 
   // Read (or re-read) the engine's account. Called when the server becomes ready and after a fix lands.
   async read() {
@@ -135,35 +147,61 @@ export class Readiness {
     for (const id of ids) if (!this.#known.has(id)) { this.#known.add(id); this.#ticked.add(id); }
     for (const id of this.#ticked) if (!ids.has(id)) this.#ticked.delete(id);
     this.#render();
-    if (missing.length && !this.#open && !this.#seen()) { this.#markSeen(); this.toggle(true, { auto: true }); }
+    if (missing.length && !this.#open && !this.#seen()) { this.#markSeen(); this.#showCallout(); }
   }
 
-  // auto: opened by itself. It doesn't take focus, and the first sign the person is working elsewhere closes it.
-  toggle(force, { auto = false, focus = true } = {}) {
+  toggle(force, { focus = true } = {}) {
     const next = force ?? !this.#open;
     if (next === this.#open) return;
+    this.#hideCallout();
     this.#open = next;
-    this.#auto = next && auto;
     if (next) this.#onOpen?.();
     this.#render();
     if (next) requestAnimationFrame(() => requestAnimationFrame(() => this.#panel?.removeAttribute('data-enter')));
-    if (this.#auto) { addEventListener('pointerdown', this.#aside, true); addEventListener('keydown', this.#aside, true); }
-    else { removeEventListener('pointerdown', this.#aside, true); removeEventListener('keydown', this.#aside, true); }
-    if (next && !auto) this.#panel?.querySelector('.close')?.focus({ preventScroll: true });
-    if (!next && focus) this.#note?.focus({ preventScroll: true });
+    if (next) this.#panel?.querySelector('.close')?.focus({ preventScroll: true });
+    else if (focus) this.#note?.focus({ preventScroll: true });
   }
-  #auto = false;
+
+  close() { if (this.#open) this.toggle(false); }
+  // Step aside for other work: close without moving focus anywhere, and put the callout away.
+  dismiss() { this.#hideCallout(); if (this.#open) this.toggle(false, { focus: false }); }
+  destroy() { this.dismiss(); this.#panel?.remove(); this.#note?.remove(); this.#panel = this.#note = null; }
+
+  // ── the first-time callout ───────────────────────────────
+
+  #callout = null;
+  #showCallout() {
+    const missing = this.#missing();
+    if (!missing.length || !this.#note) return;
+    this.#callout = document.createElement('div');
+    this.#callout.className = 'rd-callout';
+    this.#callout.setAttribute('role', 'status');
+    const n = missing.length;
+    this.#callout.innerHTML = `<span class="text" title="${plural(n, 'thing')} in this project limit${n === 1 ? 's' : ''} React Plumber: ${esc(missing[0].loses)}"><b>${plural(n, 'setup gap')}</b> · ${esc(missing[0].loses)}</span>
+      <button class="btn small primary" type="button" data-act="review">Review</button>
+      <button class="x" type="button" aria-label="Not now">${CLOSE}</button>`;
+    this.#callout.addEventListener('click', (e) => {
+      if (e.target.closest('[data-act="review"]')) this.toggle(true);
+      else if (e.target.closest('.x')) this.#hideCallout();
+    });
+    this.#root.append(this.#callout);
+    requestAnimationFrame(() => requestAnimationFrame(() => this.#callout?.setAttribute('data-in', '')));
+    addEventListener('pointerdown', this.#aside, true);
+    addEventListener('keydown', this.#aside, true);
+  }
+  #hideCallout() {
+    removeEventListener('pointerdown', this.#aside, true);
+    removeEventListener('keydown', this.#aside, true);
+    this.#callout?.remove();
+    this.#callout = null;
+  }
+  // Work starting elsewhere puts the callout away; the note stays as the way back.
   #aside = (e) => {
     if (e.type === 'keydown' && e.key !== 'Alt') return;
     const path = e.composedPath();
-    if (this.#panel && path.includes(this.#panel) || this.#note && path.includes(this.#note)) { this.#auto = false; removeEventListener('pointerdown', this.#aside, true); removeEventListener('keydown', this.#aside, true); return; }
-    this.dismiss();
+    if (this.#callout && path.includes(this.#callout) || this.#note && path.includes(this.#note)) return;
+    this.#hideCallout();
   };
-
-  close() { if (this.#open) this.toggle(false); }
-  // Step aside for other work: close without moving focus anywhere.
-  dismiss() { if (this.#open) this.toggle(false, { focus: false }); }
-  destroy() { this.dismiss(); this.#panel?.remove(); this.#note?.remove(); this.#panel = this.#note = null; }
 
   // ── state ────────────────────────────────────────────────
 

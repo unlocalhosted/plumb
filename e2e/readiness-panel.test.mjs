@@ -48,7 +48,7 @@ const state = page => page.evaluate(() => {
   };
 });
 
-test('your setup: the note, a first open that steps aside, ticks, and Copy for agent', { timeout: 90000 }, async t => {
+test('your setup: the note, a first-time callout that stays out of the way, ticks, and Copy for agent', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const url = await demo(t);
   const context = await launched.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
@@ -58,34 +58,38 @@ test('your setup: the note, a first open that steps aside, ticks, and Copy for a
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
 
-  // First visit: the panel opens by itself, names the Fast Refresh cause first, and leaves focus on the page.
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd'));
+  // First visit: a one-line callout beside the dock names the cost; the panel itself does not open, and focus stays.
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd-callout'));
   let s = await state(page);
-  assert.equal(s.open, true);
-  assert.equal(s.focusInPanel, false, 'a panel that opened by itself does not take focus');
-  assert.ok(s.causes.some(c => /Fast Refresh/.test(c)), JSON.stringify(s.causes));
-  assert.ok(s.chips.some(c => /Write in place/i.test(c)), JSON.stringify(s.chips));
+  assert.equal(s.open, false, 'the panel never opens by itself: it would cover the page');
   assert.ok(s.note, 'the dock names the biggest loss');
-  assert.equal(s.ticked, s.causes.length, 'every cause starts ticked');
-  assert.equal(s.count, `${s.causes.length} selected`);
-  // No cause is listed twice (Write needs Locate is not its own row).
-  assert.equal(new Set(s.causes).size, s.causes.length);
+  const callout = await page.evaluate(() => { const r = document.querySelector('plumb-overlay').shadowRoot, c = r.querySelector('.rd-callout'), b = c.getBoundingClientRect();
+    return { text: c.textContent.replace(/\s+/g, ' ').trim(), focus: c.contains(r.activeElement), height: b.height }; });
+  assert.match(callout.text, /^\d+ setup gaps? · /);
+  assert.equal(callout.focus, false, 'the callout does not take focus');
+  assert.ok(callout.height < 64, `the callout stays small (${callout.height}px)`);
 
-  // Starting work steps it aside: holding Alt closes it, and focus didn't move into the overlay.
+  // Starting work puts it away: holding Alt removes the callout; the note stays as the way back.
   await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
-  await page.waitForFunction(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd'));
-  assert.ok((await state(page)).note, 'the note stays as the way back');
+  await page.waitForFunction(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd-callout'));
+  assert.ok((await state(page)).note);
 
-  // Reloading doesn't open it again; the note does, and then it takes focus (the person asked for it).
+  // Once per project: after a reload there's no callout; the note opens the panel, which then takes focus.
   await page.reload();
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .ready'));
-  assert.equal((await state(page)).open, false, 'it opens by itself only once per project');
+  await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd-callout')), false);
   await page.locator('plumb-overlay').locator('.dock .ready').click();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd'));
   s = await state(page);
   assert.equal(s.focusInPanel, true);
+  assert.ok(s.causes.some(c => /Fast Refresh/.test(c)), JSON.stringify(s.causes));
+  assert.ok(s.chips.some(c => /Write in place/i.test(c)), JSON.stringify(s.chips));
+  assert.equal(s.ticked, s.causes.length, 'every cause starts ticked');
+  assert.equal(s.count, `${s.causes.length} selected`);
+  assert.equal(new Set(s.causes).size, s.causes.length, 'no cause is listed twice');
 
   // Untick one: the count follows, and Copy for agent hands over only what's ticked.
   const boxes = page.locator('plumb-overlay').locator('.rd input.box');
@@ -135,6 +139,7 @@ test('your setup: Apply writes the ticked change to the project config, shown fi
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
+  await overlay.locator('.dock .ready').click();
   await overlay.locator('.rd').waitFor();
 
   const row = overlay.locator('.rd .req[data-id="write.hmr"]');
