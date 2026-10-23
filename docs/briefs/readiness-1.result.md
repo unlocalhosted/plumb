@@ -1,7 +1,9 @@
 # Readiness layer 1 result
 
-Implementation and scoped verification are complete. The full-suite gate is
-not yet green; current limits and failed attempts are recorded below.
+Layer 1 is implemented and fully verified at `dee3a0e` on Node 22.23.1:
+**511 passed, 0 failed, 5 mode-specific skips** across the complete npm test run.
+This contract describes that pinned layer-1 revision. Concurrent later 1b/1c and
+overlay changes are separate work and are not part of this proof.
 
 Scope: section 4, row 1 of `readiness.md`. No dock, blueprint-label changes,
 system-panel UI, init/install offers, or Next.js end-to-end feature proof.
@@ -271,16 +273,46 @@ It exits on failure and does not retry or omit tests. A global nursery cap was
 tried and removed after unrelated served-root timeouts. Diagnostic clones and
 logs were removed from the repository.
 
-Full Chromium suite gate: not yet green. The latest run uses the final scoped
-runner and has reported an intermittent dynamic-DOM blueprint assertion before
-reaching the burst group. No overlay/site source changes or assertion weakening
-were made to hide browser failures. The current log is
-`/tmp/plumber-readiness-full-test-final-proof.log`. Earlier full-run logs are
-`/tmp/plumber-readiness-full-test-final.log`,
-`/tmp/plumber-readiness-full-test-verified.log`,
-`/tmp/plumber-readiness-full-test-accepted.log`, and
-`/tmp/plumber-readiness-full-test-bounded.log`. Polling and no-watch groups run
-only after the native group succeeds, as before. No push was performed.
+Final full command passed with exit 0 in the independent clone
+`/Users/vijaysingh/.codex/tmp/r1-proof`, at `dee3a0e6d06b42e8964d2c279c8063c621a8906b`.
+Node 22.23.1 was selected only for the command's environment; the system's
+Node 25 default was not changed. Root and site dependencies were installed with
+`npm ci` from the committed lockfiles. The owner's Hero snapshot was copied into
+this QA clone without modifying or committing the shared checkout's Hero file.
+
+```sh
+PLUMBER_CHROMIUM="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm test
+```
+
+| Invocation | Tests | Passed | Failed | Mode-specific skips |
+| --- | ---: | ---: | ---: | ---: |
+| Native group | 460 | 459 | 0 | 1 |
+| Bounded retained-result burst | 4 | 4 | 0 | 0 |
+| Polling serve | 26 | 25 | 0 | 1 |
+| Watch-disabled serve | 26 | 23 | 0 | 3 |
+| Total executed invocations | 516 | 511 | 0 | 5 |
+
+Serve scenarios repeat across watcher modes; 516 is not a unique-scenario count.
+The complete log is `/tmp/plumber-readiness-final-independent.log`; pinned input
+metadata is `/tmp/plumber-readiness-independent-proof.json`. The final runner
+executes every e2e file, with no retries and no excluded failed cases.
+
+Additional verification-environment corrections:
+
+- Shared-checkout builds raced concurrent layer-1b work, invalidating a side
+  check with missing `dist` files. A registered QA worktree was subsequently
+  removed during its run; its missing-file and `uv_cwd` failures are invalidated
+  verification attempts, not readiness failures.
+- The final proof uses an independent Git clone and physical locked installs.
+  A symlinked dependency view had failed the Next Turbopack locator; the same
+  case passed after the locked local install, including reads and an applied edit.
+- The CLI progress e2e completion expectation now accepts the documented elapsed
+  clock after three seconds. Its ASCII bar, 100 percent, Done label, clock format,
+  and stdout parity assertions remain intact. No product output changed.
+
+Earlier run logs remain under `/tmp/plumber-readiness-*.log`. Their failures and
+invalidations are retained here for context; the final pinned run above is the
+passing gate. No push was performed.
 
 Preliminary broad runs were stopped for compatibility/config-edge review before
 the final full run. Legacy unknown-route startup responses were preserved; new
