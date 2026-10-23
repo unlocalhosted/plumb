@@ -31,4 +31,11 @@ export const planted = [
   { screen: 'automations', file: 'screens/Automations.jsx', what: 'node type tag text-[11px]', wrong: 'below the type scale', rule: 'provenance/arbitrary', fix: 'text-xs' },
   { screen: 'automations', file: 'screens/Automations.jsx', what: 'node type colour oklch(0.55 0.13 hue)', wrong: 'a hand-written colour formula (the hue is data, the formula is not a token)', rule: 'provenance/color', fix: 'a token per node kind (--node-trigger, …)' },
   { screen: 'automations', file: 'screens/Automations.jsx', what: 'canvas inset style={{ margin: 24 }}', wrong: 'inline literal, on the ladder by value but not by token', rule: 'provenance (inline)', fix: 'm-6' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'section headings text-[15px]', wrong: 'between two type steps', rule: 'provenance/arbitrary', fix: 'text-base or text-lg' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'form gap gap-[10px]', wrong: 'off the 4px ladder', rule: 'provenance/arbitrary', fix: 'gap-2.5 or gap-3' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'Most popular badge bg-[#7a5af5] text-white', wrong: 'equals --status-review but bypasses it; a raw white', rule: 'provenance/color', fix: 'a badge variant, or bg-status-review text-primary-foreground' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'danger zone border-[#f5c2c2]', wrong: 'raw colour for a meaning the theme names', rule: 'provenance/color', fix: 'border-destructive/30' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'notification rows transition-all', wrong: 'animates every property, including layout', rule: 'habits/transition-named', fix: 'transition-colors' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'confirm input focus:outline-none', wrong: 'removes the focus outline with nothing in its place', rule: 'habits/focus-outline', fix: 'use <Input> (it has a focus ring)' },
+  { screen: 'settings', file: 'screens/Settings.jsx', what: 'confirm dialog ease-in', wrong: 'feedback that starts slowly', rule: 'habits/no-ease-in', fix: 'drop it (the default eases out)' },
 ];

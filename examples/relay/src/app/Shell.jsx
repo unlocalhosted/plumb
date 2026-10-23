@@ -5,6 +5,7 @@ import { Board } from '@/screens/Board';
 import { Issues } from '@/screens/Issues';
 import { IssueDrawer } from '@/screens/IssueDrawer';
 import { Automations } from '@/screens/Automations';
+import { Settings } from '@/screens/Settings';
 import { routes, useRoute } from './router';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -30,7 +31,7 @@ export function Shell() {
         <Sidebar route={route} />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopBar title={title} />
-          {route === 'board' ? <Board /> : route === 'issues' ? <Issues /> : route === 'automations' ? <Automations /> : <Placeholder title={title} />}
+          {route === 'board' ? <Board /> : route === 'issues' ? <Issues /> : route === 'automations' ? <Automations /> : route === 'settings' ? <Settings /> : <Placeholder title={title} />}
         </main>
         <IssueDrawer issueKey={issue} screen={route} />
       </div>
