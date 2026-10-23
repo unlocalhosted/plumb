@@ -84,7 +84,7 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
   const barOnTitle = await bars.evaluateAll((rects, box) => rects.some((r) => { const b = r.getBoundingClientRect(); return Math.abs(b.left - box.x) < 2 && b.top >= box.y && b.bottom <= box.y + box.height; }), titleBox);
   assert.ok(barOnTitle, 'the title has a bar where its words are');
   // reading, then the count
-  await say(overlay).filter({ hasText: /\d+ off in view · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /\d+ off in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
   // the marks are drawn on the frame after the count, so wait for them rather than read once
   const expected = ['gap-[10px]', 'py-[10px]', 'px-[14px]', 'rounded-[14px]', 'text-[13.5px]', 'gap-[3px]', 'rounded-[5px]'];
   await page.waitForFunction((drifts) => {
@@ -196,7 +196,7 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   const before = await footprint(page);
 
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /\d+ off in view · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /\d+ off in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
   await page.waitForFunction(() => {
     const names = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .structure g.dimension text')].map((t) => t.textContent);
     return names.includes('s3') && names.includes('s1');
@@ -226,7 +226,7 @@ test('Gaps on the system are drawn as quiet dimensions named by their token, und
   // the title block: route, viewport with its breakpoint, and the tally
   const sheet = overlay.locator('.bp .sheet[data-on]');
   await sheet.waitFor();
-  assert.match((await sheet.innerText()).replace(/\s+/g, ' '), /^SHEET \/ VIEW 1200 × 800 · lg TALLY \d+ on system · \d+ off \d+ /);
+  assert.match((await sheet.innerText()).replace(/\s+/g, ' '), /^SHEET \/ VIEW 1200 × 800 · lg TALLY \d+ on system · \d+ off(?: · \d+ not checked(?: · outside source)?)? \d+ /);
   // the causes: by count, the first is the decision that closes the most; pointing at one outlines what it touches
   const causes = sheet.locator('.cause[data-k]');
   const counts = await causes.locator('.n').allInnerTexts();
@@ -387,7 +387,7 @@ test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves no
   await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
   // the pressed step, clicked again, unpicks
   await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').click();
-  await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
+  await say(overlay).filter({ hasText: /off in view.* · Alt\+B/ }).waitFor();
   // Unpick redraws the chooser under the pointer. Chromium can enter the new step on a later frame:
   // zero queued picks still permits a hover preview. Exercise that state, then leave before checking cleanup.
   const unpicked = chooser(overlay).locator('.cmp .opt[data-pick]').filter({ hasText: /s2/ }).first();
@@ -402,7 +402,7 @@ test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves no
   await pickStep(overlay, /s1/);
   await say(overlay).filter({ hasText: /2 picked/ }).waitFor();
   await dock(overlay).getByRole('button', { name: 'Undo' }).click();
-  await say(overlay).filter({ hasText: /off in view · Alt\+B/ }).waitFor();
+  await say(overlay).filter({ hasText: /off in view.* · Alt\+B/ }).waitFor();
   assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
   assert.equal(await page.locator('#beta-chip').getAttribute('style'), null);
   // picks pending when the mode is left are lifted with it

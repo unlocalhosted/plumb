@@ -4,7 +4,7 @@
  * Which elements are on screen, and what Plumb says about each. Every reading is the engine's (host.readMarks: the
  * same findings as the Alt card, without the edits and text the card fetches when it opens).
  *
- *  pool       elements stamped with their source by the dev plugin, else every element, never anything inside an
+ *  pool       every element, including unstamped shared source beside stamped app source, never anything inside an
  *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read); watched by one
  *             IntersectionObserver, so only what is in (or near) view is read, nearest the middle first, CAP at most
  *  dedupe     elements that share a stamp (a list's rows) share one reading
@@ -112,8 +112,7 @@ export class Reader {
     try { this.#scan_(changed); } finally { performance.measure('plumb:reader-scan', { start: t0 }); }
   }
   #scan_(changed) {
-    const stamped = document.querySelectorAll('[data-plumb-source]');
-    const pool = stamped.length ? stamped : document.body.querySelectorAll('*');
+    const pool = document.body.querySelectorAll('*');
     for (const el of pool) {
       if (el.ownerSVGElement || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
       const stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;

@@ -25,7 +25,7 @@ for (const host of ['vite', 'next']) for (const checked of [false, true]) test(`
   await writeFile(join(root, 'plumber.config.mjs'), `export default { css: '../src/styles.css', source: ${JSON.stringify(checked ? ['app/**', '../src/**'] : ['app/**'])}, decisions: { spacing: { from: 'css:../src/styles.css' } } };\n`);
   let url;
   if (host === 'vite') {
-    const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false, stamp: checked })],
+    const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })],
       oxc: { jsx: { runtime: 'automatic', development: true } }, resolve: { dedupe: ['react', 'react-dom'] },
       logLevel: 'silent', server: { host: '127.0.0.1', port: 0, fs: { allow: [repo] }, watch: null } });
     stop = () => server.close(); await server.listen(); url = `http://127.0.0.1:${server.httpServer.address().port}`;

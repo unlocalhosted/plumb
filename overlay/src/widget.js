@@ -451,8 +451,7 @@ class PlumbOverlay extends HTMLElement {
     if (p.read < p.total) return `reading ${p.read} of ${p.total}…`;
     const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
     const count = [p.drift ? `${p.drift} off in view` : !p.notChecked ? 'all true in view' : '', unchecked].filter(Boolean).join(' · ');
-    if (p.notChecked) return `${count} · Alt+B`;
-    if (f?.count) return `${p.drift ? `${p.drift} off` : 'all true'} · ${f.count} picked${f.before ? ' · before' : ''}`;
+    if (f?.count) return `${p.drift ? `${p.drift} off` : p.notChecked ? unchecked : 'all true'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
     return `${count} · Alt+B`;
   }
   #dock() {

@@ -1,5 +1,5 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Board from '../../src/screens/Board.jsx';
-function Shell() { return <Board />; }
+function Shell() { return <main id="shell"><Board /></main>; }
 createRoot(document.getElementById('root')).render(<Shell />);
