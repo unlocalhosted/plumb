@@ -615,6 +615,7 @@ class PlumbOverlay extends HTMLElement {
     this.#ready?.dismiss();
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
     this.#armed = true; this.#sticky = sticky;
+    this.#blueprint?.yieldInput(true);
     addEventListener('pointermove', this.#onMove, true);
     addEventListener('click', this.#onClick, true);
     addEventListener('pointerdown', this.#swallow, true);
@@ -631,6 +632,7 @@ class PlumbOverlay extends HTMLElement {
   #disarm = () => {
     if (!this.#armed) return;
     this.#armed = false; this.#sticky = false; clearTimeout(this.#hoverTimer);
+    this.#blueprint?.yieldInput(false);
     this.#hover?.controller.abort();
     removeEventListener('pointermove', this.#onMove, true);
     removeEventListener('click', this.#onClick, true);

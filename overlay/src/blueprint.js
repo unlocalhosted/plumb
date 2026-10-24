@@ -41,6 +41,7 @@
 import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Greek, GREEK_CSS } from './blueprint-greek.js';
+import { Glass, GLASS_CSS } from './blueprint-glass.js';
 
 const SPAN = 520; // ms for the line to cross the view
 const DEVELOP = 240; // ms for one element to re-ink
@@ -108,7 +109,7 @@ const SHEET_CSS = `
   .bp[data-peek] .sheet { border-color: #a8f0c6; }
   .bp[data-peek] .sheet .tally { color: #a8f0c6; }
 `;
-export const BLUEPRINT_CSS = MARKS_CSS + SHEET_CSS + GREEK_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + SHEET_CSS + GREEK_CSS;
 
 const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -158,7 +159,7 @@ export class Blueprint {
   #fieldReady = false;
   #token = 0;
   #vars = null; // a tiny <style> holding the sweep's custom properties, so no host element gets an inline style
-  #sheet; #progress = null; #greek; #items = []; #causes = []; #peeking = false;
+  #sheet; #progress = null; #greek; #glass; #items = []; #causes = []; #peeking = false;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root
   constructor(host, root, { onState, onProgress } = {}) {
@@ -177,6 +178,7 @@ export class Blueprint {
     this.#sheet.addEventListener('pointerout', (e) => { if (e.target.closest?.('.cause') && !e.relatedTarget?.closest?.('.cause')) this.#marks.spotlight([]); });
     this.#layer.append(this.#scan, this.#sheet);
     root.appendChild(this.#layer);
+    this.#glass = new Glass(root, host);
     this.#greek = new Greek(this.#layer);
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#stamp(); }, onProgress: (p) => { this.#progress = p; this.#stamp(); this.#onProgress?.(p); } });
@@ -187,6 +189,9 @@ export class Blueprint {
   }
   get marks() {
     return this.#marks;
+  }
+  yieldInput(on) {
+    this.#glass.yieldTo(on);
   }
   get active() {
     return this.#state === 'entering' || this.#state === 'on';
@@ -233,6 +238,7 @@ export class Blueprint {
       addEventListener('pointermove', this.#point, { passive: true });
       document.addEventListener('pointerleave', this.#unpoint);
     } else this.#reader.refresh(); // turned back on mid-sweep: draw what's already read
+    this.#glass.on();
     html.setAttribute('data-plumb-blueprint', '');
     this.#set('entering');
     this.#run('in', instant);
@@ -241,6 +247,7 @@ export class Blueprint {
   leave({ instant = false } = {}) {
     if (!this.active) return;
     this.peek(false);
+    this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the sweep
     document.documentElement.removeAttribute('data-plumb-blueprint');
     this.#sheet.removeAttribute('data-on');
     this.#greek.stop(); // the words are back the moment the ink goes
@@ -392,6 +399,7 @@ export class Blueprint {
   #teardown() {
     const html = document.documentElement;
     this.peek(false);
+    this.#glass.off();
     this.#reader.stop();
     this.#marks.clear();
     removeEventListener('scroll', this.#invalidate, { capture: true });

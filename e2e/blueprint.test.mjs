@@ -120,7 +120,8 @@ test('Alt+B draws every drift in view where it lives, and the dock counts them',
   assert.ok(sync && chip, `both drifting elements are washed: ${JSON.stringify({ sync, chip })}`);
   assert.equal(sync.heat, 0.42, 'five drifts including a raw shadow and colour: the warmest stop');
   assert.ok(sync.opacity === sync.heat && chip.opacity === chip.heat, 'nothing is lifted before pointing');
-  await page.locator('#sync-row').hover();
+  const sb = await page.locator('#sync-row').boundingBox();
+  await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); // the page is under glass: the pointer, not a hover
   await page.waitForFunction(() => { const r = document.getElementById('sync-row').getBoundingClientRect(); return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp svg.wash rect')].some((w) => Math.abs(+w.getAttribute('x') - r.left) < 1 && Math.abs(+w.getAttribute('y') - r.top) < 1 && w.getAttribute('fill-opacity') === '0'); }, null, { timeout: 3000 });
   assert.equal((await washOf('beta-chip')).opacity, chip.heat, 'only the pointed element and its ancestors lift');
   await page.mouse.move(5, 700);
@@ -597,4 +598,77 @@ test('A weight reads as a number in the chooser, never as pixels', { timeout: 90
   assert.equal((await ch.locator('.change .delta').innerText()).trim(), '600');
   await page.keyboard.press('Escape');
   assert.deepEqual(errors, []);
+});
+
+test('While blueprint is on the page is read, not used: clicks, hovers and keys stay out, scroll works, Space lets the page through', { timeout: 90000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const bench = `<div id="bench" style="position:fixed;left:12px;top:320px;width:220px;background:#fff">
+    <button id="poke" onclick="this.dataset.n = +(this.dataset.n || 0) + 1">Poke</button>
+    <input id="field">
+    <div id="box" style="height:80px;overflow:auto"><div style="height:600px">tall</div></div>
+  </div><div style="height:3000px"></div>`;
+  const { url } = await demo(t, { html: (s) => s.replace('</body>', `${bench}</body>`) });
+  const { page, errors } = await open(t, launched, url);
+  const before = await footprint(page);
+  const centre = async (sel) => { const b = await page.locator(sel).boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+  const pokes = () => page.locator('#poke').evaluate((el) => +(el.dataset.n || 0));
+
+  await page.locator('#field').focus();
+  await page.keyboard.press('Alt+B');
+  assert.equal(await page.evaluate(() => document.activeElement?.id ?? ''), '', 'what had focus on the page lets go of it');
+
+  // a click on a button, and a hover over it, never reach it
+  const poke = await centre('#poke');
+  await page.mouse.move(...poke);
+  assert.equal(await page.locator('#poke').evaluate((el) => el.matches(':hover')), false, 'the page shows no hover');
+  await page.mouse.click(...poke);
+  assert.equal(await pokes(), 0, 'the click did not press the button');
+  // typing lands nowhere on the page
+  await page.mouse.click(...(await centre('#field')));
+  await page.keyboard.type('abc');
+  assert.equal(await page.locator('#field').inputValue(), '', 'no key reached the field');
+
+  // the wheel scrolls what is under it: the inner box first, then the page
+  await page.mouse.move(...(await centre('#box')));
+  await page.mouse.wheel(0, 120);
+  await page.waitForFunction(() => document.querySelector('#box').scrollTop > 0, null, { timeout: 3000 });
+  assert.equal(await page.evaluate(() => scrollY), 0, 'the inner box took the wheel, not the page');
+  await page.mouse.move(600, 300);
+  await page.mouse.wheel(0, 400);
+  await page.waitForFunction(() => scrollY > 0, null, { timeout: 3000 });
+
+  // holding Space lets the page through, for as long as it's held
+  await page.keyboard.down('Space');
+  await page.mouse.click(...poke);
+  assert.equal(await pokes(), 1, 'with Space held the click pressed the button');
+  await page.keyboard.up('Space');
+  await page.mouse.click(...poke);
+  assert.equal(await pokes(), 1, 'letting go of Space makes the page inert again');
+
+  // leaving gives the page back, and leaves nothing behind
+  await page.keyboard.press('Alt+B');
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-plumb-field'));
+  await page.mouse.click(...poke);
+  assert.equal(await pokes(), 2, 'after leaving, the page is used as normal');
+  await page.locator('#field').focus();
+  await page.keyboard.type('ok');
+  assert.equal(await page.locator('#field').inputValue(), 'ok');
+  await page.evaluate(() => scrollTo(0, 0));
+  assert.equal(await footprint(page), before);
+  assert.deepEqual(errors, []);
+});
+
+test('Alt-select still picks an element while blueprint is on', { timeout: 90000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await demo(t);
+  const { page } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  const b = await page.locator('#sync-row').boundingBox();
+  await page.keyboard.down('Alt');
+  await page.mouse.move(b.x + 4, b.y + b.height / 2);
+  await page.mouse.click(b.x + 4, b.y + b.height / 2);
+  await page.keyboard.up('Alt');
+  await page.waitForFunction(() => { const el = window.__plumb.overlay.pinnedElement; return !!el && document.querySelector('#sync-row').contains(el); }, null, { timeout: 10000 });
 });
