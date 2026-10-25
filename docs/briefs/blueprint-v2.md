@@ -23,3 +23,39 @@ Status: design, 2026-10-24. Owner feedback and decisions; replaces the 2026-10-1
    the whole group; Write applies one choice to every site, one apply per file, reviewed per file; groups that can't
    be fixed here (set in code) are one quiet count at the bottom. Proof: Relay's board shows p-[10px] as one group of
    20 sites; one Write fixes all 20 in one file write.
+
+## Layer 2 in detail: the quiet look
+
+**What goes.** The blue field and grid (`html::before`), the re-inking of the page (`data-plumb-ink`, `data-plumb-text`,
+`data-plumb-drawn`, `data-plumb-col`, the host stylesheet), the scan line and sweep, greeked text bars, the red wash,
+mint ghosts, the margin rails, on-system gap dimensions, the count badges and hold-D peek. Blueprint then writes
+**nothing** to the host page: no stylesheet, no attribute, no inline style. Everything is drawn in the overlay's shadow
+root.
+
+**Primitives** (in `tokens.css`, so they're shared with the rest of the overlay):
+| Token | Value | Why |
+| --- | --- | --- |
+| `--pl-scrim` | `rgb(20 20 22 / 0.46)` | One dim over any page; the page stays recognisable, light or dark |
+| `--pl-dim-filter` | `grayscale(1)` | Colour is reserved for drift, so the page gives its colour up |
+| `--pl-dur-dim` | `160ms`, `--pl-ease-out` | Fade in; leaving takes 120ms; reduced motion is instant |
+| drift ink | `--pl-off` | New drift, the same red the card uses for off the scale |
+| soft ink | `--pl-soft` | Tailwind defaults and the wrong tier, as in the card |
+| debt ink | `--pl-ink-3`, dashed | Recorded debt: present, quiet |
+| chosen / picked | `--pl-accent` / `--pl-on` | Same meaning as in the chooser |
+| halo | `--pl-halo`, 2px wider | Every line reads on any page |
+| label | `--pl-tag-h`, `--pl-radius-tag`, `--pl-card-code` | The overlay's tag, not a new shape |
+
+**The one component: a drifted element.**
+- **Rest:** cut out of the dim (full colour, full brightness), outlined 1.5px in its ink on a halo, at its own corner
+  radius. One label above its top-left corner: the first drift's class (`p-[10px]`) and `+n` for the rest. Breaks
+  (dimension lines, arcs, brackets) are drawn in the same ink, with no ghosts.
+- **Nesting:** only the outermost drifted element cuts the dim; a drifted child is already lit and gets only its
+  outline and label.
+- **Hover a break:** the note beside it (unchanged content) on the overlay's card surface.
+- **Focus a break (Tab):** a 2px accent ring on its hit area.
+- **Chosen:** its breaks turn accent. **Picked:** its breaks turn `--pl-on`; the label shows `→ token`.
+- **Written:** it fades out as the re-read drops it.
+- **Spotlit** (a cause is pointed at in the sheet): a 2px accent outline.
+- **Crowded labels:** a label that would cover another steps below it; a label with no room above sits inside the top.
+- **Empty:** a view with no drift: no cutouts, the dim alone, the dock says "all true".
+- **Loading:** the dim goes on at once; elements light up as their readings arrive.
