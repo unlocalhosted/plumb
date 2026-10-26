@@ -45,7 +45,14 @@ export interface ClassesResult {
 export interface ApplyTextOptions { file: string; hash: string; run: string; from: string; to: string }
 export interface ApplyTextAtOptions { file: string; hash: string; id: string; from: string; to: string }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
-export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
+/** Names one recorded write so it can be undone after the fact. */
+export interface UndoHandle { id: string; file: string; label: string }
+export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle }
+export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
+export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
+interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
+const historyLimit = 20;
+const shorten = (text: string) => { const one = text.replace(/\s+/g, ' ').trim(); return one.length > 40 ? one.slice(0, 39) + '…' : one; };
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
@@ -88,6 +95,8 @@ export class Session extends EventEmitter {
   private patternsDirty = true;
   private lastStats: unknown;
   private revision = 0;
+  private written: Recorded[] = [];
+  private writes = 0;
   private native = false;
   private events = new Set<string>();
   private inventoryDirty = false;
@@ -553,7 +562,7 @@ export class Session extends EventEmitter {
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
       const identity = await this.editableFile(file);
       const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, siteLine: number;
+      let next: string, siteLine: number, before: string;
       try {
         const info = await handle.stat();
         if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
@@ -564,6 +573,7 @@ export class Session extends EventEmitter {
         while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
         const source = bytes.subarray(0, offset).toString('utf8');
         if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+        before = source;
         const { start, end, replacement, at } = find(file, source);
         next = source.slice(0, start) + replacement + source.slice(end);
         siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
@@ -574,7 +584,8 @@ export class Session extends EventEmitter {
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining };
+      const undo = this.record(file, before, snapshot.hash, siteLine, `“${shorten(from)}” → “${shorten(to)}”`);
+      return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
   }
   async apply(options: ApplyOptions): Promise<ApplyResult> {
@@ -597,7 +608,7 @@ export class Session extends EventEmitter {
       // Refuse aliases and hard links, and hold the source descriptor throughout the write.
       const identity = await this.editableFile(file);
       const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string;
+      let next: string, before: string;
       try {
         const info = await handle.stat();
         if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
@@ -608,6 +619,7 @@ export class Session extends EventEmitter {
         while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
         const source = bytes.subarray(0, offset).toString('utf8');
         if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+        before = source;
         next = source;
         for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
         await this.sameFile(file, identity);
@@ -626,7 +638,53 @@ export class Session extends EventEmitter {
       });
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining };
+      const undo = this.record(file, before, snapshot.hash, sites[0]!.line, ordered.map(edit => `${shorten(edit.from)} → ${shorten(edit.to)}`).join(', '));
+      return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining, undo };
+    });
+  }
+  /** Remember the file as it was, so this write can be taken back while nothing has touched it since. */
+  private record(path: string, before: string, hashAfter: string, line: number, label: string): UndoHandle {
+    const file = relative(this.root, path).replaceAll('\\', '/');
+    const id = `w${++this.writes}`;
+    this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
+    if (this.written.length > historyLimit) this.written.splice(0, this.written.length - historyLimit);
+    return { id, file, label };
+  }
+  /** Recent writes, newest first. */
+  history(): Promise<{ writes: HistoryEntry[] }> {
+    return Promise.resolve({ writes: this.written.toReversed().map(({ id, file, line, label, at }) => ({ id, file, line, label, at })) });
+  }
+  /** Restore the file as it was before a write, when nothing has changed it since. Goes through the same guards as a write. */
+  undo(id: string): Promise<UndoResult> {
+    if (typeof id !== 'string' || !id.trim()) throw new UsageError('Undo requires the id of a write.');
+    return this.serialize(async () => {
+      const entry = this.written.find(item => item.id === id);
+      if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.');
+      const file = this.file(entry.path);
+      await this.editableFile(file);
+      if (sourceHash(await readFile(file, 'utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+      await this.reconcile([file]);
+      if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+      const identity = await this.editableFile(file);
+      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+        await this.sameFile(file, identity);
+        const bytes = Buffer.alloc(info.size);
+        let offset = 0;
+        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
+        if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+        await this.sameFile(file, identity);
+        await handle.writeFile(entry.before, 'utf8'); await handle.truncate(Buffer.byteLength(entry.before));
+        await this.sameFile(file, identity);
+      } finally { await handle.close(); }
+      this.written = this.written.filter(item => item.id !== id);
+      await this.reconcile([file]);
+      const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
+      if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+      return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
     });
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
