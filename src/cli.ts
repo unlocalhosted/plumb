@@ -56,6 +56,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber show <key|rule> | why <file:line>
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
        plumber check [--sarif | --agent | --format github]
+       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
@@ -90,13 +91,16 @@ async function main(): Promise<void> {
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
+          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' },
           overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
       const probe = parseArgs({ options: { ...options, agent: { type: 'string', multiple: true } }, strict: false, allowPositionals: true });
       return parseArgs({
-        options: { ...options, agent: probe.positionals[0] === 'install' ? { type: 'string', multiple: true } : { type: 'boolean' } },
+        options: { ...options, agent: probe.positionals[0] === 'install' ? { type: 'string', multiple: true } : { type: 'boolean' },
+          // craft writes its SARIF to a file; check prints it
+          ...(probe.positionals[0] === 'craft' ? { sarif: { type: 'string' } } : {}) } as typeof options & { agent: { type: 'boolean' } },
         allowPositionals: true,
         strict: true,
       });
@@ -122,7 +126,7 @@ async function main(): Promise<void> {
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   if (args.values.family !== undefined && (!(deciding || command === 'check') || !families.includes(args.values.family))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
-  if ((explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
+  if (command === 'craft' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
@@ -132,7 +136,7 @@ async function main(): Promise<void> {
     throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.\n  → plumber ${commands[0]} --help`);
   }
   if (args.values.format !== undefined && args.values.format !== (comparingTokens ? 'dtcg' : 'github')) throw new UsageError(comparingTokens ? '--format supports dtcg for plumber parity.\n  → plumber parity tokens.json --format dtcg' : '--format supports github.\n  → plumber check --format github');
-  if ([args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.\n  → plumber check --json');
+  if (command !== 'craft' && [args.values.json, args.values.sarif, args.values.agent, !comparingTokens && args.values.format !== undefined].filter(Boolean).length > 1) throw new UsageError('Choose one of --json, --sarif, --agent, or --format github.\n  → plumber check --json');
   if (args.values.json && args.values.markdown) throw new UsageError('Choose --json or --markdown.\n  → plumber report --markdown');
   if (args.values.since?.trim() === '') throw new UsageError('Provide a non-empty Git ref for --since.\n  → plumber report --since HEAD');
   if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumber parity.\n  → plumber parity tokens.json');
@@ -147,7 +151,8 @@ async function main(): Promise<void> {
   for (const name of ['root', 'config', 'served-root'] as const) {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
-  const project = await cliProject(args.values.root);
+  // craft reads a running page, not the project: no workspace to choose, the root only shortens paths
+  const project = command === 'craft' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root);
   if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.
@@ -172,6 +177,26 @@ async function main(): Promise<void> {
       loaded.presets?.length ? loaded.presets.map(preset => `${preset.name}  ${count(preset.decisions, 'token')} (${preset.exported} published), ${count(preset.components.contracts.length, 'contract')}, ${count(preset.imitation.length, 'fingerprint')}, ${count(preset.habits.length, 'habit')}\n` +
         `  source: ${preset.source}\n  components: ${preset.components.from.join(', ') || 'none'}\n` +
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
+    return;
+  }
+  if (command === 'craft') {
+    // The craft engine over a running dev server's pages, in headless Chromium (docs/briefs/craft-engine.md, layer 5)
+    if (!args.values.url?.trim()) throw new UsageError('Provide the dev server address for plumber craft.\n  → plumber craft --url http://localhost:5173/');
+    try { new URL(args.values.url); } catch { throw new UsageError(`--url ${args.values.url}: not an address.\n  → plumber craft --url http://localhost:5173/`); }
+    const timeout = args.values.timeout === undefined ? 60000 : Number(args.values.timeout);
+    if (!Number.isInteger(timeout) || timeout < 1000) throw new UsageError('--timeout is milliseconds, at least 1000.\n  → plumber craft --url <address> --timeout 60000');
+    const sarifFile = (args.values.sarif as unknown as string | boolean | undefined);
+    if (sarifFile !== undefined && (typeof sarifFile !== 'string' || !sarifFile.trim())) throw new UsageError('--sarif needs a file to write.\n  → plumber craft --url <address> --sarif craft.sarif');
+    const routes = [...(args.values.routes ?? []), ...args.positionals.slice(1)].flatMap(route => route.split(',')).filter(Boolean);
+    const { craftRun, craftFindings, craftReport, formatCraft } = await import('./craft-run.js');
+    const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout });
+    const findings = craftFindings(pages, options.root);
+    if (typeof sarifFile === 'string') {
+      const { atomicWrite } = await import('./atomic-write.js');
+      await atomicWrite(resolve(sarifFile), `${JSON.stringify(sarif(craftReport(options.root, findings)), null, 2)}\n`);
+    }
+    process.stdout.write(args.values.json ? `${JSON.stringify({ schemaVersion: 1, tool, root: options.root, routes: pages, findings }, null, 2)}\n` : formatCraft(pages, findings, options.root));
+    process.exitCode = findings.length ? 1 : 0;
     return;
   }
   if (command === 'install' && args.values.overlay) {
