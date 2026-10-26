@@ -7,6 +7,7 @@ const report = [...text, 'json'];
 export const commandFlags: Record<string, readonly string[]> = {
   check: [...report, 'base', 'changed', 'agent', 'sarif', 'format', 'strict-ledger', 'watch', 'all', 'broken', 'family', 'file', 'rule', 'new', 'debt'],
   presets: report,
+  state: report,
   habits: report,
   decisions: [...report, 'family'],
   explain: report,

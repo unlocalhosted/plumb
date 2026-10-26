@@ -40,6 +40,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
        plumber check --watch [--json|--agent] [--root <dir>]
+       plumber state [--json] [--root <dir>] [--config <path>]
        plumber habits [--json] [--root <dir>] [--config <path>]
        plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumber explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -152,7 +153,7 @@ async function main(): Promise<void> {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
   // craft reads a running page, not the project: no workspace to choose, the root only shortens paths
-  const project = command === 'craft' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root);
+  const project = command === 'craft' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
   if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.
@@ -177,6 +178,13 @@ async function main(): Promise<void> {
       loaded.presets?.length ? loaded.presets.map(preset => `${preset.name}  ${count(preset.decisions, 'token')} (${preset.exported} published), ${count(preset.components.contracts.length, 'contract')}, ${count(preset.imitation.length, 'fingerprint')}, ${count(preset.habits.length, 'habit')}\n` +
         `  source: ${preset.source}\n  components: ${preset.components.from.join(', ') || 'none'}\n` +
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
+    return;
+  }
+  if (command === 'state') {
+    // Names the starting state of the project from evidence (docs/briefs/onboarding.md). Reads only; a workspace root lists its apps.
+    const { readState, formatState } = await import('./onboarding/state.js');
+    const state = await withCliProgress(options.root, !!args.values.json, () => readState({ root: options.root, ...(options.config ? { config: options.config } : {}) }));
+    process.stdout.write(args.values.json ? `${JSON.stringify(state, null, 2)}\n` : formatState(state, rows => table(rows, [{ width: 9 }, { weight: 2 }, { width: 5, align: 'right' }, { width: 9, ink: 'dim' }])));
     return;
   }
   if (command === 'craft') {
@@ -252,6 +260,11 @@ async function main(): Promise<void> {
     process.stdout.write(args.values.json ? `${JSON.stringify(trend, null, 2)}\n` : trendMarkdown(trend));
     return;
   }
+  // The state line under the check header. It must never stop a check from reporting.
+  const stateSentence = async (report: import('./report.js').Report, config?: string): Promise<string | undefined> => {
+    try { return (await (await import('./onboarding/state.js')).readState({ root: report.root, ...(config ? { config } : {}), report })).sentence; }
+    catch { return undefined; }
+  };
   const emitCheck = async (report: import('./report.js').Report): Promise<void> => {
     if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
     else if (args.values.agent) process.stdout.write(formatAgent(report));
@@ -265,7 +278,7 @@ async function main(): Promise<void> {
     } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatCheck(report, {
       ...Object.fromEntries(['all', 'broken', 'family', 'file', 'rule', 'new', 'debt'].filter(flag => args.values[flag as keyof typeof args.values] !== undefined)
         .map(flag => [flag, args.values[flag as keyof typeof args.values]])),
-    }, args.values.verbose));
+    }, args.values.verbose, await stateSentence(report, options.config)));
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
   };
   if (args.values.watch) {
