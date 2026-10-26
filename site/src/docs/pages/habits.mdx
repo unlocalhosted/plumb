@@ -26,6 +26,8 @@ With no `habits`, no habit runs. `npx plumber habits` lists all nine, how many t
 | `safe-area-fallback` | error | `env(safe-area-inset-*)` with no fallback |
 | `overflow-clip` | warn | a decorative `overflow: hidden` that also creates a scroll container |
 | `overscroll-contain` | warn | a scrolling area whose scroll leaks to the page behind it |
+| `tracking-em` | warn | letter spacing written in px, which does not scale with the type |
+| `color-scheme` | warn | a dark theme that never sets `color-scheme`, so scrollbars and controls stay light |
 
 The first four are the ones `init` proposes.
 

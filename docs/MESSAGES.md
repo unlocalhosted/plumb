@@ -340,6 +340,8 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 - viewport-dynamic: `` `{value}` uses vh, which jumps on mobile `` · Mobile toolbars change the viewport height. · Human fixes show the complete declaration for dynamic, smallest and largest viewports, preserving expressions and choosing the matching height/width unit (`height: 100dvh`, `width: 100dvw`).
 - overflow-clip: `` `overflow-hidden` on {owner} creates a scroll container `` · It breaks position: sticky inside and still allows script scrolling. · Use overflow-clip if nothing scrolls it; at declaration sites, name the full declaration (`Use overflow: clip if nothing scrolls it`).
 - overscroll-contain: `` {owner} scrolls, and its scroll leaks to the page `` · Reaching its edge scrolls the page behind it. · Add overscroll-contain; at declaration sites, name the matching property and value (`Add overscroll-behavior-y: contain`).
+- tracking-em: `` `{authored}` sets letter spacing in px `` · Letter spacing in px stays the same at every size, so large type looks loose and small type cramped. · Use em so the tracking scales with the type.
+- color-scheme: `` The dark theme never sets color-scheme `` · Without color-scheme a dark theme keeps light scrollbars, form controls and autofill. · Add scheme-dark where the dark theme applies (or color-scheme: dark).
 - transition-named, no-ease-in, safe-area-fallback: same shape from the habit's reason.
 - Custom habits: Title = `` `{site}` breaks {habit id} ``, Because = the habit's message.
 
