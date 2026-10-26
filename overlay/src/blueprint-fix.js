@@ -17,6 +17,9 @@
  *             Arrows move, Enter opens that drift's chooser, Backspace unpicks, the foot holds Before, Undo, Write.
  *             It is the same queue the marks show, in rows; nothing lives only in the list
  *  before     the page as source has it while on; picks stay queued and their marks stay mint
+ *  group      opened from the panel for a cause (blueprint-panel.js), the chooser fixes every site of it at once: the
+ *             card says how many places and source lines it reaches, and a pick is made at every site, each from
+ *             its own reading. Sites drawn by one JSX line share one edit, written once
  *  leave      leaving blueprint lifts every preview and drops the queue: nothing is left on the page
  * ───────────────────────────────────────────────────────── */
 import { post } from './api.js';
@@ -41,6 +44,8 @@ export const FIX_CSS = `
   .ch .top .ledger { margin-top: 2px; }
   .ch .top .close { margin-top: -3px; }
   .ch .read { padding: 10px 12px 12px; }
+  .ch .grp { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-3) 12px; border-bottom: 1px solid var(--pl-rule); background: var(--pl-paper-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .ch .grp b { color: var(--pl-ink); font-weight: 600; }
   .ch .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); }
   .ch .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-ink-2); }
   .ch .foot { border-top: 1px solid var(--pl-rule); gap: 6px; }
@@ -128,15 +133,18 @@ export class Fixer {
   get stale() { return [...this.#picks].some(p => p.state === 'stale'); }
   // picks that Write would send
   writable() { return [...this.#picks].filter(p => p.state === 'picked' && p.choice.edit); }
+  // the edits Write would make: sites drawn by one JSX line share one
+  edits() { return new Set(this.writable().map(p => `${p.file}#${p.choice.edit.id}`)).size; }
   get count() { return [...this.#picks].filter(p => p.state !== 'written').length; }
   occluders() { return [this.#el, this.#list].filter(e => !e.hidden).map(e => e.getBoundingClientRect()); }
 
   // ── the chooser ──────────────────────────────────────────
-  async open(el, mark, id) {
+  // group: every site of the cause, [{ el, mark, id }], when opened from the panel
+  async open(el, mark, id, { group = null } = {}) {
     this.#host.close();
-    if (this.#open && this.#open.el === el && this.#open.key === mark.key) return;
+    if (this.#open && this.#open.el === el && this.#open.key === mark.key && !group === !this.#open.group) return;
     const from = this.#open ? this.#el.getBoundingClientRect() : null;
-    this.#open = { el, id, key: mark.key, mark, full: null, hash: null, file: null };
+    this.#open = { el, id, key: mark.key, mark, full: null, hash: null, file: null, group: group && group.length > 1 ? group : null };
     this.#marks.invalidate();
     this.#render(from ? 'moving' : 'opening');
     this.#follow();
@@ -190,7 +198,7 @@ export class Fixer {
     const o = this.#open; if (!o) return;
     const el = this.#el, m = o.full;
     const order = this.#marks.order(), at = order.findIndex(x => x.id === o.id), n = order.length;
-    const writable = this.writable().length;
+    const writable = this.edits();
     const title = (m ?? o.mark).title;
     // focus stays with the chooser across its renders: on the card while reading, then on a step
     const held = state || el.contains(this.#root.activeElement) || !this.#root.activeElement;
@@ -199,6 +207,7 @@ export class Fixer {
       <div class="top">${glyph((m ?? o.mark).glyph, tone || 'off')}<span class="title">${code(title)}</span>
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
+      ${o.group ? `<div class="grp"><span>Fixes <b>${plural(o.group.length, 'place')}</b> · ${plural(new Set(o.group.map(g => g.el.getAttribute('data-plumb-source')?.split('#')[0] ?? g.id)).size, 'source line')}</span></div>` : ''}
       <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}`
         : `<p class="empty">${esc(o.message ?? 'Reading…')}</p>`}</div>
       <div class="foot">
@@ -337,26 +346,6 @@ export class Fixer {
     for (const pick of this.#byEl.get(el)?.values() ?? []) this.#set(el, pick.mark.props, pick.choice.value);
   }
 
-  // The whole view as designed, held: every new drift in view takes its nearest token at once (a pick keeps its
-  // pick), so the page re-lays out the way it would after the fixes. Release puts it back.
-  #peeked = null;
-  peekAll(items) {
-    if (this.#before || this.#peeked) return;
-    this.#peeked = new Set();
-    for (const { el, marks } of items) for (const m of marks) {
-      if (m.ledger !== 'new' || this.#byEl.get(el)?.get(m.key)) continue;
-      const fit = (m.choices ?? []).filter(c => c.n !== undefined);
-      const c = m.pick !== null && m.pick !== undefined ? m.choices[m.pick] : m.n !== undefined && fit.length ? fit.reduce((best, x) => Math.abs(x.n - m.n) < Math.abs(best.n - m.n) ? x : best) : undefined;
-      if (!c) continue;
-      this.#set(el, m.props, c.value);
-      this.#peeked.add(el);
-    }
-  }
-  unpeekAll() {
-    for (const el of this.#peeked ?? []) this.#repaint(el);
-    this.#peeked = null;
-  }
-
   peek(j) {
     const o = this.#open; if (!o?.full || this.#before) return;
     const c = o.full.choices[j]; if (!c) return;
@@ -383,7 +372,28 @@ export class Fixer {
     this.#picks.add(pick);
     if (this.#status?.kind !== 'writing') this.#status = null;
     this.#repaint(o.el);
-    this.#host.announce(`Picked ${c.edit?.to ?? c.label} for ${o.full.text}`);
+    this.#host.announce(`Picked ${c.edit?.to ?? c.label} for ${o.full.text}${o.group ? ` at ${plural(o.group.length, 'place')}` : ''}`);
+    this.#sync();
+    if (o.group) this.#pickGroup(o, c);
+  }
+  // The same choice at every other site of the group, each from its own reading (its own edit, file and hash).
+  async #pickGroup(o, c) {
+    for (const g of o.group) {
+      if (g.el === o.el && g.mark.key === o.key) continue;
+      const full = await this.#host.read(g.el).catch(() => null);
+      if (this.#open !== o || full?.status !== 'ready') continue;
+      const m = full.marks.find(x => x.key === g.mark.key);
+      const gc = m?.choices.find(x => x.value === c.value && (x.edit?.to ?? x.label) === (c.edit?.to ?? c.label)) ?? m?.choices.find(x => x.value === c.value);
+      if (!gc) continue;
+      let byKey = this.#byEl.get(g.el);
+      if (!byKey) this.#byEl.set(g.el, (byKey = new Map()));
+      const prior = byKey.get(g.mark.key);
+      if (prior) this.#picks.delete(prior);
+      const pick = { el: g.el, key: g.mark.key, file: full.file, hash: full.hash, mark: structuredClone(m), j: m.choices.indexOf(gc), choice: gc, state: 'picked' };
+      byKey.set(g.mark.key, pick);
+      this.#picks.add(pick);
+      this.#repaint(g.el);
+    }
     this.#sync();
   }
   // After the queue changes: the marks redraw, the dock recounts, the chooser and the list follow.
@@ -449,7 +459,7 @@ export class Fixer {
     if (this.#before) this.flip(false);
     const byFile = new Map();
     for (const p of picks) (byFile.get(p.file) ?? byFile.set(p.file, []).get(p.file)).push(p);
-    const n = picks.length;
+    const n = new Set(picks.map(p => `${p.file}#${p.choice.edit.id}`)).size;
     this.#status = { kind: 'writing', text: `Writing ${plural(n, 'edit')}…` };
     this.#host.changed(); this.#render(); this.#renderList();
     const wrote = [], refused = [];
@@ -458,9 +468,10 @@ export class Fixer {
       // the newest reading of the file decides the hash; the server refuses anything older
       const hash = group.map(p => p.hash).at(-1);
       try {
-        await post('apply', { file, hash, edits: group.map(p => ({ id: p.choice.edit.id })) });
+        // sites drawn by one JSX line carry the same edit: it is sent once
+        await post('apply', { file, hash, edits: [...new Set(group.map(p => p.choice.edit.id))].map(id => ({ id })) });
         for (const p of group) p.state = 'written';
-        wrote.push({ file, n: group.length });
+        wrote.push({ file, n: new Set(group.map(p => p.choice.edit.id)).size });
         this.#host.forget();
         this.#invalidate({ file });
         this.#liftWhenReloaded(group);
@@ -574,7 +585,7 @@ export class Fixer {
     const list = this.#list, order = this.#marks.order();
     const had = list.contains(this.#root.activeElement) ? this.#root.activeElement?.dataset.id : null;
     const picked = this.count, off = order.filter(o => o.mark.ledger === 'new').length;
-    const writable = this.writable().length, writing = this.#status?.kind === 'writing';
+    const writable = this.edits(), writing = this.#status?.kind === 'writing';
     const byFile = new Map();
     for (const o of order) (byFile.get(o.file ?? '') ?? byFile.set(o.file ?? '', []).get(o.file ?? '')).push(o);
     const row = o => {

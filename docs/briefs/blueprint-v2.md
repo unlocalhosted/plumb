@@ -59,3 +59,23 @@ root.
 - **Crowded labels:** a label that would cover another steps below it; a label with no room above sits inside the top.
 - **Empty:** a view with no drift: no cutouts, the dim alone, the dock says "all true".
 - **Loading:** the dim goes on at once; elements light up as their readings arrive.
+
+## As built (2026-10-26)
+- **Layer 1, input** (`blueprint-glass.js`): a glass sheet first in the shadow root takes pointer input; the wheel is
+  handed to whatever scrolls under the pointer; plain keys aimed at the page are held back; Space passes through;
+  Alt-select makes the glass step aside.
+- **Layer 2, the look** (`blueprint-marks.js`): one dim (`--pl-scrim`, `--pl-dim-filter`) first in the shadow root,
+  under the dock and every card; drifted elements cut out of it. Two rules found by looking at Relay at 793px:
+  - *Drawn where it can be seen.* Every mark starts from the element's visible box: cut to the view and its scroll
+    containers, and with anything the page paints over it (a drawer, a sticky header) cut away, by sampling five
+    points with `elementsFromPoint`. A fully covered element draws nothing and has no hit area.
+  - *Labels for things, not parts.* An element at least 32px tall (a card, a row, a column) carries one legend label,
+    `first-class +n`; a part (an avatar, a chip, a date) counts toward the thing that holds it. Labels sit on the top
+    edge unless that edge is cut or lies on something unrelated, never on another label, never wider than the
+    element, and at most 20 characters. Outlines sit under labels; break hit areas sit over them. Breaks show only
+    for the element pointed at or focused.
+- **Layer 3, the panel** (`blueprint-panel.js`): one row per cause (rule + class), most places first, with places and
+  source lines; J/K/arrows select and light a cause, scrolling a place into the free area left of the panel through
+  whichever container scrolls it; N walks the places; Enter opens one chooser for the whole cause; a pick is made at
+  every place from its own reading; Write sends each source line's edit once. Set-in-code drift is one count in the
+  foot. The panel replaces the bottom-left sheet.

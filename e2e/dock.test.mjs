@@ -124,3 +124,34 @@ test('the dock reads on dark pages and is still under reduced motion', { timeout
     return getComputedStyle(dock.querySelector('.bob')).animationName;
   }), 'pl-breathe', 'the mark breathes while React Plumber reads the project');
 });
+
+test('the dock never sits on the page\'s own controls: a button in its corner sends it to the other one, and back', { timeout: 60000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const url = await demo(t);
+  const page = await launched.newPage({ viewport: { width: 1200, height: 800 } });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
+  const side = () => page.evaluate(() => { const b = document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').getBoundingClientRect(); return b.left < innerWidth / 2 ? 'start' : 'end'; });
+  assert.equal(await side(), 'end');
+  // the app puts a button in the bottom-right corner
+  await page.evaluate(() => { const b = document.createElement('button'); b.id = 'corner'; b.textContent = 'Send feedback'; b.onclick = () => { b.dataset.pressed = 'yes'; }; b.style.cssText = 'position:fixed;right:16px;bottom:16px;width:200px;height:36px;z-index:5'; document.body.append(b); dispatchEvent(new Event('resize')); });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').getAttribute('data-side') === 'start', null, { timeout: 5000 });
+  assert.equal(await side(), 'start', 'the dock moved to the other corner');
+  await page.locator('#corner').click();
+  assert.equal(await page.locator('#corner').getAttribute('data-pressed'), 'yes', 'the page\'s button is reachable');
+  // the punch list rises from the dock's corner too
+  await page.keyboard.press('Alt+B');
+  await page.locator('plumb-overlay').locator('.dock .list').click();
+  const list = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.pl').getBoundingClientRect().left);
+  assert.ok(list < 40, `the list rises on the dock's side: ${list}`);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  // the button goes: the dock returns to its corner
+  await page.evaluate(() => { document.getElementById('corner').remove(); dispatchEvent(new Event('resize')); });
+  await page.waitForFunction(() => !document.querySelector('plumb-overlay').hasAttribute('data-side'), null, { timeout: 5000 });
+  assert.equal(await side(), 'end');
+  assert.deepEqual(errors, []);
+});

@@ -18,7 +18,7 @@
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
 const WALK = { step: 48, pause: 260 }; // px of scroll per level; ms of stillness that resets the travel
-const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000 };
+const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
 import { locate, componentOf } from './locate.js';
 import { request, post } from './api.js';
@@ -67,6 +67,10 @@ const css = `
   code { font: var(--pl-text-reading); }
 
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
+  /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
+     that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
+  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
           background: var(--pl-paper); color: var(--pl-ink-2); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
@@ -324,9 +328,15 @@ class PlumbOverlay extends HTMLElement {
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
+    // which bottom corner the dock takes: checked when the view or the route changes, and every few seconds, since a
+    // page can render a control into the corner at any time
+    addEventListener('resize', this.#sideSoon);
+    addEventListener('hashchange', this.#sideSoon);
+    addEventListener('popstate', this.#sideSoon);
+    this.#sideTimer = setInterval(this.#side, TIMING.side);
+    this.#sideSoon();
     addEventListener('keydown', this.#onKeyDown, true);
     addEventListener('keyup', this.#onKeyUp, true);
-    addEventListener('blur', this.#onBlur);
     addEventListener('blur', this.#disarm);
     addEventListener('dblclick', this.#onDblClick, true);
     this.#resume();
@@ -355,11 +365,38 @@ class PlumbOverlay extends HTMLElement {
     this.close(); this.#disarm();
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
-    removeEventListener('blur', this.#onBlur);
     removeEventListener('blur', this.#disarm);
     removeEventListener('dblclick', this.#onDblClick, true);
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
+    removeEventListener('resize', this.#sideSoon);
+    removeEventListener('hashchange', this.#sideSoon);
+    removeEventListener('popstate', this.#sideSoon);
+    clearInterval(this.#sideTimer); clearTimeout(this.#sideSoonTimer);
   }
+
+  // The bottom corner the dock takes: the end one, unless the page has something to press under it and the start
+  // corner has less. Read only: a 3×2 grid of points over the dock's box at each corner, through the overlay.
+  #sideTimer = 0; #sideSoonTimer = 0;
+  #sideSoon = () => { clearTimeout(this.#sideSoonTimer); this.#sideSoonTimer = setTimeout(this.#side, 200); };
+  #side = () => {
+    const dock = this.#$('.dock');
+    if (!dock?.isConnected) return;
+    const r = dock.getBoundingClientRect(), inset = 16, pad = 4;
+    if (!r.width) return;
+    const press = 'a[href], button, input, select, textarea, summary, label, [role="button"], [role="link"], [role="tab"], [role="switch"], [contenteditable=""], [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+    const hits = (left) => {
+      let n = 0;
+      for (const fx of [0, 0.5, 1]) for (const fy of [0, 1]) {
+        const x = left - pad + (r.width + 2 * pad) * fx, y = innerHeight - inset - r.height - pad + (r.height + 2 * pad) * fy;
+        const under = document.elementsFromPoint(Math.min(innerWidth - 1, Math.max(0, x)), Math.min(innerHeight - 1, Math.max(0, y))).find(e => !e.closest('plumb-overlay'));
+        if (under?.closest(press)) n++;
+      }
+      return n;
+    };
+    const end = hits(innerWidth - inset - r.width), start = hits(inset);
+    const want = end > start ? 'start' : null;
+    if (want !== this.getAttribute('data-side')) want ? this.setAttribute('data-side', want) : this.removeAttribute('data-side');
+  };
 
   #toggleBlueprint(options) {
     this.#ready?.dismiss();
@@ -390,14 +427,12 @@ class PlumbOverlay extends HTMLElement {
   get progress() { return this.#bp.progress; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.sheetRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
-  choose(element, mark, id) { return this.#fixer.open(element, mark, id); }
-  peekAll(items) { this.#fixer?.peekAll(items); }
-  unpeekAll() { this.#fixer?.unpeekAll(); }
+  choose(element, mark, id, options) { return this.#fixer.open(element, mark, id, options); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
-  changed() { this.#dock(); }
+  changed() { this.#dock(); this.#blueprint?.refresh(); }
   ordered() { this.#fixer?.ordered(); }
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); }
   announce(text) { this.#announce(text); }
@@ -477,7 +512,7 @@ class PlumbOverlay extends HTMLElement {
     const list = dock.querySelector('.list');
     list.hidden = !bp;
     list.setAttribute('aria-pressed', String(!!f?.listOpen));
-    const writable = f?.writable().length ?? 0, writing = fs?.kind === 'writing';
+    const writable = f?.edits() ?? 0, writing = fs?.kind === 'writing';
     undo.hidden = !(bp && f.count);
     undo.disabled = writing;
     write.hidden = !(bp && (writable || writing || f.stale));
@@ -592,24 +627,23 @@ class PlumbOverlay extends HTMLElement {
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
-    // D, held: the view as designed, every drift at its nearest token; release puts it back
-    if ((event.key === 'd' || event.key === 'D') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); if (!event.repeat) this.#blueprint.peek(true); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
     else if (event.key === 'Escape' && this.#fixer?.isOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.close(); }
+    // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
+    else if (this.#blueprint?.active && !this.#pinned && !this.#fixer?.isOpen && !this.#fixer?.listOpen && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event) && this.#blueprint.key(event.key)) { event.preventDefault(); event.stopPropagation(); }
     // L: the punch list, when nothing on the page is being typed into
     else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#ready?.close(); this.#fixer.toggleList(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
-  #onBlur = () => this.#blueprint?.peek(false); // a held key is lost with the window
   #typing(event) {
     const t = event.composedPath()[0];
     return !!t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.localName ?? ''));
   }
   // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
-  #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); if (event.key === 'd' || event.key === 'D') this.#blueprint?.peek(false); };
+  #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
 
   #arm(sticky = false) {
     this.#ready?.dismiss();

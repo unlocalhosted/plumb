@@ -83,6 +83,13 @@
   --pl-dur-card: 180ms;         /* card pins */
   --pl-dur-feedback: 120ms;     /* copy confirmation, row press */
 
+  /* blueprint: the page held under the instrument. One dim over any page, light or dark, which gives its colour up
+     so colour means drift; drifted elements are cut out of it (docs/briefs/blueprint-v2.md, layer 2) */
+  --pl-scrim: rgb(20 20 22 / 0.46);
+  --pl-dim-filter: grayscale(1);
+  --pl-dur-dim: 160ms;          /* the dim fades in; leaving is quicker */
+  --pl-dur-undim: 120ms;
+
   /* stacking: above everything on any page */
   --pl-z: 2147483647;
 

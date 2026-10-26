@@ -92,7 +92,7 @@ for (const host of ['vite', 'next']) for (const checked of [false, true]) test(`
   assert.equal(progress.checked + progress.notChecked, progress.total);
   assert.equal(progress.drift, 0); assert.equal(progress.on, 0);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .say').textContent.includes('not checked'));
-  const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.tally').textContent]; });
+  const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.bpp .meta').textContent]; });
   for (const text of blueprint) { assert.match(text, /not checked · outside source/); assert.doesNotMatch(text, /all true/); }
   const ready = await api(page, 'readiness');
   assert.equal(ready.status, 200, JSON.stringify(ready));
