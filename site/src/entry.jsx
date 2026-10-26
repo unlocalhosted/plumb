@@ -1,7 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import { DialRoot } from 'dialkit';
-import 'dialkit/styles.css';
 
 // Each page loads only when it's the one asked for: the homepage and the docs never carry the prototypes' code.
 const PAGES = {
@@ -14,10 +12,6 @@ const load = location.pathname.startsWith('/docs') ? () => import('./docs/Docs.j
 
 load().then((Page) =>
   createRoot(document.getElementById('root')).render(
-    <>
-      <Page />
-      {/* live tuning panels, development only */}
-      {import.meta.env.DEV && <DialRoot position="top-right" />}
-    </>,
+    <Page />,
   ),
 );

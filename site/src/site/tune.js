@@ -1,7 +1,5 @@
-// Live tuning in development, frozen constants in production. In dev, each call adds a DialKit panel so timings,
-// springs and shader values can be tuned on the page; in a production build it returns the defaults and DialKit
-// never loads. Values come back in the same shape as the config.
-import { useDialKit } from 'dialkit';
+// The tuned constants: each call returns the config's defaults, in the same shape as the config ([default, min, max]
+// becomes the default, a spring stays a spring, a folder stays a folder).
 
 const plain = (config) =>
   Object.fromEntries(
@@ -13,4 +11,4 @@ const plain = (config) =>
     }),
   );
 
-export const useTune = import.meta.env.DEV ? (name, config) => useDialKit(name, config) : (_name, config) => plain(config);
+export const useTune = (_name, config) => plain(config);
