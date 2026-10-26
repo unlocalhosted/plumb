@@ -23,7 +23,7 @@
 <script type="module">
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
-  import { BOXMODEL_CSS, boxModel, pointAt } from '../src/boxmodel.js';
+  import { BOXMODEL_CSS, BLOCK_ICONS, boxModel, pointAt } from '../src/boxmodel.js';
   import { PRIMITIVES_CSS, stepper, swatches, radius, segments, align, shadows, row, bind, place } from '../src/editor-primitives.js';
 
   const host = document.getElementById('board');
@@ -74,7 +74,7 @@
   const boxes = `<section class="card bxm"><div class="head">Box model</div>
     <div class="stage"><div class="spec" id="spec"><span class="a">Opus 5.5</span><span class="b">High</span></div></div>
     <div class="stage"><p class="para" id="para">Reasoned for six seconds across search, read, code and write.</p></div>
-    <div class="legend"><span><i class="k m"></i>margin</span><span><i class="k b"></i>border</span><span><i class="k p"></i>padding</span><span><i class="k g"></i>gap</span><span><i class="k t"></i>type</span><span><i class="k off"></i>off the scale</span><span class="hint">point at a band for its value</span></div>
+    <div class="legend">${[['m', 'margin'], ['p', 'padding'], ['g', 'gap'], ['b', 'border'], ['r', 'radius'], ['line', 'type'], ['c', 'size']].map(([k, w]) => `<span><i class="ki">${BLOCK_ICONS[k]}</i>${w}</span>`).join('')}<span><i class="ki off">${BLOCK_ICONS.p}</i>off the scale</span><span class="hint">point at a band for its value</span></div>
   </section>`;
   const scale = { spacing: [[0, 's0'], [4, 's1'], [8, 's2'], [12, 's3'], [16, 's4'], [20, 's5'], [24, 's6'], [32, 's8']], radius: [[4, 'sm'], [6, 'md'], [10, 'lg'], [14, 'xl']], type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg']] };
   const tokenOf = (family, n) => scale[family]?.find(([v]) => Math.abs(v - n) < 0.5)?.[1] ?? null;
@@ -85,14 +85,10 @@
     .bxm .para { max-width: 260px; margin: 0; font: 500 14px/20px var(--pl-sans); color: var(--pl-ink); }
     .bxm .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 8px 0 4px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
     .bxm .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .bxm .k { display: inline-block; width: 22px; height: 14px; border-radius: 3px; }
-    .bxm .k.m { background-image: radial-gradient(color-mix(in oklab, var(--pl-sky) 70%, transparent) 0.8px, transparent 1px); background-size: 4px 4px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
-    .bxm .k.b { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--pl-sky) 75%, transparent); }
-    .bxm .k.p { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-sky) 55%, transparent) 0 1px, transparent 1px 6px); }
-    .bxm .k.g { background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-sky) 60%, transparent) 0 1px, transparent 1px 4px); }
-    .bxm .k.off { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-coral) 70%, transparent) 0 1px, transparent 1px 6px); }
+    .bxm .ki { display: inline-block; width: 14px; height: 14px; color: var(--pl-sky); }
+    .bxm .ki svg { display: block; width: 100%; height: 100%; }
+    .bxm .ki.off { color: var(--pl-coral); }
     .bxm .legend .hint { margin-left: auto; color: var(--pl-ink-3); }
-    .bxm .k.t { background: color-mix(in oklab, var(--pl-lilac) 18%, transparent); border-bottom: 1px dashed var(--pl-lilac); }
     .lang .hues { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
     .lang .hue { display: grid; grid-template-columns: 22px 22px 52px 1fr; align-items: center; gap: 6px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
     .lang .hue b { color: var(--pl-ink); font: 600 12px var(--pl-mono); }

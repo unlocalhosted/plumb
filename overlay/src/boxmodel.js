@@ -5,11 +5,13 @@
  * blocks"): one pattern per block, the hue from the verdict. Read from the element's live layout, drawn in the
  * overlay, never on the page.
  *
- *  margin      the dot dither outside the border, per side
+ *  margin      a light tint outside the border, per side, with the margin icon (a dashed frame round a box)
  *  border      a band its own width, at the element's own radius
- *  padding     the 45° hatch between the border and the content, per side
+ *  padding     a deeper tint between the border and the content, per side, with the padding icon (a frame, a core)
  *  content     a 1px outline
- *  gap         stripes across each gap between the children
+ *  gap         the deepest tint across each gap between the children, with the gap icon (two bars, an arrow)
+ *  icons       BLOCK_ICONS, one per block, in the band's hue, in the middle of every band big enough to hold one;
+ *              the pointed-at pill carries the same icon before its value
  *  typography  each line box as a faint band, its baseline dashed
  *  name        a lilac tag above the top-left corner: the only words at rest
  *
@@ -22,20 +24,24 @@
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 
+const ICON = 12; // an icon's size on the page; a band too small for it keeps only its tint
+
 export const BOXMODEL_CSS = `
   .bm { position: fixed; inset: 0; pointer-events: none; }
   .bm > * { position: fixed; box-sizing: border-box; }
-  .bm .m { --c: var(--pl-sky); background-image: radial-gradient(color-mix(in oklab, var(--c) 70%, transparent) 0.8px, transparent 1px); background-size: 4px 4px; }
-  .bm .p { --c: var(--pl-sky); background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--c) 55%, transparent) 0 1px, transparent 1px 6px);
-    background-color: color-mix(in oklab, var(--c) 8%, transparent); }
-  .bm .g { --c: var(--pl-sky); background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--c) 60%, transparent) 0 1px, transparent 1px 4px); }
-  .bm .g.col { background-image: repeating-linear-gradient(0deg, color-mix(in oklab, var(--c) 60%, transparent) 0 1px, transparent 1px 4px); }
-  /* off the scale: coral, and stronger than sky, so the one wrong side is what the eye finds first */
+  /* each block a flat tint of its hue, one icon in it; margin lighter than padding, gaps between them */
+  .bm .m { --c: var(--pl-sky); background: color-mix(in oklab, var(--c) 9%, transparent); }
+  .bm .p { --c: var(--pl-sky); background: color-mix(in oklab, var(--c) 20%, transparent); }
+  .bm .g { --c: var(--pl-sky); background: color-mix(in oklab, var(--c) 30%, transparent); }
+  /* off the scale: coral, stronger than sky, so the one wrong side is what the eye finds first */
   .bm .off { --c: var(--pl-coral); }
-  .bm .p.off { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-coral) 85%, transparent) 0 1.5px, transparent 1.5px 5px);
-    background-color: color-mix(in oklab, var(--pl-coral) 22%, transparent); }
-  .bm .m.off { background-image: radial-gradient(var(--pl-coral) 1px, transparent 1.2px); background-color: color-mix(in oklab, var(--pl-coral) 12%, transparent); }
-  .bm .g.off { background-color: color-mix(in oklab, var(--pl-coral) 18%, transparent); }
+  .bm .m.off { background: color-mix(in oklab, var(--c) 22%, transparent); }
+  .bm .p.off { background: color-mix(in oklab, var(--c) 38%, transparent); }
+  .bm .g.off { background: color-mix(in oklab, var(--c) 42%, transparent); }
+  .bm .ic { width: ${ICON}px; height: ${ICON}px; color: color-mix(in oklab, var(--c, var(--pl-sky)) 85%, var(--pl-ink)); translate: -50% -50%; }
+  .bm .ic svg, .bm .bm-at svg { display: block; width: 100%; height: 100%; }
+  .bm .ic.off { --c: var(--pl-coral); color: var(--pl-coral); }
+  .bm .bm-at svg { width: 11px; height: 11px; }
   .bm .b { border: solid color-mix(in oklab, var(--pl-sky) 75%, transparent); }
   .bm .c { box-shadow: 0 0 0 1px var(--pl-sky); }
   .bm .line { background: color-mix(in oklab, var(--pl-lilac) 12%, transparent); }
@@ -44,6 +50,17 @@ export const BOXMODEL_CSS = `
   .bm .bm-at { animation: pl-pop 200ms var(--pl-spring-pop) both; }
   @media (prefers-reduced-motion: reduce) { .bm .bm-at { animation: none; } }
 `;
+
+// One icon per building block, drawn on a 16px grid in the band's own hue.
+export const BLOCK_ICONS = {
+  p: '<svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="5.5" y="5.5" width="5" height="5" rx="1.2" fill="currentColor"/></svg>',
+  m: '<svg viewBox="0 0 16 16"><rect x="1.25" y="1.25" width="13.5" height="13.5" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.2 2"/><rect x="5" y="5" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+  g: '<svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="3.5" height="10" rx="1.2" fill="currentColor"/><rect x="11" y="3" width="3.5" height="10" rx="1.2" fill="currentColor"/><path d="M6.6 8h2.8M7.4 6.6 6.2 8l1.2 1.4M8.6 6.6 9.8 8l-1.2 1.4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  b: '<svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.6"/></svg>',
+  r: '<svg viewBox="0 0 16 16"><path d="M3 13V8.5A5.5 5.5 0 0 1 8.5 3H13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  line: '<svg viewBox="0 0 16 16"><path d="M3 3.5h10M8 3.5v9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  c: '<svg viewBox="0 0 16 16"><path d="M2.5 8h11M4.5 5.8 2.3 8l2.2 2.2M11.5 5.8 13.7 8l-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
@@ -124,9 +141,11 @@ export function boxModel(el, { name, tokenOf } = {}) {
   const type = tokenOf?.('type', fs);
   for (const l of lines(el)) bands.push({ kind: 'line', what: 'type', x: l.left, y: l.top, w: l.width, h: l.height, label: `Aa ${type ? `${type} · ` : ''}${r1(fs)}/${r1(lh)} · ${cs.fontWeight}`, off: !!tokenOf && !type, base: l.top + (l.height + fs * 0.68) / 2 });
 
+  // one icon in the middle of each band it fits in; a band too thin for it keeps only its tint
+  const icon = (b) => (b.w >= ICON + 2 && b.h >= ICON + 2 ? `<span class="ic${b.off ? ' off' : ''}" style="left:${r1(b.x + b.w / 2)}px;top:${r1(b.y + b.h / 2)}px">${BLOCK_ICONS[b.kind.split(' ')[0]]}</span>` : '');
   const layers = bands.map((b) => (b.kind === 'line'
     ? `${box('line', b.x, b.y, b.w, b.h)}${box('base', b.x, b.base, b.w, 1)}`
-    : box(`${b.kind}${b.off ? ' off' : ''}`, b.x, b.y, b.w, b.h)));
+    : `${box(`${b.kind}${b.off ? ' off' : ''}`, b.x, b.y, b.w, b.h)}${icon(b)}`));
   // the border band and the content outline; the radius shows in the shape itself
   if (bt || br || bb || bl) layers.push(box('b', r.left, r.top, r.width, r.height, `border-width:${bt}px ${br}px ${bb}px ${bl}px;border-radius:${cs.borderRadius}`));
   const content = { x: ix + pl, y: iy + pt, w: iw - pl - pr, h: ih - pt - pb };
@@ -157,7 +176,7 @@ export function pointAt(host, bands, x, y) {
   if (!hit) { host.replaceChildren(); host.dataset.key = ''; return null; }
   if (host.dataset.key !== key) {
     host.dataset.key = key;
-    host.innerHTML = `<div class="bm" aria-hidden="true"><span class="pl-pill bm-at"${hit.off ? ' data-hue="coral"' : hit.kind === 'line' ? ' data-hue="lilac"' : ''}>${esc(hit.label)}</span></div>`;
+    host.innerHTML = `<div class="bm" aria-hidden="true"><span class="pl-pill bm-at"${hit.off ? ' data-hue="coral"' : hit.kind === 'line' ? ' data-hue="lilac"' : ''}>${BLOCK_ICONS[hit.kind.split(' ')[0]] ?? ''}${esc(hit.label)}</span></div>`;
   }
   const pill = host.querySelector('.bm-at');
   pill.style.left = `${r1(x + 14)}px`;
