@@ -54,7 +54,7 @@ test('zero config/disabled habits judge nothing; habits command counts all built
   const list = JSON.parse(result.stdout);
   assert.equal(list.find(h => h.id === 'hover-gate').breaks, 1);
   assert.equal(list.find(h => h.id === 'transition-named').breaks, 1);
-  assert.equal(list.length, 9);
+  assert.equal(list.length, 11);
   const text = spawnSync(process.execPath, [cli, 'habits', '--root', dir], { encoding: 'utf8' });
   assert.match(text.stdout, /hover-gate\s+1 break\s/);
 });
@@ -155,4 +155,37 @@ test('legacy z-named and motion-tokens names delegate to provenance without dupl
   assert.ok(r.findings.some(f => f.rule === 'config/no-tokens' && f.family === 'z'));
   assert.ok(r.findings.some(f => f.rule === 'config/no-tokens' && f.family === 'motion'));
   assert.ok(!r.findings.some(f => f.rule.startsWith('habits/')));
+});
+
+test('tracking-em (#47): px letter spacing is marked in classes and stylesheets; em and Tailwind tracking are not', async t => {
+  const dir = await project(t, `@import "tailwindcss";
+.caps { letter-spacing: 2px; }
+.label { letter-spacing: 0.08em; }
+.reset { letter-spacing: 0px; }`, `<><h1 className="tracking-[3px]">A</h1><h2 className="tracking-tight">B</h2><p className="tracking-[0.02em]">C</p></>;`, { habits: ['tracking-em'] });
+  const r = report(dir);
+  const found = breaks(r, 'tracking-em');
+  assert.deepEqual(found.map(f => f.declaration.value).sort(), ['2px', '3px']);
+  assert.ok(found.every(f => /em/.test(f.action) && f.severity === 'warn'));
+});
+
+test('color-scheme (#58): a dark theme with no color-scheme is one finding; scheme-dark or color-scheme clears it; no dark theme, no finding', async t => {
+  const dark = await project(t, '@import "tailwindcss";', '<main className="bg-white text-black dark:bg-black dark:text-white">A</main>;', { habits: ['color-scheme'] });
+  const found = breaks(report(dark), 'color-scheme');
+  assert.equal(found.length, 1);
+  assert.match(found[0].title, /color-scheme/);
+
+  const set = await project(t, '@import "tailwindcss";', '<main className="bg-white dark:bg-black dark:scheme-dark">A</main>;', { habits: ['color-scheme'] });
+  assert.equal(breaks(report(set), 'color-scheme').length, 0);
+
+  const css = await project(t, `@import "tailwindcss";
+:root { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { .card { background: black; } }`, '', { habits: ['color-scheme'] });
+  assert.equal(breaks(report(css), 'color-scheme').length, 0);
+
+  const selector = await project(t, `@import "tailwindcss";
+.dark .card { background: black; }`, '', { habits: ['color-scheme'] });
+  assert.equal(breaks(report(selector), 'color-scheme').length, 1);
+
+  const light = await project(t, '@import "tailwindcss";', '<main className="bg-white text-black">A</main>;', { habits: ['color-scheme'] });
+  assert.equal(breaks(report(light), 'color-scheme').length, 0);
 });

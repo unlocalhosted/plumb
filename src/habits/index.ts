@@ -19,6 +19,8 @@ export const builtins = [
   { id: 'safe-area-fallback', severity: 'error', reason: 'A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.', fix: 'Add a fallback: env(safe-area-inset-*, 0px), alongside the element’s own spacing.' },
   { id: 'overflow-clip', severity: 'warn', reason: 'It breaks position: sticky inside and still allows script scrolling.', fix: 'Use overflow: clip if no programmatic scrolling, measurement or formatting context is required; review those semantics first.' },
   { id: 'overscroll-contain', severity: 'warn', reason: 'Reaching its edge scrolls the page behind it.', fix: 'Set overscroll-behavior: contain (or the matching axis) on this scroll container.' },
+  { id: 'tracking-em', severity: 'warn', reason: 'Letter spacing in px stays the same at every size, so large type looks loose and small type cramped.', fix: 'Write the tracking in em (Tailwind tracking-* utilities are em) so it scales with the font size.' },
+  { id: 'color-scheme', severity: 'warn', reason: 'Without color-scheme a dark theme keeps light scrollbars, form controls and autofill.', fix: 'Set color-scheme: dark (Tailwind scheme-dark) where the dark theme applies, or scheme-light-dark on the root.' },
 ] as const;
 export type BuiltinHabit = typeof builtins[number]['id'];
 export interface HabitSummary { id: string; reason: string; severity: HabitSeverity; enabled: boolean; breaks: number | null }
@@ -203,6 +205,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
           if (/^(padding|margin|inset)$/.test(p) && parts.length === 4 && parts[1] !== parts[3]) broken = true;
           break;
         }
+        case 'tracking-em': broken = p === 'letter-spacing' && tokens(v, /\s/).some(part => (pixels(part) ?? 0) !== 0 && /px$/i.test(part)); break;
         case 'viewport-dynamic': broken = /(?<![\w.])[-+]?(?:\d*\.)?\d+v[hw]\b/i.test(v); break;
         case 'safe-area-fallback': broken = calls(v, 'env').some(call => /^safe-area-inset-[\w-]+\s*$/i.test(call.args)); break;
         case 'overflow-clip': {
@@ -232,6 +235,13 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
       if (profiling) ruleTimes.set(habit.id, (ruleTimes.get(habit.id) ?? 0) + performance.now() - start);
     }
   }
+  // One dark theme with no color-scheme anywhere is one finding, placed on the first declaration the dark theme sets.
+  if (active.has('color-scheme') && !declarations.some(d => d.prop === 'color-scheme')) {
+    const darkened = eligible.find(d => d.when.some(c => c.kind === 'media' && /prefers-color-scheme\s*:\s*dark/i.test(c.text) ||
+      c.kind === 'selector' && /(?:^|[\s(,])(?:\.dark\b|\[data-(?:theme|mode)=["']?dark)/.test(c.text)));
+    const habit = builtins.find(h => h.id === 'color-scheme')!;
+    if (darkened) add(habit.id, darkened, habit.reason, habit.severity, habit.fix);
+  }
   for (const d of declarations) if (!d.opaque) for (const { habit, test } of compiled) if (test(d)) add(habit.id, d, habit.message, habit.severity ?? 'error', habit.message);
   const summaries: HabitSummary[] = builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: habit.severity, enabled: selected.has(habit.id), breaks: active.has(habit.id) ? counts.get(habit.id)?.size ?? 0 : null }));
   for (const { habit } of compiled) summaries.push({ id: habit.id, reason: habit.message, severity: habit.severity ?? 'error', enabled: true, breaks: counts.get(habit.id)?.size ?? 0 });
@@ -253,6 +263,8 @@ function habitMessage(id: string, d: Declaration, authored: string, owner: strin
     case 'hover-gate': return { title: `\`${authored}\` also applies on touch screens`, action: 'Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).' };
     case 'focus-outline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` removes the focus outline on ${owner}`, action: 'Restore an outline on :focus-visible.' };
     case 'logical-inline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` is a physical side`, action: `Use \`${logicalProperty(d.prop, value)}\`.` };
+    case 'tracking-em': return { title: `\`${authored}\` sets letter spacing in px`, action: 'Use em so the tracking scales with the type.' };
+    case 'color-scheme': return { title: 'The dark theme never sets color-scheme', action: 'Add scheme-dark where the dark theme applies (or color-scheme: dark).' };
     case 'viewport-dynamic': return { title: `\`${value}\` uses vh, which jumps on mobile`, action: 'Use dvh for a changing viewport, svh for the smallest, lvh for the largest.' };
     case 'overflow-clip': return { title: `\`overflow-hidden\` on ${owner} creates a scroll container`, action: 'Use overflow-clip if nothing scrolls it.' };
     case 'overscroll-contain': return { title: `${owner} scrolls, and its scroll leaks to the page`, action: 'Add overscroll-contain.' };
