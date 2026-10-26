@@ -146,3 +146,29 @@ test('Wave three: each rule marks the element that breaks it and leaves the one 
   assert.deepEqual(failed, []);
   assert.deepEqual(errors, []);
 });
+
+// What a real site taught the rules (the React Plumber site, 2026-10-27): none of these is a finding.
+const QUIET = `
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <style>{'@keyframes reveal { from { opacity: 0 } to { opacity: 1 } }'}</style>
+      <span className="inline-flex rounded-full bg-surface p-[6px]"><span id="pill-in-pill" className="rounded-full bg-accent px-s2 text-small text-surface">Pro</span></span>
+      <div className="overflow-hidden rounded-card bg-surface"><div id="flush-clipped" className="h-12 bg-ground" /><p className="p-s3 text-body">Card</p></div>
+      <section style={{ opacity: 0 }}><p id="unrevealed" className="text-body">Waiting to be revealed</p></section>
+      <section style={{ animation: 'reveal 60s linear both' }}><p id="revealing" className="text-body">Being revealed</p></section>
+      <div className="rounded-control bg-[#8ba3ff] px-s3 py-s1"><span id="bold-label" className="text-[14px] font-semibold text-[#121314]">Install</span></div>
+    </main>
+  );
+}
+`;
+
+test('Quiet on what a real site does: a pill in a pill, a flush child in a clipping corner, text not yet or still being revealed, bold 14px at Lc 56', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, QUIET);
+  const { page, errors } = await open(t, launched, url);
+  const found = [];
+  for (const rule of ['concentric-radius', 'contrast']) for (const m of await marksOf(page, rule)) found.push(`${rule}: ${m.label}`);
+  assert.deepEqual(found, []);
+  assert.deepEqual(errors, []);
+});

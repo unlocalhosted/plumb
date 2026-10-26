@@ -82,6 +82,8 @@ export const concentricRadius = {
     const R = px(ps.borderTopLeftRadius);
     if (R < minParentRadius || !uniform(ps, 'radius', R)) return [];
     const pr = facts.rect(parent), cr = facts.rect(el), b = facts.box(parent);
+    // the radius a browser draws is at most half the box: a pill is its height over two, not 9999px
+    const drawnR = Math.min(R, pr.width / 2, pr.height / 2), drawnr = Math.min(r, cr.width / 2, cr.height / 2);
     // the corner the child sits at: its edges on the parent's content edges, both sides
     const corners = [
       { name: 'tl', prop: 'border-top-left-radius', at: Math.abs(cr.left - (pr.left + b.bl + b.pl)) < 1 && Math.abs(cr.top - (pr.top + b.bt + b.pt)) < 1, ix: cr.left - pr.left, iy: cr.top - pr.top },
@@ -94,10 +96,12 @@ export const concentricRadius = {
     // unequal insets would want an elliptical corner: say nothing
     if (Math.abs(c.ix - c.iy) > 0.5) return [];
     const p = c.ix;
+    // flush in a corner the parent clips: the parent's own curve is the corner, the child's radius is never seen
+    if (p < 0.5 && ps.overflow !== 'visible') return [];
     // the parent's curve ends before the child's edge: no relation to keep
-    if (p >= R - 0.5) return [];
-    const wanted = Math.max(0, R - p);
-    if (Math.abs(r - wanted) <= tolerance) return [];
+    if (p >= drawnR - 0.5) return [];
+    const wanted = Math.max(0, drawnR - p);
+    if (Math.abs(drawnr - wanted) <= tolerance) return [];
     const cls = utility(el, 'rounded', { not: SIDE_RADIUS });
     const step = theme.nearest('radius', wanted, tolerance) ?? (wanted <= tolerance ? { short: 'none', px: 0 } : null);
     const text = cls ?? 'border-radius';
@@ -106,9 +110,9 @@ export const concentricRadius = {
       : { kind: 'advice', text: `No radius token is near ${fmt(wanted)}. Add one, or inset this by ${fmt(R - r)} instead of ${fmt(p)} so ${text} stays concentric.` };
     return [{
       key: `${this.id}@${c.name}`, what: 'corners not concentric', text, props: [c.prop], value: `${r}px`, n: r,
-      title: `\`${text}\` is not concentric: ${fmt(p)} inside a ${fmt(R)} corner wants ${fmt(wanted)}, not ${fmt(r)}`,
+      title: `\`${text}\` is not concentric: ${fmt(p)} inside a ${fmt(drawnR)} corner wants ${fmt(wanted)}, not ${fmt(drawnr)}`,
       because: 'A nested radius is the outer radius minus the padding; otherwise the two curves have different centres and the corner looks pinched or bulged.',
-      evidence: { parentRadius: R, inset: p, radius: r, wanted, corner: c.name }, confidence: 0.92, suggest,
+      evidence: { parentRadius: drawnR, inset: p, radius: drawnr, wanted, corner: c.name }, confidence: 0.92, suggest,
     }];
   },
 };
@@ -688,7 +692,7 @@ export const borderOnShadow = {
 // #24. Perceptual contrast for small text (APCA).
 export const contrast = {
   id: 'craft/contrast', family: 'craft', number: [24], tier: TIER.access, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
-  threshold: { small: 60, large: 45 },
+  threshold: { small: 60, bold: 50, large: 45 },
   check({ el, facts }) {
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
@@ -697,16 +701,22 @@ export const contrast = {
     if (!c) return [];
     // the text as it shows: its own alpha and every fade on the way up
     let fade = 1;
-    for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(facts.style(n).opacity) || 0;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      // a fade still running (an entrance, a reveal on scroll) is a moment, not the text's colour: judge it at rest
+      if (n.getAnimations?.().some((x) => x.playState === 'running' || x.playState === 'paused')) return [];
+      fade *= parseFloat(facts.style(n).opacity) || 0;
+    }
+    if (fade < 0.05) return []; // not shown at all (waiting to be revealed): there is nothing to read yet
     const text = over([c[0], c[1], c[2], alpha(c) * fade], ground);
     const fs = px(s.fontSize), w = parseInt(s.fontWeight, 10) || 400;
-    const large = fs >= 24 || fs >= 18 && w >= 700;
-    const need = large ? this.threshold.large : this.threshold.small;
+    // APCA reads weight as size: a heavier stroke reads like a larger one, so the floor falls with both
+    const large = fs >= 24 || fs >= 18 && w >= 600;
+    const need = large ? this.threshold.large : fs >= 14 && w >= 600 ? this.threshold.bold : this.threshold.small;
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     return [{
       key: this.id, what: 'too little contrast to read', text: colourClass(el, 'text') ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
-      title: `${fmt(fs)} text at APCA Lc ${Math.round(lc)} on its ground: ${need} is the floor for ${large ? 'large' : 'small'} text`,
+      title: `${fmt(fs)} text at APCA Lc ${Math.round(lc)} on its ground: ${need} is the floor for ${large ? 'large' : need === this.threshold.bold ? 'bold small' : 'small'} text`,
       because: 'Perceptual contrast (APCA) predicts what people can read better than WCAG 2 ratios, most of all on dark themes and small sizes.',
       evidence: { lc: Math.round(lc), need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
       suggest: { kind: 'advice', text: `Darken${(0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2]) / 255 < 0.5 ? ' (here: lighten)' : ''} the text until Lc reaches ${need}, or set it larger or bolder.` },
