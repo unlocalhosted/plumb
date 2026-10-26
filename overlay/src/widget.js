@@ -31,6 +31,7 @@ import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
 import { Help, HELP_CSS, HELP_ICON } from './help.js';
 import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
+import { Craft } from './craft.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -549,12 +550,22 @@ class PlumbOverlay extends HTMLElement {
 
   // ── reading an element ────────────────────────────────────
   // One read per element until something is written; the hover tag and the pinned reading share it.
+  #craft = null;
+  #craftFor(element, marks) {
+    this.#craft ??= new Craft({ theme: { decisions: () => { if (!this.#decisions) this.#scaleOf('spacing'); return this.#decisions; } } });
+    const [item] = this.#craft.enrich([{ el: element, marks: marks ?? [] }]);
+    return item?.marks ?? marks;
+  }
   read(element, fresh = false, signal) {
     if (!signal && !fresh && this.#cache.has(element)) return this.#cache.get(element);
     const promise = (async () => {
       const found = await locate(element, { explain: true, signal });
       if (!found?.file) return { status: 'unplaced', tag: element.localName, ...unplaced(found) };
-      return this.#readAt(found, element);
+      const state = await this.#readAt(found, element);
+      // craft: the mentor's rules read on the element itself join its reading, so the Alt card shows them too. They
+      // carry their suggestion in words here; picking and writing one is the blueprint chooser's (POST swap)
+      if (state?.status === 'ready') state.marks = this.#craftFor(element, state.marks);
+      return state;
     })().catch(error => error?.starting
       ? { status: 'starting', tag: element.localName, message: 'React Plumber is still reading your project…' }
       : error?.failed ? { status: 'error', tag: element.localName, short: 'React Plumber couldn’t start', message: `React Plumber couldn’t start: ${error.message}` }

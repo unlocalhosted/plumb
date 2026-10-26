@@ -45,8 +45,11 @@ async function open(t, launched, url) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(url);
-  await page.waitForFunction(() => window.__plumb?.overlay);
-  await page.evaluate(() => window.__plumb.ready());
+  // a cold dev server may reload the page once while it optimises dependencies: wait that reload out
+  for (let i = 0; ; i++) {
+    try { await page.waitForFunction(() => window.__plumb?.overlay); await page.evaluate(() => window.__plumb.ready()); break; }
+    catch (error) { if (i > 2 || !/context was destroyed|navigation/i.test(error.message)) throw error; await page.waitForLoadState('load'); }
+  }
   return { page, errors, overlay: page.locator('plumb-overlay') };
 }
 
@@ -303,5 +306,24 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   await overlay.locator('.wt').getByRole('button', { name: 'Undo' }).click();
   for (let i = 0; i < 100 && !/rounded-card/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-card bg-ground/);
+  assert.deepEqual(errors, []);
+});
+
+test('The Alt card shows craft findings too: pinning the non-concentric child names the rule and its suggestion', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.locator('#cc-bad-child').click({ modifiers: ['Alt'] });
+  const card = overlay.locator('.w:not([hidden]) .card');
+  await card.waitFor({ timeout: 10000 });
+  await page.waitForFunction(() => /not concentric/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.w:not([hidden]) .card')?.textContent ?? ''), null, { timeout: 10000 });
+  assert.match(await card.innerText(), /rounded-card/);
+  // the concentric one beside it carries no craft finding
+  await page.keyboard.press('Escape');
+  await page.locator('#cc-good-child').click({ modifiers: ['Alt'] });
+  await card.waitFor({ timeout: 10000 });
+  await page.waitForTimeout(800);
+  assert.doesNotMatch(await card.innerText(), /not concentric/);
   assert.deepEqual(errors, []);
 });
