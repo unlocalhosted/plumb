@@ -169,3 +169,46 @@ test('with something to press in both bottom corners, the dock sits in the middl
   const box = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').getBoundingClientRect().toJSON());
   assert.ok(Math.abs(box.left + box.width / 2 - 600) < 2, `centred: ${JSON.stringify(box)}`);
 });
+
+test('every gesture is one ? away, and each mode says what to do the first time only', { timeout: 60000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const url = await demo(t);
+  const page = await launched.newPage({ viewport: { width: 1200, height: 800 } });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  const overlay = page.locator('plumb-overlay');
+  // ? opens the sheet, Esc closes it; the dock's button does the same
+  await page.keyboard.press('?');
+  const sheet = overlay.getByRole('dialog', { name: 'React Plumber gestures' });
+  await sheet.waitFor();
+  const text = await sheet.innerText();
+  for (const gesture of [/Alt \+ double-click/, /J\s+K/, /Space/, /Alt \+ B/, /1–9/]) assert.match(text, gesture);
+  await page.keyboard.press('Escape');
+  await sheet.waitFor({ state: 'hidden' });
+  await overlay.getByRole('button', { name: 'Gestures' }).click();
+  await sheet.waitFor();
+  await overlay.getByRole('button', { name: 'Gestures' }).click();
+  await sheet.waitFor({ state: 'hidden' });
+  // the first Alt says how inspecting goes on; the second says nothing
+  const hint = overlay.locator('.tip:not([hidden])');
+  await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
+  await hint.filter({ hasText: /double-click words to edit/ }).waitFor();
+  await page.mouse.click(600, 300); // any click takes it away
+  await hint.waitFor({ state: 'hidden' });
+  // blueprint's first time says J K and Space
+  await page.keyboard.press('Alt+B');
+  await hint.filter({ hasText: /J K move between causes/ }).waitFor({ timeout: 20000 });
+  await page.keyboard.press('j'); // the next key takes the tip away, and still does its own work
+  await hint.waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape');
+  // once said, never again on this browser: a reload and another Alt say nothing
+  await page.reload();
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
+  await page.waitForTimeout(500);
+  assert.equal(await overlay.locator('.tip:not([hidden])').count(), 0, 'the hint is said once');
+  assert.deepEqual(errors, []);
+});

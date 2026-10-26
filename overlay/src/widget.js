@@ -29,6 +29,7 @@ import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
 import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
+import { Help, HELP_CSS, HELP_ICON } from './help.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -70,7 +71,7 @@ const css = `
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
-  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .tx-toast) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .tx-toast, .hp, .tip) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   :host([data-side="center"]) .dock { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
@@ -86,12 +87,12 @@ const css = `
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock :is(.pick, .bp-toggle, .list) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  .dock :is(.pick, .bp-toggle, .list) svg { width: 12px; height: 12px; }
-  .dock :is(.pick, .bp-toggle, .list):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock :is(.pick, .bp-toggle, .list)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock :is(.pick, .bp-toggle, .list):disabled { color: var(--pl-ink-3); cursor: default; }
+  .dock :is(.pick, .bp-toggle, .list, .help) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle, .list, .help) svg { width: 12px; height: 12px; }
+  .dock :is(.pick, .bp-toggle, .list, .help):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .dock :is(.pick, .bp-toggle, .list, .help)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .dock :is(.pick, .bp-toggle, .list, .help):disabled { color: var(--pl-ink-3); cursor: default; }
   .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
   .dock .act.write { color: var(--pl-on-accent); background: var(--pl-accent); }
@@ -302,7 +303,7 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -312,6 +313,7 @@ class PlumbOverlay extends HTMLElement {
         <button class="act undo" type="button" hidden title="Lift every pick (nothing is written)">Undo</button>
         <button class="act write" type="button" hidden></button>
         <button class="list" type="button" hidden aria-pressed="false" aria-label="Every drift in view" title="Every drift in view, as a list (L)">${LIST_ICON}</button>
+        <button class="help" type="button" aria-pressed="false" aria-label="Gestures" title="Every gesture (?)">${HELP_ICON}</button>
         <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
         <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
       </div>
@@ -327,8 +329,10 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.dock .write').addEventListener('click', () => this.#fixer.write());
     this.#$('.dock .list').addEventListener('click', () => { this.#ready?.close(); this.#fixer.toggleList(); });
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
+    // Every gesture, and a word the first time each mode is used.
+    this.#help = new Help(this.#root, { button: this.#$('.dock .help') });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
-    this.#text = new TextEditor(this.#root, { editing: (on, rect) => this.#blueprint?.editing(on, rect), announce: text => this.#announce(text), changed: () => this.#dock(),
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
@@ -436,7 +440,7 @@ class PlumbOverlay extends HTMLElement {
   get progress() { return this.#bp.progress; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id, options) { return this.#fixer.open(element, mark, id, options); }
@@ -453,9 +457,8 @@ class PlumbOverlay extends HTMLElement {
     if (state === 'refused') return this.#announce('Blueprint waits until React Plumber is running.');
     this.#bp.state = state;
     if (state === 'entering') this.#bp.progress = null;
-    // the blueprint's paper is dark: the overlay's own cards take the dark scheme over it, and give it back after
-    if (state === 'entering') { this.#schemeBefore = this.dataset.scheme ?? null; this.dataset.scheme = 'dark'; }
-    if (state === 'leaving' || state === 'off') { if (this.#schemeBefore) this.dataset.scheme = this.#schemeBefore; else delete this.dataset.scheme; this.#schemeBefore = null; }
+    // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
+    if (state === 'on') this.#help?.hint('blueprint');
     const on = state === 'entering' || state === 'on';
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
@@ -466,7 +469,6 @@ class PlumbOverlay extends HTMLElement {
     this.#dock();
   }
 
-  #schemeBefore = null;
   #announced = '';
   #announce(text) {
     if (text === this.#announced) return;
@@ -627,9 +629,12 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // ── armed: Alt held ──────────────────────────────────────
-  #text = null;
+  #text = null; #help = null;
   #onKeyDown = event => {
     if (this.#text?.editing) return; // the words being edited take the keys: Enter saves, Esc cancels
+    // ?: every gesture; Esc closes the sheet or a hint before anything else
+    if (event.key === '?' && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#help.toggle(); return; }
+    if (event.key === 'Escape' && this.#help?.escape()) { event.preventDefault(); event.stopPropagation(); return; }
     if (this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault(); event.stopPropagation();
       const s = this.#pinned.state;
@@ -660,6 +665,7 @@ class PlumbOverlay extends HTMLElement {
     this.#ready?.dismiss();
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
     this.#armed = true; this.#sticky = sticky;
+    this.#help?.hint('inspect');
     this.#blueprint?.yieldInput(true);
     addEventListener('pointermove', this.#onMove, true);
     addEventListener('click', this.#onClick, true);
