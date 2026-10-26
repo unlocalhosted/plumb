@@ -68,7 +68,7 @@ export const PANEL_CSS = `
   .bpp .row .acts { grid-column: 2 / -1; display: none; gap: var(--pl-space-3); margin-top: var(--pl-space-3); }
   .bpp .row[aria-current="true"] .acts { display: flex; }
   .bpp .row .acts span { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); padding: 3px var(--pl-space-4); border-radius: var(--pl-radius-tag); }
-  .bpp .row .acts .fix { background: var(--pl-accent); color: var(--pl-on-accent); }
+  .bpp .row .acts .fix { background: var(--pl-action-soft); color: var(--pl-on-action); }
   .bpp .row .acts .next { color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
   .bpp .empty { padding: var(--pl-space-6) var(--pl-space-5); font: var(--pl-card-body); color: var(--pl-ink-2); }
   .bpp .empty b { display: block; font: var(--pl-card-title); color: var(--pl-ink); margin-bottom: var(--pl-space-1); }

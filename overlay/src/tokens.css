@@ -5,24 +5,36 @@
 :host {
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
-  --pl-paper: #fcfcfb;          /* card ground */
-  --pl-paper-2: #f3f2ef;        /* inset strip, footer, pressed row */
-  --pl-rule: #e4e2dd;           /* row outlines, dividers, card edge */
-  --pl-ink: #1c1b19;            /* titles, readings: 16.9:1 on paper */
-  --pl-ink-2: #5c5a55;          /* body that supports, meta, labels: 6.9:1 on paper */
-  --pl-ink-3: #a19e97;          /* ticks and dividers only, never text */
+  --pl-paper: #fdfcf8;          /* card ground: warm off-white */
+  --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
+  --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
+  --pl-ink: #1d1b17;            /* titles, readings */
+  --pl-ink-2: #6b665c;          /* body that supports, meta, labels */
+  --pl-ink-3: #b3ad9f;          /* ticks and dividers only, never text */
+
+  /* the language's hues (docs/briefs/visual-language.md): one meaning each. A line colour, a pastel fill, and the
+     deep ink that letters the fill */
+  --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measure, focus */
+  --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* off the system */
+  --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on the system, written */
+  --pl-butter: #c48a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* softer trouble */
+  --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
+  --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
   /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
-  --pl-instrument: #2c64d4;          /* 5.3:1 on paper; on any host it rides on a halo */
+  --pl-instrument: var(--pl-sky);    /* selection, measurement, focus; on any host it rides on a halo */
   --pl-accent: var(--pl-instrument);
   --pl-on-accent: #ffffff;           /* text on a filled accent */
+  --pl-action: var(--pl-pink);       /* what you can do: Write, Fix all */
+  --pl-action-soft: var(--pl-pink-soft);
+  --pl-on-action: var(--pl-pink-ink);
   --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
 
   /* verdicts: the only other colour, always paired with a mark shape or a word; each has a tinted ground so a
      state reads at a glance */
-  --pl-on: #2a7d52;             /* uses a token */
-  --pl-off: #c03a46;            /* off the scale, override, imitation, broken, setup that turns a capability off */
-  --pl-soft: #a8690f;           /* Tailwind default, wrong tier, setup that limits a capability */
+  --pl-on: var(--pl-mint);      /* uses a token */
+  --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
+  --pl-soft: var(--pl-butter);  /* Tailwind default, wrong tier, setup that limits a capability */
   --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
   --pl-on-bg: color-mix(in oklab, var(--pl-on) 12%, var(--pl-paper));
   --pl-off-bg: color-mix(in oklab, var(--pl-off) 10%, var(--pl-paper));
@@ -67,9 +79,10 @@
 
   /* corners: the instrument is square, the card is a held object */
   --pl-radius-mark: 2px;
-  --pl-radius-tag: 4px;
-  --pl-radius-row: 6px;
-  --pl-radius-card: 8px;
+  --pl-radius-tag: 6px;
+  --pl-radius-pill: 7px;
+  --pl-radius-row: 8px;
+  --pl-radius-card: 12px;
 
   /* depth: the card is the only lifted thing */
   --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
@@ -78,6 +91,7 @@
   /* motion: one authored moment, the reticle travelling and the plumb line dropping */
   --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
   --pl-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1); /* settles with under 2% overshoot */
+  --pl-spring-pop: linear(0, 0.25 7%, 0.68 17%, 0.96 28%, 1.04 40%, 1.03 52%, 1.005 68%, 1); /* things appearing: ~4% overshoot */
   --pl-dur-travel: 220ms;       /* reticle moves to the next element */
   --pl-dur-drop: 140ms;         /* plumb line extends to the tag */
   --pl-dur-card: 180ms;         /* card pins */
@@ -98,18 +112,20 @@
 
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
-    --pl-paper: #1a1a1c;
-    --pl-paper-2: #232326;
+    --pl-paper: #1c1c1e;
+    --pl-paper-2: #26262a;
     --pl-rule: #323236;
-    --pl-ink: #eeede9;          /* 15.4:1 on paper */
-    --pl-ink-2: #a9a7a0;        /* 7.4:1 on paper */
-    --pl-ink-3: #5d5c58;
-    --pl-instrument: #79a2f2;
-    --pl-on-accent: #0e1422;
+    --pl-ink: #f4f3ef;
+    --pl-ink-2: #a8a6a0;
+    --pl-ink-3: #5f5d58;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #7cc4fa;    --pl-sky-ink: #08263d;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #ff7a6b;  --pl-coral-ink: #3a0b06;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #7ee0b0;   --pl-mint-ink: #06301d;
+    --pl-butter: #ffd166; --pl-butter-soft: #ffd166; --pl-butter-ink: #3a2a00;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #ff6ec7;   --pl-pink-ink: #3d0629;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #b9a6ff;  --pl-lilac-ink: #1d1240;
+    --pl-on-accent: #08263d;
     --pl-halo: rgb(10 10 12 / 0.85);
-    --pl-on: #6fc59a;
-    --pl-off: #f0848e;
-    --pl-soft: #e3b062;
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
@@ -119,18 +135,20 @@
 
 /* An explicit scheme wins over the OS, both ways. */
 :host([data-scheme="dark"]) {
-    --pl-paper: #1a1a1c;
-    --pl-paper-2: #232326;
+    --pl-paper: #1c1c1e;
+    --pl-paper-2: #26262a;
     --pl-rule: #323236;
-    --pl-ink: #eeede9;
-    --pl-ink-2: #a9a7a0;
-    --pl-ink-3: #5d5c58;
-    --pl-instrument: #79a2f2;
-    --pl-on-accent: #0e1422;
+    --pl-ink: #f4f3ef;
+    --pl-ink-2: #a8a6a0;
+    --pl-ink-3: #5f5d58;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #7cc4fa;    --pl-sky-ink: #08263d;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #ff7a6b;  --pl-coral-ink: #3a0b06;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #7ee0b0;   --pl-mint-ink: #06301d;
+    --pl-butter: #ffd166; --pl-butter-soft: #ffd166; --pl-butter-ink: #3a2a00;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #ff6ec7;   --pl-pink-ink: #3d0629;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #b9a6ff;  --pl-lilac-ink: #1d1240;
+    --pl-on-accent: #08263d;
     --pl-halo: rgb(10 10 12 / 0.85);
-    --pl-on: #6fc59a;
-    --pl-off: #f0848e;
-    --pl-soft: #e3b062;
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);

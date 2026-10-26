@@ -14,22 +14,15 @@
  *  look       a 1.5px accent ring around the words and a tag under them: where they are written, ↵ save · Esc
  *  save       Enter, or clicking away, writes the words to source at once; Esc puts them back. Newlines are not text a
  *             JSX run keeps, so Shift+Enter does nothing
- *  after      a toast by the dock says what was written, with Undo, which writes the old words back. A dev server
- *             without fast refresh reloads the page after a write: the toast and its Undo come back after the reload
- *             (sessionStorage), on the same words
+ *  after      the write history's toast (history.js) says what was written, with Undo; a dev server without fast
+ *             refresh reloads the page after a write, and blueprint, if it was on, comes back with it
  *  refused    words that can't be edited say why, beside the words, and where to change them by hand
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
 
-const HOLD = 6000; // ms the toast stays
 const RESUME = 'plumb:text-resume';
-const pathTo = (element) => {
-  const parts = [];
-  for (let n = element; n && n !== document.documentElement; n = n.parentElement) parts.unshift(`${n.localName}:nth-child(${[...n.parentElement.children].indexOf(n) + 1})`);
-  return ['html', ...parts].join(' > ');
-};
 
 export const TEXT_EDIT_CSS = `
   .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-accent), 0 0 0 3.5px var(--pl-halo); }
@@ -43,16 +36,6 @@ export const TEXT_EDIT_CSS = `
   .tx-area { position: fixed; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent;
     color: transparent; caret-color: var(--pl-accent); pointer-events: auto; }
   .tx-area::selection { background: color-mix(in oklab, var(--pl-accent) 28%, transparent); color: transparent; }
-  .tx-toast { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4));
-    display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-3) var(--pl-space-3) var(--pl-space-3) var(--pl-space-5); pointer-events: auto;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-card-meta); color: var(--pl-ink);
-    opacity: 0; translate: 0 4px; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
-  .tx-toast[data-on] { opacity: 1; translate: 0 0; }
-  .tx-toast[hidden] { display: none; }
-  .tx-toast button { all: unset; cursor: pointer; padding: 3px var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); color: var(--pl-accent); }
-  .tx-toast button:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .tx-toast button:hover { background: var(--pl-paper-2); } }
-  @media (prefers-reduced-motion: reduce) { .tx-toast { transition: none; translate: 0 0; } }
 `;
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
@@ -69,7 +52,7 @@ function caretAt(x, y) {
 }
 
 export class TextEditor {
-  #root; #host; #ring; #tag; #toast; #edit = null; #toastTimer = 0; #undo = null;
+  #root; #host; #ring; #tag; #edit = null; #hideTimer = 0;
 
   // host: editing(on, rect) lets the edit through blueprint's glass; announce(text); changed(); inBlueprint() and
   // blueprint() say whether blueprint is on and turn it back on after a reload
@@ -79,30 +62,15 @@ export class TextEditor {
     this.#ring = Object.assign(document.createElement('div'), { className: 'tx-ring', hidden: true });
     this.#tag = Object.assign(document.createElement('div'), { className: 'tx-tag', hidden: true });
     this.#tag.setAttribute('role', 'status');
-    this.#toast = Object.assign(document.createElement('div'), { className: 'tx-toast', hidden: true });
-    this.#toast.setAttribute('role', 'status');
-    root.append(this.#ring, this.#tag, this.#toast);
-    this.#toast.addEventListener('click', (e) => { if (e.target.closest('.undo')) this.undo(); });
+    root.append(this.#ring, this.#tag);
     this.#resume();
   }
 
-  // After a write that reloaded the page: the toast again, with Undo on the same words, once they have rendered.
-  async #resume() {
+  // After a write that reloaded the page: blueprint, if it was on, comes back with it.
+  #resume() {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
-    if (!saved || Date.now() - saved.at > 15000) return;
-    if (saved.blueprint) this.#host.blueprint?.(); // the mode the person was in comes back with the page
-    for (let i = 0; i < 40; i++) {
-      const el = document.querySelector(saved.path);
-      const node = el && [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && norm(n.data) === saved.from);
-      if (node) {
-        this.#undo = { node, from: saved.from, to: saved.to, lead: node.data.match(/^\s*/)[0], trail: node.data.match(/\s*$/)[0], file: saved.file, path: saved.path, blueprint: saved.blueprint };
-        // an Undo that the reload cut short is finished now
-        if (saved.undo) return this.undo();
-        return this.#toastSay(`Wrote “${saved.from}” to ${short(saved.file)}`, true);
-      }
-      await new Promise((r) => setTimeout(r, 100));
-    }
+    if (saved && Date.now() - saved.at < 15000 && saved.blueprint) this.#host.blueprint?.();
   }
 
   get editing() { return !!this.#edit; }
@@ -257,12 +225,11 @@ export class TextEditor {
     ed.node.data = keep ? ed.lead + typed + ed.trail : ed.before;
     if (!keep) return this.#end();
     this.#say('saving');
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(ed.el), from: typed, to: ed.target.from, file: ed.target.file, at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
+    try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
     try {
-      await this.#write(ed.target, ed.target.from, typed);
+      const result = await this.#write(ed.target, ed.target.from, typed);
       this.#end();
-      this.#undo = { node: ed.node, from: typed, to: ed.target.from, lead: ed.lead, trail: ed.trail, file: ed.target.file, path: pathTo(ed.el), blueprint: !!this.#host.inBlueprint?.() };
-      this.#toastSay(`Wrote “${typed}” to ${short(ed.target.file)}`, true);
+      this.#host.wrote?.(result, `Wrote “${typed}” to ${short(ed.target.file)}`);
       this.#host.announce?.(`Wrote the words to ${short(ed.target.file)}`);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
@@ -297,44 +264,14 @@ export class TextEditor {
     this.#tag.innerHTML = `<span>${esc(target.reason ?? 'These words can’t be edited here.')}${where}</span>`;
     this.#tag.hidden = false;
     Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - 428, r.left))}px`, top: `${r.bottom + 8 + 60 > innerHeight ? r.top - 60 : r.bottom + 8}px` });
-    clearTimeout(this.#toastTimer);
+    clearTimeout(this.#hideTimer);
     const hide = () => { this.#tag.hidden = true; removeEventListener('pointerdown', hide, true); };
     setTimeout(() => addEventListener('pointerdown', hide, true), 0);
-    setTimeout(hide, 4000);
-  }
-
-  #toastSay(text, undo) {
-    clearTimeout(this.#toastTimer);
-    this.#toast.innerHTML = `<span>${esc(text)}</span>${undo ? '<button class="undo" type="button">Undo</button>' : ''}`;
-    this.#toast.hidden = false;
-    requestAnimationFrame(() => this.#toast.setAttribute('data-on', ''));
-    this.#toastTimer = setTimeout(() => { this.#toast.removeAttribute('data-on'); setTimeout(() => { this.#toast.hidden = true; }, 160); this.#undo = null; }, HOLD);
-  }
-
-  // The last write, written back: the old words, against the file as it is now.
-  async undo() {
-    const u = this.#undo;
-    if (!u) return;
-    this.#undo = null;
-    // if the dev server reloads the page in the middle, the undo is finished after the reload
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ path: u.path, from: u.from, to: u.to, file: u.file, at: Date.now(), blueprint: u.blueprint, undo: true })); } catch {}
-    try {
-      const el = u.node.isConnected ? u.node.parentElement : null;
-      if (!el) throw new Error('The words are no longer on the page.');
-      const target = await this.#resolve(el, norm(u.node.data));
-      if (!target.editable) throw new Error(target.reason);
-      await this.#write(target, target.from, u.to);
-      try { sessionStorage.removeItem(RESUME); } catch {}
-      u.node.data = u.lead + u.to + u.trail;
-      this.#toastSay(`Put back “${u.to}” in ${short(u.file)}`, false);
-    } catch (error) {
-      try { sessionStorage.removeItem(RESUME); } catch {}
-      this.#toastSay(`Couldn’t undo: ${error?.message ?? 'the write was refused'}`, false);
-    }
+    this.#hideTimer = setTimeout(hide, 4000);
   }
 
   destroy() {
     if (this.#edit) this.#finish(false);
-    clearTimeout(this.#toastTimer);
+    clearTimeout(this.#hideTimer);
   }
 }

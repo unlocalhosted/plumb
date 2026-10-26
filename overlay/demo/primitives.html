@@ -22,6 +22,7 @@
 <div id="board"></div>
 <script type="module">
   import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
   import { PRIMITIVES_CSS, stepper, swatches, radius, segments, align, shadows, row, bind, place } from '../src/editor-primitives.js';
 
   const host = document.getElementById('board');
@@ -55,13 +56,44 @@
     'Padding refused': { kind: stepper, s: { steps: spacing, current: 's3', picked: 's5' }, note: 'Board.jsx changed since it was read. Pick again to retry.', error: true },
   };
   const card = (title, names) => `<section class="card"><div class="head">${title}</div>${names.map((n) => { const d = demos[n]; return row(n, d.kind ? d.kind(n, d.s) : '<span class="note">—</span>', d.note ?? '', d.error ? 'error' : ''); }).join('')}</section>`;
-  const css = `${tokens}${PRIMITIVES_CSS}
+  // the language itself: colour by meaning, pills and tags, the old Mac patterns, the ants, the rainbow, the pop
+  const hues = [['sky', 'selected · measure · focus'], ['coral', 'off the system'], ['mint', 'on the system · written'], ['butter', 'softer trouble'], ['pink', 'actions'], ['lilac', 'names']];
+  const language = `<section class="card lang"><div class="head">Language</div>
+    <div class="hues">${hues.map(([h, what]) => `<div class="hue"><span class="chip" style="background:var(--pl-${h}-soft)"></span><span class="line" style="background:var(--pl-${h})"></span><b>${h}</b><span>${what}</span></div>`).join('')}</div>
+    <div class="strip"><span class="pl-pill">12</span><span class="pl-pill" data-hue="coral">0</span><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="butter">text-white</span><span class="pl-pill" data-hue="pink">Write 2</span>
+      <span class="pl-tag"><svg viewBox="0 0 12 12"><rect x="1.5" y="2" width="9" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="7" width="5" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>Models</span>
+      <span class="pl-tag" data-hue="sky">W Fill 500px</span></div>
+    <div class="pats"><div><span class="pl-hatch sw"></span>hatch · padding</div><div><span class="pl-dither sw"></span>dither · margin</div><div><span class="pl-checker sw"></span>checker · clear</div></div>
+    <div class="measure"><div class="box pl-hatch"><div class="inner">Opus 5.5 <span class="pl-pill" data-hue="mint">High</span></div><span class="pl-pill n t">12</span><span class="pl-pill n l">12</span><span class="pl-pill n b">12</span><span class="pl-pill n r" data-hue="coral">0</span></div></div>
+    <div class="strip"><span class="ants pl-ants">picked, not written</span><span class="written">written</span></div>
+    <div class="strip"><span class="pl-rainbow band"></span><button type="button" class="replay">Pop</button><span class="pl-tag pop">Models</span></div>
+  </section>`;
+  const css = `${tokens}${PRIMITIVES_CSS}${LANGUAGE_CSS}
+    .lang .hues { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
+    .lang .hue { display: grid; grid-template-columns: 22px 22px 52px 1fr; align-items: center; gap: 6px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+    .lang .hue b { color: var(--pl-ink); font: 600 12px var(--pl-mono); }
+    .lang .chip { width: 22px; height: 22px; border-radius: 6px; }
+    .lang .line { width: 22px; height: 3px; border-radius: 2px; }
+    .lang .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+    .lang .pats { display: flex; gap: 16px; margin: 10px 0; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+    .lang .pats div { display: flex; align-items: center; gap: 8px; }
+    .lang .sw { width: 44px; height: 30px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .lang .measure { padding: 18px 26px; }
+    .lang .box { position: relative; padding: 12px; border-radius: 10px; box-shadow: 0 0 0 1px var(--pl-sky); }
+    .lang .inner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--pl-paper); font: 600 15px var(--pl-sans); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-sky) 50%, transparent); }
+    .lang .n { position: absolute; }
+    .lang .n.t { top: -10px; right: 24px; } .lang .n.b { bottom: -10px; right: 24px; } .lang .n.l { left: -18px; top: 50%; translate: 0 -50%; } .lang .n.r { right: -14px; top: 50%; translate: 0 -50%; }
+    .lang .ants { padding: 8px 12px; font: var(--pl-card-meta); color: var(--pl-ink); }
+    .lang .written { padding: 8px 12px; font: var(--pl-card-meta); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-mint); }
+    .lang .band { width: 64px; height: 8px; border-radius: 4px; }
+    .lang .replay { font: var(--pl-text-label); padding: 4px 10px; border-radius: 7px; border: 0; background: var(--pl-pink-soft); color: var(--pl-pink-ink); cursor: pointer; }
     :host { display: block; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; }
     .card { background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); padding: 4px 16px 12px; color: var(--pl-ink); }
     .card .head { font: var(--pl-card-title); padding: 12px 0 6px; }`;
   function render() {
     root.innerHTML = `<style>${css}</style><div class="grid">${[
+      language,
       card('Scale stepper', ['Padding', 'Padding picked', 'Padding drift', 'Gap disabled', 'Gap loading', 'Padding refused']),
       card('Swatches · radius · shadow', ['Fill', 'Fill drift', 'Radius', 'Radius drift', 'Shadow']),
       card('Segments · align', ['Direction', 'Wrap', 'Fit', 'Align', 'Line height empty']),
@@ -79,6 +111,7 @@
     });
   }
   render();
+  root.addEventListener('click', (e) => { if (!e.target.closest('.replay')) return; const t = root.querySelector('.pop'); t.classList.remove('pl-pop'); void t.offsetWidth; t.classList.add('pl-pop'); });
   document.getElementById('scheme').addEventListener('click', (e) => {
     const dark = document.body.classList.toggle('dark');
     host.dataset.scheme = dark ? 'dark' : 'light';

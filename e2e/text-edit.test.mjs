@@ -75,7 +75,7 @@ test('a double-click edits the words in place; Enter writes them to source; Undo
   assert.ok(!(await readFile(source, 'utf8')).includes('tiny print'));
   assert.equal(await page.locator('#tiny').getAttribute('contenteditable'), null, 'the element is put back');
   // the toast says what was written, even when the dev server reloads the page after the write
-  const toast = overlay.locator('.tx-toast');
+  const toast = overlay.locator('.wt');
   await toast.filter({ hasText: /Wrote “small print” to App\.jsx/ }).waitFor();
   // Undo writes the old words back
   await toast.getByRole('button', { name: 'Undo' }).click();
@@ -194,5 +194,45 @@ test('words in something clickable: a plain double-click leaves them be; Alt + d
   await page.keyboard.press('Enter');
   assert.equal(await page.locator(button).getAttribute('data-pressed'), '2', 'Space typed a space; it did not press the button');
   assert.ok(await fileHas(source, 'action="Run it now"'), 'the prop was written where the row is used');
+  assert.deepEqual(errors, []);
+});
+
+test('every write is in the dock\'s history, newest first, and each can be undone from there', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url, source } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const was = await readFile(source, 'utf8');
+  const write = async (words) => {
+    await page.waitForFunction(() => window.__plumb?.overlay);
+    await page.evaluate(() => window.__plumb.ready());
+    await dblclickWords(page, '#tiny');
+    await editable(page, '#tiny');
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type(words);
+    await page.keyboard.press('Enter');
+    assert.ok(await fileHas(source, `>${words}</span>`));
+    await page.waitForTimeout(1500); // the demo's dev server reloads the page after a write
+  };
+  await write('first words');
+  await write('second words');
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await overlay.getByRole('button', { name: 'Recent writes' }).click();
+  const list = overlay.getByRole('dialog', { name: 'Recent writes' });
+  await list.locator('.row').nth(1).waitFor();
+  const labels = await list.locator('.row .label').allInnerTexts();
+  assert.match(labels[0], /second words/, `newest first: ${labels}`);
+  assert.match(labels[1], /first words/);
+  // the newest is undone from the list, then the older one: the file is as it was
+  await list.locator('.row').first().getByRole('button', { name: 'Undo' }).click();
+  assert.ok(await fileHas(source, '>first words</span>'), 'the newest write was undone');
+  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await overlay.getByRole('button', { name: 'Recent writes' }).click();
+  await list.locator('.row').filter({ hasText: 'first words' }).getByRole('button', { name: 'Undo' }).click();
+  for (let i = 0; i < 100 && (await readFile(source, 'utf8')) !== was; i++) await page.waitForTimeout(100);
+  assert.equal(await readFile(source, 'utf8'), was, 'both undone: the file is exactly as it was');
   assert.deepEqual(errors, []);
 });

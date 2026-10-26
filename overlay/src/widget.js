@@ -30,6 +30,7 @@ import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
 import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
 import { Help, HELP_CSS, HELP_ICON } from './help.js';
+import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -71,7 +72,7 @@ const css = `
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
-  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .tx-toast, .hp, .tip) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .hp, .tip, .wt, .hl) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   :host([data-side="center"]) .dock { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
@@ -87,16 +88,16 @@ const css = `
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock :is(.pick, .bp-toggle, .list, .help) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  .dock :is(.pick, .bp-toggle, .list, .help) svg { width: 12px; height: 12px; }
-  .dock :is(.pick, .bp-toggle, .list, .help):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock :is(.pick, .bp-toggle, .list, .help)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock :is(.pick, .bp-toggle, .list, .help):disabled { color: var(--pl-ink-3); cursor: default; }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history) svg { width: 12px; height: 12px; }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-ink-3); cursor: default; }
   .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
-  .dock .act.write { color: var(--pl-on-accent); background: var(--pl-accent); }
-  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 88%, var(--pl-ink)); } }
+  .dock .act.write { color: var(--pl-on-action); background: var(--pl-action-soft); }
+  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .dock .act:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   .dock .act:disabled { opacity: .55; cursor: default; }
   .dock .act[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 5px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
@@ -277,8 +278,8 @@ const css = `
   .btn[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
   .btn:disabled { opacity: .4; cursor: default; }
   .btn.copy { margin-inline-start: auto; }
-  .btn.primary { color: var(--pl-on-accent); background: var(--pl-accent); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
-  @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-instrument) 88%, var(--pl-ink)); } }
+  .btn.primary { color: var(--pl-on-action); background: var(--pl-action-soft); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
+  @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .btn.primary:active:not(:disabled) { transform: translateY(1px); }
   .btn.primary:disabled { opacity: 1; color: var(--pl-ink-2); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); cursor: default; }
   .btn.primary.done { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 12%, transparent); box-shadow: none; }
@@ -303,7 +304,7 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -313,6 +314,7 @@ class PlumbOverlay extends HTMLElement {
         <button class="act undo" type="button" hidden title="Lift every pick (nothing is written)">Undo</button>
         <button class="act write" type="button" hidden></button>
         <button class="list" type="button" hidden aria-pressed="false" aria-label="Every drift in view" title="Every drift in view, as a list (L)">${LIST_ICON}</button>
+        <button class="history" type="button" aria-pressed="false" aria-label="Recent writes" title="Recent writes, each undoable">${HISTORY_ICON}</button>
         <button class="help" type="button" aria-pressed="false" aria-label="Gestures" title="Every gesture (?)">${HELP_ICON}</button>
         <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
         <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
@@ -331,8 +333,10 @@ class PlumbOverlay extends HTMLElement {
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
     this.#help = new Help(this.#root, { button: this.#$('.dock .help') });
+    // Every write, undoable: a toast after each one, and the recent ones from the dock.
+    this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
-    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, announce: text => this.#announce(text), changed: () => this.#dock(),
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
@@ -440,12 +444,13 @@ class PlumbOverlay extends HTMLElement {
   get progress() { return this.#bp.progress; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   choose(element, mark, id, options) { return this.#fixer.open(element, mark, id, options); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
   changed() { this.#dock(); this.#blueprint?.refresh(); }
+  wrote(result, text) { this.#history?.wrote(result, text); }
   ordered() { this.#fixer?.ordered(); }
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); }
   announce(text) { this.#announce(text); }
@@ -629,12 +634,12 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // ── armed: Alt held ──────────────────────────────────────
-  #text = null; #help = null;
+  #text = null; #help = null; #history = null;
   #onKeyDown = event => {
     if (this.#text?.editing) return; // the words being edited take the keys: Enter saves, Esc cancels
     // ?: every gesture; Esc closes the sheet or a hint before anything else
     if (event.key === '?' && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#help.toggle(); return; }
-    if (event.key === 'Escape' && this.#help?.escape()) { event.preventDefault(); event.stopPropagation(); return; }
+    if (event.key === 'Escape' && (this.#help?.escape() || this.#history?.escape())) { event.preventDefault(); event.stopPropagation(); return; }
     if (this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault(); event.stopPropagation();
       const s = this.#pinned.state;
@@ -1396,7 +1401,7 @@ class PlumbOverlay extends HTMLElement {
     const text = `Wrote ${n} edit${n === 1 ? '' : 's'} to ${s.file}`;
     try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(p.element), file: s.file, tag: s.tag, text, at: Date.now(), blueprint: !!this.#blueprint?.active })); } catch {}
     try {
-      if (ids.length) await post('apply', { file: s.file, hash: s.hash, edits: ids });
+      if (ids.length) this.wrote(await post('apply', { file: s.file, hash: s.hash, edits: ids }), `Wrote ${ids.length} fix${ids.length === 1 ? '' : 'es'} to ${s.file.split('/').pop()}`);
       // Each text change is written against the file as it is now: read the runs again, find the one that still says
       // what the person started from, and write only that. The server refuses if it no longer does.
       for (const t of texts) {
@@ -1406,7 +1411,7 @@ class PlumbOverlay extends HTMLElement {
         // Lift the preview first: the write is checked against the page as source made it, then the page shows the
         // written words (a dev server's reload, or the homepage's replay). If the write is refused, the preview returns.
         if (t.node.isConnected) t.node.data = t.lead + t.from + t.trail;
-        try { await post('apply-text', { file: s.file, hash: now.hash, run: run.id, from: t.from, to: t.to }); }
+        try { this.wrote(await post('apply-text', { file: s.file, hash: now.hash, run: run.id, from: t.from, to: t.to }), `Wrote “${t.to}” to ${s.file.split('/').pop()}`); }
         catch (error) { if (t.node.isConnected) t.node.data = t.lead + t.to + t.trail; throw error; }
       }
       await this.#reread(p, classes, text, texts.length > 0);

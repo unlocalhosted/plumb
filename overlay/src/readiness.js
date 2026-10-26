@@ -89,11 +89,11 @@ export const READY_CSS = `
   .rd .cmd code { flex: 1; min-width: 0; font: var(--pl-card-code); color: var(--pl-ink); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
   .rd .btn { all: unset; display: inline-flex; align-items: center; justify-content: center; height: 26px; padding: 0 var(--pl-space-5); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink); background: var(--pl-paper); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: pointer; white-space: nowrap; }
   .rd .btn.small { height: 22px; padding: 0 var(--pl-space-4); }
-  .rd .btn.primary { color: var(--pl-on-accent); background: var(--pl-accent); box-shadow: none; }
+  .rd .btn.primary { color: var(--pl-on-action); background: var(--pl-action-soft); box-shadow: none; }
   .rd .btn:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
   .rd .btn:disabled { opacity: .5; cursor: default; }
   .rd .btn[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 6px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
-  @media (hover: hover) and (pointer: fine) { .rd .btn:not(:disabled):not(.primary):hover { background: var(--pl-paper-2); } .rd .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-accent) 88%, var(--pl-ink)); } }
+  @media (hover: hover) and (pointer: fine) { .rd .btn:not(:disabled):not(.primary):hover { background: var(--pl-paper-2); } .rd .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .rd .foot { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-5) var(--pl-space-6); border-top: 1px solid var(--pl-rule); background: var(--pl-paper-2); }
   .rd .foot .count { margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .rd .foot .count[data-tone="on"] { color: var(--pl-on); }

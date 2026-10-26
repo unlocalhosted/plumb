@@ -469,7 +469,8 @@ export class Fixer {
       const hash = group.map(p => p.hash).at(-1);
       try {
         // sites drawn by one JSX line carry the same edit: it is sent once
-        await post('apply', { file, hash, edits: [...new Set(group.map(p => p.choice.edit.id))].map(id => ({ id })) });
+        const result = await post('apply', { file, hash, edits: [...new Set(group.map(p => p.choice.edit.id))].map(id => ({ id })) });
+        this.#host.wrote?.(result);
         for (const p of group) p.state = 'written';
         wrote.push({ file, n: new Set(group.map(p => p.choice.edit.id)).size });
         this.#host.forget();
