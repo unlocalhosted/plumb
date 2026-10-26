@@ -1,0 +1,951 @@
+{
+  "onboard-clean": {
+    "schemaVersion": 1,
+    "rung": "R4",
+    "name": "Clean",
+    "kind": "preset",
+    "flags": [],
+    "sentence": "A system, in use: every value family has your tokens and 98% of values use them.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 4,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": "^4.1.0",
+        "entry": "src/index.css",
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 17,
+          "onTokens": 16,
+          "off": 1,
+          "percent": 94,
+          "tokened": true,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 18,
+          "onTokens": 18,
+          "off": 0,
+          "percent": 100,
+          "tokened": true,
+          "frameworkKeys": 0
+        },
+        "radius": {
+          "total": 3,
+          "onTokens": 3,
+          "off": 0,
+          "percent": 100,
+          "tokened": true,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 14,
+          "onTokens": 14,
+          "off": 0,
+          "percent": 100,
+          "tokened": true,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 16,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 1,
+        "judged": 52,
+        "percent": 2
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 17,
+        "near": 4,
+        "percent": 24,
+        "files": 4,
+        "byFamily": {
+          "color": 7,
+          "radius": 2,
+          "spacing": 5,
+          "type-size": 3
+        }
+      },
+      "unusedTokens": {
+        "total": 16,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 7,
+        "withDark": 0
+      },
+      "entries": 1,
+      "rootProperties": 8,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": [
+        "@radix-ui",
+        "class-variance-authority"
+      ]
+    },
+    "evidence": []
+  },
+  "onboard-partial": {
+    "schemaVersion": 1,
+    "rung": "R3",
+    "name": "Partial",
+    "kind": "preset",
+    "flags": [],
+    "sentence": "A system, half in use: shadcn's tokens are installed; 19% of colour still uses Tailwind's keys.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 3,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": "^4.1.0",
+        "entry": "src/index.css",
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 8,
+          "onTokens": 8,
+          "off": 0,
+          "percent": 100,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 16,
+          "onTokens": 13,
+          "off": 3,
+          "percent": 81,
+          "tokened": true,
+          "frameworkKeys": 3
+        },
+        "radius": {
+          "total": 2,
+          "onTokens": 0,
+          "off": 2,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 16,
+          "onTokens": 0,
+          "off": 16,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 7,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 42,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 20,
+        "near": 2,
+        "percent": 10,
+        "files": 3,
+        "byFamily": {
+          "color": 9,
+          "line-height": 3,
+          "radius": 1,
+          "spacing": 4,
+          "type-size": 3
+        }
+      },
+      "unusedTokens": {
+        "total": 7,
+        "dead": 1,
+        "percent": 14
+      },
+      "darkColours": {
+        "total": 7,
+        "withDark": 0
+      },
+      "entries": 1,
+      "rootProperties": 7,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": [
+        "@radix-ui",
+        "class-variance-authority"
+      ]
+    },
+    "evidence": []
+  },
+  "onboard-framework": {
+    "schemaVersion": 1,
+    "rung": "R2",
+    "name": "Framework",
+    "kind": "tailwind",
+    "flags": [],
+    "sentence": "Tailwind's scale, no decisions of your own: 3 type sizes, 5 spacing steps, 6 colours in use.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 1,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": "^4.1.0",
+        "entry": "src/index.css",
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 8,
+          "onTokens": 7,
+          "off": 1,
+          "percent": 88,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 11,
+          "onTokens": 0,
+          "off": 11,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "radius": {
+          "total": 4,
+          "onTokens": 0,
+          "off": 4,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 13,
+          "onTokens": 0,
+          "off": 13,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "elevation": {
+          "total": 2,
+          "onTokens": 0,
+          "off": 2,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 1,
+        "judged": 38,
+        "percent": 3
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 18,
+        "near": 2,
+        "percent": 11,
+        "files": 1,
+        "byFamily": {
+          "color": 6,
+          "line-height": 3,
+          "radius": 1,
+          "spacing": 5,
+          "type-size": 3
+        }
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 1,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": []
+    },
+    "evidence": []
+  },
+  "onboard-bare": {
+    "schemaVersion": 1,
+    "rung": "R1",
+    "name": "Bare",
+    "kind": "plain",
+    "flags": [
+      "noisy"
+    ],
+    "sentence": "No system yet: 37 values in 2 files, 13 of them near-duplicates, 100% of inline styles are literals.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 1,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": null,
+        "entry": null,
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 14,
+          "onTokens": 1,
+          "off": 13,
+          "percent": 7,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 18,
+          "onTokens": 1,
+          "off": 17,
+          "percent": 6,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "radius": {
+          "total": 4,
+          "onTokens": 0,
+          "off": 4,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 11,
+          "onTokens": 0,
+          "off": 11,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "motion": {
+          "total": 2,
+          "onTokens": 0,
+          "off": 2,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 0,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 6,
+        "literal": 6,
+        "percent": 100
+      },
+      "values": {
+        "distinct": 37,
+        "near": 13,
+        "percent": 35,
+        "files": 2,
+        "byFamily": {
+          "color": 14,
+          "duration": 2,
+          "line-height": 1,
+          "radius": 3,
+          "spacing": 11,
+          "type-size": 6
+        }
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 1,
+        "withDark": 0
+      },
+      "entries": 0,
+      "rootProperties": 1,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": []
+    },
+    "evidence": []
+  },
+  "onboard-chaos": {
+    "schemaVersion": 1,
+    "rung": "R3",
+    "name": "Partial",
+    "kind": "preset",
+    "flags": [
+      "conflicting",
+      "dark-split",
+      "dead",
+      "noisy",
+      "split"
+    ],
+    "sentence": "A system, half in use: shadcn's tokens are installed; 11% of colour still uses Tailwind's keys, 2 Tailwind entries, 1 token defined twice.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 5,
+        "css": 3
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": "^4.1.0",
+        "entry": "src/index.css",
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 14,
+          "onTokens": 7,
+          "off": 7,
+          "percent": 50,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 18,
+          "onTokens": 13,
+          "off": 5,
+          "percent": 72,
+          "tokened": true,
+          "frameworkKeys": 2
+        },
+        "radius": {
+          "total": 3,
+          "onTokens": 2,
+          "off": 1,
+          "percent": 67,
+          "tokened": true,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 17,
+          "onTokens": 0,
+          "off": 17,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 28,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 14,
+        "judged": 50,
+        "percent": 28
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 23,
+        "near": 8,
+        "percent": 35,
+        "files": 5,
+        "byFamily": {
+          "color": 7,
+          "line-height": 2,
+          "radius": 1,
+          "spacing": 9,
+          "type-size": 4
+        }
+      },
+      "unusedTokens": {
+        "total": 28,
+        "dead": 21,
+        "percent": 75
+      },
+      "darkColours": {
+        "total": 7,
+        "withDark": 4
+      },
+      "entries": 2,
+      "rootProperties": 8,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 3
+      },
+      "libraries": [
+        "@radix-ui",
+        "class-variance-authority"
+      ]
+    },
+    "evidence": [
+      {
+        "about": "Tailwind entries",
+        "files": [
+          "src/admin.css",
+          "src/index.css"
+        ]
+      },
+      {
+        "about": "--radius is defined more than once: 6px vs 8px",
+        "files": [
+          "src/index.css",
+          "src/legacy.css"
+        ]
+      }
+    ]
+  },
+  "onboard-v3": {
+    "schemaVersion": 1,
+    "rung": "R0",
+    "name": "Blocked",
+    "kind": "v3",
+    "flags": [],
+    "sentence": "Tailwind 3.4: Plumber judges Tailwind 4. Your 31 theme values come with the upgrade.",
+    "next": "npx @tailwindcss/upgrade",
+    "numbers": {
+      "files": {
+        "source": 1,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 3,
+        "declared": "^3.4.17",
+        "entry": null,
+        "prefix": null
+      },
+      "families": {},
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 0,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 0,
+        "near": 0,
+        "percent": 0,
+        "files": 0,
+        "byFamily": {}
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 0,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 0
+      },
+      "libraries": [],
+      "themeValues": 31
+    },
+    "evidence": []
+  },
+  "onboard-monorepo": {
+    "schemaVersion": 1,
+    "rung": "R0",
+    "name": "Blocked",
+    "kind": "workspace",
+    "flags": [
+      "split"
+    ],
+    "sentence": "3 apps: apps/admin, apps/web, packages/ui. Run in one: --root apps/admin.",
+    "next": "plumber state --root apps/admin",
+    "numbers": {
+      "files": {
+        "source": 0,
+        "css": 0
+      },
+      "tailwind": {
+        "major": null,
+        "declared": null,
+        "entry": null,
+        "prefix": null
+      },
+      "families": {},
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 0,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 0,
+        "near": 0,
+        "percent": 0,
+        "files": 0,
+        "byFamily": {}
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 0,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 0
+      },
+      "libraries": [],
+      "apps": [
+        {
+          "path": "apps/admin",
+          "kind": "Vite"
+        },
+        {
+          "path": "apps/web",
+          "kind": "Vite"
+        },
+        {
+          "path": "packages/ui",
+          "kind": "library"
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "about": "Apps in this workspace",
+        "files": [
+          "apps/admin",
+          "apps/web",
+          "packages/ui"
+        ]
+      }
+    ]
+  },
+  "onboard-monorepo/apps/web": {
+    "schemaVersion": 1,
+    "rung": "R2",
+    "name": "Framework",
+    "kind": "tailwind",
+    "flags": [
+      "tokens-from-package"
+    ],
+    "sentence": "Tailwind's scale, no decisions of your own: 3 type sizes, 4 spacing steps in use, tokens come from @fixtures/ui.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 1,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": "^4.1.0",
+        "entry": "src/index.css",
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 7,
+          "onTokens": 7,
+          "off": 0,
+          "percent": 100,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "radius": {
+          "total": 3,
+          "onTokens": 0,
+          "off": 3,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 11,
+          "onTokens": 0,
+          "off": 11,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 3,
+        "exported": 3
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 21,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 11,
+        "near": 0,
+        "percent": 0,
+        "files": 1,
+        "byFamily": {
+          "line-height": 3,
+          "radius": 1,
+          "spacing": 4,
+          "type-size": 3
+        }
+      },
+      "unusedTokens": {
+        "total": 3,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 1,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": []
+    },
+    "evidence": []
+  },
+  "onboard-monorepo/apps/admin": {
+    "schemaVersion": 1,
+    "rung": "R1",
+    "name": "Bare",
+    "kind": "plain",
+    "flags": [],
+    "sentence": "No system yet: 13 values in 2 files, 3 of them near-duplicates.",
+    "next": "plumber init",
+    "numbers": {
+      "files": {
+        "source": 1,
+        "css": 1
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": null,
+        "entry": null,
+        "prefix": null
+      },
+      "families": {
+        "spacing": {
+          "total": 6,
+          "onTokens": 1,
+          "off": 5,
+          "percent": 17,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "color": {
+          "total": 4,
+          "onTokens": 0,
+          "off": 4,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "radius": {
+          "total": 1,
+          "onTokens": 0,
+          "off": 1,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        },
+        "type": {
+          "total": 3,
+          "onTokens": 0,
+          "off": 3,
+          "percent": 0,
+          "tokened": false,
+          "frameworkKeys": 0
+        }
+      },
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 0,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 1,
+        "literal": 1,
+        "percent": 100
+      },
+      "values": {
+        "distinct": 13,
+        "near": 3,
+        "percent": 23,
+        "files": 2,
+        "byFamily": {
+          "color": 4,
+          "radius": 1,
+          "spacing": 5,
+          "type-size": 3
+        }
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 0,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 1
+      },
+      "libraries": []
+    },
+    "evidence": []
+  },
+  "two-entries": {
+    "schemaVersion": 1,
+    "rung": "R0",
+    "name": "Blocked",
+    "kind": "no-source",
+    "flags": [
+      "split"
+    ],
+    "sentence": "No React source under src/ or app/. Set source in plumber.config.ts.",
+    "next": "set source in plumber.config.ts",
+    "numbers": {
+      "files": {
+        "source": 0,
+        "css": 2
+      },
+      "tailwind": {
+        "major": 4,
+        "declared": null,
+        "entry": null,
+        "prefix": null
+      },
+      "families": {},
+      "tokens": {
+        "project": 0,
+        "exported": 0
+      },
+      "arbitrary": {
+        "declarations": 0,
+        "judged": 0,
+        "percent": 0
+      },
+      "inline": {
+        "sites": 0,
+        "literal": 0,
+        "percent": 0
+      },
+      "values": {
+        "distinct": 0,
+        "near": 0,
+        "percent": 0,
+        "files": 0,
+        "byFamily": {}
+      },
+      "unusedTokens": {
+        "total": 0,
+        "dead": 0,
+        "percent": 0
+      },
+      "darkColours": {
+        "total": 0,
+        "withDark": 0
+      },
+      "entries": 2,
+      "rootProperties": 0,
+      "unreadable": {
+        "files": 0,
+        "stylesheets": 0
+      },
+      "libraries": []
+    },
+    "evidence": [
+      {
+        "about": "Tailwind entries",
+        "files": [
+          "src/first.css",
+          "src/second.css"
+        ]
+      }
+    ]
+  }
+}
