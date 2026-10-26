@@ -1,0 +1,6 @@
+/* Written before the theme existed; still loaded. */
+:root {
+  --radius: 8px;
+}
+
+.legacy-note { color: #667; font-size: 13px; }

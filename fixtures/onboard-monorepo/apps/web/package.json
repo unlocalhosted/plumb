@@ -1,0 +1,11 @@
+{
+  "name": "@fixtures/web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@fixtures/ui": "workspace:*",
+    "react": "^19.0.0",
+    "tailwindcss": "^4.1.0",
+    "vite": "^7.0.0"
+  }
+}

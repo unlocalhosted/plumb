@@ -1,0 +1,5 @@
+body { margin: 0; font-size: 14px; color: #555; }
+h1 { font-size: 22px; margin: 0 0 12px; }
+.table { border: 1px solid #ddd; border-radius: 6px; padding: 12px; }
+.table td { padding: 6px 10px; color: #666; }
+.table th { padding: 6px 11px; color: #333; font-size: 13px; }

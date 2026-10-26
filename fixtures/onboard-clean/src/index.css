@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn init output, with the scales shadcn leaves to Tailwind written down as ours. */
+:root {
+  /* why: the page */
+  --background: oklch(1 0 0);
+  /* why: reading text */
+  --foreground: oklch(0.145 0 0);
+  /* why: the one action colour */
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  /* why: quiet surfaces and secondary text */
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  /* why: lines */
+  --border: oklch(0.922 0 0);
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@theme {
+  /* why: one step of the spacing scale */
+  --spacing: 0.25rem;
+  /* why: captions and controls */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  /* why: body text */
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  /* why: section titles */
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  /* why: labels and titles */
+  --font-weight-medium: 500;
+}

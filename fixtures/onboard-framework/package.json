@@ -1,0 +1,9 @@
+{
+  "name": "plumb-fixture-onboard-framework",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react": "^19.0.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@fixtures/admin",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react": "^19.0.0",
+    "vite": "^7.0.0"
+  }
+}
