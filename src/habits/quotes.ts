@@ -9,12 +9,13 @@ import type { Declaration, Finding } from '../report.js';
 export const realQuotesHabit = { id: 'real-quotes', severity: 'warn', reason: 'Straight quotes, three dots and spaced hyphens read as unfinished typing.', fix: 'Use real typography: ’ for apostrophes, “ ” and ‘ ’ for quotes, … for an ellipsis, – for a spaced dash.' } as const;
 const SHOWN = new Set(['alt', 'title', 'placeholder', 'aria-label', 'aria-description', 'label']);
 
-/** The text a person sees, typeset; the same string when nothing needs it. */
+/** The text a person sees, typeset; the same string when nothing needs it. Entities (&quot; &apos;) are left as they
+ * are written: decoding them would put a straight quote back, which inside an attribute ends the attribute. */
 export function typeset(raw: string): string {
   return raw
-    .replace(/&(?:apos|#39|#x27);/g, '\'').replace(/&(?:quot|#34|#x22);/g, '"')
     .replace(/\.\.\.(?!\.)/g, '…')
-    .replace(/(\S) --? (?=\S)/g, '$1 – ')
+    // a spaced hyphen between words is a dash; between numbers (10 - 2) it is a minus, and stays
+    .replace(/(\S) --? (?=(\S))/g, (match, before: string, after: string) => /\d/.test(before) && /\d/.test(after) ? match : `${before} – `)
     .replace(/(\w)--(?=\w)/g, '$1—')
     .replace(/(\p{L})'(?=\p{L})/gu, '$1’')
     .replace(/(^|[\s(\[{—–-])"([^"\n]*?)"/g, '$1“$2”')
@@ -28,7 +29,7 @@ export async function realQuotes(files: string[], overrides: ReadonlyMap<string,
     if (!/\.[jt]sx$/.test(file)) continue;
     let text: string;
     try { text = overrides.get(file) ?? await readFile(file, 'utf8'); } catch { continue; }
-    if (!/['"]|\.\.\.|\s-\s|--|&(?:apos|quot|#39|#34);/.test(text)) continue;
+    if (!/['"]|\.\.\.|\s-\s|--/.test(text)) continue;
     const parsed = parseSync(file, text);
     if (parsed.errors.length) continue;
     const source = { file, text, lineStarts: lineStarts(text) };

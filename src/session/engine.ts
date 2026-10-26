@@ -13,6 +13,7 @@ import { errorMessage, UsageError } from '../errors.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
+import { parseSync } from 'oxc-parser';
 import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
@@ -52,6 +53,13 @@ export interface UndoHandle { id: string; file: string; label: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
 export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string }
+/** A write may never leave a source file that parses worse than it did: every writer's last guard. */
+function parsesAsBefore(file: string, before: string, next: string): void {
+  if (!/\.[cm]?[jt]sx?$/.test(file)) return;
+  const errors = (text: string) => { try { return parseSync(file, text).errors.length; } catch { return Infinity; } };
+  if (errors(next) > errors(before)) throw new UsageError('The change would leave the file unable to parse, so nothing was written.');
+}
+
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
@@ -584,6 +592,8 @@ export class Session extends EventEmitter {
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
+    if (!names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return swapClasses(_file, source, facts.location.start, names(from), names(to));
@@ -628,6 +638,7 @@ export class Session extends EventEmitter {
         const { start, end, replacement, at } = find(file, source);
         next = source.slice(0, start) + replacement + source.slice(end);
         siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
+        parsesAsBefore(file, source, next);
         await this.sameFile(file, identity);
         await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
         await this.sameFile(file, identity);
@@ -673,6 +684,7 @@ export class Session extends EventEmitter {
         before = source;
         next = source;
         for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
+        parsesAsBefore(file, source, next);
         await this.sameFile(file, identity);
         await handle.writeFile(next, 'utf8');
         await handle.truncate(Buffer.byteLength(next));

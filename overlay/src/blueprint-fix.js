@@ -100,6 +100,12 @@ const ICON = {
 const LEDGER = { new: 'new', debt: 'known debt', exception: 'accepted' };
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
+// The inverse of a craft preview: what it added goes, what it took away comes back.
+function unswap(el, { removed, added }) {
+  for (const name of added) el.classList.remove(name);
+  for (const name of removed) el.classList.add(name);
+}
+
 export class Fixer {
   #host; #root; #marks; #invalidate; #scale; #el; #list; #listOpen = false;
   #byEl = new WeakMap(); // Element → Map<mark.key, pick>
@@ -137,7 +143,8 @@ export class Fixer {
   // picks that Write would send
   writable() { return [...this.#picks].filter(p => p.state === 'picked' && p.choice.edit); }
   // the edits Write would make: sites drawn by one JSX line share one
-  edits() { const w = this.writable(); return new Set(w.filter(p => !p.choice.edit.craft).map(p => `${p.file}#${p.choice.edit.id}`)).size + w.filter(p => p.choice.edit.craft).length; }
+  // craft picks made together for one cause count once: rows drawn by one JSX line are one edit
+  edits() { const w = this.writable(); return new Set(w.filter(p => !p.choice.edit.craft).map(p => `${p.file}#${p.choice.edit.id}`)).size + new Set(w.filter(p => p.choice.edit.craft).map(p => p.together ?? p)).size; }
   get count() { return [...this.#picks].filter(p => p.state !== 'written').length; }
   occluders() { return [this.#el, this.#list].filter(e => !e.hidden).map(e => e.getBoundingClientRect()); }
 
@@ -161,6 +168,16 @@ export class Fixer {
       full.pick = pick ? 0 : null;
       this.#open.full = full;
       this.#render();
+      // the file as it is when the chooser opens: Write sends this hash, so an edit made in between is refused as stale
+      // instead of being written over
+      (async () => {
+        try {
+          const at = await locate(el);
+          if (!at?.file) return;
+          const props = await request('props', { file: at.file, line: at.line, column: at.column });
+          if (props?.hash && this.#open?.el === el && this.#open.key === mark.key) Object.assign(this.#open, { hash: props.hash, file: at.file, at: { line: props.line ?? at.line, column: props.column ?? at.column } });
+        } catch {}
+      })();
       return;
     }
     const full = await this.#host.read(el);
@@ -344,9 +361,12 @@ export class Fixer {
     if (!p) this.#previews.set(el, (p = { styleAttr: el.getAttribute('style'), original: new Map() }));
     // a craft suggestion names classes: its preview swaps them on the element, and the lift puts the class back
     if (choice?.edit?.craft) {
-      if (p.classAttr === undefined) p.classAttr = el.getAttribute('class');
-      for (const name of choice.edit.from.split(/\s+/).filter(Boolean)) el.classList.remove(name);
-      for (const name of choice.edit.to.split(/\s+/).filter(Boolean)) el.classList.add(name);
+      const names = (v) => v.split(/\s+/).filter(Boolean);
+      if (p.craft) unswap(el, p.craft);
+      // only what this preview adds or takes away is remembered, so a class React changes meanwhile is left alone
+      p.craft = { removed: names(choice.edit.from).filter((n) => el.classList.contains(n)), added: names(choice.edit.to).filter((n) => !el.classList.contains(n)) };
+      for (const name of p.craft.removed) el.classList.remove(name);
+      for (const name of p.craft.added) el.classList.add(name);
       return;
     }
     for (const prop of props) {
@@ -357,7 +377,7 @@ export class Fixer {
   #lift(el) {
     const p = this.#previews.get(el); if (!p) return;
     for (const [prop, [value, priority]] of p.original) value ? el.style.setProperty(prop, value, priority) : el.style.removeProperty(prop);
-    if (p.classAttr !== undefined) { if (p.classAttr === null) el.removeAttribute('class'); else el.setAttribute('class', p.classAttr); }
+    if (p.craft) unswap(el, p.craft);
     // Leave no residue: an element that had no style attribute gets none back (read first, so the removal is last).
     if (p.styleAttr === null && !el.style.length) { el.getAttribute('style'); el.removeAttribute('style'); }
     this.#previews.delete(el);
@@ -390,7 +410,7 @@ export class Fixer {
     if (!byKey) this.#byEl.set(o.el, (byKey = new Map()));
     const prior = byKey.get(o.key);
     if (prior) this.#picks.delete(prior);
-    const pick = { el: o.el, key: o.key, file: o.file, hash: o.hash, mark: o.full, j, choice: c, state: 'picked' };
+    const pick = { el: o.el, key: o.key, file: o.file, hash: o.hash, at: o.at, mark: o.full, j, choice: c, state: 'picked', together: o.group && c.edit?.craft ? {} : undefined };
     byKey.set(o.key, pick);
     this.#picks.add(pick);
     if (this.#status?.kind !== 'writing') this.#status = null;
@@ -401,6 +421,26 @@ export class Fixer {
   }
   // The same choice at every other site of the group, each from its own reading (its own edit, file and hash).
   async #pickGroup(o, c) {
+    // craft: each site was read on the page, not by the server; a site whose own suggestion is this same edit takes it
+    if (c.edit?.craft) {
+      const together = this.#byEl.get(o.el)?.get(o.key)?.together;
+      for (const g of o.group) {
+        if (g.el === o.el && g.mark.key === o.key) continue;
+        const s = g.mark.craft?.suggest;
+        if (s?.kind !== 'class' || s.from !== c.edit.from || s.to !== c.edit.to) continue;
+        let byKey = this.#byEl.get(g.el);
+        if (!byKey) this.#byEl.set(g.el, (byKey = new Map()));
+        const prior = byKey.get(g.mark.key);
+        if (prior) this.#picks.delete(prior);
+        const mark = structuredClone(g.mark); mark.choices = [c]; mark.pick = 0;
+        const pick = { el: g.el, key: g.mark.key, file: null, hash: null, mark, j: 0, choice: c, state: 'picked', together };
+        byKey.set(g.mark.key, pick);
+        this.#picks.add(pick);
+        this.#repaint(g.el);
+      }
+      this.#sync();
+      return;
+    }
     for (const g of o.group) {
       if (g.el === o.el && g.mark.key === o.key) continue;
       const full = await this.#host.read(g.el).catch(() => null);
@@ -489,28 +529,41 @@ export class Fixer {
     this.#host.changed(); this.#render(); this.#renderList();
     const wrote = [], refused = [];
     this.#host.remember(`Wrote ${plural(n, 'edit')} to ${[...byFile.keys()].map(f => f.split('/').pop()).join(', ')}`);
+    // rows drawn by one JSX line are one source site: the edit is sent once and every row is written by it
+    const sites = new Map(); // `${file}:${line}:${column}|${from}|${to}` → [picks]
     for (const p of craft) {
+      let at = p.file && p.at ? { file: p.file, ...p.at } : null;
+      if (!at) { try { const l = await locate(p.el); if (l?.file) at = { file: l.file, line: l.line, column: l.column }; } catch {} }
+      p.site = at;
+      const key = at ? `${at.file}:${at.line}:${at.column}|${p.choice.edit.from}|${p.choice.edit.to}` : Symbol();
+      (sites.get(key) ?? sites.set(key, []).get(key)).push(p);
+    }
+    for (const [p, ...twins] of sites.values()) {
       let file = 'the file';
       try {
-        const at = await locate(p.el);
+        const at = p.site;
         if (!at?.file) throw new Error('React Plumber can’t tie this element to a line in your source.');
         file = at.file;
-        const props = await request('props', { file: at.file, line: at.line, column: at.column });
-        if (!props?.hash) throw new Error('React Plumber couldn’t read this element.');
-        const result = await post('swap', { file: at.file, hash: props.hash, line: props.line ?? at.line, column: props.column ?? at.column, from: p.choice.edit.from, to: p.choice.edit.to });
+        // the hash read when the chooser opened; read now only when the pick was made before that reading came back
+        let { hash } = p, line = at.line, column = at.column;
+        if (!hash) {
+          const props = await request('props', { file: at.file, line: at.line, column: at.column });
+          if (!props?.hash) throw new Error('React Plumber couldn’t read this element.');
+          ({ hash } = props); line = props.line ?? line; column = props.column ?? column;
+        }
+        const result = await post('swap', { file: at.file, hash, line, column, from: p.choice.edit.from, to: p.choice.edit.to });
         this.#host.wrote?.(result, `Wrote ${p.choice.edit.to} to ${file.split('/').pop()}`);
-        p.state = 'written';
+        for (const q of [p, ...twins]) q.state = 'written';
         wrote.push({ file, n: 1 });
         // the element already wears the new classes; the dev server's reload keeps them, so the preview lets go of
         // its saved classes instead of putting the old ones back
-        const pv = this.#previews.get(p.el);
-        if (pv) pv.classAttr = undefined;
+        for (const q of [p, ...twins]) { const pv = this.#previews.get(q.el); if (pv) pv.craft = undefined; }
         this.#host.forget();
         this.#invalidate({ file });
-        this.#liftWhenReloaded([p]);
+        this.#liftWhenReloaded([p, ...twins]);
       } catch (error) {
         const stale = /changed since/i.test(error?.message ?? '');
-        p.state = stale ? 'stale' : 'picked';
+        for (const q of [p, ...twins]) q.state = stale ? 'stale' : 'picked';
         refused.push({ file, stale, message: error?.message ?? 'React Plumber refused the write.' });
       }
     }

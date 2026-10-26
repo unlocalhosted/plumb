@@ -105,6 +105,7 @@ export function App() {
         <p id="sentence" className="w-40 truncate text-body">A sentence far too long for its box</p>
         <div><button id="pair" className="flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
         <div><button id="pair-ok" className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
+        <div id="rows" className="flex flex-col items-start gap-s2">{['a', 'b', 'c'].map((n) => <button key={n} className="rounded-control bg-surface px-s2 py-s2 text-body">Go {n}</button>)}</div>
       </div>
     </main>
   );
@@ -188,5 +189,32 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   await blueprint(page, overlay);
   await page.waitForTimeout(500);
   assert.deepEqual(await on(page, 'pair'), []);
+  assert.deepEqual(errors, []);
+});
+
+test('Rows from one JSX line: the cause is picked once from the panel and written once, every row with it, nothing refused', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(500);
+  await overlay.locator('.bpp .head').click();
+  const row = overlay.locator('.bpp .row[data-key^="craft/button-padding"]').filter({ has: page.locator('code', { hasText: /^px-s2$/ }) });
+  await row.waitFor({ timeout: 10000 });
+  assert.match(await row.locator('.what').innerText(), /3 places · 1 line/);
+  await row.click();
+  await page.keyboard.press('Enter');
+  const ch = overlay.locator('.ch .card[role="dialog"]');
+  await ch.waitFor();
+  await ch.locator('.cmp .opt', { hasText: 'px-s4' }).click();
+  // three rows picked, one edit to write
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .write')?.textContent.trim() === 'Write 1', null, { timeout: 10000 });
+  await overlay.locator('.dock .write').click();
+  const source = join(root, 'src/App.jsx');
+  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="rows"'));
+  for (let i = 0; i < 100 && !/px-s4/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="rounded-control bg-surface px-s4 py-s2 text-body">Go \{n\}/);
+  await page.waitForTimeout(500);
+  assert.doesNotMatch(await overlay.locator('.dock').innerText(), /refused/i);
   assert.deepEqual(errors, []);
 });

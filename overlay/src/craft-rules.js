@@ -45,7 +45,7 @@
  * Thresholds live on the rule, so noise is tuned in one place. Every rule says nothing when its evidence is
  * ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility, classesOf } from './craft.js';
+import { rgb, utility, classesOf } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 
 const px = (v) => parseFloat(v) || 0;
@@ -175,7 +175,9 @@ export const textOpacity = {
     const cls = utility(el, 'opacity');
     const near = theme.nearestColor(mixed, this.threshold.within);
     const text = cls ?? 'opacity';
-    const suggest = near && cls ? { kind: 'class', from: cls, to: `text-${near.short}`, why: `${near.short} is the colour this text shows here (${hex(mixed)}), without the layer` }
+    // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
+    const own = colourClass(el, 'text', theme);
+    const suggest = near && cls ? { kind: 'class', from: [cls, own].filter(Boolean).join(' '), to: `text-${near.short}`, why: `${near.short} is the colour this text shows here (${hex(mixed)}), without the layer` }
       : { kind: 'advice', text: near ? `Replace opacity ${o} with the colour ${near.short}: it is what this text shows here (${hex(mixed)}).` : `Replace opacity ${o} with a colour: color-mix(in oklab, currentColor ${Math.round(o * 100)}%, transparent), or a muted text token near ${hex(mixed)}.` };
     return [{
       key: this.id, what: 'text faded by opacity', text, props: ['color'], value: String(o), n: o,
@@ -448,17 +450,44 @@ const alpha = (c) => c?.[3] ?? 0;
 // a over b, both [r, g, b, a]
 const over = (a, b) => [0, 1, 2].map((i) => a[i] * alpha(a) + b[i] * (1 - alpha(a))).concat(1);
 // a spacing utility for a px value: the theme's named step when one is that close, else Tailwind's numeric step
-const space = (theme, value, prefix) => { const t = theme.nearest('spacing', value, 0.5); return t ? `${prefix}-${t.short}` : value % 1 === 0 && value % 4 === 0 ? `${prefix}-${value / 4}` : `${prefix}-[${fmt(value)}]`; };
+const space = (theme, value, prefix) => { const t = theme.nearest('spacing', value, 0.5); return t ? `${prefix}-${t.short}` : numeric(theme, value, prefix); };
+// a numeric Tailwind step (`size-9`) when the project's --spacing unit divides the value, else the exact length
+function numeric(theme, value, prefix) {
+  const unit = theme.unit?.();
+  const n = unit ? value / unit : NaN;
+  return Number.isFinite(n) && Math.abs(n - Math.round(n * 4) / 4) < 0.01 ? `${prefix}-${Math.round(n * 4) / 4}` : `${prefix}-[${fmt(value)}]`;
+}
+const PALETTE = /^(?:black|white|transparent|current|inherit|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})(?:\/[\d.]+)?$|^\[(?:#|rgb|hsl|oklch|oklab|color-mix|var\(--color)/;
+// whether `prefix-rest` names a colour: one of the theme's, Tailwind's palette, or an arbitrary colour
+const isColour = (rest, theme) => PALETTE.test(rest) || (theme?.colors?.() ?? []).some((c) => rest === c.short || rest.startsWith(`${c.short}/`));
 // the classes of an element whose prefix sets a colour, e.g. border-ink-muted (not border, border-2, border-t)
-function colourClass(el, prefix) {
+function colourClass(el, prefix, theme) {
   for (const c of classesOf(el).split(/\s+/)) {
     if (!c.startsWith(prefix + '-') || c.includes(':')) continue;
     const rest = c.slice(prefix.length + 1);
     if (/^(?:\d|\[\d|[trblxyse]$|[trblxyse]-|solid|dashed|dotted|double|none|hidden|collapse|separate|spacing)/.test(rest)) continue;
+    // text-body is a size, text-ink a colour: only a name the theme or the palette knows as a colour counts
+    if (theme && !isColour(rest, theme)) continue;
     return c;
   }
   return null;
 }
+// The elements with a running or paused animation or transition, read once per pass.
+const animatedMemo = new WeakMap();
+function animated(facts) {
+  let v = animatedMemo.get(facts);
+  if (!v) animatedMemo.set(facts, (v = new Set(document.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'paused').map((a) => a.effect?.target).filter(Boolean))));
+  return v;
+}
+// The rows of a table, counted once per pass.
+const rowsMemo = new WeakMap();
+function rowsOf(facts, table) {
+  let m = rowsMemo.get(facts);
+  if (!m) rowsMemo.set(facts, (m = new Map()));
+  if (!m.has(table)) m.set(table, table.querySelectorAll('tr, [role="row"]').length);
+  return m.get(table);
+}
+
 // APCA 0.0.98G lightness contrast of text on ground, both [r, g, b]; positive for dark on light
 function apca(text, ground) {
   const y = ([r, g, b]) => { const l = (c) => Math.pow(c / 255, 2.4); const v = 0.2126729 * l(r) + 0.7151522 * l(g) + 0.072175 * l(b); return v < 0.022 ? v + Math.pow(0.022 - v, 1.414) : v; };
@@ -604,7 +633,7 @@ export const tabularNums = {
     const text = words(el);
     if (!/^[\s$€£¥₹+\-−–.,:%()\d]+$/.test(text) || (text.match(/\d/g) ?? []).length < 2) return [];
     const table = el.closest('table, [role="table"], [role="grid"]');
-    if (!table || table.querySelectorAll('tr, [role="row"]').length < this.threshold.rows) return [];
+    if (!table || rowsOf(facts, table) < this.threshold.rows) return [];
     const s = facts.style(el);
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];
@@ -669,7 +698,7 @@ export const oneLight = {
 export const borderOnShadow = {
   id: 'craft/border-on-shadow', family: 'craft', number: [23], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'ground'],
   threshold: { blur: 4, grey: 24 },
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     if (!shadows(s.boxShadow).some((l) => !l.inset && l.blur >= this.threshold.blur)) return [];
     if (!['Top', 'Right', 'Bottom', 'Left'].every((k) => px(s[`border${k}Width`]) >= 1 && s[`border${k}Style`] !== 'none')) return [];
@@ -677,7 +706,7 @@ export const borderOnShadow = {
     if (!c || c[3] < 1) return [];
     if (Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]) > this.threshold.grey) return []; // a coloured border is a decision
     const dark = (0.2126 * facts.ground(el)[0] + 0.7152 * facts.ground(el)[1] + 0.0722 * facts.ground(el)[2]) / 255 < 0.5;
-    const cls = colourClass(el, 'border');
+    const cls = colourClass(el, 'border', theme);
     const to = dark ? 'border-white/10' : 'border-black/10';
     return [{
       key: this.id, what: 'solid border fighting a shadow', text: cls ?? 'border-color', props: ['border-color'], value: hex(c), n: 0,
@@ -693,7 +722,7 @@ export const borderOnShadow = {
 export const contrast = {
   id: 'craft/contrast', family: 'craft', number: [24], tier: TIER.access, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   threshold: { small: 60, bold: 50, large: 45 },
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const ns = facts.style(n); if (ns.backgroundImage !== 'none') return []; if (alpha(rgb(ns.backgroundColor)) > 0.5) break; }
@@ -703,7 +732,7 @@ export const contrast = {
     let fade = 1;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       // a fade still running (an entrance, a reveal on scroll) is a moment, not the text's colour: judge it at rest
-      if (n.getAnimations?.().some((x) => x.playState === 'running' || x.playState === 'paused')) return [];
+      if (animated(facts).has(n)) return [];
       fade *= parseFloat(facts.style(n).opacity) || 0;
     }
     if (fade < 0.05) return []; // not shown at all (waiting to be revealed): there is nothing to read yet
@@ -715,7 +744,7 @@ export const contrast = {
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     return [{
-      key: this.id, what: 'too little contrast to read', text: colourClass(el, 'text') ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
+      key: this.id, what: 'too little contrast to read', text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
       title: `${fmt(fs)} text at APCA Lc ${Math.round(lc)} on its ground: ${need} is the floor for ${large ? 'large' : need === this.threshold.bold ? 'bold small' : 'small'} text`,
       because: 'Perceptual contrast (APCA) predicts what people can read better than WCAG 2 ratios, most of all on dark themes and small sizes.',
       evidence: { lc: Math.round(lc), need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
@@ -780,7 +809,7 @@ export const hitTarget = {
 export const mediaSize = {
   id: 'craft/media-size', family: 'craft', number: [34], tier: TIER.craft, owns: ['size'], once: 'ancestor', reads: ['rect', 'kids'],
   threshold: { min: 12, near: 12 },
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     if (!el.matches('img, svg, [data-avatar]')) return [];
     const r = facts.rect(el);
     if (r.width < this.threshold.min) return [];
@@ -805,7 +834,7 @@ export const mediaSize = {
       title: `This one is ${mine}px where the rest of the list is ${mode}px`,
       because: 'Media of one list are one size; 32 next to 36 looks like a mistake, not a choice.',
       evidence: { mine, mode, of: sizes.length }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to: `${cls.split('-')[0]}-${mode % 4 === 0 ? mode / 4 : `[${mode}px]`}`, why: `${mode}px like the others` } : { kind: 'advice', text: `Make it ${mode}px like the others.` },
+      suggest: cls ? { kind: 'class', from: cls, to: numeric(theme, mode, cls.replace(/^!|!$/g, '').split('-')[0]), why: `${mode}px like the others` } : { kind: 'advice', text: `Make it ${mode}px like the others.` },
     }];
   },
 };
@@ -964,13 +993,14 @@ export const inputZoom = {
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
     const fs = px(facts.style(el).fontSize);
     if (fs >= this.threshold.min) return [];
-    const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm|\[\d)/.test(c));
+    // only a class known to be a size under 16px is swapped; a theme's own size name (text-small) gets advice
+    const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 99) < 16);
     return [{
       key: this.id, what: 'zooms the page on iOS', text: cls ?? 'font-size', props: ['font-size'], value: `${fs}px`, n: fs,
       title: `This field's text is ${fmt(fs)}: iOS Safari zooms the page when it's focused`,
       because: 'Safari on iPhone zooms in on any field under 16px and leaves the page zoomed.',
       evidence: { fontSize: fs }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `text-base md:${cls}`, why: '16px on phones, your size from md up' } : { kind: 'class', from: '', to: 'text-base md:text-sm', why: '16px on phones' },
+      suggest: cls ? { kind: 'class', from: cls, to: `text-base md:${cls}`, why: '16px on phones, your size from md up' } : { kind: 'advice', text: `Give the field 16px text on phones (text-base), keeping ${fmt(fs)} from md up.` },
     }];
   },
 };
@@ -996,7 +1026,7 @@ function stickyHeader(facts) {
 export const anchorOffset = {
   id: 'craft/anchor-offset', family: 'craft', number: [73], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style'],
   threshold: {},
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     if (!el.id || !el.matches('h1, h2, h3, h4, section, article, [id]:is(h5, h6)')) return [];
     const h = stickyHeader(facts);
     if (!h) return [];
@@ -1004,13 +1034,13 @@ export const anchorOffset = {
     if (px(s.scrollMarginTop) >= h - 0.5) return [];
     const parentMargin = [...document.querySelectorAll('html, body')].some((n) => px(facts.style(n).scrollPaddingTop) >= h - 0.5);
     if (parentMargin) return [];
-    const steps = Math.ceil(h / 4);
+    const to = numeric(theme, Math.ceil(h), 'scroll-mt');
     return [{
       key: this.id, what: 'jump lands under the header', text: utility(el, 'scroll-mt') ?? 'scroll-margin-top', props: ['scroll-margin-top'], value: s.scrollMarginTop, n: px(s.scrollMarginTop),
       title: `#${el.id} lands under the ${fmt(h)} sticky header when linked to`,
       because: 'A jump scrolls the target to the very top, where the sticky header covers it; scroll-margin-top leaves room.',
       evidence: { header: h, margin: px(s.scrollMarginTop) }, confidence: 0.85,
-      suggest: { kind: 'class', from: utility(el, 'scroll-mt') ?? '', to: `scroll-mt-${steps}`, why: `${steps * 4}px, the header's height` },
+      suggest: { kind: 'class', from: utility(el, 'scroll-mt') ?? '', to, why: `${fmt(Math.ceil(h))}, the header's height` },
     }];
   },
 };

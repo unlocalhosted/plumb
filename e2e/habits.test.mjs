@@ -228,6 +228,8 @@ test('real-quotes (#19): straight marks in what a person reads are marked with t
     <p>Don’t stop…</p>
     <code>const a = "x"; let b = 'y';</code>
     <p className="it's-a-class">Plain words</p>
+    <img alt="5&quot; tall" src="/b.png" />
+    <p>10 - 2 = 8</p>
   </>);
 }`, { habits: ['real-quotes'] });
   const found = breaks(report(dir), 'real-quotes');

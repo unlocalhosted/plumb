@@ -20,6 +20,7 @@
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
 import { arbitrate } from './craft-arbitrate.js';
+import { rgb, VIRTUAL } from './craft-read.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -71,36 +72,7 @@ export class Facts {
   }
 }
 
-// 'rgb(r, g, b)' or 'rgba(r, g, b, a)' → [r, g, b, a]; null for anything else (a colour the page never resolved)
-export function rgb(s) {
-  const m = String(s ?? '').match(/^rgba?\(([^)]+)\)$/);
-  if (!m) return null;
-  const parts = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
-  if (parts.length < 3 || parts.some((n) => !Number.isFinite(n))) return null;
-  return [parts[0], parts[1], parts[2], parts[3] ?? 1];
-}
-
-// The utility in a class list that sets a property, by its Tailwind prefix: 'rounded-card' for /^rounded(-|$)/,
-// with variants stripped (hover:rounded-lg is not the rest state). Side and corner forms are excluded by `not`.
-// An element's classes as the rules read them: its own, or the ones a suggestion would give it while the arbitration
-// re-runs a rule on the page as it will be (Facts.with). Set and cleared in one synchronous call; never written.
-const VIRTUAL = new WeakMap();
-export const classesOf = (el) => VIRTUAL.get(el) ?? el.getAttribute('class') ?? '';
-
-export function utility(el, prefix, { not } = {}) {
-  for (const c of classesOf(el).split(/\s+/)) {
-    if (!c) continue;
-    let depth = 0, colon = -1;
-    for (let i = 0; i < c.length; i++) { if (c[i] === '[') depth++; else if (c[i] === ']') depth--; else if (c[i] === ':' && !depth) colon = i; }
-    if (colon >= 0) continue;
-    const base = c.replace(/^!/, '').replace(/!$/, '').replace(/^-/, '');
-    if (base !== prefix && !base.startsWith(prefix + '-')) continue;
-    const suffix = base === prefix ? '' : base.slice(prefix.length + 1);
-    if (not && not.test(suffix)) continue;
-    return c;
-  }
-  return null;
-}
+export { rgb, utility, classesOf } from './craft-read.js';
 
 // The theme as the rules see it: the overlay's decisions, each measured on the page once (a token written as
 // calc(var(--spacing) * 3) is known in px, a colour written as oklch() in rgb). The probe is the one write the engine
@@ -112,6 +84,18 @@ export class Theme {
   constructor({ decisions } = {}) { this.#decisions = decisions ?? (() => null); }
   // [{ name, short, px }] for radius and spacing; [{ name, short, rgb }] for color; [] while the decisions load
   scale(family) { return this.#measure()[family] ?? []; }
+  // one step of Tailwind's numeric scale (--spacing) in px, or null when the project has none: `pl-5` means 5 of
+  // these, so a numeric class is offered only when the project defines the unit
+  #unit;
+  unit() {
+    if (this.#unit !== undefined) return this.#unit;
+    const probe = document.createElement('i');
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;padding-left:calc(var(--spacing) * 1);';
+    document.body.append(probe);
+    const n = parseFloat(getComputedStyle(probe).paddingLeft);
+    probe.remove();
+    return (this.#unit = n > 0 ? n : null);
+  }
   colors() { return this.scale('color'); }
   #measure() {
     const d = this.#decisions();
@@ -158,6 +142,16 @@ export class Theme {
     }
     return best;
   }
+}
+
+// An important class stays important: `!px-s3` becomes `!pl-5 !pr-s6`, in the same spelling (leading or trailing).
+function important(suggest) {
+  if (suggest?.kind !== 'class') return suggest;
+  const from = String(suggest.from ?? '').split(/\s+/).filter(Boolean);
+  if (!from.length || !from.every((c) => /^!|!$/.test(c))) return suggest;
+  const lead = from[0].startsWith('!');
+  const to = String(suggest.to).split(/\s+/).filter(Boolean).map((c) => (/^!|!$/.test(c) ? c : lead ? `!${c}` : `${c}!`)).join(' ');
+  return { ...suggest, to };
 }
 
 // A finding, as a mark the overlay draws and groups like any other.
@@ -211,7 +205,8 @@ export class Craft {
   // The craft findings of one element, run fresh or from the cache by signature.
   #marksFor(el, facts) {
     if (!el.isConnected || el.closest('plumb-overlay')) return [];
-    const sig = `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}`;
+    // what a finding depends on: the element's and its parent's classes, its own inline style, its words
+    const sig = `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
     const hit = this.#cache.get(el);
     if (hit && hit.sig === sig) return hit.marks;
     const marks = [];
@@ -222,7 +217,7 @@ export class Craft {
       if (quiet.has(rule.id)) continue;
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
-      for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ ...f, rule: rule.id, key: f.key ?? rule.id }));
+      for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
     }
     this.#cache.set(el, { sig, marks });
     return marks;

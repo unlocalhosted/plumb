@@ -287,7 +287,7 @@ export function swapClasses(file: string, text: string, start: number, from: str
     if (from.length) throw new UsageError(`This element has no static className holding ${from.join(' ')}.`);
     const spread = el.opening.attributes.some(attribute => attribute.type === 'JSXSpreadAttribute');
     if (spread) throw new UsageError('This element spreads props, which may carry className; change the class by hand.');
-    return { start: el.opening.name.end, end: el.opening.name.end, replacement: ` className="${to.join(' ')}"`, at };
+    return { start: el.opening.name.end, end: el.opening.name.end, replacement: ` className="${quoted(to, '"').join(' ')}"`, at };
   }
   const all = classes(el.className.strings);
   const found = from.map(name => all.find(item => item.text === name));
@@ -295,12 +295,34 @@ export function swapClasses(file: string, text: string, start: number, from: str
   if (missing.length) throw new UsageError(`${missing.join(' ')} is not written on this element; read it again.`);
   const string = found[0]?.string ?? el.className.strings[0]!;
   if (found.some(item => item!.string !== string)) throw new UsageError('These classes sit in different parts of the className; change them by hand.');
-  const kept = classes([string]).filter(item => !from.includes(item.text)).map(item => item.text);
-  const at0 = found.length ? classes([string]).findIndex(item => item.text === from[0]) : kept.length;
-  const fresh = to.filter(name => !kept.includes(name));
-  const next = [...kept.slice(0, at0), ...fresh, ...kept.slice(at0)].join(' ');
-  if (next === classes([string]).map(item => item.text).join(' ')) throw new UsageError('Nothing to change: the classes are already so.');
-  // the string's inner text, keeping its leading and trailing whitespace
-  const lead = string.text.match(/^\s*/)![0], trail = string.text.match(/\s*$/)![0];
-  return { start: string.start, end: string.end, replacement: lead + next + trail, at };
+  // The edit is made on the string as written, token by token: escapes, quotes, line breaks and indentation stay
+  // exactly as they are, and only the named classes move.
+  const raw = text.slice(string.start, string.end), delimiter = text[string.start - 1]!;
+  const lead = raw.match(/^\s*/)![0], rest = raw.slice(lead.length), trail = rest.match(/\s*$/)![0], core = rest.slice(0, rest.length - trail.length);
+  const pieces = core ? core.split(/(\s+)/) : [];
+  // [whitespace before, token] pairs; the first token has none
+  const pairs = pieces.flatMap((piece, i) => i % 2 ? [] : [{ sep: i ? pieces[i - 1]! : '', tok: piece }]);
+  const absent = from.filter(name => !pairs.some(pair => pair.tok === name));
+  if (absent.length) throw new UsageError(`${absent.join(' ')} is written with escapes here; change it by hand.`);
+  const kept = pairs.filter(pair => !from.includes(pair.tok));
+  const fresh = quoted(to.filter(name => !all.some(item => item.text === name && !from.includes(name))), delimiter);
+  const first = from.length ? pairs.findIndex(pair => pair.tok === from[0]) : pairs.length;
+  const sep = from.length ? pairs[first]!.sep : ' ';
+  const before = pairs.slice(0, first).filter(pair => !from.includes(pair.tok)).length;
+  const added = fresh.map((tok, i) => ({ sep: i ? ' ' : sep, tok }));
+  const next = [...kept.slice(0, before), ...added, ...kept.slice(before)];
+  if (next.length && next[0]!.sep) next[0] = { ...next[0]!, sep: '' };
+  const body = next.map(pair => pair.sep + pair.tok).join('');
+  if (body === core) throw new UsageError('Nothing to change: the classes are already so.');
+  return { start: string.start, end: string.end, replacement: lead + body + trail, at };
+}
+/** Classes written into a string with this delimiter: a quote of the same kind inside `[…]` turns into the other kind
+ * (CSS takes either), and anything that still cannot sit in the string unescaped is refused. */
+function quoted(names: string[], delimiter: string): string[] {
+  return names.map(name => {
+    let out = name;
+    if (delimiter === "'" || delimiter === '"') out = name.replaceAll(delimiter, delimiter === "'" ? '"' : "'");
+    if (out.includes(delimiter) || out.includes('\\') || (delimiter === '`' && out.includes('${')) || /[\r\n]/.test(out)) throw new UsageError(`${name} cannot be written into this string as it is; add it by hand.`);
+    return out;
+  });
 }

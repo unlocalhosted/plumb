@@ -43,7 +43,9 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         for (let attempt = 0; ; attempt++) {
           try {
             await page.waitForFunction(() => (window as unknown as { __plumb?: { overlay?: unknown } }).__plumb?.overlay, undefined, { timeout: Math.min(options.timeout, 15000) });
-            await page.evaluate(() => (window as unknown as { __plumb: { ready(): Promise<unknown> } }).__plumb.ready());
+            // ready() waits while the server reads; a server that never finishes is a timeout, not a hang
+            await page.evaluate((timeout) => Promise.race([(window as unknown as { __plumb: { ready(): Promise<unknown> } }).__plumb.ready(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error(`the overlay was not ready after ${timeout}ms`)), timeout))]), options.timeout);
             break;
           } catch (error) {
             const message = (error as Error).message;

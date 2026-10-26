@@ -20,7 +20,7 @@
  * server's marks are later layers.
  * ───────────────────────────────────────────────────────── */
 import { TIER } from './craft-facets.js';
-import { classesOf } from './craft.js';
+import { classesOf } from './craft-read.js';
 
 const FLOOR = 0.8;
 const words = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
@@ -28,7 +28,9 @@ const words = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
 function applied(list, { from, to }) {
   const out = words(from), at = list.findIndex((c) => out.includes(c));
   const kept = list.filter((c) => !out.includes(c));
-  kept.splice(at < 0 ? kept.length : Math.min(at, kept.length), 0, ...words(to).filter((c) => !kept.includes(c)));
+  // where the first removed class stood, counted among the classes that stay
+  const where = at < 0 ? kept.length : list.slice(0, at).filter((c) => !out.includes(c)).length;
+  kept.splice(where, 0, ...words(to).filter((c) => !kept.includes(c)));
   return kept;
 }
 
@@ -67,7 +69,8 @@ function annotate(m, byId) {
 // Runs each folded rule that comes `after` the kept one on the page as the kept edit leaves it, and stacks its edit.
 function compose(k, folded, el, byId, facts, theme) {
   let edit = k.craft.suggest;
-  if (edit?.kind !== 'class' || !folded.length) return;
+  // without the values the kept edit sets, the page it leaves can't be read: nothing is stacked on a guess
+  if (edit?.kind !== 'class' || !folded.length || !edit.sets || !Object.keys(edit.sets).length) return;
   let list = applied(words(classesOf(el)), edit), sets = { ...(edit.sets ?? {}) };
   const whys = [edit.why].filter(Boolean), composed = [];
   for (const f of folded) {
