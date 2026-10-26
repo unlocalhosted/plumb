@@ -136,7 +136,7 @@ export class Blueprint {
 
   #invalidate = () => this.#marks.invalidate();
   // the page element under the pointer, looking through the glass and the overlay's own marks
-  #point = (e) => this.#marks.point(document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.closest('plumb-overlay')) ?? null);
+  #point = (e) => { this.#panel.fold(); this.#marks.point(document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.closest('plumb-overlay')) ?? null); };
   #unpoint = () => this.#marks.point(null);
 
   #on() {

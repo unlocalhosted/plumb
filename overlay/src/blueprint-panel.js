@@ -15,6 +15,9 @@
  *             at every place, and Write sends each source line's edit once, one apply per file (blueprint-fix.js)
  *  picked     a row whose places are all picked says what they become; written rows leave with their marks
  *  pointed    pointing at a row outlines its places, the way selecting does, until the pointer leaves
+ *  fold       at rest the panel is one line in the top-right corner (71 off · 6 causes), so the page stays in view.
+ *             It opens to the list, only as tall as its rows, on J/K, a key below, pointing at it or a click, and
+ *             folds back when the pointer goes back to the page, on Esc, or on a second click
  *  in code    drift the overlay can't fix here (an inline style, a value from config) is one quiet count at the foot
  *  states     reading (the header counts the readings), empty (no drift in view: everything uses the system),
  *             and the rows as they arrive. Nothing here writes to the page; the panel is the overlay's own card
@@ -25,16 +28,26 @@
 import { esc } from './choices.js';
 
 export const PANEL_CSS = `
-  .bpp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + 18px);
-    width: 300px; display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto;
+  .bpp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px);
+    width: 300px; max-width: calc(100vw - 2 * var(--pl-space-6)); display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto;
     background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     opacity: 0; translate: 8px 0; transition: opacity var(--pl-dur-undim) var(--pl-ease-out), translate var(--pl-dur-undim) var(--pl-ease-out); }
   .bpp[hidden] { display: none; }
   .bpp[data-on] { opacity: 1; translate: 0 0; transition-duration: var(--pl-dur-card); }
   @media (prefers-reduced-motion: reduce) { .bpp { transition: none; translate: 0 0; } }
-  .bpp .head { flex: none; padding: var(--pl-space-5) var(--pl-space-5) var(--pl-space-4); border-bottom: 1px solid var(--pl-rule); }
+  .bpp .head { all: unset; flex: none; display: flex; align-items: center; gap: var(--pl-space-4); box-sizing: border-box; padding: var(--pl-space-4) var(--pl-space-5); cursor: pointer; border-radius: var(--pl-radius-card); }
+  .bpp .head:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: -2px; }
   .bpp .head .title { font: var(--pl-card-title); }
-  .bpp .head .meta { font: var(--pl-card-meta); color: var(--pl-ink-2); margin-top: var(--pl-space-1); font-variant-numeric: tabular-nums; }
+  .bpp .head .meta { font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bpp .head .chev { margin-inline-start: auto; width: 10px; height: 10px; color: var(--pl-ink-2); transition: rotate var(--pl-dur-feedback) var(--pl-ease-out); }
+  /* folded: one line, as wide as its words */
+  .bpp:not([data-open]) { width: auto; }
+  .bpp:not([data-open]) :is(.rows, .foot, .head .title) { display: none; }
+  .bpp[data-open] .head { flex-wrap: wrap; row-gap: var(--pl-space-1); border-bottom: 1px solid var(--pl-rule); border-radius: var(--pl-radius-card) var(--pl-radius-card) 0 0; }
+  .bpp[data-open] .head .title { flex: 1 0 auto; }
+  .bpp[data-open] .head .meta { order: 3; flex-basis: 100%; }
+  .bpp[data-open] .head .chev { rotate: 180deg; }
+  @media (hover: hover) and (pointer: fine) { .bpp:not([data-open]) .head:hover { background: var(--pl-paper-2); } }
   .bpp .head .meta .off { color: var(--pl-off); font-weight: 600; }
   .bpp .rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--pl-space-2); margin: 0; list-style: none; }
   .bpp .row { all: unset; display: grid; grid-template-columns: 8px 1fr auto; column-gap: var(--pl-space-4); row-gap: 1px; align-items: baseline;
@@ -111,7 +124,7 @@ export function groupsOf(items) {
 }
 
 export class Panel {
-  #el; #host; #marks; #groups = []; #code = 0; #progress = null; #at = null; #place = 0; #pointed = null; #on = false;
+  #el; #host; #marks; #open = false; #openedAt = 0; #groups = []; #code = 0; #progress = null; #at = null; #place = 0; #pointed = null; #on = false;
 
   // host: choose(el, mark, id, { group }), fixState(el, mark); marks: the MarkLayer (spotlight)
   constructor(root, { host, marks }) {
@@ -119,7 +132,7 @@ export class Panel {
     this.#marks = marks;
     this.#el = Object.assign(document.createElement('aside'), { className: 'bpp', hidden: true });
     this.#el.setAttribute('aria-label', 'Drift in view, by cause');
-    this.#el.innerHTML = '<div class="head"><div class="title">Drift in view</div><div class="meta" role="status"></div></div><ul class="rows" role="list"></ul><div class="foot"><span class="code" hidden></span><span class="keys" aria-hidden="true"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>↵</kbd> fix · <kbd>N</kbd> next place</span></div>';
+    this.#el.innerHTML = '<button class="head" type="button" aria-expanded="false"><span class="title">Drift in view</span><span class="meta" role="status"></span><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><ul class="rows" role="list"></ul><div class="foot"><span class="code" hidden></span><span class="keys" aria-hidden="true"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>↵</kbd> fix · <kbd>N</kbd> next place</span></div>';
     root.append(this.#el);
     const rows = this.#el.querySelector('.rows');
     rows.addEventListener('click', (e) => {
@@ -132,14 +145,31 @@ export class Panel {
     });
     rows.addEventListener('pointerover', (e) => { const row = e.target.closest?.('.row'); if (row && row.dataset.key !== this.#pointed) (this.#pointed = row.dataset.key), this.#light(); });
     rows.addEventListener('pointerleave', () => { this.#pointed = null; this.#light(); });
+    // pointing opens the list, so the click that follows must not fold it again: a click folds only a list that was
+    // already open
+    this.#el.querySelector('.head').addEventListener('click', () => this.open(!this.#open || performance.now() - this.#openedAt < 400));
+    this.#el.addEventListener('pointerenter', () => this.open(true));
   }
 
   get rect() { return this.#on ? this.#el.getBoundingClientRect() : null; }
 
+  // Unfolded to the list, or folded to its one line.
+  open(on) {
+    if (on === this.#open || !this.#on) return;
+    this.#open = on;
+    if (on) this.#openedAt = performance.now();
+    this.#el.toggleAttribute('data-open', on);
+    this.#el.querySelector('.head').setAttribute('aria-expanded', String(on));
+  }
+  // The pointer went back to the page: the list folds.
+  fold() {
+    if (this.#open && !this.#el.matches(':hover')) this.open(false);
+  }
+
   show(on) {
     this.#on = on;
     if (on) { this.#el.hidden = false; requestAnimationFrame(() => this.#on && this.#el.setAttribute('data-on', '')); }
-    else { this.#el.removeAttribute('data-on'); this.#el.hidden = true; this.#at = null; this.#pointed = null; this.#groups = []; this.#progress = null; this.#marks.spotlight([]); }
+    else { this.open(false); this.#el.removeAttribute('data-on'); this.#el.hidden = true; this.#at = null; this.#pointed = null; this.#groups = []; this.#progress = null; this.#marks.spotlight([]); }
   }
 
   // The reader's items changed, or the queue did: regroup and redraw, keeping the selection by its cause.
@@ -155,7 +185,10 @@ export class Panel {
 
   // Keys from the widget; true when the panel used it.
   key(key) {
-    if (!this.#on || !this.#groups.length) return false;
+    if (!this.#on) return false;
+    if (key === 'Escape' && this.#open) return this.open(false), true;
+    if (!this.#groups.length) return false;
+    if (/^[jJkKnN]$|^Arrow(Up|Down)$|^Enter$/.test(key)) this.open(true);
     if (key === 'j' || key === 'J' || key === 'ArrowDown') return this.move(1), true;
     if (key === 'k' || key === 'K' || key === 'ArrowUp') return this.move(-1), true;
     if ((key === 'n' || key === 'N') && this.#at) return this.next(), true;

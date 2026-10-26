@@ -210,10 +210,17 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
   // the panel: docked on the right, its header counts the drift and the causes
   await page.waitForFunction(() => getComputedStyle(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp')).opacity === '1');
-  const box = await panel(overlay).boundingBox();
-  assert.ok(box.x + box.width > 1200 - 24 && box.width >= 280, `docked right: ${JSON.stringify(box)}`);
   const drift = labels.filter((l) => l.startsWith('Drift:')).length;
   await panel(overlay).locator('.meta').filter({ hasText: new RegExp(`^${drift} off · \\d+ causes?( · |$)`) }).waitFor({ timeout: 5000 });
+  // at rest it is one line in the top-right corner, so the page stays in view
+  const rest = await panel(overlay).boundingBox();
+  assert.ok(rest.x + rest.width > 1200 - 24 && rest.y < 24 && rest.height < 48 && rest.width < 260, `folded to one line: ${JSON.stringify(rest)}`);
+  assert.equal(await panel(overlay).locator('.head').getAttribute('aria-expanded'), 'false');
+  // a click opens it, only as tall as its rows
+  await panel(overlay).locator('.head').click();
+  const unfolded = await panel(overlay).boundingBox();
+  const fits = await panel(overlay).evaluate((p) => { const rows = p.querySelector('.rows'); return rows.scrollHeight <= rows.clientHeight + 1 || p.getBoundingClientRect().bottom >= innerHeight - 16 - 22 - 24; });
+  assert.ok(unfolded.height > rest.height && fits && unfolded.y + unfolded.height <= 800 - 16 - 22 - 10, `open to its rows, never onto the dock: ${JSON.stringify(unfolded)}`);
   // one row per cause, most places first; every drift mark is in exactly one row
   const counts = (await rowsOf(overlay).locator('.n').allInnerTexts()).map(Number);
   assert.ok(counts.length >= 3 && counts.every((n, i) => i === 0 || n <= counts[i - 1]), `causes by places: ${counts}`);
@@ -221,19 +228,25 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   const texts = await rowsOf(overlay).locator('code').allInnerTexts();
   assert.ok(texts.includes('gap-[10px]') && texts.includes('rounded-[14px]'), `rows name the class: ${texts}`);
   assert.match(await rowsOf(overlay).filter({ hasText: 'gap-[10px]' }).locator('.what').innerText(), /^spacing off the scale · 1 place$/);
-  // pointing at a row outlines its places; leaving puts it out
+  // pointing at a row outlines its places; going back to the page puts it out and folds the list
   await rowsOf(overlay).first().hover();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
   await page.mouse.move(5, 300);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length === 0, null, { timeout: 3000 });
-  // J selects the first cause and lights it; K stays at the top; J again moves on
+  await page.mouse.move(400, 500);
+  assert.equal(await panel(overlay).locator('.head').getAttribute('aria-expanded'), 'false', 'back on the page, the list folds');
+  // J opens the list, selects the first cause and lights it; K stays at the top; J again moves on; Esc folds it
   await page.keyboard.press('j');
+  assert.equal(await panel(overlay).locator('.head').getAttribute('aria-expanded'), 'true');
   assert.equal(await rowsOf(overlay).first().getAttribute('aria-current'), 'true');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
   await page.keyboard.press('k');
   assert.equal(await rowsOf(overlay).first().getAttribute('aria-current'), 'true');
   await page.keyboard.press('j');
   assert.equal(await rowsOf(overlay).nth(1).getAttribute('aria-current'), 'true');
+  await page.keyboard.press('Escape');
+  assert.equal(await panel(overlay).locator('.head').getAttribute('aria-expanded'), 'false');
+  assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'true', 'the first Esc only folds the list');
   // D is an ordinary key now: nothing on the page changes
   await page.keyboard.down('d');
   await page.waitForTimeout(150);
@@ -690,6 +703,7 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter
   await page.locator('#dense').scrollIntoViewIfNeeded();
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await panel(overlay).locator('.head').click(); // the list opens from its one line
   const row = rowsOf(overlay).filter({ has: page.locator('code', { hasText: /^rounded-\[3px\]/ }) });
   await row.waitFor({ timeout: 10000 });
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bpp .row')].some((r) => /^rounded-\[3px\]/.test(r.querySelector('code').textContent) && r.querySelector('.n').textContent === '36'), null, { timeout: 10000 });
@@ -707,7 +721,7 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter
   await step.waitFor();
   await step.click();
   // every place is picked, and the row says what they become
-  await row.locator('.to').waitFor({ timeout: 10000 });
+  await row.locator('.to').waitFor({ state: 'attached', timeout: 10000 }); // the list may have folded while the chooser was in use
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .write')?.textContent.trim() === 'Write 1', null, { timeout: 10000 });
   await overlay.locator('.dock .write').click();
   await say(overlay).filter({ hasText: /Wrote 1 edit to App\.jsx/ }).waitFor({ timeout: 15000 });
