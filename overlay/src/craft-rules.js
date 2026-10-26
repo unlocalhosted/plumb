@@ -46,6 +46,7 @@
  * ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
 import { rgb, utility } from './craft.js';
+import { TIER } from './craft-facets.js';
 
 const px = (v) => parseFloat(v) || 0;
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
@@ -68,7 +69,7 @@ function cornerShows(el, s) {
 
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
 export const concentricRadius = {
-  id: 'craft/concentric-radius', family: 'craft', number: [8, 41], reads: ['rect', 'style', 'parent'],
+  id: 'craft/concentric-radius', family: 'craft', number: [8, 41], tier: TIER.craft, owns: ['radius'], once: 'ancestor', reads: ['rect', 'style', 'parent'],
   threshold: { tolerance: 1.5, minParentRadius: 4 },
   check({ el, facts }, theme) {
     const { tolerance, minParentRadius } = this.threshold;
@@ -122,7 +123,7 @@ const gapOf = (s, axis) => axis === 'x' ? px(s.columnGap) : axis === 'y' ? px(s.
 
 // #7. Inner spacing ≤ outer spacing: the gap inside a group is smaller than the gap between groups.
 export const innerOuterSpacing = {
-  id: 'craft/inner-outer-spacing', family: 'craft', number: [7], reads: ['style', 'kids', 'parent'],
+  id: 'craft/inner-outer-spacing', family: 'craft', number: [7], tier: TIER.craft, owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'parent'],
   threshold: { min: 0.5 },
   check({ el, facts }, theme) {
     const s = facts.style(el);
@@ -156,14 +157,13 @@ export const innerOuterSpacing = {
 
 // #57. color-mix instead of opacity for text colour.
 export const textOpacity = {
-  id: 'craft/text-opacity', family: 'craft', number: [57], reads: ['style', 'text', 'ground'],
+  id: 'craft/text-opacity', family: 'craft', number: [57], tier: TIER.craft, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   threshold: { within: 32 },
   check({ el, facts }, theme) {
     const s = facts.style(el);
     const o = parseFloat(s.opacity);
     if (!(o > 0 && o < 1) || !facts.text(el) || REPLACED.has(el.localName)) return [];
     if (s.animationName !== 'none') return []; // mid-fade is not a colour decision
-    if (el.matches('[disabled], [aria-disabled="true"], :disabled') || el.closest('[disabled], [aria-disabled="true"]')) return []; // #26's territory
     const color = rgb(s.color);
     if (!color) return [];
     const ground = facts.ground(el);
@@ -184,7 +184,7 @@ export const textOpacity = {
 
 // #37. Never land on half pixels: a pure translation whose offset is fractional in device pixels blurs text and lines.
 export const halfPixel = {
-  id: 'craft/half-pixel', family: 'craft', number: [37], reads: ['style', 'rect', 'text'],
+  id: 'craft/half-pixel', family: 'craft', number: [37], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   threshold: { slack: 0.05 },
   check({ el, facts }) {
     const s = facts.style(el);
@@ -231,7 +231,7 @@ export const halfPixel = {
 
 // #38. Hairlines are 0.5px on a 2× screen: a divider drawn 1px wide there is twice as heavy as it means to be.
 export const hairline = {
-  id: 'craft/hairline', family: 'craft', number: [38], reads: ['style', 'rect'],
+  id: 'craft/hairline', family: 'craft', number: [38], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'rect'],
   threshold: { minDpr: 2 },
   check({ el, facts }) {
     if ((devicePixelRatio || 1) < this.threshold.minDpr) return [];
@@ -256,7 +256,7 @@ export const hairline = {
 
 // #39. An image gets a faint inner outline, so a light picture doesn't bleed into a light page (or dark into dark).
 export const imageOutline = {
-  id: 'craft/image-outline', family: 'craft', number: [39], reads: ['style', 'rect', 'ground'],
+  id: 'craft/image-outline', family: 'craft', number: [39], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'rect', 'ground'],
   threshold: { minSize: 20, sameGround: 0.12 },
   check({ el, facts }) {
     if (el.localName !== 'img' || !el.complete || !el.naturalWidth) return [];
@@ -300,7 +300,7 @@ function shadows(value) {
 
 // #51. Layered shadows: one big blur reads as a smudge; a few layers read as ambient and direct light.
 export const layeredShadow = {
-  id: 'craft/layered-shadow', family: 'craft', number: [51, 53], reads: ['style'],
+  id: 'craft/layered-shadow', family: 'craft', number: [51, 53], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style'],
   threshold: { blur: 16 },
   check({ el, facts }) {
     const s = facts.style(el);
@@ -335,7 +335,7 @@ function keyframes(name) {
 
 // #63. Never scale from 0: an entrance from nothing looks like it came from nowhere.
 export const scaleFromZero = {
-  id: 'craft/scale-from-zero', family: 'craft', number: [63], reads: ['style'],
+  id: 'craft/scale-from-zero', family: 'craft', number: [63], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style'],
   threshold: {},
   check({ el, facts }) {
     const s = facts.style(el);
@@ -363,7 +363,7 @@ export const scaleFromZero = {
 
 // #74. A large z-index on an element in the flow is a z-index war: give its component its own stacking context.
 export const zIndexWar = {
-  id: 'craft/z-index-war', family: 'craft', number: [74], reads: ['style'],
+  id: 'craft/z-index-war', family: 'craft', number: [74], tier: TIER.craft, owns: ['stacking'], once: 'ancestor', reads: ['style'],
   threshold: { above: 100 },
   check({ el, facts }) {
     const s = facts.style(el);
@@ -395,7 +395,7 @@ function contentLeft(el, facts) {
 // #1. Align content, not boxes: a filled, padded row whose words fall off the column its siblings' words share bleeds
 // out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
 export const contentAlign = {
-  id: 'craft/content-align', family: 'craft', number: [1], reads: ['style', 'rect', 'kids', 'parent'],
+  id: 'craft/content-align', family: 'craft', number: [1], tier: TIER.craft, owns: ['margin-x'], once: 'ancestor', reads: ['style', 'rect', 'kids', 'parent'],
   threshold: { min: 4, siblings: 2 },
   check({ el, facts }, theme) {
     const parent = el.parentElement;
@@ -472,7 +472,7 @@ function lineCount(el, facts) {
 
 // #9. Equal padding isn't equal: a text button wants about twice as much padding across as down.
 export const buttonPadding = {
-  id: 'craft/button-padding', family: 'craft', number: [9], reads: ['style', 'rect', 'text'],
+  id: 'craft/button-padding', family: 'craft', number: [9], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   threshold: { ratio: 1.5, maxHeight: 56 },
   check({ el, facts }, theme) {
     if (!el.matches(CONTROL) || el.matches('a[href]') && !utility(el, 'px') && !utility(el, 'p')) return [];
@@ -496,7 +496,7 @@ export const buttonPadding = {
 
 // #10. The icon side gets less padding: a glyph box carries its own whitespace.
 export const iconSide = {
-  id: 'craft/icon-side', family: 'craft', number: [10], reads: ['style', 'kids', 'text'],
+  id: 'craft/icon-side', family: 'craft', number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'kids', 'text'],
   threshold: { min: 8, less: 2 },
   check({ el, facts }, theme) {
     if (!el.matches(CONTROL)) return [];
@@ -523,7 +523,7 @@ export const iconSide = {
 
 // #13. 45–75 characters a line for reading text.
 export const measure = {
-  id: 'craft/measure', family: 'craft', number: [13], reads: ['style', 'rect', 'text'],
+  id: 'craft/measure', family: 'craft', number: [13], tier: TIER.legibility, owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   threshold: { max: 90, chars: 240 },
   check({ el, facts }) {
     if (!el.matches('p, li, dd, blockquote') || !facts.text(el)) return [];
@@ -547,7 +547,7 @@ export const measure = {
 
 // #14. Line height shrinks as size grows: body about 1.5, headings 1.1–1.25.
 export const leading = {
-  id: 'craft/leading', family: 'craft', number: [14], reads: ['style', 'rect', 'text'],
+  id: 'craft/leading', family: 'craft', number: [14], tier: TIER.legibility, owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   threshold: { large: 30, loose: 1.4, small: 18, tight: 1.3 },
   check({ el, facts }) {
     if (!facts.text(el)) return [];
@@ -571,7 +571,7 @@ export const leading = {
 
 // #15. Tighten large type; space out small capitals.
 export const tracking = {
-  id: 'craft/tracking', family: 'craft', number: [15], reads: ['style', 'text'],
+  id: 'craft/tracking', family: 'craft', number: [15], tier: TIER.legibility, owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text'],
   threshold: { caps: 14, large: 36 },
   check({ el, facts }) {
     if (!facts.text(el)) return [];
@@ -593,7 +593,7 @@ export const tracking = {
 
 // #16. Tabular numbers where numbers line up: a column of figures in a table.
 export const tabularNums = {
-  id: 'craft/tabular-nums', family: 'craft', number: [16], reads: ['style', 'text'],
+  id: 'craft/tabular-nums', family: 'craft', number: [16], tier: TIER.legibility, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   threshold: { rows: 3 },
   check({ el, facts }) {
     if (!el.matches('td, th, [role="cell"], [role="gridcell"]')) return [];
@@ -616,7 +616,7 @@ export const tabularNums = {
 
 // #18. No widows in headings: balance the lines.
 export const headingWidow = {
-  id: 'craft/heading-widow', family: 'craft', number: [18], reads: ['style', 'text'],
+  id: 'craft/heading-widow', family: 'craft', number: [18], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'text'],
   threshold: { words: 3 },
   check({ el, facts }) {
     if (!el.matches('h1, h2, h3') || !facts.text(el)) return [];
@@ -643,7 +643,7 @@ export const headingWidow = {
 
 // #20. One light source: shadows fall the same way, down.
 export const oneLight = {
-  id: 'craft/one-light', family: 'craft', number: [20], reads: ['style'],
+  id: 'craft/one-light', family: 'craft', number: [20], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style'],
   threshold: { blur: 2 },
   check({ el, facts }) {
     const s = facts.style(el);
@@ -663,7 +663,7 @@ export const oneLight = {
 
 // #23. Translucent borders on elevated surfaces.
 export const borderOnShadow = {
-  id: 'craft/border-on-shadow', family: 'craft', number: [23], reads: ['style', 'ground'],
+  id: 'craft/border-on-shadow', family: 'craft', number: [23], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'ground'],
   threshold: { blur: 4, grey: 24 },
   check({ el, facts }) {
     const s = facts.style(el);
@@ -687,16 +687,18 @@ export const borderOnShadow = {
 
 // #24. Perceptual contrast for small text (APCA).
 export const contrast = {
-  id: 'craft/contrast', family: 'craft', number: [24], reads: ['style', 'text', 'ground'],
+  id: 'craft/contrast', family: 'craft', number: [24], tier: TIER.access, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   threshold: { small: 60, large: 45 },
   check({ el, facts }) {
-    if (!facts.text(el) || disabled(el) || el.closest('[aria-hidden="true"]')) return [];
+    if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
-    if (parseFloat(s.opacity) < 1) return []; // #57's
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const ns = facts.style(n); if (ns.backgroundImage !== 'none') return []; if (alpha(rgb(ns.backgroundColor)) > 0.5) break; }
     const ground = facts.ground(el), c = rgb(s.color);
     if (!c) return [];
-    const text = over(c, ground);
+    // the text as it shows: its own alpha and every fade on the way up
+    let fade = 1;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(facts.style(n).opacity) || 0;
+    const text = over([c[0], c[1], c[2], alpha(c) * fade], ground);
     const fs = px(s.fontSize), w = parseInt(s.fontWeight, 10) || 400;
     const large = fs >= 24 || fs >= 18 && w >= 700;
     const need = large ? this.threshold.large : this.threshold.small;
@@ -714,7 +716,10 @@ export const contrast = {
 
 // #26. Disabled is not just lower opacity: a faded coloured control loses its words.
 export const disabledContrast = {
-  id: 'craft/disabled-contrast', family: 'craft', number: [26], reads: ['style', 'ground'],
+  id: 'craft/disabled-contrast', family: 'craft', number: [26], tier: TIER.access, owns: ['color'], once: 'ancestor', refines: ['craft/contrast', 'craft/text-opacity'],
+  // an inactive control (and the words inside it) is judged by this rule alone, whether it passes or not: WCAG 1.4.3
+  // exempts it from text contrast, and its opacity is a state, not a colour choice
+  scope: ({ el }) => disabled(el), reads: ['style', 'ground'],
   threshold: { min: 45 },
   check({ el, facts }) {
     if (!el.matches(':disabled, [aria-disabled="true"]') || !el.matches('button, [role="button"], input, a')) return [];
@@ -740,7 +745,7 @@ export const disabledContrast = {
 
 // #27. Hit targets at least 24px, even when the drawing is smaller.
 export const hitTarget = {
-  id: 'craft/hit-target', family: 'craft', number: [27], reads: ['rect', 'style', 'text'],
+  id: 'craft/hit-target', family: 'craft', number: [27], tier: TIER.access, owns: ['size', 'padding-y'], once: 'ancestor', reads: ['rect', 'style', 'text'],
   threshold: { min: 24, long: 64 },
   check({ el, facts }) {
     if (!el.matches('button, [role="button"], a[href], input:not([type="hidden"]), select, summary, [role="checkbox"], [role="switch"], [role="tab"]') || disabled(el)) return [];
@@ -763,7 +768,7 @@ export const hitTarget = {
 
 // #34. One avatar and icon size per list.
 export const mediaSize = {
-  id: 'craft/media-size', family: 'craft', number: [34], reads: ['rect', 'kids'],
+  id: 'craft/media-size', family: 'craft', number: [34], tier: TIER.craft, owns: ['size'], once: 'ancestor', reads: ['rect', 'kids'],
   threshold: { min: 12, near: 12 },
   check({ el, facts }) {
     if (!el.matches('img, svg, [data-avatar]')) return [];
@@ -800,11 +805,11 @@ const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 
 
 // #35. Truncate with intent: what is cut off shows in full on hover.
 export const truncateIntent = {
-  id: 'craft/truncate-intent', family: 'craft', number: [35], reads: ['style'],
+  id: 'craft/truncate-intent', family: 'craft', number: [35], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style'],
   threshold: {},
   check({ el, facts }) {
     const s = facts.style(el);
-    if (!truncated(el, s) || pathLike(words(el))) return [];
+    if (!truncated(el, s)) return [];
     for (let n = el, i = 0; n && i < 3; n = n.parentElement, i++) if (n.hasAttribute('title') || n.hasAttribute('aria-label') || n.hasAttribute('data-tooltip')) return [];
     return [{
       key: this.id, what: 'cut off with no way to read it', text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
@@ -818,7 +823,7 @@ export const truncateIntent = {
 
 // #36. A large scroll area keeps room for its scrollbar, so its content doesn't shift when one appears.
 export const scrollbarGutter = {
-  id: 'craft/scrollbar-gutter', family: 'craft', number: [36], reads: ['style', 'rect'],
+  id: 'craft/scrollbar-gutter', family: 'craft', number: [36], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style', 'rect'],
   threshold: { width: 280, height: 200 },
   check({ el, facts }) {
     if (el === document.body || el === document.documentElement) return [];
@@ -848,7 +853,7 @@ function hoverWeights() {
 
 // #42. Bold on hover must not shift layout.
 export const boldHover = {
-  id: 'craft/bold-hover', family: 'craft', number: [42], reads: ['style'],
+  id: 'craft/bold-hover', family: 'craft', number: [42], tier: TIER.legibility, owns: ['font-weight'], once: 'ancestor', reads: ['style'],
   threshold: {},
   check({ el, facts }) {
     if (!facts.text(el)) return [];
@@ -869,7 +874,7 @@ export const boldHover = {
 
 // #45. Hanging punctuation: an opening quote hangs outside the text edge.
 export const hangingQuote = {
-  id: 'craft/hanging-quote', family: 'craft', number: [45], reads: ['style', 'text'],
+  id: 'craft/hanging-quote', family: 'craft', number: [45], tier: TIER.craft, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'text'],
   threshold: {},
   check({ el, facts }) {
     if (!el.matches('blockquote, blockquote > p, q, p') || !facts.text(el)) return [];
@@ -890,7 +895,7 @@ export const hangingQuote = {
 
 // #46. Capitals get the case feature, so hyphens, brackets and @ sit at their height.
 export const capsCase = {
-  id: 'craft/caps-case', family: 'craft', number: [46], reads: ['style', 'text'],
+  id: 'craft/caps-case', family: 'craft', number: [46], tier: TIER.craft, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   threshold: {},
   check({ el, facts }) {
     if (!facts.text(el)) return [];
@@ -920,7 +925,7 @@ function hsl([r, g, b]) {
 
 // #55. Interpolate gradients in OKLCH/OKLab: sRGB goes grey between saturated colours.
 export const gradientSpace = {
-  id: 'craft/gradient-space', family: 'craft', number: [55], reads: ['style'],
+  id: 'craft/gradient-space', family: 'craft', number: [55], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style'],
   threshold: { saturation: 0.45, hue: 60 },
   check({ el, facts }) {
     const bg = facts.style(el).backgroundImage;
@@ -943,7 +948,7 @@ export const gradientSpace = {
 
 // #70. Inputs at least 16px, or iOS Safari zooms the page on focus.
 export const inputZoom = {
-  id: 'craft/input-zoom', family: 'craft', number: [70], reads: ['style'],
+  id: 'craft/input-zoom', family: 'craft', number: [70], tier: TIER.access, owns: ['font-size'], once: 'ancestor', reads: ['style'],
   threshold: { min: 16 },
   check({ el, facts }) {
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
@@ -979,7 +984,7 @@ function stickyHeader(facts) {
 
 // #73. scroll-margin-top on anchor targets, so the sticky header doesn't cover the heading you jumped to.
 export const anchorOffset = {
-  id: 'craft/anchor-offset', family: 'craft', number: [73], reads: ['style'],
+  id: 'craft/anchor-offset', family: 'craft', number: [73], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style'],
   threshold: {},
   check({ el, facts }) {
     if (!el.id || !el.matches('h1, h2, h3, h4, section, article, [id]:is(h5, h6)')) return [];
@@ -1002,7 +1007,8 @@ export const anchorOffset = {
 
 // #76. Truncate paths and ids in the middle: their ends carry the meaning.
 export const middleTruncate = {
-  id: 'craft/middle-truncate', family: 'craft', number: [76], reads: ['style'],
+  id: 'craft/middle-truncate', family: 'craft', number: [76], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', refines: ['craft/truncate-intent'],
+  scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)), reads: ['style'],
   threshold: {},
   check({ el, facts }) {
     const s = facts.style(el);

@@ -48,6 +48,8 @@ export const FIX_CSS = `
   .ch .grp { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-3) 12px; border-bottom: 1px solid var(--pl-rule); background: var(--pl-paper-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .ch .grp b { color: var(--pl-ink); font-weight: 600; }
   .ch .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); }
+  /* a finding the hierarchy folded under this one: the same quiet type as because */
+  .ch .read .also { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); margin-top: 2px; }
   .ch .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-ink-2); }
   .ch .foot { border-top: 1px solid var(--pl-rule); gap: 6px; }
   .ch .foot .file { all: unset; flex: 0 1 auto; font: var(--pl-card-meta); color: var(--pl-ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; padding: 0 2px; border-radius: 3px; }
@@ -221,7 +223,7 @@ export class Fixer {
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
       ${o.group ? `<div class="grp"><span>Fixes <b>${plural(o.group.length, 'place')}</b> · ${plural(new Set(o.group.map(g => g.el.getAttribute('data-plumb-source')?.split('#')[0] ?? g.id)).size, 'source line')}</span></div>` : ''}
-      <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}`
+      <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}${(m.also ?? []).map((x) => `<div class="also">also: ${esc(x.what)}</div>`).join('')}`
         : `<p class="empty">${esc(o.message ?? 'Reading…')}</p>`}</div>
       <div class="foot">
         ${o.file ? `<button class="file" title="${esc(o.file)}:${o.line}">${esc(o.file.split('/').pop())}:${o.line}</button>` : ''}

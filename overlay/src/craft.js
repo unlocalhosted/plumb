@@ -19,6 +19,7 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate()
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
+import { arbitrate } from './craft-arbitrate.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -173,7 +174,8 @@ export class Craft {
     try {
       this.#theme.colors();
       const facts = new Facts();
-      const out = items.map((item) => ({ ...item, marks: [...item.marks, ...this.#marksFor(item.el, facts)] }));
+      // the rules, then the hierarchy: one kept mark per element and facet (craft-arbitrate.js)
+      const out = arbitrate(items.map((item) => ({ ...item, marks: [...item.marks, ...this.#marksFor(item.el, facts)] })), { facts, theme: this.#theme, rules: this.#rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {
@@ -195,7 +197,11 @@ export class Craft {
     const hit = this.#cache.get(el);
     if (hit && hit.sig === sig) return hit.marks;
     const marks = [];
+    // a special case that covers this element is its authority, firing or not: the general rules it refines don't run
+    const quiet = new Set();
+    for (const rule of this.#rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
     for (const rule of this.#rules) {
+      if (quiet.has(rule.id)) continue;
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
       for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ ...f, rule: rule.id, key: f.key ?? rule.id }));
