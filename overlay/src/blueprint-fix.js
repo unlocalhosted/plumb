@@ -223,7 +223,7 @@ export class Fixer {
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
       ${o.group ? `<div class="grp"><span>Fixes <b>${plural(o.group.length, 'place')}</b> · ${plural(new Set(o.group.map(g => g.el.getAttribute('data-plumb-source')?.split('#')[0] ?? g.id)).size, 'source line')}</span></div>` : ''}
-      <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}${(m.also ?? []).map((x) => `<div class="also">also: ${esc(x.what)}</div>`).join('')}`
+      <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}${(m.also ?? []).map((x) => `<div class="also">${x.composed ? 'with' : 'also'}: ${esc(x.what)}</div>`).join('')}`
         : `<p class="empty">${esc(o.message ?? 'Reading…')}</p>`}</div>
       <div class="foot">
         ${o.file ? `<button class="file" title="${esc(o.file)}:${o.line}">${esc(o.file.split('/').pop())}:${o.line}</button>` : ''}

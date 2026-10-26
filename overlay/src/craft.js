@@ -48,6 +48,19 @@ export class Facts {
     const s = this.style(el);
     return { pt: px(s.paddingTop), pr: px(s.paddingRight), pb: px(s.paddingBottom), pl: px(s.paddingLeft), bt: px(s.borderTopWidth), br: px(s.borderRightWidth), bb: px(s.borderBottomWidth), bl: px(s.borderLeftWidth) };
   }
+  // The same page with one element as a suggestion would leave it: `sets` its style values (camelCase → px) and
+  // `classes` its class list. Run `fn(facts)` on it; nothing on the page changes.
+  with(el, { sets = {}, classes } = {}, fn) {
+    const base = this;
+    const real = base.style(el);
+    const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
+    // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
+    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), style: (x) => (x === el ? over : base.style(x)) };
+    virtual.box = Facts.prototype.box.bind(virtual);
+    virtual.with = Facts.prototype.with.bind(virtual);
+    if (classes !== undefined) VIRTUAL.set(el, classes);
+    try { return fn(virtual); } finally { VIRTUAL.delete(el); }
+  }
   // the ground an element's text sits on: the nearest painted background up the tree, else the page's
   ground(el) {
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
@@ -69,8 +82,13 @@ export function rgb(s) {
 
 // The utility in a class list that sets a property, by its Tailwind prefix: 'rounded-card' for /^rounded(-|$)/,
 // with variants stripped (hover:rounded-lg is not the rest state). Side and corner forms are excluded by `not`.
+// An element's classes as the rules read them: its own, or the ones a suggestion would give it while the arbitration
+// re-runs a rule on the page as it will be (Facts.with). Set and cleared in one synchronous call; never written.
+const VIRTUAL = new WeakMap();
+export const classesOf = (el) => VIRTUAL.get(el) ?? el.getAttribute('class') ?? '';
+
 export function utility(el, prefix, { not } = {}) {
-  for (const c of (el.getAttribute('class') ?? '').split(/\s+/)) {
+  for (const c of classesOf(el).split(/\s+/)) {
     if (!c) continue;
     let depth = 0, colon = -1;
     for (let i = 0; i < c.length; i++) { if (c[i] === '[') depth++; else if (c[i] === ']') depth--; else if (c[i] === ':' && !depth) colon = i; }

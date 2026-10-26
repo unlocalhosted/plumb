@@ -45,7 +45,7 @@
  * Thresholds live on the rule, so noise is tuned in one place. Every rule says nothing when its evidence is
  * ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility } from './craft.js';
+import { rgb, utility, classesOf } from './craft.js';
 import { TIER } from './craft-facets.js';
 
 const px = (v) => parseFloat(v) || 0;
@@ -451,7 +451,7 @@ const over = (a, b) => [0, 1, 2].map((i) => a[i] * alpha(a) + b[i] * (1 - alpha(
 const space = (theme, value, prefix) => { const t = theme.nearest('spacing', value, 0.5); return t ? `${prefix}-${t.short}` : value % 1 === 0 && value % 4 === 0 ? `${prefix}-${value / 4}` : `${prefix}-[${fmt(value)}]`; };
 // the classes of an element whose prefix sets a colour, e.g. border-ink-muted (not border, border-2, border-t)
 function colourClass(el, prefix) {
-  for (const c of (el.getAttribute('class') ?? '').split(/\s+/)) {
+  for (const c of classesOf(el).split(/\s+/)) {
     if (!c.startsWith(prefix + '-') || c.includes(':')) continue;
     const rest = c.slice(prefix.length + 1);
     if (/^(?:\d|\[\d|[trblxyse]$|[trblxyse]-|solid|dashed|dotted|double|none|hidden|collapse|separate|spacing)/.test(rest)) continue;
@@ -493,14 +493,14 @@ export const buttonPadding = {
       title: `\`${cls ?? 'padding'}\` pads this button ${fmt(b.pl)} across and ${fmt(b.pt)} down: words want about twice as much across`,
       because: 'Words are wide and short; the same padding all round looks cramped at the sides. Text buttons take about 2:1, icon buttons stay square.',
       evidence: { across: b.pl, down: b.pt }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to, why: `${fmt(want)} across to ${fmt(b.pt)} down` } : { kind: 'advice', text: `Pad it ${fmt(want)} across and ${fmt(b.pt)} down.` },
+      suggest: cls ? { kind: 'class', from: cls, to, why: `${fmt(want)} across to ${fmt(b.pt)} down`, sets: { paddingLeft: want, paddingRight: want } } : { kind: 'advice', text: `Pad it ${fmt(want)} across and ${fmt(b.pt)} down.` },
     }];
   },
 };
 
 // #10. The icon side gets less padding: a glyph box carries its own whitespace.
 export const iconSide = {
-  id: 'craft/icon-side', family: 'craft', number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'kids', 'text'],
+  id: 'craft/icon-side', family: 'craft', number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
   threshold: { min: 8, less: 2 },
   check({ el, facts }, theme) {
     if (!el.matches(CONTROL)) return [];
@@ -520,7 +520,7 @@ export const iconSide = {
       title: `The ${lead ? 'leading' : 'trailing'} icon side is padded ${fmt(b.pl)}, the same as the text side`,
       because: 'An icon carries whitespace inside its glyph box, so the same padding looks wider on its side; take 2–4px off it.',
       evidence: { padding: b.pl, side: lead ? 'left' : 'right' }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `${space(theme, less, `p${side}`)} ${space(theme, b.pl, `p${other}`)}`, why: `${fmt(less)} on the icon side, ${fmt(b.pl)} on the text side` } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
+      suggest: cls ? { kind: 'class', from: cls, to: `${space(theme, less, `p${side}`)} ${space(theme, b.pl, `p${other}`)}`, why: `${fmt(less)} on the icon side, ${fmt(b.pl)} on the text side`, sets: { [lead ? 'paddingLeft' : 'paddingRight']: less } } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
     }];
   },
 };
@@ -867,7 +867,7 @@ export const boldHover = {
   threshold: {},
   check({ el, facts }) {
     if (!facts.text(el)) return [];
-    const cls = (el.getAttribute('class') ?? '').split(/\s+/).find((c) => /(?:^|:)(?:group-)?hover:font-(?!mono|sans|serif)/.test(c));
+    const cls = classesOf(el).split(/\s+/).find((c) => /(?:^|:)(?:group-)?hover:font-(?!mono|sans|serif)/.test(c));
     const css = !cls && hoverWeights().some((sel) => { try { return sel && el.matches(sel); } catch { return false; } });
     if (!cls && !css) return [];
     const after = getComputedStyle(el, '::after').content;
@@ -945,7 +945,7 @@ export const gradientSpace = {
     const [a, b] = [c[0], c.at(-1)];
     const dh = Math.min(Math.abs(a[0] - b[0]), 360 - Math.abs(a[0] - b[0]));
     if (a[1] < this.threshold.saturation || b[1] < this.threshold.saturation || dh < this.threshold.hue) return [];
-    const cls = (el.getAttribute('class') ?? '').split(/\s+/).find((k) => /^bg-(?:linear|gradient)-to-[a-z]+$/.test(k));
+    const cls = classesOf(el).split(/\s+/).find((k) => /^bg-(?:linear|gradient)-to-[a-z]+$/.test(k));
     return [{
       key: this.id, what: 'gradient greys out in the middle', text: cls ?? 'background-image', props: ['background-image'], value: 'srgb', n: dh,
       title: `This gradient runs between two saturated colours ${Math.round(dh)}° apart in sRGB: it goes grey in the middle`,
@@ -964,7 +964,7 @@ export const inputZoom = {
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
     const fs = px(facts.style(el).fontSize);
     if (fs >= this.threshold.min) return [];
-    const cls = (el.getAttribute('class') ?? '').split(/\s+/).find((c) => /^text-(?:xs|sm|\[\d)/.test(c));
+    const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm|\[\d)/.test(c));
     return [{
       key: this.id, what: 'zooms the page on iOS', text: cls ?? 'font-size', props: ['font-size'], value: `${fs}px`, n: fs,
       title: `This field's text is ${fmt(fs)}: iOS Safari zooms the page when it's focused`,

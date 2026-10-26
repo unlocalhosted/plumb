@@ -103,6 +103,8 @@ export function App() {
         <div><button id="off-ok" disabled className="rounded-control bg-ground px-s4 py-s2 text-body text-ink-muted">Pay now</button></div>
         <p id="path" className="w-40 truncate text-body">src/components/forms/inputs/TextField.tsx</p>
         <p id="sentence" className="w-40 truncate text-body">A sentence far too long for its box</p>
+        <div><button id="pair" className="flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
+        <div><button id="pair-ok" className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
       </div>
     </main>
   );
@@ -156,5 +158,35 @@ test('Truncation pair: a cut-off path is judged by middle-truncate alone; a cut-
   const rows = (await craftRows(overlay)).map((r) => r.rule).sort();
   assert.ok(rows.includes('craft/middle-truncate') && rows.includes('craft/truncate-intent'), JSON.stringify(rows));
   assert.equal(rows.filter((r) => r === 'craft/middle-truncate').length, 1);
+  assert.deepEqual(errors, []);
+});
+
+test('Padding pair: square padding on an icon button is one mark whose one edit answers both rules (wider across, less on the icon side); written, the button is quiet', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(500);
+  const pair = await on(page, 'pair');
+  assert.deepEqual(pair.map((m) => m.rule), ['button-padding'], JSON.stringify(pair));
+  assert.deepEqual(await on(page, 'pair-ok'), []);
+  const words = await openMark(page, overlay, pair[0].id);
+  // the composed edit: button-padding's 24px across, then icon-side run on that page takes 4px off the icon side
+  assert.match(words.note, /Change px-s3 to pl-5 pr-s6: 24px across to 12px down; 20px on the icon side, 24px on the text side\./);
+  assert.deepEqual(await alsoOf(overlay), ['with: icon side padded like the text side']);
+  const ch = overlay.locator('.ch .card[role="dialog"]');
+  await ch.locator('.cmp .opt', { hasText: 'pl-5 pr-s6' }).click();
+  await overlay.locator('.dock .write').click();
+  const source = join(root, 'src/App.jsx');
+  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="pair"'));
+  for (let i = 0; i < 100 && !/pl-5 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body"/);
+  // the page as written: neither rule has anything left to say about the button
+  await page.reload();
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await blueprint(page, overlay);
+  await page.waitForTimeout(500);
+  assert.deepEqual(await on(page, 'pair'), []);
   assert.deepEqual(errors, []);
 });
