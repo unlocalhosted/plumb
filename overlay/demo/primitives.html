@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor primitives · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1040px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Editor primitives</h1>
+  <p>Every control the element editors are built from, in every state. Hover previews, click picks, arrows move.</p>
+  <button id="scheme" type="button">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  import { PRIMITIVES_CSS, stepper, swatches, radius, segments, align, shadows, row, bind, place } from '../src/editor-primitives.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  const spacing = ['s0', 's1', 's2', 's3', 's4', 's5', 's6', 's8', 's10'].map((t, i) => ({ token: t, n: [0, 4, 8, 12, 16, 20, 24, 32, 40][i], value: `${[0, 4, 8, 12, 16, 20, 24, 32, 40][i]}px` }));
+  const colors = [['surface', '#ffffff'], ['ground', '#f3f4f6'], ['ink', '#1c1b19'], ['muted', '#6b7280'], ['accent', '#2c64d4'], ['ok', '#2a7d52'], ['warn', '#a8690f'], ['danger', '#c03a46']].map(([token, swatch]) => ({ token, swatch }));
+  const radii = [['none', 0], ['sm', 4], ['md', 6], ['lg', 10], ['xl', 14], ['full', 99]].map(([token, n]) => ({ token, n, value: `${n}px` }));
+  const elevation = [['none', 'none'], ['rest', '0 1px 2px rgb(0 0 0 / .12)'], ['raised', '0 2px 6px rgb(0 0 0 / .16)'], ['float', '0 8px 20px -6px rgb(0 0 0 / .28)']].map(([token, shadow]) => ({ token, shadow }));
+  const dirs = [{ token: 'row', label: 'Row', glyph: 'row' }, { token: 'column', label: 'Column', glyph: 'column' }];
+  const wrap = [{ token: 'nowrap', label: 'One line', glyph: 'nowrap' }, { token: 'wrap', label: 'Wrap', glyph: 'wrap' }];
+  const fit = [{ token: 'cover', label: 'Cover', glyph: 'cover' }, { token: 'contain', label: 'Contain', glyph: 'contain' }];
+  const cells = ['start start', 'start center', 'start end', 'center start', 'center center', 'center end', 'end start', 'end center', 'end end'].map((token) => ({ token, label: token }));
+
+  // each demo: a name, a primitive, its state; picks update the state and the control re-renders
+  const demos = {
+    'Padding': { kind: stepper, s: { steps: spacing, current: 's3' } },
+    'Padding picked': { kind: stepper, s: { steps: spacing, current: 's3', picked: 's4' } },
+    'Padding drift': { kind: stepper, s: { steps: spacing, current: null, drift: { n: 10, label: '10' } } },
+    'Gap disabled': { kind: stepper, s: { steps: spacing, current: 's2', disabled: true }, note: 'Set in code: <code>gap={size}</code>' },
+    'Gap loading': { kind: stepper, s: { steps: [], busy: true } },
+    'Fill': { kind: swatches, s: { steps: colors, current: 'surface' } },
+    'Fill drift': { kind: swatches, s: { steps: colors, current: null, drift: { label: '#d23a3a', swatch: '#d23a3a' } } },
+    'Radius': { kind: radius, s: { steps: radii, current: 'lg' } },
+    'Radius drift': { kind: radius, s: { steps: radii, current: null, drift: { n: 12, label: '12' } } },
+    'Shadow': { kind: shadows, s: { steps: elevation, current: 'rest' } },
+    'Direction': { kind: segments, s: { steps: dirs, current: 'row' } },
+    'Wrap': { kind: segments, s: { steps: wrap, current: 'nowrap' } },
+    'Fit': { kind: segments, s: { steps: fit, current: 'cover' } },
+    'Align': { kind: align, s: { steps: cells, current: 'center start' } },
+    'Line height empty': { kind: null, note: 'Your theme has no line-height steps yet.' },
+    'Padding refused': { kind: stepper, s: { steps: spacing, current: 's3', picked: 's5' }, note: 'Board.jsx changed since it was read. Pick again to retry.', error: true },
+  };
+  const card = (title, names) => `<section class="card"><div class="head">${title}</div>${names.map((n) => { const d = demos[n]; return row(n, d.kind ? d.kind(n, d.s) : '<span class="note">—</span>', d.note ?? '', d.error ? 'error' : ''); }).join('')}</section>`;
+  const css = `${tokens}${PRIMITIVES_CSS}
+    :host { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; }
+    .card { background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); padding: 4px 16px 12px; color: var(--pl-ink); }
+    .card .head { font: var(--pl-card-title); padding: 12px 0 6px; }`;
+  function render() {
+    root.innerHTML = `<style>${css}</style><div class="grid">${[
+      card('Scale stepper', ['Padding', 'Padding picked', 'Padding drift', 'Gap disabled', 'Gap loading', 'Padding refused']),
+      card('Swatches · radius · shadow', ['Fill', 'Fill drift', 'Radius', 'Radius drift', 'Shadow']),
+      card('Segments · align', ['Direction', 'Wrap', 'Fit', 'Align', 'Line height empty']),
+    ].join('')}</div>`;
+    bind(root, {
+      // a pick updates the control in place, so the current fill slides to it
+      pick: (name, i) => {
+        const d = demos[name]; d.s.current = d.s.steps[i].token; d.s.picked = null; d.s.drift = null;
+        const g = root.querySelector(`[aria-label="${name}"]`);
+        g.querySelectorAll('.opt[role="radio"]').forEach((o) => { o.setAttribute('aria-checked', String(+o.dataset.i === i)); o.removeAttribute('data-picked'); });
+        g.querySelector('.notch')?.remove();
+        place(g);
+      },
+      page: (name, start) => { demos[name].s.start = start; render(); },
+    });
+  }
+  render();
+  document.getElementById('scheme').addEventListener('click', (e) => {
+    const dark = document.body.classList.toggle('dark');
+    host.dataset.scheme = dark ? 'dark' : 'light';
+    e.target.textContent = dark ? 'Light' : 'Dark';
+  });
+</script>
+</body>
+</html>
