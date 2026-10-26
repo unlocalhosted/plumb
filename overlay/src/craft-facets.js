@@ -3,7 +3,7 @@
  *
  * The primitive the rule hierarchy stands on (docs/briefs/craft-hierarchy.md): what a finding is about. A facet is
  * the thing a person would say is being changed ("its side padding", "its text colour"), not a CSS property. Two
- * findings on one element conflict exactly when their facets meet; the arbitration (craft-arbitrate.js) keeps one.
+ * findings on one element conflict exactly when their facets meet; the arbitration (verdict.js) keeps one.
  *
  *  facetOf(prop)        a CSS property → its facet, or null
  *  facetOfClass(cls)    a utility (variants stripped) → its facet, or null

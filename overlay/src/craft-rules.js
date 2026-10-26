@@ -496,7 +496,7 @@ function lineCount(el, facts) {
 
 // #9. Equal padding isn't equal: a text button wants about twice as much padding across as down.
 export const buttonPadding = {
-  id: 'craft/button-padding', family: 'craft', number: [9], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  id: 'craft/button-padding', family: 'craft', round: { '*': 'up' }, number: [9], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   threshold: { ratio: 1.5, maxHeight: 56 },
   check({ el, facts }, theme) {
     if (!el.matches(CONTROL) || el.matches('a[href]') && !utility(el, 'px') && !utility(el, 'p')) return [];
@@ -519,7 +519,7 @@ export const buttonPadding = {
 
 // #10. The icon side gets less padding: a glyph box carries its own whitespace.
 export const iconSide = {
-  id: 'craft/icon-side', family: 'craft', number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
+  id: 'craft/icon-side', family: 'craft', round: { '*': 'down' }, number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
   threshold: { min: 8, less: 2 },
   check({ el, facts }, theme) {
     if (!el.matches(CONTROL)) return [];
@@ -605,7 +605,7 @@ export const tracking = {
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: caps ? 'tracking-wider' : 'tracking-tight', why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing' },
+      suggest: { kind: 'class', from: cls ?? '', to: caps ? 'tracking-wider' : 'tracking-tight', why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing', sets: { letterSpacing: fs * (caps ? 0.05 : -0.025) } },
     }];
   },
 };
@@ -627,7 +627,7 @@ export const tabularNums = {
       ...say(this.id, {}),
       key: this.id, text: 'font-variant-numeric', props: ['font-variant-numeric'], value: s.fontVariantNumeric, n: 0,
       evidence: { text }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'tabular-nums', why: 'every digit the same width' },
+      suggest: { kind: 'class', from: '', to: 'tabular-nums', why: 'every digit the same width', sets: { fontVariantNumeric: 'tabular-nums' } },
     }];
   },
 };
@@ -653,7 +653,7 @@ export const headingWidow = {
       ...say(this.id, { word: m[3] }),
       key: this.id, text: 'text-wrap', props: ['text-wrap'], value: m[3], n: 1,
       evidence: { word: m[3] }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines' },
+      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines', sets: { textWrap: 'balance', textWrapStyle: 'balance' } },
     }];
   },
 };
@@ -995,7 +995,7 @@ function stickyHeader(facts) {
 
 // #73. scroll-margin-top on anchor targets, so the sticky header doesn't cover the heading you jumped to.
 export const anchorOffset = {
-  id: 'craft/anchor-offset', family: 'craft', number: [73], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style'],
+  id: 'craft/anchor-offset', family: 'craft', round: { '*': 'up' }, number: [73], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style'],
   threshold: {},
   check({ el, facts }, theme) {
     if (!el.id || !el.matches('h1, h2, h3, h4, section, article, [id]:is(h5, h6)')) return [];

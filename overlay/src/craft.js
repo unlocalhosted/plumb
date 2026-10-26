@@ -19,7 +19,7 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate()
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
-import { arbitrate } from './craft-arbitrate.js';
+import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL } from './craft-read.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
@@ -186,8 +186,8 @@ export class Craft {
     try {
       this.#theme.colors();
       const facts = new Facts();
-      // the rules, then the hierarchy: one kept mark per element and facet (craft-arbitrate.js)
-      const out = arbitrate(items.map((item) => ({ ...item, marks: [...item.marks, ...this.#marksFor(item.el, facts)] })), { facts, theme: this.#theme, rules: this.#rules });
+      // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
+      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...this.#marksFor(item.el, facts)] })), { facts, theme: this.#theme, rules: this.#rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {

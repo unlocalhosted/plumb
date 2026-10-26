@@ -2,7 +2,7 @@
  * CRAFT READ · React Plumber overlay
  *
  * The small reads every craft module shares (colours, an element's classes, the utility that sets a property), in a
- * module of their own so craft.js, craft-rules.js and craft-arbitrate.js import them without a cycle.
+ * module of their own so craft.js, craft-rules.js and verdict.js import them without a cycle.
  * ───────────────────────────────────────────────────────── */
 
 // 'rgb(r, g, b)' or 'rgba(r, g, b, a)' → [r, g, b, a]; null for anything else (a colour the page never resolved)

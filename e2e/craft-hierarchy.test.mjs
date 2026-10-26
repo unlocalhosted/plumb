@@ -104,7 +104,7 @@ export function App() {
         <p id="path" className="w-40 truncate text-body">src/components/forms/inputs/TextField.tsx</p>
         <p id="sentence" className="w-40 truncate text-body">A sentence far too long for its box</p>
         <div><button id="pair" className="flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
-        <div><button id="pair-ok" className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
+        <div><button id="pair-ok" className="flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
         <div id="rows" className="flex flex-col items-start gap-s2">{['a', 'b', 'c'].map((n) => <button key={n} className="rounded-control bg-surface px-s2 py-s2 text-body">Go {n}</button>)}</div>
       </div>
     </main>
@@ -173,15 +173,15 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   assert.deepEqual(await on(page, 'pair-ok'), []);
   const words = await openMark(page, overlay, pair[0].id);
   // the composed edit: button-padding's 24px across, then icon-side run on that page takes 4px off the icon side
-  assert.match(words.note, /Change px-s3 to pl-5 pr-s6: 24px on the sides, 12px on top; 20px by the icon, 24px by the text\./);
+  assert.match(words.note, /Change px-s3 to pl-s4 pr-s6: 24px on the sides, 12px on top; 20px by the icon, 24px by the text\./);
   assert.deepEqual(await alsoOf(overlay), ['with: Too much space by the icon']);
   const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.locator('.cmp .opt', { hasText: 'pl-5 pr-s6' }).click();
+  await ch.locator('.cmp .opt', { hasText: 'pl-s4 pr-s6' }).click();
   await overlay.locator('.dock .write').click();
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="pair"'));
-  for (let i = 0; i < 100 && !/pl-5 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
-  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body"/);
+  for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"/);
   // the page as written: neither rule has anything left to say about the button
   await page.reload();
   await page.waitForFunction(() => window.__plumb?.overlay);
