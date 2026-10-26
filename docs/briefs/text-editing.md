@@ -38,3 +38,9 @@ Status: design, 2026-10-26. Owner feedback and decisions.
    `where` beside the words, and the page's own double-click (selecting a word) still happens. Inputs, textareas and
    contenteditable elements on the page are left alone. Proof: e2e, a double-click on a leaf's words, typing, Enter,
    and the source file changed; clicking away saves; Esc restores; Undo restores the file; a refused one explains.
+
+## Clickable words (owner, 2026-10-26)
+A plain double-click on words inside something clickable (a card, a button, a link, a tab) would press it on the first
+click. So a plain double-click edits only where both clicks hit the same element and nothing clickable holds the words;
+**Alt + double-click** edits any words: Alt already keeps clicks off the page, and the pin its first click makes is let
+go. In blueprint the page is inert, so a plain double-click edits any words there. In a button, Space is typed by hand.

@@ -232,6 +232,8 @@ export class TextEditor {
 
   #key = (e) => {
     e.stopPropagation();
+    // in a button or a link, Space presses it rather than typing: the space is put in by hand
+    if (e.key === ' ' && this.#edit?.leaf && !e.metaKey && !e.ctrlKey) { e.preventDefault(); document.execCommand('insertText', false, ' '); return; }
     if (e.key === 'Enter') { e.preventDefault(); if (!e.shiftKey) this.#finish(true); }
     else if (e.key === 'Escape') { e.preventDefault(); this.#finish(false); }
   };

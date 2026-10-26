@@ -108,7 +108,7 @@ test('Esc puts the words back and writes nothing; clicking away saves', { timeou
   assert.deepEqual(errors, []);
 });
 
-test('words mixed with other elements are edited over their own line; words from a prop say why they can\'t be', { timeout: 120000 }, async (t) => {
+test('words beside other elements are edited over their own line; a prop is edited where it is passed; an expression says why it can\'t be', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url, source } = await demo(t);
@@ -125,16 +125,28 @@ test('words mixed with other elements are edited over their own line; words from
   assert.ok(await fileHas(source, '>Simple words, <b'), 'the run was written beside its siblings');
   assert.equal(await area.count(), 0);
 
-  // the sync row's title is a prop of the row: it says why, and where (once the page has settled after the write)
+  // once the page has settled after the write: the sync row's title is a prop where the row is used, and is edited
+  // there; a grid cell's number is an expression ({i + 1}), and says why it can't be
   await page.waitForTimeout(1500);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
   await page.evaluate(() => window.scrollTo(0, 0));
   await dblclickWords(page, '#sync-row > div > span:first-child');
+  await editable(page, '#sync-row > div > span:first-child');
+  await overlay.locator('.tx-tag').filter({ hasText: /App\.jsx:\d+/ }).waitFor();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('Sync the calendar');
+  await page.keyboard.press('Enter');
+  assert.ok(await fileHas(source, 'title="Sync the calendar"'), 'the prop was written where the row is used');
+  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await page.locator('#dense').scrollIntoViewIfNeeded();
+  await dblclickWords(page, '#dense span:first-child');
   const tag = overlay.locator('.tx-tag[data-kind="refused"]');
   await tag.waitFor({ timeout: 10000 });
-  assert.match(await tag.innerText(), /expression|prop|not written/i);
-  assert.equal(await page.locator('#sync-row > div > span:first-child').getAttribute('contenteditable'), null);
+  assert.match(await tag.innerText(), /expression/i);
+  assert.equal(await page.locator('#dense span').first().getAttribute('contenteditable'), null);
   assert.deepEqual(errors, []);
 });
 
@@ -154,5 +166,33 @@ test('in blueprint, a double-click edits words through the glass, and the keys r
   assert.ok(await fileHas(source, '>fine words</span>'), 'written from blueprint');
   // Enter saved, it did not leave blueprint; a dev server that reloads the page brings blueprint back with it
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.bp-toggle')?.getAttribute('aria-pressed') === 'true', null, { timeout: 10000 });
+  assert.deepEqual(errors, []);
+});
+
+test('words in something clickable: a plain double-click leaves them be; Alt + double-click edits them and presses nothing', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url, source } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const button = '#sync-row button';
+  await page.locator(button).evaluate((b) => { b.dataset.pressed = '0'; b.addEventListener('click', () => { b.dataset.pressed = String(+b.dataset.pressed + 1); }); });
+  // plain: the button takes its clicks, as it would for anyone; nothing is edited
+  await dblclickWords(page, button);
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator(button).getAttribute('contenteditable'), null, 'a plain double-click does not edit a button');
+  assert.equal(await page.locator(button).getAttribute('data-pressed'), '2');
+  // Alt: the clicks stay off the page, no card is left open, the words are edited
+  await page.keyboard.down('Alt');
+  await dblclickWords(page, button);
+  await page.keyboard.up('Alt');
+  await editable(page, button);
+  assert.equal(await page.locator(button).getAttribute('data-pressed'), '2', 'Alt kept the clicks off the button');
+  assert.equal(await overlay.locator('.w:not([hidden]) .card').count(), 0, 'no reading card is left pinned');
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('Run it now');
+  assert.equal(await page.locator(button).textContent(), 'Run it now');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator(button).getAttribute('data-pressed'), '2', 'Space typed a space; it did not press the button');
+  assert.ok(await fileHas(source, 'action="Run it now"'), 'the prop was written where the row is used');
   assert.deepEqual(errors, []);
 });

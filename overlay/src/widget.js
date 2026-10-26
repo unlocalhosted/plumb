@@ -343,6 +343,7 @@ class PlumbOverlay extends HTMLElement {
     addEventListener('keyup', this.#onKeyUp, true);
     addEventListener('blur', this.#disarm);
     addEventListener('dblclick', this.#onDblClick, true);
+    addEventListener('pointerdown', this.#onDown, { capture: true, passive: true });
     this.#resume();
   }
 
@@ -372,6 +373,7 @@ class PlumbOverlay extends HTMLElement {
     removeEventListener('keyup', this.#onKeyUp, true);
     removeEventListener('blur', this.#disarm);
     removeEventListener('dblclick', this.#onDblClick, true);
+    removeEventListener('pointerdown', this.#onDown, { capture: true });
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
     removeEventListener('resize', this.#sideSoon);
     removeEventListener('hashchange', this.#sideSoon);
@@ -1350,10 +1352,25 @@ class PlumbOverlay extends HTMLElement {
     if (node) this.#text.start(node);
   }
 
-  // A double-click on words anywhere on the page edits them (text-edit.js); in blueprint it looks through the glass.
+  // A double-click on words edits them (text-edit.js). Plain, only where it can't have done anything else: both clicks
+  // on the same element, and nothing clickable around the words (a card, a button, a link would have opened on the
+  // first click). Alt + double-click edits any words: Alt keeps the clicks off the page, and the pin the first
+  // Alt-click made is let go. In blueprint the page is inert, so a plain double-click edits any words there.
+  #downs = [];
+  #onDown = event => { this.#downs = [this.#downs.at(-1), event.composedPath()[0]]; };
   #onDblClick = event => {
-    if (event.composedPath().some(n => n === this) && !this.#blueprint?.active) return;
-    if (event.composedPath()[0]?.closest?.('.dock, .w, .ch, .pl, .bpp, .rd, .rd-callout, .tx-toast')) return;
+    const path = event.composedPath();
+    if (path.some(n => n === this) && !this.#blueprint?.active) return;
+    if (path[0]?.closest?.('.dock, .w, .ch, .pl, .bpp, .rd, .rd-callout, .tx-toast')) return;
+    const free = event.altKey || this.#blueprint?.active;
+    if (!free) {
+      const [a, b] = this.#downs;
+      if (!a || a !== b || a !== path[0]) return;
+      if (path[0]?.closest?.('a[href], button, summary, label, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"], [role="checkbox"]')) return;
+    } else if (event.altKey) {
+      this.#disarm();
+      if (this.#pinned) this.close();
+    }
     this.#blueprint?.through(() => this.#text.dblclick(event)) ?? this.#text.dblclick(event);
   };
 
