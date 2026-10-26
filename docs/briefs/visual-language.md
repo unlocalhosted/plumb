@@ -61,3 +61,23 @@ using the semantic names, so the change lands everywhere at once.
 3. The overlay's own surfaces: dock (with the rainbow mark), cards, chooser, panel, toasts, sheet.
 4. The marks on the page: sky selection and measurement pills with hatched padding (the reference), coral drift
    outlines and labels, marching ants for picks, mint for written.
+
+## The DOM's building blocks (owner, 2026-10-27: "a better language for padding, border, margin, typography")
+Every part of the box model has one **pattern** (what it is) and takes its **hue** from the verdict (sky: measured
+and on the scale; coral: off the scale; mint: just written). The same drawing is used everywhere an element is shown
+(Alt-inspect, a pointed-at drifted element in blueprint, the pinned card), drawn by one renderer (`boxmodel.js`) from
+the element's live layout.
+
+| Block | Pattern | Label |
+| --- | --- | --- |
+| content | a 1px solid outline | size pills at the bottom-right: `W Fill 500` / `H Hug 64` / `W 240` (fill = stretches, hug = fits its content, a number = fixed) |
+| padding | the 45° hatch between the border and the content, per side | a pill centred on each non-zero side: the token and the number, `s3 · 12`; coral when off the scale |
+| border | a solid band its own width | one pill at the top-left corner, `1`, only when the border is visible |
+| radius | an arc at each rounded corner | `r lg · 10` beside the top-left arc |
+| margin | the dot dither outside the border, per side | a pill on each non-zero side |
+| gap | vertical (or horizontal) stripes across each gap between children | one pill in the first gap, `s2 · 8` |
+| typography | each line box as a faint band, the baseline as a 1px dashed line | one pill at the start of the first line: `Aa text-sm · 14/20 · 500` |
+| name | a lilac tag above the top-left corner | the component's name, else the tag (`Board › Card`) |
+
+Rules: zero values draw nothing; a side's pill sits on that side, never over the content; pills never overlap (a
+later pill steps outward); everything is drawn in the overlay, never on the page.
