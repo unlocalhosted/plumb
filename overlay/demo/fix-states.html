@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix in place · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1120px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 70ch; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1120px; margin: 0 auto; }
+  /* this sheet draws the overlay's states itself: the live overlay the dev server injects stays out of it */
+  plumb-overlay { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fix in place</h1>
+  <p>One facet (side padding) of one button, in every state, drawn on the element. No card. The captions are this sheet's, not the product's.</p>
+  <button id="scheme" type="button">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  /* ─────────────────────────────────────────────────────────
+   * FIX IN PLACE · STATES (docs/briefs/insight-not-noise.md §2)
+   *
+   * The element is a real button laid out by the browser; every drawing is measured from it, in the overlay's own
+   * vocabulary: tokens.css hues, the lilac name tag, one pill, the box model's padding hatch and icons, the
+   * staircase stepper. The facet: padding-right of an icon button, 12px (s3) where the words want 24px (s6).
+   *
+   *  rest · pointed · selected · previewing · dragging · accepted · writing · quiet · still loud · error · loading
+   *  · disabled · no step · a higher rule · set in code · no source line · two facets · why, on demand
+   * ───────────────────────────────────────────────────────── */
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+  import { BLOCK_ICONS } from '../src/boxmodel.js';
+  import { PRIMITIVES_CSS, stepper } from '../src/editor-primitives.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  const scale = [['s1', 4], ['s2', 8], ['s3', 12], ['s4', 16], ['s6', 24], ['s8', 32]].map(([token, n]) => ({ token, n, value: `${n}px` }));
+
+  // the drawings shared by every state
+  const GLYPH = {
+    // a ratio of two lengths: the text side twice the height side, as lengths, not digits
+    ratio: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="3.2" rx="1.6" fill="currentColor"/><rect x="3" y="14.8" width="9" height="3.2" rx="1.6" fill="currentColor" opacity=".55"/><path d="M21 4v16" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.6 1.6"/></svg>',
+    eye: '<svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>',
+    grip: '<svg viewBox="0 0 16 16"><path d="M2.5 8h11M5 5.5 2.5 8 5 10.5M11 5.5 13.5 8 11 10.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    file: '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>',
+  };
+
+  // one scene: a real button on a dimmed page; `draw(b, el)` returns the overlay for it, measured in scene coordinates
+  const scenes = [
+    ['rest', 'Blueprint on, not pointed at: the element is cut out of the dim and outlined. Nothing else.', (b) => ring(b, 'coral', 1)],
+    ['pointed', 'The outline thickens, the claimed band tints, one pill at the pointer: its token and number.', (b) => ring(b, 'coral', 2) + band(b, 'coral') + pill(b.right + 4, b.top - 26, 'p', 'pr · s3 · 12', 'coral') + cursor(b.right - 6, b.top + b.h / 2)],
+    ['selected', 'Clicked anywhere on it. Name above, the band coral, a dashed ghost where the edge will be, the scale under the band with the target ringed, the reason at the band’s end.', (b) => ghost(b, 24) + ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'coral') + stair(b, { current: 's3', picked: 's6' }) + reason(b, 'ratio')],
+    ['previewing', 'The target pointed at or focused (↑ ↓): the page itself shows the fix; the ghost is the edge now.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'sky') + stair(b, { current: 's3', picked: 's6', hover: 's6' }) + pill(b.right + 4, b.top - 26, 'p', 'pr · s6 · 24', 'sky'), { pr: 24 }],
+    ['dragging', 'Pressed on the band: the pointer locks, every 22px of travel is one step, the edge springs to it.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'sky') + grip(b) + stair(b, { current: 's3', picked: 's4', hover: 's4' }) + pill(b.right + 4, b.top - 26, 'p', 'pr · s4 · 16', 'sky'), { pr: 16 }],
+    ['accepted', 'Enter, or let go on the target: marching ants (picked, not written), the band mint, a row in Changes.', (b) => ants(b, 'sky') + tag(b, 'Button') + band(b, 'mint') + changesRow('Button', 'pr', 's3', 's6'), { pr: 24 }],
+    ['writing', 'Accept in Changes: the ants keep marching while the server writes the class.', (b) => ants(b, 'sky') + tag(b, 'Button') + band(b, 'mint') + changesRow('Button', 'pr', 's3', 's6', 'writing'), { pr: 24 }],
+    ['quiet', 'Written and read again: nothing claims it. The ants close into a mint line, then the dim closes over it.', (b) => ring(b, 'mint', 1.5) + changesRow('Button', 'pr', 's3', 's6', 'written'), { pr: 24 }],
+    ['still loud', 'Written, but read again something still claims it (here the height side): the ring stays coral on that band.', (b) => ring(b, 'coral', 1.5) + tag(b, 'Button') + band(b, 'coral', 'py') + changesRow('Button', 'pr', 's3', 's6', 'loud'), { pr: 24 }],
+    ['error', 'The server refused (the file changed): the ants stop and flash coral once; the row keeps the pick to retry.', (b) => ants(b, 'coral', true) + tag(b, 'Button') + band(b, 'mint') + changesRow('Button', 'pr', 's3', 's6', 'refused'), { pr: 24 }],
+    ['loading', 'Selected before its verdict is in: the ring shimmers, no band yet; Tab still reaches it.', (b) => ring(b, 'sky', 1.5, 'shimmer') + tag(b, 'Button')],
+    ['disabled', 'The dev server is down or the file is stale: a hollow grey ring, nothing previews.', (b) => ring(b, 'grey', 1.5, 'hollow') + tag(b, 'Button', 'grey')],
+    ['no step', 'No step of the scale fits the rule: the staircase has a hollow bar where the step would be. Nothing to accept.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'coral') + stair(b, { current: 's3', missing: true }) + reason(b, 'ratio')],
+    ['a higher rule', 'The step exists but would break a more important rule (here: the target would get too small to hit): struck, with that rule’s glyph.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'coral') + stair(b, { current: 's3', picked: 's6', struck: true }) + reason(b, 'eye')],
+    ['set in code', 'The class is built at runtime: the band is cross-hatched, there is no staircase, nothing drags.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'coral', 'pr', 'hatch')],
+    ['no source line', 'React Plumber can’t tie it to a line: the name has no file dot; the band is drawn, nothing is draggable.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button', 'lilac', false) + band(b, 'coral')],
+    ['two facets', 'Two claims on one element: both bands lit, the current one with the staircase; dots in the name step through them (. ,).', (b) => ghost(b, 24) + ring(b, 'sky', 1.5) + tag(b, 'Button', 'lilac', true, [true, false]) + band(b, 'coral') + band(b, 'coral', 'pl', 'faint') + stair(b, { current: 's3', picked: 's6' }) + reason(b, 'ratio')],
+    ['why, on demand', 'i (or holding on the reason): one line, under 72 characters. A second i shows what was folded under it.', (b) => ring(b, 'sky', 1.5) + tag(b, 'Button') + band(b, 'coral') + stair(b, { current: 's3', picked: 's6' }) + reason(b, 'ratio', true) + why(b, 'words want about twice as much padding across as down')],
+  ];
+
+  // ── drawings, in scene coordinates ────────────────────────
+  const at = (x, y, w, h) => `left:${x}px;top:${y}px;${w !== undefined ? `width:${w}px;` : ''}${h !== undefined ? `height:${h}px;` : ''}`;
+  const ring = (b, hue, w, kind = '') => `<div class="ring ${kind}" data-hue="${hue}" style="${at(b.left - 3, b.top - 3, b.w + 6, b.h + 6)}--w:${w}px"></div>`;
+  const ants = (b, hue, stopped = false) => `<div class="ring pl-ants${stopped ? ' stopped' : ''}" data-hue="${hue}" style="${at(b.left - 3, b.top - 3, b.w + 6, b.h + 6)}"></div>`;
+  function tag(b, name, hue = 'lilac', located = true, facets = null) {
+    const dots = facets ? `<span class="rail">${facets.map((on) => `<i${on ? ' class="on"' : ''}></i>`).join('')}</span>` : '';
+    return `<span class="pl-tag" data-hue="${hue}" style="${at(b.left - 3, b.top - 30)}">${located ? `<span class="dot">${GLYPH.file}</span>` : ''}${name}${dots}</span>`;
+  }
+  // the claimed padding band, drawn as the box model draws it: hatch tint, the padding icon in the middle
+  function band(b, hue, side = 'pr', kind = '') {
+    const w = side === 'pr' ? b.pr : side === 'pl' ? b.pl : b.w, h = side === 'py' ? b.pt : b.h;
+    const x = side === 'pr' ? b.right - b.pr : b.left, y = b.top;
+    const draw = (bx, by) => `<div class="band ${kind}" data-hue="${hue}" style="${at(bx, by, w, h)}">${kind === 'faint' ? '' : `<span class="ic">${BLOCK_ICONS.p}</span>`}</div>`;
+    return side === 'py' ? draw(x, y) + draw(x, b.bottom - b.pb) : draw(x, y);
+  }
+  // the dashed edge where the band's inner edge will be once the fix is in
+  // the element as the fix leaves it: a dashed outline of the wider box (the words stay, the right edge moves out)
+  const ghost = (b, to) => `<div class="ghost-box" style="${at(b.left - 3, b.top - 3, b.w + (to - b.pr) + 6, b.h + 6)}"></div>`;
+  // the staircase under the band, its current bar, its target ringed; variants for the why-not states
+  function stair(b, { current, picked, hover, missing, struck }) {
+    let steps = scale;
+    if (missing) steps = scale.map((s) => (s.token === 's6' ? { ...s, token: '—', label: 'no step', missing: true } : s));
+    let html = stepper('padding right', { steps, current, picked: missing ? null : picked });
+    if (missing) html = html.replace(/(<button[^>]*aria-label="no step[^"]*"[^>]*>)/, '$1').replace('aria-label="no step', 'data-missing aria-label="no step');
+    if (struck) html = html.replace('data-picked', 'data-picked data-struck');
+    if (hover) html = html.replace(new RegExp(`(title="${hover} · )`), '$1').replace(`aria-label="${hover} `, `data-hover aria-label="${hover} `);
+    return `<div class="stair" style="${at(b.left - 22, b.bottom + 10)}">${html}</div>`;
+  }
+  const reason = (b, kind, big = false) => `<span class="reason${big ? ' big' : ''}" data-kind="${kind}" style="${at(b.right + 22, b.top + b.h / 2 - (big ? 18 : 10))}">${GLYPH[kind]}</span>`;
+  const pill = (x, y, icon, text, hue) => `<span class="pl-pill" data-hue="${hue}" style="position:absolute;${at(x, y)}">${BLOCK_ICONS[icon]}${text}</span>`;
+  const cursor = (x, y) => `<span class="cursor" style="${at(x, y)}">${GLYPH.grip}</span>`;
+  const grip = (b) => `<span class="grip" style="${at(b.right - b.pr / 2 - 9, b.top + b.h / 2 - 9)}">${GLYPH.grip}</span>`;
+  const why = (b, text) => `<span class="why" style="${at(b.left - 22, b.bottom + 52)}">${text}</span>`;
+  // the Changes sidebar's row for the element: tokens and arrows, its state
+  function changesRow(name, prop, from, to, state = 'pending') {
+    const mark = { pending: '', writing: '<i class="spin"></i>', written: '✓', loud: '<b>still py</b>', refused: '<b>changed since read</b>' }[state];
+    return `<div class="changes" data-state="${state}"><span class="pl-tag" data-hue="lilac">${name}</span><code>${prop}</code><code class="from">${from}</code><span class="arr">→</span><code class="to">${to}</code><span class="st">${mark}</span></div>`;
+  }
+
+  root.innerHTML = `<style>
+    :host { display: block; }
+    ${tokens}
+    ${LANGUAGE_CSS}
+    ${PRIMITIVES_CSS}
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    figure { margin: 0; border-radius: 14px; overflow: hidden; background: var(--pl-paper); box-shadow: var(--pl-shadow-card, 0 1px 2px rgb(0 0 0 / .08)); }
+    figcaption { padding: 10px 14px 14px; font: 12px/1.45 var(--pl-sans); color: var(--pl-ink-2); }
+    figcaption b { display: block; font: 600 12px/1.3 var(--pl-sans); color: var(--pl-ink); margin-bottom: 2px; text-transform: none; }
+    /* the page under the blueprint: dimmed, the element cut out */
+    .stage { position: relative; height: 210px; background: #9a9893; overflow: hidden; }
+    .dark .stage { background: #2a2a2d; }
+    .stage .page-el { position: absolute; left: 70px; top: 64px; display: inline-flex; align-items: center; gap: 8px; height: auto;
+      padding: 12px; border: 0; border-radius: 8px; background: #fff; color: #15181b; font: 500 14px/20px system-ui, sans-serif; box-shadow: 0 0 0 9999px rgb(0 0 0 / 0); }
+    .stage .page-el svg { width: 16px; height: 16px; }
+    .ov { position: absolute; inset: 0; pointer-events: none; }
+    .ov > * { position: absolute; box-sizing: border-box; }
+    /* the ring: the element is the target */
+    .ring { border-radius: 10px; border: var(--w, 1.5px) solid var(--h); --h: var(--pl-sky); transition: border-width var(--pl-dur-feedback) ease-out; }
+    .ring[data-hue="coral"] { --h: var(--pl-coral); } .ring[data-hue="mint"] { --h: var(--pl-mint); } .ring[data-hue="grey"] { --h: color-mix(in oklab, var(--pl-ink) 35%, transparent); }
+    .ring.hollow { border-style: dashed; }
+    .ring.shimmer { border-color: transparent; background: linear-gradient(var(--pl-paper), var(--pl-paper)) padding-box, linear-gradient(90deg, var(--pl-sky-soft), var(--pl-sky), var(--pl-sky-soft)) border-box; background-size: 200% 100%; animation: shimmer 1.2s linear infinite; -webkit-mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0) border-box; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .ring.pl-ants { border: 0; background-image: repeating-linear-gradient(90deg, var(--h) 0 5px, transparent 5px 9px), repeating-linear-gradient(90deg, var(--h) 0 5px, transparent 5px 9px), repeating-linear-gradient(0deg, var(--h) 0 5px, transparent 5px 9px), repeating-linear-gradient(0deg, var(--h) 0 5px, transparent 5px 9px);
+      background-size: 100% 1.5px, 100% 1.5px, 1.5px 100%, 1.5px 100%; background-position: 0 0, 0 100%, 0 0, 100% 0; background-repeat: no-repeat; animation: march 600ms linear infinite; border-radius: 0; }
+    .ring.pl-ants.stopped { animation: none; }
+    @keyframes march { to { background-position: 9px 0, -9px 100%, 0 -9px, 100% 9px; } }
+    .pl-tag { position: absolute; }
+    .pl-tag .dot { display: inline-grid; width: 6px; height: 6px; color: var(--pill-ink, var(--pl-lilac-ink)); }
+    .pl-tag .dot svg { width: 6px; height: 6px; }
+    .pl-tag[data-hue="grey"] { --pill-soft: var(--pl-paper-2); --pill-ink: var(--pl-ink-2); }
+    .rail { display: inline-flex; gap: 3px; margin-left: 2px; }
+    .rail i { width: 5px; height: 5px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--pl-lilac); }
+    .rail i.on { background: var(--pl-lilac); }
+    /* the claimed band: the padding hatch in the verdict's hue */
+    .band { --h: var(--pl-coral); background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--h) 70%, transparent) 0 1px, color-mix(in oklab, var(--h) 22%, transparent) 1px 6px); display: grid; place-items: center; }
+    .band[data-hue="sky"] { --h: var(--pl-sky); } .band[data-hue="mint"] { --h: var(--pl-mint); }
+    .band.faint { opacity: .45; }
+    .band.hatch { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--h) 75%, transparent) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, color-mix(in oklab, var(--h) 75%, transparent) 0 1px, color-mix(in oklab, var(--h) 18%, transparent) 1px 4px); }
+    .band .ic { width: 12px; height: 12px; color: color-mix(in oklab, var(--h) 85%, var(--pl-ink)); }
+    .band .ic svg, .pl-pill svg { width: 11px; height: 11px; display: block; }
+    .ghost-box { border: 1.5px dashed var(--pl-sky); border-radius: 10px; }
+    .stair { padding: 2px 4px; border-radius: 9px; background: color-mix(in oklab, var(--pl-paper) 92%, transparent); box-shadow: 0 1px 3px rgb(0 0 0 / .18); }
+    .stair .ep.st .opt[data-hover] .lab { opacity: 1; }
+    .stair .ep.st .opt[data-hover] .bar { background: color-mix(in oklab, var(--pl-sky) 55%, transparent); height: 14px; }
+    .stair .ep.st .opt[data-missing] .bar { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-ink) 35%, transparent); }
+    .stair .ep.st .opt[data-struck] .bar { box-shadow: inset 0 0 0 1.5px var(--pl-sky); position: relative; }
+    .stair .ep.st .opt[data-struck]::before { content: ''; position: absolute; left: 3px; right: 3px; top: 50%; height: 2px; background: var(--pl-coral); rotate: -20deg; border-radius: 2px; }
+    .reason { width: 20px; height: 20px; color: var(--pl-coral-ink); display: grid; place-items: center; padding: 2px; border-radius: 6px; background: var(--pl-coral-soft); }
+    .reason.big { width: 36px; height: 36px; padding: 6px; }
+    .reason svg { width: 100%; height: 100%; display: block; }
+    .reason[data-kind="eye"] { color: var(--pl-sky-ink); background: var(--pl-sky-soft); }
+    .cursor, .grip { width: 18px; height: 18px; color: var(--pl-ink); filter: drop-shadow(0 0 1px #fff); }
+    .grip { color: var(--pl-sky-ink); }
+    .why { max-width: 260px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.3 var(--pl-sans); background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 3px rgb(0 0 0 / .2); }
+    /* the Changes sidebar, one row, in the scene's corner */
+    .changes { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px; background: var(--pl-paper); box-shadow: 0 1px 3px rgb(0 0 0 / .2); font: 500 11px/1 var(--pl-mono); color: var(--pl-ink); }
+    .changes .pl-tag { position: static; height: 18px; }
+    .changes .from { color: var(--pl-coral); text-decoration: line-through; }
+    .changes .to { color: var(--pl-mint-ink); background: var(--pl-mint-soft); padding: 2px 4px; border-radius: 4px; }
+    .changes .arr { color: var(--pl-ink-2); }
+    .changes .st { min-width: 12px; color: var(--pl-mint); font-weight: 700; }
+    .changes .st b { font: 600 10px/1 var(--pl-sans); color: var(--pl-coral); }
+    .changes[data-state="loud"], .changes[data-state="refused"] { box-shadow: 0 0 0 1.5px var(--pl-coral); }
+    .changes .spin { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--pl-sky-soft); border-top-color: var(--pl-sky); animation: spin .8s linear infinite; }
+    @keyframes spin { to { rotate: 1turn; } }
+    @media (prefers-reduced-motion: reduce) { .ring.pl-ants, .ring.shimmer, .changes .spin { animation: none; } }
+  </style><div class="grid"></div>`;
+
+  const ICON_DOT = '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>';
+  function render() {
+    const grid = root.querySelector('.grid');
+    grid.innerHTML = scenes.map(([name, words]) => `<figure><div class="stage"><button class="page-el" tabindex="-1">${ICON_DOT}Save</button><div class="ov"></div></div><figcaption><b>${name}</b>${words}</figcaption></figure>`).join('');
+    grid.querySelectorAll('figure').forEach((fig, i) => {
+      const [, , draw, after] = scenes[i];
+      const el = fig.querySelector('.page-el'), stage = fig.querySelector('.stage');
+      if (after?.pr) el.style.paddingRight = `${after.pr}px`;
+      const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+      const b = { left: r.left - s.left, top: r.top - s.top, w: r.width, h: r.height, right: r.right - s.left, bottom: r.bottom - s.top,
+        pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
+      fig.querySelector('.ov').innerHTML = draw(b, el);
+    });
+  }
+  render();
+  addEventListener('resize', render);
+  document.getElementById('scheme').addEventListener('click', (e) => {
+    const dark = document.body.classList.toggle('dark');
+    host.dataset.scheme = dark ? 'dark' : 'light';
+    root.querySelector('.grid').classList.toggle('dark', dark);
+    e.target.textContent = dark ? 'Light' : 'Dark';
+  });
+</script>
+</body>
+</html>
