@@ -112,6 +112,27 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
   }
 });
 
+test('Fast Refresh diff is offered on its own when the config has no plugins at all, and Plumber then goes in front', async t => {
+  const root = await fixture(t, "import { defineConfig } from 'vite';\nexport default defineConfig({ server: { hmr: true, watch: { usePolling: true, awaitWriteFinish: true } } });\n");
+  const file = join(root, 'vite.config.mjs'), { request, report } = await api(t, root);
+  let ready = await report(), refresh = item(ready, 'write.refresh');
+  assert.equal(refresh.status, 'missing');
+  assert.match(refresh.loses, /reloads the whole page and loses its state/);
+  assert.equal(refresh.fix.kind, 'diff', JSON.stringify(refresh.fix));
+  assert.match(refresh.fix.diff, /\+import plumberReact from '@vitejs\/plugin-react'/);
+  assert.match(refresh.fix.diff, /\+.*plugins: \[plumberReact\(\)\]/);
+  const applied = await request('readiness/fix', { id: 'write.refresh', hash: refresh.fix.hash, confirm: true, allowDirty: true });
+  assert.equal(applied.status, 200, await applied.clone().text());
+  ready = await report();
+  assert.equal(item(ready, 'write.refresh').status, 'ok');
+  assert.equal(item(ready, 'locate.plugin').status, 'missing');
+  run(root, ['fix', 'locate.plugin', '--yes']);
+  assert.match(await readFile(file, 'utf8'), /plugins: \[plumb\(\), plumberReact\(\)\]/);
+  ready = await report();
+  assert.equal(item(ready, 'locate.order').status, 'ok');
+  assert.equal(item(ready, 'write.refresh').status, 'ok');
+});
+
 test('HMR and polling diffs survive Vite startup for every writable server shape', async t => {
   for (const setting of ['', 'server: {}', 'server: { watch: null }', 'server: { watch: {} }', 'server: { watch: { ignored: ["**/generated/**"], interval: 900, awaitWriteFinish: false } }']) {
     await t.test(setting || 'no server', async t => {

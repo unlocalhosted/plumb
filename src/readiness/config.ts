@@ -71,6 +71,19 @@ function remove(text: MagicString, source: string, node: ObjectNode, entry: Prop
   if (separator !== undefined) text.remove(separator, separator + 1);
 }
 
+/** The import for the React Fast Refresh plugin, reusing an existing import's local name. */
+function refreshImport(ast: ReturnType<typeof parse>, source: string, module: string): { name: string; edit: MagicString } {
+  const existing = ast.body.find(item => item.type === 'ImportDeclaration' && item.source.value === module);
+  let name = existing?.type === 'ImportDeclaration' ? existing.specifiers.find(item => item.type === 'ImportDefaultSpecifier')?.local.name : undefined;
+  const edit = new MagicString(source);
+  if (!name) {
+    const names = new Set<string>(); walk(ast, node => { if (node.type === 'Identifier') names.add(node.name); });
+    name = 'plumberReact'; while (names.has(name)) name += '_';
+    edit.appendLeft(ast.body[0]?.start ?? 0, `import ${name} from '${module}';\n`);
+  }
+  return { name, edit };
+}
+
 /** Unreadable, composed and ambiguous configs retain unknown facts. No execution. */
 export async function hostConfig(root: string): Promise<HostConfig | undefined> {
   const found: HostConfig[] = [];
@@ -137,23 +150,27 @@ export async function hostConfig(root: string): Promise<HostConfig | undefined> 
         } else if (known || !array.elements.length) { result.plugin = false; result.ordered = false; }
         if (calls.some(name => name && refresh.includes(name))) result.refresh = true;
         else if (known || !array.elements.length) result.refresh = false;
-        if (result.refresh === false && result.plugin && calls.filter(name => name === plumb).length === 1) {
-          // Use the installed official plugin. Never edit package.json or install.
+        // Use the installed official plugin. Never edit package.json or install.
+        // After plumb() when it is present; at the end when it is absent (the
+        // locate.plugin fix later moves plumb() in front).
+        if (result.refresh === false && (plumbIndex < 0 || calls.filter(name => name === plumb).length === 1)) {
           const module = installedRefresh(file);
           if (module) {
-            const existing = ast.body.find(item => item.type === 'ImportDeclaration' && item.source.value === module);
-            let name = existing?.type === 'ImportDeclaration' ? existing.specifiers.find(item => item.type === 'ImportDefaultSpecifier')?.local.name : undefined;
-            const edit = new MagicString(source);
-            if (!name) {
-              const names = new Set<string>(); walk(ast, node => { if (node.type === 'Identifier') names.add(node.name); });
-              name = 'plumberReact'; while (names.has(name)) name += '_';
-              edit.appendLeft(ast.body[0]?.start ?? 0, `import ${name} from '${module}';\n`);
-            }
-            const plumber = array.elements[plumbIndex]!;
-            edit.appendLeft(plumber.end, `, ${name}()`);
+            const { name, edit } = refreshImport(ast, source, module);
+            if (plumbIndex >= 0) edit.appendLeft(array.elements[plumbIndex]!.end, `, ${name}()`);
+            else if (array.elements.length) edit.appendLeft(array.elements.at(-1)!.end, `, ${name}()`);
+            else edit.appendLeft(array.start + 1, `${name}()`);
             result.changes['write.refresh'] = edit.toString();
           }
         }
+      }
+    }
+    if (!plugins) {
+      const module = installedRefresh(file);
+      if (module) {
+        const { name, edit } = refreshImport(ast, source, module);
+        set(edit, source, config, 'plugins', `[${name}()]`);
+        result.changes['write.refresh'] = edit.toString();
       }
     }
     try {
