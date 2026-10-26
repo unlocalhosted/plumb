@@ -19,7 +19,7 @@ interface SourceRun extends TextRun { literal?: { start: number; end: number; qu
 interface TextSite { element: JSXElement; runs: SourceRun[]; reason: string }
 
 // JSX uses the HTML4 named entity table, not the browser's larger HTML5 table.
-function decodeEntities(text: string): string {
+export function decodeEntities(text: string): string {
   return text.replace(/&(#x[\da-f]+|#\d+|[a-z][\da-z]*);/gi, (entity, name: string) => {
     if (!name.startsWith('#')) return Object.hasOwn(jsxEntities, name) ? String.fromCodePoint(jsxEntities[name]!) : entity;
     const value = name[1]?.toLowerCase() === 'x' ? parseInt(name.slice(2), 16) : Number(name.slice(1));

@@ -20,3 +20,9 @@ export const textWriteErrors = {
   unknown: 'Unknown text run id. Read the element\'s text again.',
   mismatch: 'The text changed since the overlay read it. Read it again.',
 } as const;
+
+/** A JSX attribute string has no backslash escapes: the quote and anything entity-shaped are spelled as entities. */
+export function encodeAttributeString(to: string, quote: string): string {
+  const content = to.replace(/&(?=#x[\da-f]+;|#\d+;|[a-z][\da-z]*;)/gi, '&amp;').replaceAll(quote, quote === '"' ? '&quot;' : '&apos;');
+  return quote + content + quote;
+}
