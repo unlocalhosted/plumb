@@ -4,7 +4,8 @@
  * The controls every element editor is built from (docs/briefs/element-editors.md, layer 2). One vocabulary for
  * choosing a value on the system, whatever the property: the theme's steps are the only things you can press.
  *
- *  stepper   spacing, size, type: the scale as a row of steps, a window around the current one; ‹ › step the window
+ *  stepper   spacing, size, type: a staircase, each step a bar as wide as its value, a window around the current
+ *            one; ‹ › move the window; a step's name only while it is pointed at or focused
  *  swatches  colour: one chip per token, its name on hover and focus
  *  radius    corners: each step drawn as the corner it makes
  *  segments  direction, wrap, fit: two to four options as one segmented control, with glyphs and words
@@ -18,7 +19,7 @@
  *  focus      a 2px accent ring, keyboard only
  *  pressed    a step pressed down scales to 0.96
  *  picked     a step chosen but not written yet: an accent ring and a dot under it; the current fill stays put
- *  drift      the value sits off the scale: a dashed --pl-off notch where it falls between steps, with its number
+ *  drift      the value sits off the scale: a coral bar at its own width, where it falls between the steps
  *  disabled   a property set in code (dynamic): the steps quiet, a line saying why, nothing to press
  *  loading    the scale is not read yet: quiet placeholder steps, no hover
  *  empty      the theme has no steps for this family: one line saying so
@@ -61,6 +62,31 @@ export const PRIMITIVES_CSS = `
   .ep[aria-disabled="true"] .opt[aria-checked="true"] { color: var(--pl-ink-2); }
   .ep[aria-busy="true"] .opt { color: transparent; background: var(--pl-paper-2); pointer-events: none; }
   .ep[aria-busy="true"] .fill { display: none; }
+
+  /* the staircase: bars that grow with the scale; the current bar sky, the rest quiet; a picked bar ringed; drift a
+     coral bar where its value falls; a step's name only while pointed at or focused */
+  .ep.st { gap: 3px; align-items: center; }
+  .ep.st .opt { min-width: 0; height: 30px; padding: 0 5px; flex-direction: column; justify-content: center; }
+  .ep.st .bar { display: block; height: 12px; border-radius: 3px; background: color-mix(in oklab, var(--pl-ink) 22%, transparent);
+    transition: background var(--pl-dur-feedback) ease-out, height var(--pl-dur-feedback) var(--pl-spring-pop); }
+  @media (hover: hover) and (pointer: fine) { .ep.st .opt:hover { background: none; } .ep.st .opt:hover .bar { background: color-mix(in oklab, var(--pl-sky) 55%, transparent); height: 14px; } }
+  .ep.st .opt[aria-checked="true"] .bar { background: var(--pl-sky); height: 14px; }
+  .ep.st .opt[aria-checked="true"] { color: var(--pl-ink); }
+  .ep.st .opt[data-picked] { box-shadow: none; }
+  .ep.st .opt[data-picked] .bar { background: none; box-shadow: inset 0 0 0 1.5px var(--pl-sky); height: 14px; }
+  .ep.st .opt[data-picked]::after { bottom: 1px; }
+  .ep.st .lab { position: absolute; top: calc(100% + 2px); left: 50%; translate: -50% 0; padding: 2px 5px; border-radius: 5px; white-space: nowrap;
+    font: 600 10px/1 var(--pl-mono); background: var(--pl-sky-soft); color: var(--pl-sky-ink); opacity: 0; pointer-events: none; transition: opacity var(--pl-dur-feedback) ease-out; }
+  .ep.st .opt:hover .lab, .ep.st .opt:focus-visible .lab { opacity: 1; }
+  .ep.st .notch { border-inline: 0; padding: 0 5px; height: 30px; flex-direction: column; justify-content: center; }
+  .ep.st .notch .bar { background: none; box-shadow: inset 0 0 0 1.5px var(--pl-coral); background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-coral) 60%, transparent) 0 1px, transparent 1px 4px); height: 14px; }
+  .ep.st .notch { pointer-events: auto; cursor: default; }
+  .ep.st .notch .lab { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+  .ep.st .notch:hover .lab { opacity: 1; }
+  .ep.st[aria-disabled="true"] .bar { background: color-mix(in oklab, var(--pl-ink) 12%, transparent); }
+  .ep.st[aria-disabled="true"] .opt[aria-checked="true"] .bar { background: color-mix(in oklab, var(--pl-ink) 30%, transparent); }
+  .ep.st[aria-busy="true"] .opt { background: none; }
+  .ep.st[aria-busy="true"] .bar { background: var(--pl-paper-2); }
 
   /* swatches */
   .ep.sw .opt { width: 26px; min-width: 26px; padding: 0; }
@@ -130,12 +156,18 @@ function withNotch(steps, s, render, inner) {
   return out;
 }
 
+// A staircase: each step a bar as wide as its value (scaled to the window's largest), so the sizes are seen, not
+// read. The name of a step shows only while it is pointed at or focused.
+const BAR = 30; // px the window's largest step is drawn
+const barOf = (n, max) => `<span class="bar" style="width:${Math.max(3, Math.round(BAR * (n ?? 0) / Math.max(1, max)))}px"></span>`;
 export function stepper(name, s) {
   const at = Math.max(0, s.steps.findIndex((x) => x.token === (s.picked ?? s.current)));
   const start = Math.max(0, Math.min(s.steps.length - WINDOW, (s.start ?? at - Math.floor(WINDOW / 2))));
   const shown = s.steps.slice(start, start + WINDOW);
-  const body = s.busy ? Array.from({ length: 5 }, (_, i) => `<span class="opt" aria-hidden="true">s${i}</span>`).join('') : withNotch(shown, s, (step, k) => opt(s, step, start + k, esc(step.label ?? step.token)));
-  return `<div class="ep st" role="radiogroup" aria-label="${esc(name)}" data-start="${start}"${attrs(s)}><button type="button" class="page prev" aria-label="Smaller steps" ${start <= 0 ? 'disabled' : ''} tabindex="-1">‹</button><span class="fill" aria-hidden="true"></span>${body}<button type="button" class="page next" aria-label="Larger steps" ${start + WINDOW >= s.steps.length ? 'disabled' : ''} tabindex="-1">›</button></div>`;
+  const max = Math.max(...shown.map((x) => x.n ?? 0), s.drift?.n ?? 0);
+  const body = s.busy ? Array.from({ length: 6 }, (_, i) => `<span class="opt" aria-hidden="true">${barOf(i * 4, 20)}</span>`).join('')
+    : withNotch(shown, s, (step, k) => opt(s, step, start + k, `${barOf(step.n, max)}<span class="lab">${esc(step.label ?? step.token)}</span>`), (d) => `${barOf(d.n, max)}<span class="lab">${esc(d.label)}</span>`);
+  return `<div class="ep st" role="radiogroup" aria-label="${esc(name)}" data-start="${start}"${attrs(s)}><button type="button" class="page prev" aria-label="Smaller steps" ${start <= 0 ? 'disabled' : ''} tabindex="-1">‹</button>${body}<button type="button" class="page next" aria-label="Larger steps" ${start + WINDOW >= s.steps.length ? 'disabled' : ''} tabindex="-1">›</button></div>`;
 }
 export function swatches(name, s) {
   const chip = (c) => `<span class="chip" style="background:${esc(c)}"></span>`;
