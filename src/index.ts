@@ -19,6 +19,7 @@ import { provenance } from './rules/provenance.js';
 import { cachedComponents, discoverComponents } from './ownership/components.js';
 import { judgeOwnership } from './ownership/judge.js';
 import { judgeHabits } from './habits/index.js';
+import { realQuotes } from './habits/quotes.js';
 import { judgeImitation, suggestImitation } from './imitation/index.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
@@ -197,6 +198,12 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
   const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus));
   findings.push(...habits.findings);
+  if (options.listHabits || config.value.habits?.includes('real-quotes')) {
+    const quoted = await realQuotes([...sourceFiles], input ? new Map([[input.file, input.text]]) : undefined);
+    findings.push(...quoted);
+    const summary = habits.summaries.find(h => h.id === 'real-quotes');
+    if (summary && summary.breaks !== null) summary.breaks = quoted.length;
+  }
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
   findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));

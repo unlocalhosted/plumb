@@ -54,7 +54,7 @@ test('zero config/disabled habits judge nothing; habits command counts all built
   const list = JSON.parse(result.stdout);
   assert.equal(list.find(h => h.id === 'hover-gate').breaks, 1);
   assert.equal(list.find(h => h.id === 'transition-named').breaks, 1);
-  assert.equal(list.length, 11);
+  assert.equal(list.length, 15);
   const text = spawnSync(process.execPath, [cli, 'habits', '--root', dir], { encoding: 'utf8' });
   assert.match(text.stdout, /hover-gate\s+1 break\s/);
 });
@@ -188,4 +188,49 @@ test('color-scheme (#58): a dark theme with no color-scheme is one finding; sche
 
   const light = await project(t, '@import "tailwindcss";', '<main className="bg-white text-black">A</main>;', { habits: ['color-scheme'] });
   assert.equal(breaks(report(light), 'color-scheme').length, 0);
+});
+
+test('composited-motion (#32): a transition on a layout property is marked; transform and opacity are not', async t => {
+  const dir = await project(t, `@import "tailwindcss";
+.grow { transition: width 200ms ease-out; }
+.slide { transition: transform 200ms ease-out, opacity 200ms ease-out; }`, `<><div className="transition-[height]" /><div className="transition-transform" /></>;`, { habits: ['composited-motion'] });
+  const found = breaks(report(dir), 'composited-motion');
+  assert.deepEqual(found.map(f => f.declaration.site.text).sort(), ['transition-[height]', 'transition: width 200ms ease-out']);
+  assert.equal(found.length, 2, JSON.stringify(found.map(f => f.title)));
+  assert.ok(found.every(f => /transform and opacity/.test(f.action)));
+});
+
+test('reduced-motion-fade (#67): a global kill switch under reduced motion is marked; a reduced duration on one element is not', async t => {
+  const dir = await project(t, `@import "tailwindcss";
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .sheet { transition-duration: 120ms; } }`, '', { habits: ['reduced-motion-fade'] });
+  const found = breaks(report(dir), 'reduced-motion-fade');
+  assert.equal(found.length, 2, JSON.stringify(found.map(f => f.title)));
+  assert.ok(found.every(f => /fade/.test(f.action)));
+});
+
+test('font-metrics (#43): a web font with no metric-matched fallback is one finding; size-adjust on a fallback clears it', async t => {
+  const bare = await project(t, `@import "tailwindcss";
+@font-face { font-family: Inter; src: url(/inter.woff2) format("woff2"); }`, '', { habits: ['font-metrics'] });
+  assert.equal(breaks(report(bare), 'font-metrics').length, 1);
+  const matched = await project(t, `@import "tailwindcss";
+@font-face { font-family: Inter; src: url(/inter.woff2) format("woff2"); }
+@font-face { font-family: Inter Fallback; src: local(Arial); size-adjust: 107%; ascent-override: 90%; }`, '', { habits: ['font-metrics'] });
+  assert.equal(breaks(report(matched), 'font-metrics').length, 0);
+});
+
+test('real-quotes (#19): straight marks in what a person reads are marked with the typeset text; code and real marks are not', async t => {
+  const dir = await project(t, '@import "tailwindcss";', `export function App() {
+  return (<>
+    <p>Don't stop...</p>
+    <p>Say "hello" - then leave</p>
+    <img alt="The team's photo" src="/a.png" />
+    <p>Don’t stop…</p>
+    <code>const a = "x"; let b = 'y';</code>
+    <p className="it's-a-class">Plain words</p>
+  </>);
+}`, { habits: ['real-quotes'] });
+  const found = breaks(report(dir), 'real-quotes');
+  assert.deepEqual(found.map(f => f.edits[0].text).sort(), ['Don’t stop…', 'Say “hello” – then leave', 'The team’s photo'].sort());
+  assert.ok(found.every(f => f.sites[0].line > 1 && f.severity === 'warn'));
 });

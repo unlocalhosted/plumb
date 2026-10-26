@@ -20,6 +20,10 @@ export const builtins = [
   { id: 'overflow-clip', severity: 'warn', reason: 'It breaks position: sticky inside and still allows script scrolling.', fix: 'Use overflow: clip if no programmatic scrolling, measurement or formatting context is required; review those semantics first.' },
   { id: 'overscroll-contain', severity: 'warn', reason: 'Reaching its edge scrolls the page behind it.', fix: 'Set overscroll-behavior: contain (or the matching axis) on this scroll container.' },
   { id: 'tracking-em', severity: 'warn', reason: 'Letter spacing in px stays the same at every size, so large type looks loose and small type cramped.', fix: 'Write the tracking in em (Tailwind tracking-* utilities are em) so it scales with the font size.' },
+  { id: 'composited-motion', severity: 'warn', reason: 'Animating a layout property lays the page out again on every frame, so the motion stutters.', fix: 'Animate transform (translate, scale) and opacity instead, or grid-template-rows for a height reveal.' },
+  { id: 'reduced-motion-fade', severity: 'warn', reason: 'Reduced motion asks for less movement, not for state changes nobody can see.', fix: 'Under prefers-reduced-motion, keep a short opacity fade and drop only the movement.' },
+  { id: 'font-metrics', severity: 'warn', reason: 'Without a metric-matched fallback the page jumps when the web font arrives.', fix: 'Give the fallback @font-face size-adjust and ascent-override (or use next/font or fontaine, which write them).' },
+  { id: 'real-quotes', severity: 'warn', reason: 'Straight quotes, three dots and spaced hyphens read as unfinished typing.', fix: 'Use real typography: ’ for apostrophes, “ ” and ‘ ’ for quotes, … for an ellipsis, – for a spaced dash.' },
   { id: 'color-scheme', severity: 'warn', reason: 'Without color-scheme a dark theme keeps light scrollbars, form controls and autofill.', fix: 'Set color-scheme: dark (Tailwind scheme-dark) where the dark theme applies, or scheme-light-dark on the root.' },
 ] as const;
 export type BuiltinHabit = typeof builtins[number]['id'];
@@ -205,6 +209,9 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
           if (/^(padding|margin|inset)$/.test(p) && parts.length === 4 && parts[1] !== parts[3]) broken = true;
           break;
         }
+        case 'composited-motion': broken = (p === 'transition-property' || p === 'transition') && tokens(v.toLowerCase(), /[\s,]/).some(part => /^(?:width|height|top|left|right|bottom|inset|margin(?:-\w+)?|padding(?:-\w+)?|max-height|max-width|min-height|min-width|inline-size|block-size)$/.test(part)); break;
+        case 'reduced-motion-fade': broken = /(?:^|[\s,>])\*/.test(s) && d.when.some(c => c.kind === 'media' && /prefers-reduced-motion\s*:\s*reduce/i.test(c.text)) &&
+          (/^(?:animation|animation-name|transition|transition-property)$/.test(p) && /^none\b/i.test(v) || /^(?:animation|transition)-duration$/.test(p) && /^0(?:\.0*1)?m?s\b|^0$/.test(v)); break;
         case 'tracking-em': broken = p === 'letter-spacing' && tokens(v, /\s/).some(part => (pixels(part) ?? 0) !== 0 && /px$/i.test(part)); break;
         case 'viewport-dynamic': broken = /(?<![\w.])[-+]?(?:\d*\.)?\d+v[hw]\b/i.test(v); break;
         case 'safe-area-fallback': broken = calls(v, 'env').some(call => /^safe-area-inset-[\w-]+\s*$/i.test(call.args)); break;
@@ -235,6 +242,12 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
       if (profiling) ruleTimes.set(habit.id, (ruleTimes.get(habit.id) ?? 0) + performance.now() - start);
     }
   }
+  // A web font with no metric-matched fallback anywhere is one finding, on the first @font-face that loads a file.
+  if (active.has('font-metrics') && !declarations.some(d => /^(?:size-adjust|ascent-override|descent-override)$/.test(d.prop))) {
+    const face = declarations.find(d => d.prop === 'src' && /url\(/.test(d.authoredCss ?? d.value) && d.when.some(c => c.kind === 'selector' && c.text === '@font-face'));
+    const habit = builtins.find(h => h.id === 'font-metrics')!;
+    if (face) add(habit.id, face, habit.reason, habit.severity, habit.fix);
+  }
   // One dark theme with no color-scheme anywhere is one finding, placed on the first declaration the dark theme sets.
   if (active.has('color-scheme') && !declarations.some(d => d.prop === 'color-scheme')) {
     const darkened = eligible.find(d => d.when.some(c => c.kind === 'media' && /prefers-color-scheme\s*:\s*dark/i.test(c.text) ||
@@ -263,6 +276,9 @@ function habitMessage(id: string, d: Declaration, authored: string, owner: strin
     case 'hover-gate': return { title: `\`${authored}\` also applies on touch screens`, action: 'Use `pointer-hover:` (or wrap the rule in @media (hover: hover) and (pointer: fine)).' };
     case 'focus-outline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` removes the focus outline on ${owner}`, action: 'Restore an outline on :focus-visible.' };
     case 'logical-inline': return { title: `\`${isClass(d) ? d.site.text : d.prop}\` is a physical side`, action: `Use \`${logicalProperty(d.prop, value)}\`.` };
+    case 'composited-motion': return { title: `\`${authored}\` animates layout`, action: 'Animate transform and opacity instead.' };
+    case 'reduced-motion-fade': return { title: `\`${authored}\` turns every animation off for reduced motion`, action: 'Keep a short opacity fade under prefers-reduced-motion.' };
+    case 'font-metrics': return { title: 'Web fonts load with no metric-matched fallback', action: 'Add size-adjust and ascent-override to a fallback @font-face.' };
     case 'tracking-em': return { title: `\`${authored}\` sets letter spacing in px`, action: 'Use em so the tracking scales with the type.' };
     case 'color-scheme': return { title: 'The dark theme never sets color-scheme', action: 'Add scheme-dark where the dark theme applies (or color-scheme: dark).' };
     case 'viewport-dynamic': return { title: `\`${value}\` uses vh, which jumps on mobile`, action: 'Use dvh for a changing viewport, svh for the smallest, lvh for the largest.' };

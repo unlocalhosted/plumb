@@ -262,17 +262,22 @@ test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and i
   assert.deepEqual(errors, []);
 });
 
-test('Noise: a well-built page yields no craft finding, and neither does the demo with every corner case', { timeout: 120000 }, async (t) => {
+test('Noise: a well-built page yields no craft finding; the demo with every corner case yields only its three real ones', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
+  // the demo breaks three rules for real: its cut-off label has no title (#35), its icon button pads the icon side like
+  // the text side (#10), its 12px field zooms iOS (#70). Anything else would be noise.
+  const known = { GOOD: [], demo: ['icon-side', 'input-zoom', 'truncate-intent'] };
   for (const [app, query] of [[GOOD, ''], [null, '?corners']]) {
     const { url } = await fixture(t, app);
     const { page, errors, overlay } = await open(t, launched, url + query);
     await blueprint(page, overlay);
     await page.waitForTimeout(500); // the rest of the page is read off-screen after the view
     await page.waitForFunction(() => /off on this page|All on the system|not checked/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp .meta').textContent), null, { timeout: 10000 });
-    assert.deepEqual(await craftMarks(page), [], `no craft mark on ${app ? 'the well-built page' : 'the demo'}`);
-    assert.deepEqual(await craftRows(overlay), [], `no craft row on ${app ? 'the well-built page' : 'the demo'}`);
+    const want = known[app ? 'GOOD' : 'demo'];
+    const marks = await craftMarks(page);
+    assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
+    assert.deepEqual([...new Set((await craftRows(overlay)).map((r) => r.rule.replace('craft/', '')))].sort(), want, `craft rows on ${app ? 'the well-built page' : 'the demo'}`);
     assert.deepEqual(errors, []);
     await page.close();
   }
