@@ -68,3 +68,29 @@ Reasons: runtime value (as above); `Written in a shared style object or imported
 
 Not done: editing a shared style object from the element that uses it (`style={BOX}`) is refused rather than rewritten, because the object may be shared by other elements; a later layer could offer the edit at the definition with a count of users.
 Files: `src/surfaces/edits.ts`, `src/session/{worker,engine}.ts`, `e2e/inline-edits.test.mjs` (2 tests). Pre-existing failure unrelated: `e2e/cli-findings.test.mjs` "site read-only human reports fit real 80/140-column PTYs" fails identically without my changes.
+
+## 4. Element props API (layer 1 of docs/briefs/element-editors.md)
+
+New module `src/session/props.ts` (pure: source text + decisions + the element's compiled declarations), wired as `Session.props` / `Session.set` in the engine, and the routes `GET /__plumb/props` and `POST /__plumb/set` (every route list, stdio `plumb.props` / `plumb.set`). `set` is a normal write through `writeText` (same file-identity, hash, reconcile guards), so it is recorded in the write history and returns the same `undo` handle.
+
+`GET /__plumb/props?file=src/App.tsx&line=5&column=6` (any position inside the element's opening tag):
+```json
+{ "file": "/abs/src/App.tsx", "line": 5, "column": 5, "hash": "<sha256 of the file>", "kind": "layout", "tag": "div",
+  "props": [ { "key": "padding", "family": "spacing", "value": "12px", "token": "s3", "source": "class", "class": "p-s3",
+      "steps": [ { "token": "s2", "value": "8px", "label": "s2", "class": "p-s2", "css": "var(--spacing-s2)" } ] },
+    { "key": "background", "family": "color", "value": null, "token": null, "source": "none", "class": null, "steps": [ … ],
+      "dynamic": "className is built at runtime (a variable); set the class by hand." } ] }
+```
+- All 21 keys are always present: padding, padding-x, padding-y, gap, flex-direction, align-items, justify-content, flex-wrap, radius, background, border-color, border-width, shadow, font-size, font-weight, line-height, color, width, height, object-fit, aspect-ratio. `line`/`column` are the element's normalized opening position (use them for `set`).
+- `kind`: media (img, video, svg, …), control (button, input, select, textarea), layout (has flex/grid utility), text (p, h1-6, span, …), else surface.
+- `source`: `class` (a base utility in a static className sets it; variant classes such as `hover:p-2` never count), `inline` (a static value in `style={{…}}`; `value` is the literal, `token` set when it is `var(--ns-token)`; a runtime value has `dynamic`), `computed` (the compiler sees a declaration for it which no class on this element explains), `none`. `dynamic` appears when the className or style is built at runtime.
+- `steps` come from the project's theme tokens in the property's namespace (`--spacing-`, `--radius-`, `--color-`, `--shadow-`, `--text-`, `--font-weight-`, `--leading-`), project tokens first; if the project defines none for the family, Tailwind's defaults are listed (not for spacing). Layout/media/border-width/width/height also carry fixed steps (row, col, wrap, center, cover, square, video, full, auto, …). `class` and `css` on a step are additions to the brief's shape: the class that sets it, and the inline value (`var(--spacing-s3)` or the plain CSS value) used when the property is inline.
+- Tailwind's numeric spacing (`p-3` on the default `--spacing` unit) is read (value from the compiled declaration, token null) but is not offered as steps.
+
+`POST /__plumb/set { file, hash, line, column, key, token }` (line and column are required to identify the element; not in the brief's body):
+```json
+{ "revision": 5, "file": "/abs/src/App.tsx", "hash": "…", "applied": ["set:padding"], "remaining": [], "undo": { "id": "w3", "file": "src/App.tsx", "label": "padding: s3 → s4" } }
+```
+Behaviour: replaces the first base class that sets the property (keeps a leading or trailing `!`); otherwise appends the class to the first plain string of a static className (string literal, `{'…'}`, template literal without expressions, or `cn`/`clsx`/`classNames`/`cx`/`twMerge`/`tw`/`cva` call); creates ` className="…"` when the element has none; edits the literal in place when the property is a static inline value. Refusals (400, nothing written): className built at runtime (variable, condition, template with expressions, a call with no string argument), an element that spreads props and has no className, a runtime inline value, an unknown step, setting the step that is already set, a stale `hash` (`The file changed since the overlay read it. Read it again.`).
+
+Files: `src/session/props.ts` (new), `src/session/{engine,index,coordinator,server}.ts`, `e2e/props.test.mjs` (4 tests over real HTTP: families and steps; replace, add and undo; cn / new className / inline; refusals). Not covered: `cva` variant objects, components that forward `className` (set applies to the usage element only), per-side padding/radius utilities (`pt-`, `rounded-t-`), stylesheet-defined classes as a source of values.

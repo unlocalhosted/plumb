@@ -17,6 +17,8 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
+import { elementProps, setProp } from './props.js';
+import type { Props } from './props.js';
 import { readText, textSites } from './text.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
@@ -48,6 +50,8 @@ export interface ApplyOptions { file: string; hash: string; edits: { id: string 
 /** Names one recorded write so it can be undone after the fact. */
 export interface UndoHandle { id: string; file: string; label: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle }
+export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
+export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
 interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
@@ -538,6 +542,38 @@ export class Session extends EventEmitter {
         replacement: run.literal ? encodeTextLiteral(to, run.literal.quote) : encodeJSXText(source.slice(start, end), to) };
     });
   }
+  /** Every property family an editor needs for the JSX element at this position, set or not. */
+  async props(file: string, line: number, column: number): Promise<PropsResult> {
+    const path = this.file(file); this.position(line); this.position(column);
+    const { text, location, site, decisions } = await this.elementFacts(path, line, column);
+    return { file: path, line: location.line, column: location.column, hash: sourceHash(text),
+      ...elementProps(path, text, location.start, location.tag, decisions, site.declarations) };
+  }
+  private async elementFacts(path: string, line: number, column: number) {
+    await this.readableSource(path);
+    if (!/\.[cm]?[jt]sx$/.test(path) && !/\.[cm]?jsx?$/.test(path)) throw new UsageError('Properties need a JSX source file.');
+    const text = await readFile(path, 'utf8');
+    const location = jsxLocation(path, text, line, column, undefined, 'any');
+    if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
+    const [site, decisions] = await Promise.all([this.site(path, location.line, location.column), this.decisions()]);
+    if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw new UsageError(staleFile);
+    return { text, location, site, decisions };
+  }
+  /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
+  async set(options: SetOptions): Promise<ApplyResult> {
+    const { file, hash, line, column, key, token } = options ?? {} as SetOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof key !== 'string' || !key.trim() || typeof token !== 'string' || !token.trim()) throw new UsageError('Set requires file, hash, line, column, key and token.');
+    const path = this.file(file); this.position(line); this.position(column);
+    const facts = await this.elementFacts(path, line, column);
+    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations).props.find(item => item.key === key);
+    const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
+    return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
+      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token);
+      return { ...change, replacement: change.replacement };
+    }, label);
+  }
   /** The text-at write: one string (JSX text, an attribute or a literal) addressed by the id text-at returned. */
   applyTextAt(options: ApplyTextAtOptions): Promise<ApplyResult> {
     const { file, hash, id, from, to } = options ?? {} as ApplyTextAtOptions;
@@ -549,7 +585,7 @@ export class Session extends EventEmitter {
       return { start: target.start, end: target.end, replacement: target.replace(to), at: target.start };
     });
   }
-  private async writeText(path: string, hash: string, id: string, from: string, to: string, find: (file: string, source: string) => { start: number; end: number; replacement: string; at: number }): Promise<ApplyResult> {
+  private async writeText(path: string, hash: string, id: string, from: string, to: string, find: (file: string, source: string) => { start: number; end: number; replacement: string; at: number }, label?: string): Promise<ApplyResult> {
     if (typeof path !== 'string' || !path.trim() || typeof hash !== 'string' || !hash.trim() ||
       typeof id !== 'string' || !id.trim() || typeof from !== 'string' || typeof to !== 'string') throw new UsageError(textWriteErrors.parameters);
     if (!to.trim()) throw new UsageError(textWriteErrors.empty);
@@ -584,7 +620,7 @@ export class Session extends EventEmitter {
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, siteLine, `“${shorten(from)}” → “${shorten(to)}”`);
+      const undo = this.record(file, before, snapshot.hash, siteLine, label ?? `“${shorten(from)}” → “${shorten(to)}”`);
       return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
   }
