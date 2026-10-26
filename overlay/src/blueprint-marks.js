@@ -179,10 +179,11 @@ function visibleBox(el, r, view, memo) {
     }
     if (s.position === 'fixed') break;
   }
-  if (b.right - b.left < 2 || b.bottom - b.top < 2) return null;
+  // a hairline (a 1px rule) is seen: only a box with no width or no height is not
+  if (b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
   let seen = false;
   for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.2], [0.85, 0.2], [0.15, 0.8], [0.85, 0.8]]) {
-    if (b.right - b.left < 2 || b.bottom - b.top < 2) return null;
+    if (b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
     const px = b.left + (b.right - b.left) * fx, py = b.top + (b.bottom - b.top) * fy;
     const hit = document.elementsFromPoint(px, py).find((e) => !e.closest('plumb-overlay'));
     if (!hit || el.contains(hit) || hit.contains(el)) { seen = true; continue; }
@@ -196,7 +197,7 @@ function visibleBox(el, r, view, memo) {
     else if (spansX && c.bottom >= b.bottom - 1 && c.top > b.top) b.bottom = c.top;
     else if (spansX && spansY) return null;
   }
-  if (!seen || b.right - b.left < 2 || b.bottom - b.top < 2) return null;
+  if (!seen || b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
   return { ...b, width: b.right - b.left, height: b.bottom - b.top, clipped: b.top > r.top + 0.5 || b.left > r.left + 0.5 || b.right < r.right - 0.5 || b.bottom < r.bottom - 0.5, topCut: b.top > r.top + 0.5 };
 }
 
