@@ -50,6 +50,11 @@ export function replacement(finding: Finding, site: Site, decision: Decision, re
 }
 
 export const editChoices = (finding: Finding) => (finding.choices ?? finding.decisions).filter(d => !(finding.rule.endsWith('/framework') && d.origin === 'framework'));
+const sameSite = (a: Site, b: Site) => a.file === b.file && a.line === b.line && a.column === b.column;
+/** A copy of a token's value carries its matching token per site (edits), not a list of choices. */
+const siteChoices = (finding: Finding, site: Site): Decision[] => finding.rule.endsWith('/by-value') && !finding.choices?.length
+  ? finding.decisions.filter(d => finding.edits?.some(edit => edit.token === d.name && sameSite(edit.site, site)))
+  : editChoices(finding);
 
 /** Only offer replacements whose authored text exists at the reported UTF-16 location. */
 export function structuredEdits(report: Report, sources: ReadonlyMap<string, string>, decisionNames?: Set<string>, includeDebt = false): StructuredEdit[] {
@@ -63,7 +68,7 @@ export function structuredEdits(report: Report, sources: ReadonlyMap<string, str
     for (const site of sites) {
       const source = sources.get(site.file), line = starts.get(site.file)?.[site.line - 1];
       if (source === undefined || line === undefined) continue;
-      for (const decision of editChoices(finding)) {
+      for (const decision of siteChoices(finding, site)) {
         let change = replacement(finding, site, decision, report, decisionNames);
         if (!change) continue;
         let start = line + site.column - 1;
@@ -87,4 +92,29 @@ export function structuredEdits(report: Report, sources: ReadonlyMap<string, str
     }
   }
   return [...edits.values()];
+}
+
+export interface RefusedSite { rule: string; file: string; line: number; column: number; text: string; reason: string }
+/**
+ * Drift in this report which no edit can fix, each with the reason. These are the values the editor cannot write:
+ * computed at runtime, written in a shared object elsewhere, or with no token close enough.
+ */
+export function refusedSites(report: Report, sources: ReadonlyMap<string, string>, edits: readonly StructuredEdit[]): RefusedSite[] {
+  const starts = new Map([...sources].map(([file, text]) => [file, lineStarts(text)]));
+  const edited = new Set(edits.map(edit => `${edit.file}:${edit.line}:${edit.column}`));
+  const refused = new Map<string, RefusedSite>();
+  for (const finding of report.findings) {
+    if (!finding.rule.startsWith('provenance/')) continue;
+    for (const site of finding.sites.filter(site => site.inScope !== false && (!site.ledger || site.ledger.status === 'new' || site.ledger.status === 'debt'))) {
+      const source = sources.get(site.file), line = starts.get(site.file)?.[site.line - 1];
+      if (source === undefined || line === undefined || edited.has(`${site.file}:${site.line}:${site.column}`)) continue;
+      const here = source.slice(line + site.column - 1, line + site.column - 1 + site.text.length) === site.text;
+      const reason = finding.rule === 'provenance/opaque-inline' ? `Computed at runtime, so it cannot be edited here. ${finding.action ?? ''}`.trim()
+        : !here ? 'Written in a shared style object or imported value, not at this element; change it where it is defined.'
+        : !siteChoices(finding, site).length ? finding.action || 'No token is close enough. Pick one with the design owner, or add one to the theme.'
+        : 'This spelling cannot be rewritten automatically; change it by hand.';
+      refused.set(`${site.file}:${site.line}:${site.column}:${finding.rule}`, { rule: finding.rule, file: site.file, line: site.line, column: site.column, text: site.text, reason });
+    }
+  }
+  return [...refused.values()];
 }

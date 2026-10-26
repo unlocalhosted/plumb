@@ -94,6 +94,10 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply-text-at') return session.applyTextAt(params as unknown as Parameters<Session['applyTextAt']>[0]);
   if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
+  if (method === 'props') return session.props(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!);
+  if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
+  if (method === 'undo') return session.undo(text(params, 'id')!);
+  if (method === 'history') return session.history();
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
     return session.apply({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: params.edits.map(edit => ({ id: edit.id as string })) });
@@ -158,8 +162,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -220,7 +224,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'try', 'health', 'refresh'].includes(method);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'try', 'health', 'refresh'].includes(method);
       let result: unknown;
       if (current) result = await dispatchRequest(current, method, params, options, json);
       else {
@@ -327,7 +331,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

@@ -434,8 +434,8 @@ fixes, not drift rules. The existing Node/config/Tailwind/CSS/ledger/cache table
 follows under `Diagnostics`. Doctor exits 1 for a missing requirement or a failed
 diagnostic; unknown requirements alone do not fail it.
 
-Use concrete consequences: `Writes reload the page instead of swapping the
-component.`, `Every finding counts as new.`, `The dev server may miss writes,
+Use concrete consequences: `Every write reloads the whole page and loses its
+state, instead of swapping the component in place.`, `Every finding counts as new.`, `The dev server may miss writes,
 leaving the page unchanged.` An unknown check must say what needs verification;
 a stopped server or an unreadable/composed config is never proof of readiness.
 

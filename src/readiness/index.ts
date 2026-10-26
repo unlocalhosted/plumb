@@ -192,7 +192,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     ? manual('Add the installed React Fast Refresh plugin immediately after plumb(); this config needs manual review.')
     : step('Install the React Fast Refresh plugin, then rerun plumber doctor to review the config diff.', `${manager} ${manager === 'npm' ? 'install' : 'add'} -D @vitejs/plugin-react`);
   add('write.refresh', 'write', status(refresh), refresh ? 'React Fast Refresh is present' : 'React Fast Refresh is not established', evidence('plugin', 'React Fast Refresh plugin'),
-    'Writes reload the page instead of swapping the component.', await configFix('write.refresh', refreshStep));
+    'Every write reloads the whole page and loses its state, instead of swapping the component in place.', await configFix('write.refresh', refreshStep));
   const hmr = runtime?.hmr ?? host?.hmr;
   add('write.hmr', 'write', status(hmr), hmr === false ? 'Hot updates are off' : hmr ? 'Hot updates are enabled' : 'Hot updates could not be checked', evidence('hmr', `server.hmr: ${hmr === undefined ? 'not established' : hmr}`),
     'Writes reload the page instead of updating it in place.', await configFix('write.hmr', manual('Remove server.hmr: false from the dev config.')));
