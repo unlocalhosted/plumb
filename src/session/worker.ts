@@ -15,7 +15,7 @@ import { Focus } from './focus.js';
 import { readLedger } from '../ledger/store.js';
 import { profileDuration } from '../profile.js';
 import { readFile } from 'node:fs/promises';
-import { structuredEdits } from '../surfaces/edits.js';
+import { structuredEdits, refusedSites } from '../surfaces/edits.js';
 import { sourceHash } from '../collect/cache.js';
 import { cssCode } from '../collect/stylesheets.js';
 import { jsxSiteMatcher, jsxLocation } from './source-location.js';
@@ -292,8 +292,9 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const text = await readFile(file, 'utf8'), hash = state.sourceHash(file) ?? sourceHash(text);
     if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
     if (protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
-    const edits = structuredEdits(scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), new Map([[file, text]]), decisionNames, true);
-    return { file, hash, edits };
+    const local = scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), sources = new Map([[file, text]]);
+    const edits = structuredEdits(local, sources, decisionNames, true);
+    return { file, hash, edits, refused: refusedSites(local, sources, edits) };
   }
   if (method === 'remaining') {
     const sites = params.sites as { line: number }[], file = params.file as string, view = await localReport(file);

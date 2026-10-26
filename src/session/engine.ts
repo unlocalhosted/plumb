@@ -14,7 +14,7 @@ import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import type { ClassTraceLimit } from '../collect/computed.js';
-import type { StructuredEdit } from '../surfaces/edits.js';
+import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { readText, textSites } from './text.js';
@@ -32,7 +32,7 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
 export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> };
 export type ManyResult = { value: unknown } | { error: string; usage: boolean };
-export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[] }
+export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
 export interface ClassesResult {
   revision: number; file: string; line: number; column: number;
   classes: { token: string; ambiguous: boolean; sites: (SiteResult & { column: number; hash: string; edits: StructuredEdit[] })[] }[];
