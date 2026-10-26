@@ -86,6 +86,21 @@ export class Reader {
     this.#offscreen = 0;
   }
 
+  // Nothing left to read: no wave in flight, none about to start, and nothing queued that a wave would still take
+  // (the headless run asks; the readers on screen never need to)
+  get settled() {
+    if (this.#settle || this.#inflight || !this.#running) return false;
+    let off = this.#offscreen;
+    for (const item of this.#items.values()) {
+      if (item.state === 'queued') {
+        if (this.#visible.has(item.id)) return false;
+        const shown = item.el.isConnected && (item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true }) : true);
+        if (shown && off < PAGE) return false;
+      } else if (item.state === 'pending' && item.tries < BACKOFF.length) return false;
+    }
+    return true;
+  }
+
   // Draw again from what's already read (the mode turned back on mid-sweep).
   refresh() {
     this.#progress = '';

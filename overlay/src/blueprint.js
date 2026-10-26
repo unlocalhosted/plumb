@@ -43,7 +43,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel; #craft;
+  #panel; #craft; #items = [];
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -57,7 +57,7 @@ export class Blueprint {
     this.#glass = new Glass(root, host);
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#marks.set(items); this.#panel.set(items); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -151,6 +151,13 @@ export class Blueprint {
   }
   get craft() {
     return this.#craft;
+  }
+  // everything read on the page, with its craft marks, and whether the reader has nothing left to read (the headless run)
+  get items() {
+    return this.#items;
+  }
+  get settled() {
+    return this.active && this.#reader.settled;
   }
 
   healthChanged(status) {

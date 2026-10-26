@@ -2,6 +2,7 @@
 import { locate } from './src/locate.js';
 import { request } from './src/api.js';
 import { mountOverlay } from './src/widget.js';
+import { craftRun } from './src/craft-run.js';
 
 window.__plumb = {
   locate,
@@ -11,6 +12,8 @@ window.__plumb = {
     return request('site', { file: location.file, line: location.line, column: location.column });
   },
   overlay: mountOverlay(),
+  // The craft engine over the whole page, as plain JSON (plumber craft).
+  craft: options => craftRun(window.__plumb.overlay, options),
   // Resolves once Plumb has finished its first read of the project (the dev server never waits for it).
   async ready(interval = 100) {
     for (;;) {

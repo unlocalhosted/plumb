@@ -444,6 +444,7 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
   get health() { return this.#health; }
+  get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
