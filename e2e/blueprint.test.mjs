@@ -211,7 +211,7 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   // the panel: docked on the right, its header counts the drift and the causes
   await page.waitForFunction(() => getComputedStyle(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp')).opacity === '1');
   const drift = labels.filter((l) => l.startsWith('Drift:')).length;
-  await panel(overlay).locator('.meta').filter({ hasText: new RegExp(`^${drift} off · \\d+ causes?( · |$)`) }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.meta').filter({ hasText: /^\d+ off on this page · \d+ causes?( · |$)/ }).waitFor({ timeout: 5000 });
   // at rest it is one line in the top-right corner, so the page stays in view
   const rest = await panel(overlay).boundingBox();
   assert.ok(rest.x + rest.width > 1200 - 24 && rest.y < 24 && rest.height < 48 && rest.width < 260, `folded to one line: ${JSON.stringify(rest)}`);
@@ -224,7 +224,10 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   // one row per cause, most places first; every drift mark is in exactly one row
   const counts = (await rowsOf(overlay).locator('.n').allInnerTexts()).map(Number);
   assert.ok(counts.length >= 3 && counts.every((n, i) => i === 0 || n <= counts[i - 1]), `causes by places: ${counts}`);
-  assert.equal(counts.reduce((a, b) => a + b, 0), drift, 'every drift is in one row');
+  // the rows count the whole page, read beyond the view: at least every drift in view, each in one row
+  const pageOff = Number((await panel(overlay).locator('.meta').innerText()).match(/^(\d+) off/)[1]);
+  assert.ok(pageOff >= drift, `the page holds at least what is in view: ${pageOff} >= ${drift}`);
+  assert.equal(counts.reduce((a, b) => a + b, 0) + Number((await panel(overlay).locator('.meta').innerText()).match(/(\d+) set in code/)?.[1] ?? 0), pageOff, 'every drift on the page is in one row');
   const texts = await rowsOf(overlay).locator('code').allInnerTexts();
   assert.ok(texts.includes('gap-[10px]') && texts.includes('rounded-[14px]'), `rows name the class: ${texts}`);
   assert.match(await rowsOf(overlay).filter({ hasText: 'gap-[10px]' }).locator('.what').innerText(), /^spacing off the scale · 1 place$/);
@@ -728,5 +731,37 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter
   const now = await readFile(source, 'utf8');
   assert.equal((now.match(/rounded-\[3px\]/g) ?? []).length, 0, 'the line no longer carries the drift');
   assert.equal(now.split('\n').length, was.split('\n').length, 'one line changed in place');
+  assert.deepEqual(errors, []);
+});
+
+test('A cause counts every place on the page, not just the view, and N walks them one by one', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await demo(t, { html: (s) => s.replace('</body>', '<div id="more"></div></body>') });
+  // forty rows from one JSX line, most of them below the fold
+  await writeFile(join(root, 'src/Rows.jsx'), `export function Rows() {\n  return <section className="mt-[600px]">{Array.from({ length: 40 }, (_, i) => <div key={i} id={'row-' + i} className="h-24 p-[10px]">Row {i}</div>)}</section>;\n}\n`);
+  await writeFile(join(root, 'src/entry.jsx'), (await readFile(join(root, 'src/entry.jsx'), 'utf8')) + `import { Rows } from './Rows.jsx';\ncreateRoot(document.getElementById('more')).render(<Rows />);\n`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await panel(overlay).locator('.head').click();
+  const row = rowsOf(overlay).filter({ has: page.locator('code', { hasText: /^p-\[10px\]/ }) });
+  // the panel's count grows past the view as the rest of the page is read
+  await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bpp .row')].some((r) => /^p-\[10px\]/.test(r.querySelector('code').textContent) && r.querySelector('.n').textContent === '40'), null, { timeout: 20000 });
+  assert.match(await row.locator('.what').innerText(), /40 places · 1 line$/);
+  const inView = await page.evaluate(() => [...document.querySelectorAll('[id^="row-"]')].filter((r) => { const b = r.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).length);
+  assert.ok(inView < 40, `most rows are off-screen: ${inView} in view`);
+  // select it; N walks place by place, scrolling the page, and the row says where you are
+  await row.click();
+  const y0 = await page.evaluate(() => scrollY);
+  await page.keyboard.press('n');
+  await row.locator('.next').filter({ hasText: /^2 of 40/ }).waitFor();
+  for (let i = 0; i < 20; i++) await page.keyboard.press('n');
+  await row.locator('.next').filter({ hasText: /^22 of 40/ }).waitFor();
+  await page.waitForFunction((y) => scrollY > y + 500, y0, { timeout: 5000 });
+  const at = await page.evaluate(() => { const r = document.getElementById('row-21').getBoundingClientRect(); return r.top + r.height / 2; });
+  assert.ok(Math.abs(at - 800 / 2) < 80, `the 22nd row is brought to the middle: ${at}`);
+  await page.keyboard.press('N'); // Shift+N goes back
+  await row.locator('.next').filter({ hasText: /^21 of 40/ }).waitFor();
   assert.deepEqual(errors, []);
 });

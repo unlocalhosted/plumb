@@ -14,12 +14,17 @@
  *             backoff (2s, 4s, 8s)
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
  *             previews are the card's own), re-read what changed; a write re-reads every element from that file
+ *  page       once what is in view has landed and nothing is in flight, the rest of the page is read in the same
+ *             waves, off-screen: every element that is rendered (not display:none, not visibility:hidden), PAGE at
+ *             most, so a cause counts every place it has on the page, not only those in view. Marks are still drawn
+ *             only where they can be seen; scrolling brings the view's elements back to the front of the queue
  *  progress   { read, total, drift, on } for what is in view, reported only when it changes; `on` counts the gaps on
- *             the system (drawn as quiet dimensions), `drift` the new findings (drawn as marks)
+ *             the system, `drift` the new findings. The items handed on (onChange) are everything read, page-wide
  * ───────────────────────────────────────────────────────── */
 
 const WAVE = 128; // readings go to the server in waves: one batched request for the resolves, one for the sites
 const CAP = 260;
+const PAGE = 2000; // elements read off-screen at most, after the view
 const BACKOFF = [2000, 4000, 8000];
 const THROTTLE = 150;
 
@@ -34,6 +39,7 @@ export class Reader {
   #next = 1;
   #io = null; #mo = null; #throttle = 0; #retry = 0; #progress = '';
   #running = false;
+  #offscreen = 0; // elements read off-screen so far
 
   constructor(host, { onChange, onProgress }) {
     this.#host = host;
@@ -74,6 +80,7 @@ export class Reader {
     this.#visible.clear();
     this.#queue = [];
     this.#progress = '';
+    this.#offscreen = 0;
   }
 
   // Draw again from what's already read (the mode turned back on mid-sweep).
@@ -150,8 +157,24 @@ export class Reader {
       .slice(0, CAP)
       .map((x) => x.item);
     this.#queue = order.filter((item) => item.state === 'queued');
+    // the view is read: the rest of the page, off-screen, in the same waves
+    if (!this.#queue.length && !this.#inflight) this.#queue = this.#rest();
     this.#pump();
     this.#report(order);
+  }
+
+  // The next wave of the page beyond the view: rendered elements not yet read, in document order.
+  #rest() {
+    const out = [];
+    for (const item of this.#items.values()) {
+      if (out.length >= WAVE || this.#offscreen >= PAGE) break;
+      if (item.state !== 'queued' || this.#visible.has(item.id)) continue;
+      const shown = item.el.isConnected && (item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true }) : true);
+      if (!shown) continue;
+      out.push(item);
+      this.#offscreen++;
+    }
+    return out;
   }
 
   #waveAt = 0;
@@ -224,8 +247,9 @@ export class Reader {
       this.#progress = key;
       this.#onProgress?.({ read, total: order.length, drift, on, checked, notChecked, outsideSource });
     }
-    // what to draw: everything read, in document order
-    const shown = order.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    // what to hand on: everything read on the page (the marks draw what is in view; the panel counts it all), in
+    // document order
+    const shown = [...this.#items.values()].filter((i) => i.state === 'ready' && (i.marks.length || i.dims.length)).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     this.#onChange?.(shown.map(({ id, el, marks, dims, file }) => ({ id, el, marks, dims, file })));
   }
 }

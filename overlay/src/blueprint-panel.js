@@ -7,10 +7,13 @@
  *  group      one row per cause: the same class under the same rule (p-[10px] off the spacing scale). The row says
  *             the class, what is wrong with it in words, how many places carry it and from how many source lines.
  *             Rows run by places, most first: the first row is the decision that closes the most
+ *  page       a cause counts its places on the whole page, read beyond the view (blueprint-reader.js), not only
+ *             those in view; the dock still says what is off in view
  *  select     J/K or the arrows move between rows (or a click). The selected row's places are outlined on the page,
  *             and when none of them can be seen (off the view, or behind the panel) the page scrolls the first into
  *             the middle of the free area left of the panel, through whichever scroll containers hold it (a board's
- *             horizontal scroller, the page). N walks the page to the next place the same way
+ *             horizontal scroller, the page). N walks to the next place the same way and Shift+N back,
+ *             with the row saying which place of how many (3 of 20)
  *  fix        Enter (or Fix all) opens the chooser for the whole group at its first place in view: one pick is made
  *             at every place, and Write sends each source line's edit once, one apply per file (blueprint-fix.js)
  *  picked     a row whose places are all picked says what they become; written rows leave with their marks
@@ -42,7 +45,7 @@ export const PANEL_CSS = `
   .bpp .head .chev { margin-inline-start: auto; width: 10px; height: 10px; color: var(--pl-ink-2); transition: rotate var(--pl-dur-feedback) var(--pl-ease-out); }
   /* folded: one line, as wide as its words */
   .bpp:not([data-open]) { width: auto; }
-  .bpp:not([data-open]) :is(.rows, .foot, .head .title) { display: none; }
+  .bpp:not([data-open]) :is(.rows, .foot, .head .title, .head .more) { display: none; }
   .bpp[data-open] .head { flex-wrap: wrap; row-gap: var(--pl-space-1); border-bottom: 1px solid var(--pl-rule); border-radius: var(--pl-radius-card) var(--pl-radius-card) 0 0; }
   .bpp[data-open] .head .title { flex: 1 0 auto; }
   .bpp[data-open] .head .meta { order: 3; flex-basis: 100%; }
@@ -191,7 +194,8 @@ export class Panel {
     if (/^[jJkKnN]$|^Arrow(Up|Down)$|^Enter$/.test(key)) this.open(true);
     if (key === 'j' || key === 'J' || key === 'ArrowDown') return this.move(1), true;
     if (key === 'k' || key === 'K' || key === 'ArrowUp') return this.move(-1), true;
-    if ((key === 'n' || key === 'N') && this.#at) return this.next(), true;
+    if (key === 'n' && this.#at) return this.next(1), true;
+    if (key === 'N' && this.#at) return this.next(-1), true; // Shift+N: back
     if (key === 'Enter' && this.#at) return this.fix(), true;
     return false;
   }
@@ -215,12 +219,15 @@ export class Panel {
     if (!inFree(at.el, free)) this.#reveal(at.el);
   }
 
-  // The next place of the selected cause, brought to the middle of the view.
-  next() {
+  // The next (or, with -1, the previous) place of the selected cause, anywhere on the page, brought to the middle
+  // of the free area; the row says which one of how many.
+  next(dir = 1) {
     const g = this.#group();
     if (!g) return;
-    this.#place = (this.#place + 1) % g.members.length;
+    const n = g.members.length;
+    this.#place = (this.#place + dir + n) % n;
     this.#reveal(g.members[this.#place].el);
+    this.render();
   }
 
   // The chooser for the whole cause, at its first place in view.
@@ -263,7 +270,7 @@ export class Panel {
     // never "all on the system" while some of the view could not be checked
     const unchecked = p?.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
     const meta = !p || !p.total ? 'Reading…' : p.read < p.total ? `Reading ${p.read} of ${p.total}…`
-      : off + this.#code ? `<span class="off">${off + this.#code} off</span> · ${plural(this.#groups.length, 'cause')}${this.#code ? ` · ${this.#code} set in code` : ''}${unchecked ? ` · ${unchecked}` : ''}`
+      : off + this.#code ? `<span class="off">${off + this.#code} off<span class="more"> on this page</span></span> · ${plural(this.#groups.length, 'cause')}<span class="more">${this.#code ? ` · ${this.#code} set in code` : ''}${unchecked ? ` · ${unchecked}` : ''}</span>`
       : unchecked || 'All on the system';
     const metaEl = this.#el.querySelector('.meta');
     if (metaEl.innerHTML !== meta) metaEl.innerHTML = meta;
@@ -275,7 +282,7 @@ export class Panel {
       return `<li><button class="row" type="button" data-key="${esc(g.key)}"${current ? ' aria-current="true"' : ''} aria-label="${esc(`${g.text}: ${g.what}, ${where}${to ? `, picked ${to}` : ''}`)}">`
         + `<span class="dot${to ? ' picked' : g.soft ? ' soft' : ''}"></span><code>${esc(g.text)}${to ? ` <span class="to">→ ${esc(to)}</span>` : ''}</code><span class="n">${g.members.length}</span>`
         + `<span class="what">${esc(g.what)} · ${esc(where)}</span>`
-        + `<span class="acts"><span class="fix" data-act="fix">Fix ${g.members.length === 1 ? '' : 'all '}↵</span>${g.members.length > 1 ? `<span class="next" data-act="next">Next place N</span>` : ''}</span></button></li>`;
+        + `<span class="acts"><span class="fix" data-act="fix">Fix ${g.members.length === 1 ? '' : 'all '}↵</span>${g.members.length > 1 ? `<span class="next" data-act="next">${current ? `${this.#place + 1} of ${g.members.length} · ` : ''}Next N</span>` : ''}</span></button></li>`;
     }).join('');
     const empty = !(p?.total && p.read === p.total) ? '' : p.notChecked
       ? `<li class="empty"><b>No drift found</b>${plural(p.notChecked, 'element')} could not be checked${p.outsideSource ? ': their source is outside this project' : ''}.</li>`
