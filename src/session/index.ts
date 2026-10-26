@@ -6,8 +6,8 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'classes' | 'apply' | 'applyText' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
-export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'try' | 'refresh'>;
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
+export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'try' | 'refresh'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
@@ -69,7 +69,7 @@ export class Session extends EventEmitter {
     if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
-    const id = ++this.id, deadline = ['apply', 'applyText', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
+    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
@@ -88,6 +88,7 @@ export class Session extends EventEmitter {
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   many(...args: Parameters<Engine['many']>) { return this.call('many', args); }
   text(...args: Parameters<Engine['text']>) { return this.call('text', args); }
+  textAt(...args: Parameters<Engine['textAt']>) { return this.call('textAt', args); }
   edits(...args: Parameters<Engine['edits']>) { return this.call('edits', args); }
   private validateClasses(args: Parameters<Engine['classes']>): void {
     // Preserve synchronous argument errors without filesystem or analysis work.
@@ -100,6 +101,7 @@ export class Session extends EventEmitter {
   }
   classes(...args: Parameters<Engine['classes']>) { this.validateClasses(args); return this.call('classes', args); }
   applyText(...args: Parameters<Engine['applyText']>) { return this.call('applyText', args); }
+  applyTextAt(...args: Parameters<Engine['applyTextAt']>) { return this.call('applyTextAt', args); }
   apply(...args: Parameters<Engine['apply']>) { return this.call('apply', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }

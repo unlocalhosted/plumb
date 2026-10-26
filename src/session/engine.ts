@@ -18,6 +18,8 @@ import type { StructuredEdit } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { readText, textSites } from './text.js';
+import { resolveTextAt, textTargets } from './text-at.js';
+import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
@@ -41,6 +43,7 @@ export interface ClassesResult {
   limits: ClassTraceLimit[];
 }
 export interface ApplyTextOptions { file: string; hash: string; run: string; from: string; to: string }
+export interface ApplyTextAtOptions { file: string; hash: string; id: string; from: string; to: string }
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings'] }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
@@ -412,7 +415,7 @@ export class Session extends EventEmitter {
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
     }
-    if (['site', 'edits', 'text', 'why', 'classes'].includes(method)) {
+    if (['site', 'edits', 'text', 'textAt', 'why', 'classes'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
       await this.readableSource(file);
       if (method === 'classes') this.validateClasses(args[3]);
@@ -513,15 +516,39 @@ export class Session extends EventEmitter {
       return { revision: this.revision, ...result };
     });
   }
-  async applyText(options: ApplyTextOptions): Promise<ApplyResult> {
-    if (!options || typeof options.file !== 'string' || !options.file.trim() || typeof options.hash !== 'string' || !options.hash.trim() ||
-      typeof options.run !== 'string' || !options.run.trim() || typeof options.from !== 'string' || typeof options.to !== 'string') throw new UsageError(textWriteErrors.parameters);
-    if (!options.to.trim()) throw new UsageError(textWriteErrors.empty);
-    if (options.to.length > 500) throw new UsageError(textWriteErrors.length);
-    const file = this.file(options.file);
+  applyText(options: ApplyTextOptions): Promise<ApplyResult> {
+    const { file, hash, run: id, from, to } = options ?? {} as ApplyTextOptions;
+    return this.writeText(file, hash, id, from, to, (_file, source) => {
+      // Re-derive the run from the held file, never trust a client range or text.
+      const site = textSites(_file, source).find(site => site.runs.some(run => run.id === id));
+      const run = site?.runs.find(run => run.id === id);
+      if (!site || !run) throw new UsageError(textWriteErrors.unknown);
+      if (run.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;
+      return { start, end, at: site.element.openingElement.start,
+        replacement: run.literal ? encodeTextLiteral(to, run.literal.quote) : encodeJSXText(source.slice(start, end), to) };
+    });
+  }
+  /** The text-at write: one string (JSX text, an attribute or a literal) addressed by the id text-at returned. */
+  applyTextAt(options: ApplyTextAtOptions): Promise<ApplyResult> {
+    const { file, hash, id, from, to } = options ?? {} as ApplyTextAtOptions;
+    return this.writeText(file, hash, id, from, to, (_file, source) => {
+      const target = textTargets(_file, source).targets.find(target => target.id === id);
+      if (!target) throw new UsageError(textWriteErrors.unknown);
+      if (target.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      if (target.plain && /[\r\n]/.test(to)) throw new UsageError('An attribute holds one line of text.');
+      return { start: target.start, end: target.end, replacement: target.replace(to), at: target.start };
+    });
+  }
+  private async writeText(path: string, hash: string, id: string, from: string, to: string, find: (file: string, source: string) => { start: number; end: number; replacement: string; at: number }): Promise<ApplyResult> {
+    if (typeof path !== 'string' || !path.trim() || typeof hash !== 'string' || !hash.trim() ||
+      typeof id !== 'string' || !id.trim() || typeof from !== 'string' || typeof to !== 'string') throw new UsageError(textWriteErrors.parameters);
+    if (!to.trim()) throw new UsageError(textWriteErrors.empty);
+    if (to.length > 500) throw new UsageError(textWriteErrors.length);
+    const file = this.file(path);
     return this.serialize(async () => {
       await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== options.hash) throw new UsageError(staleFile);
+      if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
       await this.reconcile([file]);
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
       const identity = await this.editableFile(file);
@@ -536,16 +563,10 @@ export class Session extends EventEmitter {
         let offset = 0;
         while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
         const source = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(source) !== options.hash) throw new UsageError(staleFile);
-        // Re-derive the run from the held file, never trust a client range or text.
-        const site = textSites(file, source).find(site => site.runs.some(run => run.id === options.run));
-        const run = site?.runs.find(run => run.id === options.run);
-        if (!site || !run) throw new UsageError(textWriteErrors.unknown);
-        if (run.text !== options.from) throw new UsageError(textWriteErrors.mismatch);
-        const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;
-        const replacement = run.literal ? encodeTextLiteral(options.to, run.literal.quote) : encodeJSXText(source.slice(start, end), options.to);
+        if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+        const { start, end, replacement, at } = find(file, source);
         next = source.slice(0, start) + replacement + source.slice(end);
-        siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, site.element.openingElement.start, '').line;
+        siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
         await this.sameFile(file, identity);
         await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
         await this.sameFile(file, identity);
@@ -553,7 +574,7 @@ export class Session extends EventEmitter {
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      return { revision: this.revision, file, hash: snapshot.hash, applied: [options.run], remaining: snapshot.remaining };
+      return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining };
     });
   }
   async apply(options: ApplyOptions): Promise<ApplyResult> {
@@ -612,6 +633,29 @@ export class Session extends EventEmitter {
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
   private healthSnapshot: { caches: object; work?: object } = { caches: {} };
+  /** Where these words are written: JSX text in the element, an attribute at it or a use site, or a literal in source. */
+  textAt(file: string, line: number, column: number, words: string, owners?: string): Promise<TextAtResult> {
+    const path = this.file(file); this.position(line); this.position(column);
+    if (typeof words !== 'string' || words.length > 2000) throw new UsageError('text must be at most 2000 characters.');
+    // Owners are untrusted: any that is not readable project source is skipped, never an error.
+    const chain: { path: string; line: number; column: number }[] = [];
+    for (const item of (owners ?? '').split(',').slice(0, 32)) {
+      const match = /^(.+):(\d+):(\d+)$/.exec(item.trim());
+      if (!match) continue;
+      try { chain.push({ path: this.file(match[1]!), line: Number(match[2]), column: Number(match[3]) }); } catch { /* not project source */ }
+    }
+    return this.serializeRead(async () => {
+      await this.readableSource(path);
+      if (!this.batchRead) await this.reconcile([path]);
+      if (!this.sourceFiles.has(path) || !/\.[cm]?[jt]sx?$/.test(path)) throw new UsageError('Text edits require a tracked JSX source file.');
+      const read = async (target: string) => {
+        if (!this.sourceFiles.has(target) || !/\.[cm]?[jt]sx?$/.test(target)) return undefined;
+        try { await this.readableSource(target); return await readFile(target, 'utf8'); } catch { return undefined; }
+      };
+      return resolveTextAt({ line, column, words, owners: chain, read, relative: target => relative(this.root, target).replaceAll('\\', '/'),
+        files: () => [...this.sourceFiles].filter(target => /\.[cm]?[jt]sx?$/.test(target) && containsPath(sourceBoundary(this.root), target)).sort() }, path);
+    });
+  }
   health() {
     return Promise.resolve({ ...this.healthSnapshot, work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations }, status: this.failure ? 'invalid' : 'ready', root: this.root,
       ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
