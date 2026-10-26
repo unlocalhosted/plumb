@@ -23,7 +23,9 @@
 <script type="module">
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
-  import { BOXMODEL_CSS, BLOCK_ICONS, boxModel, pointAt } from '../src/boxmodel.js';
+  import { BOXMODEL_CSS, BLOCK_ICONS, boxModel, pointAt, bandAt } from '../src/boxmodel.js';
+  import { SCRUB_CSS, scrub, cursorOf } from '../src/scrub.js';
+  import { CHANGES_CSS, Changes } from '../src/changes.js';
   import { PRIMITIVES_CSS, stepper, swatches, radius, segments, align, shadows, row, bind, place } from '../src/editor-primitives.js';
 
   const host = document.getElementById('board');
@@ -78,7 +80,7 @@
   </section>`;
   const scale = { spacing: [[0, 's0'], [4, 's1'], [8, 's2'], [12, 's3'], [16, 's4'], [20, 's5'], [24, 's6'], [32, 's8']], radius: [[4, 'sm'], [6, 'md'], [10, 'lg'], [14, 'xl']], type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg']] };
   const tokenOf = (family, n) => scale[family]?.find(([v]) => Math.abs(v - n) < 0.5)?.[1] ?? null;
-  const css = `${tokens}${PRIMITIVES_CSS}${LANGUAGE_CSS}${BOXMODEL_CSS}
+  const css = `${tokens}${PRIMITIVES_CSS}${LANGUAGE_CSS}${BOXMODEL_CSS}${SCRUB_CSS}${CHANGES_CSS}
     .bxm .stage { padding: 56px 48px 48px; display: flex; }
     .bxm .spec { display: flex; align-items: center; gap: 8px; margin: 16px; padding: 20px 24px 20px 10px; min-width: 300px; border: 1px solid var(--pl-rule); border-radius: 10px; background: var(--pl-paper-2); font: 600 15px var(--pl-sans); color: var(--pl-ink); }
     .bxm .spec .b { font: 600 12px var(--pl-mono); color: var(--pl-mint-ink); background: var(--pl-mint-soft); padding: 3px 8px; border-radius: 7px; }
@@ -146,7 +148,29 @@
   draw();
   addEventListener('scroll', draw, { passive: true });
   addEventListener('resize', draw);
-  addEventListener('pointermove', (e) => pointAt(pointed, bands, e.clientX, e.clientY), { passive: true });
+  // direct manipulation: over a band the cursor says it can be dragged; pressing scrubs it through the scale with the
+  // pointer held in place; the box model redraws as it steps; letting go adds the change to the bar
+  const names = new Map([['spec', 'ModelRow'], ['para', 'p']]);
+  const changes = new Changes(root, { onAccept: async (batch) => { await new Promise((r) => setTimeout(r, 400)); return batch.map((b) => ({ el: b.el, ok: true })); }, onSelect: () => draw() });
+  let dragging = false;
+  addEventListener('pointermove', (e) => {
+    if (dragging) return;
+    const b = bandAt(bands, e.clientX, e.clientY);
+    document.documentElement.style.cursor = b?.prop && b.family === 'spacing' ? cursorOf(b.prop) : '';
+    pointAt(pointed, bands, e.clientX, e.clientY);
+  }, { passive: true });
+  addEventListener('pointerdown', (e) => {
+    const b = bandAt(bands, e.clientX, e.clientY);
+    if (!b?.prop || b.family !== 'spacing') return;
+    const steps = scale.spacing.map(([n, token]) => ({ token, n }));
+    const original = [b.el.style.getPropertyValue(b.prop), b.el.style.getPropertyPriority(b.prop)];
+    const from = { token: tokenOf('spacing', b.n), n: b.n };
+    dragging = true;
+    pointAt(pointed, [], 0, 0);
+    scrub(e, { el: b.el, prop: b.prop, steps, from: b.n, host: pointed, onStep: () => draw(),
+      onDone: (step) => { dragging = false; draw(); if (step) changes.set(b.el, names.get(b.el.id) ?? b.el.localName, b.prop, from, step, original); } });
+  }, true);
+  addEventListener('keydown', (e) => { if ((e.key === 'j' || e.key === 'k') && changes.move(e.key === 'j' ? 1 : -1)) e.preventDefault(); });
   root.addEventListener('click', (e) => { if (!e.target.closest('.replay')) return; const t = root.querySelector('.pop'); t.classList.remove('pl-pop'); void t.offsetWidth; t.classList.add('pl-pop'); });
   document.getElementById('scheme').addEventListener('click', (e) => {
     const dark = document.body.classList.toggle('dark');

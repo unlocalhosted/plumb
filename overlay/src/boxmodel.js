@@ -123,7 +123,12 @@ export function boxModel(el, { name, tokenOf } = {}) {
   // a value's verdict: the step it sits on, else off the scale (coral); without a scale, a plain measurement
   const verdict = (family, n) => { const t = tokenOf && n ? tokenOf(family, n) : undefined; return { label: t ? `${t} · ${r1(n)}` : `${r1(n)}`, off: !!tokenOf && !!n && !t }; };
   const bands = [];
-  const band = (kind, what, family, n, x, y, w, h, extra = {}) => { if (w > 0.5 && h > 0.5 && n !== 0) bands.push({ kind, what, x, y, w, h, ...verdict(family, n), ...extra }); };
+  // a band knows the property it is, so it can be dragged (scrub.js): 'margin right' → margin-right, a gap along a
+  // row → column-gap, down a column → row-gap
+  const band = (kind, what, family, n, x, y, w, h, extra = {}) => {
+    const prop = what === 'gap' ? (kind.includes('col') ? 'row-gap' : 'column-gap') : what.replace(' ', '-');
+    if (w > 0.5 && h > 0.5 && n !== 0) bands.push({ kind, what, prop, family, n, el, x, y, w, h, ...verdict(family, n), ...extra });
+  };
 
   // margin, outside the border; padding, inside it; per side
   band('m', 'margin top', 'spacing', mt, r.left - ml, r.top - mt, r.width + ml + mr, mt);
