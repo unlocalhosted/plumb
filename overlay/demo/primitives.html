@@ -23,7 +23,7 @@
 <script type="module">
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
-  import { BOXMODEL_CSS, boxModel } from '../src/boxmodel.js';
+  import { BOXMODEL_CSS, boxModel, pointAt } from '../src/boxmodel.js';
   import { PRIMITIVES_CSS, stepper, swatches, radius, segments, align, shadows, row, bind, place } from '../src/editor-primitives.js';
 
   const host = document.getElementById('board');
@@ -74,7 +74,7 @@
   const boxes = `<section class="card bxm"><div class="head">Box model</div>
     <div class="stage"><div class="spec" id="spec"><span class="a">Opus 5.5</span><span class="b">High</span></div></div>
     <div class="stage"><p class="para" id="para">Reasoned for six seconds across search, read, code and write.</p></div>
-    <div class="legend"><span><i class="k m"></i>margin</span><span><i class="k b"></i>border</span><span><i class="k p"></i>padding</span><span><i class="k g"></i>gap</span><span><i class="k t"></i>type</span><span class="pl-pill" data-hue="coral">10</span> off the scale</div>
+    <div class="legend"><span><i class="k m"></i>margin</span><span><i class="k b"></i>border</span><span><i class="k p"></i>padding</span><span><i class="k g"></i>gap</span><span><i class="k t"></i>type</span><span><i class="k off"></i>off the scale</span><span class="hint">point at a band for its value</span></div>
   </section>`;
   const scale = { spacing: [[0, 's0'], [4, 's1'], [8, 's2'], [12, 's3'], [16, 's4'], [20, 's5'], [24, 's6'], [32, 's8']], radius: [[4, 'sm'], [6, 'md'], [10, 'lg'], [14, 'xl']], type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg']] };
   const tokenOf = (family, n) => scale[family]?.find(([v]) => Math.abs(v - n) < 0.5)?.[1] ?? null;
@@ -90,6 +90,8 @@
     .bxm .k.b { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--pl-sky) 75%, transparent); }
     .bxm .k.p { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-sky) 55%, transparent) 0 1px, transparent 1px 6px); }
     .bxm .k.g { background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-sky) 60%, transparent) 0 1px, transparent 1px 4px); }
+    .bxm .k.off { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-coral) 70%, transparent) 0 1px, transparent 1px 6px); }
+    .bxm .legend .hint { margin-left: auto; color: var(--pl-ink-3); }
     .bxm .k.t { background: color-mix(in oklab, var(--pl-lilac) 18%, transparent); border-bottom: 1px dashed var(--pl-lilac); }
     .lang .hues { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
     .lang .hue { display: grid; grid-template-columns: 22px 22px 52px 1fr; align-items: center; gap: 6px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
@@ -136,10 +138,19 @@
   render();
   // the overlay over the specimens, drawn from their live layout and redrawn as the page moves
   const layer = document.createElement('div');
-  const draw = () => { layer.innerHTML = boxModel(root.getElementById('spec'), { name: 'ModelRow', tokenOf }) + boxModel(root.getElementById('para'), { name: 'p', tokenOf }); if (!layer.isConnected) root.append(layer); };
+  // at rest, only patterns, colour and the names; pointing at one band shows its one value
+  let bands = [];
+  const pointed = document.createElement('div');
+  const draw = () => {
+    const a = boxModel(root.getElementById('spec'), { name: 'ModelRow', tokenOf }), b = boxModel(root.getElementById('para'), { name: 'p', tokenOf });
+    bands = [...a.bands, ...b.bands];
+    layer.innerHTML = a.html + b.html;
+    if (!layer.isConnected) root.append(layer, pointed);
+  };
   draw();
   addEventListener('scroll', draw, { passive: true });
   addEventListener('resize', draw);
+  addEventListener('pointermove', (e) => pointAt(pointed, bands, e.clientX, e.clientY), { passive: true });
   root.addEventListener('click', (e) => { if (!e.target.closest('.replay')) return; const t = root.querySelector('.pop'); t.classList.remove('pl-pop'); void t.offsetWidth; t.classList.add('pl-pop'); });
   document.getElementById('scheme').addEventListener('click', (e) => {
     const dark = document.body.classList.toggle('dark');

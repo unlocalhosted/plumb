@@ -5,21 +5,19 @@
  * blocks"): one pattern per block, the hue from the verdict. Read from the element's live layout, drawn in the
  * overlay, never on the page.
  *
- *  margin      the dot dither outside the border, per side, with a pill on each non-zero side
- *  border      a band its own width; one pill at the top-left corner
- *  padding     the 45° hatch between the border and the content, per side, a pill centred on each non-zero side
- *  content     a 1px outline; size pills at the bottom-right: W Fill 500 · H Hug 64 · W 240
- *  radius      `r 10` beside the top-left corner
- *  gap         stripes across each gap between the children, one pill in the first
- *  typography  each line box as a faint band, its baseline dashed, one pill at the first line: Aa 14/20 · 500
- *  name        a lilac tag above the top-left corner
+ *  margin      the dot dither outside the border, per side
+ *  border      a band its own width, at the element's own radius
+ *  padding     the 45° hatch between the border and the content, per side
+ *  content     a 1px outline
+ *  gap         stripes across each gap between the children
+ *  typography  each line box as a faint band, its baseline dashed
+ *  name        a lilac tag above the top-left corner: the only words at rest
  *
- *  verdict     tokenOf(family, px) names the step a value sits on (`s3`), or returns null: a value with no step is
- *              off the scale and draws coral. Without tokenOf every value is drawn as a plain measurement in sky
- *  pills       few, and never on the content: padding's sit on the element's edge (top and bottom near its right
- *              end, left and right at its middle, as in the reference); margin is labelled only when it is off the
- *              scale; a border only when it is thicker than 1; a radius only when it is off the scale; the type pill
- *              sits beside the name tag. A pill that would sit on another moves away from the element's centre
+ *  verdict     the hue: sky when the value sits on a step of the scale (tokenOf names it), coral when it is off it.
+ *              Without tokenOf everything is sky
+ *  pointing    no labels at rest (docs/briefs/visual-language.md: visual, not labels). pointAt(bands, x, y) gives one
+ *              small pill for the one band under the pointer: its token and number (`s3 · 12`), the type of a line
+ *              (`Aa sm · 14/20 · 500`), the content's size (`W Fill 500 · H Hug 64`), the border's width and radius
  *  rules       zero draws nothing
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
@@ -32,15 +30,19 @@ export const BOXMODEL_CSS = `
     background-color: color-mix(in oklab, var(--c) 8%, transparent); }
   .bm .g { --c: var(--pl-sky); background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--c) 60%, transparent) 0 1px, transparent 1px 4px); }
   .bm .g.col { background-image: repeating-linear-gradient(0deg, color-mix(in oklab, var(--c) 60%, transparent) 0 1px, transparent 1px 4px); }
+  /* off the scale: coral, and stronger than sky, so the one wrong side is what the eye finds first */
   .bm .off { --c: var(--pl-coral); }
+  .bm .p.off { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-coral) 85%, transparent) 0 1.5px, transparent 1.5px 5px);
+    background-color: color-mix(in oklab, var(--pl-coral) 22%, transparent); }
+  .bm .m.off { background-image: radial-gradient(var(--pl-coral) 1px, transparent 1.2px); background-color: color-mix(in oklab, var(--pl-coral) 12%, transparent); }
+  .bm .g.off { background-color: color-mix(in oklab, var(--pl-coral) 18%, transparent); }
   .bm .b { border: solid color-mix(in oklab, var(--pl-sky) 75%, transparent); }
   .bm .c { box-shadow: 0 0 0 1px var(--pl-sky); }
   .bm .line { background: color-mix(in oklab, var(--pl-lilac) 12%, transparent); }
   .bm .base { height: 0; border-top: 1px dashed color-mix(in oklab, var(--pl-lilac) 80%, transparent); }
-  .bm .pl-pill, .bm .pl-tag { translate: -50% -50%; }
-  .bm .pl-tag, .bm .head .pl-pill { translate: none; }
-  .bm .head { align-items: center; }
-  .bm .pill-tl, .bm .pill-br { translate: 0 0; }
+  .bm .pl-tag, .bm .bm-at { translate: none; }
+  .bm .bm-at { animation: pl-pop 200ms var(--pl-spring-pop) both; }
+  @media (prefers-reduced-motion: reduce) { .bm .bm-at { animation: none; } }
 `;
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
@@ -91,87 +93,74 @@ function lines(el) {
 }
 
 /**
- * The box model of `el` as overlay markup (fixed, viewport coordinates).
+ * The box model of `el`: { html, bands }. The html is the drawing (fixed, viewport coordinates): patterns and colour
+ * only, and the element's name. `bands` are the drawn parts with their values, for pointAt.
  * options: { name, tokenOf(family, px) → token | null }
  */
 export function boxModel(el, { name, tokenOf } = {}) {
   const cs = getComputedStyle(el), r = el.getBoundingClientRect();
-  const m = SIDES.map((s) => px(cs[`margin-${s}`] ?? cs.getPropertyValue(`margin-${s}`)));
-  const b = SIDES.map((s) => (cs.getPropertyValue(`border-${s}-style`) === 'none' ? 0 : px(cs.getPropertyValue(`border-${s}-width`))));
-  const p = SIDES.map((s) => px(cs.getPropertyValue(`padding-${s}`)));
-  const [mt, mr, mb, ml] = m, [bt, br, bb, bl] = b, [pt, pr, pb, pl] = p;
-  // a value's verdict: its step, or off the scale (coral) when the scale has none for it
-  const verdict = (family, n) => { if (!tokenOf || !n) return { label: `${r1(n)}`, off: false }; const t = tokenOf(family, n); return t ? { label: `${t} · ${r1(n)}`, off: false } : { label: `${r1(n)}`, off: true }; };
-  const layers = [], pills = [];
-  const pill = (x, y, v, cls = '') => pills.push({ x, y, html: `<span class="pl-pill ${cls}"${v.off ? ' data-hue="coral"' : ''} style="left:${r1(x)}px;top:${r1(y)}px">${esc(v.label)}</span>` });
+  const val = (s) => px(cs.getPropertyValue(s));
+  const [mt, mr, mb, ml] = SIDES.map((s) => val(`margin-${s}`));
+  const [bt, br, bb, bl] = SIDES.map((s) => (cs.getPropertyValue(`border-${s}-style`) === 'none' ? 0 : val(`border-${s}-width`)));
+  const [pt, pr, pb, pl] = SIDES.map((s) => val(`padding-${s}`));
+  // a value's verdict: the step it sits on, else off the scale (coral); without a scale, a plain measurement
+  const verdict = (family, n) => { const t = tokenOf && n ? tokenOf(family, n) : undefined; return { label: t ? `${t} · ${r1(n)}` : `${r1(n)}`, off: !!tokenOf && !!n && !t }; };
+  const bands = [];
+  const band = (kind, what, family, n, x, y, w, h, extra = {}) => { if (w > 0.5 && h > 0.5 && n !== 0) bands.push({ kind, what, x, y, w, h, ...verdict(family, n), ...extra }); };
 
-  // margin, outside the border
-  const mv = m.map((n) => verdict('spacing', n));
-  layers.push(box(`m${mv[0].off ? ' off' : ''}`, r.left - ml, r.top - mt, r.width + ml + mr, mt), box(`m${mv[2].off ? ' off' : ''}`, r.left - ml, r.bottom, r.width + ml + mr, mb),
-    box(`m${mv[3].off ? ' off' : ''}`, r.left - ml, r.top, ml, r.height), box(`m${mv[1].off ? ' off' : ''}`, r.right, r.top, mr, r.height));
-  // margin speaks only when it is off the scale, at its outer edge
-  if (mt && mv[0].off) pill(r.left + r.width / 2, r.top - mt, mv[0]);
-  if (mb && mv[2].off) pill(r.left + r.width / 2, r.bottom + mb, mv[2]);
-  if (ml && mv[3].off) pill(r.left - ml, r.top + r.height / 2, mv[3]);
-  if (mr && mv[1].off) pill(r.right + mr, r.top + r.height / 2, mv[1]);
-
-  // padding, inside the border
+  // margin, outside the border; padding, inside it; per side
+  band('m', 'margin top', 'spacing', mt, r.left - ml, r.top - mt, r.width + ml + mr, mt);
+  band('m', 'margin bottom', 'spacing', mb, r.left - ml, r.bottom, r.width + ml + mr, mb);
+  band('m', 'margin left', 'spacing', ml, r.left - ml, r.top, ml, r.height);
+  band('m', 'margin right', 'spacing', mr, r.right, r.top, mr, r.height);
   const ix = r.left + bl, iy = r.top + bt, iw = r.width - bl - br, ih = r.height - bt - bb;
-  const pv = p.map((n) => verdict('spacing', n));
-  layers.push(box(`p${pv[0].off ? ' off' : ''}`, ix, iy, iw, pt), box(`p${pv[2].off ? ' off' : ''}`, ix, iy + ih - pb, iw, pb),
-    box(`p${pv[3].off ? ' off' : ''}`, ix, iy + pt, pl, ih - pt - pb), box(`p${pv[1].off ? ' off' : ''}`, ix + iw - pr, iy + pt, pr, ih - pt - pb));
-  // padding's pills on the element's own edge, straddling it: off the content, next to the side they measure
-  const endX = r.right - Math.min(36, r.width / 4);
-  if (pt) pill(endX, r.top, pv[0]);
-  if (pb) pill(endX, r.bottom, pv[2]);
-  // left and right sit just outside the edge: a side band is often thinner than half a pill
-  if (pl) pill(r.left - 16, r.top + r.height / 2, pv[3]);
-  if (pr) pill(r.right + 16, r.top + r.height / 2, pv[1]);
-
-  // gaps between the children
-  const gs = gaps(el, cs);
-  gs.forEach((g, i) => {
-    const v = verdict('spacing', g.n);
-    layers.push(box(`g${g.col ? ' col' : ''}${v.off ? ' off' : ''}`, g.x, g.y, g.w, g.h));
-    // a gap is often too narrow to hold its pill: it sits on the element's top edge, above the gap
-    if (i === 0) pill(g.x + g.w / 2, g.col ? g.y + g.h / 2 : r.top, g.col ? { ...v } : v);
-  });
-
-  // the words: line boxes and their baselines
-  const ls = lines(el);
+  band('p', 'padding top', 'spacing', pt, ix, iy, iw, pt);
+  band('p', 'padding bottom', 'spacing', pb, ix, iy + ih - pb, iw, pb);
+  band('p', 'padding left', 'spacing', pl, ix, iy + pt, pl, ih - pt - pb);
+  band('p', 'padding right', 'spacing', pr, ix + iw - pr, iy + pt, pr, ih - pt - pb);
+  for (const g of gaps(el, cs)) band(g.col ? 'g col' : 'g', 'gap', 'spacing', g.n, g.x, g.y, g.w, g.h);
+  // the words: a band per line, its baseline dashed; pointing at one says the type
   const fs = px(cs.fontSize), lh = cs.lineHeight === 'normal' ? fs * 1.2 : px(cs.lineHeight);
-  for (const l of ls) {
-    layers.push(box('line', l.left, l.top, l.width, l.height));
-    const base = l.top + (l.height + fs * 0.68) / 2; // the alphabetic baseline, near enough for a system face
-    layers.push(box('base', l.left, base, l.width, 1));
-  }
-  const t = ls.length ? tokenOf?.('type', fs) : null;
-  const type = ls.length ? `<span class="pl-pill" data-hue="lilac">Aa ${esc(t ? `${t} · ` : '')}${r1(fs)}/${r1(lh)} · ${esc(cs.fontWeight)}</span>` : '';
+  const type = tokenOf?.('type', fs);
+  for (const l of lines(el)) bands.push({ kind: 'line', what: 'type', x: l.left, y: l.top, w: l.width, h: l.height, label: `Aa ${type ? `${type} · ` : ''}${r1(fs)}/${r1(lh)} · ${cs.fontWeight}`, off: !!tokenOf && !type, base: l.top + (l.height + fs * 0.68) / 2 });
 
-  // the border band, and the content outline
-  if (bt || br || bb || bl) {
-    layers.push(box('b', r.left, r.top, r.width, r.height, `border-width:${bt}px ${br}px ${bb}px ${bl}px;border-radius:${cs.borderRadius}`));
-    if (Math.max(...b) > 1) pill(r.left + 14, r.top, { label: `${Math.max(...b)}`, off: false });
-  }
-  layers.push(box('c', ix + pl, iy + pt, iw - pl - pr, ih - pt - pb, `border-radius:${Math.max(0, px(cs.borderTopLeftRadius) - Math.max(pl, pt))}px`));
+  const layers = bands.map((b) => (b.kind === 'line'
+    ? `${box('line', b.x, b.y, b.w, b.h)}${box('base', b.x, b.base, b.w, 1)}`
+    : box(`${b.kind}${b.off ? ' off' : ''}`, b.x, b.y, b.w, b.h)));
+  // the border band and the content outline; the radius shows in the shape itself
+  if (bt || br || bb || bl) layers.push(box('b', r.left, r.top, r.width, r.height, `border-width:${bt}px ${br}px ${bb}px ${bl}px;border-radius:${cs.borderRadius}`));
+  const content = { x: ix + pl, y: iy + pt, w: iw - pl - pr, h: ih - pt - pb };
+  layers.push(box('c', content.x, content.y, content.w, content.h, `border-radius:${Math.max(0, px(cs.borderTopLeftRadius) - Math.max(pl, pt))}px`));
+  // pointing at the content says its size; at the border, its width and radius
+  bands.push({ kind: 'c', what: 'size', ...content, label: `W ${sizing(el, cs, 'w')} · H ${sizing(el, cs, 'h')}`, off: false, under: true });
   const rad = px(cs.borderTopLeftRadius);
-  if (rad) { const v = verdict('radius', rad); if (v.off) pill(r.left, r.top, { ...v, label: `r ${v.label}` }); }
+  if (bt || rad) bands.push({ kind: 'b', what: 'border', x: r.left, y: r.top, w: r.width, h: Math.max(bt, 3), label: [bt ? `border ${Math.max(bt, br, bb, bl)}` : '', rad ? `r ${verdict('radius', rad).label}` : ''].filter(Boolean).join(' · '), off: rad ? verdict('radius', rad).off : false });
 
-  // size, at the bottom-right; the name, above the top-left
-  const size = `<span class="pl-pill pill-br" style="left:${r1(r.right - 4)}px;top:${r1(r.bottom + mb + 6)}px;translate:-100% 0">W ${esc(sizing(el, cs, 'w'))} · H ${esc(sizing(el, cs, 'h'))}</span>`;
-  // the name, and the type beside it, in one row above the top-left corner
-  const tag = `<div class="head" style="left:${r1(r.left - ml)}px;top:${r1(r.top - mt - 30)}px;display:flex;gap:6px"><span class="pl-tag">${esc(name ?? el.localName)}</span>${type}</div>`;
+  // the only words at rest: the element's name above its top-left corner
+  const tag = `<span class="pl-tag" style="left:${r1(r.left - ml)}px;top:${r1(r.top - mt - 28)}px">${esc(name ?? el.localName)}</span>`;
+  return { html: `<div class="bm" aria-hidden="true">${layers.join('')}${tag}</div>`, bands };
+}
 
-  // pills never sit on each other: a later one moves away from the element's centre
-  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  const placed = [];
-  const html = pills.map((p) => {
-    let { x, y } = p, step = 0;
-    const dx = Math.sign(x - cx) || 1, dy = Math.sign(y - cy) || 1;
-    const vertical = Math.abs(y - cy) >= Math.abs(x - cx) * (r.height / Math.max(1, r.width));
-    while (step < 6 && placed.some(([a, c]) => Math.abs(a - x) < 40 && Math.abs(c - y) < 20)) { if (vertical) y += 20 * dy; else x += 44 * dx; step++; }
-    placed.push([x, y]);
-    return p.html.replace(/top:[\d.-]+px/, `top:${r1(y)}px`).replace(/left:[\d.-]+px/, `left:${r1(x)}px`);
-  }).join('');
-  return `<div class="bm" aria-hidden="true">${layers.join('')}${html}${tag}${size}</div>`;
+/** The one band under a point (bands drawn on top first), or null. */
+export function bandAt(bands, x, y) {
+  return [...bands].reverse().filter((b) => !b.under).find((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h)
+    ?? bands.find((b) => b.under && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) ?? null;
+}
+
+/**
+ * The pill for the band under the pointer, kept in `host` (an element the caller owns): it pops in when the pointer
+ * reaches a new band, follows the pointer while it stays on that band, and goes when it leaves every band.
+ */
+export function pointAt(host, bands, x, y) {
+  const hit = bandAt(bands, x, y);
+  const key = hit ? `${hit.what}|${hit.label}|${Math.round(hit.x)}|${Math.round(hit.y)}` : '';
+  if (!hit) { host.replaceChildren(); host.dataset.key = ''; return null; }
+  if (host.dataset.key !== key) {
+    host.dataset.key = key;
+    host.innerHTML = `<div class="bm" aria-hidden="true"><span class="pl-pill bm-at"${hit.off ? ' data-hue="coral"' : hit.kind === 'line' ? ' data-hue="lilac"' : ''}>${esc(hit.label)}</span></div>`;
+  }
+  const pill = host.querySelector('.bm-at');
+  pill.style.left = `${r1(x + 14)}px`;
+  pill.style.top = `${r1(y - 28)}px`;
+  return hit;
 }
