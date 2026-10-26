@@ -38,6 +38,9 @@ export const GLYPHS = {
   // a component's outline pieced from two halves that do not meet
   imitation: '<path d="M12 5H7a2.5 2.5 0 0 0-2.5 2.5v9A2.5 2.5 0 0 0 7 19h5M12 6.5h5a2.5 2.5 0 0 1 2.5 2.5v9a2.5 2.5 0 0 1-2.5 2.5h-5"/>',
 
+  // craft: two rounded frames sharing one centre, the concentric corner a mentor points at
+  craft: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><rect x="8" y="8" width="8" height="8" rx="1.5"/><path class="fill" d="M3.5 7.5v-4h4L3.5 7.5z"/>',
+
   // a rule with nothing in it
   existence: '<path d="M9.5 4.5H9A2.5 2.5 0 0 0 6.5 7v2.5c0 1.4-.9 2.5-2.25 2.5 1.35 0 2.25 1.1 2.25 2.5V17A2.5 2.5 0 0 0 9 19.5h.5M14.5 4.5h.5A2.5 2.5 0 0 1 17.5 7v2.5c0 1.4.9 2.5 2.25 2.5-1.35 0-2.25 1.1-2.25 2.5V17a2.5 2.5 0 0 1-2.5 2.5h-.5"/>',
 };

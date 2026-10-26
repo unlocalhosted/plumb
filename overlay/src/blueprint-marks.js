@@ -108,6 +108,12 @@ const inkOf = (mark, fix) => fix?.kind === 'picked' || fix?.kind === 'written' ?
 // What a break says when asked: its finding in words, the tokens nearest to it, and what a click does.
 function hintOf(mark, fix) {
   const title = String(mark.title ?? '').replace(/`/g, '');
+  // craft: the finding, then its suggestion in words (a class change or advice); the chooser holds the why
+  if (mark.family === 'craft') {
+    const s = mark.craft?.suggest;
+    const say = s?.kind === 'class' ? `${s.from} → ${s.to}` : s?.text ?? '';
+    return `${esc(title)}${say ? `<span class="near">${esc(say)}</span>` : ''}<span class="act">click for why</span>`;
+  }
   const near = (mark.choices ?? []).slice(0, 3).map((c) => `${c.label}${c.n !== undefined ? ` ${Math.round(c.n * 10) / 10}` : ''}`).join(' · ');
   const act = fix?.kind === 'picked' ? `picked ${fix.to} · click to change` : fix?.kind === 'current' ? 'choosing…' : near ? 'click to fix' : 'click to accept or add a token';
   return `${esc(title)}<span class="near">${near ? `nearest ${esc(near)}` : 'no token is close'}</span><span class="act">${esc(act)}</span>`;

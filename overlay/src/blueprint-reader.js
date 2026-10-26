@@ -41,10 +41,13 @@ export class Reader {
   #running = false;
   #offscreen = 0; // elements read off-screen so far
 
-  constructor(host, { onChange, onProgress }) {
+  // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
+  #enrich;
+  constructor(host, { onChange, onProgress, enrich }) {
     this.#host = host;
     this.#onChange = onChange;
     this.#onProgress = onProgress;
+    this.#enrich = enrich ?? null;
   }
 
   start() {
@@ -236,11 +239,16 @@ export class Reader {
   }
 
   #report(order) {
+    // craft: every read element goes through the craft engine first, so the counts below and the items handed on
+    // agree on what is drawn (its marks are appended to the element's own)
+    const ready = [...this.#items.values()].filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file }) => ({ id, el, marks, dims, file }));
+    const enriched = this.#enrich ? this.#enrich(ready) : ready;
+    const marksOf = new Map(enriched.map((i) => [i.id, i.marks]));
     const read = order.filter((i) => i.state === 'ready').length;
     const checked = order.filter((i) => i.state === 'ready' && i.checked).length;
     const notChecked = read - checked;
     const outsideSource = order.filter((i) => i.state === 'ready' && i.outsideSource).length;
-    const drift = order.reduce((n, i) => n + i.marks.filter((m) => m.ledger === 'new').length, 0);
+    const drift = order.reduce((n, i) => n + (marksOf.get(i.id) ?? i.marks).filter((m) => m.ledger === 'new').length, 0);
     const on = order.reduce((n, i) => n + i.dims.length, 0);
     const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}`;
     if (key !== this.#progress) {
@@ -249,7 +257,7 @@ export class Reader {
     }
     // what to hand on: everything read on the page (the marks draw what is in view; the panel counts it all), in
     // document order
-    const shown = [...this.#items.values()].filter((i) => i.state === 'ready' && (i.marks.length || i.dims.length)).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
-    this.#onChange?.(shown.map(({ id, el, marks, dims, file }) => ({ id, el, marks, dims, file })));
+    const shown = enriched.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    this.#onChange?.(shown);
   }
 }

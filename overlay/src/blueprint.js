@@ -24,6 +24,7 @@ import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Glass, GLASS_CSS } from './blueprint-glass.js';
 import { Panel, PANEL_CSS } from './blueprint-panel.js';
+import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -42,19 +43,21 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel;
+  #panel; #craft;
 
-  // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root
-  constructor(host, root, { onState, onProgress } = {}) {
+  // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
+  // theme: { decisions() } for the craft engine's scales (craft.js)
+  constructor(host, root, { onState, onProgress, theme } = {}) {
     this.#host = host;
     this.#onState = onState;
     this.#onProgress = onProgress;
+    this.#craft = new Craft({ theme });
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#marks.set(items); this.#panel.set(items); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); } });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#marks.set(items); this.#panel.set(items); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -100,6 +103,7 @@ export class Blueprint {
       performance.measure('plumb:reader-start', { start: t0 });
       addEventListener('scroll', this.#invalidate, { passive: true, capture: true });
       addEventListener('resize', this.#invalidate);
+      addEventListener('resize', this.#remeasure); // craft: a new layout is measured again
       addEventListener('pointermove', this.#point, { passive: true });
       document.addEventListener('pointerleave', this.#unpoint);
     } else this.#reader.refresh(); // turned back on while fading out: draw what's already read
@@ -134,7 +138,19 @@ export class Blueprint {
   }
 
   invalidate(change) {
+    this.#craft.invalidate(); // craft: a written file changes what the page measures
     if (this.active) this.#reader.invalidate(change);
+  }
+
+  // craft: measured again on the next hand-off (a resize moved everything)
+  #remeasure = () => this.#craft.invalidate();
+  // craft: the theme's decisions arrived (or changed): suggestions name its tokens, so everything is judged again
+  themeChanged() {
+    this.#craft.invalidate();
+    if (this.active) this.#reader.refresh();
+  }
+  get craft() {
+    return this.#craft;
   }
 
   healthChanged(status) {
@@ -176,6 +192,8 @@ export class Blueprint {
     this.#marks.clear();
     removeEventListener('scroll', this.#invalidate, { capture: true });
     removeEventListener('resize', this.#invalidate);
+    removeEventListener('resize', this.#remeasure);
+    this.#craft.invalidate();
     removeEventListener('pointermove', this.#point);
     document.removeEventListener('pointerleave', this.#unpoint);
     this.#layer.removeAttribute('data-on');

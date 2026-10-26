@@ -80,7 +80,7 @@ export const PANEL_CSS = `
 
 // What is wrong with a class, in words: the kind of finding in its family.
 const NOUN = { spacing: 'spacing off the scale', radius: 'corner off the scale', type: 'text size or weight off the scale', color: 'raw colour', elevation: 'hand-written shadow', shadow: 'hand-written shadow', z: 'z-index off the scale', motion: 'timing off the scale' };
-const whatOf = (mark) => /framework/.test(mark.rule) ? 'Tailwind default, not your theme' : /tier/.test(mark.rule) ? 'raw token where a named one is wanted'
+const whatOf = (mark) => mark.family === 'craft' ? (mark.what ?? 'craft') /* craft: the rule's own noun (craft.js) */ : /framework/.test(mark.rule) ? 'Tailwind default, not your theme' : /tier/.test(mark.rule) ? 'raw token where a named one is wanted'
   : /by-value|matches/.test(mark.rule) ? 'matches a token without using it' : /existence/.test(mark.rule) ? 'undefined variable' : (NOUN[mark.family] ?? `${mark.family} off the scale`);
 const soft = (mark) => /framework|tier|by-value|matches/.test(mark.rule);
 const inCode = (mark) => /opaque-inline|^config\//.test(mark.rule);

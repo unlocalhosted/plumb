@@ -148,6 +148,9 @@ export class Fixer {
     this.#marks.invalidate();
     this.#render(from ? 'moving' : 'opening');
     this.#follow();
+    // craft: a craft finding (craft.js) is read on the page, not from the server; the chooser shows the finding, its
+    // why and its advice as they are. Writing its suggestion is the next layer (docs/briefs/craft-engine.md)
+    if (mark.family === 'craft') { this.#open.full = structuredClone(mark); this.#render(); return; }
     const full = await this.#host.read(el);
     if (!this.#open || this.#open.el !== el || this.#open.key !== mark.key) return;
     if (full.status === 'starting') { this.#open.message = full.message; this.#render(); setTimeout(() => this.#open?.el === el && this.#open.key === mark.key && this.#reload(), 1000); return; }

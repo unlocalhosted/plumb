@@ -324,6 +324,8 @@ class PlumbOverlay extends HTMLElement {
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
       onProgress: progress => { this.#bp.progress = progress; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
+      // craft: the engine measures the theme's tokens from the same decisions the choosers use (asked for on first use)
+      theme: { decisions: () => { if (!this.#decisions) this.#scaleOf('spacing'); return this.#decisions; } },
     });
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     this.#fixer = new Fixer(this, this.#root, { marks: this.#blueprint.marks, invalidate: change => this.#blueprint.invalidate(change), scale: family => this.#scaleOf(family) });
@@ -1172,6 +1174,7 @@ class PlumbOverlay extends HTMLElement {
         this.#decisions = d; this.#scales.clear();
         if (this.#pinned?.state?.status === 'ready') this.#refresh();
         this.#fixer?.refresh();
+        this.#blueprint?.themeChanged(); // craft: suggestions can now name the theme's tokens
       }).catch(() => { this.#decisionsLoading = null; });
       return [];
     }
