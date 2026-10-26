@@ -45,7 +45,12 @@ export function noChoice(m) {
 
 // The form for a mark's choices. el: the element (for em and the shadow plate's ground); scale(family) → the theme's
 // steps [{ short, px }] for the ladder, [] while unknown.
-export function choicesHtml(m, { el, scale }) {
+export function choicesHtml(m, options) {
+  // a craft finding says what to do in words above its suggestion, which is its one choice
+  const lead = m.family === 'craft' && m.choices.length && m.action ? `<div class="note">${code(m.action)}</div>` : '';
+  return lead + choicesFor(m, options);
+}
+function choicesFor(m, { el, scale }) {
   if (!m.choices.length) return noChoice(m);
   const name = c => esc(c.edit?.to ?? c.label);
   const reason = c => c.why ? `<span class="sr"> ${esc(c.why)}</span>` : '';

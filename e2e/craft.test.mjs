@@ -3,7 +3,7 @@
 // suggestion; the element beside it that follows the rule carries nothing; a well-built page yields no craft finding.
 // Real Vite with the plugin on a fixture page, real React 19, real Chromium.
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -175,7 +175,7 @@ test('Concentric corners (#8/#41): a 12px child in 4px padding of a 12px corner 
   assert.match(words.title, /Choose a token for rounded-card is not concentric/);
   assert.match(words.note, /Change rounded-card to rounded-control: control is 8px, the concentric radius here \(12px − 4px\)\./);
   assert.match(words.because, /outer radius minus the padding/);
-  assert.equal(words.steps, 0);
+  assert.equal(words.steps, 1, "the suggestion is the one choice");
   assert.deepEqual(errors, []);
 });
 
@@ -273,4 +273,35 @@ test('Noise: a well-built page yields no craft finding, and neither does the dem
     assert.deepEqual(errors, []);
     await page.close();
   }
+});
+
+test('A suggestion is written in one pick: the concentric corner previews rounded-control, Write swaps the class in source, Undo puts it back', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const source = join(root, 'src/App.jsx');
+  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="cc-bad-child"'));
+  assert.match(await line(), /className="rounded-card /);
+  await blueprint(page, overlay);
+  await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/concentric-radius')), null, { timeout: 10000 });
+  const [mark] = (await craftMarks(page)).filter((m) => m.rule === 'concentric-radius');
+  await openMark(page, overlay, mark.id);
+  const ch = overlay.locator('.ch .card[role="dialog"]');
+  const step = ch.locator('.cmp .opt', { hasText: 'rounded-control' });
+  // pointing previews: the child wears the suggested class on the page
+  await step.hover();
+  await page.waitForFunction(() => document.getElementById('cc-bad-child').classList.contains('rounded-control'), null, { timeout: 3000 });
+  assert.equal(await page.locator('#cc-bad-child').evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '8px');
+  await step.click();
+  await overlay.locator('.dock .write').click();
+  for (let i = 0; i < 100 && !/rounded-control/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="rounded-control bg-ground/, 'the class is swapped where it was, in source');
+  assert.doesNotMatch(await line(), /rounded-card/);
+  // the write is in the history: Undo puts the source back
+  await overlay.locator('.wt').filter({ hasText: /Wrote rounded-control/ }).waitFor({ timeout: 10000 });
+  await overlay.locator('.wt').getByRole('button', { name: 'Undo' }).click();
+  for (let i = 0; i < 100 && !/rounded-card/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="rounded-card bg-ground/);
+  assert.deepEqual(errors, []);
 });

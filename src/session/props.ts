@@ -274,3 +274,33 @@ export function setProp(file: string, text: string, start: number, tag: string, 
   const first = el.className.strings[0]!;
   return { start: first.end, end: first.end, replacement: first.text.trim() ? ` ${step.class}` : step.class, at };
 }
+
+/**
+ * Swap classes on an element: take `from` out of its static className and put `to` where the first of them was.
+ * Used for craft suggestions (rounded-card → rounded-control; opacity-65 → text-ink-muted), which name classes rather
+ * than one property's step. Every `from` class must be in one static string (a literal, or one string of cn/cva).
+ */
+export function swapClasses(file: string, text: string, start: number, from: string[], to: string[]): SourceChange {
+  const el = element(file, text, start), at = el.opening.start;
+  if (el.className.kind === 'dynamic') throw new UsageError(el.className.reason);
+  if (el.className.kind === 'none') {
+    if (from.length) throw new UsageError(`This element has no static className holding ${from.join(' ')}.`);
+    const spread = el.opening.attributes.some(attribute => attribute.type === 'JSXSpreadAttribute');
+    if (spread) throw new UsageError('This element spreads props, which may carry className; change the class by hand.');
+    return { start: el.opening.name.end, end: el.opening.name.end, replacement: ` className="${to.join(' ')}"`, at };
+  }
+  const all = classes(el.className.strings);
+  const found = from.map(name => all.find(item => item.text === name));
+  const missing = from.filter((_, i) => !found[i]);
+  if (missing.length) throw new UsageError(`${missing.join(' ')} is not written on this element; read it again.`);
+  const string = found[0]?.string ?? el.className.strings[0]!;
+  if (found.some(item => item!.string !== string)) throw new UsageError('These classes sit in different parts of the className; change them by hand.');
+  const kept = classes([string]).filter(item => !from.includes(item.text)).map(item => item.text);
+  const at0 = found.length ? classes([string]).findIndex(item => item.text === from[0]) : kept.length;
+  const fresh = to.filter(name => !kept.includes(name));
+  const next = [...kept.slice(0, at0), ...fresh, ...kept.slice(at0)].join(' ');
+  if (next === classes([string]).map(item => item.text).join(' ')) throw new UsageError('Nothing to change: the classes are already so.');
+  // the string's inner text, keeping its leading and trailing whitespace
+  const lead = string.text.match(/^\s*/)![0], trail = string.text.match(/\s*$/)![0];
+  return { start: string.start, end: string.end, replacement: lead + next + trail, at };
+}

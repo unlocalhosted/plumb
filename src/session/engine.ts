@@ -17,7 +17,7 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
-import { elementProps, setProp } from './props.js';
+import { elementProps, setProp, swapClasses } from './props.js';
 import type { Props } from './props.js';
 import { readText, textSites } from './text.js';
 import { resolveTextAt, textTargets } from './text-at.js';
@@ -52,6 +52,7 @@ export interface UndoHandle { id: string; file: string; label: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
 export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string }
+export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
 interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
@@ -573,6 +574,20 @@ export class Session extends EventEmitter {
       const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token);
       return { ...change, replacement: change.replacement };
     }, label);
+  }
+  /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
+  async swap(options: SwapOptions): Promise<ApplyResult> {
+    const { file, hash, line, column, from, to } = options ?? {} as SwapOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof from !== 'string' || typeof to !== 'string' || !to.trim()) throw new UsageError('Swap requires file, hash, line, column, from and to.');
+    const names = (v: string) => v.split(/\s+/).filter(Boolean);
+    if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
+    const path = this.file(file); this.position(line); this.position(column);
+    const facts = await this.elementFacts(path, line, column);
+    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
+      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      return swapClasses(_file, source, facts.location.start, names(from), names(to));
+    }, `${from || '—'} → ${to}`);
   }
   /** The text-at write: one string (JSX text, an attribute or a literal) addressed by the id text-at returned. */
   applyTextAt(options: ApplyTextAtOptions): Promise<ApplyResult> {
