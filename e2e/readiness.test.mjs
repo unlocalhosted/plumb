@@ -299,7 +299,7 @@ test('doctor and read-only route cover every capability and token family with ev
   const before = await readFile(join(root, 'vite.config.mjs'), 'utf8');
   const ready = await report();
   assert.equal(ready.schemaVersion, 1);
-  assert.equal(ready.requirements.length, 24);
+  assert.equal(ready.requirements.length, 25);
   assert.deepEqual(ready.capabilities.map(item => item.id), ['read', 'remember', 'fast', 'locate', 'preview', 'write', 'blueprint', 'system']);
   assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   for (const requirement of ready.requirements) {
@@ -313,6 +313,8 @@ test('doctor and read-only route cover every capability and token family with ev
   for (const id of ['read.styles', 'remember.baseline', 'fast.config', 'locate.plugin', 'locate.order', 'locate.react-dev', 'locate.host', 'preview.locate', 'write.locate', 'write.refresh', 'write.hmr', 'blueprint.locate', 'blueprint.host', 'system.blueprint']) assert.equal(item(ready, id).status, 'ok', id);
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'ok');
   assert.equal(item(ready, 'system.preset').status, 'missing');
+  assert.equal(item(ready, 'system.state').status, 'ok');
+  assert.match(item(ready, 'system.state').title, /^(?:A system|Tailwind's scale|No system yet).*\.$/);
   assert.equal(await readFile(join(root, 'vite.config.mjs'), 'utf8'), before, 'GET cannot edit config');
   assert.equal((await request('readiness', undefined, false)).status, 401);
   assert.equal((await request('readiness', {})).status, 405);

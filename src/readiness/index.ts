@@ -22,6 +22,7 @@ import { atomicWrite } from '../atomic-write.js';
 import { addSourceGlobs, hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
+import { readState } from '../onboarding/state.js';
 
 export type Capability = 'read' | 'remember' | 'fast' | 'locate' | 'preview' | 'write' | 'blueprint' | 'system';
 export type Status = 'ok' | 'missing' | 'unknown';
@@ -211,6 +212,12 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const presets = report?.presets ?? loaded?.presets ?? [];
   add('system.preset', 'system', loaded ? presets.length ? 'ok' : 'missing' : 'unknown', presets.length ? 'A preset is selected' : 'No preset is selected', [{ file: configFile, line: presetLine, text: presets.length ? presets.map(item => item.name).join(', ') : 'No loaded preset' }],
     'The system panel has no preset to review or fill.', step('Choose a preset in your React Plumber config.', 'plumber presets'));
+  // Where the project starts: the sentence the CLI header, doctor and the first-open card share (docs/briefs/onboarding.md section 5).
+  let started: Awaited<ReturnType<typeof readState>> | undefined;
+  if (report) try { started = await readState({ root, ...(options.config ? { config: options.config } : {}), report }); } catch { /* An unreadable state is unknown, not a failure of readiness. */ }
+  add('system.state', 'system', started ? 'ok' : 'unknown', started?.sentence ?? 'The project state could not be read',
+    [{ file: started?.numbers.tailwind.entry ?? 'package.json', line: 1, text: started ? `${started.rung} ${started.name}${started.flags.length ? ` · ${started.flags.join(', ')}` : ''}` : 'No state' }],
+    'The system panel cannot say where this project starts.', step('Run plumber doctor to see what blocks reading the project.', 'plumber doctor'));
   return { schemaVersion: 1, capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.some(item => item.status === 'unknown');
     const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));

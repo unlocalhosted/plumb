@@ -68,9 +68,9 @@ function detail(report: Report, findings: Finding[], verbose: boolean, accept = 
   return renderFindingLines(findingLines(findings), path, verbose) + (context ? '\n\n' + context : '');
 }
 
-function header(report: Report): string {
+function header(report: Report, state?: string): string {
   const theme = report.tailwind.entry === null ? 'plain CSS' : `Tailwind ${report.tailwind.version?.split('.').slice(0, 2).join('.') ?? 'unknown'} · theme ${relative(report.root, report.tailwind.entry)}`;
-  return wrap(`React Plumber  ${basename(report.root)} · ${theme} · ${number(Object.values(report.files).reduce((sum, n) => sum + n, 0))} files · ${(report.timing.totalMs / 1000).toFixed(1)}s`);
+  return wrap(`React Plumber  ${basename(report.root)} · ${theme} · ${number(Object.values(report.files).reduce((sum, n) => sum + n, 0))} files · ${(report.timing.totalMs / 1000).toFixed(1)}s`) + (state ? '\n' + wrap(state) : '');
 }
 
 function fixTable(rows: string[][]): string[] {
@@ -82,15 +82,16 @@ function fixTable(rows: string[][]): string[] {
   ]), showReason ? [{ weight: 1 }, { weight: 1 }, { width: 32 }] : [{ weight: 1 }, { width: 32 }]);
 }
 
-export function formatCheck(report: Report, filters: DetailFilters = {}, verbose = false): string {
+/** `state` is the one-sentence state of the project (src/onboarding/state.ts), printed under the header. */
+export function formatCheck(report: Report, filters: DetailFilters = {}, verbose = false, state?: string): string {
   if (filters.all && Object.entries(filters).every(([key, value]) => key === 'all' || value === undefined || value === false)) return formatAll(report, verbose);
   if (Object.values(filters).some(value => value !== undefined && value !== false)) {
     const hints = filters.rule === 'config' && !filters.broken && !filters.file && !filters.new && !filters.debt
       ? Object.entries(report.configHints ?? {}).filter(([family]) => !filters.family || family === filters.family).map(([, hint]) => hint) : [];
-    return header(report) + '\n\n' + detail(report, select(report, filters), verbose || !!filters.rule) +
+    return header(report, state) + '\n\n' + detail(report, select(report, filters), verbose || !!filters.rule) +
       (hints.length ? '\n\nSetup\n' + hints.map(hint => wrap(`  ${hint}`)).join('\n') : '') + '\n';
   }
-  const lines = [header(report), '', 'On your tokens'];
+  const lines = [header(report, state), '', 'On your tokens'];
   const judged = families.filter(family => report.coverage[family].total > 0)
     .sort((a, b) => report.coverage[a].fromDecisions / report.coverage[a].total - report.coverage[b].fromDecisions / report.coverage[b].total);
   const coverageRows = judged.map(family => {
