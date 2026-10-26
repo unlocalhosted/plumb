@@ -18,6 +18,8 @@ export function Craft() {
       {/* each row: the one that breaks a craft rule (left) beside the one that follows it (right). Alt+B to see. */}
       <header className="sticky top-0 h-12 w-full bg-surface" />
       <div className="grid grid-cols-2 gap-s6">
+        <div><button id="composed-bad" className="flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body">{ICON}Save</button></div>
+        <div><button id="composed-good" className="flex items-center gap-s2 rounded-control bg-surface pl-5 pr-s6 py-s3 text-body">{ICON}Save</button></div>
         <div><button id="button-padding-bad" className="rounded-control bg-surface p-s2 text-body">Save</button></div>
         <div><button id="button-padding-good" className="rounded-control bg-surface px-s4 py-s2 text-body">Save</button></div>
         <div><button id="icon-side-bad" className="flex items-center gap-s2 rounded-control bg-surface px-s4 py-s2 text-body">{ICON}Add</button></div>
