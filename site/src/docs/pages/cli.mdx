@@ -4,3 +4,20 @@ import data from '../recordings/reference/cli.json'
 Every `plumber` command and its flags, read from the CLI's own source. Run `npx plumber <command>`; with no command, `plumber` runs `check`.
 
 <CliReference data={data} />
+
+## plumber craft
+
+The craft rules (type, spacing and shadows judged on the page as it renders, not in the source) run in the browser. `plumber craft` runs them without one: it opens each route of a running dev server in headless Chromium, lets the overlay read every element on the page, off-screen ones too, and prints each finding at the line of JSX that made it.
+
+```sh
+npx plumber craft --url http://localhost:5173/ --routes / /settings --sarif craft.sarif
+```
+
+- `--url <address>` is the dev server, with the `plumb()` Vite plugin running.
+- `--routes <path> …` are the routes to open (default `/`). Space or comma separated.
+- `--json` prints every route's findings and the source sites as JSON.
+- `--sarif <file>` writes a SARIF 2.1.0 report, for code scanning.
+- `--timeout <ms>` bounds each route (default 60000).
+- `--root <dir>` is the app's folder, which source paths are relative to (default: the current directory).
+
+It exits 1 when there are findings and 0 when the page is clean. The overlay needs Playwright, an optional dependency: `npm i -D playwright && npx playwright install chromium`, or set `PLUMBER_CHROMIUM` to a Chrome or Chromium you already have. Inside the page, `await window.__plumb.craft()` returns the same findings as plain JSON.
