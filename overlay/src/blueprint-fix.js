@@ -168,16 +168,6 @@ export class Fixer {
       full.pick = pick ? 0 : null;
       this.#open.full = full;
       this.#render();
-      // the file as it is when the chooser opens: Write sends this hash, so an edit made in between is refused as stale
-      // instead of being written over
-      (async () => {
-        try {
-          const at = await locate(el);
-          if (!at?.file) return;
-          const props = await request('props', { file: at.file, line: at.line, column: at.column });
-          if (props?.hash && this.#open?.el === el && this.#open.key === mark.key) Object.assign(this.#open, { hash: props.hash, file: at.file, at: { line: props.line ?? at.line, column: props.column ?? at.column } });
-        } catch {}
-      })();
       return;
     }
     const full = await this.#host.read(el);
@@ -235,7 +225,7 @@ export class Fixer {
     // focus stays with the chooser across its renders: on the card while reading, then on a step
     const held = state || el.contains(this.#root.activeElement) || !this.#root.activeElement;
     const tone = m ? (this.#byEl.get(o.el)?.get(o.key) ? 'ok' : m.ledger !== 'new' ? 'quiet' : m.soft ? 'soft' : '') : '';
-    el.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Choose a token for ${esc(title.replace(/`/g, ''))}">
+    el.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="${esc(title.replace(/`/g, ''))}">
       <div class="top">${glyph((m ?? o.mark).glyph, tone || 'off')}<span class="title">${code(title)}</span>
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
@@ -362,9 +352,11 @@ export class Fixer {
     // a craft suggestion names classes: its preview swaps them on the element, and the lift puts the class back
     if (choice?.edit?.craft) {
       const names = (v) => v.split(/\s+/).filter(Boolean);
+      // the same preview again changes nothing: touching the classes would make the page read itself again
+      if (p.craft && p.craft.from === choice.edit.from && p.craft.to === choice.edit.to) return;
       if (p.craft) unswap(el, p.craft);
       // only what this preview adds or takes away is remembered, so a class React changes meanwhile is left alone
-      p.craft = { removed: names(choice.edit.from).filter((n) => el.classList.contains(n)), added: names(choice.edit.to).filter((n) => !el.classList.contains(n)) };
+      p.craft = { from: choice.edit.from, to: choice.edit.to, removed: names(choice.edit.from).filter((n) => el.classList.contains(n)), added: names(choice.edit.to).filter((n) => !el.classList.contains(n)) };
       for (const name of p.craft.removed) el.classList.remove(name);
       for (const name of p.craft.added) el.classList.add(name);
       return;
@@ -413,6 +405,16 @@ export class Fixer {
     const pick = { el: o.el, key: o.key, file: o.file, hash: o.hash, at: o.at, mark: o.full, j, choice: c, state: 'picked', together: o.group && c.edit?.craft ? {} : undefined };
     byKey.set(o.key, pick);
     this.#picks.add(pick);
+    // craft: the file as it is when the fix is picked. Apply sends this hash, so an edit made in between is refused
+    // as stale instead of being written over. Read quietly: nothing re-renders while it comes back
+    if (c.edit?.craft && !pick.hash) (async () => {
+      try {
+        const at = await locate(o.el);
+        if (!at?.file) return;
+        const props = await request('props', { file: at.file, line: at.line, column: at.column });
+        if (props?.hash && !pick.hash) Object.assign(pick, { hash: props.hash, file: at.file, at: { line: props.line ?? at.line, column: props.column ?? at.column } });
+      } catch {}
+    })();
     if (this.#status?.kind !== 'writing') this.#status = null;
     this.#repaint(o.el);
     this.#host.announce(`Picked ${c.edit?.to ?? c.label} for ${o.full.text}${o.group ? ` at ${plural(o.group.length, 'place')}` : ''}`);

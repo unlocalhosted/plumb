@@ -464,7 +464,10 @@ export class MarkLayer {
       node.fix = fix;
       if (node.markup !== markup) (node.g.innerHTML = markup), (node.markup = markup);
       node.g.toggleAttribute('data-show', active.has(item.el) || !!fix);
-      node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? 'Drift' : 'Recorded'}: ${mark.title}.${fix?.to ? ` Picked ${fix.to}.` : ''} Choose a token.`);
+      // what a screen reader hears: the line itself, then what is picked; no internal words (docs/copy/voice.md)
+      const said = mark.title.replace(/`/g, '').replace(/\.?$/, '.');
+      node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? '' : 'Known, recorded. '}${said}${fix?.to ? ` Picked ${fix.to}.` : ''}`);
+      node.hit.dataset.ledger = mark.ledger;
       node.hit.toggleAttribute('aria-current', fix?.kind === 'current');
       order.push({ id, el: item.el, mark, file: item.file ?? null });
       const [x, y, w, h] = box;

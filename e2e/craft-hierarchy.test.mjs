@@ -128,8 +128,8 @@ test('Colour trio: faded text that cannot be read is one contrast mark with the 
   const faded = await on(page, 'faded');
   assert.deepEqual(faded.map((m) => m.rule), ['contrast'], JSON.stringify(faded));
   const words = await openMark(page, overlay, faded[0].id);
-  assert.match(words.title + words.note, /APCA|Lc/);
-  assert.deepEqual(await alsoOf(overlay), ['also: text faded by opacity']);
+  assert.match(words.title + words.note, /Contrast \d+ at 14px/);
+  assert.deepEqual(await alsoOf(overlay), ['also: Faded with opacity']);
   await page.keyboard.press('Escape');
   // the one that still reads keeps the polish finding alone
   assert.deepEqual((await on(page, 'faded-ok')).map((m) => m.rule), ['text-opacity']);
@@ -173,8 +173,8 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   assert.deepEqual(await on(page, 'pair-ok'), []);
   const words = await openMark(page, overlay, pair[0].id);
   // the composed edit: button-padding's 24px across, then icon-side run on that page takes 4px off the icon side
-  assert.match(words.note, /Change px-s3 to pl-5 pr-s6: 24px across to 12px down; 20px on the icon side, 24px on the text side\./);
-  assert.deepEqual(await alsoOf(overlay), ['with: icon side padded like the text side']);
+  assert.match(words.note, /Change px-s3 to pl-5 pr-s6: 24px on the sides, 12px on top; 20px by the icon, 24px by the text\./);
+  assert.deepEqual(await alsoOf(overlay), ['with: Too much space by the icon']);
   const ch = overlay.locator('.ch .card[role="dialog"]');
   await ch.locator('.cmp .opt', { hasText: 'pl-5 pr-s6' }).click();
   await overlay.locator('.dock .write').click();

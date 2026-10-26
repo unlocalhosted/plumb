@@ -28,8 +28,8 @@ overlay's chrome (dock, panel, toasts, errors). The CLI and docs follow later.
    | finding, mark, claim, verdict | problem (or nothing: the drawing says it) |
    | facet | the property's name: right padding, corners, text size |
    | craft rule, tier, confidence | nothing |
-   | write, apply | save to code |
-   | refused | couldn't save |
+   | write, save | apply |
+   | refused | couldn't apply |
    | read again, reading | checking |
    | locate, site, source line | where it is in your code |
 
@@ -90,27 +90,27 @@ The short label is what a panel row says. The line is what `i` shows. The reason
 | Blueprint on. Reading this view. | Checking this screen… |
 | Reading 120 of 400… | Checking 120 of 400 |
 | One token fits. Take it with 1, or Enter. | *(gone with the card)* |
-| Write 3 edits | Save 3 changes |
-| Wrote px-s4 to App.jsx | Saved px-s4 in App.jsx |
-| Writing to source… | Saving… |
-| React Plumber refused the write. | Couldn't save. *(then the reason)* |
+| Write 3 edits | Apply 3 changes |
+| Wrote px-s4 to App.jsx | Applied px-s4 in App.jsx |
+| Writing to source… | Applying… |
+| React Plumber refused the write. | Couldn't apply. *(then the reason)* |
 | The file changed since React Plumber read it. | This file changed after we checked it. Check again. |
-| React Plumber can't tie this element to a line in your source, so it won't guess one. | Can't find this in your code, so nothing here can be saved. |
+| React Plumber can't tie this element to a line in your source, so it won't guess one. | Can't reach this in your code, so nothing here can be applied. |
 | This element wasn't rendered by React (HTML written at runtime, or outside your app), so it has no line in your source. | Not drawn by React, so it isn't in your code. |
 | The dev server's source map for this element doesn't lead back to your source, so React Plumber won't guess a line. | Your dev server's source map doesn't point back to your code for this. |
 | Set in code · `gap={size}` | Set by code: `gap={size}` |
 | Tailwind default, not your theme | Tailwind's default, not yours |
 | Rendered by a library inside this component | Drawn by a library inside this component |
-| Every write reloads the whole … | Saving reloads the whole page. Turn on hot reload to keep your place. |
+| Every write reloads the whole … | Applying reloads the whole page. Turn on hot reload to keep your place. |
 | Undid px-s4 in App.jsx | Undone in App.jsx |
 | React Plumber · Alt to inspect | Hold `Alt` to inspect |
 
-## Decisions for you
+## Decided
 
-1. **"Write" becomes "Save to code"** (button "Save 3 changes", toast "Saved"). Recommended: it says where the
-   change goes, and "write" sounds like typing.
-2. **"Problems" or "issues"?** Recommended: problems. "Issues" sounds like a tracker.
-3. **"Blueprint" stays as the mode's name** (Alt+B), but no sentence starts with it.
+1. The button is **Apply changes** ("Apply 3 changes"); the toast says **Applied**. (Owner, 2026-10-27.)
+2. **Problems**, not issues.
+3. **Blueprint** stays as the mode's name (Alt+B); no sentence starts with it.
+4. When an element can't be tied to the code: **"Can't reach this in your code"**. (Owner.)
 
 ## How it's built
 

@@ -47,6 +47,7 @@
  * ───────────────────────────────────────────────────────── */
 import { rgb, utility, classesOf } from './craft-read.js';
 import { TIER } from './craft-facets.js';
+import { say } from './words.js';
 
 const px = (v) => parseFloat(v) || 0;
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
@@ -105,13 +106,12 @@ export const concentricRadius = {
     const cls = utility(el, 'rounded', { not: SIDE_RADIUS });
     const step = theme.nearest('radius', wanted, tolerance) ?? (wanted <= tolerance ? { short: 'none', px: 0 } : null);
     const text = cls ?? 'border-radius';
-    const suggest = step && cls ? { kind: 'class', from: cls, to: `rounded-${step.short}`, why: `${step.short} is ${fmt(step.px)}, the concentric radius here (${fmt(R)} − ${fmt(p)})` }
-      : step ? { kind: 'advice', text: `Set border-radius to ${fmt(step.px)} (rounded-${step.short}): the parent's ${fmt(R)} corner minus ${fmt(p)} of inset.` }
-      : { kind: 'advice', text: `No radius token is near ${fmt(wanted)}. Add one, or inset this by ${fmt(R - r)} instead of ${fmt(p)} so ${text} stays concentric.` };
+    const suggest = step && cls ? { kind: 'class', from: cls, to: `rounded-${step.short}`, why: `${fmt(step.px)}: ${fmt(drawnR)} minus ${fmt(p)}` }
+      : step ? { kind: 'advice', text: `Use ${fmt(step.px)} (rounded-${step.short}).` }
+      : { kind: 'advice', text: `None of your radius steps is near ${fmt(wanted)}. Add one, or change the padding.` };
     return [{
-      key: `${this.id}@${c.name}`, what: 'corners not concentric', text, props: [c.prop], value: `${r}px`, n: r,
-      title: `\`${text}\` is not concentric: ${fmt(p)} inside a ${fmt(drawnR)} corner wants ${fmt(wanted)}, not ${fmt(drawnr)}`,
-      because: 'A nested radius is the outer radius minus the padding; otherwise the two curves have different centres and the corner looks pinched or bulged.',
+      ...say(this.id, { r: drawnr, p, R: drawnR, wanted }),
+      key: `${this.id}@${c.name}`, text, props: [c.prop], value: `${r}px`, n: r,
       evidence: { parentRadius: drawnR, inset: p, radius: drawnr, wanted, corner: c.name }, confidence: 0.92, suggest,
     }];
   },
@@ -148,12 +148,11 @@ export const innerOuterSpacing = {
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
     const step = theme.floor('spacing', G);
     const text = cls ?? 'gap';
-    const suggest = step && cls ? { kind: 'class', from: cls, to: `gap-${step.short}`, why: `${step.short} is ${fmt(step.px)}, no wider than the ${fmt(G)} between groups` }
-      : { kind: 'advice', text: step ? `Bring the gap down to ${fmt(step.px)} (gap-${step.short}) or less, under the ${fmt(G)} between groups.` : `Bring the gap under ${fmt(G)}, the space between groups, or widen that space.` };
+    const suggest = step && cls ? { kind: 'class', from: cls, to: `gap-${step.short}`, why: `${fmt(step.px)}, tighter than the ${fmt(G)} between groups` }
+      : { kind: 'advice', text: step ? `Make the gap ${fmt(step.px)} (gap-${step.short}) or less.` : `Make the gap smaller than ${fmt(G)}.` };
     return [{
-      key: this.id, what: 'inner gap wider than outer', text, props: ['gap'], value: `${g}px`, n: g,
-      title: `\`${text}\` is wider than the space around its group: ${fmt(g)} inside, ${fmt(G)} between groups`,
-      because: 'Proximity is how people read grouping: the gap inside a group must be smaller than the gap between groups, or the groups dissolve.',
+      ...say(this.id, { g, G }),
+      key: this.id, text, props: ['gap'], value: `${g}px`, n: g,
       evidence: { inner: g, outer: G, axis }, confidence: 0.9, suggest,
     }];
   },
@@ -177,12 +176,11 @@ export const textOpacity = {
     const text = cls ?? 'opacity';
     // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
     const own = colourClass(el, 'text', theme);
-    const suggest = near && cls ? { kind: 'class', from: [cls, own].filter(Boolean).join(' '), to: `text-${near.short}`, why: `${near.short} is the colour this text shows here (${hex(mixed)}), without the layer` }
-      : { kind: 'advice', text: near ? `Replace opacity ${o} with the colour ${near.short}: it is what this text shows here (${hex(mixed)}).` : `Replace opacity ${o} with a colour: color-mix(in oklab, currentColor ${Math.round(o * 100)}%, transparent), or a muted text token near ${hex(mixed)}.` };
+    const suggest = near && cls ? { kind: 'class', from: [cls, own].filter(Boolean).join(' '), to: `text-${near.short}`, why: 'the colour it shows as now' }
+      : { kind: 'advice', text: near ? `Use the colour ${near.short} instead of opacity ${o}.` : `Use a colour instead of opacity ${o}: color-mix(in oklab, currentColor ${Math.round(o * 100)}%, transparent), or a muted text token near ${hex(mixed)}.` };
     return [{
-      key: this.id, what: 'text faded by opacity', text, props: ['color'], value: String(o), n: o,
-      title: `\`${text}\` fades text through a layer: its colour then depends on what is behind it`,
-      because: 'Opacity varies with the ground and composites a layer; a mixed colour (color-mix, or a muted token) is stable and cheaper to paint.',
+      ...say(this.id, { o, near: near?.short }),
+      key: this.id, text, props: ['color'], value: String(o), n: o,
       evidence: { opacity: o, color: hex(color), ground: hex(ground), mixed: hex(mixed) }, confidence: 0.9, suggest,
     }];
   },
@@ -224,12 +222,11 @@ export const halfPixel = {
     const half = cls && /1\/2$/.test(cls);
     const size = fx ? r.width : r.height, even = Math.ceil(size / 2) * 2;
     const suggest = { kind: 'advice', text: half
-      ? `Give it an even size: it is ${fmt(size)} ${fx ? 'wide' : 'tall'}, so −50% is ${fmt(fx ? e : f)}; at ${even}px the shift lands on a pixel. Or translate by whole pixels.`
-      : `Translate by whole pixels: ${fmt(e)}, ${fmt(f)} puts ${hairline ? 'this line' : 'this text'} between device pixels.` };
+      ? `Make it ${even}px ${fx ? 'wide' : 'tall'}, so half of it is a whole number.`
+      : 'Move it by whole pixels.' };
     return [{
-      key: this.id, what: 'lands on a half pixel', text, props: ['transform'], value: `${e}px ${f}px`, n: fx ? e : f,
-      title: `\`${text}\` lands on a half pixel: shifted ${fmt(e)}, ${fmt(f)}, so ${hairline ? 'the line' : 'its text'} blurs`,
-      because: 'Fractional transforms rasterise text and 1px lines between device pixels, which smears them.',
+      ...say(this.id, { x: e, y: f, line: hairline }),
+      key: this.id, text, props: ['transform'], value: `${e}px ${f}px`, n: fx ? e : f,
       evidence: { x: e, y: f, dpr, width: r.width, height: r.height }, confidence: 0.9, suggest,
     }];
   },
@@ -251,11 +248,10 @@ export const hairline = {
     const cls = oneSide ? utility(el, `border-${sides[0][0].toLowerCase()}`) ?? utility(el, 'border') : utility(el, 'h') ?? utility(el, 'w');
     const text = cls ?? (oneSide ? `border-${sides[0].toLowerCase()}` : 'divider');
     return [{
-      key: this.id, what: '1px divider on a 2× screen', text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
-      title: `\`${text}\` is a 1px line on a ${devicePixelRatio}× screen: twice as heavy as a hairline`,
-      because: 'On a retina screen 1 CSS pixel is 2 device pixels; a divider meant to be a hairline reads as a heavy rule.',
+      ...say(this.id, { dpr: devicePixelRatio }),
+      key: this.id, text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
       evidence: { dpr: devicePixelRatio, sides, rule }, confidence: 0.82,
-      suggest: { kind: 'advice', text: oneSide ? `Draw it as a hairline: border-${sides[0].toLowerCase()}-width: 0.5px (or a 0.5px box-shadow), and keep 1px where the screen is 1×.` : 'Make the divider 0.5px tall (height: 0.5px, or transform: scaleY(0.5)) on 2× screens.' },
+      suggest: { kind: 'advice', text: oneSide ? `Use a 0.5px border on 2× screens.` : 'Make it 0.5px tall on 2× screens.' },
     }];
   },
 };
@@ -286,11 +282,10 @@ export const imageOutline = {
     if (Math.abs(lum(edge) - lum(ground)) > this.threshold.sameGround) return [];
     const dark = lum(ground) < 0.5;
     return [{
-      key: this.id, what: 'image edge lost in the page', text: 'img', props: ['outline'], value: 'none', n: 0,
-      title: `This image's edge is the same tone as the page around it, so its shape is lost`,
-      because: 'A light picture on a light page (or dark on dark) has no edge; a faint inner outline gives it one without a visible border.',
+      ...say(this.id, {}),
+      key: this.id, text: 'img', props: ['outline'], value: 'none', n: 0,
       evidence: { edge: hex(edge), ground: hex(ground) }, confidence: 0.85,
-      suggest: { kind: 'class', from: '', to: `outline outline-1 -outline-offset-1 ${dark ? 'outline-white/10' : 'outline-black/10'}`, why: 'a 1px inner outline at 10%, the hairline every image keeps' },
+      suggest: { kind: 'class', from: '', to: `outline outline-1 -outline-offset-1 ${dark ? 'outline-white/10' : 'outline-black/10'}`, why: 'a faint 1px outline inside the edge' },
     }];
   },
 };
@@ -318,11 +313,10 @@ export const layeredShadow = {
     const b = l.blur, y = Math.max(1, Math.round(l.y || b / 4));
     const stack = [[0.5, 1], [1, 2], [2, 4], [4, 8]].map(([k, m]) => `0 ${Math.round(y * k / 4 * 10) / 10}px ${Math.round(b * m / 8)}px rgb(0 0 0 / ${(0.04 * (5 - m / 2)).toFixed(2)})`).join(', ');
     return [{
-      key: this.id, what: 'one big shadow layer', text, props: ['box-shadow'], value: s.boxShadow, n: b,
-      title: `\`${text}\` is one ${fmt(b)} blur: a smudge rather than a lift`,
-      because: 'Real shadows are ambient and direct light together; three to five stacked layers, blur and offset growing as opacity falls, read as height.',
+      ...say(this.id, { blur: b }),
+      key: this.id, text, props: ['box-shadow'], value: s.boxShadow, n: b,
       evidence: { blur: b, x: l.x, y: l.y }, confidence: 0.84,
-      suggest: { kind: 'advice', text: `Stack layers instead, e.g. box-shadow: ${stack}; keep the y-offset to blur ratio the same across your elevation steps.` },
+      suggest: { kind: 'advice', text: `Try: box-shadow: ${stack}` },
     }];
   },
 };
@@ -358,11 +352,10 @@ export const scaleFromZero = {
     }
     if (!found.length) return [];
     return [{
-      key: this.id, what: 'entrance from scale 0', text: `@keyframes ${found[0]}`, props: ['animation'], value: '0', n: 0,
-      title: `\`${found[0]}\` starts at scale(0): it appears from nowhere`,
-      because: 'Starting at 0 makes an element look like it grew out of a point; 0.9–0.97 with a fade reads as arriving, and transform-origin at the trigger makes it grow out of its button.',
+      ...say(this.id, { name: found[0] }),
+      key: this.id, text: `@keyframes ${found[0]}`, props: ['animation'], value: '0', n: 0,
       evidence: { keyframes: found }, confidence: 0.9,
-      suggest: { kind: 'advice', text: `Start ${found[0]} at scale(0.95) with opacity 0, and set transform-origin where it comes from (the trigger).` },
+      suggest: { kind: 'advice', text: 'Start at scale(0.95) with opacity 0, from the button that opens it.' },
     }];
   },
 };
@@ -380,11 +373,10 @@ export const zIndexWar = {
     const cls = utility(el, 'z');
     const text = cls ?? `z-index: ${z}`;
     return [{
-      key: this.id, what: 'z-index escalation', text, props: ['z-index'], value: String(z), n: z,
-      title: `\`${text}\` climbs to ${z} inside the page: a z-index war`,
-      because: 'Ever-higher numbers fight other components; isolation: isolate on the component gives it its own stacking context so small numbers work inside it.',
+      ...say(this.id, { z }),
+      key: this.id, text, props: ['z-index'], value: String(z), n: z,
       evidence: { zIndex: z, position: s.position }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: 'z-10', why: 'a small number inside the component, with isolation: isolate on the component itself' } : { kind: 'advice', text: 'Put isolation: isolate on the component and use a small z-index inside it.' },
+      suggest: cls ? { kind: 'class', from: cls, to: 'z-10', why: 'a small number, with isolation: isolate on the component' } : { kind: 'advice', text: 'Add isolation: isolate to the component and use a small z-index inside it.' },
     }];
   },
 };
@@ -429,12 +421,11 @@ export const contentAlign = {
     if (mine === null || Math.abs(mine - column - pl) > 1) return [];
     const step = theme.nearest('spacing', pl, 0.5);
     const cls = utility(el, 'px') ?? utility(el, 'pl') ?? utility(el, 'p');
-    const suggest = step && cls ? { kind: 'class', from: '', to: `-mx-${step.short}`, why: `bleeds the fill out by its ${fmt(pl)} padding, so the words sit on the column` }
-      : { kind: 'advice', text: `Pull the row out by its padding (margin-inline: -${fmt(pl)}) so its fill bleeds and its words line up with the column.` };
+    const suggest = step && cls ? { kind: 'class', from: '', to: `-mx-${step.short}`, why: `pulls the row out by its ${fmt(pl)} padding` }
+      : { kind: 'advice', text: `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` };
     return [{
-      key: this.id, what: 'content off its column', text: cls ?? 'padding-left', props: ['margin-left'], value: `${pl}px`, n: pl,
-      title: `This row's words sit ${fmt(pl)} in from the column its siblings' words share`,
-      because: 'The eye follows letters, not boxes: a filled row should bleed out by its padding so its words stay on the line.',
+      ...say(this.id, { pl }),
+      key: this.id, text: cls ?? 'padding-left', props: ['margin-left'], value: `${pl}px`, n: pl,
       evidence: { column, content: mine, padding: pl, siblings: edges.length }, confidence: 0.86, suggest,
     }];
   },
@@ -518,11 +509,10 @@ export const buttonPadding = {
     const cls = utility(el, 'px') ?? utility(el, 'p', { not: /^[trblxyse](?:-|$)/ });
     const to = cls?.startsWith('p-') ? `${space(theme, want, 'px')} ${space(theme, b.pt, 'py')}` : space(theme, want, 'px');
     return [{
-      key: this.id, what: 'square padding on a text button', text: cls ?? 'padding', props: ['padding-left', 'padding-right'], value: `${b.pl}px`, n: b.pl,
-      title: `\`${cls ?? 'padding'}\` pads this button ${fmt(b.pl)} across and ${fmt(b.pt)} down: words want about twice as much across`,
-      because: 'Words are wide and short; the same padding all round looks cramped at the sides. Text buttons take about 2:1, icon buttons stay square.',
+      ...say(this.id, { side: b.pl }),
+      key: this.id, text: cls ?? 'padding', props: ['padding-left', 'padding-right'], value: `${b.pl}px`, n: b.pl,
       evidence: { across: b.pl, down: b.pt }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to, why: `${fmt(want)} across to ${fmt(b.pt)} down`, sets: { paddingLeft: want, paddingRight: want } } : { kind: 'advice', text: `Pad it ${fmt(want)} across and ${fmt(b.pt)} down.` },
+      suggest: cls ? { kind: 'class', from: cls, to, why: `${fmt(want)} on the sides, ${fmt(b.pt)} on top`, sets: { paddingLeft: want, paddingRight: want } } : { kind: 'advice', text: `Use ${fmt(want)} on the sides and ${fmt(b.pt)} on top.` },
     }];
   },
 };
@@ -545,11 +535,10 @@ export const iconSide = {
     const less = b.pl - 4 >= 4 ? b.pl - 4 : b.pl - this.threshold.less;
     const cls = utility(el, 'px');
     return [{
-      key: this.id, what: 'icon side padded like the text side', text: cls ?? 'padding', props: [lead ? 'padding-left' : 'padding-right'], value: `${b.pl}px`, n: b.pl,
-      title: `The ${lead ? 'leading' : 'trailing'} icon side is padded ${fmt(b.pl)}, the same as the text side`,
-      because: 'An icon carries whitespace inside its glyph box, so the same padding looks wider on its side; take 2–4px off it.',
+      ...say(this.id, { side: b.pl, less }),
+      key: this.id, text: cls ?? 'padding', props: [lead ? 'padding-left' : 'padding-right'], value: `${b.pl}px`, n: b.pl,
       evidence: { padding: b.pl, side: lead ? 'left' : 'right' }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `${space(theme, less, `p${side}`)} ${space(theme, b.pl, `p${other}`)}`, why: `${fmt(less)} on the icon side, ${fmt(b.pl)} on the text side`, sets: { [lead ? 'paddingLeft' : 'paddingRight']: less } } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
+      suggest: cls ? { kind: 'class', from: cls, to: `${space(theme, less, `p${side}`)} ${space(theme, b.pl, `p${other}`)}`, why: `${fmt(less)} by the icon, ${fmt(b.pl)} by the text`, sets: { [lead ? 'paddingLeft' : 'paddingRight']: less } } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
     }];
   },
 };
@@ -569,9 +558,8 @@ export const measure = {
     if (perLine <= this.threshold.max || lineCount(el, facts) < 3) return [];
     const cls = utility(el, 'max-w');
     return [{
-      key: this.id, what: 'lines too long to read', text: cls ?? 'max-width', props: ['max-width'], value: `${Math.round(perLine)}ch`, n: Math.round(perLine),
-      title: `About ${Math.round(perLine)} characters a line: past 75, the eye loses the start of the next line`,
-      because: 'Long lines lose the return sweep; 45–75 characters keeps reading easy.',
+      ...say(this.id, { chars: Math.round(perLine) }),
+      key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${Math.round(perLine)}ch`, n: Math.round(perLine),
       evidence: { perLine: Math.round(perLine), width, fontSize: fs }, confidence: 0.84,
       suggest: { kind: 'class', from: cls ?? '', to: 'max-w-prose', why: 'about 65 characters a line' },
     }];
@@ -593,11 +581,10 @@ export const leading = {
     const cls = utility(el, 'leading');
     const to = big ? 'leading-tight' : 'leading-normal';
     return [{
-      key: `${this.id}@${big ? 'loose' : 'tight'}`, what: big ? 'loose leading on large type' : 'tight leading on body text', text: cls ?? 'line-height', props: ['line-height'], value: ratio.toFixed(2), n: ratio,
-      title: big ? `${fmt(fs)} type at ${ratio.toFixed(2)} line height: the lines drift apart` : `${fmt(fs)} running text at ${ratio.toFixed(2)} line height: the lines crowd`,
-      because: 'Leading falls as size grows: body text reads at about 1.5, headings at 1.1–1.25; big type with loose leading looks like separate lines.',
+      ...say(this.id, { big, size: fs, ratio: ratio.toFixed(2) }),
+      key: `${this.id}@${big ? 'loose' : 'tight'}`, text: cls ?? 'line-height', props: ['line-height'], value: ratio.toFixed(2), n: ratio,
       evidence: { fontSize: fs, lineHeight: lh, ratio, lines }, confidence: 0.83,
-      suggest: { kind: 'class', from: cls ?? '', to, why: big ? '1.25 for large type' : '1.5 for running text' },
+      suggest: { kind: 'class', from: cls ?? '', to, why: big ? 'line height 1.25' : 'line height 1.5' },
     }];
   },
 };
@@ -615,11 +602,10 @@ export const tracking = {
     if (!caps && !large) return [];
     const cls = utility(el, 'tracking');
     return [{
-      key: `${this.id}@${caps ? 'caps' : 'large'}`, what: caps ? 'small capitals set tight' : 'large type spaced out', text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
-      title: caps ? `${fmt(fs)} capitals with no added tracking: they crowd` : `${fmt(fs)} type with positive tracking: large letters already look loose`,
-      because: 'Large letters look loose and want −0.01 to −0.03em; small capitals look cramped and want +0.04 to +0.08em.',
+      ...say(this.id, { caps, size: fs }),
+      key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: caps ? 'tracking-wider' : 'tracking-tight', why: caps ? '+0.05em for small capitals' : '−0.025em for large type' },
+      suggest: { kind: 'class', from: cls ?? '', to: caps ? 'tracking-wider' : 'tracking-tight', why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing' },
     }];
   },
 };
@@ -638,11 +624,10 @@ export const tabularNums = {
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];
     return [{
-      key: this.id, what: 'proportional figures in a column', text: 'font-variant-numeric', props: ['font-variant-numeric'], value: s.fontVariantNumeric, n: 0,
-      title: 'Numbers in this column use proportional figures, so they don\'t line up',
-      because: 'Proportional digits have different widths: columns misalign and counters jitter. Tabular figures are all one width.',
+      ...say(this.id, {}),
+      key: this.id, text: 'font-variant-numeric', props: ['font-variant-numeric'], value: s.fontVariantNumeric, n: 0,
       evidence: { text }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'tabular-nums', why: 'every digit one width' },
+      suggest: { kind: 'class', from: '', to: 'tabular-nums', why: 'every digit the same width' },
     }];
   },
 };
@@ -665,11 +650,10 @@ export const headingWidow = {
     const lastWord = at(end - m[3].length, end), before = at(m.index, m.index + m[1].length);
     if (!lastWord || !before || lastWord.top <= before.top + 1) return [];
     return [{
-      key: this.id, what: 'one word alone on the last line', text: 'text-wrap', props: ['text-wrap'], value: m[3], n: 1,
-      title: `This heading ends with "${m[3]}" alone on its last line`,
-      because: 'A single word on the last line of a heading looks broken; balanced wrapping evens the lines.',
+      ...say(this.id, { word: m[3] }),
+      key: this.id, text: 'text-wrap', props: ['text-wrap'], value: m[3], n: 1,
       evidence: { word: m[3] }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'lines of even length' },
+      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines' },
     }];
   },
 };
@@ -685,11 +669,10 @@ export const oneLight = {
     if (!off.length) return [];
     const l = off[0], cls = utility(el, 'shadow');
     return [{
-      key: this.id, what: 'shadow cast from another light', text: cls ?? 'box-shadow', props: ['box-shadow'], value: `${l.x}px ${l.y}px`, n: l.y,
-      title: `\`${cls ?? 'box-shadow'}\` falls ${l.y < 0 ? 'upward' : 'sideways'} (${fmt(l.x)}, ${fmt(l.y)}): another light than the rest of the page`,
-      because: 'All shadows on a page come from one light, usually above; one cast another way looks pasted in.',
+      ...say(this.id, { up: l.y < 0 }),
+      key: this.id, text: cls ?? 'box-shadow', props: ['box-shadow'], value: `${l.x}px ${l.y}px`, n: l.y,
       evidence: { x: l.x, y: l.y }, confidence: 0.82,
-      suggest: { kind: 'advice', text: `Cast it down: x 0, y ${fmt(Math.max(1, Math.abs(l.y) || Math.abs(l.x)))}, the same direction as your elevation scale.` },
+      suggest: { kind: 'advice', text: `Make it fall down: x 0, y ${fmt(Math.max(1, Math.abs(l.y) || Math.abs(l.x)))}.` },
     }];
   },
 };
@@ -709,11 +692,10 @@ export const borderOnShadow = {
     const cls = colourClass(el, 'border', theme);
     const to = dark ? 'border-white/10' : 'border-black/10';
     return [{
-      key: this.id, what: 'solid border fighting a shadow', text: cls ?? 'border-color', props: ['border-color'], value: hex(c), n: 0,
-      title: `\`${cls ?? 'border-color'}\` is a solid ${hex(c)} edge on a raised surface: it fights the shadow`,
-      because: 'An opaque grey border draws a hard line around a soft shadow; a translucent one darkens the ground and sits inside the light.',
+      ...say(this.id, { color: hex(c) }),
+      key: this.id, text: cls ?? 'border-color', props: ['border-color'], value: hex(c), n: 0,
       evidence: { border: hex(c) }, confidence: 0.83,
-      suggest: { kind: 'class', from: cls ?? '', to, why: 'a 10% edge that takes the colour of what is behind it' },
+      suggest: { kind: 'class', from: cls ?? '', to, why: 'a 10% see-through border' },
     }];
   },
 };
@@ -744,11 +726,10 @@ export const contrast = {
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     return [{
-      key: this.id, what: 'too little contrast to read', text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
-      title: `${fmt(fs)} text at APCA Lc ${Math.round(lc)} on its ground: ${need} is the floor for ${large ? 'large' : need === this.threshold.bold ? 'bold small' : 'small'} text`,
-      because: 'Perceptual contrast (APCA) predicts what people can read better than WCAG 2 ratios, most of all on dark themes and small sizes.',
+      ...say(this.id, { lc: Math.round(lc), size: fs, need, large }),
+      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
       evidence: { lc: Math.round(lc), need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
-      suggest: { kind: 'advice', text: `Darken${(0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2]) / 255 < 0.5 ? ' (here: lighten)' : ''} the text until Lc reaches ${need}, or set it larger or bolder.` },
+      suggest: { kind: 'advice', text: `${(0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2]) / 255 < 0.5 ? 'Lighten' : 'Darken'} the text, or make it bigger or bolder.` },
     }];
   },
 };
@@ -773,11 +754,10 @@ export const disabledContrast = {
     if (lc >= this.threshold.min) return [];
     const cls = utility(el, 'disabled:opacity') ?? utility(el, 'opacity');
     return [{
-      key: this.id, what: 'disabled by opacity alone', text: cls ?? 'opacity', props: ['opacity'], value: String(o), n: o,
-      title: `Disabled by fading to ${o}: its words drop to Lc ${Math.round(lc)}`,
-      because: 'Opacity on a coloured control fades the words with the fill until they can\'t be read, and the control just looks broken.',
+      ...say(this.id, { o, lc: Math.round(lc) }),
+      key: this.id, text: cls ?? 'opacity', props: ['opacity'], value: String(o), n: o,
       evidence: { opacity: o, lc: Math.round(lc) }, confidence: 0.84,
-      suggest: { kind: 'advice', text: 'Give disabled its own colours (a muted fill and muted text tokens, still readable) and cursor: not-allowed, rather than opacity.' },
+      suggest: { kind: 'advice', text: 'Give disabled its own muted colours instead of opacity.' },
     }];
   },
 };
@@ -796,11 +776,10 @@ export const hitTarget = {
     if (r.width >= min && r.height >= min || r.width === 0 || r.height === 0 || Math.max(r.width, r.height) >= long) return [];
     const short = Math.min(r.width, r.height);
     return [{
-      key: this.id, what: 'too small to hit', text: el.localName, props: ['width', 'height'], value: `${Math.round(r.width)}×${Math.round(r.height)}`, n: short,
-      title: `This control is ${Math.round(r.width)}×${Math.round(r.height)}px to hit: under ${min}px, people miss it`,
-      because: 'Small targets miss, most of all on touch: a control is at least 24px to hit (44 on touch), even when what it draws is smaller.',
+      ...say(this.id, { w: Math.round(r.width), h: Math.round(r.height), min }),
+      key: this.id, text: el.localName, props: ['width', 'height'], value: `${Math.round(r.width)}×${Math.round(r.height)}`, n: short,
       evidence: { width: r.width, height: r.height }, confidence: 0.84,
-      suggest: { kind: 'advice', text: `Grow its hit area to ${min}px: padding, min-h-6 min-w-6, or an absolutely placed ::before at inset -${fmt((min - short) / 2)}.` },
+      suggest: { kind: 'advice', text: `Make the tap area ${min}px: more padding, or min-h-6 min-w-6.` },
     }];
   },
 };
@@ -830,11 +809,10 @@ export const mediaSize = {
     if (!mode || mine === mode || times < 2 || times <= sizes.length / 2 || Math.abs(mine - mode) > this.threshold.near) return [];
     const cls = utility(el, 'size') ?? utility(el, 'w');
     return [{
-      key: this.id, what: 'one size off in a list', text: cls ?? 'size', props: ['width'], value: `${mine}px`, n: mine,
-      title: `This one is ${mine}px where the rest of the list is ${mode}px`,
-      because: 'Media of one list are one size; 32 next to 36 looks like a mistake, not a choice.',
+      ...say(this.id, { mine, mode }),
+      key: this.id, text: cls ?? 'size', props: ['width'], value: `${mine}px`, n: mine,
       evidence: { mine, mode, of: sizes.length }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to: numeric(theme, mode, cls.replace(/^!|!$/g, '').split('-')[0]), why: `${mode}px like the others` } : { kind: 'advice', text: `Make it ${mode}px like the others.` },
+      suggest: cls ? { kind: 'class', from: cls, to: numeric(theme, mode, cls.replace(/^!|!$/g, '').split('-')[0]), why: `${mode}px, like the rest` } : { kind: 'advice', text: `Make it ${mode}px, like the rest.` },
     }];
   },
 };
@@ -851,11 +829,10 @@ export const truncateIntent = {
     if (!truncated(el, s)) return [];
     for (let n = el, i = 0; n && i < 3; n = n.parentElement, i++) if (n.hasAttribute('title') || n.hasAttribute('aria-label') || n.hasAttribute('data-tooltip')) return [];
     return [{
-      key: this.id, what: 'cut off with no way to read it', text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
-      title: 'This text is cut off and nothing shows the rest',
-      because: 'Truncation hides words; the full value belongs on hover (a title or a tooltip), with min-width: 0 on its flex parent.',
+      ...say(this.id, {}),
+      key: this.id, text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
       evidence: { text: words(el).slice(0, 80) }, confidence: 0.85,
-      suggest: { kind: 'advice', text: 'Show the full value on hover: title={value} on this element (or a tooltip).' },
+      suggest: { kind: 'advice', text: 'Add title={value} so the full text shows on hover.' },
     }];
   },
 };
@@ -871,11 +848,10 @@ export const scrollbarGutter = {
     const r = facts.rect(el);
     if (r.width < this.threshold.width || r.height < this.threshold.height) return [];
     return [{
-      key: this.id, what: 'layout shifts when it scrolls', text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow', props: ['scrollbar-gutter'], value: 'auto', n: 0,
-      title: 'This scroll area\'s content moves sideways when its scrollbar appears',
-      because: 'With classic scrollbars the content narrows the moment it overflows; a stable gutter keeps the room.',
+      ...say(this.id, {}),
+      key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow', props: ['scrollbar-gutter'], value: 'auto', n: 0,
       evidence: { width: r.width, height: r.height }, confidence: 0.8,
-      suggest: { kind: 'class', from: '', to: '[scrollbar-gutter:stable]', why: 'room for the scrollbar kept from the start' },
+      suggest: { kind: 'class', from: '', to: '[scrollbar-gutter:stable]', why: 'keeps room for the scrollbar' },
     }];
   },
 };
@@ -902,11 +878,10 @@ export const boldHover = {
     const after = getComputedStyle(el, '::after').content;
     if (after && after !== 'none' && after !== 'normal') return []; // a reserved bold copy
     return [{
-      key: this.id, what: 'hover weight moves the row', text: cls ?? 'font-weight', props: ['font-weight'], value: facts.style(el).fontWeight, n: 0,
-      title: `\`${cls ?? ':hover font-weight'}\` widens the words on hover, so the row jumps`,
-      because: 'A heavier weight is wider; without its width reserved the neighbours shift every time the pointer passes.',
+      ...say(this.id, {}),
+      key: this.id, text: cls ?? 'font-weight', props: ['font-weight'], value: facts.style(el).fontWeight, n: 0,
       evidence: { hover: cls ?? 'stylesheet' }, confidence: 0.85,
-      suggest: { kind: 'advice', text: 'Reserve the bold width: a hidden bold copy in ::after (content: attr(data-text); font-weight: bold; height: 0; visibility: hidden; display: block), or change colour instead of weight.' },
+      suggest: { kind: 'advice', text: 'Reserve the bold width with a hidden bold copy, or change the colour instead.' },
     }];
   },
 };
@@ -923,11 +898,10 @@ export const hangingQuote = {
     if (px(s.textIndent) < 0 || /first/.test(s.hangingPunctuation ?? '')) return [];
     if (el.matches('blockquote > p') && el.parentElement && el.parentElement.firstElementChild !== el) return [];
     return [{
-      key: this.id, what: 'quote mark inside the column', text: 'text-indent', props: ['text-indent'], value: s.textIndent, n: 0,
-      title: 'The opening quote sits inside the column, so the letters start a mark-width in',
-      because: 'Letters, not marks, should line up with the column: the opening quote hangs outside it.',
+      ...say(this.id, {}),
+      key: this.id, text: 'text-indent', props: ['text-indent'], value: s.textIndent, n: 0,
       evidence: { first: first.data.trim()[0] }, confidence: 0.82,
-      suggest: { kind: 'advice', text: 'Hang it: text-indent: -0.45em on this block (Safari also takes hanging-punctuation: first).' },
+      suggest: { kind: 'advice', text: 'Add text-indent: -0.45em.' },
     }];
   },
 };
@@ -942,11 +916,10 @@ export const capsCase = {
     if (s.textTransform !== 'uppercase' && !/^[^a-z]*[A-Z]{3}[^a-z]*$/.test(words(el))) return [];
     if (!/[-()@\[\]{}:—–·]/.test(words(el)) || /"case"/.test(s.fontFeatureSettings)) return [];
     return [{
-      key: this.id, what: 'marks set low among capitals', text: 'font-feature-settings', props: ['font-feature-settings'], value: s.fontFeatureSettings, n: 0,
-      title: 'Capitals with hyphens or brackets, and no case feature: the marks sit at lowercase height',
-      because: 'Punctuation is drawn for lowercase; the case feature raises hyphens, brackets and @ to sit with capitals.',
+      ...say(this.id, {}),
+      key: this.id, text: 'font-feature-settings', props: ['font-feature-settings'], value: s.fontFeatureSettings, n: 0,
       evidence: { text: words(el).slice(0, 40) }, confidence: 0.8,
-      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'marks raised to capital height' },
+      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'lifts the punctuation' },
     }];
   },
 };
@@ -976,11 +949,10 @@ export const gradientSpace = {
     if (a[1] < this.threshold.saturation || b[1] < this.threshold.saturation || dh < this.threshold.hue) return [];
     const cls = classesOf(el).split(/\s+/).find((k) => /^bg-(?:linear|gradient)-to-[a-z]+$/.test(k));
     return [{
-      key: this.id, what: 'gradient greys out in the middle', text: cls ?? 'background-image', props: ['background-image'], value: 'srgb', n: dh,
-      title: `This gradient runs between two saturated colours ${Math.round(dh)}° apart in sRGB: it goes grey in the middle`,
-      because: 'sRGB interpolation passes through desaturated mixes; OKLCH keeps the chroma between saturated stops.',
+      ...say(this.id, {}),
+      key: this.id, text: cls ?? 'background-image', props: ['background-image'], value: 'srgb', n: dh,
       evidence: { from: hex(stops(bg)[0]), to: hex(stops(bg).at(-1)), hue: Math.round(dh) }, confidence: 0.84,
-      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'interpolated in OKLCH' } : { kind: 'advice', text: 'Interpolate it in OKLCH: linear-gradient(in oklch to right, …).' },
+      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'mixed in OKLCH' } : { kind: 'advice', text: 'Mix it in OKLCH: linear-gradient(in oklch to right, …).' },
     }];
   },
 };
@@ -996,11 +968,10 @@ export const inputZoom = {
     // only a class known to be a size under 16px is swapped; a theme's own size name (text-small) gets advice
     const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 99) < 16);
     return [{
-      key: this.id, what: 'zooms the page on iOS', text: cls ?? 'font-size', props: ['font-size'], value: `${fs}px`, n: fs,
-      title: `This field's text is ${fmt(fs)}: iOS Safari zooms the page when it's focused`,
-      because: 'Safari on iPhone zooms in on any field under 16px and leaves the page zoomed.',
+      ...say(this.id, { size: fs }),
+      key: this.id, text: cls ?? 'font-size', props: ['font-size'], value: `${fs}px`, n: fs,
       evidence: { fontSize: fs }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `text-base md:${cls}`, why: '16px on phones, your size from md up' } : { kind: 'advice', text: `Give the field 16px text on phones (text-base), keeping ${fmt(fs)} from md up.` },
+      suggest: cls ? { kind: 'class', from: cls, to: `text-base md:${cls}`, why: '16px on phones, yours from md up' } : { kind: 'advice', text: `Use 16px on phones (text-base) and ${fmt(fs)} from md up.` },
     }];
   },
 };
@@ -1036,11 +1007,10 @@ export const anchorOffset = {
     if (parentMargin) return [];
     const to = numeric(theme, Math.ceil(h), 'scroll-mt');
     return [{
-      key: this.id, what: 'jump lands under the header', text: utility(el, 'scroll-mt') ?? 'scroll-margin-top', props: ['scroll-margin-top'], value: s.scrollMarginTop, n: px(s.scrollMarginTop),
-      title: `#${el.id} lands under the ${fmt(h)} sticky header when linked to`,
-      because: 'A jump scrolls the target to the very top, where the sticky header covers it; scroll-margin-top leaves room.',
+      ...say(this.id, { id: el.id, header: h }),
+      key: this.id, text: utility(el, 'scroll-mt') ?? 'scroll-margin-top', props: ['scroll-margin-top'], value: s.scrollMarginTop, n: px(s.scrollMarginTop),
       evidence: { header: h, margin: px(s.scrollMarginTop) }, confidence: 0.85,
-      suggest: { kind: 'class', from: utility(el, 'scroll-mt') ?? '', to, why: `${fmt(Math.ceil(h))}, the header's height` },
+      suggest: { kind: 'class', from: utility(el, 'scroll-mt') ?? '', to, why: `the header’s ${fmt(Math.ceil(h))}` },
     }];
   },
 };
@@ -1055,11 +1025,10 @@ export const middleTruncate = {
     const t = words(el);
     if (!truncated(el, s) || !pathLike(t)) return [];
     return [{
-      key: this.id, what: 'path cut at its end', text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
-      title: `\`${t.length > 40 ? t.slice(0, 37) + '…' : t}\` is cut at its end, where the name is`,
-      because: 'A path\'s or an id\'s end is its meaning (the file, the last digits); cut the middle instead.',
+      ...say(this.id, { text: t.length > 40 ? t.slice(0, 37) + '…' : t }),
+      key: this.id, text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
       evidence: { text: t }, confidence: 0.84,
-      suggest: { kind: 'advice', text: 'Cut it in the middle: keep the start and the end (e.g. src/…/Button.tsx) and put the whole value in title.' },
+      suggest: { kind: 'advice', text: 'Keep the start and end, like src/…/Button.tsx, and put the full path in title.' },
     }];
   },
 };

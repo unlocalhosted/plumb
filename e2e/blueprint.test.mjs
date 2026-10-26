@@ -97,7 +97,7 @@ test('Alt+B dims the page and lifts every drift in view where it lives; one labe
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
   const count = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
-  assert.equal(count, labels.filter((l) => l.startsWith('Drift:')).length, 'the dock counts the drift marks drawn');
+  assert.equal(count, await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length), 'the dock counts the drift marks drawn');
   // the sync row is cut out of the dim at its own radius, and outlined in the drift ink
   const clip = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.shade').style.clipPath);
   const row = await page.locator('#sync-row').boundingBox();
@@ -204,13 +204,13 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /\d+ off in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
   // the count and the drawn marks agree once the last reading lands
-  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) off/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.getAttribute('aria-label').startsWith('Drift:')).length; }, null, { timeout: 5000 });
+  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) off/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
   // the panel: docked on the right, its header counts the drift and the causes
   await page.waitForFunction(() => getComputedStyle(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp')).opacity === '1');
-  const drift = labels.filter((l) => l.startsWith('Drift:')).length;
+  const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
   await panel(overlay).locator('.meta').filter({ hasText: /^\d+ off on this page · \d+ causes?( · |$)/ }).waitFor({ timeout: 5000 });
   // at rest it is one line in the top-right corner, so the page stays in view
   const rest = await panel(overlay).boundingBox();
@@ -290,7 +290,7 @@ test('A mark opens its chooser; a pick previews on the page; Write puts it in so
   // the chooser, beside the row, names the finding and offers the family's steps; nothing opens the reading card
   const ch = chooser(overlay);
   await ch.waitFor();
-  assert.match(await ch.getAttribute('aria-label'), /Choose a token for gap-\[10px\] hardcodes 10px/);
+  assert.match(await ch.getAttribute('aria-label'), /^`?gap-\[10px\]`? hardcodes 10px/);
   assert.equal(await overlay.locator('.w:not([hidden])').count(), 0, 'the reading card stays closed');
   const row = await page.locator('#sync-row').boundingBox();
   let box = null;
@@ -504,7 +504,7 @@ test('The punch list: every drift in view in rows; arrows move, Enter opens that
   await list.waitFor({ state: 'hidden' });
   const ch = chooser(overlay);
   await ch.waitFor();
-  assert.ok(second.startsWith((await ch.getAttribute('aria-label')).replace(/^Choose a token for /, '')), 'the chooser is for the row chosen');
+  assert.ok(second.startsWith((await ch.getAttribute('aria-label'))), 'the chooser is for the row chosen');
   // Esc closes the chooser, L opens the list from the keyboard, Esc closes it
   await page.keyboard.press('Escape');
   await ch.waitFor({ state: 'hidden' });

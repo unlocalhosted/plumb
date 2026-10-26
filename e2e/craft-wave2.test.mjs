@@ -108,7 +108,7 @@ test('Content alignment (#1): a filled row among plain rows whose words fall off
   const marks = await marksOf(page, 'content-align');
   assert.equal(marks.length, 1, JSON.stringify(marks));
   assert.ok(await within(page, 'row-bad', marks[0]), 'on the row that does not bleed');
-  assert.match(marks[0].label, /words sit 12px in from the column/);
+  assert.match(marks[0].label, /words start 12px in from the others/);
   // its fix is one pick: -mx-s3 is added where it was written, and the words land on the column
   const line = async () => (await readFile(join(root, 'src/App.jsx'), 'utf8')).split('\\n').find((l) => l.includes('id="row-bad"'));
   assert.match(await line(), /className="rounded-control/);

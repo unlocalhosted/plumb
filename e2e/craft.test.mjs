@@ -159,13 +159,13 @@ test('Concentric corners (#8/#41): a 12px child in 4px padding of a 12px corner 
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/concentric-radius')), null, { timeout: 10000 });
   const marks = (await craftMarks(page)).filter((m) => m.rule === 'concentric-radius');
   assert.equal(marks.length, 1, `one concentric mark: ${JSON.stringify(marks)}`);
-  assert.match(marks[0].label, /Drift: `rounded-card` is not concentric: 4px inside a 12px corner wants 8px, not 12px/);
+  assert.match(marks[0].label, /^This 12px corner sits 4px inside a 12px corner\. Use 8px\./);
   // the mark sits on the child's top-left corner
   const child = await rectOf(page, 'cc-bad-child');
   assert.ok(Math.abs(marks[0].x - child.x) < 8 && Math.abs(marks[0].y - child.y) < 8, `the arc is at the corner: ${JSON.stringify({ mark: marks[0], child })}`);
   // the panel: one row for the cause, its class, its noun, one place
   const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/concentric-radius');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['rounded-card', 'corners not concentric · 1 place']]);
+  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['rounded-card', 'Corner doesn’t match its parent · 1 place']]);
   // pointing at the row lights the breaking child, not the good one
   const glow = await pointRow(page, overlay, 'craft/concentric-radius');
   assert.ok(glow.some((g) => same(g, child)), `the row lights the child: ${JSON.stringify(glow)}`);
@@ -175,9 +175,9 @@ test('Concentric corners (#8/#41): a 12px child in 4px padding of a 12px corner 
   // the mark's note says the change; the chooser says why and what to do, and offers no scale to pick from
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /rounded-card → rounded-control/);
-  assert.match(words.title, /Choose a token for rounded-card is not concentric/);
-  assert.match(words.note, /Change rounded-card to rounded-control: control is 8px, the concentric radius here \(12px − 4px\)\./);
-  assert.match(words.because, /outer radius minus the padding/);
+  assert.match(words.title, /^This 12px corner sits 4px inside a 12px corner/);
+  assert.match(words.note, /Change rounded-card to rounded-control: 8px: 12px minus 4px\./);
+  assert.match(words.because, /Inner radius = outer radius minus the padding/);
   assert.equal(words.steps, 1, "the suggestion is the one choice");
   assert.deepEqual(errors, []);
 });
@@ -191,14 +191,14 @@ test('Inner ≤ outer spacing (#7): groups 8px apart with 16px inside are marked
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.includes(':craft/inner-outer-spacing')).length === 2, null, { timeout: 10000 });
   const marks = (await craftMarks(page)).filter((m) => m.rule === 'inner-outer-spacing');
   assert.equal(marks.length, 2);
-  for (const m of marks) assert.match(m.label, /Drift: `gap-s4` is wider than the space around its group: 16px inside, 8px between groups/);
+  for (const m of marks) assert.match(m.label, /^Items here are 16px apart, but the groups are only 8px apart\./);
   // each mark lies in the gap of its own group, between its two words
   for (const id of ['io-bad-a', 'io-bad-b']) {
     const [a, b] = await page.locator(`#${id} > span`).evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
     assert.ok(marks.some((m) => m.y + m.h / 2 > a - 2 && m.y + m.h / 2 < b + 20 && m.y >= a - 2), `a mark in ${id}'s gap: ${JSON.stringify(marks)} between ${a} and ${b}`);
   }
   const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/inner-outer-spacing');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['gap-s4', 'inner gap wider than outer · 2 places']]);
+  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['gap-s4', 'Group falls apart · 2 places']]);
   const glow = await pointRow(page, overlay, 'craft/inner-outer-spacing');
   const [badA, badB, goodA] = await Promise.all(['io-bad-a', 'io-bad-b', 'io-good-a'].map((id) => rectOf(page, id)));
   assert.ok(glow.some((g) => same(g, badA)) && glow.some((g) => same(g, badB)), `both groups light: ${JSON.stringify(glow)}`);
@@ -206,8 +206,8 @@ test('Inner ≤ outer spacing (#7): groups 8px apart with 16px inside are marked
   await page.mouse.move(5, 5);
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /gap-s4 → gap-s2/);
-  assert.match(words.note, /Change gap-s4 to gap-s2: s2 is 8px, no wider than the 8px between groups\./);
-  assert.match(words.because, /Proximity is how people read grouping/);
+  assert.match(words.note, /Change gap-s4 to gap-s2: 8px, tighter than the 8px between groups\./);
+  assert.match(words.because, /close together as one group/);
   assert.deepEqual(errors, []);
 });
 
@@ -220,11 +220,11 @@ test('Text colour via opacity (#57): faded text is marked and told the token it 
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/text-opacity')), null, { timeout: 10000 });
   const marks = (await craftMarks(page)).filter((m) => m.rule === 'text-opacity');
   assert.equal(marks.length, 1, JSON.stringify(marks));
-  assert.match(marks[0].label, /Drift: `opacity-65` fades text through a layer: its colour then depends on what is behind it/);
+  assert.match(marks[0].label, /^This text uses opacity 0\.65\. Use ink-muted, the colour it shows as\./);
   const bad = await rectOf(page, 'op-bad');
   assert.ok(marks[0].x >= bad.x - 2 && marks[0].x <= bad.right + 12 && marks[0].y >= bad.y - 4 && marks[0].y <= bad.bottom, `the bracket is at the words: ${JSON.stringify({ mark: marks[0], bad })}`);
   const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/text-opacity');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['opacity-65', 'text faded by opacity · 1 place']]);
+  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['opacity-65', 'Faded with opacity · 1 place']]);
   const glow = await pointRow(page, overlay, 'craft/text-opacity');
   const good = await rectOf(page, 'op-good');
   assert.ok(glow.some((g) => same(g, bad)) && !glow.some((g) => same(g, good)), `the faded paragraph lights, the coloured one does not: ${JSON.stringify(glow)}`);
@@ -232,8 +232,8 @@ test('Text colour via opacity (#57): faded text is marked and told the token it 
   // the suggestion names the theme colour the faded text actually shows here: ink at 65% over the ground is ink-muted
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /opacity-65 → text-ink-muted/);
-  assert.match(words.note, /Change opacity-65 to text-ink-muted: ink-muted is the colour this text shows here \(#[0-9a-f]{6}\), without the layer\./);
-  assert.match(words.because, /Opacity varies with the ground/);
+  assert.match(words.note, /Change opacity-65 to text-ink-muted: the colour it shows as now\./);
+  assert.match(words.because, /Opacity changes with whatever is behind/);
   assert.deepEqual(errors, []);
 });
 
@@ -246,19 +246,19 @@ test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and i
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/half-pixel')), null, { timeout: 10000 });
   const marks = (await craftMarks(page)).filter((m) => m.rule === 'half-pixel');
   assert.equal(marks.length, 1, JSON.stringify(marks));
-  assert.match(marks[0].label, /Drift: `-translate-x-1\/2` lands on a half pixel: shifted -16.5px, 0px, so its text blurs/);
+  assert.match(marks[0].label, /^Moved by -16\.5px, 0px, so it lands between pixels\./);
   const bad = await rectOf(page, 'hp-bad');
   assert.ok(Math.abs(marks[0].x - bad.x) < 2 && Math.abs(marks[0].y - bad.y) < 2, `the box is on the label: ${JSON.stringify({ mark: marks[0], bad })}`);
   const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/half-pixel');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['-translate-x-1/2', 'lands on a half pixel · 1 place']]);
+  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['-translate-x-1/2', 'Blurry text · 1 place']]);
   const glow = await pointRow(page, overlay, 'craft/half-pixel');
   const good = await rectOf(page, 'hp-good');
   assert.ok(glow.some((g) => same(g, bad)) && !glow.some((g) => same(g, good)), `the odd label lights, the even one does not: ${JSON.stringify(glow)}`);
   await page.mouse.move(5, 5);
   const words = await openMark(page, overlay, marks[0].id);
-  assert.match(words.hinted, /Give it an even size: it is 33px wide, so −50% is -16.5px; at 34px the shift lands on a pixel\. Or translate by whole pixels\./);
-  assert.match(words.note, /Give it an even size: it is 33px wide, so −50% is -16.5px; at 34px the shift lands on a pixel\./);
-  assert.match(words.because, /between device pixels/);
+  assert.match(words.hinted, /Make it 34px wide, so half of it is a whole number\./);
+  assert.match(words.note, /Make it 34px wide, so half of it is a whole number\./);
+  assert.match(words.because, /blur when they sit between two pixels/);
   assert.deepEqual(errors, []);
 });
 
@@ -322,13 +322,13 @@ test('The Alt card shows craft findings too: pinning the non-concentric child na
   await page.locator('#cc-bad-child').click({ modifiers: ['Alt'] });
   const card = overlay.locator('.w:not([hidden]) .card');
   await card.waitFor({ timeout: 10000 });
-  await page.waitForFunction(() => /not concentric/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.w:not([hidden]) .card')?.textContent ?? ''), null, { timeout: 10000 });
+  await page.waitForFunction(() => /sits 4px inside a 12px corner/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.w:not([hidden]) .card')?.textContent ?? ''), null, { timeout: 10000 });
   assert.match(await card.innerText(), /rounded-card/);
   // the concentric one beside it carries no craft finding
   await page.keyboard.press('Escape');
   await page.locator('#cc-good-child').click({ modifiers: ['Alt'] });
   await card.waitFor({ timeout: 10000 });
   await page.waitForTimeout(800);
-  assert.doesNotMatch(await card.innerText(), /not concentric/);
+  assert.doesNotMatch(await card.innerText(), /sits 4px inside a 12px corner/);
   assert.deepEqual(errors, []);
 });
