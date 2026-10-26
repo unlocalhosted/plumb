@@ -342,6 +342,10 @@ Title names the code and the effect; Because is the habit's reason; Do is the ha
 - overscroll-contain: `` {owner} scrolls, and its scroll leaks to the page `` · Reaching its edge scrolls the page behind it. · Add overscroll-contain; at declaration sites, name the matching property and value (`Add overscroll-behavior-y: contain`).
 - tracking-em: `` `{authored}` sets letter spacing in px `` · Letter spacing in px stays the same at every size, so large type looks loose and small type cramped. · Use em so the tracking scales with the type.
 - color-scheme: `` The dark theme never sets color-scheme `` · Without color-scheme a dark theme keeps light scrollbars, form controls and autofill. · Add scheme-dark where the dark theme applies (or color-scheme: dark).
+- composited-motion: `` `{authored}` animates layout `` · Animating a layout property lays the page out again on every frame, so the motion stutters. · Animate transform and opacity instead.
+- reduced-motion-fade: `` `{authored}` turns every animation off for reduced motion `` · Reduced motion asks for less movement, not for state changes nobody can see. · Keep a short opacity fade under prefers-reduced-motion.
+- font-metrics: `` Web fonts load with no metric-matched fallback `` · Without a metric-matched fallback the page jumps when the web font arrives. · Add size-adjust and ascent-override to a fallback @font-face.
+- real-quotes: `` `{text}` uses straight typing marks `` · Straight quotes, three dots and spaced hyphens read as unfinished typing. · Write it as `{typeset}`.
 - transition-named, no-ease-in, safe-area-fallback: same shape from the habit's reason.
 - Custom habits: Title = `` `{site}` breaks {habit id} ``, Because = the habit's message.
 

@@ -28,6 +28,10 @@ With no `habits`, no habit runs. `npx plumber habits` lists all nine, how many t
 | `overscroll-contain` | warn | a scrolling area whose scroll leaks to the page behind it |
 | `tracking-em` | warn | letter spacing written in px, which does not scale with the type |
 | `color-scheme` | warn | a dark theme that never sets `color-scheme`, so scrollbars and controls stay light |
+| `composited-motion` | warn | a transition on a layout property (width, height, top, margin…), which re-lays out every frame |
+| `reduced-motion-fade` | warn | a global reduced-motion rule that turns every animation and transition off, so state changes vanish |
+| `font-metrics` | warn | web fonts with no metric-matched fallback (`size-adjust`, `ascent-override`), so the page jumps when they load |
+| `real-quotes` | warn | straight quotes, `...` and spaced hyphens in text a person reads; the fix is the typeset text |
 
 The first four are the ones `init` proposes.
 
