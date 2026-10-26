@@ -71,6 +71,7 @@ const css = `
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
   :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .tx-toast) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="center"]) .dock { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
@@ -381,8 +382,9 @@ class PlumbOverlay extends HTMLElement {
     clearInterval(this.#sideTimer); clearTimeout(this.#sideSoonTimer);
   }
 
-  // The bottom corner the dock takes: the end one, unless the page has something to press under it and the start
-  // corner has less. Read only: a 3×2 grid of points over the dock's box at each corner, through the overlay.
+  // Where along the bottom the dock sits: the end corner, unless the page has something to press under it; then the
+  // start corner, then the middle, whichever has nothing to press under it, else whichever has least. Read only: a
+  // 3×2 grid of points over the dock's box at each place, through the overlay.
   #sideTimer = 0; #sideSoonTimer = 0;
   #sideSoon = () => { clearTimeout(this.#sideSoonTimer); this.#sideSoonTimer = setTimeout(this.#side, 200); };
   #side = () => {
@@ -400,8 +402,8 @@ class PlumbOverlay extends HTMLElement {
       }
       return n;
     };
-    const end = hits(innerWidth - inset - r.width), start = hits(inset);
-    const want = end > start ? 'start' : null;
+    const places = [[null, innerWidth - inset - r.width], ['start', inset], ['center', (innerWidth - r.width) / 2]].map(([side, left]) => [side, hits(left)]);
+    const want = (places.find(([, n]) => n === 0) ?? places.reduce((best, p) => (p[1] < best[1] ? p : best)))[0];
     if (want !== this.getAttribute('data-side')) want ? this.setAttribute('data-side', want) : this.removeAttribute('data-side');
   };
 

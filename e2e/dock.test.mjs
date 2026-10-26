@@ -155,3 +155,17 @@ test('the dock never sits on the page\'s own controls: a button in its corner se
   assert.equal(await side(), 'end');
   assert.deepEqual(errors, []);
 });
+
+test('with something to press in both bottom corners, the dock sits in the middle', { timeout: 60000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const url = await demo(t);
+  const page = await launched.newPage({ viewport: { width: 1200, height: 800 } });
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
+  await page.evaluate(() => { for (const side of ['left', 'right']) { const b = document.createElement('button'); b.textContent = side; b.style.cssText = `position:fixed;${side}:16px;bottom:16px;width:260px;height:36px`; document.body.append(b); } dispatchEvent(new Event('resize')); });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').getAttribute('data-side') === 'center', null, { timeout: 5000 });
+  const box = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').getBoundingClientRect().toJSON());
+  assert.ok(Math.abs(box.left + box.width / 2 - 600) < 2, `centred: ${JSON.stringify(box)}`);
+});
