@@ -32,6 +32,18 @@ export async function matchProjectFiles(root: string, patterns: string | string[
   if (external.length) matches.push(...await glob(external, { cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false }));
   return [...new Set(matches)];
 }
+/** Every stylesheet that imports Tailwind, sorted: the entry when there is one, a choice when there are several. */
+export async function tailwindEntryCandidates(root: string, diagnostics: Finding[] = [], known?: readonly string[]): Promise<string[]> {
+  const candidates: string[] = [];
+  const files = await matchProjectFiles(root, '**/*.css', known);
+  for (const file of files.sort()) {
+    try {
+      const css = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+      if (tailwindImport.test(css)) candidates.push(file);
+    } catch (error) { diagnostics.push(unreadable(file, file, error)); }
+  }
+  return candidates;
+}
 async function entryCss(root: string, diagnostics: Finding[], inputs: string[], css?: string, known?: readonly string[]): Promise<string | null> {
   if (css !== undefined) {
     const path = resolve(root, css);
@@ -45,14 +57,7 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
     }
     return path;
   }
-  const candidates: string[] = [];
-  const files = await matchProjectFiles(root, '**/*.css', known);
-  for (const file of files.sort()) {
-    try {
-      const css = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
-      if (tailwindImport.test(css)) candidates.push(file);
-    } catch (error) { diagnostics.push(unreadable(file, file, error)); }
-  }
+  const candidates = await tailwindEntryCandidates(root, diagnostics, known);
   if (candidates.length > 1) {
     inputs.push(...candidates);
     const entry = await appTailwindEntry(root, candidates, diagnostics, inputs);

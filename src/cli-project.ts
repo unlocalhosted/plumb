@@ -11,25 +11,9 @@ import { ignore } from './project.js';
 /** A shell argument, including workspace names containing spaces. */
 export const shellPath = (path: string) => /^[\w./@-]+$/.test(path) ? path : "'" + path.replaceAll("'", "'\\''") + "'";
 
-export async function cliProject(argument?: string): Promise<{ root: string; notice: string }> {
-  const cwd = process.cwd(), start = resolve(argument ?? cwd);
-  try {
-    if (!(await stat(start)).isDirectory()) throw new UsageError(`--root ${argument ?? '.'}: not a folder (from ${cwd}).`);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT' || (error as NodeJS.ErrnoException).code === 'ENOTDIR') {
-      throw new UsageError(`--root ${argument ?? '.'}: no such folder (from ${cwd}).`);
-    }
-    throw error;
-  }
-  let root = start;
-  const home = await realpath(homedir()).catch(() => homedir());
-  while (!existsSync(resolve(root, 'package.json'))) {
-    // A home directory is a boundary even when HOME belongs to another user.
-    if (root === home || root === homedir() || dirname(root) === root || /^(?:\/Users|\/home)\/[^/]+$/.test(root)) {
-      throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
-    }
-    root = dirname(root);
-  }
+export interface WorkspaceApp { path: string; kind: string; tailwind: string | null }
+/** The React apps of a workspace root, or none for a single project. `workspace` says the root declares one. */
+export async function workspaceApps(root: string): Promise<{ workspace: boolean; apps: WorkspaceApp[] }> {
   const metadata = await packageMetadata(root);
   let patterns: string[] = [];
   const workspaces = metadata.workspaces;
@@ -51,7 +35,7 @@ export async function cliProject(argument?: string): Promise<{ root: string; not
   const selectors = patterns.length ? patterns.map(pattern => `${pattern.replace(/\/$/, '')}/package.json`) :
     explicit ? ['**/package.json'] : ['*/package.json', '*/*/package.json'];
   const manifests = await glob(selectors, { cwd: root, ignore, absolute: true, followSymbolicLinks: false });
-  const apps: { path: string; kind: string; tailwind: string | null }[] = [];
+  const apps: WorkspaceApp[] = [];
   for (const file of manifests.sort()) {
     if (file === resolve(root, 'package.json')) continue;
     const folder = dirname(file), child = await packageMetadata(folder);
@@ -63,7 +47,31 @@ export async function cliProject(argument?: string): Promise<{ root: string; not
     const declared = dependencies.tailwindcss?.match(/\d+/)?.[0];
     apps.push({ path: relative(root, folder), kind: dependencies.next ? 'Next.js' : dependencies.vite ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? declared ?? null });
   }
-  if (explicit || apps.length > 1) {
+  return { workspace: explicit || apps.length > 1, apps };
+}
+
+export async function cliProject(argument?: string, allowWorkspace = false): Promise<{ root: string; notice: string; apps?: WorkspaceApp[] }> {
+  const cwd = process.cwd(), start = resolve(argument ?? cwd);
+  try {
+    if (!(await stat(start)).isDirectory()) throw new UsageError(`--root ${argument ?? '.'}: not a folder (from ${cwd}).`);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT' || (error as NodeJS.ErrnoException).code === 'ENOTDIR') {
+      throw new UsageError(`--root ${argument ?? '.'}: no such folder (from ${cwd}).`);
+    }
+    throw error;
+  }
+  let root = start;
+  const home = await realpath(homedir()).catch(() => homedir());
+  while (!existsSync(resolve(root, 'package.json'))) {
+    // A home directory is a boundary even when HOME belongs to another user.
+    if (root === home || root === homedir() || dirname(root) === root || /^(?:\/Users|\/home)\/[^/]+$/.test(root)) {
+      throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
+    }
+    root = dirname(root);
+  }
+  const { workspace, apps } = await workspaceApps(root);
+  if (workspace) {
+    if (allowWorkspace) return { root, notice: '', apps };
     throw new UsageError(`This is a workspace with ${apps.length} ${apps.length === 1 ? 'app' : 'apps'}. Pick one:\n` +
       (apps.length ? table(apps.map(app => [{ text: `npx plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n') :
         '  → npx plumber --root path/to/app'));

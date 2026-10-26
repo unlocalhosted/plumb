@@ -44,7 +44,7 @@ export class CheckCache {
   private selected = new Set<string>();
   private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[], private tokenPatterns: string[]) {}
   static async create(options: CheckOptions): Promise<CheckCache | undefined> {
-    if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation) return;
+    if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation || options.entry !== undefined) return;
     const root = resolve(options.root ?? process.cwd());
     const config = options.config ? resolve(root, options.config) : allConfigNames.map(name => join(root, name)).find(existsSync);
     if (!config) return;

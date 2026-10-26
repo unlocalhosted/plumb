@@ -58,6 +58,8 @@ export interface CheckOptions extends LedgerOptions {
   listHabits?: boolean;
   /** Report candidate fingerprints without enabling or persisting them. */
   suggestImitation?: boolean;
+  /** Judge against this Tailwind entry when the project has not chosen one (plumber state only; skips the whole-report cache). */
+  entry?: string;
 }
 
 export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?: AnalysisRuntime): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
@@ -72,6 +74,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     throw new UsageError(`Set --root to an existing project directory: ${root}: ${errorMessage(error)}`);
   }
   const config = await phase('config', [root, options.config], () => loadConfig(root, options.config));
+  if (options.entry !== undefined && config.value.css === undefined) config.value.css = options.entry;
   profileDuration('phase:config', performance.now() - start);
   const input = snippet ? prepareSnippet(root, config.value, snippet) : undefined;
   const discoverStart = performance.now();
