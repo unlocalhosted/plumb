@@ -28,6 +28,7 @@ import { GLYPH_CSS, glyph } from './glyphs.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
 import { Readiness, READY_CSS } from './readiness.js';
+import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -69,7 +70,7 @@ const css = `
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
-  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .tx-toast) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
@@ -300,7 +301,7 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -325,6 +326,9 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.dock .write').addEventListener('click', () => this.#fixer.write());
     this.#$('.dock .list').addEventListener('click', () => { this.#ready?.close(); this.#fixer.toggleList(); });
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
+    // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => this.#blueprint?.editing(on, rect), announce: text => this.#announce(text), changed: () => this.#dock(),
+      inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
@@ -362,6 +366,7 @@ class PlumbOverlay extends HTMLElement {
   disconnectedCallback() {
     this.#blueprint?.destroy();
     this.#ready?.destroy();
+    this.#text?.destroy();
     this.close(); this.#disarm();
     removeEventListener('keydown', this.#onKeyDown, true);
     removeEventListener('keyup', this.#onKeyUp, true);
@@ -618,7 +623,9 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // ── armed: Alt held ──────────────────────────────────────
+  #text = null;
   #onKeyDown = event => {
+    if (this.#text?.editing) return; // the words being edited take the keys: Enter saves, Esc cancels
     if (this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault(); event.stopPropagation();
       const s = this.#pinned.state;
@@ -885,7 +892,6 @@ class PlumbOverlay extends HTMLElement {
 
   close() {
     const p = this.#pinned; if (!p) return;
-    this.#endTextEdit(false);
     this.#restore(p);
     this.#pinned = null;
     dispatchEvent(new CustomEvent('plumb:unpin', { detail: { element: p.element } }));
@@ -947,7 +953,7 @@ class PlumbOverlay extends HTMLElement {
       if (e.altKey || e.metaKey || e.ctrlKey) return;
       if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key) && !e.target.closest('.opt')) { e.preventDefault(); this.#go(this.#pinned.active + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1)); }
       else if (/^[1-9]$/.test(e.key)) { const opt = this.#root.querySelectorAll('.cmp .opt')[Number(e.key) - 1]; if (opt) { e.preventDefault(); opt.click(); } }
-      else if ((e.key === 'e' || e.key === 'E') && this.#pinned.state.text?.editable) { e.preventDefault(); this.#startTextEdit(0); }
+      else if ((e.key === 'e' || e.key === 'E') && this.#pinned.state.text?.editable) { e.preventDefault(); this.#editRun(0); }
       else if (e.key === 'Enter' && !e.target.closest('button')) { const write = this.#$('.write'); if (write && !write.disabled && !write.hidden) { e.preventDefault(); write.click(); } }
     });
   }
@@ -1247,7 +1253,6 @@ class PlumbOverlay extends HTMLElement {
   #undo() {
     const p = this.#pinned;
     p.peeking = false;
-    this.#endTextEdit(false);
     this.#restore(); p.original.clear(); p.texts.clear(); p.before = false; p.status = null;
     for (const m of p.state.marks) delete m.synced;
     this.#$('.flip').setAttribute('aria-pressed', 'false');
@@ -1329,7 +1334,7 @@ class PlumbOverlay extends HTMLElement {
         ? `<s class="was">${esc(r.text)}</s><span class="arrow" aria-hidden="true">→</span><span>${esc(e.to)}</span>`
         : esc(r.text)}</button>`;
     }).join('')}${p.texts.size ? '' : '<span class="tr hint">E to edit</span>'}`;
-    row.querySelectorAll('.run').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.#startTextEdit(Number(b.dataset.run)); }));
+    row.querySelectorAll('.run').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.#editRun(Number(b.dataset.run)); }));
   }
 
   // The DOM text node that renders a run: a direct child of the element whose words match it.
@@ -1338,74 +1343,18 @@ class PlumbOverlay extends HTMLElement {
     return [...p.element.childNodes].find(n => n.nodeType === Node.TEXT_NODE && norm(n.data) === norm(said)) ?? null;
   }
 
-  // Editing happens on the page, in the element's own font: an input laid over the words, transparent, so what you
-  // see is the page itself re-flowing as you type. Enter keeps it as a preview; Esc puts the words back.
-  #startTextEdit(i) {
-    const p = this.#pinned, run = p.state.text?.runs?.[i];
-    if (!run || p.status?.kind === 'writing') return;
-    this.#endTextEdit(true);
-    const node = this.#textNode(run);
-    if (!node) return;
-    const prior = p.texts.get(run.id);
-    const lead = prior?.lead ?? node.data.match(/^\s*/)[0], trail = prior?.trail ?? node.data.match(/\s*$/)[0];
-    const start = prior?.to ?? run.text;
-    const cs = getComputedStyle(p.element);
-    const input = document.createElement('input');
-    input.className = 'tedit';
-    input.value = start;
-    input.setAttribute('aria-label', `Text of ${p.state.tag ?? 'this element'}`);
-    for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing']) input.style[k] = cs[k];
-    this.#root.append(input);
-    const range = document.createRange();
-    const place = () => {
-      if (!node.isConnected) return;
-      range.selectNodeContents(node);
-      const r = range.getBoundingClientRect();
-      input.style.left = `${r.left - 2}px`; input.style.top = `${r.top}px`;
-      input.style.width = `${Math.max(24, r.width + 6)}px`; input.style.height = `${r.height}px`;
-    };
-    p.editing = { run, node, lead, trail, input, place, start };
-    input.addEventListener('input', () => { node.data = lead + input.value + trail; place(); this.#light(); });
-    input.addEventListener('keydown', e => {
-      e.stopPropagation();
-      if (e.key === 'Enter') { e.preventDefault(); this.#endTextEdit(true); }
-      else if (e.key === 'Escape') { e.preventDefault(); this.#endTextEdit(false); }
-    });
-    input.addEventListener('blur', () => this.#endTextEdit(true));
-    const follow = () => { if (p.editing?.input === input) { place(); requestAnimationFrame(follow); } };
-    place(); follow();
-    input.focus(); input.select();
+  // A run from the card is edited where it is on the page, the same way a double-click edits it.
+  #editRun(i) {
+    const p = this.#pinned, run = p?.state.text?.runs?.[i];
+    const node = run ? this.#textNode(run) : null;
+    if (node) this.#text.start(node);
   }
 
-  #endTextEdit(keep) {
-    const p = this.#pinned, ed = p?.editing;
-    if (!ed) return;
-    p.editing = null;
-    ed.input.remove();
-    const to = ed.input.value.replace(/\s+/g, ' ').trim();
-    if (!keep || !to) {
-      // back to what it said before this edit began
-      ed.node.data = ed.lead + ed.start + ed.trail;
-    } else if (to === ed.run.text) {
-      p.texts.delete(ed.run.id);
-      ed.node.data = ed.lead + to + ed.trail;
-    } else {
-      p.texts.set(ed.run.id, { from: ed.run.text, to, node: ed.node, lead: ed.lead, trail: ed.trail });
-      ed.node.data = ed.lead + to + ed.trail;
-      if (p.status?.kind !== 'writing') p.status = null;
-    }
-    this.#refresh();
-    this.#$('.card')?.focus({ preventScroll: true });
-  }
-
+  // A double-click on words anywhere on the page edits them (text-edit.js); in blueprint it looks through the glass.
   #onDblClick = event => {
-    const p = this.#pinned;
-    if (!p?.state?.text?.editable || !p.element.contains(event.target)) return;
-    event.preventDefault(); event.stopPropagation();
-    const at = document.caretPositionFromPoint?.(event.clientX, event.clientY)?.offsetNode ?? document.caretRangeFromPoint?.(event.clientX, event.clientY)?.startContainer;
-    const i = p.state.text.runs.findIndex(r => this.#textNode(r) === at);
-    this.#startTextEdit(Math.max(0, i));
-    getSelection()?.removeAllRanges();
+    if (event.composedPath().some(n => n === this) && !this.#blueprint?.active) return;
+    if (event.composedPath()[0]?.closest?.('.dock, .w, .ch, .pl, .bpp, .rd, .rd-callout, .tx-toast')) return;
+    this.#blueprint?.through(() => this.#text.dblclick(event)) ?? this.#text.dblclick(event);
   };
 
   // ── write: the same edits, in source ─────────────────────
@@ -1415,7 +1364,6 @@ class PlumbOverlay extends HTMLElement {
     const ids = this.#writable().map(m => ({ id: m.choices[m.pick].edit.id }));
     const texts = [...p.texts.values()];
     if (!ids.length && !texts.length) return;
-    this.#endTextEdit(true);
     this.#unpeek();
     p.status = { kind: 'writing' }; this.#updateSync();
     const classes = p.element.getAttribute('class');

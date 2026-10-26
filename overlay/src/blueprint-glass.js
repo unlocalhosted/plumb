@@ -10,6 +10,9 @@
  *  keys      what had focus on the page loses it on the way in, and keys aimed at the page are held back; the
  *            overlay's own keys (Esc, Alt+B, the chooser's) are untouched because they're handled before this
  *  space     holding Space lets the page through for as long as it's held, like a hand tool; the cursor says so
+ *  editing   while words are edited in place (text-edit.js) the keys reach them, and the glass has a hole over the words
+ *            so a click there moves the caret; a click anywhere else lands on the glass and ends the edit, never on
+ *            the page
  *  leaving   every listener and attribute goes with it
  * ───────────────────────────────────────────────────────── */
 
@@ -29,7 +32,7 @@ const scrollable = (el) => {
 };
 
 export class Glass {
-  #el; #host; #on = false; #passing = false; #cursor = '';
+  #el; #host; #on = false; #passing = false; #cursor = ''; #editing = null;
 
   constructor(root, host) {
     this.#host = host;
@@ -40,6 +43,27 @@ export class Glass {
   }
 
   get passing() { return this.#passing; }
+
+  // Run fn with the glass out of the way of hit tests (a caret looked up under a double-click).
+  through(fn) {
+    if (!this.#on) return fn();
+    const prior = this.#el.style.pointerEvents;
+    this.#el.style.pointerEvents = 'none';
+    try { return fn(); } finally { this.#el.style.pointerEvents = prior; }
+  }
+
+  // Words are being edited: rect() gives their box each frame, or null when the edit ends.
+  editing(on, rect) {
+    if (!on) { this.#editing = null; this.#el.style.removeProperty('clip-path'); return; }
+    const hole = () => {
+      if (this.#editing !== hole) return;
+      const r = rect?.();
+      if (r) this.#el.style.setProperty('clip-path', `path(evenodd, "M0 0H${innerWidth}V${innerHeight}H0Z M${r.left - 2} ${r.top - 2}H${r.right + 2}V${r.bottom + 2}H${r.left - 2}Z")`);
+      requestAnimationFrame(hole);
+    };
+    this.#editing = hole;
+    hole();
+  }
 
   // Alt-select owns input while it's armed (it swallows the page's clicks itself and reads what's under the
   // pointer), so the glass steps aside for it
@@ -60,6 +84,7 @@ export class Glass {
   off() {
     if (!this.#on) return;
     this.#on = false;
+    this.editing(false);
     this.#pass(false);
     this.#el.hidden = true;
     removeEventListener('keydown', this.#key, true);
@@ -83,7 +108,7 @@ export class Glass {
   #ours = (e) => e.composedPath().some((n) => n?.localName === 'plumb-overlay');
 
   #key = (e) => {
-    if (e.defaultPrevented) return;
+    if (e.defaultPrevented || this.#editing) return;
     if (e.code === 'Space' && !this.#ours(e)) {
       e.preventDefault(); e.stopImmediatePropagation(); // no page scroll, no button press from the space bar
       if (!e.repeat) this.#pass(true);
@@ -97,6 +122,7 @@ export class Glass {
   };
 
   #keyUp = (e) => {
+    if (this.#editing) return;
     if (e.code === 'Space') { e.preventDefault(); e.stopImmediatePropagation(); this.#pass(false); }
   };
 
