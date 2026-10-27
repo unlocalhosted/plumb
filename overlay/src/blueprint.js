@@ -25,6 +25,7 @@ import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Glass, GLASS_CSS } from './blueprint-glass.js';
 import { Panel, PANEL_CSS } from './blueprint-panel.js';
 import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
+import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -35,7 +36,7 @@ const LAYER_CSS = `
   .bp[data-on] > :is(.labels, svg) { opacity: 1; transition-duration: var(--pl-dur-dim); }
   @media (prefers-reduced-motion: reduce) { .bp > :is(.labels, svg) { transition: none; } }
 `;
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -43,7 +44,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel; #craft; #items = [];
+  #panel; #craft; #items = []; #selection;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -55,14 +56,19 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
+    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el) });
+    this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
   key(key) {
-    return this.active && this.#panel.key(key);
+    if (!this.active) return false;
+    // with an element selected, . and , step through its problems
+    if (this.#selection.el && (key === '.' || key === ',')) return this.#selection.step(key === '.' ? 1 : -1) || true;
+    return this.#panel.key(key);
   }
   // The queue changed: the panel says what each cause becomes.
   refresh() {
@@ -121,6 +127,7 @@ export class Blueprint {
     if (!this.active) return;
     clearTimeout(this.#timer);
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
+    this.#selection.clear();
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
@@ -164,9 +171,30 @@ export class Blueprint {
     if (this.active) this.#reader.healthChanged(status);
   }
 
-  #invalidate = () => this.#marks.invalidate();
+  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); };
   // the page element under the pointer, looking through the glass and the overlay's own marks
-  #point = (e) => { this.#panel.fold(); this.#marks.point(document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.closest('plumb-overlay')) ?? null); };
+  #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
+  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#selection.point(e.clientX, e.clientY); };
+  // the reader's reading of an element, or of the nearest ancestor it read
+  #itemOf(el) { return el ? this.#items.find((i) => i.el === el) ?? null : null; }
+  // A click on the page: the innermost element under it that the reader read (else the element itself) is selected;
+  // a click on nothing lets go.
+  #click = (e) => {
+    const hit = this.#under(e.clientX, e.clientY);
+    if (!hit || hit === document.body || hit === document.documentElement) { this.#selection.clear(); return; }
+    let el = hit;
+    while (el && el !== document.body && !this.#itemOf(el)) el = el.parentElement;
+    if (!el || el === document.body) {
+      // nothing read up the chain: a quiet element is selected as it is, but a wrapper holding read elements (the app's
+      // root, a page section) is the page's background, and a click there lets go
+      if (this.#items.some((i) => hit.contains(i.el))) { this.#selection.clear(); return; }
+      el = hit;
+    }
+    this.#selection.select(el, this.#itemOf(el));
+  };
+  // Esc lets go of the selection before it leaves blueprint; true when there was one
+  deselect() { return this.#selection.clear(); }
+  get selected() { return this.#selection.el; }
   #unpoint = () => this.#marks.point(null);
 
   #on() {
@@ -194,6 +222,7 @@ export class Blueprint {
   }
 
   #teardown() {
+    this.#selection.clear();
     this.#glass.off();
     this.#reader.stop();
     this.#marks.clear();

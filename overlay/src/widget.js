@@ -671,6 +671,7 @@ class PlumbOverlay extends HTMLElement {
     // L: the punch list, when nothing on the page is being typed into
     else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#ready?.close(); this.#fixer.toggleList(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
+    else if (event.key === 'Escape' && this.#blueprint?.active && this.#blueprint.deselect()) { event.preventDefault(); event.stopPropagation(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
   #typing(event) {

@@ -40,7 +40,10 @@ export class Glass {
     this.#el.setAttribute('aria-hidden', 'true');
     root.prepend(this.#el); // under everything the overlay draws
     this.#el.addEventListener('wheel', this.#wheel, { passive: false });
+    // a click on the glass is a click on the page under it: the blueprint selects what is there (select.js)
+    this.#el.addEventListener('click', (e) => this.onClick?.(e));
   }
+  onClick = null;
 
   get passing() { return this.#passing; }
 

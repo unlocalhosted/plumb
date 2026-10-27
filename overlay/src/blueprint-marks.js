@@ -317,6 +317,13 @@ export class MarkLayer {
   }
 
   // The page element under the pointer (looked for through the glass): its drifted region shows its breaks.
+  // The selected element (select.js) draws itself: its label steps aside.
+  #selected = null;
+  select(el) {
+    if (el === this.#selected) return;
+    this.#selected = el;
+    this.invalidate();
+  }
   point(el) {
     if (el === this.#pointed) return;
     this.#pointed = el;
@@ -511,6 +518,7 @@ export class MarkLayer {
     const labelled = [...things.map((l) => [l, tally.get(l)]), ...loose.filter((l) => active.has(l.item.el)).map((l) => [l, l.drift.length - 1])];
     for (const [l, more] of labelled) {
       const { item, r, drift } = l;
+      if (item.el === this.#selected) continue; // the selected element is drawn by the selection (select.js), not labelled
       const first = drift[0];
       const fix = this.#state?.(item.el, first) ?? null;
       const ink = inkFor(l);

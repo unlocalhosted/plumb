@@ -114,20 +114,28 @@ function lines(el) {
  * only, and the element's name. `bands` are the drawn parts with their values, for pointAt.
  * options: { name, tokenOf(family, px) → token | null }
  */
-export function boxModel(el, { name, tokenOf } = {}) {
+// A band's property as a person says it: 'padding right' → 'right padding'
+const said = (what) => { const [k, side] = what.split(' '); return side ? `${side} ${k}` : k; };
+
+export function boxModel(el, { name, tokenOf, claimed, tag: around } = {}) {
   const cs = getComputedStyle(el), r = el.getBoundingClientRect();
   const val = (s) => px(cs.getPropertyValue(s));
   const [mt, mr, mb, ml] = SIDES.map((s) => val(`margin-${s}`));
   const [bt, br, bb, bl] = SIDES.map((s) => (cs.getPropertyValue(`border-${s}-style`) === 'none' ? 0 : val(`border-${s}-width`)));
   const [pt, pr, pb, pl] = SIDES.map((s) => val(`padding-${s}`));
   // a value's verdict: the step it sits on, else off the scale (coral); without a scale, a plain measurement
-  const verdict = (family, n) => { const t = tokenOf && n ? tokenOf(family, n) : undefined; return { label: t ? `${t} · ${r1(n)}` : `${r1(n)}`, off: !!tokenOf && !!n && !t }; };
+  // the words follow docs/copy/voice.md: the property, the number, the token in brackets (`right padding 12 (s3)`)
+  const verdict = (family, n) => { const t = tokenOf && n ? tokenOf(family, n) : undefined; return { n: r1(n), token: t, off: !!tokenOf && !!n && !t }; };
   const bands = [];
   // a band knows the property it is, so it can be dragged (scrub.js): 'margin right' → margin-right, a gap along a
   // row → column-gap, down a column → row-gap
   const band = (kind, what, family, n, x, y, w, h, extra = {}) => {
     const prop = what === 'gap' ? (kind.includes('col') ? 'row-gap' : 'column-gap') : what.replace(' ', '-');
-    if (w > 0.5 && h > 0.5 && n !== 0) bands.push({ kind, what, prop, family, n, el, x, y, w, h, ...verdict(family, n), ...extra });
+    if (!(w > 0.5 && h > 0.5 && n !== 0)) return;
+    const v = verdict(family, n);
+    // the verdict decides the hue when one is given: a band it claims is coral, every other band sky
+    const off = claimed ? !!claimed(prop) : v.off;
+    bands.push({ kind, what, prop, family, n, el, x, y, w, h, ...v, off, label: `${said(what)} ${v.n}${v.token ? ` (${v.token})` : ''}`, ...extra });
   };
 
   // margin, outside the border; padding, inside it; per side
@@ -144,7 +152,8 @@ export function boxModel(el, { name, tokenOf } = {}) {
   // the words: a band per line, its baseline dashed; pointing at one says the type
   const fs = px(cs.fontSize), lh = cs.lineHeight === 'normal' ? fs * 1.2 : px(cs.lineHeight);
   const type = tokenOf?.('type', fs);
-  for (const l of lines(el)) bands.push({ kind: 'line', what: 'type', x: l.left, y: l.top, w: l.width, h: l.height, label: `Aa ${type ? `${type} · ` : ''}${r1(fs)}/${r1(lh)} · ${cs.fontWeight}`, off: !!tokenOf && !type, base: l.top + (l.height + fs * 0.68) / 2 });
+  const typeOff = claimed ? ['font-size', 'line-height', 'letter-spacing', 'font-weight'].some((p) => claimed(p)) : !!tokenOf && !type;
+  for (const l of lines(el)) bands.push({ kind: 'line', what: 'type', x: l.left, y: l.top, w: l.width, h: l.height, label: `text ${r1(fs)}${type ? ` (${type})` : ''} · line ${r1(lh)} · weight ${cs.fontWeight}`, off: typeOff, base: l.top + (l.height + fs * 0.68) / 2 });
 
   // one icon in the middle of each band it fits in; a band too thin for it keeps only its tint
   const icon = (b) => (b.w >= ICON + 2 && b.h >= ICON + 2 ? `<span class="ic${b.off ? ' off' : ''}" style="left:${r1(b.x + b.w / 2)}px;top:${r1(b.y + b.h / 2)}px">${BLOCK_ICONS[b.kind.split(' ')[0]]}</span>` : '');
@@ -156,12 +165,14 @@ export function boxModel(el, { name, tokenOf } = {}) {
   const content = { x: ix + pl, y: iy + pt, w: iw - pl - pr, h: ih - pt - pb };
   layers.push(box('c', content.x, content.y, content.w, content.h, `border-radius:${Math.max(0, px(cs.borderTopLeftRadius) - Math.max(pl, pt))}px`));
   // pointing at the content says its size; at the border, its width and radius
-  bands.push({ kind: 'c', what: 'size', ...content, label: `W ${sizing(el, cs, 'w')} · H ${sizing(el, cs, 'h')}`, off: false, under: true });
+  const sz = (axis) => sizing(el, cs, axis).replace(/^Fill /, 'fills ').replace(/^Hug /, 'fits ');
+  bands.push({ kind: 'c', what: 'size', ...content, label: `width ${sz('w')} · height ${sz('h')}`, off: false, under: true });
   const rad = px(cs.borderTopLeftRadius);
-  if (bt || rad) bands.push({ kind: 'b', what: 'border', x: r.left, y: r.top, w: r.width, h: Math.max(bt, 3), label: [bt ? `border ${Math.max(bt, br, bb, bl)}` : '', rad ? `r ${verdict('radius', rad).label}` : ''].filter(Boolean).join(' · '), off: rad ? verdict('radius', rad).off : false });
+  const rv = verdict('radius', rad);
+  if (bt || rad) bands.push({ kind: 'b', what: 'border', prop: 'border-radius', x: r.left, y: r.top, w: r.width, h: Math.max(bt, 3), label: [bt ? `border ${Math.max(bt, br, bb, bl)}` : '', rad ? `corners ${rv.n}${rv.token ? ` (${rv.token})` : ''}` : ''].filter(Boolean).join(' · '), off: claimed ? !!claimed('border-radius') : rad ? rv.off : false });
 
   // the only words at rest: the element's name above its top-left corner
-  const tag = `<span class="pl-tag" style="left:${r1(r.left - ml)}px;top:${r1(r.top - mt - 28)}px">${esc(name ?? el.localName)}</span>`;
+  const tag = `<span class="pl-tag" style="left:${r1(r.left - ml)}px;top:${r1(r.top - mt - 28)}px">${around?.before ?? ''}${esc(name ?? el.localName)}${around?.after ?? ''}</span>`;
   return { html: `<div class="bm" aria-hidden="true">${layers.join('')}${tag}</div>`, bands };
 }
 
