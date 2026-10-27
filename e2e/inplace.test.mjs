@@ -230,3 +230,49 @@ test('Backspace drops the change and the element is back as it was; dragging a b
   assert.match((await fixOf(page)).changes ?? '', /right padding 12 → 24 \(s6\)/);
   assert.deepEqual(errors, []);
 });
+
+test('Two problems in two families on one label: each taken in place with Enter, one Apply writes both, and the label is quiet', { timeout: 150000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  // a theme with a letter-spacing step, so both fixes are on the theme
+  await writeFile(join(root, 'src/styles.css'), (await readFile(join(root, 'src/styles.css'), 'utf8')).replace('@theme {', '@theme {\n  --tracking-wide: 0.05em;'));
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  const [x, y] = await center(page, 'status', 0.3, 0.5);
+  await page.mouse.click(x, y);
+  await page.waitForTimeout(400);
+  await page.mouse.move(5, 5);
+  // the first problem's fix is drawn; Enter takes it and the next one becomes current
+  await page.waitForFunction(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .stair'), null, { timeout: 5000 });
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
+  // the theme's text sizes for the second: its exact edit is read, then Enter takes it
+  await page.waitForFunction(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .stair'), null, { timeout: 5000 })
+;
+  for (let i = 0; i < 20; i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(250); if (/2 changes/.test(await overlay.locator('.cg').innerText().catch(() => ''))) break; }
+  const sidebar = (await overlay.locator('.cg').innerText()).replace(/\s+/g, ' ');
+  assert.match(sidebar, /letter spacing .*→ tracking-wide/, sidebar);
+  assert.match(sidebar, /text size .*→ small/, sidebar);
+  assert.match(sidebar, /Apply 2 changes/);
+  await overlay.locator('.cg .ok').click();
+  const source = join(root, 'src/App.jsx');
+  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="status"'));
+  for (let i = 0; i < 100 && /text-\[11px\]/.test(await line()); i++) await page.waitForTimeout(100);
+  const written = /className="([^"]+)"/.exec(await line())[1].split(' ').sort();
+  assert.deepEqual(written, ['text-ink-muted', 'text-small', 'tracking-wide', 'uppercase']);
+  await page.waitForTimeout(800);
+  await page.reload();
+  await page.waitForLoadState('load');
+  await page.waitForFunction(() => window.__plumb?.overlay);
+  await page.evaluate(() => window.__plumb.ready());
+  try { await blueprint(page, overlay); } catch { await page.keyboard.press('Escape'); await page.waitForTimeout(500); await blueprint(page, overlay); }
+  await page.waitForTimeout(600);
+  const marks = await page.evaluate(() => {
+    const el = document.getElementById('status').getBoundingClientRect();
+    return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
+      .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2).map((h) => h.id);
+  });
+  assert.deepEqual(marks, [], `quiet: ${JSON.stringify(marks)}`);
+  assert.deepEqual(errors, []);
+});

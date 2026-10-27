@@ -111,8 +111,8 @@ function classesOfSides(letter, s) {
  * The class edit that writes per-property changes ([{ prop, to: { token } }]) on an element whose box family is set by
  * classes: { from, to } for `swap`, or null when a property isn't a box side or a side isn't set by a class.
  */
-export function boxEdit(el, props) {
-  const classes = (el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean);
+export function boxEdit(el, props) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props); }
+export function boxEditOf(classes, props) {
   let from = [], to = [];
   for (const [family, letter] of Object.entries(FAMILY)) {
     const mine = props.filter((p) => p.prop.startsWith(`${family}-`));
@@ -126,4 +126,69 @@ export function boxEdit(el, props) {
   const keep = from.filter((c) => to.includes(c));
   from = from.filter((c) => !keep.includes(c)); to = to.filter((c) => !keep.includes(c));
   return to.length ? { from: from.join(' '), to: to.join(' ') } : null;
+}
+
+// ── every other family: a choice of class edits ────────────
+
+const word = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
+// what a facet is called on the page
+export const FACET_SAID = { radius: 'corners', 'font-size': 'text size', 'letter-spacing': 'letter spacing', 'line-height': 'line height', color: 'text colour',
+  background: 'fill', border: 'border', shadow: 'shadow', 'font-features': 'figures', 'text-flow': 'wrapping', size: 'size', gap: 'gap', scroll: 'scroll', stacking: 'layer',
+  transform: 'motion', 'font-weight': 'weight', 'padding-x': 'side padding', 'padding-y': 'top and bottom padding', 'margin-x': 'side margin', 'margin-y': 'top and bottom margin' };
+
+/**
+ * A plan for any problem whose fix is a class edit: a craft fix (its one verified edit) or a drift mark (its theme's
+ * choices, each an exact class edit read from the server: `edits(mark)` resolves them). Options are drawn as a
+ * staircase (sizes), swatches (colours) or a single target.
+ */
+export function swapPlanOf(problem) {
+  if (problem.family === 'craft') {
+    const fix = problem.craft?.suggest;
+    if (fix?.kind !== 'class') return null;
+    return { kind: 'swap', facet: problem.facets?.[0], options: [{ token: fix.to, label: fix.to, n: null, write: { from: fix.from ?? '', to: fix.to } }], at: 0, now: null };
+  }
+  const choices = problem.choices ?? [];
+  if (!choices.length) return null;
+  return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: c.n ?? null, swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null })),
+    at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: problem.n ?? null, swatch: problem.family === 'color' ? problem.value : null } };
+}
+
+// A class edit previewed on the element (classes swapped), or put back: the inverse of exactly what was done.
+export function swapPreview(el, write, on, memo) {
+  if (on) {
+    if (memo.done) swapPreview(el, null, false, memo);
+    const removed = word(write.from).filter((c) => el.classList.contains(c)), added = word(write.to).filter((c) => !el.classList.contains(c));
+    for (const c of removed) el.classList.remove(c);
+    for (const c of added) el.classList.add(c);
+    memo.done = { removed, added };
+  } else if (memo.done) {
+    for (const c of memo.done.added) el.classList.remove(c);
+    for (const c of memo.done.removed) el.classList.add(c);
+    memo.done = null;
+  }
+}
+
+// a class edit applied to a class list: `from` out, `to` in where the first of `from` stood (else at the end)
+export function applied(list, { from, to }) {
+  const out = word(from), at = list.findIndex((c) => out.includes(c));
+  const kept = list.filter((c) => !out.includes(c));
+  const where = at < 0 ? kept.length : list.slice(0, at).filter((c) => !out.includes(c)).length;
+  kept.splice(where, 0, ...word(to).filter((c) => !kept.includes(c)));
+  return kept;
+}
+/**
+ * Every change on one element as one class edit against its classes as written: class edits applied in order, then the
+ * spacing changes as the fewest padding and margin classes. `classes`: the element's classes with every preview put
+ * back. Null when a change can't be written as classes.
+ */
+export function elementEdit(classes, writes, props) {
+  let list = [...classes];
+  for (const w of writes) { if (!w) return null; list = applied(list, w); }
+  if (props.length) {
+    const box = boxEditOf(list, props);
+    if (!box) return null;
+    list = applied(list, box);
+  }
+  const from = classes.filter((c) => !list.includes(c)), to = list.filter((c) => !classes.includes(c));
+  return to.length || from.length ? { from: from.join(' '), to: to.join(' ') } : null;
 }

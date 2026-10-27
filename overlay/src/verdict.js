@@ -152,6 +152,15 @@ function verify(k, el, byId, rules, facts, theme, before) {
   let list = applied(words(classesOf(el)), edit), rewritten = false;
   const sets = { ...(edit.sets ?? {}) };
   for (const cls of words(edit.to)) {
+    // a type step (letter spacing, line height, text size, weight) must be one the project's own theme names
+    const t = /^!?(tracking|leading|text|font)-([a-z0-9]+(?:-[a-z0-9]+)*)!?$/.exec(cls);
+    if (t && theme.loaded) {
+      const ns = { tracking: ['--tracking-'], leading: ['--leading-'], text: ['--text-'], font: ['--font-weight-'] }[t[1]];
+      const said = { tracking: 'letter-spacing', leading: 'line-height', text: 'text size', font: 'weight' }[t[1]];
+      const colour = t[1] === 'text' && theme.colors().some((c) => c.short === t[2]);
+      if (!colour && !ns.some((n) => theme.has(`${n}${t[2]}`))) return withdraw(k, 'no-step', `Your theme has no ${said} step for this. Add one, then use it here.`);
+      continue;
+    }
     const u = utilityOf(cls);
     if (!u || !theme.scale(u.family).length) continue; // no named steps: the numeric scale is the system
     const v = pxOf(u, theme);

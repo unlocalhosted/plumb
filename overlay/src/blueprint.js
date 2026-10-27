@@ -27,7 +27,7 @@ import { Panel, PANEL_CSS } from './blueprint-panel.js';
 import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
-import { boxEdit } from './inplace.js';
+import { elementEdit } from './inplace.js';
 import { post, request } from './api.js';
 import { locate } from './locate.js';
 
@@ -62,7 +62,7 @@ export class Blueprint {
     this.#glass = new Glass(root, host);
     this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)) });
     this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el),
-      changes: this.#changes, steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
+      changes: this.#changes, read: (el) => host.read(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
@@ -205,8 +205,9 @@ export class Blueprint {
   async #apply(batch) {
     const out = [];
     for (const b of batch) {
-      const edit = boxEdit(b.el, b.props);
-      if (!edit) { out.push({ el: b.el, ok: false, why: 'Only padding and margin can be applied from here for now.' }); continue; }
+      // every change on the element as one class edit against its classes as written
+      const edit = elementEdit(b.classes, b.writes ?? [], b.props);
+      if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
       try {
         const at = await locate(b.el);
         if (!at?.file) throw new Error('Can’t reach this in your code.');

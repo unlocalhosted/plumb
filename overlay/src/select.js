@@ -19,8 +19,9 @@
 import { boxModel, pointAt, BOXMODEL_CSS } from './boxmodel.js';
 import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
-import { PRIMITIVES_CSS, stepper } from './editor-primitives.js';
-import { planOf, moved, preview, GLYPHS, SPACING_PROPS } from './inplace.js';
+import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
+import { esc } from './choices.js';
+import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, FACET_SAID } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -58,12 +59,14 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #tokenOf; #health; #onChange; #changes; #steps; #plan = null; #previewing = false;
+  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set();
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
   // steps(family) → the theme's scale [{ token, n }]
-  constructor(root, { tokenOf, health, onChange, changes, steps }) {
+  // read(el) → the element's full reading (each theme choice's exact class edit)
+  constructor(root, { tokenOf, health, onChange, changes, steps, read }) {
+    this.#read = read;
     this.#tokenOf = tokenOf;
     this.#health = health;
     this.#onChange = onChange;
@@ -85,7 +88,7 @@ export class Selection {
   select(el, item) {
     if (el === this.#el) { this.step(1); return; }
     this.#unpreview();
-    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null;
+    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#taken = new Set();
     this.#onChange?.(el);
     this.#layer.hidden = false;
     this.draw(true);
@@ -94,8 +97,13 @@ export class Selection {
   refresh(item) {
     if (!this.#el) return;
     if (!this.#el.isConnected) return this.clear();
+    const was = this.current?.key;
     this.#item = item ?? null;
-    this.#at = Math.min(this.#at, Math.max(0, this.problems.length - 1));
+    // the same problem stays current through a re-read (the order can change); else the first one not yet taken
+    const same = this.problems.findIndex((m) => m.key === was && !this.#taken.has(m.key));
+    const open = this.problems.findIndex((m) => !this.#taken.has(m.key));
+    this.#at = same >= 0 ? same : open >= 0 ? open : Math.min(this.#at, Math.max(0, this.problems.length - 1));
+    if (this.current?.key !== was) this.#plan = null;
     this.draw();
   }
   step(by) {
@@ -120,21 +128,48 @@ export class Selection {
   // accepts it into Changes; Backspace drops the element's change. True when used.
   key(key) {
     if (!this.#el) return false;
-    if (key === 'Backspace' && this.#changes?.has(this.#el)) { this.#changes.discard(this.#el); this.#plan = null; this.draw(); return true; }
+    if (key === 'Backspace' && this.#changes?.has(this.#el)) { this.#changes.discard(this.#el); this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
     const plan = this.#plan;
     if (!plan) return false;
     const by = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[key];
-    if (by) { this.#plan = moved(plan, by); preview(this.#el, this.#plan, true); this.#previewing = true; this.draw(); return true; }
+    if (by) { this.#move(by); return true; }
     if (key === 'Enter') { this.accept(); return true; }
     return false;
   }
-  // The fix as it stands becomes the element's change in the sidebar (still only on the page: Apply writes it).
-  accept() {
+  // The target moved along the plan's options: the page previews it.
+  #move(by) {
     const plan = this.#plan, el = this.#el;
-    if (!plan || !el || !this.#changes) return false;
-    preview(el, plan, true);
-    for (const p of plan.props) this.#changes.set(el, el.localName, p.prop, p.from, p.to, p.original);
+    if (plan.kind === 'swap') {
+      const at = Math.max(0, Math.min(plan.options.length - 1, plan.at + by));
+      this.#plan = { ...plan, at };
+      if (plan.options[at].write) swapPreview(el, plan.options[at].write, true, this.#memo);
+    } else { this.#plan = moved(plan, by); preview(el, this.#plan, true); }
+    this.#previewing = true;
+    this.draw();
+  }
+  // The fix as it stands becomes the element's change in the sidebar (still only on the page: Apply writes it); the
+  // element's next problem with a fix becomes current.
+  accept() {
+    const plan = this.#plan, el = this.#el, problem = this.current;
+    if (!plan || !el || !this.#changes || !problem) return false;
+    if (plan.kind === 'swap') {
+      const opt = plan.options[plan.at];
+      if (!opt.write) return false; // its exact edit is still being read
+      const memo = this.#memo;
+      // the sidebar keeps the classes as written: the preview is put back while it records them, then shown again
+      swapPreview(el, null, false, memo);
+      this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo) });
+      swapPreview(el, opt.write, true, memo);
+      this.#memo = {};
+    } else {
+      preview(el, plan, true);
+      for (const p of plan.props) this.#changes.set(el, el.localName, p.prop, p.from, p.to, p.original);
+    }
     this.#previewing = false; // Changes owns the preview now
+    this.#taken.add(problem.key);
+    this.#plan = null;
+    const next = this.problems.findIndex((m, i) => i !== this.#at && !this.#taken.has(m.key));
+    if (next >= 0) this.#at = next;
     this.draw();
     return true;
   }
@@ -163,7 +198,10 @@ export class Selection {
     return band ? cursorOf(band.prop) : '';
   }
   #unpreview() {
-    if (this.#previewing && this.#el && this.#plan && !this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
+    if (this.#previewing && this.#el && this.#plan) {
+      if (this.#plan.kind === 'swap') swapPreview(this.#el, null, false, this.#memo);
+      else if (!this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
+    }
     this.#previewing = false;
   }
 
@@ -191,14 +229,31 @@ export class Selection {
     this.#bands = bm.bands;
     const r = el.getBoundingClientRect();
     const ring = `<div class="ring" data-state="${state}" style="left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px"></div>`;
-    // the fix, in place: only for a problem whose verified fix sets spacing, and only until it is accepted
+    // the fix, in place, for the current problem until it is accepted; the element shows ants once it has a change
     const accepted = !!this.#changes?.has(el);
     this.#layer.dataset.state = accepted ? 'accepted' : state;
     let fix = '';
-    if (!accepted && current && state === 'ready') {
-      this.#plan ??= planOf(current, el, this.#steps?.('spacing') ?? [], (n) => this.#tokenOf('spacing', n));
+    if (current && !this.#taken.has(current.key) && state === 'ready') {
+      this.#plan ??= planOf(current, el, this.#steps?.('spacing') ?? [], (n) => this.#tokenOf('spacing', n)) ?? swapPlanOf(current);
       const plan = this.#plan;
-      if (plan) {
+      if (plan?.kind === 'swap') {
+        // a theme choice's exact class edit comes from the element's full reading, read once
+        if (plan.options.some((o) => !o.write) && !plan.reading && this.#read) {
+          plan.reading = true;
+          const key = current.key;
+          this.#read(el).then((full) => {
+            const m = full?.marks?.find((x) => x.key === key);
+            if (!m || this.#plan !== plan) return;
+            plan.options = plan.options.map((o) => { const c = m.choices?.find((x) => (x.label ?? x.name) === o.label); return c?.edit ? { ...o, write: { from: c.edit.from, to: c.edit.to } } : o; });
+            this.draw();
+          }).catch(() => {});
+        }
+        const o = plan.options;
+        const control = o.every((x) => x.swatch) ? swatches(plan.facet ?? 'colour', { steps: o.map((x) => ({ token: x.label, swatch: x.swatch })), current: null, picked: o[plan.at].label, drift: plan.now?.swatch ? { label: plan.now.label, swatch: plan.now.swatch } : undefined })
+          : o.every((x) => Number.isFinite(x.n)) && o.length > 1 ? stepper(plan.facet ?? 'value', { steps: o.map((x) => ({ token: x.label, n: x.n })), current: null, picked: o[plan.at].label, drift: Number.isFinite(plan.now?.n) ? { n: plan.now.n, label: String(plan.now.n) } : undefined })
+          : `<span class="pl-pill target" data-hue="sky">→ ${esc(o[plan.at].label)}</span>`;
+        fix = `<div class="stair" data-kind="swap" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + 12}px">${control}</div>`;
+      } else if (plan) {
         const g = plan.ghost;
         const stair = stepper(plan.main.prop, { steps: plan.steps, current: plan.main.from.token, picked: plan.steps[plan.at].token });
         fix = `<div class="ghost" style="left:${g.left - 3}px;top:${g.top - 3}px;width:${g.width + 6}px;height:${g.height + 6}px"></div>`
@@ -207,8 +262,8 @@ export class Selection {
       }
     }
     this.#layer.innerHTML = fix + ring + bm.html;
-    // the staircase: pointing a step previews it, a click picks it
-    for (const opt of this.#layer.querySelectorAll('.stair .opt[data-i]')) opt.addEventListener('click', () => { const i = +opt.dataset.i; this.#plan = moved(this.#plan, i - this.#plan.at); preview(el, this.#plan, true); this.#previewing = true; this.draw(); });
+    // the control: a click on an option picks it (and previews it)
+    for (const opt of this.#layer.querySelectorAll('.stair .opt[data-i]')) opt.addEventListener('click', () => { this.#move(+opt.dataset.i - this.#plan.at); });
     // the current problem's bands draw strongest
     for (const b of this.#layer.querySelectorAll('.bm > .off')) {
       const at = this.#bands.find((x) => x.off && Math.abs(x.x - parseFloat(b.style.left)) < 0.6 && Math.abs(x.y - parseFloat(b.style.top)) < 0.6);

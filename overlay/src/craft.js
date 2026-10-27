@@ -84,6 +84,10 @@ export class Theme {
   constructor({ decisions } = {}) { this.#decisions = decisions ?? (() => null); }
   // [{ name, short, px }] for radius and spacing; [{ name, short, rgb }] for color; [] while the decisions load
   scale(family) { return this.#measure()[family] ?? []; }
+  // whether the project's own theme names a token (a framework default is not the project's): --tracking-wide
+  has(name) { const d = this.#decisions(); return Array.isArray(d) && d.some((x) => x.name === name && x.origin !== 'framework'); }
+  // whether the decisions are in at all (before they load, nothing can be judged against them)
+  get loaded() { return Array.isArray(this.#decisions()); }
   // one step of Tailwind's numeric scale (--spacing) in px, or null when the project has none: `pl-5` means 5 of
   // these, so a numeric class is offered only when the project defines the unit
   #unit;

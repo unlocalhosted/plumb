@@ -593,7 +593,7 @@ export const leading = {
 export const tracking = {
   id: 'craft/tracking', family: 'craft', number: [15], tier: TIER.legibility, owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text'],
   threshold: { caps: 14, large: 36 },
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     if (!facts.text(el)) return [];
     const s = facts.style(el), fs = px(s.fontSize);
     const ls = s.letterSpacing === 'normal' ? 0 : px(s.letterSpacing);
@@ -605,10 +605,18 @@ export const tracking = {
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: caps ? 'tracking-wider' : 'tracking-tight', why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing', sets: { letterSpacing: fs * (caps ? 0.05 : -0.025) } },
+      suggest: { kind: 'class', from: cls ?? '', to: trackingStep(theme, caps), why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing', sets: { letterSpacing: fs * (caps ? 0.05 : -0.025) } },
     }];
   },
 };
+
+// The letter-spacing step to suggest: the project's own when its theme names one (wide for small capitals, tight for
+// large type), else Tailwind's name (which the verdict withdraws when the theme lacks it).
+function trackingStep(theme, caps) {
+  const names = caps ? ['wider', 'wide', 'widest'] : ['tight', 'tighter'];
+  const own = names.find((n) => theme?.has?.(`--tracking-${n}`));
+  return `tracking-${own ?? names[0]}`;
+}
 
 // #16. Tabular numbers where numbers line up: a column of figures in a table.
 export const tabularNums = {

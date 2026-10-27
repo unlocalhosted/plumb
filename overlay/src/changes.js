@@ -80,18 +80,32 @@ export class Changes {
   }
 
   has(el) { return this.#items.has(el); }
-  get count() { return [...this.#items.values()].reduce((n, i) => n + i.props.size, 0); }
+  get count() { return [...this.#items.values()].reduce((n, i) => n + i.props.size + i.swaps.size, 0); }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #byIndex(i) { return [...this.#items.keys()][i]; }
 
+  #item(el, name) {
+    let item = this.#items.get(el);
+    // the classes as written, before any preview: every change on the element is written against them
+    if (!item) this.#items.set(el, (item = { name, props: new Map(), swaps: new Map(), classes: (el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), why: null }));
+    return item;
+  }
+  // A class edit taken from a problem's fix (a craft fix, a theme token): { label, from, to, write: { from, to }, undo }
+  put(el, name, key, change) {
+    const item = this.#item(el, name);
+    item.swaps.get(key)?.undo?.();
+    item.swaps.set(key, change);
+    this.render();
+    this.#at = el;
+    this.render();
+  }
   // A property of an element took a new step (from a drag). Back at where it started, the change is dropped.
   set(el, name, prop, from, to, original) {
-    let item = this.#items.get(el);
-    if (!item) this.#items.set(el, (item = { name, props: new Map(), why: null }));
+    const item = this.#item(el, name);
     const had = item.props.get(prop);
     if (had && had.from.token === to.token) item.props.delete(prop);
     else item.props.set(prop, { from: had?.from ?? from, to, original: had?.original ?? original });
-    if (!item.props.size) this.#items.delete(el);
+    if (!item.props.size && !item.swaps.size) this.#items.delete(el);
     this.#at = this.#items.has(el) ? el : this.#at;
     this.render();
   }
@@ -116,6 +130,7 @@ export class Changes {
     const item = this.#items.get(el);
     if (!item) return;
     for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); }
+    for (const c of item.swaps.values()) c.undo?.();
     if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
     this.#items.delete(el);
     if (this.#at === el) this.#at = [...this.#items.keys()][0] ?? null;
@@ -126,7 +141,7 @@ export class Changes {
   async accept() {
     if (this.#busy || !this.#items.size) return;
     this.#busy = true; this.render();
-    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })) }));
+    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write) }));
     const results = (await this.#onAccept?.(batch).catch((error) => batch.map((b) => ({ el: b.el, ok: false, why: error?.message })))) ?? [];
     for (const r of results) {
       const item = this.#items.get(r.el);
@@ -147,6 +162,7 @@ export class Changes {
     this.#el.innerHTML = `<div class="top"><b>Changes</b><span>${els.length} element${els.length === 1 ? '' : 's'} · ${n} change${n === 1 ? '' : 's'}</span></div>
       <div class="rows" role="list">${els.map(([el, i], k) => `<div class="el" role="listitem" tabindex="0" data-i="${k}"${el === this.#at ? ' aria-current="true"' : ''}>
         <div class="name"><span class="pl-tag">${esc(i.name)}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(i.name)}" title="Discard">${X}</button></div>
+        ${[...i.swaps.values()].map((c) => `<div class="chg"><i></i><span class="prop">${esc(c.label)}</span><span class="from">${esc(c.from)}</span>→<span class="to">${esc(c.to)}</span></div>`).join('')}
         ${[...i.props].map(([prop, c]) => `<div class="chg"><i>${BLOCK_ICONS[KIND(prop)] ?? ''}</i><span class="prop">${esc(said(prop))}</span><span class="from">${esc(Math.round(c.from.n))}</span>→<span class="to">${esc(`${Math.round(c.to.n)}${c.to.token ? ` (${c.to.token})` : ''}`)}</span></div>`).join('')}
         ${i.why ? `<div class="why">${esc(i.why)}</div>` : ''}</div>`).join('')}</div>
       <div class="foot"><span class="keys">J K step</span><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Applying…' : `Apply ${n} change${n === 1 ? '' : 's'}`}</button></div>`;
