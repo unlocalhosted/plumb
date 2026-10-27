@@ -1,6 +1,7 @@
 // The craft hierarchy, layer 1 (docs/briefs/craft-hierarchy.md): when rules meet on one facet of one element, one mark
-// is kept by (refines, tier, confidence) and the others ride on it as quiet "also" lines in its chooser. Proved as a
-// person sees it: one mark on the element, the kept rule's words, the folded ones under them. Real Vite, React, Chromium.
+// is kept by (refines, tier, confidence) and the others ride on it as quiet "also" findings (the glow's data-also, the
+// engine's mark). Proved as a person sees it: one mark on the element, the kept rule's words, its cause in the fix panel.
+// Real Vite, React, Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -10,6 +11,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
+import { applyFix, cause, engineMark, openMark } from './helpers/fix.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
@@ -63,53 +65,6 @@ const craftMarks = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay').shadowRoot;
   return [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.includes(':craft/')).map((h) => { const r = h.getBoundingClientRect(); return { id: h.dataset.id, rule: h.dataset.id.split(':craft/')[1].split('@')[0], label: h.getAttribute('aria-label'), x: r.left, y: r.top, w: r.width, h: r.height }; });
 });
-// The panel's craft rows: [{ rule, text, what }].
-const craftRows = (overlay) => overlay.locator('.bpp .row[data-key^="craft/"]').evaluateAll((rows) => rows.map((r) => ({ key: r.dataset.key, rule: r.dataset.key.split('|')[0], text: r.querySelector('code').textContent, what: r.querySelector('.what').textContent })));
-const rectOf = (page, id) => page.locator(`#${id}`).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
-// the elements a row lights when pointed at, as boxes
-const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
-const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
-
-// Points at a row, and says which page elements light up.
-async function pointRow(page, overlay, key) {
-  await overlay.locator('.bpp .head').click();
-  await overlay.locator(`.bpp .row[data-key^="${key}"]`).first().hover();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
-  return lit(page);
-}
-// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
-// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
-// options it offers.
-async function openMark(page, overlay, id) {
-  const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-  const hint = overlay.locator('.bp .bp-hint[data-on]');
-  await hint.waitFor({ timeout: 3000 });
-  const hinted = await hint.innerText();
-  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
-  await page.mouse.move(2, 2);
-  await page.waitForTimeout(150);
-  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
-  await page.keyboard.press('i');
-  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
-  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
-}
-// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
-async function applyFix(page, overlay) {
-  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
-  await overlay.locator('.cg:not([hidden]) .ok').click();
-}
-// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
-async function whyLines(page, overlay) {
-  const out = [];
-  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
-  return out;
-}
-
 const PAGE = `
 export function App() {
   return (
@@ -135,7 +90,9 @@ const on = async (page, id) => {
   const r = await page.evaluate((id) => { const el = document.getElementById(id); const b = el.getBoundingClientRect(); return { l: b.left, t: b.top, r: Math.max(b.right, b.left + el.scrollWidth), b: b.bottom }; }, id);
   return (await craftMarks(page)).filter((m) => m.x + m.w / 2 >= r.l - 2 && m.x + m.w / 2 <= r.r + 20 && m.y + m.h / 2 >= r.t - 2 && m.y + m.h / 2 <= r.b + 2);
 };
-const alsoOf = (overlay) => overlay.locator('.ch .card[role="dialog"] .read .also').allInnerTexts();
+
+// the rules folded under a glow, as the glow carries them
+const alsoOn = (overlay, id) => overlay.locator(`.bp .hit[data-id="${id}"]`).getAttribute('data-also');
 
 test('Colour trio: faded text that cannot be read is one contrast mark with the fade folded under it; a disabled control faded to nothing is judged by the disabled rule alone', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
@@ -145,19 +102,24 @@ test('Colour trio: faded text that cannot be read is one contrast mark with the 
   await page.waitForTimeout(500);
   const faded = await on(page, 'faded');
   assert.deepEqual(faded.map((m) => m.rule), ['contrast'], JSON.stringify(faded));
-  await openMark(page, overlay, faded[0].id);
-  const lines = await whyLines(page, overlay);
-  assert.match(lines[0], /^Contrast \d+ at 14px\..* · also 1$/);
-  assert.match(lines[1], /^This text uses opacity 0\.3/);
+  // the kept mark speaks in its own words; the fade rides under it
+  assert.match(faded[0].label, /^Contrast \d+ at 14px\./);
+  assert.equal(await alsoOn(overlay, faded[0].id), 'craft/text-opacity');
+  const folded = (await engineMark(page, 'faded', 'craft/contrast')).also;
+  assert.deepEqual(folded.map((a) => a.rule), ['craft/text-opacity']);
+  assert.match(folded[0].title, /^This text uses opacity 0\.3/);
+  // a click on it puts the one cause in hand
+  const words = await openMark(page, overlay, faded[0].id);
+  assert.equal(words.line, faded[0].label);
   await page.keyboard.press('Escape');
+  await overlay.locator('.fx .line').waitFor({ timeout: 5000 });
   // the one that still reads keeps the polish finding alone
   assert.deepEqual((await on(page, 'faded-ok')).map((m) => m.rule), ['text-opacity']);
   const off = await on(page, 'off');
   assert.deepEqual(off.map((m) => m.rule), ['disabled-contrast'], JSON.stringify(off));
   // inside its scope the disabled rule is the only judge: no fade or contrast finding is even made, so nothing folds
-  await openMark(page, overlay, off[0].id);
-  assert.doesNotMatch((await whyLines(page, overlay))[0], /also/);
-  await page.keyboard.press('Escape');
+  assert.equal(await alsoOn(overlay, off[0].id), '');
+  assert.deepEqual((await engineMark(page, 'off', 'craft/disabled-contrast')).also, []);
   assert.deepEqual(await on(page, 'off-ok'), []);
   assert.deepEqual(errors, []);
 });
@@ -170,14 +132,12 @@ test('Truncation pair: a cut-off path is judged by middle-truncate alone; a cut-
   await page.waitForTimeout(500);
   const path = await on(page, 'path');
   assert.deepEqual(path.map((m) => m.rule), ['middle-truncate'], JSON.stringify(path));
-  await openMark(page, overlay, path[0].id);
-  assert.doesNotMatch((await whyLines(page, overlay))[0], /also/);
-  await page.keyboard.press('Escape');
+  assert.equal(await alsoOn(overlay, path[0].id), '', 'nothing folds under the path');
   assert.deepEqual((await on(page, 'sentence')).map((m) => m.rule), ['truncate-intent']);
-  // one row per kept cause: the folded one makes none
-  const rows = (await craftRows(overlay)).map((r) => r.rule).sort();
-  assert.ok(rows.includes('craft/middle-truncate') && rows.includes('craft/truncate-intent'), JSON.stringify(rows));
-  assert.equal(rows.filter((r) => r === 'craft/middle-truncate').length, 1);
+  // one cause per kept finding: the folded one makes none, so each rule is held once on the page
+  const rules = (await craftMarks(page)).map((m) => m.rule);
+  assert.equal(rules.filter((r) => r === 'middle-truncate').length, 1);
+  assert.equal(rules.filter((r) => r === 'truncate-intent').length, 1);
   assert.deepEqual(errors, []);
 });
 
@@ -190,12 +150,13 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   const pair = await on(page, 'pair');
   assert.deepEqual(pair.map((m) => m.rule), ['button-padding'], JSON.stringify(pair));
   assert.deepEqual(await on(page, 'pair-ok'), []);
-  await openMark(page, overlay, pair[0].id);
+  // the icon-side rule rides under it
+  assert.equal(await alsoOn(overlay, pair[0].id), 'craft/icon-side');
+  const folded = (await engineMark(page, 'pair', 'craft/button-padding')).also;
+  assert.match(folded[0].title, /The icon side has the same/);
   // the composed edit: button-padding's 24px across, then icon-side run on that page takes 4px off the icon side
-  assert.match(await overlay.locator('.sel .stair').innerText(), /s6/);
-  const lines = await whyLines(page, overlay);
-  assert.match(lines[0], / · also 1$/);
-  assert.match(lines[1], /The icon side has the same/);
+  const words = await openMark(page, overlay, pair[0].id, { options: true });
+  assert.equal(words.target, 's6', `the pick is 24px across: ${JSON.stringify(words)}`);
   await applyFix(page, overlay);
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="pair"'));
@@ -217,15 +178,14 @@ test('Rows from one JSX line: the cause is picked once from the panel and writte
   const { page, errors, overlay } = await open(t, launched, url);
   await blueprint(page, overlay);
   await page.waitForTimeout(500);
-  await overlay.locator('.bpp .head').click();
-  const row = overlay.locator('.bpp .row[data-key^="craft/button-padding"]').filter({ has: page.locator('code', { hasText: /^px-s2$/ }) });
-  await row.waitFor({ timeout: 10000 });
-  assert.match(await row.locator('.what').innerText(), /3 places · 1 line/);
-  await row.click();
-  await page.keyboard.press('Enter');
-  // one row selected, the other two go with it; Enter takes the fix for all three, Apply writes once
-  await overlay.locator('.sel .ring').waitFor();
-  assert.match(await overlay.locator('.sel .pl-tag').innerText(), /×3/);
+  // a click on one row's glow: the cause is the class, all three places, one line
+  const rows = (await craftMarks(page)).filter((m) => m.rule === 'button-padding');
+  const mine = await page.evaluate(() => [...document.querySelectorAll('#rows > button')].map((b) => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
+  const onRow = rows.find((m) => mine.some((r) => m.x + m.w / 2 >= r.l - 2 && m.x + m.w / 2 <= r.r + 20 && m.y + m.h / 2 >= r.t - 2 && m.y + m.h / 2 <= r.b + 2));
+  assert.ok(onRow, `a button-padding glow on a row: ${JSON.stringify(rows)}`);
+  const words = await openMark(page, overlay, onRow.id, { options: true });
+  assert.equal(words.cls, 'px-s2');
+  assert.match(words.what, /3 places$/);
   let writes = 0;
   await page.route('**/swaps', (route) => { writes++; route.continue(); });
   await applyFix(page, overlay);
@@ -235,6 +195,5 @@ test('Rows from one JSX line: the cause is picked once from the panel and writte
   assert.match(await line(), /className="rounded-control bg-surface px-s4 py-s2 text-body">Go \{n\}/);
   await page.waitForTimeout(500);
   assert.equal(writes, 1, 'one write');
-  assert.equal(await overlay.locator('.cg:not([hidden]) .why').count(), 0, 'nothing refused');
   assert.deepEqual(errors, []);
 });
