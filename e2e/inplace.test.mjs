@@ -1,7 +1,7 @@
-// The fix in place (docs/briefs/insight-not-noise.md layer 2 and 3): a selected element's verified fix is drawn on it
-// (a ghost, the scale with the target ringed, the reason) and taken there: arrows preview a step, Enter makes it the
-// element's change in the Changes sidebar, Apply writes it as one class edit, and the element comes back quiet.
-// A band can be dragged through the scale too. Proved on a page like a real app, through real Vite, React, Chromium.
+// The fix in the fix panel (overlay/src/fixpanel.js): a cause is put in hand, ↑ ↓ try a step on the page, Enter takes
+// it, A writes the taken causes as one class edit per line, and the element comes back quiet. (The ghost, the ringed
+// stair, the Changes sidebar and dragging a band through the scale are gone.) Proved on a page like a real app,
+// through real Vite, React, Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -131,66 +131,36 @@ const run = (page) => page.evaluate(() => window.__plumb.craft({ timeout: 30000 
 
 
 
-const sel = (overlay) => overlay.locator('.sel');
+const panel = (overlay) => overlay.locator('.fx');
+const inHand = (overlay) => overlay.locator('.fx .cause .cls');
 const center = async (page, id, dx = 0.5, dy = 0.5) => { const b = await page.locator(`#${id}`).boundingBox(); return [b.x + b.width * dx, b.y + b.height * dy]; };
-const drawn = (page) => page.evaluate(() => {
-  const root = document.querySelector('plumb-overlay').shadowRoot;
-  return { ring: !!root.querySelector('.sel .ring'), tag: root.querySelector('.sel .pl-tag')?.textContent ?? null, dot: !!root.querySelector('.sel .pl-tag .dot'),
-    rail: [...root.querySelectorAll('.sel .pl-tag .rail i')].map((i) => i.classList.contains('on')), off: root.querySelectorAll('.sel .bm > .off').length,
-    current: root.querySelectorAll('.sel .bm > .off[data-current]').length, chooser: !!root.querySelector('.ch .card[role="dialog"]:not([hidden])') && !root.querySelector('.ch').hidden };
-});
-
-
-const fixOf = (page) => page.evaluate(() => {
-  const root = document.querySelector('plumb-overlay').shadowRoot;
-  return { ghost: !!root.querySelector('.sel .ghost'), stair: !!root.querySelector('.sel .stair'), reason: !!root.querySelector('.sel .reason'),
-    picked: root.querySelector('.sel .stair .opt[data-picked]')?.getAttribute('title') ?? null, state: root.querySelector('.sel')?.dataset.state ?? null,
-    changes: root.querySelector('.cg:not([hidden])')?.innerText.replace(/\s+/g, ' ') ?? null };
-});
-const select = async (page, overlay, id) => {
-  await blueprint(page, overlay);
-  await page.waitForTimeout(600);
-  const [x, y] = await center(page, id, 0.5, 0.85);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(300);
-  await page.mouse.move(5, 5);
+// a click the way a person makes it: the pointer arrives first (the nearest glow takes it), then presses
+const click = async (page, x, y) => { await page.mouse.move(x, y); await page.waitForTimeout(250); await page.mouse.click(x, y); };
+// the glow of a line (its zone's own point) clicked: the cause it belongs to is in hand
+const glow = async (page, overlay, text) => {
+  const [x, y] = (await overlay.locator(`.bp .hit[aria-label*="${text}"]`).first().getAttribute('data-at')).split(',').map(Number);
+  await click(page, x, y);
 };
 const padding = (page, id, side) => page.locator(`#${id}`).evaluate((el, side) => getComputedStyle(el)[`padding${side}`], side);
-
-test('The fix is drawn on the selected element: a ghost, the scale with the target ringed, the reason; arrows preview a step', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await select(page, overlay, 'invite');
-  let f = await fixOf(page);
-  assert.equal(f.ghost && f.stair && f.reason, true, JSON.stringify(f));
-  assert.equal(f.picked, "s6");
-  assert.equal(await padding(page, 'invite', 'Right'), '12px', 'nothing changes on the page until a step is pointed at');
-  await page.keyboard.press('ArrowDown');
-  await page.waitForTimeout(150);
-  f = await fixOf(page);
-  assert.equal(f.picked, "s4");
-  assert.equal(await padding(page, 'invite', 'Right'), '16px', 'the page previews the step');
-  assert.deepEqual(errors, []);
-});
-
-test('Enter makes the fix the element’s change; Apply writes it as one class edit; after the reload the button is quiet in every family', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { root, url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await select(page, overlay, 'invite');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(250);
-  const f = await fixOf(page);
-  assert.equal(f.state, 'accepted');
-  assert.match(f.changes, /left padding 12 → 16 \(s4\) .*right padding 12 → 24 \(s6\)/);
-  assert.match(f.changes, /Apply 2 changes/);
-  await overlay.locator('.cg .ok').click();
-  const source = join(root, 'src/App.jsx');
-  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
-  for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
-  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-accent pl-s4 pr-s6 py-s3 text-body text-surface"/);
-  // the write reloads the page by itself; let that land, then read the page again
+const badge = (overlay) => panel(overlay).locator('.apply .badge');
+const taken = async (overlay) => Number(await badge(overlay).innerText().catch(() => '0'));
+// walk the causes with → until `cls` is in hand and its exact edit is read, then Enter takes it
+async function take(page, overlay, cls) {
+  const before = await taken(overlay);
+  for (let i = 0; i < 12; i++) {
+    if (await inHand(overlay).first().innerText().catch(() => null) === cls) {
+      await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
+      await page.keyboard.press('Enter');
+      await badge(overlay).filter({ hasText: String(before + 1) }).waitFor({ timeout: 5000 }).catch(async () => { throw new Error(`taking ${cls} did not count it: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}`); });
+      return;
+    }
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(400);
+  }
+  throw new Error(`${cls} was not reached`);
+}
+// the blueprint comes back after a write reloads the page; marks drawn on one element
+async function reopen(page, overlay) {
   await page.waitForTimeout(800);
   await page.reload();
   await page.waitForLoadState('load');
@@ -198,40 +168,53 @@ test('Enter makes the fix the element’s change; Apply writes it as one class e
   await page.evaluate(() => window.__plumb.ready());
   try { await blueprint(page, overlay); } catch { await page.keyboard.press('Escape'); await page.waitForTimeout(500); await blueprint(page, overlay); }
   await page.waitForTimeout(600);
-  const marks = await page.evaluate(() => {
-    const el = document.getElementById('invite').getBoundingClientRect();
-    return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
-      .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2).map((h) => h.id);
-  });
-  assert.deepEqual(marks, [], 'quiet');
-  assert.deepEqual(errors, []);
-});
+}
+const marksOn = (page, id) => page.evaluate((id) => {
+  const el = document.getElementById(id).getBoundingClientRect();
+  return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
+    .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2).map((h) => h.id);
+}, id);
 
-test('Backspace drops the change and the element is back as it was; dragging a band through the scale makes a change too', { timeout: 120000 }, async (t) => {
+test('The fix is tried on the page from the panel: the cause in hand shows the theme’s steps with the suggestion picked and tried; ↑ ↓ move the page to another step', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
-  await select(page, overlay, 'invite');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(200);
-  assert.equal(await padding(page, 'invite', 'Right'), '24px');
-  await page.keyboard.press('Backspace');
-  await page.waitForTimeout(200);
-  assert.equal((await fixOf(page)).changes, null);
-  assert.equal(await padding(page, 'invite', 'Right'), '12px', 'back as it was');
-  // drag the right padding two steps (22px each) to the right: s3 → s4 → s6
-  const b = await page.locator('#invite').boundingBox();
-  await page.mouse.move(b.x + b.width - 5, b.y + b.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(b.x + b.width - 5 + 23, b.y + b.height / 2, { steps: 3 });
-  await page.mouse.move(b.x + b.width - 5 + 46, b.y + b.height / 2, { steps: 3 });
-  await page.mouse.up();
-  await page.waitForTimeout(250);
-  assert.match((await fixOf(page)).changes ?? '', /right padding 12 → 24 \(s6\)/);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  await glow(page, overlay, '12px on every side');
+  await inHand(overlay).filter({ hasText: /^px-s3$/ }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
+  // the suggestion is picked and already on the page: s4 on the left, s6 on the right
+  assert.equal(await panel(overlay).locator('.sp[aria-pressed="true"] .tk').innerText(), 's6');
+  await page.waitForFunction(() => { const c = getComputedStyle(document.getElementById('invite')); return c.paddingLeft === '16px' && c.paddingRight === '24px'; }, null, { timeout: 5000 });
+  assert.equal(await padding(page, 'invite', 'Top'), '12px', 'only the sides move');
+  // ↓ tries the next step down: the page previews it
+  await page.keyboard.press('ArrowDown');
+  await panel(overlay).locator('.sp[aria-pressed="true"] .tk').filter({ hasText: /^s4$/ }).waitFor({ timeout: 5000 });
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('invite')).paddingRight === '16px', null, { timeout: 5000 });
   assert.deepEqual(errors, []);
 });
 
-test('Two problems in two families on one label: each taken in place with Enter, one Apply writes both, and the label is quiet', { timeout: 150000 }, async (t) => {
+test('Enter takes the fix; A writes it as one class edit; after the reload the button is quiet in every family', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  await glow(page, overlay, '12px on every side');
+  await inHand(overlay).filter({ hasText: /^px-s3$/ }).waitFor({ timeout: 10000 });
+  await take(page, overlay, 'px-s3');
+  await page.keyboard.press('a');
+  const source = join(root, 'src/App.jsx');
+  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
+  for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
+  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-accent pl-s4 pr-s6 py-s3 text-body text-surface"/);
+  await reopen(page, overlay);
+  assert.deepEqual(await marksOn(page, 'invite'), [], 'quiet');
+  assert.deepEqual(errors, []);
+});
+
+test('Two problems in two families on one label: each taken with Enter, one A writes both, and the label is quiet', { timeout: 150000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await fixture(t, PAGE);
   // a theme with a letter-spacing step, so both fixes are on the theme
@@ -240,39 +223,20 @@ test('Two problems in two families on one label: each taken in place with Enter,
   await blueprint(page, overlay);
   await page.waitForTimeout(600);
   const [x, y] = await center(page, 'status', 0.3, 0.5);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(400);
-  await page.mouse.move(5, 5);
-  // the first problem's fix is drawn; Enter takes it and the next one becomes current
-  await page.waitForFunction(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .stair'), null, { timeout: 5000 });
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(300);
-  // the theme's text sizes for the second: its exact edit is read, then Enter takes it
-  await page.waitForFunction(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .stair'), null, { timeout: 5000 })
-;
-  for (let i = 0; i < 20; i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(250); if (/2 changes/.test(await overlay.locator('.cg').innerText().catch(() => ''))) break; }
-  const sidebar = (await overlay.locator('.cg').innerText()).replace(/\s+/g, ' ');
-  assert.match(sidebar, /letter spacing .*→ tracking-wide/, sidebar);
-  assert.match(sidebar, /text size .*→ small/, sidebar);
-  assert.match(sidebar, /Apply 2 changes/);
-  await overlay.locator('.cg .ok').click();
+  await click(page, x, y);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  // the label's two causes: its capitals take the theme's tracking-wide, its size takes a type step
+  await take(page, overlay, 'letter-spacing');
+  await take(page, overlay, 'text-[11px]');
+  assert.equal(await taken(overlay), 2);
+  await page.keyboard.press('a');
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="status"'));
   for (let i = 0; i < 100 && /text-\[11px\]/.test(await line()); i++) await page.waitForTimeout(100);
   const written = /className="([^"]+)"/.exec(await line())[1].split(' ').sort();
   assert.deepEqual(written, ['text-ink-muted', 'text-small', 'tracking-wide', 'uppercase']);
-  await page.waitForTimeout(800);
-  await page.reload();
-  await page.waitForLoadState('load');
-  await page.waitForFunction(() => window.__plumb?.overlay);
-  await page.evaluate(() => window.__plumb.ready());
-  try { await blueprint(page, overlay); } catch { await page.keyboard.press('Escape'); await page.waitForTimeout(500); await blueprint(page, overlay); }
-  await page.waitForTimeout(600);
-  const marks = await page.evaluate(() => {
-    const el = document.getElementById('status').getBoundingClientRect();
-    return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
-      .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2).map((h) => h.id);
-  });
+  await reopen(page, overlay);
+  const marks = await marksOn(page, 'status');
   assert.deepEqual(marks, [], `quiet: ${JSON.stringify(marks)}`);
   assert.deepEqual(errors, []);
 });
