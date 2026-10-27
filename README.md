@@ -8,9 +8,9 @@ npm install -D @unlocalhosted/react-plumber
 
 Published as [`@unlocalhosted/react-plumber`](https://www.npmjs.com/package/@unlocalhosted/react-plumber); the command it installs is `plumber`. Source and releases live at [unlocalhosted/plumb](https://github.com/unlocalhosted/plumb).
 
-React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system. In the browser, it lets you fix a drift by pointing at it and writes the fix to the source file.
+React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and where the page falls short of the craft a good designer would expect: tight button sides, corners that don't match their parent, text faded with opacity, lines too long, targets too small to tap. In the browser, it draws every problem on the running page and fixes it in the source file, one cause at a time. In CI, it reads the same pages headlessly and fails on what you decided matters.
 
-<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="960" alt="Blueprint mode: the running page as a wireframe, every drift as an amber break with the nearest token ghosted beside it, held as designed, and the causes listed by count"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="960" alt="Blueprint mode: the running page dimmed, heat where it is off, the fix panel holding one cause with its options drawn as what they are"></p>
 
 It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. Inline values written in code are read symbolically: constants fold, a ternary or a typed prop is read as every outcome, a token beside a runtime number is judged by the token, and `k * STAGGER` is judged by its step. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
 
@@ -21,12 +21,14 @@ It compiles classes, stylesheets, `@apply` and inline styles with the project's 
 ```sh
 npm install -D @unlocalhosted/react-plumber
 npx plumber                 # report drift; exits 0 with no config
-npx plumber init            # write plumber.config.ts and a baseline of today's findings
+npx plumber state           # where the project starts: bare, half a system, a system
+npx plumber propose         # tokens drafted from the values the code already uses
+npx plumber init            # ask, write the theme, write plumber.config.ts, baseline today's findings
 npx plumber check           # green: only new drift fails from here
 npx plumber install --ci    # add the GitHub Action
 ```
 
-`init` infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
+`state` names the starting point from evidence. `propose` harvests the spacing, colour, radius and type values in use, clusters them into a scale, names the steps and shows what each would take over; `propose --write` puts them in your theme, in the shape your theme already has (`@theme`, shadcn's `@theme inline`, or `:root`), and imports a new file from your stylesheet. `init` asks the same questions one at a time (`--yes` takes every default, `--family spacing=keep` answers one), infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line; `plumber fix <id>` applies one of its diffs after you confirm it.
 
 ### 2. Fix it from the page
 
@@ -44,32 +46,77 @@ import react from '@vitejs/plugin-react'
 export default { plugins: [plumb(), react()] }
 ```
 
-Start your dev server as usual. Then:
+Start your dev server as usual. The overlay lives only in development: production builds carry no script, no stamps and no server routes.
+
+#### Reading
 
 | Gesture | What happens |
 | --- | --- |
-| Hold **Alt** and hover | The element under the pointer is outlined, with its component and how many values are off the scale. |
-| **Click** while holding Alt | Pins a reading: the exact JSX that made the element, and each off-scale value with the tokens that fit. |
-| **Alt+↑ / Alt+↓** | Steps between the element's JSX and the components above it. |
-| Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
-| **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
+| Hold **Alt** | The element under the pointer is outlined, with its component and how many values are off the scale. |
+| **Alt + click** | Pins a reading: the exact JSX that made the element, each off-scale value with the tokens that fit, and the craft problems on it. |
+| **Alt + two-finger scroll** | Up to the parent, down to the child. |
+| **Double-click** words | Edit them in place; **Enter** or clicking away writes them to the source string, **Esc** puts them back. **Alt + double-click** reaches words in a button, card or link. |
 
-#### Blueprint mode
+#### Blueprint: fixing
 
-Press **Alt+B** and the whole view becomes its own blueprint, a wireframe of the running page with every drift drawn where it lives. Words become bars. Gaps on your scale are faint dimensions named by their token; rails on the left and top margins read the page's rhythm. Anything off the scale is an amber break on its own geometry, with the nearest token ghosted in mint beside it at its own size. Each element carries a count, a red wash says how far it sits from the system, and the title block lists the causes of the drift by count, the first line being the decision that closes the most. Nothing else is lettered at rest.
+Press **Alt+B**. The page dims and heat shows where it is off: an amber break on the geometry of every drift, with the nearest token ghosted beside it, and the craft problems the page has, measured on the page. The **fix panel**, docked at the bottom, is the one place you act. Its unit is a cause: one class under one rule, every place it is used. One decision, and every place moves.
 
 | Gesture | What happens |
 | --- | --- |
 | **Alt+B** | Blueprint on or off. **Esc** also leaves, and the page is put back exactly. |
-| **Point** at a break, or **Tab** to it | One note in words: what is off, the nearest tokens, what a click does. |
-| **Click** a break, or **Enter** | Opens its chooser. Pointing at a step previews it; clicking picks it. Several picks go in one **Write**. |
-| **Hold D** | The view as designed: every drift takes its nearest token at once and the ink turns mint. Release puts it back. |
-| **L** | The punch list: every drift in view in rows. |
-| Point at a cause in the title block | Outlines every element it touches. |
+| **Click** anything, or **Enter** | Puts the first cause in hand: the class, what is off in words, its places, and its options drawn as what they are (padding as green hatch, margin as orange dots, gap as purple stripes, type as "Ag", colour as a swatch). The value it has now is struck through. |
+| **↑ ↓**, or point at an option | Tries it: every place of the cause glides to it on the live page, and its heat shrinks with it. |
+| **Enter** | Takes the option. **→** or **Tab** skips the cause, **←** goes back. |
+| **J K** | Moves between causes; **N** walks the places of one. |
+| **A** | Applies everything taken: one guarded write per file, undoable from the dock. |
+| Hold **Space** | Use the page underneath (scroll, open a menu) without leaving blueprint. |
+| **L** | Every drift in view as a list. |
+
+When the theme has no step that would settle a rule, the option is a new token, named and valued from the craft spec (`--tracking-caps: 0.06em`); taking it adds the token to your theme file and swaps the class in the same breath. When nothing can be written as classes, the panel says so and offers Skip.
+
+Every write is checked against the file on disk: the file's hash, that it still parses, that the class is still there as written. A stale file is refused with "This file changed after we checked it", never overwritten. Writes land in place, so the dev server's hot reload picks them up, and each one returns an undo handle.
 
 If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; React Plumber then finds positions through React's owner chain instead.
 
 React Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+
+### 3. Craft in CI
+
+```sh
+npx plumber spec                                      # the craft spec in effect, and where each value came from
+npx plumber craft --url http://localhost:5173/        # the page's craft problems, headless
+npx plumber craft --url http://localhost:5173/ --routes / /settings --json
+npx plumber craft --url http://localhost:5173/ --sarif craft.sarif
+```
+
+`craft` opens each route in headless Chromium (Playwright, installed separately: `npm i -D playwright && npx playwright install chromium`, or set `PLUMBER_CHROMIUM` to a Chrome you have), reads every element the way the overlay does, and reports what is off with the same words and the same fix. It also tries the states a person reaches: dark mode, touch, hover and press, a toggle, a menu, a tooltip, the keyboard, a spinner. `--no-pairs` and `--no-probe` leave those out; `--probe drag` adds the one gesture that can move things; `--probe-budget` caps how many elements each gesture tries. `--judge` asks a vision model (Anthropic's API, with `ANTHROPIC_API_KEY`; never when `CI` is set) about the findings a rule measured but would not stand behind, sending it a crop of each; every answer is kept under `.plumber/judge` to commit with the project, so a run without the flag reuses them. Advisory findings (matters of taste) are notes and never fail the run; every other finding exits 1. `--json` prints the spec, each route and the findings; `--sarif` writes SARIF 2.1.0 for code scanning.
+
+The spec is the standard every rule reads its numbers from. `plumber spec` prints it; the `craft` key in your config changes it:
+
+```ts
+import { defineConfig } from '@unlocalhosted/react-plumber'
+
+export default defineConfig({
+  css: 'src/styles.css',
+  craft: {
+    preset: 'balanced',                        // strict | balanced | relaxed
+    values: {                                  // per principle, per rule: the numbers, merged over the preset
+      legibility: { measure: { max: 70 } },
+      access: { 'hit-target': { min: 44 } },
+    },
+    rules: {                                   // per rule: off, or its tier and severity
+      'craft/hairline': false,
+      'craft/continuous-corners': { tier: 'craft' },
+      'habits/real-quotes': { severity: 'info' },
+    },
+    tokens: {                                  // new tokens the fix panel may add
+      create: true,
+      name: '{family}-{job}',
+      file: 'src/styles.css',
+    },
+  },
+})
+```
 
 ### From a checkout
 
