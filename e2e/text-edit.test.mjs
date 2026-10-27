@@ -156,7 +156,7 @@ test('in blueprint, a double-click edits words through the glass, and the keys r
   const { url, source } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.dock .say').filter({ hasText: /off in view|all true/ }).waitFor({ timeout: 30000 });
+  await overlay.locator('.dock .say').filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 30000 });
 
   await dblclickWords(page, '#tiny');
   await editable(page, '#tiny');

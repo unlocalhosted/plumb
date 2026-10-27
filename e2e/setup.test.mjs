@@ -296,7 +296,7 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   assert.equal(await page.locator('#calendar-row').evaluate(element => getComputedStyle(element).gap), '8px');
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source, 'preview has not changed disk');
   await reading.getByRole('button', { name: 'Write 1 edit' }).click();
-  await overlay.locator('.synced .state').filter({ hasText: 'Wrote 1 edit to src/App.jsx' }).waitFor({ timeout: 15000 });
+  await overlay.locator('.synced .state').filter({ hasText: 'Applied 1 change in src/App.jsx' }).waitFor({ timeout: 15000 });
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source.replace('gap-[10px]', 'gap-s2'), 'exactly the chosen token edit');
   const checked = JSON.parse(plumb('check', '--json'));
   const sourceSite = site => site.file === join(root, 'src/App.jsx');

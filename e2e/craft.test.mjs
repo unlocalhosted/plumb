@@ -56,7 +56,7 @@ async function open(t, launched, url) {
 // Blueprint on, and the view read to the end (the panel's header stops counting readings).
 async function blueprint(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.bpp .meta').filter({ hasText: /off on this page|All on the system|not checked/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
 }
 
 // Every craft mark drawn, by its rule and the element it is on: the hit's id names the mark's key.
@@ -289,7 +289,7 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     const { page, errors, overlay } = await open(t, launched, url + query);
     await blueprint(page, overlay);
     await page.waitForTimeout(500); // the rest of the page is read off-screen after the view
-    await page.waitForFunction(() => /off on this page|All on the system|not checked/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp .meta').textContent), null, { timeout: 10000 });
+    await page.waitForFunction(() => /on this page|Everything matches your system|not checked/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp .meta').textContent), null, { timeout: 10000 });
     const want = known[app ? 'GOOD' : 'demo'];
     const marks = await craftMarks(page);
     assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);

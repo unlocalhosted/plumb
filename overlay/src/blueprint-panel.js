@@ -134,8 +134,8 @@ export class Panel {
     this.#host = host;
     this.#marks = marks;
     this.#el = Object.assign(document.createElement('aside'), { className: 'bpp', hidden: true });
-    this.#el.setAttribute('aria-label', 'Drift in view, by cause');
-    this.#el.innerHTML = '<button class="head" type="button" aria-expanded="false"><span class="title">Drift in view</span><span class="meta" role="status"></span><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><ul class="rows" role="list"></ul><div class="foot"><span class="code" hidden></span><span class="keys" aria-hidden="true"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>↵</kbd> fix · <kbd>N</kbd> next place</span></div>';
+    this.#el.setAttribute('aria-label', 'What’s off on this page');
+    this.#el.innerHTML = '<button class="head" type="button" aria-expanded="false"><span class="title">What’s off</span><span class="meta" role="status"></span><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><ul class="rows" role="list"></ul><div class="foot"><span class="code" hidden></span><span class="keys" aria-hidden="true"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>↵</kbd> fix · <kbd>N</kbd> next place</span></div>';
     root.append(this.#el);
     const rows = this.#el.querySelector('.rows');
     rows.addEventListener('click', (e) => {
@@ -269,9 +269,9 @@ export class Panel {
     const p = this.#progress, off = this.#groups.reduce((n, g) => n + g.members.length, 0);
     // never "all on the system" while some of the view could not be checked
     const unchecked = p?.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
-    const meta = !p || !p.total ? 'Reading…' : p.read < p.total ? `Reading ${p.read} of ${p.total}…`
-      : off + this.#code ? `<span class="off">${off + this.#code} off<span class="more"> on this page</span></span> · ${plural(this.#groups.length, 'cause')}<span class="more">${this.#code ? ` · ${this.#code} set in code` : ''}${unchecked ? ` · ${unchecked}` : ''}</span>`
-      : unchecked || 'All on the system';
+    const meta = !p || !p.total ? 'Checking…' : p.read < p.total ? `Checking ${p.read} of ${p.total}…`
+      : off + this.#code ? `<span class="off">${plural(off + this.#code, 'problem')}<span class="more"> on this page</span></span> · ${this.#groups.length} fix${this.#groups.length === 1 ? '' : 'es'}<span class="more">${this.#code ? ` · ${this.#code} set in code` : ''}${unchecked ? ` · ${unchecked}` : ''}</span>`
+      : unchecked || 'Everything matches your system';
     const metaEl = this.#el.querySelector('.meta');
     if (metaEl.innerHTML !== meta) metaEl.innerHTML = meta;
     const rows = this.#groups.map((g) => {

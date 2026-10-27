@@ -86,7 +86,7 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   // Write: the edit lands in source, the dev server reloads, and the reading comes back current.
   const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
   await reading.getByRole('button', { name: 'Write 1 edit' }).click();
-  await overlay.locator('.synced .state').filter({ hasText: 'Wrote 1 edit to src/App.jsx' }).waitFor({ timeout: 15000 });
+  await overlay.locator('.synced .state').filter({ hasText: 'Applied 1 change in src/App.jsx' }).waitFor({ timeout: 15000 });
   const after = await readFile(join(root, 'src/App.jsx'), 'utf8');
   assert.equal(after, before.replace('gap-[10px] py-[10px]', 'gap-s2 py-[10px]'), 'exactly the previewed edit, nothing else');
   assert.equal(await page.locator('#sync-row').getAttribute('style'), null, 'the preview is lifted once the page carries the change');
@@ -129,5 +129,5 @@ test('Undo lifts every preview; closing never leaves a preview behind; unplaced 
   await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.body.append(d); return window.__plumb.overlay.pin(d); });
   assert.equal(await page.$eval('#runtime', element => window.__plumb.locate(element)), null);
   assert.deepEqual(await page.$eval('#runtime', element => window.__plumb.locate(element, { explain: true })), { location: null, reason: 'no-fiber', detail: {} });
-  await overlay.getByRole('dialog').filter({ hasText: 'wasn’t rendered by React' }).waitFor();
+  await overlay.getByRole('dialog').filter({ hasText: 'Not drawn by React' }).waitFor();
 });

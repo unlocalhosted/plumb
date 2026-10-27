@@ -45,7 +45,7 @@ const KEYS = [
 ];
 
 const HINTS = {
-  blueprint: 'Blueprint · J K move between causes · ↵ fixes one everywhere · hold Space to use the page',
+  blueprint: 'Click anything to fix it · J K next problem · hold Space to use the page',
   inspect: 'Click to pin and read it · two-finger scroll walks the tree · double-click words to edit them',
   words: '↵ or clicking away saves to source · Esc puts the words back',
 };

@@ -191,7 +191,8 @@ export class Craft {
       this.#theme.colors();
       const facts = new Facts();
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
-      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...this.#marksFor(item.el, facts)] })), { facts, theme: this.#theme, rules: this.#rules });
+      // craft judges what it can reach: an element outside the project's source has no line to fix, so it is left be
+      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.#rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {

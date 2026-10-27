@@ -56,7 +56,7 @@ async function open(t, launched, url) {
 // Blueprint on, and the view read to the end (the panel's header stops counting readings).
 async function blueprint(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.bpp .meta').filter({ hasText: /off on this page|All on the system|not checked/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
 }
 
 // Every craft mark drawn, by its rule and the element it is on: the hit's id names the mark's key.

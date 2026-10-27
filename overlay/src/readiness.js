@@ -273,7 +273,7 @@ export class Readiness {
     const n = missing.length, scroll = this.#panel.querySelector('.body')?.scrollTop ?? 0, focus = this.#focusKey();
     this.#panel.innerHTML = `<div class="card" role="dialog" aria-label="Your setup">
       <div class="top"><span class="title">Your setup</span><button class="close" type="button" aria-label="Close">${CLOSE}</button></div>
-      <p class="lead">${plural(n, 'thing')} limit${n === 1 ? 's' : ''} what React Plumber can do here. Tick what to fix.</p>
+      <p class="lead">${plural(n, 'thing')} to set up before everything works. Tick what to fix.</p>
       <div class="body">${causes.map((q) => this.#reqHtml(q)).join('')}</div>
       ${this.#footHtml(missing)}
     </div>`;
@@ -394,7 +394,7 @@ export class Readiness {
         this.#row.set(q.id, { done: fresh.fix.file });
         wrote = true;
         await this.#refresh(); // the next fix may edit the same file: its hash must be current
-      } catch (error) { this.#row.set(q.id, { error: error.message || 'React Plumber refused the change.' }); }
+      } catch (error) { this.#row.set(q.id, { error: error.message || 'Couldn’t apply.' }); }
       this.#render();
     }
     // A config change restarts the dev server; read once more when it answers so the list reflects it.

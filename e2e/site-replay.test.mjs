@@ -56,8 +56,6 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
     await page.goto(run.base);
     await page.waitForFunction(() => window.__plumb?.overlay && document.querySelector('[data-drift="card"]'));
     await page.evaluate(() => window.__plumb.ready());
-    // Close the development tuner through its own header before using the hero.
-    if (run.dev) await page.locator('.dialkit-root .dialkit-panel-header').filter({ hasText: 'DialKit' }).click();
     assert.equal(await page.locator('vite-error-overlay').count(), 0);
     const overlay = page.locator('plumb-overlay');
     assert.equal(await overlay.count(), 1);
@@ -77,7 +75,7 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
       const desired = (run.alternate ? alternatives : preferred)[index];
       await dialog.getByRole('button', { name: new RegExp(`^${desired}(?:,|$)`) }).click();
       await dialog.getByRole('button', { name: 'Write 1 edit', exact: true }).click();
-      await overlay.locator('.synced .state').filter({ hasText: /^Wrote 1 edit to/ }).waitFor();
+      await overlay.locator('.synced .state').filter({ hasText: /^Applied 1 change in/ }).waitFor();
       await page.waitForFunction(({ part, bad }) => !document.querySelector(`[data-drift="${part}"]`).classList.contains(bad), drift);
       assert.equal(await page.locator(`[data-drift="${drift.part}"]`).evaluate((node, token) => node.classList.contains(token), desired), true);
       assert.doesNotMatch(await dialog.locator('.read .t').innerText(), new RegExp(drift.bad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));

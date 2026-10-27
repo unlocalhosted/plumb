@@ -80,7 +80,7 @@ const within = (p, r, slack = 1) => p.x >= r.x - slack && p.x + p.w <= r.right +
 
 async function on(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view|all true/ }).waitFor({ timeout: 30000 });
+  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 30000 });
   // the marks are drawn on the frame after the count
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length > 100, null, { timeout: 10000 });
 }

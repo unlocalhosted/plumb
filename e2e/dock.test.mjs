@@ -56,7 +56,7 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   await dock.waitFor();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
   let s = await read(page);
-  assert.equal(s.say, 'React Plumber · Alt to inspect');
+  assert.equal(s.say, 'Hold Alt to inspect');
   assert.ok(s.right >= 12 && s.right <= 20 && s.bottom >= 12 && s.bottom <= 20, `bottom right with a 16px inset: ${s.right}, ${s.bottom}`);
   assert.equal(await dock.locator('[role="status"]').getAttribute('aria-live'), 'polite');
 
@@ -199,7 +199,7 @@ test('every gesture is one ? away, and each mode says what to do the first time 
   await hint.waitFor({ state: 'hidden' });
   // blueprint's first time says J K and Space
   await page.keyboard.press('Alt+B');
-  await hint.filter({ hasText: /J K move between causes/ }).waitFor({ timeout: 20000 });
+  await hint.filter({ hasText: /J K next problem/ }).waitFor({ timeout: 20000 });
   await page.keyboard.press('j'); // the next key takes the tip away, and still does its own work
   await hint.waitFor({ state: 'hidden' });
   await page.keyboard.press('Escape');

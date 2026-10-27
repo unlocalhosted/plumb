@@ -52,11 +52,11 @@ function unplaced(found) {
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
     return { short: `not checked: ${file}`, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
-  if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'This element wasn’t rendered by React (HTML written at runtime, or outside your app), so it has no line in your source.' };
+  if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'Not drawn by React, so it isn’t in your code.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
-    return { short: 'library only', message: 'A library rendered this element, and React Plumber can’t prove which line of your code used it. Point at the component that wraps it instead.' };
-  if (found?.reason === 'map') return { short: 'no source map', message: 'The dev server’s source map for this element doesn’t lead back to your source, so React Plumber won’t guess a line.' };
-  return { short: 'not placed', message: 'React Plumber can’t tie this element to a line in your source, so it won’t guess one.' };
+    return { short: 'library only', message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
+  if (found?.reason === 'map') return { short: 'no source map', message: 'Your dev server’s source map doesn’t point back to your code for this.' };
+  return { short: 'not placed', message: 'Can’t reach this in your code.' };
 }
 // A structural path survives a reload of the same app state; ids and classes may not (the write changes classes).
 const pathTo = element => {
@@ -503,11 +503,12 @@ class PlumbOverlay extends HTMLElement {
   #blueprintSays() {
     const p = this.#bp.progress, f = this.#fixer, status = f?.status;
     if (status) return esc(status.text);
-    if (!p || !p.total) return 'reading…';
-    if (p.read < p.total) return `reading ${p.read} of ${p.total}…`;
+    if (!p || !p.total) return 'checking…';
+    if (p.read < p.total) return `checking ${p.read} of ${p.total}…`;
     const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
-    const count = [p.drift ? `${p.drift} off in view` : !p.notChecked ? 'all true in view' : '', unchecked].filter(Boolean).join(' · ');
-    if (f?.count) return `${p.drift ? `${p.drift} off` : p.notChecked ? unchecked : 'all true'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
+    const problems = (n) => `${n} problem${n === 1 ? '' : 's'}`;
+    const count = [p.drift ? `${problems(p.drift)} in view` : !p.notChecked ? 'nothing to fix in view' : '', unchecked].filter(Boolean).join(' · ');
+    if (f?.count) return `${p.drift ? problems(p.drift) : p.notChecked ? unchecked : 'nothing to fix'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
     return `${count} · Alt+B`;
   }
   #dock() {
@@ -521,7 +522,7 @@ class PlumbOverlay extends HTMLElement {
       starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
       failed: 'React Plumber couldn’t start',
       lost: 'Reconnecting…',
-      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? `Blueprint · ${this.#blueprintSays()}` : 'React Plumber · Alt to inspect',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : 'Hold Alt to inspect',
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
     const f = this.#fixer, fs = f?.status;
@@ -1417,16 +1418,16 @@ class PlumbOverlay extends HTMLElement {
     p.status = { kind: 'writing' }; this.#updateSync();
     const classes = p.element.getAttribute('class');
     const n = ids.length + texts.length;
-    const text = `Wrote ${n} edit${n === 1 ? '' : 's'} to ${s.file}`;
+    const text = `Applied ${n} change${n === 1 ? '' : 's'} in ${s.file}`;
     try { sessionStorage.setItem(RESUME, JSON.stringify({ path: pathTo(p.element), file: s.file, tag: s.tag, text, at: Date.now(), blueprint: !!this.#blueprint?.active })); } catch {}
     try {
-      if (ids.length) this.wrote(await post('apply', { file: s.file, hash: s.hash, edits: ids }), `Wrote ${ids.length} fix${ids.length === 1 ? '' : 'es'} to ${s.file.split('/').pop()}`);
+      if (ids.length) this.wrote(await post('apply', { file: s.file, hash: s.hash, edits: ids }), `Applied ${ids.length} change${ids.length === 1 ? '' : 's'} in ${s.file.split('/').pop()}`);
       // Each text change is written against the file as it is now: read the runs again, find the one that still says
       // what the person started from, and write only that. The server refuses if it no longer does.
       for (const t of texts) {
         const now = await request('text', { file: s.file, line: s.line, column: s.column });
         const run = now?.editable ? now.runs.find(r => r.text === t.from) : null;
-        if (!run) throw new Error(`The text "${t.from}" changed since React Plumber read it.`);
+        if (!run) throw new Error(`“${t.from}” changed after we checked it. Check again.`);
         // Lift the preview first: the write is checked against the page as source made it, then the page shows the
         // written words (a dev server's reload, or the homepage's replay). If the write is refused, the preview returns.
         if (t.node.isConnected) t.node.data = t.lead + t.from + t.trail;

@@ -256,7 +256,7 @@ export class Reader {
   #report(order) {
     // craft: every read element goes through the craft engine first, so the counts below and the items handed on
     // agree on what is drawn (its marks are appended to the element's own)
-    const ready = [...this.#items.values()].filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file }) => ({ id, el, marks, dims, file }));
+    const ready = [...this.#items.values()].filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
     const enriched = this.#enrich ? this.#enrich(ready) : ready;
     const marksOf = new Map(enriched.map((i) => [i.id, i.marks]));
     const read = order.filter((i) => i.state === 'ready').length;

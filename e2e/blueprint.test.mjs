@@ -88,7 +88,7 @@ test('Alt+B dims the page and lifts every drift in view where it lives; one labe
   assert.equal(shade.filter, 'grayscale(1)', 'the page gives its colour up under the dim');
   assert.match(shade.bg, /rgba\(20, 20, 22, 0\.46\)/);
   // reading, then the count
-  await say(overlay).filter({ hasText: /\d+ off in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /\d+ problems? in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
   const expected = ['gap-[10px]', 'py-[10px]', 'px-[14px]', 'rounded-[14px]', 'text-[13.5px]', 'gap-[3px]', 'rounded-[5px]'];
   await page.waitForFunction((drifts) => {
     const labels = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((r) => r.getAttribute('aria-label'));
@@ -96,7 +96,7 @@ test('Alt+B dims the page and lifts every drift in view where it lives; one labe
   }, expected, { timeout: 5000 }).catch(() => {});
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
-  const count = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
+  const count = Number((await say(overlay).innerText()).match(/(\d+) problems?/)[1]);
   assert.equal(count, await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length), 'the dock counts the drift marks drawn');
   // the sync row is cut out of the dim at its own radius, and outlined in the drift ink
   const clip = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.shade').style.clipPath);
@@ -173,13 +173,13 @@ test('Leaving puts the page back exactly, and nothing keeps listening', { timeou
   const before = await footprint(page);
 
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view|all true/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
   await page.keyboard.press('Alt+B');
   await off(page);
 
   assert.equal(await footprint(page), before, 'no attribute, inline style or stylesheet is left behind');
   assert.equal(await hits(overlay).count(), 0);
-  assert.match(await say(overlay).innerText(), /React Plumber · Alt to inspect/);
+  assert.match(await say(overlay).innerText(), /Hold Alt to inspect/);
   assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'false');
   await page.mouse.wheel(0, 300);
   await page.waitForTimeout(300);
@@ -203,16 +203,16 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   const before = await footprint(page);
 
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /\d+ off in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /\d+ problems? in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
   // the count and the drawn marks agree once the last reading lands
-  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) off/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
+  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) problems?/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
   // the panel: docked on the right, its header counts the drift and the causes
   await page.waitForFunction(() => getComputedStyle(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp')).opacity === '1');
   const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
-  await panel(overlay).locator('.meta').filter({ hasText: /^\d+ off on this page · \d+ causes?( · |$)/ }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.meta').filter({ hasText: /^\d+ problems? on this page · \d+ fix(es)?( · |$)/ }).waitFor({ timeout: 5000 });
   // at rest it is one line in the top-right corner, so the page stays in view
   const rest = await panel(overlay).boundingBox();
   assert.ok(rest.x + rest.width > 1200 - 24 && rest.y < 24 && rest.height < 48 && rest.width < 260, `folded to one line: ${JSON.stringify(rest)}`);
@@ -226,7 +226,7 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
   const counts = (await rowsOf(overlay).locator('.n').allInnerTexts()).map(Number);
   assert.ok(counts.length >= 3 && counts.every((n, i) => i === 0 || n <= counts[i - 1]), `causes by places: ${counts}`);
   // the rows count the whole page, read beyond the view: at least every drift in view, each in one row
-  const pageOff = Number((await panel(overlay).locator('.meta').innerText()).match(/^(\d+) off/)[1]);
+  const pageOff = Number((await panel(overlay).locator('.meta').innerText()).match(/^(\d+) problems?/)[1]);
   assert.ok(pageOff >= drift, `the page holds at least what is in view: ${pageOff} >= ${drift}`);
   assert.equal(counts.reduce((a, b) => a + b, 0) + Number((await panel(overlay).locator('.meta').innerText()).match(/(\d+) set in code/)?.[1] ?? 0), pageOff, 'every drift on the page is in one row');
   const texts = await rowsOf(overlay).locator('code').allInnerTexts();
@@ -303,7 +303,7 @@ test('A mark selects its element; an option previews on the page; Enter and Appl
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
   // the element is selected with that drift current; nothing opens over it
   await selected(overlay).waitFor();
@@ -329,7 +329,7 @@ test('Several elements’ changes are applied together, one write per file', { t
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'rounded-[14px]');
   await take(page, overlay);
   await clickMark(page, overlay, 'gap-[3px]');
@@ -356,7 +356,7 @@ test('Backspace drops a change; Discard all drops the rest; leaving blueprint le
   const { page, overlay } = await open(t, launched, url);
   const before = await footprint(page);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
   await take(page, overlay, 's2');
   assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
@@ -388,7 +388,7 @@ test('A write the server refuses as stale is said so on its row; Apply again rea
   const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
   await take(page, overlay, 's2');
   // The first write is answered as the server answers a file that changed since it was read (changing the file on
@@ -415,7 +415,7 @@ test('Keyboard only: Tab reaches a mark, Enter selects its element, arrows pick,
   const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   const active = () => page.evaluate(() => { const a = document.querySelector('plumb-overlay').shadowRoot.activeElement; return a ? { cls: a.className.baseVal ?? a.className, label: a.getAttribute('aria-label') } : null; });
   let label = null;
   for (let i = 0; i < 40 && !label; i++) {
@@ -447,7 +447,7 @@ test('The Changes sidebar: a row per element changed; a click on a row selects i
   const { url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
   await take(page, overlay, 's2');
   await clickMark(page, overlay, 'gap-[3px]');
@@ -488,7 +488,7 @@ test('The dim takes a coloured page to grey and darker, the page keeps its own p
   const [r0, g0, b0] = await pixel(page, 1190, 400);
   assert.ok(b0 > 180 && r0 < 80, `the page is blue there (rgb ${r0},${g0},${b0})`);
   await page.keyboard.press('Alt+B');
-  await say(page.locator('plumb-overlay')).filter({ hasText: /off in view|all true/ }).waitFor({ timeout: 20000 });
+  await say(page.locator('plumb-overlay')).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
   assert.deepEqual(await paint(), original, 'html and body keep their own paint under the dim');
   const [r, g, b] = await pixel(page, 1190, 400);
   assert.ok(Math.max(r, g, b) - Math.min(r, g, b) <= 3, `an empty spot is grey under the dim (rgb ${r},${g},${b})`);
@@ -534,7 +534,7 @@ test('A weight reads as a number on the element, never as pixels', { timeout: 90
   const { url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   const mark = markFor(overlay, 'font-semibold').first();
   await mark.waitFor();
   const b = await mark.boundingBox();
@@ -634,7 +634,7 @@ test('Drawn only where it can be seen: a drawer over part of an element cuts its
   const drawer = (width) => page.evaluate((width) => { let d = document.getElementById('drawer'); if (!d) { d = document.createElement('div'); d.id = 'drawer'; d.style.cssText = 'position:fixed;left:0;top:0;bottom:0;background:#fff;z-index:10'; document.body.append(d); } d.style.width = `${width}px`; }, width);
   await drawer(row.x + row.width / 2);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view|all true/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
   const outline = () => page.evaluate((y) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .outlines rect')].map((o) => ({ x: +o.getAttribute('x'), y: +o.getAttribute('y'), w: +o.getAttribute('width') })).find((o) => Math.abs(o.y - 0.75 - y) < 1), row.y);
   await page.waitForFunction((y) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .outlines rect')].some((o) => Math.abs(+o.getAttribute('y') - 0.75 - y) < 1), row.y, { timeout: 5000 });
   const half = await outline();
@@ -659,7 +659,7 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter
   assert.equal(was.match(/rounded-\[3px\]/g).length, 1, 'the cells are written once, on one line');
   await page.locator('#dense').scrollIntoViewIfNeeded();
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await panel(overlay).locator('.head').click(); // the list opens from its one line
   const row = rowsOf(overlay).filter({ has: page.locator('code', { hasText: /^rounded-\[3px\]/ }) });
   await row.waitFor({ timeout: 10000 });
@@ -691,7 +691,7 @@ test('A cause counts every place on the page, not just the view, and N walks the
   await writeFile(join(root, 'src/entry.jsx'), (await readFile(join(root, 'src/entry.jsx'), 'utf8')) + `import { Rows } from './Rows.jsx';\ncreateRoot(document.getElementById('more')).render(<Rows />);\n`);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
+  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
   await panel(overlay).locator('.head').click();
   const row = rowsOf(overlay).filter({ has: page.locator('code', { hasText: /^p-\[10px\]/ }) });
   // the panel's count grows past the view as the rest of the page is read
