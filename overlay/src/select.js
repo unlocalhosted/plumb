@@ -257,6 +257,16 @@ export class Selection {
     pointAt(this.#pill, this.#bands, x, y);
   }
 
+  // Everything drawn beside the element stays on the screen: a piece that runs off the right edge comes back in, and
+  // the reason, drawn at the element's right, moves to its left. All reads, then all writes.
+  #fit(r) {
+    const pieces = [...this.#layer.querySelectorAll('.stair, .why, .reason')].map((el) => ({ el, b: el.getBoundingClientRect() }));
+    const edge = innerWidth - 4;
+    for (const { el, b } of pieces) {
+      if (b.right <= edge) continue;
+      el.style.left = `${el.classList.contains('reason') ? Math.max(4, r.left - b.width - 10) : Math.max(4, edge - b.width)}px`;
+    }
+  }
   draw(fresh = false) {
     const el = this.#el;
     if (!el) return;
@@ -328,6 +338,7 @@ export class Selection {
     }
     const sibs = this.#group.filter((g) => g.el.isConnected).map((g) => { const q = g.el.getBoundingClientRect(); return `<div class="sib" style="left:${q.left - 2}px;top:${q.top - 2}px;width:${q.width + 4}px;height:${q.height + 4}px"></div>`; }).join('');
     this.#layer.innerHTML = fix + sibs + ring + bm.html;
+    this.#fit(r);
     // the control: a click on an option picks it (and previews it)
     for (const opt of this.#layer.querySelectorAll('.stair .opt[data-i]')) opt.addEventListener('click', () => { this.#move(+opt.dataset.i - this.#plan.at); });
     // pointing at the control previews the target on the page; leaving it puts the page back (until it is taken)

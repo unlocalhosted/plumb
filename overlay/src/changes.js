@@ -66,7 +66,7 @@ export class Changes {
   #at = null; #busy = false; #onAccept; #onSelect; #onShow; #onDiscard; #onPut; #rows = [];
 
   // onAccept([{ el, name, props: [{ prop, from, to }] }]) → Promise<[{ el, ok, why? }]>; onSelect(el) lights it
-  // onShow(): the sidebar appears (what sits where it opens makes room)
+  // onShow(shown): the sidebar appears or goes (what sits where it opens makes room, then takes it back)
   constructor(root, { onAccept, onSelect, onShow, onDiscard, onPut } = {}) {
     this.#onShow = onShow;
     this.#onPut = onPut;
@@ -185,8 +185,8 @@ export class Changes {
     const n = this.count;
     const was = !this.#el.hidden;
     this.#el.hidden = !n;
+    if (was !== !!n) this.#onShow?.(!!n);
     if (!n) return;
-    if (!was) this.#onShow?.();
     this.#el.setAttribute('aria-busy', String(this.#busy));
     // elements with the same changes (the rows of one list, the places of one cause) are one row: ×12
     const rows = [];

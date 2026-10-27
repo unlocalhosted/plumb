@@ -63,8 +63,8 @@ export class Blueprint {
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
     this.#walk = new Walkthrough(root);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => { this.#panel.open(false); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
-    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); if (el) this.#changes.avoid(el.getBoundingClientRect()); },
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: (shown) => { if (shown) this.#panel.open(false); queueMicrotask(() => this.#focus()); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
+    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
       changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
@@ -184,7 +184,14 @@ export class Blueprint {
     if (this.active) this.#reader.healthChanged(status);
   }
 
-  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); };
+  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
+  // what the person is working on (the selection, else the walkthrough's element): the chrome keeps clear of it
+  #focus() {
+    const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
+    const r = el?.isConnected ? el.getBoundingClientRect() : null;
+    if (r) this.#changes.avoid(r);
+    this.#panel.avoid(r, [this.#changes.rect]);
+  }
   // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
   #offerWalk() {
     if (this.#state !== 'on' || this.#walk.active) return;
@@ -194,6 +201,7 @@ export class Blueprint {
       if (!m || m.family !== 'craft' || m.craft?.suggest?.kind !== 'class') return false;
       return !!(planOf(m, i.el, steps, (n) => this.#craft.theme.nearest('spacing', n, 0.5)?.short ?? null) ?? swapPlanOf(m));
     });
+    this.#focus();
   }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;

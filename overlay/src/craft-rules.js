@@ -1008,6 +1008,9 @@ export const anchorOffset = {
   threshold: {},
   check({ el, facts }, theme) {
     if (!el.id || !el.matches('h1, h2, h3, h4, section, article, [id]:is(h5, h6)')) return [];
+    // an id is only a place people land when something links to it (a link on the page, or the address itself)
+    facts.linked ??= new Set([...document.querySelectorAll('a[href*="#"]')].map((a) => decodeURIComponent(a.hash.slice(1))).concat(decodeURIComponent(location.hash.slice(1))).filter(Boolean));
+    if (!facts.linked.has(el.id)) return [];
     const h = stickyHeader(facts);
     if (!h) return [];
     const s = facts.style(el);

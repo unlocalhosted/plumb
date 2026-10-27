@@ -36,6 +36,8 @@ export const PANEL_CSS = `
     background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     opacity: 0; translate: 8px 0; transition: opacity var(--pl-dur-undim) var(--pl-ease-out), translate var(--pl-dur-undim) var(--pl-ease-out); }
   .bpp[hidden] { display: none; }
+  .bpp[data-side="start"] { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  .bpp[data-away] { visibility: hidden; }
   .bpp[data-on] { opacity: 1; translate: 0 0; transition-duration: var(--pl-dur-card); }
   @media (prefers-reduced-motion: reduce) { .bpp { transition: none; translate: 0 0; } }
   .bpp .head { all: unset; flex: none; display: flex; align-items: center; gap: var(--pl-space-4); box-sizing: border-box; padding: var(--pl-space-4) var(--pl-space-5); cursor: pointer; border-radius: var(--pl-radius-card); }
@@ -157,6 +159,23 @@ export class Panel {
   get rect() { return this.#on ? this.#el.getBoundingClientRect() : null; }
 
   // Unfolded to the list, or folded to its one line.
+  // Keeps clear of what the person is working on and of the other chrome (Changes): the first top corner that covers
+  // neither; when no corner is, it steps aside until one is (the dock still counts what's off).
+  avoid(rect, chrome = []) {
+    let side = 'end', away = false;
+    if (!this.#el.hidden) {
+      const r = this.#el.getBoundingClientRect(), here = this.#el.dataset.side === 'start';
+      const mirror = { left: innerWidth - r.right, right: innerWidth - r.left };
+      const at = { end: here ? mirror : r, start: here ? r : mirror };
+      const hits = (b, q) => q && b.left < q.right && b.right > q.left && r.top < q.bottom && r.bottom > q.top;
+      const free = (k) => !chrome.some((q) => hits(at[k], q));
+      const clear = ['end', 'start'].find((k) => free(k) && !hits(at[k], rect));
+      side = clear ?? (here ? 'start' : 'end');
+      away = !clear;
+    }
+    if ((this.#el.dataset.side ?? 'end') !== side) { if (side === 'end') delete this.#el.dataset.side; else this.#el.dataset.side = side; }
+    this.#el.toggleAttribute('data-away', away);
+  }
   open(on) {
     if (on === this.#open || !this.#on) return;
     this.#open = on;

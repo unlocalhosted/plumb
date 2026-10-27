@@ -58,6 +58,7 @@ export function Craft() {
         <div><div id="gradient-space-good" className="h-12 w-48" style={{ backgroundImage: 'linear-gradient(in oklch to right, rgb(255, 0, 0), rgb(0, 0, 255))' }} /></div>
         <div><input id="input-zoom-bad" className="h-8 bg-surface text-sm" /></div>
         <div><input id="input-zoom-good" className="h-8 bg-surface text-base" /></div>
+        <nav className="flex gap-s3 text-small"><a href="#anchor-offset-bad">Section one</a><a href="#anchor-offset-good">Section two</a></nav><div />
         <div><h4 id="anchor-offset-bad" className="text-body">Section one</h4></div>
         <div><h4 id="anchor-offset-good" className="scroll-mt-12 text-body">Section two</h4></div>
         <div><p id="middle-truncate-bad" className="w-40 truncate text-body">{PATH}</p></div>
