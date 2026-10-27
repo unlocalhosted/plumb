@@ -1,6 +1,7 @@
-// The element is the target (docs/briefs/insight-not-noise.md layer 1): with blueprint on, a click anywhere on an
-// element selects it and draws it: a ring, its name, its box model with the bands its problems claim in coral, one pill
-// for the band pointed at. No card opens. Proved on a page like a real app, through real Vite, React and Chromium.
+// The element is the way to a cause (the fix panel, overlay/src/fixpanel.js): with blueprint on, a click on an element
+// that has a problem puts its cause in hand in the fix panel; a quiet element holds nothing. The ring, the name tag, the
+// box-model bands and the why line of the old selection are gone. Proved on a page like a real app, through real Vite,
+// React and Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -109,7 +110,7 @@ export function App() {
       </header>
       <section className="flex flex-col gap-s3 rounded-card bg-surface p-s4">
         <span id="status" className="text-[11px] uppercase text-ink-muted">Status</span>
-        <p className="text-body">Three people can see this workspace.</p>
+        <p id="quiet" className="text-body">Three people can see this workspace.</p>
         <ul className="flex flex-col gap-s2">
           {members.map(([name, role]) => <li key={name} className="flex items-center justify-between text-body"><span>{name}</span><span className="text-small text-ink-muted">{role}</span></li>)}
         </ul>
@@ -130,134 +131,171 @@ const run = (page) => page.evaluate(() => window.__plumb.craft({ timeout: 30000 
 
 
 
-const sel = (overlay) => overlay.locator('.sel');
+const panel = (overlay) => overlay.locator('.fx');
 const center = async (page, id, dx = 0.5, dy = 0.5) => { const b = await page.locator(`#${id}`).boundingBox(); return [b.x + b.width * dx, b.y + b.height * dy]; };
-const drawn = (page) => page.evaluate(() => {
-  const root = document.querySelector('plumb-overlay').shadowRoot;
-  return { ring: !!root.querySelector('.sel .ring'), tag: root.querySelector('.sel .pl-tag')?.textContent ?? null, dot: !!root.querySelector('.sel .pl-tag .dot'),
-    rail: [...root.querySelectorAll('.sel .pl-tag .rail i')].map((i) => i.classList.contains('on')), off: root.querySelectorAll('.sel .bm > .off').length,
-    current: root.querySelectorAll('.sel .bm > .off[data-current]').length, chooser: !!root.querySelector('.ch .card[role="dialog"]:not([hidden])') && !root.querySelector('.ch').hidden };
-});
+const padding = (page, id, side) => page.locator(`#${id}`).evaluate((el, side) => getComputedStyle(el)[`padding${side}`], side);
+// a click the way a person makes it: the pointer arrives first (the nearest glow takes it), then presses
+const click = async (page, x, y) => { await page.mouse.move(x, y); await page.waitForTimeout(250); await page.mouse.click(x, y); };
+const inHand = (overlay) => overlay.locator('.fx .cause .cls');
+const shown = (page, sel) => page.evaluate((sel) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll(sel)].some((e) => e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none'), sel);
 
-test('A click anywhere on an element selects it: ring, name, its claimed bands coral, one pill for the band pointed at; no card', { timeout: 120000 }, async (t) => {
+test('A click on an element with a problem puts a cause of it in hand: the class, its places, the options drawn as specimens with the suggestion tried on the page; no card, nothing else drawn', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
   await blueprint(page, overlay);
   await page.waitForTimeout(600);
+  assert.equal(await inHand(overlay).count(), 0, 'at rest nothing is in hand');
+  // a click on the button holds a cause the button is a place of (the biggest one it is in)
   const [x, y] = await center(page, 'invite', 0.5, 0.85);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(300);
-  const d = await drawn(page);
-  assert.equal(d.ring, true);
-  assert.match(d.tag, /button/);
-  assert.equal(d.dot, true, 'tied to a line of the code');
-  assert.ok(d.off >= 2, `the side paddings are claimed: ${JSON.stringify(d)}`);
-  assert.equal(d.chooser, false, 'no card opens');
-  // its label steps aside: the selection draws it now
-  const labels = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .lbl')].map((l) => l.textContent));
-  assert.ok(!labels.includes('px-s3'), JSON.stringify(labels));
-  // pointing at the right padding: one pill, the property, the number, the token
-  const b = await page.locator('#invite').boundingBox();
-  await page.mouse.move(b.x + b.width - 4, b.y + b.height / 2);
-  await overlay.locator('.bm-at').waitFor({ timeout: 3000 });
-  assert.equal(await overlay.locator('.bm-at').innerText(), 'right padding 12 (s3)');
-  assert.equal(await overlay.locator('.bm-at').count(), 1);
-  assert.deepEqual(errors, []);
-});
-
-test('An element with two problems shows both: a dot each in its name, the current one filled; . steps to the next', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await blueprint(page, overlay);
-  await page.waitForTimeout(600);
-  const [x, y] = await center(page, 'status', 0.3, 0.5);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(300);
-  assert.deepEqual((await drawn(page)).rail, [true, false]);
-  await page.keyboard.press('.');
-  await page.waitForTimeout(200);
-  assert.deepEqual((await drawn(page)).rail, [false, true]);
-  // a second click on it steps too
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(200);
-  assert.deepEqual((await drawn(page)).rail, [true, false]);
-  assert.deepEqual(errors, []);
-});
-
-test('A quiet element selects with nothing coral; a click on the empty page lets go; Esc lets go before it leaves blueprint', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await blueprint(page, overlay);
-  await page.waitForTimeout(600);
-  const [hx, hy] = await center(page, 'title');
-  await page.mouse.click(hx, hy);
-  await page.waitForTimeout(300);
-  let d = await drawn(page);
-  assert.equal(d.ring, true);
-  assert.equal(d.off, 0, `nothing claimed on a quiet element: ${JSON.stringify(d)}`);
-  // the empty page, far from everything
-  const { width, height } = page.viewportSize();
-  const [ex, ey] = [width - 30, height - 120];
-  const under = await page.evaluate(([x, y]) => document.elementsFromPoint(x, y).filter((e) => !e.closest('plumb-overlay')).map((e) => e.localName + (e.id ? '#' + e.id : '')).join(' > '), [ex, ey]);
-  await page.mouse.click(ex, ey);
-  await page.waitForTimeout(200);
-  assert.equal((await drawn(page)).ring, false, `under the click: ${under}`);
-  // Esc: first the selection, then blueprint
-  await page.mouse.click(hx, hy);
-  await page.waitForTimeout(200);
+  await click(page, x, y);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /\d+ places?$/);
+  for (const sel of ['.sel', '.cg', '.bpp', '.ch:not([hidden]) .card[role="dialog"]']) assert.equal(await shown(page, sel), false, `${sel} is not shown`);
+  // the glow on the button's own padding holds the padding cause: its options are specimens, the suggestion is tried
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(200);
-  assert.equal((await drawn(page)).ring, false);
-  assert.equal(await page.evaluate(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden), true, 'blueprint is still on');
+  await panel(overlay).locator('.line .count').waitFor({ timeout: 5000 });
+  const at = await overlay.locator('.bp .hit[aria-label*="12px on every side"]').getAttribute('data-at');
+  const [gx, gy] = at.split(',').map(Number);
+  await click(page, gx, gy);
+  await inHand(overlay).filter({ hasText: /^px-s3$/ }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /^Sides too tight · 1 place$/);
+  // the theme's steps are the options, each with its token; the suggestion (wider on the sides) is the pick
+  assert.deepEqual(await panel(overlay).locator('.sp .tk').allInnerTexts(), ['s1', 's2', 's3', 's4', 's6']);
+  const picked = await panel(overlay).locator('.sp[aria-pressed="true"] .v').innerText();
+  assert.equal(picked, '24px');
+  // the pick is tried on the page: s4 on the left, s6 on the right; the top and bottom stay
+  await page.waitForFunction(() => { const c = getComputedStyle(document.getElementById('invite')); return c.paddingLeft === '16px' && c.paddingRight === '24px'; }, null, { timeout: 5000 });
+  assert.equal(await padding(page, 'invite', 'Top'), '12px', 'only the sides move');
+  assert.equal(await shown(page, '.ch:not([hidden]) .card[role="dialog"]'), false, 'no card opens');
   assert.deepEqual(errors, []);
 });
 
-test('Why, as a drawing and on demand: the reason sits at the element’s side; i shows the one line, then what is folded under it, then hides', { timeout: 120000 }, async (t) => {
+test('An element with two problems is in two causes: a click holds one of them, → and ← walk to the other and back', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
   await blueprint(page, overlay);
   await page.waitForTimeout(600);
-  const [x, y] = await center(page, 'invite', 0.5, 0.85);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(300);
-  const why = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .why')?.textContent ?? null);
-  assert.equal(await overlay.locator('.sel .reason').count(), 1);
-  assert.equal(await why(), null, 'no words at rest');
-  await page.keyboard.press('i');
-  assert.match(await why(), /^12px on every side\. Text buttons need about twice as much on the sides\. · also 1$/);
-  assert.ok((await why()).length <= 90);
-  await page.keyboard.press('i');
-  assert.match(await why(), /The icon side has the same/);
-  await page.keyboard.press('i');
-  assert.equal(await why(), null);
-  assert.deepEqual(errors, []);
-});
-
-test('No step the theme has: the scale shows a hollow bar where the step would be, and the mark carries the token that fills it', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await blueprint(page, overlay);
-  await page.waitForTimeout(600);
+  // the status label has two problems: its size is off the type scale, its capitals are set tight
+  const forStatus = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => h.getAttribute('aria-label')));
+  assert.ok(forStatus.some((l) => /text-\[11px\]/.test(l)), JSON.stringify(forStatus));
   const [x, y] = await center(page, 'status', 0.3, 0.5);
-  await page.mouse.click(x, y);
-  await page.waitForTimeout(300);
-  // step to the letter-spacing problem: this theme has no letter-spacing steps
-  for (let i = 0; i < 3 && !(await overlay.locator('.sel .stair[data-kind="no-step"]').count()); i++) { await page.keyboard.press('.'); await page.waitForTimeout(200); }
-  assert.equal(await overlay.locator('.sel .stair[data-kind="no-step"] .gap').count(), 1);
-  await page.keyboard.press('i');
-  assert.match(await overlay.locator('.sel .why').innerText(), /^11px capitals with no letter spacing\./);
-  // the suggestion is a token the theme can add (docs/briefs/craft-spec.md §4 c); the panel shows it when it learns the kind
-  const suggest = await page.evaluate(() => { const i = window.__plumb.overlay.blueprintReader.items.find((x) => x.el.id === 'status'); return i.marks.find((m) => m.rule === 'craft/tracking')?.craft.suggest; });
+  await click(page, x, y);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  const first = await inHand(overlay).innerText();
+  // walk every cause with →: each is reached once, and the label's size and its capitals are both among them
+  const place = async () => (await panel(overlay).locator('.cause .nav').innerText()).match(/(\d+) of (\d+)/).slice(1).map(Number);
+  const [from, total] = await place();
+  const seen = [first];
+  for (let i = 1; i < total; i++) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction((k) => /(\d+) of \d+/.exec(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .cause .nav')?.textContent ?? '')?.[1] === String(k), ((from - 1 + i) % total) + 1, { timeout: 5000 });
+    seen.push(await inHand(overlay).innerText());
+  }
+  assert.equal(new Set(seen).size, total, `every cause is reached once: ${seen}`);
+  assert.ok(seen.some((c) => /text-\[11px\]/.test(c)) && seen.some((c) => /letter-spacing/.test(c)), `the label\u2019s size and its capitals are both causes: ${seen}`);
+  // ←: back to the cause before
+  await page.keyboard.press('ArrowLeft');
+  await inHand(overlay).filter({ hasText: seen.at(-2) }).waitFor({ timeout: 5000 });
+  assert.deepEqual(errors, []);
+});
+
+test('The cause in hand stays the cause in hand while the reader looks at the page again: its name, its options and the count of causes do not move under it', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  await page.keyboard.press('Enter');
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  const state = () => overlay.locator('.fx').evaluate((e) => ({ cls: e.querySelector('.cls')?.textContent, nav: e.querySelector('.nav')?.textContent.replace(/[^\d of]/g, '').trim(), what: e.querySelector('.what')?.textContent }));
+  const first = await state();
+  // the page is read again while the fix is tried on it (a tried place stops being a problem): the cause must hold still
+  await page.waitForTimeout(2500);
+  assert.deepEqual(await state(), first, 'the cause in hand changed under the person while its fix was tried');
+  // and walking on, each cause shows its own options: a size has type steps, a padding has spacing steps, capitals a new token
+  const own = { 'text-[11px]': ['now', 'small', 'body'], 'px-s3': ['s1', 's2', 's3', 's4', 's6'], 'letter-spacing': ['new token'] };
+  const seen = new Set();
+  for (let i = 0; i < 6; i++) {
+    await page.waitForTimeout(1200);
+    const now = await state();
+    const tokens = await overlay.locator('.fx .sp .tk').allInnerTexts();
+    seen.add(now.cls);
+    if (own[now.cls]) assert.deepEqual(tokens, own[now.cls], `the options belong to ${now.cls}: ${JSON.stringify({ now, tokens })}`);
+    await page.keyboard.press('ArrowRight');
+  }
+  assert.ok(seen.size >= 4, `walking → reaches the causes one by one: ${[...seen]}`);
+  assert.deepEqual(errors, []);
+});
+
+test('A quiet element holds nothing; Esc puts a cause down before it leaves blueprint', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  const [hx, hy] = await center(page, 'quiet', 0.3);
+  await click(page, hx, hy);
+  await page.waitForTimeout(400);
+  assert.equal(await inHand(overlay).count(), 0, 'a quiet element puts nothing in hand');
+  // a cause in hand; Esc puts it down, blueprint stays; the next Esc leaves blueprint
+  const [ix, iy] = await center(page, 'invite', 0.5, 0.85);
+  await click(page, ix, iy);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  await page.keyboard.press('Escape');
+  await panel(overlay).locator('.line .count').waitFor({ timeout: 5000 });
+  assert.equal(await inHand(overlay).count(), 0, 'Esc puts the cause down');
+  assert.equal(await page.evaluate(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden), true, 'blueprint is still on');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden, null, { timeout: 5000 });
+  assert.deepEqual(errors, []);
+});
+
+test('A click on the empty page lets go of the cause in hand', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  const [ix, iy] = await center(page, 'invite', 0.5, 0.85);
+  await click(page, ix, iy);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  const { width } = page.viewportSize();
+  const [ex, ey] = [width - 30, 40];
+  const under = await page.evaluate(([x, y]) => document.elementsFromPoint(x, y).filter((e) => !e.closest('plumb-overlay')).map((e) => e.localName + (e.id ? '#' + e.id : '')).join(' > '), [ex, ey]);
+  await click(page, ex, ey);
+  await page.waitForTimeout(500);
+  assert.equal(await inHand(overlay).count(), 0, `a click on the empty page (under it: ${under}) lets go of the cause; the fix panel still holds it while the page shows the original`);
+  assert.deepEqual(errors, []);
+});
+
+test('No step the theme has: the cause is a new token; the panel says what taking it adds, and the engine carries the token that fills it', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  // the suggestion is a token the theme can add (docs/briefs/craft-spec.md §4 c)
+  const suggestion = () => page.evaluate(() => { const i = window.__plumb.overlay.blueprintReader.items.find((x) => x.el.id === 'status'); return i.marks.find((m) => m.rule === 'craft/tracking')?.craft.suggest; });
+  await page.waitForFunction(() => window.__plumb.overlay.blueprintReader.items.find((x) => x.el.id === 'status')?.marks.find((m) => m.rule === 'craft/tracking')?.craft.suggest?.kind === 'token', null, { timeout: 10000 }).catch(() => {});
+  const suggest = await suggestion();
   assert.equal(suggest.kind, 'token');
   assert.deepEqual([suggest.name, suggest.value, suggest.then.to], ['--tracking-caps', '0.06em', 'tracking-caps']);
-  // Enter takes nothing
+  // walk the causes to the one with no step: a note, one new-token specimen, nothing else to pick
+  const [x, y] = await center(page, 'status', 0.3, 0.5);
+  await click(page, x, y);
+  await inHand(overlay).waitFor({ timeout: 10000 });
+  for (let i = 0; i < 12 && !(await panel(overlay).locator('.note').count()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
+  const note = await panel(overlay).locator('.note').innerText();
+  assert.match(note, /--tracking-caps: 0\.06em/);
+  assert.match(note, /tracking-caps/);
+  assert.equal(await panel(overlay).locator('.sp').count(), 1);
+  assert.match(await panel(overlay).locator('.sp .tk').innerText(), /new token/);
+  // Enter takes it: the panel counts one change ready to apply; nothing is written until A
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(200);
-  assert.equal(await overlay.locator('.cg:not([hidden])').count(), 0);
+  for (let i = 0; i < 30 && !(await panel(overlay).locator('.apply .badge').filter({ hasText: /^[1-9]/ }).count()); i++) { await page.waitForTimeout(150); if (await panel(overlay).locator('.take').count()) await page.keyboard.press('Enter'); }
+  await panel(overlay).locator('.apply .badge').filter({ hasText: /^[1-9]/ }).waitFor({ timeout: 5000 });
   assert.deepEqual(errors, []);
 });
