@@ -664,7 +664,10 @@ export class Session extends EventEmitter {
     const { file, hash, name, value, why, then } = options ?? {} as TokenOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof name !== 'string' || typeof value !== 'string') throw new UsageError('A token write requires file, hash, name and value.');
     if (!/^--[a-z][a-z0-9-]*$/.test(name)) throw new UsageError('A token name is --family-name, in lowercase.');
-    if (!/^[^;{}<>\r\n]{1,80}$/.test(value.trim()) || !value.trim()) throw new UsageError('A token value is one CSS value, under eighty characters.');
+    // one declaration's worth of CSS: nothing that could end the declaration, open or close a block, start a comment
+    // or leave a string open, so the stylesheet keeps the blocks it had (topBlocks below is the last guard)
+    const clean0 = value.trim();
+    if (!/^[^;{}<>\r\n\\]{1,80}$/.test(clean0) || /\/\*|\*\//.test(clean0) || (clean0.split('"').length - 1) % 2 || (clean0.split("'").length - 1) % 2) throw new UsageError('A token value is one CSS value, under eighty characters.');
     if (why !== undefined && (typeof why !== 'string' || /[\r\n*]/.test(why) || why.length > 120)) throw new UsageError('A token why is one short line.');
     // the server says where tokens go and whether they may be made (plumber spec): the client only repeats it
     const spec = await this.request<ProjectSpec>('spec');
