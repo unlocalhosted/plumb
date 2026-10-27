@@ -48,6 +48,7 @@
 import { rgb, utility, classesOf } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
+import { RUN_RULES } from './craft-headless.js';
 
 const px = (v) => parseFloat(v) || 0;
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
@@ -1407,4 +1408,4 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading,
-  weightLevels, greyLevels, rhythm];
+  weightLevels, greyLevels, rhythm, ...RUN_RULES];

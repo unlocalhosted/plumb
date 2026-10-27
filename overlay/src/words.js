@@ -237,6 +237,8 @@ export const CRAFT = {
     line: `This stack is ${px(g)} apart; the page keeps to ${steps}.`,
     reason: 'Repeating a few gaps down the page is what makes it feel even.',
   }),
+  // ── headless rules (pairs, probes, structure: craft-headless.js) ──
+  // ── end of headless rules ──
 };
 
 // A rule's words as the finding's fields: what (its label), title (its line), because (its reason).

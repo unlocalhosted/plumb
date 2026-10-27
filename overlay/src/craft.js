@@ -22,6 +22,7 @@ import { RULES } from './craft-rules.js';
 import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL } from './craft-read.js';
 import { TIER } from './craft-facets.js';
+import { HEADLESS } from './craft-headless.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -57,7 +58,7 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
@@ -126,6 +127,11 @@ export class Facts {
     }
     return { ...m, halfLeading, lineHeight: lh, baseline };
   }
+  // The headless facts (craft-headless.js): another condition's page, a gesture's timeline, the element's source.
+  // Null in the live overlay, so the rules that need them stay quiet there.
+  other(condition) { return HEADLESS.other(condition, this); }
+  probe(el, gesture) { return HEADLESS.probe(el, gesture); }
+  source(el) { return HEADLESS.source(el); }
   // the ground an element's text sits on: the nearest painted background up the tree, else the page's
   ground(el) {
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
