@@ -273,6 +273,31 @@ export const CRAFT = {
     reason: 'A transition reverses from where it is.',
   }),
   // ── headless rules (pairs, probes, structure: craft-headless.js) ──
+  'dark-elevation': ({ blur }) => ({
+    label: 'Shadow does nothing in dark',
+    line: `This ${px(blur)} shadow can’t show on a dark surface.`,
+    reason: 'In the dark, a surface rises by getting lighter, or by a light edge on top.',
+  }),
+  'dark-weight': ({ weight, size }) => ({
+    label: 'Light text looks heavy on dark',
+    line: `Weight ${weight}, ${px(size)}: light on dark looks bolder than on white.`,
+    reason: 'Light text glows into a dark ground. Smooth it, or lighten the weight in dark.',
+  }),
+  'skeleton-match': ({ was, now }) => ({
+    label: 'Skeleton is the wrong size',
+    line: `The skeleton is ${px(was)} tall. What loads in is ${px(now)}.`,
+    reason: 'When the real content lands, everything under it jumps.',
+  }),
+  'scroll-cue-seen': () => ({
+    label: 'No sign there is more to scroll',
+    line: 'The edges look the same at the top as at the end.',
+    reason: 'People can’t tell more is hidden. Fade the edge that has more behind it.',
+  }),
+  'spinner-timing': ({ ms }) => ({
+    label: 'Spinner flashes',
+    line: `On a quick reply this spinner shows for just ${ms}ms.`,
+    reason: 'A blink is worse than nothing. Wait 200ms, then keep it up for 500ms.',
+  }),
   // ── end of headless rules ──
 };
 
