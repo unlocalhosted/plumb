@@ -278,6 +278,7 @@ test('packaged CLI never uses its enclosing consumer repository HEAD as a React 
   await cp(join(root, 'dist'), join(packageRoot, 'dist'), { recursive: true });
   await cp(join(root, 'package.json'), join(packageRoot, 'package.json'));
   await cp(join(root, 'skills'), join(packageRoot, 'skills'), { recursive: true });
+  await cp(join(root, 'overlay/src'), join(packageRoot, 'overlay/src'), { recursive: true }); // the standard the CLI reads (dist/habits imports it)
   await cp(join(root, 'action.yml'), join(packageRoot, 'action.yml'));
   await symlink(join(root, 'node_modules'), join(packageRoot, 'node_modules'));
   const directory = await fixture(t);
