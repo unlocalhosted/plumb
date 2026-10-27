@@ -1,47 +1,29 @@
 /* ─────────────────────────────────────────────────────────
  * BLUEPRINT MARKS · React Plumber overlay
  *
- * The page held under one dim, and every drifted element in view lifted out of it where it lives
- * (docs/briefs/blueprint-v2.md, layer 2). Colour means drift; nothing else on the sheet has any.
+ * Registration (overlay/demo/registration.html): the page against its system. The page is never dimmed or boxed;
+ * only what is off glows, as much as it is off.
  *
- *  dim        one layer over the view: the page greyed (--pl-dim-filter) under a scrim (--pl-scrim). Drifted elements
- *             are cut out of it, at their own corner radius, so they show in full colour. Only the outermost drifted
- *             element cuts: a drifted child is already lit. A page-sized wrapper never cuts, or the whole view would
- *  outline    each drifted element in view, 1.5px in its ink (1px for one inside another), with no halo: it sits on
- *             the edge between the dim and the lit cut, which already sets it apart: --pl-off for drift off the system, --pl-soft
- *             when all it has is softer (a Tailwind default, the wrong tier)
- *  seen       everything is drawn from where an element can be seen, not from its box: cut to the view and to its
- *             scroll containers, with whatever the page paints over it (a drawer, a sticky header, a dialog) cut away
- *             (visibleBox). An element nothing of which shows draws nothing: no cut, outline, label or hit area
- *  label      one per drifted thing (an element at least LABEL_MIN tall: a card, a row, a column), set on its top edge
- *             like a legend, or inside its top-left corner when that edge is cut away or lies on something else: the
- *             first drift's class and +n for the rest. A drifted part (an avatar, a chip, a date) counts toward the
- *             thing that holds it and has a label of its own only while it is looked at, when nothing holds it. A label
- *             never lies on another, and never runs wider than its element. A click opens the first drift's chooser
- *  breaks     each finding drawn where it lives, in the element's ink on a halo: a dimension across a gap, padding or
- *             margin, an arc on a corner, a bracket at the words, a dot or a dashed box for the rest. Geometry comes
- *             from geometry.js (dimensionsFor), the same places the Alt card uses. Breaks are drawn only for the
- *             drifted element being pointed at (and everything drifted inside it), the one holding focus, and any
- *             break that is being chosen for or is picked: at rest the sheet shows outlines and labels, nothing
- *             more. Recorded debt is dashed and quiet (--pl-ink-3); the mark being chosen for is the accent; a
- *             picked or written one is --pl-on. Every break keeps its hit area, so Tab and a click still reach it
- *  note       pointing at a break, or reaching it with Tab, shows one note on the overlay's card surface: what is off,
- *             the tokens nearest to it, and that a click fixes it. One at a time
- *  spotlight  the panel's causes point back at the page: the outline of every element a cause touches is drawn again
- *             in the accent, over its drift ink
- *  act        every break's hit area is a button in document order: Tab reaches it, Enter or a click opens its chooser
- *  resolve    a break whose fix was written fades once the re-read drops it
- *  occlusion  a break under the chooser, the reading card or the dock is not clickable there
- *
- *  retained   one <g> per break, keyed by a stable id, redrawn only when its geometry changes
- *  measure    one batch per frame, only when invalidated (scroll, resize, a reading arriving, a fix changing state):
- *             every rect and style first, then every write
+ *  zone       one per mark, where the mark lives: the band of space between where the page puts an edge and where
+ *             the system would (padding, margin, each gap), the words of a type value that is off, or a soft glow
+ *             along the element's edge for anything without a place of its own (a colour, a radius, a shadow).
+ *             Magenta heat for too much; cyan dots for space that is missing (it reads without colour, and on a
+ *             coloured surface)
+ *  heat       how far off: |is − should| against the step, HEAT.min (a 1px error is still seen) to 1; hotter is
+ *             brighter and spreads further. Softer drift (a Tailwind default) rests at the minimum
+ *  arrival    turning blueprint on, every zone pulses in twice, worst first, then rests still
+ *  point      pointing at a zone (or focusing it, or coming within MAGNET px of a thin one) pulses it, lights every
+ *             zone of the same cause, quiets the rest, and shows one pill by the pointer: class → token (×n places)
+ *  spotlight  the panel's causes point back at the page: their zones light the same way
+ *  act        every zone's hit area is its own pieces (each gap, not the box around them), a button: Tab walks
+ *             them hottest first, Enter or a click selects the element
+ *  seen       a zone is cut to where its element can be seen (a drawer over half a row leaves heat on the other
+ *             half); nothing covered is drawn or clickable
+ *  all clear  the last problem fixed: four registration marks spring onto the corners, hold, and go
+ *  measure    one batch per frame, only when invalidated: every rect and style first, then every write
  * ───────────────────────────────────────────────────────── */
-import { dimensionsFor } from './geometry.js';
 
-const TICK = 3;
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
-const CH = 6.7; // px per character of the label's 11px code face, for placing labels without measuring them
 
 export const MARKS_CSS = `
   .bp { position: fixed; inset: 0; pointer-events: none; }
@@ -80,6 +62,22 @@ export const MARKS_CSS = `
   .bp .bp-hint[data-on] { opacity: 1; }
   .bp .bp-hint .near { color: var(--pl-ink-2); display: block; }
   .bp .bp-hint .act { color: var(--pl-accent); display: block; font: var(--pl-text-label); margin-top: var(--pl-space-1); }
+  /* registration: heat where the page is off, no boxes at rest */
+  .bp { --pl-heat: #ff1f8f; --pl-sys: #00a3ff; }
+  @media (prefers-color-scheme: dark) { .bp { --pl-heat: #ff4fa7; --pl-sys: #2bb8ff; } }
+  .bp .heat .warm rect { fill: var(--pl-heat); }
+  .bp .heat .dots rect { fill: url(#pl-dot); }
+  svg.all-clear { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2147483647; }
+  svg.all-clear .mark { stroke: #00a3ff; stroke-width: 1.5px; fill: none; transform-box: fill-box; transform-origin: center; }
+  @media (prefers-color-scheme: dark) { svg.all-clear .mark { stroke: #2bb8ff; } }
+  .bp .heat .warm rect.edge { fill: none; stroke: var(--pl-heat); stroke-width: 3px; }
+  .bp .heat .zone { transition: opacity 220ms ease-out; }
+  .bp .bp-hint.pill { max-width: none; padding: 0 var(--pl-space-3); height: 24px; display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; white-space: nowrap;
+    font: 600 11.5px/1 var(--pl-mono); color: #fff; background: #1c1b19; box-shadow: 0 2px 10px rgb(0 0 0 / .2); }
+  .bp .bp-hint.pill .line { white-space: pre; }
+  .bp .bp-hint.pill .from { color: #ff7ab8; font-weight: 600; } .bp .bp-hint.pill .to { color: #6fd0ff; font-weight: 600; }
+  .bp .bp-hint.pill .arr, .bp .bp-hint.pill .n { opacity: .6; } .bp .bp-hint.pill .say { font: 500 12px/1.3 var(--pl-sans); white-space: normal; max-width: 300px; }
+  .bp .bp-hint.pill:has(.say) { height: auto; padding: 6px 10px; }
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
   .bp .hit[data-under] { pointer-events: none; }
@@ -103,68 +101,12 @@ export function labelOf(mark, fix) {
 const counts = (mark) => mark.ledger === 'new' && !/opaque-inline|^config\//.test(mark.rule);
 // Softer drift: a Tailwind default, the wrong tier, a value that matches a token without using it.
 const soft = (mark) => /framework|tier|by-value|matches/.test(mark.rule);
-const inkOf = (mark, fix) => fix?.kind === 'picked' || fix?.kind === 'written' ? 'picked' : fix?.kind === 'current' ? 'current' : mark.ledger !== 'new' ? 'debt' : soft(mark) ? 'soft' : 'off';
 
-// What a break says when asked: its finding in words, the tokens nearest to it, and what a click does.
-function hintOf(mark, fix) {
-  const title = String(mark.title ?? '').replace(/`/g, '');
-  // craft: the finding, then its suggestion in words (a class change or advice); the chooser holds the why
-  if (mark.family === 'craft') {
-    const s = mark.craft?.suggest;
-    const say = s?.kind === 'class' ? `${s.from} → ${s.to}` : s?.text ?? '';
-    return `${esc(title)}${say ? `<span class="near">${esc(say)}</span>` : ''}<span class="act">click for why</span>`;
-  }
-  const near = (mark.choices ?? []).slice(0, 3).map((c) => `${c.label}${c.n !== undefined ? ` ${Math.round(c.n * 10) / 10}` : ''}`).join(' · ');
-  const act = fix?.kind === 'picked' ? `picked ${fix.to} · click to change` : fix?.kind === 'current' ? 'choosing…' : near ? 'click to fix' : 'click to accept or add a token';
-  return `${esc(title)}<span class="near">${near ? `nearest ${esc(near)}` : 'no token is close'}</span><span class="act">${esc(act)}</span>`;
-}
-
-// A break and its hit box, as markup and a rect, from its geometry: drawn twice, a halo under the ink, so it reads on
-// any page.
-function draw(g, mark, fix = null) {
-  const ink = inkOf(mark, fix);
-  const w = ink === 'debt' ? 1 : 2;
-  const ticks = (pts) => pts.map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`).join('');
-  let body = '';
-  let box;
-  if (g.kind === 'h') {
-    body = `<line x1="${g.x1}" y1="${g.y}" x2="${g.x2}" y2="${g.y}"/>` + ticks([[g.x1, g.y - TICK, g.x1, g.y + TICK], [g.x2, g.y - TICK, g.x2, g.y + TICK]]);
-    box = [g.x1, g.y - 7, Math.max(4, g.x2 - g.x1), 14];
-  } else if (g.kind === 'v') {
-    body = `<line x1="${g.x}" y1="${g.y1}" x2="${g.x}" y2="${g.y2}"/>` + ticks([[g.x - TICK, g.y1, g.x + TICK, g.y1], [g.x - TICK, g.y2, g.x + TICK, g.y2]]);
-    box = [g.x - 7, g.y1, 14, Math.max(4, g.y2 - g.y1)];
-  } else if (g.kind === 'arc') {
-    const { cx, cy, dx, dy, rad } = g;
-    const sweep = dx * dy > 0 ? 1 : 0;
-    body = `<path d="M${cx} ${cy + dy * rad} A${rad} ${rad} 0 0 ${sweep} ${cx + dx * rad} ${cy}"/>`;
-    box = [Math.min(cx, cx + dx * rad) - 3, Math.min(cy, cy + dy * rad) - 3, rad + 6, rad + 6];
-  } else if (g.kind === 'type') {
-    body = `<line x1="${g.x}" y1="${g.y1}" x2="${g.x}" y2="${g.y2}"/>` + ticks([[g.x - 3, g.y1, g.x, g.y1], [g.x - 3, g.y2, g.x, g.y2]]);
-    box = [g.x - 4, g.y1, 10, Math.max(14, g.y2 - g.y1)];
-  } else if (g.kind === 'box') {
-    body = `<rect x="${g.x + 0.5}" y="${g.y + 0.5}" width="${Math.max(0, g.w - 1)}" height="${Math.max(0, g.h - 1)}" stroke-dasharray="4 3"/>`;
-    box = [g.x, g.y, Math.max(14, g.w), Math.min(Math.max(14, g.h), 24)];
-  } else {
-    body = `<circle cx="${g.x}" cy="${g.y}" r="3"/>`;
-    box = [g.x - 7, g.y - 7, 14, 14];
-  }
-  const dash = ink === 'debt' ? ' stroke-dasharray="3 3"' : '';
-  return { markup: `<g class="halo" stroke-width="${w + 2}" aria-hidden="true">${body}</g><g class="ink k-${ink}" stroke-width="${w}"${dash} aria-hidden="true">${body}</g>`, box };
-}
-
-// A rounded rectangle as a path, for a cut in the dim.
-function roundRect(x, y, w, h, r) {
-  r = Math.max(0, Math.min(r, w / 2, h / 2));
-  const f = (n) => Math.round(n * 10) / 10;
-  if (!r) return `M${f(x)} ${f(y)}H${f(x + w)}V${f(y + h)}H${f(x)}Z`;
-  return `M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w)} ${f(y + r)}V${f(y + h - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x)} ${f(y + h - r)}V${f(y + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z`;
-}
 // Where an element can actually be seen: its box, cut to the view and to every scroll container around it, then with
 // whatever the page paints over it cut away. The page is sampled at five points; at a point where something else is on
 // top (a drawer, a sticky header, a dialog), the branch of the page that covers it is found, and when it spans a whole
 // side of the box that side is pulled in past it. Null when nothing of the element shows. Reads only; rects and
 // styles are memoised for the frame.
-const LABEL_MIN = 32; // an element shorter than this is a part (an avatar, a chip, a date) and its drift counts toward what holds it
 function visibleBox(el, r, view, memo) {
   const rect = (e) => { let v = memo.rects.get(e); if (!v) memo.rects.set(e, (v = e.getBoundingClientRect())); return v; };
   const style = (e) => { let v = memo.styles.get(e); if (!v) memo.styles.set(e, (v = getComputedStyle(e))); return v; };
@@ -201,14 +143,155 @@ function visibleBox(el, r, view, memo) {
   return { ...b, width: b.right - b.left, height: b.bottom - b.top, clipped: b.top > r.top + 0.5 || b.left > r.left + 0.5 || b.right < r.right - 0.5 || b.bottom < r.bottom - 0.5, topCut: b.top > r.top + 0.5 };
 }
 
-// A label says which class, not all of it: a long arbitrary value is cut with an ellipsis (the note and the chooser
-// carry the rest).
-const LABEL_CHARS = 20;
-const short = (text) => (text.length > LABEL_CHARS ? `${text.slice(0, LABEL_CHARS - 1)}…` : text);
 
-const within = (a, b) => a.left >= b.left - 1 && a.top >= b.top - 1 && a.right <= b.right + 1 && a.bottom <= b.bottom + 1;
+
+
+// ── registration (docs: overlay/demo/registration.html) ──────────────────────────────────────────────────────────
+// A mark is drawn as heat where it is off, not as a box around its element: the band of space between where the page
+// puts an edge and where the system would (padding, margin, gap), the words of a type value that is off, or, for
+// anything without a place of its own (a colour, a radius, a shadow), a soft glow along the element's edge. Heat says
+// how far off: |is − should| against the step, from HEAT.min (a 1px error is still seen) to 1.
+export const HEAT = {
+  min: 0.3, gain: 2.2,            // heat = min + gain × |is − should| / should
+  rest: 0.62, lit: 0.28, quiet: 0.28, // opacity at heat 1; added when its cause is pointed; kept for other causes
+  blur: [2.4, 4.2],               // blur at heat 0 → 1: hotter spreads further
+  thin: 1.5,                      // a band thinner than this is drawn this thick, around its centre
+  pulse: 700, arrival: 2, stagger: 60, // the arrival: two pulses each, worst first
+};
+const SIDES = { top: 'Top', right: 'Right', bottom: 'Bottom', left: 'Left' };
+const sidesOf = (prop) => {
+  const m = /^(padding|margin)(?:-(top|right|bottom|left|inline|block))?$/.exec(prop);
+  if (!m) return null;
+  const which = !m[2] ? ['top', 'right', 'bottom', 'left'] : m[2] === 'inline' ? ['left', 'right'] : m[2] === 'block' ? ['top', 'bottom'] : [m[2]];
+  return { box: m[1], sides: which };
+};
+const camel = (p) => p.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+// what the system would have for one property: the fix's own value when it says (a craft suggestion's sets), else the
+// nearest token offered
+function shouldOf(mark, prop) {
+  const sets = mark.craft?.suggest?.sets ?? {};
+  for (const k of [camel(prop), camel(prop.replace(/-(top|right|bottom|left)$/, '')), camel(prop.replace(/-(top|bottom)$/, '-block')), camel(prop.replace(/-(left|right)$/, '-inline'))]) {
+    const n = parseFloat(sets[k]);
+    if (Number.isFinite(n)) return n;
+  }
+  const c = (mark.choices ?? []).find((x) => Number.isFinite(x.n));
+  if (c) return c.n;
+  // a class suggestion names its token: gap-s2 is --spacing-s2 on the page, p-[18px] is 18, gap-4 is 4 × --spacing
+  const to = String(mark.craft?.suggest?.to ?? '').split(/\s+/).find((k) => /^-?(p|m|gap|space)[xytrblse]?(-[xy])?-/.test(k));
+  const t = to && /-(\[[^\]]+\]|[\w.]+)$/.exec(to)?.[1];
+  if (!t) return null;
+  if (t.startsWith('[')) return parseFloat(t.slice(1)) || null;
+  const root = getComputedStyle(document.documentElement), unit = (v) => (/rem$/.test(v) ? parseFloat(v) * parseFloat(root.fontSize) : parseFloat(v));
+  if (/^[\d.]+$/.test(t)) { const base = unit(root.getPropertyValue('--spacing')); return Number.isFinite(base) ? base * +t : null; }
+  const v = unit(root.getPropertyValue(`--spacing-${t}`));
+  return Number.isFinite(v) ? v : null;
+}
+const TYPE = new Set(['font-size', 'font-weight', 'line-height', 'letter-spacing']);
+// A mark's zone: { bands: [[x, y, w, h, tooMuch]], words: [[x, y, w, h]], edge: rect|null, off, box: [x, y, w, h] }.
+// Reads only.
+function zoneOf(el, mark, r, style) {
+  const s = style(el), px = (v) => parseFloat(v) || 0;
+  const bands = [], words = [];
+  let off = null, edge = null;
+  for (const prop of mark.props ?? []) {
+    const sd = sidesOf(prop);
+    if (sd) {
+      const want = shouldOf(mark, prop.replace(/-(inline|block)$/, ''));
+      if (want === null) continue;
+      const is = (side) => px(s[`${sd.box}${SIDES[side]}`]);
+      for (const side of sd.sides) {
+        const a = is(side), d = Math.abs(a - want);
+        if (d < 0.25) continue;
+        off = Math.max(off ?? 0, d / Math.max(want, 4));
+        const more = a > want;
+        if (sd.box === 'padding') {
+          const pl = Math.min(is('left'), sd.sides.includes('left') ? want : is('left')), pr = Math.min(is('right'), sd.sides.includes('right') ? want : is('right'));
+          const pt = Math.min(is('top'), sd.sides.includes('top') ? want : is('top')), pb = Math.min(is('bottom'), sd.sides.includes('bottom') ? want : is('bottom'));
+          if (side === 'top') bands.push([r.left + pl, r.top + pt, r.width - pl - pr, d, more]);
+          if (side === 'bottom') bands.push([r.left + pl, r.bottom - pb - d, r.width - pl - pr, d, more]);
+          if (side === 'left') bands.push([r.left + pl, r.top + pt, d, r.height - pt - pb, more]);
+          if (side === 'right') bands.push([r.right - pr - d, r.top + pt, d, r.height - pt - pb, more]);
+        } else {
+          if (side === 'top') bands.push([r.left, r.top - d, r.width, d, more, true]);
+          if (side === 'bottom') bands.push([r.left, r.bottom, r.width, d, more, true]);
+          if (side === 'left') bands.push([r.left - d, r.top, d, r.height, more, true]);
+          if (side === 'right') bands.push([r.right, r.top, d, r.height, more, true]);
+        }
+      }
+      continue;
+    }
+    if (/^(gap|row-gap|column-gap)$/.test(prop)) {
+      const want = shouldOf(mark, prop);
+      if (want === null) continue;
+      const kids = [...el.children].map((k) => k.getBoundingClientRect()).filter((k) => k.width > 0 && k.height > 0);
+      const column = /column/.test(s.flexDirection) || (s.display.includes('grid') && prop === 'row-gap');
+      // one child: no gap shows yet; a small spot where it would start, just after the child
+      if (kids.length < 2) { const k = kids[0]; bands.push(column ? [r.left + r.width / 2 - 3, Math.min(k ? k.bottom : r.bottom - 7, r.bottom - 7), 6, 6, true] : [Math.min(k ? k.right : r.right - 7, r.right - 7), r.top + r.height / 2 - 3, 6, 6, true]); off = Math.max(off ?? 0, 0); continue; }
+      const a = px(column ? s.rowGap : s.columnGap), d = a - want;
+      if (Math.abs(d) < 0.25) continue;
+      off = Math.max(off ?? 0, Math.abs(d) / Math.max(want, 4));
+      for (let i = 0; i + 1 < kids.length; i++) {
+        if (column) bands.push([r.left, kids[i + 1].top - Math.abs(d), r.width, Math.abs(d), d > 0]);
+        else bands.push([kids[i + 1].left - Math.abs(d), r.top, Math.abs(d), r.height, d > 0]);
+      }
+      continue;
+    }
+    if (TYPE.has(prop)) {
+      const want = shouldOf(mark, prop), a = px(s[camel(prop)]);
+      if (want !== null) off = Math.max(off ?? 0, Math.abs(a - want) / (prop === 'font-weight' ? 400 : Math.max(want, 1)));
+      if (!words.length) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        for (const q of [...range.getClientRects()].slice(0, 8)) if (q.width > 1) words.push([q.left, q.top, q.width, q.height]);
+      }
+      continue;
+    }
+  }
+  if (!bands.length && !words.length) edge = r;
+  return { bands, words, edge, off, radius: px(s.borderTopLeftRadius) };
+}
+// A zone cut to where its element can be seen (a drawer over half a row leaves heat on the other half only)
+function cutTo(zone, v) {
+  // a margin lies outside its element: it is cut to the view, everything else to where the element shows
+  const view = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+  const cut = ([x, y, w, h, more, outside]) => { const c = outside ? view : v; const l = Math.max(x, c.left), t = Math.max(y, c.top), rr = Math.min(x + w, c.right), b = Math.min(y + h, c.bottom); return rr - l > 0.25 && b - t > 0.25 ? [l, t, rr - l, b - t, more, outside] : null; };
+  const bands = zone.bands.map(cut).filter(Boolean), words = zone.words.map(cut).filter(Boolean);
+  let edge = zone.edge ? cut([zone.edge.left, zone.edge.top, zone.edge.width, zone.edge.height]) : null;
+  if (zone.edge && !edge) return null;
+  if (!zone.edge && !bands.length && !words.length) return null;
+  if (edge) edge = { left: edge[0], top: edge[1], width: edge[2], height: edge[3] };
+  const r = edge;
+  const all = [...bands.map(([x, y, w, h]) => [x, y, w, h]), ...words, ...(edge ? [[r.left, r.top, r.width, r.height]] : [])];
+  const x0 = Math.min(...all.map((b) => b[0])), y0 = Math.min(...all.map((b) => b[1]));
+  const x1 = Math.max(...all.map((b) => b[0] + b[2])), y1 = Math.max(...all.map((b) => b[1] + b[3]));
+  return { ...zone, bands, words, edge, box: [x0, y0, x1 - x0, y1 - y0], radius: v.clipped ? 0 : zone.radius };
+}
+const heatOf = (mark, zone) => (soft(mark) || mark.soft ? HEAT.min : zone.off === null ? 0.5 : Math.min(1, HEAT.min + zone.off * HEAT.gain));
+const causeOf = (mark) => `${mark.rule}|${mark.text ?? ''}`;
+// What the pill says: the class and what it becomes (×n when the cause has more places), or the advice in words
+function pillOf(mark, n) {
+  const s = mark.craft?.suggest;
+  const line = (inner) => `<span class="line">${inner}</span>`;
+  if (s?.kind === 'class') return line(`<b class="from">${esc(s.from || mark.text || '')}</b> <span class="arr">→</span> <b class="to">${esc(s.to)}</b>${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
+  if (s?.kind === 'advice' || mark.family === 'craft') return `<span class="say">${esc(String(s?.text ?? mark.title ?? '').replace(/`/g, ''))}</span>`;
+  const c = (mark.choices ?? [])[0];
+  return line(`<b class="from">${esc(mark.text ?? labelOf(mark))}</b> ${c ? `<span class="arr">→</span> <b class="to">${esc(c.label ?? c.name ?? '')}</b>` : '<span class="say">no token is close</span>'}${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
+}
+// One zone, drawn: magenta heat where there is too much, cyan dots where space is missing, blurred by its heat level
+function heatMarkup(zone, level) {
+  let warm = '', dots = '';
+  for (const [x, y, w, h, more] of zone.bands) {
+    const tw = Math.max(w, HEAT.thin), th = Math.max(h, HEAT.thin), tx = x - (tw - w) / 2, ty = y - (th - h) / 2;
+    if (more) warm += `<rect x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" width="${tw.toFixed(1)}" height="${th.toFixed(1)}"/>`;
+    else dots += `<rect x="${(tx - 2).toFixed(1)}" y="${(ty - 2).toFixed(1)}" width="${(tw + 4).toFixed(1)}" height="${(th + 4).toFixed(1)}"/>`;
+  }
+  for (const [x, y, w, h] of zone.words) warm += `<rect x="${x.toFixed(1)}" y="${(y + h * 0.15).toFixed(1)}" width="${w.toFixed(1)}" height="${(h * 0.7).toFixed(1)}" rx="${(h * 0.35).toFixed(1)}"/>`;
+  if (zone.edge) { const r = zone.edge; warm += `<rect class="edge" x="${(r.left + 2).toFixed(1)}" y="${(r.top + 2).toFixed(1)}" width="${Math.max(0, r.width - 4).toFixed(1)}" height="${Math.max(0, r.height - 4).toFixed(1)}" rx="${Math.max(0, zone.radius - 2).toFixed(1)}"/>`; }
+  return (warm ? `<g class="warm" filter="url(#pl-heat-${level})">${warm}</g>` : '') + (dots ? `<g class="dots" filter="url(#pl-dots)">${dots}</g>` : '');
+}
 
 export class MarkLayer {
+  #heat; #hand = null; #cause = null; #arrive = 0; #pulsed = new Set();
   #dim; #dimPath = ''; #svg; #anchor; #outlines; #outlineMarkup = ''; #labels; #labelMarkup = ''; #hint; #hinted = null; #light; #lit = []; #lightMarkup = ''; #nodes = new Map(); #items = []; #pointed = null; #focused = null; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
   // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
@@ -231,6 +314,15 @@ export class MarkLayer {
     this.#light = document.createElementNS(NS, 'g');
     this.#light.setAttribute('class', 'light');
     under.appendChild(this.#light);
+    // the heat: one zone per mark, blurred by its heat level; missing space as dots
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = [0, 1, 2, 3, 4].map((l) => `<filter id="pl-heat-${l}" filterUnits="userSpaceOnUse" x="-50" y="-50" width="20000" height="20000"><feGaussianBlur stdDeviation="${(HEAT.blur[0] + ((HEAT.blur[1] - HEAT.blur[0]) * l) / 4).toFixed(2)}"/><feComponentTransfer><feFuncA type="linear" slope="1.3"/></feComponentTransfer></filter>`).join('')
+      + '<filter id="pl-dots" filterUnits="userSpaceOnUse" x="-50" y="-50" width="20000" height="20000"><feGaussianBlur stdDeviation=".45"/></filter>'
+      + '<pattern id="pl-dot" width="3.5" height="3.5" patternUnits="userSpaceOnUse"><circle cx="1.75" cy="1.75" r=".95" fill="var(--pl-sys)" stroke="#fff" stroke-width=".6"/></pattern>';
+    under.prepend(defs);
+    this.#heat = document.createElementNS(NS, 'g');
+    this.#heat.setAttribute('class', 'heat');
+    under.appendChild(this.#heat);
     this.#svg = document.createElementNS(NS, 'svg');
     this.#svg.setAttribute('role', 'group');
     this.#svg.setAttribute('aria-label', 'Drift on this view');
@@ -251,10 +343,10 @@ export class MarkLayer {
       if (!hit) return;
       if (e.type === 'click' && Number.isFinite(e.clientX)) {
         let best = null, area = Infinity;
+        const pt = new DOMPoint(e.clientX, e.clientY);
         for (const node of this.#nodes.values()) {
-          if (node.hit.hasAttribute('data-under')) continue;
+          if (node.hit.hasAttribute('data-under') || !node.hit.isPointInFill?.(pt)) continue;
           const r = node.hit.getBoundingClientRect();
-          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) continue;
           if (r.width * r.height < area) (area = r.width * r.height), (best = node.hit);
         }
         hit = best ?? hit;
@@ -267,20 +359,24 @@ export class MarkLayer {
     this.#labels.addEventListener('click', (e) => { const lbl = e.target.closest?.('.lbl'); if (lbl) this.#open(lbl.dataset.id, e); });
     // the note: on the break under the pointer, or the one that has focus
     this.#hint = document.createElement('div');
-    this.#hint.className = 'bp-hint';
+    this.#hint.className = 'bp-hint pill';
     this.#hint.setAttribute('role', 'tooltip');
     layer.append(this.#hint);
     const over = (e) => { const hit = e.target.closest?.('.hit'); if (hit) this.#showHint(hit.dataset.id); };
     this.#svg.addEventListener('pointerover', over);
-    this.#svg.addEventListener('pointerout', (e) => { if (e.target.closest?.('.hit') && !e.relatedTarget?.closest?.('.hit')) this.#showHint(null); });
+    // the pill sits by the pointer, where the eye already is
+    this.#svg.addEventListener('pointermove', (e) => { this.#hand = { x: e.clientX, y: e.clientY }; if (this.#hinted) this.#placeHint(); });
+    this.#svg.addEventListener('pointerout', (e) => { if (e.target.closest?.('.hit') && !e.relatedTarget?.closest?.('.hit')) (this.#hand = null), this.#showHint(null); });
     this.#svg.addEventListener('focusin', (e) => { over(e); const node = this.#nodes.get(e.target.closest?.('.hit')?.dataset.id); this.#focused = node?.el ?? null; this.invalidate(); });
     this.#svg.addEventListener('focusout', () => { this.#showHint(null); this.#focused = null; this.invalidate(); });
   }
 
   // The dim goes on (shown, then faded in with on) and off with the mode.
+  // registration: the page is never dimmed; turning on starts the arrival (each zone pulses in, worst first)
   dim(state) {
-    this.#dim.hidden = state === 'off';
-    this.#dim.toggleAttribute('data-on', state === 'on');
+    this.#dim.hidden = true;
+    if (state === 'on' || state === 'entering') { if (!this.#arrive) (this.#arrive = performance.now()), (this.#pulsed = new Set()); }
+    else this.#arrive = 0;
   }
 
   #open(id, e) {
@@ -300,20 +396,27 @@ export class MarkLayer {
     this.invalidate();
   }
 
-  // One note at a time, beside the break: to its right, else to its left, else under it; never off the view.
+  // One pill at a time: the pointed zone's class and what it becomes (or its advice), by the pointer; from the keyboard,
+  // at the zone. Its cause lights with it.
   #showHint(id) {
     const node = id ? this.#nodes.get(id) : null;
     this.#hinted = node ? id : null;
+    const cause = node ? causeOf(node.mark) : null;
+    if (cause !== this.#cause) { this.#cause = cause; this.invalidate(); }
     if (!node) { this.#hint.removeAttribute('data-on'); return; }
-    this.#hint.innerHTML = hintOf(node.mark, node.fix);
-    const r = node.hit.getBoundingClientRect(), w = this.#hint.offsetWidth || 200, h = this.#hint.offsetHeight || 48;
-    let x = r.right + 8, y = r.top + r.height / 2 - h / 2;
-    if (x + w > innerWidth - 8) x = r.left - 8 - w;
-    if (x < 8) (x = Math.max(8, Math.min(innerWidth - w - 8, r.left))), (y = r.bottom + 8);
-    y = Math.max(8, Math.min(innerHeight - h - 8, y));
+    const n = [...this.#nodes.values()].filter((x) => causeOf(x.mark) === cause).length;
+    this.#hint.innerHTML = pillOf(node.mark, n);
+    this.#placeHint();
+    this.#hint.setAttribute('data-on', '');
+  }
+  #placeHint() {
+    const node = this.#nodes.get(this.#hinted);
+    if (!node) return;
+    const w = this.#hint.offsetWidth || 160, h = this.#hint.offsetHeight || 24, [ax, ay] = (node.hit.dataset.at ?? '0,0').split(',').map(Number);
+    let x = this.#hand ? this.#hand.x + 14 : ax, y = this.#hand ? this.#hand.y + 18 : ay - h - 12;
+    x = Math.max(8, Math.min(innerWidth - w - 8, x)); y = Math.max(8, Math.min(innerHeight - h - 8, y));
     this.#hint.style.left = `${x}px`;
     this.#hint.style.top = `${y}px`;
-    this.#hint.setAttribute('data-on', '');
   }
 
   // The page element under the pointer (looked for through the glass): its drifted region shows its breaks.
@@ -336,6 +439,49 @@ export class MarkLayer {
     this.invalidate();
   }
 
+  // Magnetism: a pointer near a zone (within MAGNET px of its hit box, on nothing else) points at it, so a thin band
+  // is easy to reach; a click then takes that zone's element. Returns the element, or null.
+  #magnet = null;
+  near(x, y) {
+    const MAGNET = 18;
+    let best = null, dist = MAGNET;
+    for (const [id, node] of this.#nodes) {
+      // only thin zones pull: a zone the size of its element is reached by pointing at the element
+      if (!node.thin || !node.hit.isConnected || node.hit.hasAttribute('data-under')) continue;
+      const r = node.hit.getBoundingClientRect();
+      const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (d < dist) (dist = d), (best = id);
+    }
+    if (best) { this.#hand = { x, y }; if (this.#hinted !== best) this.#showHint(best); else this.#placeHint(); }
+    else if (this.#magnet && this.#hinted === this.#magnet) this.#showHint(null);
+    this.#magnet = best;
+    return best ? this.#nodes.get(best).el : null;
+  }
+  get magnet() { return this.#magnet ? this.#nodes.get(this.#magnet)?.el ?? null : null; }
+
+  // The all-clear: the last problem on the page was just fixed. Four registration marks come in turned and loose, then
+  // spring onto their pins at the corners of the view, hold, and go. A quiet "done", no words.
+  allClear() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const m = 28, size = 22, svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'all-clear');
+    svg.setAttribute('aria-hidden', 'true');
+    const corners = [[m, m, -1, -1], [innerWidth - m, m, 1, -1], [m, innerHeight - m, -1, 1], [innerWidth - m, innerHeight - m, 1, 1]];
+    svg.innerHTML = corners.map(([x, y]) => `<g transform="translate(${x} ${y})"><g class="mark"><circle r="${size / 3}"/><path d="M${-size / 2} 0H${size / 2}M0 ${-size / 2}V${size / 2}"/></g></g>`).join('');
+    this.#svg.getRootNode().append(svg); // above the dock and the panel: the moment is the page's, nothing covers it
+    [...svg.querySelectorAll('.mark')].forEach((g, i) => {
+      const [, , dx, dy] = corners[i];
+      // the spring is the arrival's alone (onto the pins); the hold and the fade run straight
+      g.animate([{ opacity: 0, transform: `translate(${dx * 14}px, ${dy * 14}px) rotate(${dx * dy * 50}deg) scale(.7)`, easing: 'cubic-bezier(.3, 1.4, .5, 1)' }, { opacity: 1, transform: 'none', offset: 0.35 }, { opacity: 1, transform: 'none', offset: 0.8, easing: 'ease-in' }, { opacity: 0, transform: 'scale(.92)' }],
+        { duration: 1700, delay: i * 45, easing: 'linear', fill: 'both' });
+    });
+    setTimeout(() => svg.remove(), 1900);
+  }
+
+  // Where the heat is, hottest first: the chrome keeps clear of it (a panel parked on the worst problem hides it)
+  zones() {
+    return [...this.#nodes.values()].filter((n) => n.hit.isConnected).sort((a, b) => +b.hit.dataset.heat - +a.hit.dataset.heat).map((n) => n.hit.getBoundingClientRect());
+  }
   // Marks in document order, as last drawn: [{ id, el, mark, file }].
   order() {
     return this.#order;
@@ -403,8 +549,9 @@ export class MarkLayer {
     const tRead = performance.now();
     // READS. Every rect, geometry and style the frame needs is measured here, before a single write, so the
     // page's layout is computed once per frame however many marks there are.
-    const plan = [], lifted = [];
+    const plan = [];
     const memo = { rects: new Map(), styles: new Map() };
+    const styleOf = (e) => { let v = memo.styles.get(e); if (!v) memo.styles.set(e, (v = getComputedStyle(e))); return v; };
     const tVis = performance.now();
     for (const item of this.#items) {
       if (!item.el.isConnected) continue;
@@ -415,51 +562,36 @@ export class MarkLayer {
       // seen: what of it shows past its scroll containers and whatever the page paints over it. A covered element
       // draws nothing, not even a hit area, so a click on the drawer over it never opens its chooser
       const box = near && item.marks.length ? visibleBox(item.el, r, view, memo) : null;
-      item.marks.forEach((mark, k) => plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, g: box ? dimensionsFor(item.el, mark.props) : null }));
-      const drift = item.marks.filter(counts);
-      if (box && drift.length) lifted.push({ item, r: box, drift, radius: box.clipped ? 0 : parseFloat(getComputedStyle(item.el).borderTopLeftRadius) || 0 });
+      // registration: what is off is drawn as a zone of heat (counted drift, and craft, advisories included)
+      item.marks.forEach((mark, k) => { const zone = box && (counts(mark) || mark.family === 'craft') ? cutTo(zoneOf(item.el, mark, r, styleOf), box) : null; plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, zone, er: r, heat: zone ? heatOf(mark, zone) : 0 }); });
     }
     performance.measure('plumb:marks-visible', { start: tVis });
-    const litSet = new Set(this.#lit);
     performance.measure('plumb:marks-read', { start: tRead });
-    // regions: the outermost drifted elements, largest first; each holds the drifted elements inside it
-    const regions = [];
-    for (const l of [...lifted].sort((a, b) => b.r.width * b.r.height - a.r.width * a.r.height)) {
-      const host = regions.find((g) => g.top.item.el.contains(l.item.el) && within(l.r, g.top.r));
-      if (host) host.inner.push(l); else regions.push({ top: l, inner: [] });
-    }
-    // labels: every drifted element tall enough to be a thing (a card, a row, a column) carries one; a part (an
-    // avatar, a chip, a date) counts toward the nearest labelled thing that holds it, and carries its own label only
-    // while it is being looked at, when nothing holds it
-    const things = lifted.filter((l) => l.r.height >= LABEL_MIN);
-    const tally = new Map(things.map((l) => [l, l.drift.length - 1]));
-    const loose = [];
-    for (const l of lifted) {
-      if (tally.has(l)) continue;
-      let holder = null;
-      for (const t of things) if (t.item.el.contains(l.item.el) && (!holder || holder.item.el.contains(t.item.el))) holder = t;
-      if (holder) tally.set(holder, tally.get(holder) + l.drift.length); else loose.push(l);
-    }
-    // the region being looked at: the one holding the pointed or focused element
-    const looking = [this.#focused, this.#pointed].filter(Boolean);
-    const active = new Set();
-    for (const g of regions) if (looking.some((el) => g.top.item.el.contains(el))) { active.add(g.top.item.el); for (const l of g.inner) active.add(l.item.el); }
     // WRITES, from here on.
     const tWrite = performance.now();
-    let after = null; // keeps hit rects in document order for Tab
+    // the cause pointed at (a zone's pill, or a cause in the panel): its zones light, the others go quiet
+    const lit = new Set(this.#lit);
+    const lighting = this.#cause || lit.size;
+    const isLit = (item, mark) => (this.#cause ? causeOf(mark) === this.#cause : lit.has(item.el));
+    // Tab walks the hottest first: hit boxes go in by heat, the drawn order (the panel's) stays the page's
+    const byHeat = [...plan].filter((p) => p.zone).sort((a, b) => b.heat - a.heat);
+    const rank = new Map(byHeat.map((p, i) => [p.id, i]));
+    const now = performance.now(), arriving = this.#arrive && now - this.#arrive < 2600;
+    let after = null;
     const order = [];
-    for (const { id, item, mark, g } of plan) {
+    for (const { id, item, mark, zone, er, heat } of plan) {
       let node = this.#nodes.get(id);
-      if (!g) {
+      if (!zone) {
         if (node) this.#drop(id, node);
         continue;
       }
       const fix = this.#state?.(item.el, mark) ?? null;
-      const { markup, box } = draw(g, mark, fix);
+      const level = Math.max(0, Math.min(4, Math.round(((heat - HEAT.min) / (1 - HEAT.min)) * 4)));
+      const markup = heatMarkup(zone, level);
       if (!node) {
         const group = document.createElementNS(NS, 'g');
-        group.setAttribute('class', 'break');
-        const hit = document.createElementNS(NS, 'rect');
+        group.setAttribute('class', 'zone');
+        const hit = document.createElementNS(NS, 'path');
         hit.setAttribute('class', 'hit');
         hit.setAttribute('tabindex', '0');
         hit.setAttribute('role', 'button');
@@ -470,81 +602,60 @@ export class MarkLayer {
       node.mark = mark;
       node.fix = fix;
       if (node.markup !== markup) (node.g.innerHTML = markup), (node.markup = markup);
-      node.g.toggleAttribute('data-show', active.has(item.el) || !!fix);
+      node.g.dataset.cause = causeOf(mark);
+      node.g.dataset.box = `${Math.round(er.left)},${Math.round(er.top)},${Math.round(er.width)},${Math.round(er.height)}`; // the element it belongs to
+      // how warm it rests, brighter when its cause is pointed, quiet when another cause is
+      const stage = this.#hinted === id ? 'pointed' : lighting ? (isLit(item, mark) ? 'lit' : 'quiet') : 'resting';
+      const rest = heat * HEAT.rest, o = stage === 'quiet' ? rest * HEAT.quiet : stage === 'resting' ? rest : Math.min(1, rest + HEAT.lit);
+      if (node.g.dataset.stage !== stage || node.g.style.opacity !== String(o)) { node.g.dataset.stage = stage; node.g.style.opacity = String(o); }
+      if (node.g.parentNode !== this.#heat) this.#heat.appendChild(node.g);
+      // the pointed zone breathes; on arrival every zone pulses twice, worst first
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!still) {
+        if (stage === 'pointed' && !node.breath) node.breath = node.g.animate([{ opacity: o }, { opacity: 1 }, { opacity: o }], { duration: HEAT.pulse * 1.6, iterations: Infinity, easing: 'ease-in-out' });
+        if (stage !== 'pointed' && node.breath) node.breath.cancel(), (node.breath = null);
+        if (arriving && !this.#pulsed.has(id)) {
+          this.#pulsed.add(id);
+          node.g.animate([{ opacity: 0 }, { opacity: Math.min(1, o + 0.4) }, { opacity: o }], { duration: HEAT.pulse, delay: rank.get(id) * HEAT.stagger, iterations: HEAT.arrival, easing: 'ease-in-out', fill: 'backwards' });
+        }
+      }
       // what a screen reader hears: the line itself, then what is picked; no internal words (docs/copy/voice.md)
       const said = mark.title.replace(/`/g, '').replace(/\.?$/, '.');
       node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? '' : 'Known, recorded. '}${said}${fix?.to ? ` Picked ${fix.to}.` : ''}`);
       node.hit.dataset.ledger = mark.soft && mark.family === 'craft' ? 'soft' : mark.ledger; // an advisory is shown, not counted
-      // what else this mark answers for: the findings the verdict folded under it (verdict.js)
       node.hit.dataset.also = (mark.also ?? []).map((x) => x.rule).join(' ');
+      node.hit.dataset.heat = heat.toFixed(2);
       node.hit.toggleAttribute('aria-current', fix?.kind === 'current');
       order.push({ id, el: item.el, mark, file: item.file ?? null });
-      const [x, y, w, h] = box;
-      node.hit.setAttribute('x', x);
-      node.hit.setAttribute('y', y);
-      node.hit.setAttribute('width', Math.max(14, w));
-      node.hit.setAttribute('height', Math.max(14, h));
-      node.hit.toggleAttribute('data-under', under.some((o) => x < o.right && o.left < x + w && y < o.bottom && o.top < y + h));
-      // document order: each pair follows the previous one, after the outlines
+      // the hit box: the zone, with room to aim at a thin band
+      // the hit area is the zone's own pieces (each gap, each band, the words, or the element), not their bounding
+      // box: a gap's hit never covers the children between the gaps. A thin piece gets room around it to aim at
+      const pieces = zone.edge ? [[zone.edge.left, zone.edge.top, zone.edge.width, zone.edge.height]] : [...zone.bands, ...zone.words].map(([px0, py0, pw, ph]) => [px0, py0, pw, ph]);
+      const [x, y, w, h] = zone.box;
+      node.thin = Math.min(w, h) < 14 || pieces.every(([, , pw, ph]) => Math.min(pw, ph) < 14);
+      const grown = pieces.map(([px0, py0, pw, ph]) => { const pad = Math.min(pw, ph) < 14 ? 6 : 0; const gw = Math.max(14, pw + 2 * pad), gh = Math.max(14, ph + 2 * pad); return [px0 + pw / 2 - gw / 2, py0 + ph / 2 - gh / 2, gw, gh]; });
+      const d = grown.map(([gx, gy, gw, gh]) => `M${gx.toFixed(1)} ${gy.toFixed(1)}h${gw.toFixed(1)}v${gh.toFixed(1)}h${(-gw).toFixed(1)}Z`).join('');
+      if (node.hit.getAttribute('d') !== d) node.hit.setAttribute('d', d);
+      // where to aim (a click, focus's pill): the middle of its first piece
+      node.hit.dataset.at = `${(grown[0][0] + grown[0][2] / 2).toFixed(1)},${(grown[0][1] + grown[0][3] / 2).toFixed(1)}`;
+      node.hit.toggleAttribute('data-under', grown.every(([gx, gy, gw, gh]) => under.some((o2) => gx < o2.right && o2.left < gx + gw && gy < o2.bottom && o2.top < gy + gh)));
+      void x; void y;
+    }
+    // hottest first, for Tab: the smaller of two overlapping boxes still wins a click (pick, above)
+    for (const p of byHeat) {
+      const node = this.#nodes.get(p.id);
+      if (!node) continue;
       const anchor = after ? after.nextSibling : this.#anchor.nextSibling;
-      if (node.g !== anchor) this.#svg.insertBefore(node.g, anchor);
-      if (node.hit !== node.g.nextSibling) this.#svg.insertBefore(node.hit, node.g.nextSibling);
+      if (node.hit !== anchor) this.#svg.insertBefore(node.hit, anchor);
       after = node.hit;
     }
     performance.measure('plumb:marks-write-marks', { start: tWrite });
     const tRest = performance.now();
-    // the cuts: each region's outermost element, never one the size of the page
-    const cuts = regions.map((g) => g.top).filter((l) => l.r.width * l.r.height < view.w * view.h * 0.6);
-    const path = cuts.length ? `path(evenodd, "M0 0H${view.w}V${view.h}H0Z ${cuts.map(({ r, radius }) => roundRect(r.left, r.top, r.width, r.height, radius)).join(' ')}")` : '';
-    if (path !== this.#dimPath) { if (path) this.#dim.style.setProperty('clip-path', path); else this.#dim.style.removeProperty('clip-path'); this.#dimPath = path; }
-    // the outlines, every drifted element; the labels, one per region on its top edge
-    let outlines = '', labels = '';
-    const taken = [];
-    const free = (x, y, w) => !taken.some(([a, b, c]) => x < a + c + 4 && a < x + w + 4 && y < b + TAG_H && b < y + TAG_H);
-    const inkFor = (l) => { const fix = this.#state?.(l.item.el, l.drift[0]) ?? null; return inkOf(l.drift[0], fix) === 'picked' ? 'picked' : l.drift.every(soft) ? 'soft' : 'off'; };
-    for (const { top, inner } of regions) {
-      for (const l of [top, ...inner]) {
-        const { r, radius } = l;
-        const rx = Math.min(radius, r.width / 2, r.height / 2).toFixed(1);
-        const rect = `x="${(r.left + 0.75).toFixed(1)}" y="${(r.top + 0.75).toFixed(1)}" width="${Math.max(0, r.width - 1.5).toFixed(1)}" height="${Math.max(0, r.height - 1.5).toFixed(1)}" rx="${rx}"`;
-        const cls = l === top ? '' : 'inner ';
-        outlines += `<rect class="${cls}ink k-${inkFor(l)}" ${rect}/>`;
-      }
-    }
-    // a label's place: on the element's top edge like a legend, unless that edge is cut away or what is above it is
-    // something else (another card, a header): then inside its top-left corner. Never on another label: it moves along
-    // the edge, else it is not drawn
-    const related = (el, x, y) => { const hit = document.elementsFromPoint(x, y).find((e) => !e.closest('plumb-overlay')); return !hit || el.contains(hit) || hit.contains(el); };
-    const labelled = [...things.map((l) => [l, tally.get(l)]), ...loose.filter((l) => active.has(l.item.el)).map((l) => [l, l.drift.length - 1])];
-    for (const [l, more] of labelled) {
-      const { item, r, drift } = l;
-      if (item.el === this.#selected) continue; // the selected element is drawn by the selection (select.js), not labelled
-      const first = drift[0];
-      const fix = this.#state?.(item.el, first) ?? null;
-      const ink = inkFor(l);
-      const text = short(fix?.to ? `${first.text ?? labelOf(first)} → ${fix.to}` : (first.text ?? labelOf(first)));
-      const w = (text.length + (more ? String(more).length + 1 : 0)) * CH + 12 + (more ? 4 : 0);
-      if (w > r.width + 40) continue; // a label wider than its element would cover its neighbours
-      const x0 = Math.max(2, Math.min(view.w - w - 2, r.left + Math.max(6, Math.min(12, l.radius))));
-      const legend = !r.topCut && r.top - TAG_H / 2 >= 2 && related(item.el, x0 + w / 2, r.top - TAG_H / 2 + 2);
-      let x = x0, y = legend ? r.top - TAG_H / 2 : r.top + 3;
-      for (let step = 0; step < 4 && !free(x, y, w); step++) x += w + 6;
-      if (!free(x, y, w) || x + w > r.right + 2) continue;
-      taken.push([x, y, w]);
-      const id = `${item.id}:${item.marks.indexOf(first)}:${first.key}`;
-      const hidden = under.some((o) => x < o.right && o.left < x + w && y < o.bottom && o.top < y + TAG_H);
-      labels += `<span class="lbl k-${ink}" data-id="${esc(id)}"${hidden ? ' data-under' : ''} style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px">${esc(text)}${more ? `<span class="more">+${more}</span>` : ''}</span>`;
-    }
-    if (outlines !== this.#outlineMarkup) (this.#outlines.innerHTML = outlines), (this.#outlineMarkup = outlines);
-    if (labels !== this.#labelMarkup) (this.#labels.innerHTML = labels), (this.#labelMarkup = labels);
-    // the spotlight: a lit element's outline, drawn again in the accent over its drift ink (one line, not two)
-    let light = '';
-    for (const l of lifted) {
-      if (!litSet.has(l.item.el)) continue;
-      const { r, radius } = l;
-      light += `<rect x="${(r.left + 0.75).toFixed(1)}" y="${(r.top + 0.75).toFixed(1)}" width="${Math.max(0, r.width - 1.5).toFixed(1)}" height="${Math.max(0, r.height - 1.5).toFixed(1)}" rx="${Math.min(radius, r.width / 2, r.height / 2).toFixed(1)}"/>`;
-    }
-    if (light !== this.#lightMarkup) (this.#light.innerHTML = light), (this.#lightMarkup = light);
+    // registration draws no dim, outlines, labels or spotlight boxes: the heat says it all
+    if (this.#outlineMarkup) (this.#outlines.innerHTML = ''), (this.#outlineMarkup = '');
+    if (this.#labelMarkup) (this.#labels.innerHTML = ''), (this.#labelMarkup = '');
+    if (this.#lightMarkup) (this.#light.innerHTML = ''), (this.#lightMarkup = '');
+    if (this.#dimPath) (this.#dim.style.removeProperty('clip-path'), (this.#dimPath = ''));
     performance.measure('plumb:marks-write-rest', { start: tRest });
     this.#order = order;
     const key = order.map((o) => o.id).join(',');

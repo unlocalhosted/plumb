@@ -68,14 +68,14 @@ const craftMarks = (page) => page.evaluate(() => {
 const craftRows = (overlay) => overlay.locator('.bpp .row[data-key^="craft/"]').evaluateAll((rows) => rows.map((r) => ({ key: r.dataset.key, rule: r.dataset.key.split('|')[0], text: r.querySelector('code').textContent, what: r.querySelector('.what').textContent })));
 const rectOf = (page, id) => page.locator(`#${id}`).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
 // the elements a row lights when pointed at, as boxes
-const lit = (page) => page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect')].map((o) => ({ x: +o.getAttribute('x') - 0.75, y: +o.getAttribute('y') - 0.75, w: +o.getAttribute('width') + 1.5, h: +o.getAttribute('height') + 1.5 })));
+const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
 const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
 
 // Points at a row, and says which page elements light up.
 async function pointRow(page, overlay, key) {
   await overlay.locator('.bpp .head').click();
   await overlay.locator(`.bpp .row[data-key^="${key}"]`).first().hover();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
   return lit(page);
 }
 // Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
@@ -83,7 +83,7 @@ async function pointRow(page, overlay, key) {
 // options it offers.
 async function openMark(page, overlay, id) {
   const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await hit.boundingBox();
+  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   const hint = overlay.locator('.bp .bp-hint[data-on]');
   await hint.waitFor({ timeout: 3000 });

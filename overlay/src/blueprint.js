@@ -64,13 +64,13 @@ export class Blueprint {
     this.#glass = new Glass(root, host);
     this.#walk = new Walkthrough(root);
     this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: (shown) => { if (shown) this.#panel.open(false); queueMicrotask(() => this.#focus()); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
-    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
+    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
       changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
-    this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
+    this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => { host.ordered?.(); this.#focus(); } });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -190,7 +190,7 @@ export class Blueprint {
     const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
     const r = el?.isConnected ? el.getBoundingClientRect() : null;
     if (r) this.#changes.avoid(r);
-    this.#panel.avoid(r, [this.#changes.rect]);
+    this.#panel.avoid(r, [this.#changes.rect], r ? [] : this.#marks.zones());
   }
   // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
   #offerWalk() {
@@ -205,12 +205,15 @@ export class Blueprint {
   }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
-  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
+  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#marks.near(e.clientX, e.clientY); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
   // the reader's reading of an element, or of the nearest ancestor it read
   #itemOf(el) { return el ? this.#items.find((i) => i.el === el) ?? null : null; }
   // A click on the page: the innermost element under it that the reader read (else the element itself) is selected;
   // a click on nothing lets go.
   #click = (e) => {
+    // magnetism: a pointer near a zone takes that zone's element
+    const near = this.#marks.magnet;
+    if (near) { this.#selection.select(near, this.#itemOf(near)); return; }
     const hit = this.#under(e.clientX, e.clientY);
     if (!hit || hit === document.body || hit === document.documentElement) { this.#selection.clear(); return; }
     let el = hit;
@@ -232,7 +235,22 @@ export class Blueprint {
   }
   // Apply in the Changes sidebar: every element's changes as one class edit on its own line, all of one file's in one
   // write (POST swaps) with the hash read when the first change was taken; the page reloads and is read again
+  // The all-clear: problems were left before a write, and once the page is read again none are. The count before the
+  // write is kept in the session, so a write that reloads the page still ends in its all-clear.
+  #lastDrift = 0;
+  #clearAfterWrite(p) {
+    if (p.read === p.total) {
+      let wrote = null;
+      try { wrote = JSON.parse(sessionStorage.getItem('plumb:wrote') ?? 'null'); } catch {}
+      if (wrote && p.drift === 0 && wrote.drift > 0 && Date.now() - wrote.t < 20000) {
+        try { sessionStorage.removeItem('plumb:wrote'); } catch {}
+        this.#marks.allClear();
+      }
+    }
+    if (p.read === p.total) this.#lastDrift = p.drift;
+  }
   async #apply(batch) {
+    try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}
     const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
     for (const b of batch) {
       // every change on the element as one class edit against its classes as written

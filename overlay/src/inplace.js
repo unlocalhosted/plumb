@@ -100,8 +100,34 @@ export function classesFor(plan) {
   return { from: plan.edit.from, to: out.join(' ') };
 }
 
+// The glide: a change to an element's layout or paint (a step tried, a fix taken, a preview put back) moves the page
+// there instead of jumping: a short transition on the properties a fix touches, set inline for the move and then
+// given back, so the element's own transitions are as they were. The neighbours reflow with it every frame. Off under
+// reduced motion. (Figma calls it Smart Animate; in code, a layout transition.)
+export const GLIDE = { ms: 360, ease: 'cubic-bezier(.2, .8, .2, 1)',
+  props: ['padding', 'margin', 'gap', 'row-gap', 'column-gap', 'width', 'height', 'min-width', 'min-height', 'max-width', 'border-radius', 'border-width', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'translate', 'opacity', 'color', 'background-color', 'border-color', 'box-shadow'] };
+const gliding = new WeakMap(); // el → { timer, transition: [value, priority] as it was before the glide }
+export function glide(el, change) {
+  if (!el?.style || matchMedia('(prefers-reduced-motion: reduce)').matches) return change();
+  let g = gliding.get(el);
+  if (!g) {
+    g = { transition: [el.style.getPropertyValue('transition'), el.style.getPropertyPriority('transition')] };
+    gliding.set(el, g);
+    el.style.setProperty('transition', GLIDE.props.map((p) => `${p} ${GLIDE.ms}ms ${GLIDE.ease}`).join(', '), 'important');
+  }
+  change();
+  clearTimeout(g.timer);
+  g.timer = setTimeout(() => {
+    const [v, pr] = g.transition;
+    if (v) el.style.setProperty('transition', v, pr); else el.style.removeProperty('transition');
+    if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
+    gliding.delete(el);
+  }, GLIDE.ms + 40);
+}
+
 // Previews the plan on the element (inline styles the overlay owns), or puts it back.
-export function preview(el, plan, on) {
+export function preview(el, plan, on) { glide(el, () => previewNow(el, plan, on)); }
+function previewNow(el, plan, on) {
   for (const p of plan.props) {
     if (on) el.style.setProperty(p.prop, `${p.to.n}px`, 'important');
     else { const [v, pr] = p.original; if (v) el.style.setProperty(p.prop, v, pr); else el.style.removeProperty(p.prop); }
@@ -187,9 +213,10 @@ export function swapPlanOf(problem) {
 
 // An option previewed on the element (its classes swapped, and the values it stands for as inline styles the overlay
 // owns), or put back: the inverse of exactly what was done.
-export function swapPreview(el, write, on, memo, styles = {}) {
+export function swapPreview(el, write, on, memo, styles = {}) { glide(el, () => swapNow(el, write, on, memo, styles)); }
+function swapNow(el, write, on, memo, styles) {
   if (on) {
-    if (memo.done) swapPreview(el, null, false, memo);
+    if (memo.done) swapNow(el, null, false, memo);
     const removed = word(write?.from).filter((c) => el.classList.contains(c)), added = word(write?.to).filter((c) => !el.classList.contains(c));
     for (const c of removed) el.classList.remove(c);
     for (const c of added) el.classList.add(c);

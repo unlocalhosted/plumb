@@ -14,6 +14,7 @@
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 import { BLOCK_ICONS } from './boxmodel.js';
+import { glide } from './inplace.js';
 
 // a property as a person says it: padding-right → right padding
 const said = (prop) => { const [k, side] = prop.split('-'); return side && !/gap/.test(prop) ? `${side} ${k}` : prop.replace('-', ' '); };
@@ -146,7 +147,8 @@ export class Changes {
   discard(el) {
     const item = this.#items.get(el);
     if (!item) return;
-    for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); }
+    // back as it was, gliding (a change put back moves the page the way taking it did)
+    glide(el, () => { for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); } });
     for (const c of item.swaps.values()) c.undo?.();
     this.#onDiscard?.(el);
     if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');

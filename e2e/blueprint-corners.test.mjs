@@ -64,14 +64,16 @@ const drawn = (page) =>
     const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
     return {
       hits: [...root.querySelectorAll('.bp .hit')].map((h) => ({ ...box(h), label: h.getAttribute('aria-label') })),
-      outlines: [...root.querySelectorAll('.bp .outlines rect')].map((o) => ({ x: +o.getAttribute('x') - 0.75, y: +o.getAttribute('y') - 0.75, w: +o.getAttribute('width') + 1.5, h: +o.getAttribute('height') + 1.5, inner: o.classList.contains('inner') })),
+      // registration: an element is marked when it has heat; the zone says whose it is (data-box). One inside another
+      // marked element is inner. No labels, no dim
+      outlines: (() => { const boxes = [...new Set([...root.querySelectorAll('.bp .heat .zone')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }); return boxes.map((o) => ({ ...o, inner: boxes.some((p) => p !== o && p.x <= o.x + 1 && p.y <= o.y + 1 && p.x + p.w >= o.x + o.w - 1 && p.y + p.h >= o.y + o.h - 1 && p.w * p.h > o.w * o.h) })); })(),
       labels: [...root.querySelectorAll('.bp .lbl')].map((l) => ({ ...box(l), text: l.textContent })),
       clip: root.querySelector('.shade')?.style.clipPath ?? '',
       sheet: root.querySelector('.bp .sheet')?.innerText.replace(/\s+/g, ' ') ?? '',
     };
   });
 // the outline drawn at an element's box
-const outlineAt = (d, r) => d.outlines.find((o) => Math.abs(o.x - r.x) < 1 && Math.abs(o.y - r.y) < 1 && Math.abs(o.w - r.w) < 1.5);
+const outlineAt = (d, r) => d.outlines.find((o) => Math.abs(o.x - r.x) < 1.5 && Math.abs(o.y - r.y) < 1.5 && Math.abs(o.w - r.w) < 2);
 // the page's own paint for a few properties, to prove blueprint never restyles it
 const paint = (page, selector, pseudo) => page.locator(selector).first().evaluate((el, pseudo) => { const cs = getComputedStyle(el, pseudo); return { color: cs.color, bg: cs.backgroundColor, image: cs.backgroundImage, shadow: cs.boxShadow, opacity: cs.opacity, outline: cs.outlineStyle, caret: cs.caretColor, visibility: cs.visibility }; }, pseudo ?? null);
 const rectOf = (page, selector) => page.locator(selector).first().evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
@@ -98,9 +100,9 @@ test('words: mixed weights, wrapping, truncation, controls, editable, pseudo, sv
   // the words are not drawn over: no outline or label sits on a paragraph with no drift
   const d = await drawn(page);
   const prose = await rectOf(page, '#prose');
-  assert.equal(d.outlines.filter((o) => Math.abs(o.x - prose.x) < 1 && Math.abs(o.y - prose.y) < 1).length, 0, 'a paragraph on the system is not outlined');
+  assert.equal(d.outlines.filter((o) => Math.abs(o.x - prose.x) < 1 && Math.abs(o.y - prose.y) < 1).length, 0, 'a paragraph on the system has no heat');
   const tiny = await rectOf(page, '#tiny');
-  assert.ok(outlineAt(d, tiny), 'tiny print off the scale is outlined where it sits');
+  assert.ok(outlineAt(d, tiny), 'tiny print off the scale has heat where it sits');
   assert.deepEqual(errors, []);
 });
 
@@ -155,24 +157,17 @@ test('nesting and density: a dense grid, repeated rows from one site, a nested b
   const dense = await rectOf(page, '#dense');
   const cells = d.hits.filter((h) => inside(h, dense) && /rounded-\[3px\]/.test(h.label));
   assert.equal(cells.length, 36, `every cell's corner is a break: ${cells.length}`);
-  // the wrapper holds the grid, the rows and the button: it is the one region cut out of the dim; every drifted
-  // element inside it is outlined thinly
+  // the wrapper holds the grid, the rows and the button: each drifted element has its own heat, the inner ones inside
+  // the wrapper's; nothing is labelled and nothing is dimmed
   const wrapper = await rectOf(page, '#wrapper'), nested = await rectOf(page, '#nested-button');
   const top = outlineAt(d, wrapper);
-  assert.ok(top && !top.inner, `the wrapper is the region: ${JSON.stringify(top)}`);
-  assert.ok(d.clip.includes(` ${Math.round(wrapper.y * 10) / 10} H`), `the wrapper is cut out of the dim: ${d.clip.slice(0, 120)}`);
+  assert.ok(top && !top.inner, `the wrapper has its own heat: ${JSON.stringify(top)}`);
   const cellRects = await page.evaluate(() => [...document.querySelectorAll('#dense span')].map((c) => { const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; }));
   const cellOutlines = cellRects.map((c) => outlineAt(d, c));
-  assert.ok(cellOutlines.every((o) => o?.inner), `every cell is outlined as inner: ${cellOutlines.filter((o) => !o?.inner).length} not`);
-  // the wrapper and the grid are things and carry a label each; a cell is a part, so its drift counts toward the grid
-  const held = d.labels.filter((l) => within(l, { ...wrapper, y: wrapper.y - 12, bottom: wrapper.bottom })).map((l) => l.text);
-  assert.ok(held.length >= 2 && held.length <= 3, `the wrapper and the grid are labelled, nothing smaller: ${held}`);
-  assert.ok(!held.some((l) => l.startsWith('rounded-[3px]')), `no cell has a label of its own: ${held}`);
-  assert.ok(held.some((l) => /^gap-\[5px\]\+(\d+)$/.test(l) && +l.match(/\+(\d+)$/)[1] >= 36), `the grid's label counts its cells: ${held}`);
-  assert.ok(outlineAt(d, nested)?.inner, 'the nested button is outlined inside its region');
-  // labels never sit on each other
-  const overlapping = d.labels.filter((a, i) => d.labels.some((b, j) => j > i && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h));
-  assert.equal(overlapping.length, 0, `no two labels overlap: ${overlapping.map((l) => l.text)}`);
+  assert.ok(cellOutlines.every((o) => o?.inner), `every cell has heat, inside the wrapper's: ${cellOutlines.filter((o) => !o?.inner).length} not`);
+  assert.ok(outlineAt(d, nested)?.inner, 'the nested button has heat inside its wrapper');
+  assert.equal(d.labels.length, 0, 'no labels');
+  assert.equal(d.clip, '', 'no dim');
   // the four rows come from one JSX site: one reading, four sets of marks
   const rows = await rectOf(page, '#rows');
   const rowHits = d.hits.filter((h) => inside(h, rows) && /rounded-\[5px\]/.test(h.label));
@@ -212,7 +207,7 @@ test('runtime values: a step is a break, an opaque width is not', { timeout: 120
   assert.deepEqual(errors, []);
 });
 
-test('the page changes while on: a removed element takes its marks; an added one is read and outlined', { timeout: 120000 }, async (t) => {
+test('the page changes while on: a removed element takes its marks; an added one is read and gets its heat', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -230,7 +225,7 @@ test('the page changes while on: a removed element takes its marks; an added one
   for (let i = 0; i < 200 && (await rowHits()) !== 4; i++) await page.waitForTimeout(50);
   assert.equal(await rowHits(), 4, 'an added row is read and gets its break');
   const added = await rectOf(page, '#added');
-  await page.waitForFunction((r) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .outlines rect')].some((o) => Math.abs(+o.getAttribute('x') - 0.75 - r.x) < 1 && Math.abs(+o.getAttribute('y') - 0.75 - r.y) < 1), added, { timeout: 3000 });
+  await page.waitForFunction((r) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone')].some((z) => { const [x, y] = z.dataset.box.split(',').map(Number); return Math.abs(x - r.x) < 1.5 && Math.abs(y - r.y) < 1.5; }), added, { timeout: 3000 });
   assert.deepEqual(errors, []);
 });
 

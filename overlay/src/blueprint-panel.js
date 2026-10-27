@@ -161,7 +161,7 @@ export class Panel {
   // Unfolded to the list, or folded to its one line.
   // Keeps clear of what the person is working on and of the other chrome (Changes): the first top corner that covers
   // neither; when no corner is, it steps aside until one is (the dock still counts what's off).
-  avoid(rect, chrome = []) {
+  avoid(rect, chrome = [], heat = []) {
     let side = 'end', away = false;
     if (!this.#el.hidden) {
       const r = this.#el.getBoundingClientRect(), here = this.#el.dataset.side === 'start';
@@ -172,6 +172,11 @@ export class Panel {
       const clear = ['end', 'start'].find((k) => free(k) && !hits(at[k], rect));
       side = clear ?? (here ? 'start' : 'end');
       away = !clear;
+      // with nothing in hand, the corner that covers less heat (the hottest zones count most)
+      if (!rect && !away) {
+        const cost = (k) => heat.reduce((n, q, i) => n + (hits(at[k], q) ? heat.length - i : 0), 0);
+        if (free('start') && cost('start') < cost('end')) side = 'start';
+      }
     }
     if ((this.#el.dataset.side ?? 'end') !== side) { if (side === 'end') delete this.#el.dataset.side; else this.#el.dataset.side = side; }
     this.#el.toggleAttribute('data-away', away);

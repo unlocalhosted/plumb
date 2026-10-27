@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registration · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1160px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 84ch; }
+  header .acts { margin-left: auto; display: flex; gap: 8px; }
+  header button { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1160px; margin: 0 auto; }
+  plumb-overlay { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Registration</h1>
+  <p>Your page against your system. Only what is off glows, as much as it is off: magenta where there is too much space or weight, cyan dots where space is missing. Point at a glow to see what it is; everything with the same cause lights with it. Click to pick, Enter to fix, Esc to let go, Tab to walk from the worst.</p>
+  <div class="acts"><button id="replay" type="button">Replay</button><button id="scheme" type="button">Dark</button></div>
+</header>
+<div id="board"></div>
+<script type="module">
+  /* ─────────────────────────────────────────────────────────
+   * REGISTRATION · STORYBOARD
+   *
+   * One stage per zone drives everything it shows. A zone is one problem on one element: the part of a space that
+   * is off (the band between where the page puts an edge and where the system would), or a word whose size or weight
+   * is off (the word itself).
+   *
+   *  ARRIVING     blueprint turns on
+   *     0ms       registration marks fade in at the corners
+   *   300ms       zones pulse in, worst first (60ms apart), twice each
+   *  ~1900ms      every zone rests: still, at its own heat
+   *
+   *  RESTING      heat = how far off, against the step: 18 vs 16 is a haze, 28 vs 16 glows hot; never under min
+   *  POINTED      the zone pulses; one pill: class → fix (×n places); a type zone shows the right size or weight
+   *               printed over it in cyan
+   *  LIT          every other zone of the same cause brightens, still
+   *  QUIET        zones of other causes fade back
+   *  PICKED       click: the pointed state holds when the pointer leaves; the pill says ↵ fix
+   *  COOLING      Enter: the page eases into the system (360ms); every zone of the cause shrinks with it and cools
+   *     → GONE    nothing is left where the page now agrees
+   *
+   * Reduced motion: no pulses; a fix is instant and the heat simply goes.
+   * ───────────────────────────────────────────────────────── */
+
+  const TIMING = {
+    zonesIn:       300,   // first zone starts its arrival pulses
+    zoneStagger:   60,    // between zones, worst first
+    pulse:         700,   // one pulse (rest → warm → rest)
+    arrivalPulses: 2,     // how many times each zone pulses on arrival
+    fix:           360,   // the page easing into the system; the heat cools over the same time
+  };
+
+  /* Heat: how warm a zone rests, from how far off it is */
+  const HEAT = {
+    min:   0.3,          // the faintest a real problem ever rests (a 1px error is still seen)
+    gain:  2.2,          // heat per unit of error ratio (|is − should| / should)
+    rest:  0.75,         // resting opacity at heat 1
+    lit:   0.25,         // added when its cause is pointed
+    quiet: 0.3,          // multiplier for other causes while one is pointed
+    blur:  [2.6, 4.4],   // blur at heat 0 → 1: hotter spreads further
+    thin:  1.5,          // a band thinner than this is drawn this thick (centred), so 1px errors stay findable
+  };
+
+  /* The two inks */
+  const INK = { light: { system: '#00a3ff', diff: '#ff1f8f' }, dark: { system: '#2bb8ff', diff: '#ff4fa7' } };
+
+  /* ── the pages ── */
+  const PAGE = `
+    <div class="pg">
+      <header class="hd"><h1 data-m="title">Team settings</h1><button class="btn" data-m="invite"><i></i>Invite</button></header>
+      <section class="card" data-m="card">
+        <span class="eyebrow" data-m="status">Status</span>
+        <p>Three people can see this workspace.</p>
+        <ul class="list" data-m="list">
+          <li><span>Ada Lovelace</span><span class="role">Owner</span></li>
+          <li><span>Grace Hopper</span><span class="role">Admin</span></li>
+          <li><span>Alan Turing</span><span class="role">Member</span></li>
+        </ul>
+      </section>
+      <section class="card second" data-m="danger">
+        <span class="eyebrow">Danger zone</span>
+        <p>Delete this workspace and everything in it.</p>
+      </section>
+    </div>`;
+  // what is off, what the system says, and the class change that makes it so. Same `cls` = same cause.
+  const TEAM = [
+    { el: 'title', kind: 'type', cls: 'font-semibold', to: 'font-medium', css: { fontWeight: '500' } },
+    { el: 'invite', kind: 'padding', cls: 'px-s3', to: 'pl-s4 pr-s6', css: { paddingLeft: '16px', paddingRight: '24px' } },
+    { el: 'status', kind: 'type', cls: 'text-[11px]', to: 'text-small', css: { fontSize: '12px' } },
+    { el: 'list', kind: 'gap', cls: 'gap-[10px]', to: 'gap-s2', css: { rowGap: '8px' } },
+    { el: 'card', kind: 'padding', cls: 'p-[18px]', to: 'p-s4', css: { padding: '16px' } },
+    { el: 'danger', kind: 'padding', cls: 'p-[18px]', to: 'p-s4', css: { padding: '16px' } },
+    { el: 'danger', kind: 'margin', cls: 'mt-[22px]', to: 'mt-s6', css: { marginTop: '10px' } },
+  ];
+  // the same padding mistake at four sizes, to read heat against error
+  const LADDER_PAGE = `<div class="pg ladder">${[17, 18, 22, 28].map((p) => `<section class="card" data-m="l${p}" style="padding:${p}px"><span class="eyebrow">p-[${p}px]</span><p>vs 16</p></section>`).join('')}</div>`;
+  const LADDER = [17, 18, 22, 28].map((p) => ({ el: `l${p}`, kind: 'padding', cls: `p-[${p}px]`, to: 'p-s4', css: { padding: '16px' } }));
+
+  const scenes = [
+    { title: 'registered', caption: 'Seven problems, four kinds of cause. Point at any glow: its cause lights, the rest go quiet. Click, then Enter, to fix a whole cause at once.', page: PAGE, problems: TEAM, zoom: 1.5, wide: true },
+    { title: 'today', caption: 'For comparison: a box and a class name for each problem.', page: PAGE, problems: TEAM, today: true },
+    { title: 'how hot', caption: 'The same mistake at 17, 18, 22 and 28 where the system says 16: the further off, the hotter.', page: LADDER_PAGE, problems: LADDER, zoom: 1.1 },
+    { title: 'a page that agrees', caption: 'Nothing off: no heat at all.', page: PAGE, problems: [] },
+  ];
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>
+    :host { display: block; --system: ${INK.light.system}; --diff: ${INK.light.diff}; }
+    :host(.dark) { --system: ${INK.dark.system}; --diff: ${INK.dark.diff}; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .side { display: grid; gap: 22px; }
+    figure { margin: 0; }
+    figcaption { font: 12.5px/1.45 system-ui, sans-serif; margin-top: 8px; opacity: .8; display: flex; gap: 10px; align-items: flex-start; }
+    figcaption b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .75; margin-bottom: 2px; }
+    figcaption button { flex: none; font: inherit; font-size: 11px; padding: 2px 8px; border-radius: 5px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+    .scene { position: relative; border-radius: 12px; overflow: hidden; background: #f7f7f5; isolation: isolate; outline: none; }
+    :host(.dark) .scene { background: #17171a; }
+    .pg { padding: 18px; display: flex; flex-direction: column; gap: 14px; font: 13px/1.4 system-ui, sans-serif; color: #1c1b19; }
+    :host(.dark) .pg { color: #eeede9; }
+    .pg.ladder { display: grid; grid-template-columns: 1fr 1fr; }
+    .hd { display: flex; align-items: center; justify-content: space-between; }
+    .hd h1 { margin: 0; font: 600 15px/1.2 system-ui, sans-serif; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 8px; padding: 7px 12px; font: 500 12.5px/1 system-ui, sans-serif; background: #3b5bdb; color: white; }
+    .btn i { width: 8px; height: 8px; border-radius: 50%; background: #0b0b0b; }
+    .card { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 12px; background: white; box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
+    :host(.dark) .card { background: #222226; }
+    .card.second { margin-top: 8px; }
+    .card p { margin: 0; }
+    .eyebrow { font: 600 11px/1 system-ui, sans-serif; text-transform: uppercase; color: #6b6b70; }
+    .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .list li { display: flex; justify-content: space-between; }
+    .role { color: #8a8a90; }
+    .page.fixing [data-m] { transition: padding ${TIMING.fix}ms cubic-bezier(.2,.8,.2,1), row-gap ${TIMING.fix}ms cubic-bezier(.2,.8,.2,1), margin ${TIMING.fix}ms cubic-bezier(.2,.8,.2,1), font-size ${TIMING.fix}ms cubic-bezier(.2,.8,.2,1), font-weight ${TIMING.fix}ms linear; }
+
+    /* the system's plate: only ever inked for the pointed type zone (the word at the right size or weight) */
+    .plate { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; }
+    :host(.dark) .plate { mix-blend-mode: screen; }
+    .plate * { visibility: hidden; background: transparent !important; box-shadow: none !important; color: var(--system) !important; }
+    .plate .ink { visibility: visible; }
+    .plate .btn i { background: transparent !important; }
+
+    svg.ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    svg.ink .heat:not(.dots) { mix-blend-mode: multiply; }
+    :host(.dark) svg.ink .heat:not(.dots) { mix-blend-mode: screen; }
+    svg.ink .hit { pointer-events: all; fill: transparent; cursor: pointer; }
+    svg.ink .z { outline: none; }
+    .pill { position: absolute; display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+      font: 600 11.5px/1 ui-monospace, monospace; background: #1c1b19; color: #fff; box-shadow: 0 2px 8px rgb(0 0 0 / .18); animation: pop 220ms cubic-bezier(.3,1.4,.5,1) both; }
+    :host(.dark) .pill { background: #f4f3ef; color: #1c1b19; }
+    .pill .from { color: #ff6fb5; } .pill .to { color: #5cc6ff; } .pill .n, .pill .k { opacity: .6; } .pill .k { font-family: system-ui; }
+    :host(.dark) .pill .from { color: var(--diff); } :host(.dark) .pill .to { color: #0077c8; }
+    @keyframes pop { from { opacity: 0; scale: .92; } }
+    .cls { position: absolute; font: 600 10.5px/1 ui-monospace, monospace; height: 17px; padding: 0 5px; display: inline-flex; align-items: center; border-radius: 4px; background: #ef5a3c; color: white; }
+    @media (prefers-reduced-motion: reduce) { .pill { animation: none; } }
+  </style><div class="grid"><div class="main"></div><div class="side"></div></div>`;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── measuring ── */
+  const rel = (scene, el) => { const s = scene.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height }; };
+  const px = (v) => parseFloat(v) || 0;
+
+  // a problem's geometry right now: bands of space that are off ([x, y, w, h, tooMuch]), or the word's boxes
+  function measure(S, z) {
+    const el = S.page.querySelector(`[data-m="${z.el}"]`), A = rel(S.scene, el), cs = getComputedStyle(el), k = S.zoom;
+    const want = (prop) => px(z.css[prop] ?? z.css.padding);
+    if (z.kind === 'type') {
+      const r = document.createRange(); r.selectNodeContents(el);
+      const s = S.scene.getBoundingClientRect();
+      const words = [...r.getClientRects()].map((q) => [q.left - s.left, q.top - s.top, q.width, q.height]);
+      const off = 'fontSize' in z.css ? Math.abs(px(cs.fontSize) - px(z.css.fontSize)) / px(z.css.fontSize) : Math.abs(px(cs.fontWeight) - px(z.css.fontWeight)) / 400;
+      return { words, off, box: A };
+    }
+    const bands = [];
+    let off = 0;
+    if (z.kind === 'padding') {
+      const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((s) => `padding${s}` in z.css || 'padding' in z.css);
+      const v = (s) => [px(cs[`padding${s}`]) * k, (sides.includes(s) ? want(`padding${s}`) : px(cs[`padding${s}`])) * k];
+      const [T0, T1] = v('Top'), [R0, R1] = v('Right'), [B0, B1] = v('Bottom'), [L0, L1] = v('Left');
+      const l = Math.min(L0, L1), r = Math.min(R0, R1), t = Math.min(T0, T1), b = Math.min(B0, B1);
+      const dT = Math.abs(T0 - T1), dB = Math.abs(B0 - B1);
+      if (dT >= 0.25) bands.push([A.x + l, A.y + t, A.w - l - r, dT, T0 > T1]);
+      if (dB >= 0.25) bands.push([A.x + l, A.y + A.h - b - dB, A.w - l - r, dB, B0 > B1]);
+      if (Math.abs(L0 - L1) >= 0.25) bands.push([A.x + l, A.y + t + dT, Math.abs(L0 - L1), A.h - t - b - dT - dB, L0 > L1]);
+      if (Math.abs(R0 - R1) >= 0.25) bands.push([A.x + A.w - r - Math.abs(R0 - R1), A.y + t + dT, Math.abs(R0 - R1), A.h - t - b - dT - dB, R0 > R1]);
+      off = Math.max(...['Top', 'Right', 'Bottom', 'Left'].map((s) => { const [a, b2] = v(s); return Math.abs(a - b2) / Math.max(b2, 4 * k); }));
+    }
+    if (z.kind === 'gap') {
+      const kids = [...el.children].map((c) => rel(S.scene, c)), d = (px(cs.rowGap) - want('rowGap')) * k;
+      for (let i = 0; i + 1 < kids.length; i++) bands.push([A.x, kids[i + 1].y - Math.abs(d), A.w, Math.abs(d), d > 0]);
+      off = Math.abs(d) / (want('rowGap') * k);
+    }
+    if (z.kind === 'margin') {
+      const col = px(getComputedStyle(el.parentElement).rowGap) * k;
+      const d = (px(cs.marginTop) - want('marginTop')) * k;
+      bands.push([A.x, A.y - Math.abs(d), A.w, Math.abs(d), d > 0]);
+      off = Math.abs(d) / (want('marginTop') * k + col);
+    }
+    return { bands: bands.filter((q) => q[2] > 0.25 && q[3] > 0.25), off, box: A };
+  }
+  const heatOf = (off) => Math.min(1, HEAT.min + off * HEAT.gain);
+
+  /* ── a zone's stage, from the scene's state ── */
+  function stageOf(S, z) {
+    if (S.fixing?.cause === z.cls) return 'cooling';
+    const at = S.picked ?? S.pointed;
+    if (!at) return S.arriving ? 'arriving' : 'resting';
+    if (at.cause !== z.cls) return 'quiet';
+    return at.id === z.id ? 'pointed' : 'lit';
+  }
+  function opacityOf(S, z, stage) {
+    const rest = z.heat * HEAT.rest;
+    if (stage === 'quiet') return rest * HEAT.quiet;
+    if (stage === 'lit' || stage === 'pointed') return Math.min(1, rest + HEAT.lit);
+    if (stage === 'cooling') return rest * (1 - S.fixing.p);
+    return rest;
+  }
+
+  /* ── drawing ── */
+  function render(S) {
+    const { scene, svg } = S;
+    const W = scene.clientWidth, H = scene.clientHeight, uid = S.uid;
+    for (const z of S.zones) { z.m = measure(S, z); if (S.fixing?.cause !== z.cls) z.heat = heatOf(z.m.off); }
+    // worst first: the order zones pulse in and Tab walks
+    const order = [...S.zones].sort((a, b) => b.heat - a.heat);
+    let defs = `<pattern id="dots-${uid}" width="3.5" height="3.5" patternUnits="userSpaceOnUse"><circle cx="1.75" cy="1.75" r=".95" fill="var(--system)" stroke="#fff" stroke-width=".6"/></pattern>`;
+    let body = '';
+    for (const z of order) {
+      const stage = stageOf(S, z), o = opacityOf(S, z, stage), blur = HEAT.blur[0] + (HEAT.blur[1] - HEAT.blur[0]) * z.heat;
+      defs += `<filter id="h-${uid}-${z.id}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><feGaussianBlur stdDeviation="${blur}"/><feComponentTransfer><feFuncA type="linear" slope="1.3"/></feComponentTransfer></filter>`
+        + `<filter id="d-${uid}-${z.id}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><feGaussianBlur stdDeviation="${blur * 0.15}"/></filter>`;
+      let heat = '', hit = '', dotted = '';
+      if (z.kind === 'type') {
+        // a soft glow under the word itself
+        for (const [x, y, w, h] of z.m.words) { heat += `<rect x="${x}" y="${y + h * 0.15}" width="${w}" height="${h * 0.7}" rx="${h * 0.35}" fill="var(--diff)"/>`; hit += `<rect class="hit" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}"/>`; }
+        heat = `<g filter="url(#h-${uid}-${z.id})">${heat}</g>`;
+      } else {
+        let warm = '', dots = '';
+        for (const [x, y, w, h, more] of z.m.bands) {
+          // a band under HEAT.thin is drawn that thick around its centre: a 1px error is still findable
+          const tw = Math.max(w, HEAT.thin), th = Math.max(h, HEAT.thin), tx = x - (tw - w) / 2, ty = y - (th - h) / 2;
+          if (more) warm += `<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" fill="var(--diff)"/>`;
+          // missing space: dotted cyan, so it reads without colour too
+          else dots += `<rect x="${tx - 2}" y="${ty - 2}" width="${tw + 4}" height="${th + 4}" fill="url(#dots-${uid})"/>`;
+          hit += `<rect class="hit" x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}"/>`;
+        }
+        heat = warm ? `<g filter="url(#h-${uid}-${z.id})">${warm}</g>` : '';
+        dotted = dots ? `<g filter="url(#d-${uid}-${z.id})">${dots}</g>` : '';
+      }
+      body += `<g class="z" data-id="${z.id}" tabindex="0" role="button" aria-label="${z.cls}, should be ${z.to}">${heat ? `<g class="heat" data-stage="${stage}" style="opacity:${o}">${heat}</g>` : ''}${dotted ? `<g class="heat dots" data-stage="${stage}" style="opacity:${o}">${dotted}</g>` : ''}${hit}</g>`;
+      dotted = '';
+    }
+    const focused = root.activeElement?.closest?.('.z')?.dataset.id;
+    svg.innerHTML = `<defs>${defs}</defs>${body}${S.zones.length ? regMarks(W, H) : ''}`;
+    if (focused) svg.querySelector(`.z[data-id="${focused}"]`)?.focus({ preventScroll: true });
+    pill(S);
+    plate(S);
+    if (still) return;
+    // pulses: the arrival (twice each, worst first) and the pointed zone (while pointed)
+    for (const g of svg.querySelectorAll('.heat')) {
+      const z = S.zones.find((x) => x.id === g.parentElement.dataset.id), stage = g.dataset.stage, o = +g.style.opacity;
+      if (stage === 'arriving') g.animate([{ opacity: 0 }, { opacity: Math.min(1, o + 0.45) }, { opacity: o }], { duration: TIMING.pulse, delay: S.arrivalLeft + order.indexOf(z) * TIMING.zoneStagger, iterations: TIMING.arrivalPulses, easing: 'ease-in-out', fill: 'backwards' });
+      if (stage === 'pointed') g.animate([{ opacity: o }, { opacity: 1 }, { opacity: o }], { duration: TIMING.pulse * 1.6, iterations: Infinity, easing: 'ease-in-out' });
+    }
+  }
+  function regMarks(W, H) {
+    const m = 10, r = 4;
+    return `<g opacity=".9">${[[m, m], [W - m, m], [m, H - m], [W - m, H - m]].map(([x, y]) => `<g stroke="var(--system)" stroke-width="1" fill="none"><circle cx="${x}" cy="${y}" r="${r}"/><path d="M${x - r - 3} ${y}h${2 * r + 6}M${x} ${y - r - 3}v${2 * r + 6}"/></g>`).join('')}</g>`;
+  }
+  // the one pill: the pointed zone's class, its fix, how many places share the cause, and ↵ once picked
+  function pill(S) {
+    S.scene.querySelector('.pill')?.remove();
+    const at = S.picked ?? S.pointed;
+    if (!at || S.fixing) return;
+    const z = S.zones.find((x) => x.id === at.id);
+    if (!z) return;
+    const n = S.zones.filter((x) => x.cls === z.cls).length, b = z.m.box;
+    const el = document.createElement('span');
+    el.className = 'pill';
+    el.innerHTML = `<span class="from">${z.cls}</span>→<span class="to">${z.to}</span>${n > 1 ? `<span class="n">×${n}</span>` : ''}${S.picked ? '<span class="k">↵ fix</span>' : ''}`;
+    S.scene.append(el);
+    // by the pointer, where the eye already is; from the keyboard, at the zone's top-left
+    const w = el.offsetWidth, h = el.offsetHeight, at0 = S.hand ?? { x: b.x, y: b.y - h - 6 };
+    const x = Math.min(S.scene.clientWidth - w - 8, Math.max(8, at0.x + (S.hand ? 14 : 0))), y = Math.min(S.scene.clientHeight - h - 8, Math.max(6, at0.y + (S.hand ? 18 : 0)));
+    Object.assign(el.style, { left: `${x}px`, top: `${y}px` });
+  }
+  // a pointed type zone: the word at the system's size or weight, printed over it in cyan, pinned at its top-left
+  function plate(S) {
+    for (const n of S.plateEl.querySelectorAll('[data-m]')) { n.removeAttribute('style'); }
+    for (const n of S.plateEl.querySelectorAll('.ink')) n.classList.remove('ink');
+    const at = S.picked ?? S.pointed, z = at && S.zones.find((x) => x.id === at.id);
+    if (!z || z.kind !== 'type' || S.fixing) return;
+    const real = S.page.querySelector(`[data-m="${z.el}"]`), twin = S.plateEl.querySelector(`[data-m="${z.el}"]`);
+    Object.assign(twin.style, z.css);
+    const A = rel(S.scene, real), B = rel(S.scene, twin);
+    twin.style.translate = `${(A.x - B.x) / S.zoom}px ${(A.y - B.y) / S.zoom}px`;
+    for (const n of [twin, ...twin.querySelectorAll('*')]) n.classList.add('ink');
+  }
+
+  /* ── the fix: the page eases into the system; each frame is measured again, so the heat shrinks and cools ── */
+  function fix(S, cause) {
+    const zs = S.zones.filter((z) => z.cls === cause);
+    if (!zs.length || S.fixing) return;
+    S.page.classList.toggle('fixing', !still);
+    for (const z of zs) Object.assign(S.page.querySelector(`[data-m="${z.el}"]`).style, z.css);
+    S.fixing = { cause, p: 0 }; S.picked = null; S.pointed = null;
+    const t0 = performance.now();
+    const tick = () => {
+      S.fixing.p = still ? 1 : Math.min(1, (performance.now() - t0) / TIMING.fix);
+      render(S);
+      if (S.fixing.p < 1) return requestAnimationFrame(tick);
+      S.zones = S.zones.filter((z) => z.cls !== cause); S.fixing = null; S.page.classList.remove('fixing');
+      render(S);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* ── today, for comparison ── */
+  function today(S) {
+    S.plateEl.style.display = 'none';
+    S.svg.innerHTML = S.problems.map((z) => { const A = rel(S.scene, S.page.querySelector(`[data-m="${z.el}"]`)); return `<rect x="${A.x}" y="${A.y}" width="${A.w}" height="${A.h}" fill="none" stroke="#ef5a3c" stroke-width="1.5"/>`; }).join('');
+    S.scene.querySelectorAll('.cls').forEach((n) => n.remove());
+    for (const z of S.problems) { const A = rel(S.scene, S.page.querySelector(`[data-m="${z.el}"]`)); const t = document.createElement('span'); t.className = 'cls'; t.textContent = z.cls; Object.assign(t.style, { left: `${A.x}px`, top: `${A.y - 9}px` }); S.scene.append(t); }
+  }
+
+  /* ── scenes ── */
+  const S_ALL = scenes.map((sc, i) => {
+    const fig = document.createElement('figure');
+    fig.innerHTML = `<div class="scene" tabindex="-1"><div class="page">${sc.page}</div><div class="plate">${sc.page}</div><svg class="ink"></svg></div>`
+      + `<figcaption><div><b>${sc.title}</b>${sc.caption}</div>${sc.today ? '' : '<button type="button" class="again">↺</button>'}</figcaption>`;
+    root.querySelector(i === 0 ? '.main' : '.side').append(fig);
+    const scene = fig.querySelector('.scene');
+    if (sc.zoom) for (const n of scene.querySelectorAll('.pg')) n.style.zoom = sc.zoom;
+    const S = { ...sc, scene, page: scene.querySelector('.page'), plateEl: scene.querySelector('.plate'), svg: scene.querySelector('svg.ink'), zoom: sc.zoom ?? 1, uid: `s${i}`, zones: [], pointed: null, picked: null, fixing: null, arriving: false, arrivalLeft: 0 };
+    wire(S);
+    fig.querySelector('.again')?.addEventListener('click', () => arrive(S));
+    return S;
+  });
+
+  // blueprint turns on: the page as found, its zones, the zones pulsing in worst first, then rest
+  function arrive(S) {
+    if (S.today) return today(S);
+    for (const el of S.page.querySelectorAll('[data-m]')) el.removeAttribute('style');
+    for (const el of S.page.querySelectorAll('[data-m^="l"]')) el.style.padding = el.dataset.m.slice(1) + 'px';
+    S.zones = S.problems.map((p, i) => ({ ...p, id: `z${i}` }));
+    S.pointed = S.picked = S.fixing = null;
+    S.arriving = !still;
+    S.arrivalLeft = TIMING.zonesIn;
+    render(S);
+    clearTimeout(S.settle);
+    S.settle = setTimeout(() => { S.arriving = false; render(S); }, TIMING.zonesIn + S.zones.length * TIMING.zoneStagger + TIMING.pulse * TIMING.arrivalPulses);
+  }
+
+  // point, pick, fix, let go, walk
+  function wire(S) {
+    const zoneOf = (e) => e.target.closest?.('.z')?.dataset.id;
+    const point = (id) => { const z = S.zones.find((x) => x.id === id); if (!z || S.fixing || S.pointed?.id === id) return; S.pointed = { id, cause: z.cls }; S.arriving = false; clearTimeout(S.settle); render(S); };
+    const hand = (e) => { const r = S.scene.getBoundingClientRect(); S.hand = { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    S.svg.addEventListener('pointerover', (e) => { const id = zoneOf(e); if (id) { hand(e); point(id); } });
+    S.svg.addEventListener('pointermove', (e) => { if (!e.target.closest?.('.z') || S.picked) return; hand(e); const el = S.scene.querySelector('.pill'); if (el) pill(S); });
+    S.svg.addEventListener('pointerout', (e) => { if (e.relatedTarget?.closest?.('.z') || !S.pointed) return; S.pointed = null; render(S); });
+    S.svg.addEventListener('click', (e) => { const id = zoneOf(e); if (!id) return; const z = S.zones.find((x) => x.id === id); S.picked = { id, cause: z.cls }; render(S); });
+    S.svg.addEventListener('focusin', (e) => { const id = zoneOf(e); if (id && !e.target.matches(':hover')) S.hand = null; if (id) point(id); });
+    S.svg.addEventListener('keydown', (e) => {
+      const at = S.picked ?? S.pointed;
+      if (e.key === 'Enter' && at) { e.preventDefault(); fix(S, at.cause); }
+      if (e.key === 'Escape') { S.picked = S.pointed = null; root.activeElement?.blur?.(); render(S); }
+    });
+    S.scene.addEventListener('pointerdown', (e) => { if (!e.target.closest?.('.z') && S.picked) { S.picked = null; render(S); } });
+  }
+
+  const all = () => S_ALL.forEach((S, i) => setTimeout(() => arrive(S), i * 120));
+  requestAnimationFrame(() => document.fonts.ready.then(all));
+  addEventListener('resize', () => S_ALL.forEach((S) => (S.today ? today(S) : render(S))));
+  document.getElementById('replay').addEventListener('click', all);
+  document.getElementById('scheme').addEventListener('click', (e) => {
+    const d = document.body.classList.toggle('dark');
+    root.host.classList.toggle('dark', d);
+    e.target.textContent = d ? 'Light' : 'Dark';
+    S_ALL.forEach((S) => (S.today ? today(S) : render(S)));
+  });
+</script>
+</body>
+</html>

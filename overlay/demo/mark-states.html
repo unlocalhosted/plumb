@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marks at rest · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1120px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 76ch; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1120px; margin: 0 auto; }
+  plumb-overlay { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Marks at rest</h1>
+  <p>How a problem is drawn on your page before you point at it, and when you do. A mark draws where the problem lives: an element you can see whole lights up; a space shows as its own pattern; a big box gets its corners. The full outline only comes with your attention. Captions are this sheet's, not the product's.</p>
+  <button id="palette" type="button">Palette: vivid</button>
+  <button id="scheme" type="button" style="margin-left:0">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  /* ─────────────────────────────────────────────────────────
+   * MARKS AT REST · STATES
+   *
+   * The page in each scene is real DOM laid out by the browser; every mark is measured from it. The language is the
+   * overlay's (tokens.css, language.js): coral = off your system, hatch = padding, stripes = gap, dither = margin,
+   * the lilac tag = a name.
+   *
+   *  today          every problem outlined, 1.5px centred on the box edge, class names at rest (for comparison)
+   *  lit            a whole small element: cut out of the dim, no line
+   *  gap            the gaps themselves, striped; the container stays dimmed
+   *  padding        the padding bands, hatched
+   *  margin         the margin band, dithered
+   *  corners        a big box whose problem isn't a space: four crop marks that follow its radius
+   *  pointed        any of them, pointed at: one crisp 1px line inside the edge, following the corners, and its name
+   * ───────────────────────────────────────────────────────── */
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+
+  // the page every scene shows: a small settings screen
+  const PAGE = `
+    <div class="pg">
+      <header class="hd"><h1 data-m="title">Team settings</h1><button class="btn" data-m="invite"><i></i>Invite</button></header>
+      <section class="card" data-m="card">
+        <span class="eyebrow" data-m="status">Status</span>
+        <p>Three people can see this workspace.</p>
+        <ul class="list" data-m="list">
+          <li><span>Ada Lovelace</span><span class="role">Owner</span></li>
+          <li><span>Grace Hopper</span><span class="role">Admin</span></li>
+          <li><span>Alan Turing</span><span class="role">Member</span></li>
+        </ul>
+      </section>
+      <section class="card second" data-m="danger">
+        <span class="eyebrow">Danger zone</span>
+        <p>Delete this workspace and everything in it.</p>
+      </section>
+    </div>`;
+
+  // what is wrong where: element → how its problem is drawn, and its name
+  const PROBLEMS = {
+    title: { kind: 'lit', name: 'h1', cls: 'font-semibold' },
+    invite: { kind: 'lit', name: 'button', cls: 'px-s3' },
+    status: { kind: 'lit', name: 'span', cls: 'text-[11px]' },
+    list: { kind: 'gap', name: 'ul', cls: 'gap-[10px]' },
+    card: { kind: 'padding', name: 'section', cls: 'p-[18px]' },
+    danger: { kind: 'margin', name: 'section', cls: 'mt-[22px]' },
+  };
+
+  const scenes = [
+    ['today', 'Every problem outlined at full strength, class names on the page. Six problems, eight lines; the card and the list share edges, so their lines double.', { marks: Object.keys(PROBLEMS), today: true }],
+    ['an element, at rest', 'The button’s padding is off. It is lifted out of the dim, in its own colours. No line.', { marks: ['invite'] }],
+    ['an element, pointed', 'One 1px line, inside its edge, on the pixel, following its corners. Its name above.', { marks: ['invite'], point: 'invite' }],
+    ['a gap, at rest', 'The list’s gap is off. The gaps themselves light up, striped; the rows stay dimmed with the page.', { marks: ['list'] }],
+    ['a gap, pointed', 'The list gets its line and name; the stripes stay, so you still see what is wrong.', { marks: ['list'], point: 'list' }],
+    ['padding, at rest', 'The card’s padding is off. Its padding lights up, hatched; what’s inside stays dimmed.', { marks: ['card'] }],
+    ['margin, at rest', 'The danger card’s top margin is off. The space above it lights up, dithered.', { marks: ['danger'] }],
+    ['a big box, at rest', 'A problem on a big box that isn’t a space (here: a shadow on the card). Four crop marks that follow its corners.', { marks: ['card'], corners: true }],
+    ['a big box, pointed', 'Pointed at: the one line, inside the edge.', { marks: ['card'], corners: true, point: 'card' }],
+    ['nested', 'The card’s padding and the Status label inside it, both off. Nothing at rest is a line, so nothing doubles.', { marks: ['card', 'status'] }],
+    ['the whole page', 'All six, the new way. Compare with “today”: you see where, not boxes.', { marks: Object.keys(PROBLEMS) }],
+  ];
+
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+    :host { display: block; }
+    /* the palette under trial. vivid: saturated hues used solid, white words on solid pills, lines at full strength
+       (the inspector look); today: the overlay's pastel tokens */
+    :host { --mk-off: #ff3b1f; --mk-name: #3d8bff; --mk-name-ink: #fff; --mk-pattern: 1; }
+    :host(.today) { --mk-off: var(--pl-coral); --mk-name: var(--pl-lilac-soft); --mk-name-ink: var(--pl-lilac-ink); --mk-pattern: .85; }
+    .name { display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px 0 6px; border-radius: 6px; font: 600 12px/1 system-ui, sans-serif; background: var(--mk-name); color: var(--mk-name-ink); white-space: nowrap; }
+    .name svg { width: 12px; height: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    figure { margin: 0; }
+    figcaption { font: 12.5px/1.45 system-ui, sans-serif; margin-top: 8px; color: inherit; opacity: .8; }
+    figcaption b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .7; margin-bottom: 2px; }
+    .scene { position: relative; border-radius: 12px; overflow: hidden; background: #f6f6f4; }
+    :host(.dark) .scene { background: #19191c; }
+    .pg { padding: 18px; display: flex; flex-direction: column; gap: 14px; font: 13px/1.4 system-ui, sans-serif; color: #1c1b19; }
+    :host(.dark) .pg { color: #eeede9; }
+    .hd { display: flex; align-items: center; justify-content: space-between; }
+    .hd h1 { margin: 0; font: 600 15px/1.2 system-ui, sans-serif; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 8px; padding: 7px 12px; font: 500 12.5px/1 system-ui, sans-serif; background: #3b5bdb; color: white; }
+    .btn i { width: 8px; height: 8px; border-radius: 50%; background: #0b0b0b; }
+    .card { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 12px; background: white; box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
+    :host(.dark) .card { background: #222226; }
+    .card.second { margin-top: 8px; }
+    .card p { margin: 0; }
+    .eyebrow { font: 600 10px/1 system-ui, sans-serif; text-transform: uppercase; color: #6b6b70; }
+    .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .list li { display: flex; justify-content: space-between; }
+    .role { color: #8a8a90; }
+    svg.layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .tags { position: absolute; inset: 0; pointer-events: none; }
+    .tags > * { position: absolute; }
+    .cls { font: 600 10.5px/1 ui-monospace, monospace; height: 17px; padding: 0 5px; display: inline-flex; align-items: center; border-radius: 4px; background: var(--mk-off); color: white; }
+  </style><div class="grid"></div>`;
+
+  const grid = root.querySelector('.grid');
+  const NS = 'http://www.w3.org/2000/svg';
+  const CORAL = 'var(--mk-off)';
+
+  for (const [title, caption, opts] of scenes) {
+    const fig = document.createElement('figure');
+    fig.innerHTML = `<div class="scene">${PAGE}<svg class="layer"></svg><div class="tags"></div></div><figcaption><b>${title}</b>${caption}</figcaption>`;
+    grid.append(fig);
+  }
+  // drawn after layout: every mark is measured from the scene's real elements
+  requestAnimationFrame(() => document.fonts.ready.then(drawAll));
+  addEventListener('resize', drawAll);
+
+  function drawAll() {
+    [...grid.children].forEach((fig, i) => draw(fig.querySelector('.scene'), scenes[i][2]));
+  }
+
+  function box(scene, el) {
+    const s = scene.getBoundingClientRect(), r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height, r: parseFloat(cs.borderTopLeftRadius) || 0, cs };
+  }
+
+  function draw(scene, { marks, today = false, point = null, corners = false }) {
+    const svg = scene.querySelector('svg.layer'), tags = scene.querySelector('.tags');
+    const W = scene.clientWidth, H = scene.clientHeight;
+    const el = (k) => scene.querySelector(`[data-m="${k}"]`);
+    const id = Math.random().toString(36).slice(2);
+    let defs = `<defs>
+      <pattern id="hatch${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1" height="6" fill="${CORAL}" style="opacity: var(--mk-pattern)"/></pattern>
+      <pattern id="stripe${id}" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="${CORAL}"/></pattern>
+      <pattern id="dither${id}" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".75" fill="${CORAL}"/></pattern>`;
+    let art = '', labels = '';
+    const lit = [], bands = []; // lit: whole elements; bands: spaces (svg paths), both cut out of the dim
+
+    for (const k of marks) {
+      const p = PROBLEMS[k], e = el(k), b = box(scene, e);
+      if (today) {
+        // today: a 1.5px stroke centred on the box edge, square, and the class at rest
+        art += `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="none" stroke="${CORAL}" stroke-width="1.5"/>`;
+        labels += `<span class="cls" style="left:${b.x}px;top:${b.y - 9}px">${p.cls}</span>`;
+        lit.push(b);
+        continue;
+      }
+      const kind = corners && k === 'card' ? 'corners' : p.kind;
+      if (kind === 'lit') lit.push(b);
+      if (kind === 'padding') {
+        const pt = parseFloat(b.cs.paddingTop), pr = parseFloat(b.cs.paddingRight), pb = parseFloat(b.cs.paddingBottom), pl = parseFloat(b.cs.paddingLeft);
+        // the band, clipped to the element's own rounded shape
+        defs += `<clipPath id="c${k}${id}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${b.r}"/></clipPath>`;
+        const ring = `M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z M${b.x + pl} ${b.y + pt}v${b.h - pt - pb}h${b.w - pl - pr}v${-(b.h - pt - pb)}Z`;
+        bands.push(`<g clip-path="url(#c${k}${id})"><path fill-rule="evenodd" d="${ring}" fill="black"/></g>`);
+        art += `<g clip-path="url(#c${k}${id})"><path fill="url(#hatch${id})" fill-rule="evenodd" d="${ring}"/></g>`;
+      }
+      if (kind === 'gap') {
+        const kids = [...e.children].map((c) => box(scene, c));
+        for (let i = 0; i + 1 < kids.length; i++) {
+          const top = kids[i].y + kids[i].h, h = kids[i + 1].y - top;
+          bands.push(`<rect x="${b.x}" y="${top}" width="${b.w}" height="${h}" fill="black"/>`);
+          art += `<rect x="${b.x}" y="${top}" width="${b.w}" height="${h}" fill="url(#stripe${id})"/>`;
+        }
+      }
+      if (kind === 'margin') {
+        const mt = parseFloat(b.cs.marginTop) + 14; // the column's own gap plus the margin: the space above it
+        bands.push(`<rect x="${b.x}" y="${b.y - mt}" width="${b.w}" height="${mt}" fill="black"/>`);
+        art += `<rect x="${b.x}" y="${b.y - mt}" width="${b.w}" height="${mt}" fill="url(#dither${id})"/>`;
+      }
+      if (kind === 'corners') art += crops(b);
+      if (point === k) {
+        // pointed: one 1px line inside the edge, on the pixel, following the corners; the name above
+        const x = Math.round(b.x) + 0.5, y = Math.round(b.y) + 0.5;
+        art += `<rect x="${x}" y="${y}" width="${Math.round(b.w) - 1}" height="${Math.round(b.h) - 1}" rx="${Math.max(0, b.r - 0.5)}" fill="none" stroke="${CORAL}" stroke-width="1"/>`;
+        labels += `<span class="name" style="left:${Math.round(b.x)}px;top:${Math.round(b.y) - 26}px"><svg viewBox="0 0 12 12"><rect x="1.5" y="2" width="9" height="3.2" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="6.8" width="5.5" height="3.2" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>${p.name}</span>`;
+        art += cursor(b.x + b.w * 0.6, b.y + Math.min(b.h - 6, 14));
+      }
+    }
+    // the dim, with lit elements cut out of it in their own shape
+    // a lit element keeps a 2px moat of dim where it meets a lit space, so the two never merge into one bright shape
+    const moat = (fill) => lit.map((b) => `<rect x="${b.x - 2}" y="${b.y - 2}" width="${b.w + 4}" height="${b.h + 4}" rx="${b.r + 2}" fill="${fill}"/>`).join('');
+    const hole = lit.map((b) => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${b.r}" fill="black"/>`).join('');
+    defs += `<mask id="dim${id}"><rect width="${W}" height="${H}" fill="white"/>${bands.join('')}${today ? '' : moat('white')}${hole}</mask>`;
+    defs += `<mask id="art${id}"><rect width="${W}" height="${H}" fill="white"/>${today ? '' : moat('black') + hole.replaceAll('fill="black"', 'fill="white"')}</mask></defs>`;
+    const dark = root.host.classList.contains('dark');
+    svg.innerHTML = defs + `<rect width="${W}" height="${H}" fill="${dark ? 'rgb(0 0 0 / .55)' : root.host.classList.contains('today') ? 'rgb(40 38 34 / .42)' : 'rgb(16 17 20 / .38)'}" mask="url(#dim${id})"/><g mask="url(#art${id})">` + art + '</g>';
+    tags.innerHTML = labels;
+  }
+
+  // four crop marks at a box's corners, each following that corner's curve, inside the edge
+  function crops({ x, y, w, h, r }) {
+    const a = 7, s = 2, i = s / 2, R = Math.max(0, r - i);
+    x += i; y += i; w -= s; h -= s;
+    const c = [
+      `M${x} ${y + R + a}V${y + R}A${R} ${R} 0 0 1 ${x + R} ${y}H${x + R + a}`,
+      `M${x + w - R - a} ${y}H${x + w - R}A${R} ${R} 0 0 1 ${x + w} ${y + R}V${y + R + a}`,
+      `M${x + w} ${y + h - R - a}V${y + h - R}A${R} ${R} 0 0 1 ${x + w - R} ${y + h}H${x + w - R - a}`,
+      `M${x + R + a} ${y + h}H${x + R}A${R} ${R} 0 0 1 ${x} ${y + h - R}V${y + h - R - a}`,
+    ];
+    return `<path d="${c.join(' ')}" fill="none" stroke="${CORAL}" stroke-width="${s}" stroke-linecap="round"/>`;
+  }
+  const cursor = (x, y) => `<path transform="translate(${x} ${y})" d="M0 0v13l3.5-3.2 2.4 5.2 2-.9-2.4-5.1H10Z" fill="black" stroke="white" stroke-width="1" stroke-linejoin="round"/>`;
+
+  document.getElementById('palette').addEventListener('click', (e) => {
+    const today = root.host.classList.toggle('today');
+    e.target.textContent = `Palette: ${today ? 'today' : 'vivid'}`;
+    drawAll();
+  });
+  document.getElementById('scheme').addEventListener('click', (e) => {
+    const dark = document.body.classList.toggle('dark');
+    root.host.classList.toggle('dark', dark);
+    e.target.textContent = dark ? 'Light' : 'Dark';
+    drawAll();
+  });
+</script>
+</body>
+</html>

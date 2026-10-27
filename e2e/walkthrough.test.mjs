@@ -80,7 +80,7 @@ async function pointRow(page, overlay, key) {
 // Opens a mark's chooser by a real click on its box, and returns the words it shows.
 async function openMark(page, overlay, id) {
   const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await hit.boundingBox();
+  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   const hint = overlay.locator('.bp .bp-hint[data-on]');
   await hint.waitFor({ timeout: 3000 });

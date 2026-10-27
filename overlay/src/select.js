@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, FACET_SAID, glyphOf } from './inplace.js';
+import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -68,14 +68,15 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
+  #onFrame; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
   // steps(family) → the theme's scale [{ token, n }]
   // read(el) → the element's full reading (each theme choice's exact class edit)
   // site(el) → { file, line, column, hash } read now (where its changes will be written)
-  constructor(root, { tokenOf, health, onChange, changes, steps, read, site }) {
+  constructor(root, { tokenOf, health, onChange, changes, steps, read, site, onFrame }) {
+    this.#onFrame = onFrame; // every frame of a glide: the page's other marks follow the reflow
     this.#read = read;
     this.#site = site;
     this.#tokenOf = tokenOf;
@@ -159,6 +160,19 @@ export class Selection {
     if (key === 'Enter') { this.accept(); return true; }
     return false;
   }
+  // While the page glides into a step, the ring, bands and scale ride along with the element, frame by frame.
+  #following = 0;
+  #follow() {
+    const until = performance.now() + GLIDE.ms + 60;
+    if (this.#following) return void (this.#followUntil = until);
+    this.#followUntil = until;
+    const frame = () => {
+      this.draw(); this.#onFrame?.();
+      this.#following = performance.now() < this.#followUntil ? requestAnimationFrame(frame) : 0;
+    };
+    this.#following = requestAnimationFrame(frame);
+  }
+  #followUntil = 0;
   // The target moved along the plan's options: the page previews it.
   #move(by) {
     const plan = this.#plan, el = this.#el;
@@ -169,6 +183,7 @@ export class Selection {
     } else { this.#plan = moved(plan, by); preview(el, this.#plan, true); }
     this.#previewing = true;
     this.draw();
+    this.#follow();
   }
   // The fix as it stands becomes the element's change in the sidebar (still only on the page: Apply writes it); the
   // element's next problem with a fix becomes current.
@@ -197,7 +212,7 @@ export class Selection {
       // every other place of the cause takes the same steps
       for (const g of this.#group) for (const p of plan.props) {
         const original = [g.el.style.getPropertyValue(p.prop), g.el.style.getPropertyPriority(p.prop)];
-        g.el.style.setProperty(p.prop, `${p.to.n}px`, 'important');
+        glide(g.el, () => g.el.style.setProperty(p.prop, `${p.to.n}px`, 'important'));
         this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to, original);
       }
     }
@@ -209,6 +224,7 @@ export class Selection {
     const next = this.problems.findIndex((m, i) => i !== this.#at && !this.#taken.has(m.key));
     if (next >= 0) this.#at = next;
     this.draw();
+    this.#follow();
     return true;
   }
   // Pressed on a spacing band of the selected element: drag it through the scale (scrub.js); letting go makes it a
@@ -247,6 +263,7 @@ export class Selection {
     if (this.#previewing && this.#el && this.#plan) {
       if (this.#plan.kind === 'swap') swapPreview(this.#el, null, false, this.#memo);
       else if (!this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
+      this.#follow();
     }
     this.#previewing = false;
   }
