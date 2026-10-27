@@ -45,6 +45,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
        plumber habits [--json] [--root <dir>] [--config <path>]
        plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
+       plumber spec [--rule <id>] [--json] [--root <dir>] [--config <path>]
        plumber explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber try [--lang tsx|css] [--as <path>] [--json|--agent] < snippet
        plumber imitation --suggest [--json] [--root <dir>] [--config <path>]
@@ -193,6 +194,18 @@ async function main(): Promise<void> {
         `  contracts: ${preset.components.contracts.join(', ') || 'default ownership'}\n  fingerprints: ${preset.imitation.join(', ') || 'none'}\n  habits: ${preset.habits.join(', ') || 'none'}\n  markers: ${preset.markers.join(', ') || 'none'}\n`).join('') : 'No presets loaded.\n');
     return;
   }
+  if (command === 'spec') {
+    // The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, and where each value came from
+    const root = resolve(options.root ?? process.cwd());
+    const loaded = await loadConfig(root, options.config);
+    const { projectSpec, formatSpec } = await import('./craft-spec.js');
+    const spec = await projectSpec(root, loaded.value);
+    const only = args.values.rule;
+    if (only !== undefined && !spec.principles.some(p => p.rules.some(r => r.id === only || r.short === only))) throw new UsageError(`Unknown craft rule ${only}.\n  → plumber spec`);
+    process.stdout.write(args.values.json ? `${JSON.stringify(only ? { ...spec, principles: spec.principles.map(p => ({ ...p, rules: p.rules.filter(r => r.id === only || r.short === only) })).filter(p => p.rules.length) } : spec, null, 2)}\n`
+      : formatSpec(spec, loaded.path ? relative(root, loaded.path) : null, only));
+    return;
+  }
   if (command === 'state') {
     // Names the starting state of the project from evidence (docs/briefs/onboarding.md). Reads only; a workspace root lists its apps.
     const { readState, formatState } = await import('./onboarding/state.js');
@@ -238,7 +251,9 @@ async function main(): Promise<void> {
       const { atomicWrite } = await import('./atomic-write.js');
       await atomicWrite(resolve(sarifFile), `${JSON.stringify(sarif(craftReport(options.root, findings)), null, 2)}\n`);
     }
-    process.stdout.write(args.values.json ? `${JSON.stringify({ schemaVersion: 1, tool, root: options.root, routes: pages, findings }, null, 2)}\n` : formatCraft(pages, findings, options.root));
+    // the spec every route was judged against is one object: said once, not per route
+    const spec = pages.find(page => page.spec)?.spec ?? null;
+    process.stdout.write(args.values.json ? `${JSON.stringify({ schemaVersion: 1, tool, root: options.root, spec, routes: pages.map(({ spec: _s, ...page }) => page), findings }, null, 2)}\n` : formatCraft(pages, findings, options.root));
     process.exitCode = findings.some((finding) => finding.severity === 'error') ? 1 : 0;
     return;
   }

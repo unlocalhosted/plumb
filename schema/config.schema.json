@@ -48,6 +48,46 @@
         "minLength": 1
       }
     },
+    "craft": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The craft spec (docs/briefs/craft-spec.md): a preset, values by principle and rule, rules on/off and tier, and the token policy. plumber spec prints what is in effect.",
+      "properties": {
+        "preset": { "enum": ["strict", "balanced", "relaxed"] },
+        "values": {
+          "type": "object",
+          "description": "Per principle (access, legibility, theme, rhythm, shape, depth, colour, hierarchy, alignment, motion, taste), per rule short name, the rule's numbers and wants.",
+          "additionalProperties": { "type": "object", "additionalProperties": { "type": "object" } }
+        },
+        "rules": {
+          "type": "object",
+          "description": "Per rule id (craft/* or habits/*): false to turn it off, or { enabled, tier, severity }.",
+          "additionalProperties": {
+            "anyOf": [
+              { "type": "boolean" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "tier": { "enum": ["access", "legibility", "theme", "craft", "advisory"] },
+                  "severity": { "enum": ["error", "warn", "info"] }
+                }
+              }
+            ]
+          }
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "create": { "type": "boolean" },
+            "name": { "anyOf": [{ "type": "string" }, { "type": "object", "additionalProperties": { "type": "string" } }] },
+            "file": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
     "decisions": {
       "type": "object",
       "additionalProperties": false,

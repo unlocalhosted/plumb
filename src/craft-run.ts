@@ -14,7 +14,7 @@ export interface CraftRecord {
   rule: string; title: string; because: string; action: string; text: string; value: unknown; confidence: number | null;
   evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
-export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[] }
+export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
 export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean }
 
 const missing = `The headless run needs Playwright, an optional dependency.

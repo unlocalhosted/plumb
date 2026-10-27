@@ -11,6 +11,9 @@ import { validateHabits } from './habits/index.js';
 import type { CustomHabit } from './habits/predicates.js';
 export type { CustomHabit } from './habits/predicates.js';
 import type { ClassHelperInput } from './collect/class-helpers.js';
+import { validateCraft } from '../overlay/src/craft-spec.js';
+import type { CraftConfig } from '../overlay/src/craft-spec.js';
+export type { CraftConfig } from '../overlay/src/craft-spec.js';
 export type { ClassHelper, ClassHelperInput } from './collect/class-helpers.js';
 
 export interface DecisionSource {
@@ -48,6 +51,10 @@ export interface PlumbConfig {
   };
   habits?: (string | CustomHabit)[];
   imitation?: Record<string, { elements?: string[]; fingerprint: string[] }>;
+  /** The craft spec: preset, values by principle, rules on/off and tier, token policy (docs/briefs/craft-spec.md). */
+  craft?: CraftConfig;
+  /** Dependency presets' craft keys, in order, set by loadPresets; never written by hand. */
+  craftLayers?: { from: string; craft: CraftConfig }[];
 }
 
 export interface LoadedConfig {
@@ -60,7 +67,7 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
   return config;
 }
 
-const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets'];
+const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets', 'craft'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
 const filenames = allConfigNames;
 
@@ -160,6 +167,10 @@ export function validateConfig(value: unknown): PlumbConfig {
   if ('habits' in config) {
     if (!Array.isArray(config.habits)) invalid('habits', 'an array');
     validateHabits(config.habits);
+  }
+  if ('craft' in config) {
+    const problems = validateCraft(config.craft);
+    if (problems.length) throw new UsageError(problems.join('\n'));
   }
   if ('imitation' in config) {
     for (const [name, value] of Object.entries(object(config.imitation, 'imitation'))) {

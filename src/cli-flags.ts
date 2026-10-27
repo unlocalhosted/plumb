@@ -11,6 +11,7 @@ export const commandFlags: Record<string, readonly string[]> = {
   propose: [...report, 'family', 'write', 'yes', 'decline'],
   habits: report,
   decisions: [...report, 'family'],
+  spec: [...report, 'rule'],
   explain: report,
   imitation: [...report, 'suggest'],
   try: [...report, 'agent', 'lang', 'as'],

@@ -25,7 +25,7 @@
 import { locate } from './locate.js';
 import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
 import { request } from './api.js';
-import { Facts, Theme } from './craft.js';
+import { Facts, Theme, spec } from './craft.js';
 import { RULES } from './craft-rules.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -187,7 +187,9 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
         });
       }
     }
-    const result = { route: location.pathname + location.search, url: location.href, read: blueprint.items.length, complete, findings: JSON.parse(JSON.stringify([...found.values()])) };
+    const result = { route: location.pathname + location.search, url: location.href, read: blueprint.items.length, complete, findings: JSON.parse(JSON.stringify([...found.values()])),
+      // the standard the page was judged against (docs/briefs/craft-spec.md): the project's, once the server handed it over
+      spec: spec.loaded ? JSON.parse(JSON.stringify(spec.value)) : null };
     // asked for only when there is an eye to ask (a judge flag, or answers already kept): otherwise the result is as it was
     if (grey) result.grey = JSON.parse(JSON.stringify(await greyPass()));
     return result;

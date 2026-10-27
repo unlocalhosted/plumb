@@ -5,6 +5,7 @@ import { ResolverFactory } from 'oxc-resolver';
 import { glob } from 'tinyglobby';
 import type { PlumbConfig } from '../config.js';
 import { validateConfig } from '../config.js';
+import { validateCraft } from '../../overlay/src/craft-spec.js';
 import { familyFor } from '../decisions/index.js';
 import { defineDecisions } from '../decisions/record.js';
 import type { DecisionInput } from '../decisions/record.js';
@@ -17,7 +18,7 @@ import { discoverComponents } from '../ownership/components.js';
 import type { ComponentIdentity } from '../ownership/components.js';
 import { componentFiles } from '../ownership/cache.js';
 
-export interface Preset extends Pick<PlumbConfig, 'components' | 'imitation' | 'habits' | 'markers'> {
+export interface Preset extends Pick<PlumbConfig, 'components' | 'imitation' | 'habits' | 'markers' | 'craft'> {
   name?: string;
   decisions?: DecisionInput[] | (() => DecisionInput[] | Promise<DecisionInput[]>) | PlumbConfig['decisions'];
   exported?: boolean | string[];
@@ -41,7 +42,8 @@ const contains = (directory: string, file: string) => file === directory || file
 
 export function definePreset(preset: Preset): Preset {
   if (!preset || typeof preset !== 'object' || Array.isArray(preset)) throw new UsageError('Set a preset to an object.');
-  for (const key of Object.keys(preset)) if (!['name', 'decisions', 'components', 'imitation', 'habits', 'markers', 'exported'].includes(key)) throw new UsageError(`Remove unknown preset key "${key}".`);
+  for (const key of Object.keys(preset)) if (!['name', 'decisions', 'components', 'imitation', 'habits', 'markers', 'exported', 'craft'].includes(key)) throw new UsageError(`Remove unknown preset key "${key}".`);
+  if (preset.craft !== undefined) { const problems = validateCraft(preset.craft); if (problems.length) throw new UsageError(problems.join('\n')); }
   if (preset.name !== undefined && (typeof preset.name !== 'string' || !preset.name.trim())) throw new UsageError('Set preset.name to a non-empty string.');
   if (preset.exported !== undefined && typeof preset.exported !== 'boolean' && (!Array.isArray(preset.exported) || preset.exported.some(value => typeof value !== 'string' || !value.trim()))) throw new UsageError('Set preset.exported to a boolean or an array of token names.');
   const { name, decisions, exported, ...config } = preset;
@@ -260,6 +262,9 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
   for (const habit of [...loaded.flatMap(item => item.preset.habits ?? []), ...project.habits ?? []]) habits.set(typeof habit === 'string' ? habit : habit.id, habit);
   if (habits.size) value.habits = [...habits.values()];
   if (project.habits?.length === 0) value.habits = [];
+  // the craft spec: a design-system package ships its standard; merged after the named preset, before the project's own
+  const craftLayers = loaded.filter(item => item.preset.craft).map(item => ({ from: `preset ${item.summary.name}`, craft: item.preset.craft! }));
+  if (craftLayers.length) value.craftLayers = craftLayers;
   if (loaded.some(item => item.preset.markers)) value.markers = [...new Set([...loaded.flatMap(item => item.preset.markers ?? []), ...project.markers ?? []])];
   const imitation = Object.assign({}, ...loaded.map(item => item.preset.imitation), project.imitation);
   if (Object.keys(imitation).length) value.imitation = imitation; // Names used only for graph discovery; judging is scoped below.

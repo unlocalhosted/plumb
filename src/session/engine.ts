@@ -22,6 +22,7 @@ import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
 import { ancestorWith, indexSource } from '../structure/index.js';
 import type { StructureEntry } from '../structure/index.js';
 import type { Props } from './props.js';
+import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
@@ -832,6 +833,8 @@ export class Session extends EventEmitter {
     });
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
+  /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
+  spec(): Promise<ProjectSpec> { return this.read('spec'); }
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
   private healthSnapshot: { caches: object; work?: object } = { caches: {} };

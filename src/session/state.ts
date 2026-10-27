@@ -113,6 +113,8 @@ export class WarmState implements AnalysisRuntime {
   private initializedRules = new Set<string>();
   private reachability = new WeakMap<object, Map<string, Set<string>>>();
   private config: PlumbConfig = {};
+  /** The project's config as loaded (presets merged): what the craft spec resolves from. */
+  get settings(): PlumbConfig { return this.config; }
   constructor(readonly root: string, public inventory?: readonly string[]) { this.collection = new CollectionState(root); }
   private reachable(file: string, edges: ReadonlyMap<string, Iterable<string>>): Set<string> {
     let cache = this.reachability.get(edges);

@@ -118,6 +118,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   }
   if (method === 'why') return read('why', [text(params, 'file')!, position(params, 'line')!]);
   if (method === 'decisions') return read('decisions', []);
+  if (method === 'spec') return read('spec', []);
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
   if (method === 'try') {
@@ -177,7 +178,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'structure', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -345,7 +346,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'structure', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

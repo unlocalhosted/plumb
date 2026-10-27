@@ -2,6 +2,7 @@ import { isLedgerPath } from '../paths.js';
 import { environment } from '../paths.js';
 import { parentPort, workerData } from 'node:worker_threads';
 import { analyze } from '../index.js';
+import { projectSpec } from '../craft-spec.js';
 import type { CheckOptions } from '../index.js';
 import type { LoadedConfig } from '../config.js';
 import type { Report } from '../report.js';
@@ -319,6 +320,8 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     return site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
   }
   if (method === 'decisions') return (sharedDirty ? await current() : raw).decisions;
+  // the craft spec (docs/briefs/craft-spec.md): the standard as this project's config tunes it, and where a new token goes
+  if (method === 'spec') return projectSpec(options.root!, state.settings, sharedDirty ? await current() : raw);
   if (method === 'why') return inspectLedger('why', `${params.file}:${params.line}`, await report());
   if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   if (method === 'try') {

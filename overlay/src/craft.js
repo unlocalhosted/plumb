@@ -23,6 +23,8 @@ import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
+import { resolveSpec, specFor } from './craft-spec.js';
+import { request } from './api.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -240,6 +242,19 @@ function labOf([r, g, b]) {
   return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q];
 }
 
+// The spec (docs/briefs/craft-spec.md): the standard until the project's own arrives from the server (`spec`), then
+// that; every Craft is told, and judges the page again. One per page, shared by every Theme.
+const SPEC = { value: resolveSpec(), loaded: false, loading: null, crafts: new Set() };
+function loadSpec() {
+  if (SPEC.loaded || SPEC.loading) return;
+  SPEC.loading = request('spec', {}).then((s) => {
+    if (!s?.principles) { SPEC.loading = null; return; } // the server is still reading: asked again on the next pass
+    SPEC.value = s; SPEC.loaded = true;
+    for (const c of SPEC.crafts) c.specChanged();
+  }).catch(() => { SPEC.loading = null; });
+}
+export const spec = { get loaded() { return SPEC.loaded; }, get value() { return SPEC.value; }, load: loadSpec };
+
 // The theme as the rules see it: the overlay's decisions, each measured on the page once (a token written as
 // calc(var(--spacing) * 3) is known in px, a colour written as oklch() in rgb). The probe is the one write the engine
 // makes to the page, and it runs before any element is read in a pass.
@@ -260,6 +275,11 @@ export class Theme {
     this.#axes.set(family, has);
     return has;
   }
+  // the spec's entry for a rule: { enabled, tier, ...thresholds, want } (the standard until the project's own arrives)
+  spec(id) { return specFor(SPEC.value, id) ?? { enabled: true }; }
+  // the token policy and target: { create, name, file, shape, hash }
+  tokens() { return SPEC.value.tokens; }
+  get specLoaded() { return SPEC.loaded; }
   // whether the project's own theme names a token (a framework default is not the project's): --tracking-wide
   has(name) { const d = this.#decisions(); return Array.isArray(d) && d.some((x) => x.name === name && x.origin !== 'framework'); }
   // whether the decisions are in at all (before they load, nothing can be judged against them)
@@ -354,8 +374,10 @@ export class Craft {
   onFacts = null;
   constructor({ rules = RULES, theme } = {}) {
     INK.crafts.add(this);
+    SPEC.crafts.add(this);
     this.#rules = rules;
     this.#theme = theme instanceof Theme ? theme : new Theme(theme ?? {});
+    loadSpec();
   }
   get rules() { return this.#rules; }
   get theme() { return this.#theme; }
@@ -363,11 +385,13 @@ export class Craft {
   // Everything measured is measured again on the next run (a resize, a write, the page changed under us).
   invalidate() { this.#cache = new WeakMap(); }
   inked() { this.invalidate(); this.onFacts?.(); }
+  specChanged() { this.invalidate(); this.onFacts?.(); }
 
   // items: [{ id, el, marks, dims, file }]. Returns the same items with each element's craft marks appended. One
   // measuring pass; no write to the page except the theme's colour probe, which runs first.
   enrich(items) {
     const t0 = performance.now();
+    if (!SPEC.loaded) loadSpec();
     try {
       this.#theme.colors();
       const facts = new Facts();

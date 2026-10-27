@@ -6,7 +6,7 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'propEdit' | 'structure' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'why' | 'try' | 'refresh' | 'many';
 export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'propEdit' | 'try' | 'refresh'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
@@ -108,6 +108,7 @@ export class Session extends EventEmitter {
   swap(...args: Parameters<Engine['swap']>) { return this.call('swap', args); }
   swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }
   propEdit(...args: Parameters<Engine['propEdit']>) { return this.call('propEdit', args); }
+  spec(...args: Parameters<Engine['spec']>) { return this.call('spec', args); }
   structure(...args: Parameters<Engine['structure']>) { return this.call('structure', args); }
   undo(...args: Parameters<Engine['undo']>) { return this.call('undo', args); }
   history(...args: Parameters<Engine['history']>) { return this.call('history', args); }
