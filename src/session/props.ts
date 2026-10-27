@@ -326,3 +326,26 @@ function quoted(names: string[], delimiter: string): string[] {
     return out;
   });
 }
+
+/** Set (or add) a literal prop on a JSX element: delayDuration={0} → delayDuration={500}. The prop must be a plain literal
+ * or absent; one computed at runtime is changed by hand. */
+export function setJsxProp(file: string, text: string, start: number, name: string, value: string | number | boolean): SourceChange {
+  const opening = findOpening(file, text, start);
+  if (!opening) throw new UsageError('Source position does not identify an authored JSX element.');
+  const at = opening.start;
+  const written = typeof value === 'string' ? JSON.stringify(value) : String(value);
+  const attribute = opening.attributes.find(item => item.type === 'JSXAttribute' && item.name.type === 'JSXIdentifier' && item.name.name === name);
+  const attr = typeof value === 'string' ? written : `{${written}}`;
+  if (!attribute || attribute.type !== 'JSXAttribute') {
+    if (opening.attributes.some(item => item.type === 'JSXSpreadAttribute')) throw new UsageError('This element spreads props, which may carry the same prop; set it by hand.');
+    return { start: opening.name.end, end: opening.name.end, replacement: ` ${name}=${attr}`, at };
+  }
+  const current = attribute.value;
+  if (!current) return { start: attribute.start, end: attribute.end, replacement: `${name}=${attr}`, at };
+  if (current.type === 'Literal') return { start: current.start, end: current.end, replacement: attr, at };
+  if (current.type === 'JSXExpressionContainer' && current.expression.type !== 'JSXEmptyExpression') {
+    const expression = unwrap(current.expression);
+    if (expression.type === 'Literal') return { start: expression.start, end: expression.end, replacement: written, at };
+  }
+  throw new UsageError(`${name} is computed at runtime; change it by hand.`);
+}

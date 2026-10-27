@@ -238,6 +238,29 @@ export function probesIn(list) {
 const placed = (el, p) => pathKey(el) === (p.surface && fromKey(p.surface) ? p.surface : p.trigger);
 const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
 
+// ── source: what the code says an element is ──────────────
+
+// facts.source(el) → { component, library, role, props, handlers, provider? } from the server's structure index
+// (`structure` in the session API), once craft-run.js has asked for it; null before, and in the live overlay until the
+// reading brings it. Only the elements a rule would ask about are prepared: custom controls and tooltip triggers.
+const sources = new Map(), known = new WeakMap();
+export function sourcesIn(list) { sources.clear(); for (const { k, s } of list) sources.set(k, s); }
+// the live overlay hands in what the server said about an element as its reading arrives (the Craft cache wants invalidating after)
+export function setSource(el, s) { known.set(el, s); }
+const NATIVE = 'button, a[href], input, select, textarea, summary, label, option, svg, img';
+export function wantedSources() {
+  const els = new Set();
+  for (const [id] of probes) if (id.startsWith('tooltip|')) { const e = fromKey(id.slice(8)); if (e) els.add(e); }
+  for (const e of document.body.querySelectorAll('*')) {
+    if (els.size >= 80) break;
+    if (e.closest('plumb-overlay') || e.matches(NATIVE) || !e.getClientRects().length || e.closest('svg')) continue;
+    const s = getComputedStyle(e);
+    const custom = e.getAttribute('role') === 'button' || (s.cursor === 'pointer' && e.parentElement && getComputedStyle(e.parentElement).cursor !== 'pointer') || /^(none|pan-x|pan-y)$/.test(s.touchAction);
+    if (custom) els.add(e);
+  }
+  return [...els];
+}
+
 // ── rules ───────────────────────────────────────────────────
 
 const isHighlight = (l) => l.inset && l.y >= 1 && l.rgb && oklab(l.rgb)[0] > 0.7 && l.rgb[3] <= 0.15;
@@ -403,16 +426,26 @@ export const menuPointerdown = {
 
 // #60. Tooltips wait a beat for the first, then none for the next.
 export const tooltipDelay = {
-  id: 'craft/tooltip-delay', family: 'craft', number: [60], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:tooltip'],
+  id: 'craft/tooltip-delay', family: 'craft', number: [60], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:tooltip', 'source'],
   check({ el, facts }) {
     const p = facts.probe(el, 'tooltip');
     if (!p?.lead) return [];
     const ms = { quick: p.t1, slow: p.t1, skip: p.t2, cool: p.t3 }[p.lead];
+    // the provider's own prop is the fix, when the code says where the provider is
+    const provider = facts.source(el)?.provider;
+    const first = p.lead === 'quick' || p.lead === 'slow';
+    const name = provider?.library === 'base-ui' ? (first ? 'delay' : null) : first ? 'delayDuration' : 'skipDelayDuration';
+    const to = first ? 500 : 300;
+    const from = name ? provider?.props?.[name] ?? null : null;
+    const suggest = provider && name && from !== to
+      ? { kind: 'prop', component: provider.component, name, from, to, why: first ? 'about half a second for the first' : 'no wait for the next, for a moment',
+        text: `Set ${name}={${to}} on <${provider.component}>${from === null ? '' : ` (now ${from})`}.`, site: { file: provider.file, line: provider.line, column: provider.column, hash: provider.hash } }
+      : { kind: 'advice', text: 'On the tooltip provider: delayDuration={500} skipDelayDuration={300}.' };
     return [{
       ...say(this.id, { kind: p.lead, ms: Math.round(ms) }),
       key: `${this.id}@${p.lead}`, text: 'tooltip', props: ['transition-delay'], value: `${Math.round(ms)}ms`, n: ms,
       evidence: { first: p.t1 === null ? null : Math.round(p.t1), next: p.t2 === null ? null : Math.round(p.t2), back: p.t3 === null ? null : Math.round(p.t3), measured: true }, confidence: 0.88,
-      suggest: { kind: 'advice', text: 'On the tooltip provider: delayDuration={500} skipDelayDuration={300}.' },
+      suggest,
     }];
   },
 };
@@ -464,6 +497,46 @@ export const overdrag = {
   },
 };
 
+// Whether the page says anything about the tap highlight where this element is (it is inherited): an inline style, or a
+// rule of a style sheet whose selector reaches the element or one above it. A browser's own default can't be read
+// (desktop Chromium reports transparent), so what is read is whether the page took the decision.
+let TAP = null;
+const tapRules = () => {
+  if (TAP?.n === document.styleSheets.length) return TAP.list;
+  const list = [];
+  const walk = (rules) => { for (const r of rules) { if (r.style?.getPropertyValue('-webkit-tap-highlight-color')) list.push(r.selectorText); else if (r.cssRules) walk(r.cssRules); } };
+  for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch {} }
+  TAP = { n: document.styleSheets.length, list };
+  return list;
+};
+const tapDecided = (el) => !!el.closest('[style*="tap-highlight"]') || tapRules().some((sel) => { try { return !!el.closest(sel); } catch { return false; } });
+
+// #71. A control built from a div: phones flash it grey on a tap, and a drag on it also scrolls the page.
+export const touchManipulation = {
+  id: 'craft/touch-manipulation', family: 'craft', number: [71], tier: TIER.access, owns: ['interaction'], once: 'ancestor', reads: ['style', 'source'],
+  check({ el, facts }) {
+    if (el.matches(NATIVE)) return [];
+    const source = facts.source(el);
+    if (!source) return [];
+    const s = facts.style(el);
+    const press = el.getAttribute('role') === 'button' || source.handlers.some((h) => /^on(?:Click|PointerDown|PointerUp|MouseDown|MouseUp|TouchStart|TouchEnd)$/.test(h));
+    const drag = source.handlers.some((h) => /^on(?:PointerMove|TouchMove|MouseMove|Drag)/.test(h)) && press;
+    const clear = tapDecided(el);
+    const loose = /^(?:auto|manipulation)$/.test(s.touchAction);
+    if (!press || (clear && !(drag && loose))) return [];
+    const missing = [];
+    if (drag && loose) missing.push('touch-none');
+    else if (!drag && s.touchAction === 'auto') missing.push('touch-manipulation');
+    if (!clear) missing.push('[-webkit-tap-highlight-color:transparent]');
+    return [{
+      ...say(this.id, { drag: drag && loose }),
+      key: this.id, text: utility(el, 'touch') ?? 'tap highlight', props: ['touch-action', '-webkit-tap-highlight-color'], value: s.touchAction, n: 1,
+      evidence: { handlers: source.handlers, touchAction: s.touchAction, tapHighlight: clear ? 'decided' : 'left to the browser' }, confidence: 0.84,
+      suggest: { kind: 'class', from: '', to: missing.join(' '), why: drag && loose ? 'the drag keeps the touch' : 'no grey flash, no tap delay' },
+    }];
+  },
+};
+
 // #66, the half that waits. A spinner that shows for a blink on a fast reply is worse than none.
 export const spinnerTiming = {
   id: 'craft/spinner-timing', family: 'craft', number: [66], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['other:held', 'probe:press'], pairs: ['held'],
@@ -491,10 +564,10 @@ export const spinnerTiming = {
 export const HEADLESS = {
   other: (condition) => pairs.get(condition) ?? null,
   probe: (el, gesture) => (probes.size ? probes.get(`${gesture}|${pathKey(el)}`) ?? null : null),
-  source: () => null,
+  source: (el) => known.get(el) ?? (sources.size ? sources.get(pathKey(el)) ?? null : null),
 };
 
-export const RUN_RULES = [darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag];
+export const RUN_RULES = [darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

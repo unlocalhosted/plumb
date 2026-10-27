@@ -23,7 +23,8 @@
  *  probes { list }            → hand the recorded gestures in (before the run)
  * ───────────────────────────────────────────────────────── */
 import { locate } from './locate.js';
-import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn } from './craft-headless.js';
+import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
+import { request } from './api.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -104,9 +105,22 @@ async function operate(options) {
   throw new Error(`Unknown craft operation ${op}.`);
 }
 
+// What the code says about the elements a rule will ask about: where each was written, then the server's index of it
+async function prepareSources() {
+  const found = [];
+  await Promise.all(wantedSources().map(async (el) => {
+    const at = await locate(el, { explain: true, batch: true }).catch(() => null);
+    if (!at?.file) return;
+    const s = await request('structure', { file: at.file, line: at.line, column: at.column }).catch(() => null);
+    if (s) found.push({ k: pathKey(el), s });
+  }));
+  sourcesIn(found);
+}
+
 export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, ...rest } = {}) {
   if (op) return operate({ op, ...rest });
   resetKeys();
+  await prepareSources();
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
   const was = blueprint.active;

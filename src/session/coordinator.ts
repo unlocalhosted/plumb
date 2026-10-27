@@ -7,7 +7,7 @@ const port = parentPort!;
 const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
 const queue: Call[] = [];
 let running = false;
-const read = (call: Call) => !['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'props', 'history', 'refresh', 'try'].includes(call.method);
+const read = (call: Call) => !['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'propEdit', 'props', 'history', 'refresh', 'try'].includes(call.method);
 try {
   const session = await Session.create(workerData);
   const snapshot = async () => ({ health: await session.health(), stats: session.stats });

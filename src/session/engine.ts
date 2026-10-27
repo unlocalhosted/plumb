@@ -18,7 +18,9 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
-import { elementProps, setProp, swapClasses } from './props.js';
+import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
+import { ancestorWith, indexSource } from '../structure/index.js';
+import type { StructureEntry } from '../structure/index.js';
 import type { Props } from './props.js';
 import { readText, textSites } from './text.js';
 import { resolveTextAt, textTargets } from './text-at.js';
@@ -60,6 +62,14 @@ function parsesAsBefore(file: string, before: string, next: string): void {
   if (errors(next) > errors(before)) throw new UsageError('The change would leave the file unable to parse, so nothing was written.');
 }
 
+export interface PropEditOptions { file: string; hash: string; line: number; column: number; name: string; value: string | number | boolean }
+/** What the source says an element is (docs/briefs/craft-hard-rules.md, structure). */
+export interface StructureResult {
+  file: string; line: number; column: number; hash: string;
+  component: string; source: string | null; library: string | null; role: StructureEntry['role']; props: StructureEntry['props']; handlers: string[];
+  /** For a tooltip: the provider whose delays it follows (the one above it in its file, else the project's only one). */
+  provider?: { file: string; line: number; column: number; hash: string; component: string; library: string | null; props: StructureEntry['props'] };
+}
 export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string }[] }
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
@@ -599,6 +609,49 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return swapClasses(_file, source, facts.location.start, names(from), names(to));
     }, `${from || '—'} → ${to}`);
+  }
+  /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
+  async structure(file: string, line: number, column: number): Promise<StructureResult | null> {
+    const path = this.file(file); this.position(line); this.position(column);
+    await this.readableSource(path);
+    const text = await readFile(path, 'utf8');
+    const location = jsxLocation(path, text, line, column, undefined, 'any');
+    if (!location) return null;
+    const entries = indexSource(path, text);
+    const at = entries.findIndex(entry => entry.start === location.start);
+    const entry = entries[at];
+    if (!entry) return null;
+    const rel = (target: string) => relative(this.root, target).split(sep).join('/');
+    const out: StructureResult = { file, line: entry.line, column: entry.column, hash: sourceHash(text), component: entry.component, source: entry.source, library: entry.library, role: entry.role, props: entry.props, handlers: entry.handlers };
+    // a tooltip, or a trigger inside one: the provider whose delays it follows
+    if (entry.role === 'tooltip' || ancestorWith(entries, at, 'tooltip')) {
+      let provider = ancestorWith(entries, at, 'tooltip-provider'), where = path, whereText = text;
+      if (!provider) {
+        // a provider in a layout file: the project's one, when it has exactly one
+        const found: { path: string; text: string; entry: StructureEntry }[] = [];
+        for (const other of this.sourceFiles) {
+          if (!/\.[cm]?[jt]sx$/.test(other) || found.length > 1) continue;
+          const t = other === path ? text : await readFile(other, 'utf8').catch(() => '');
+          for (const e of indexSource(other, t)) if (e.role === 'tooltip-provider') found.push({ path: other, text: t, entry: e });
+        }
+        if (found.length === 1) { provider = found[0]!.entry; where = found[0]!.path; whereText = found[0]!.text; }
+      }
+      if (provider) out.provider = { file: where === path ? file : rel(where), line: provider.line, column: provider.column, hash: sourceHash(whereText), component: provider.component, library: provider.library, props: provider.props };
+    }
+    return out;
+  }
+  /** Set a literal prop on a component (a craft suggestion of kind prop: delayDuration={500}), in one guarded write. */
+  async propEdit(options: PropEditOptions): Promise<ApplyResult> {
+    const { file, hash, line, column, name, value } = options ?? {} as PropEditOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof name !== 'string' || !/^[A-Za-z_][\w-]*$/.test(name)) throw new UsageError('A prop edit requires file, hash, line, column, name and value.');
+    if (!['string', 'number', 'boolean'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value)) || (typeof value === 'string' && /[\r\n]/.test(value))) throw new UsageError('A prop edit sets a string, a number or a boolean.');
+    const path = this.file(file); this.position(line); this.position(column);
+    const facts = await this.elementFacts(path, line, column);
+    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    return this.writeText(path, hash, `prop:${name}`, name, String(value), (_file, source) => {
+      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      return setJsxProp(_file, source, facts.location.start, name, value);
+    }, `${name}={${JSON.stringify(value)}}`);
   }
   /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person
    * accepted on several elements of one file, or the rows of one line. Each swap is found against the file as it is. */

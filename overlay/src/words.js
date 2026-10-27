@@ -335,6 +335,11 @@ export const CRAFT = {
     line: kind === 'dead' ? 'Drag it past its end and it stops dead.' : 'Drag it as far as you like and it follows, with no limit.',
     reason: 'Past its limit, something should give: move less than the pointer, then spring back.',
   }),
+  'touch-manipulation': ({ drag }) => ({
+    label: drag ? 'Page scrolls under the drag' : 'Tap flashes grey on phones',
+    line: drag ? 'Dragging this also scrolls the page on a phone.' : 'Tapping this flashes it grey on a phone.',
+    reason: drag ? 'Set touch-action: none, so the drag keeps the touch.' : 'Browsers add a grey tap highlight to custom controls. Turn it off.',
+  }),
   // ── end of headless rules ──
 };
 
