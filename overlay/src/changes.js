@@ -61,12 +61,13 @@ const X = '<svg viewBox="0 0 12 12" width="11" height="11"><path d="M3 3l6 6M9 3
 
 export class Changes {
   #el; #items = new Map(); // element → { name, props: Map<prop, { from, to, original: [value, priority] }>, why }
-  #at = null; #busy = false; #onAccept; #onSelect; #onShow; #onDiscard; #rows = [];
+  #at = null; #busy = false; #onAccept; #onSelect; #onShow; #onDiscard; #onPut; #rows = [];
 
   // onAccept([{ el, name, props: [{ prop, from, to }] }]) → Promise<[{ el, ok, why? }]>; onSelect(el) lights it
   // onShow(): the sidebar appears (what sits where it opens makes room)
-  constructor(root, { onAccept, onSelect, onShow, onDiscard } = {}) {
+  constructor(root, { onAccept, onSelect, onShow, onDiscard, onPut } = {}) {
     this.#onShow = onShow;
+    this.#onPut = onPut;
     this.#onDiscard = onDiscard;
     this.#onAccept = onAccept;
     this.#onSelect = onSelect;
@@ -102,6 +103,7 @@ export class Changes {
     const item = this.#item(el, name);
     item.swaps.get(key)?.undo?.();
     item.swaps.set(key, change);
+    this.#onPut?.(el);
     this.render();
     this.#at = el;
     this.render();
@@ -113,6 +115,7 @@ export class Changes {
     if (had && had.from.token === to.token) item.props.delete(prop);
     else item.props.set(prop, { from: had?.from ?? from, to, original: had?.original ?? original });
     if (!item.props.size && !item.swaps.size) this.#items.delete(el);
+    else this.#onPut?.(el);
     this.#at = this.#items.has(el) ? el : this.#at;
     this.render();
   }

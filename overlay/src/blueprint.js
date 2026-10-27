@@ -27,7 +27,8 @@ import { Panel, PANEL_CSS } from './blueprint-panel.js';
 import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
-import { elementEdit } from './inplace.js';
+import { elementEdit, planOf, swapPlanOf } from './inplace.js';
+import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
 import { post, request } from './api.js';
 import { locate } from './locate.js';
 
@@ -40,7 +41,7 @@ const LAYER_CSS = `
   .bp[data-on] > :is(.labels, svg) { opacity: 1; transition-duration: var(--pl-dur-dim); }
   @media (prefers-reduced-motion: reduce) { .bp > :is(.labels, svg) { transition: none; } }
 `;
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -48,7 +49,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel; #craft; #items = []; #selection; #changes;
+  #panel; #craft; #items = []; #selection; #changes; #walk;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -60,14 +61,15 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => this.#panel.open(false), onDiscard: (el) => this.#selection.discarded(el) });
-    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el),
+    this.#walk = new Walkthrough(root);
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => { this.#panel.open(false); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
+    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); },
       changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -137,6 +139,7 @@ export class Blueprint {
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
     this.#selection.clear();
     this.#changes.discardAll(); // nothing previewed is left on the page
+    this.#walk.end();
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
@@ -180,7 +183,17 @@ export class Blueprint {
     if (this.active) this.#reader.healthChanged(status);
   }
 
-  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); };
+  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); };
+  // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
+  #offerWalk() {
+    if (this.#state !== 'on' || this.#walk.active) return;
+    const steps = this.#craft.theme.scale('spacing').filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n);
+    this.#walk.offer(this.#items, (i) => {
+      const m = i.marks.find((x) => x.family === 'craft' || x.ledger === 'new');
+      if (!m || m.family !== 'craft' || m.craft?.suggest?.kind !== 'class') return false;
+      return !!(planOf(m, i.el, steps, (n) => this.#craft.theme.nearest('spacing', n, 0.5)?.short ?? null) ?? swapPlanOf(m));
+    });
+  }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
   #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
@@ -230,6 +243,7 @@ export class Blueprint {
         this.#host.wrote?.(result, `Applied ${f.els.length === 1 ? f.edits[0].to : `${f.els.length} changes`} in ${file.split('/').pop()}`);
         this.invalidate({ file });
         for (const el of f.els) out.push({ el, ok: true });
+        if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
       } catch (error) {
         this.#host.forgetResume?.();
         const why = /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t apply.';
@@ -254,6 +268,7 @@ export class Blueprint {
     this.#marks.dim('on');
     this.#set('on');
     this.#marks.invalidate();
+    this.#offerWalk();
   }
 
   #off() {
