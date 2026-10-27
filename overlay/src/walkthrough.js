@@ -70,5 +70,6 @@ export class Walkthrough {
     const top = this.#step === 1 ? r.bottom + 10 : below ? r.bottom + 64 : Math.max(8, r.top - 48);
     this.#layer.innerHTML = `${this.#step === 1 ? `<div class="pulse" style="left:${r.left - 4}px;top:${r.top - 4}px;width:${r.width + 8}px;height:${r.height + 8}px"></div>` : ''}<div class="line" data-step="${this.#step}" style="left:${Math.max(8, r.left)}px;top:${top}px"><span class="n">${this.#step}/4</span>${words.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c])}</div>`;
   }
-  #go(step) { this.#step = step; this.#layer.hidden = false; this.draw(); }
+  // from a taken change on, the write may reload the page before the last line shows: it counts as seen from there
+  #go(step) { this.#step = step; if (step >= 3) done(); this.#layer.hidden = false; this.draw(); }
 }

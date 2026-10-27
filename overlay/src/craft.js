@@ -57,11 +57,74 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
     try { return fn(virtual); } finally { VIRTUAL.delete(el); }
+  }
+  // The page's habits (docs/briefs/craft-hard-rules.md, census): one count over every element the reader handed on,
+  // clustered, so a rule can judge an element against this app's own majority rather than a universal number.
+  //   weights     the font weights of text-owning elements (to the hundred)
+  //   textColors  their text colours, composited on their ground, neutral ones only (chroma < 0.04)
+  //   gaps        the gaps of column stacks with three or more children
+  // → { sample, clusters: [{ value, count, members }] (most first), share(value) }
+  items = [];
+  #census = new Map();
+  census(name) {
+    let c = this.#census.get(name);
+    if (c) return c;
+    const clusters = [];
+    const add = (value, el, near) => { const k = clusters.find((x) => near(x.value, value)); if (k) { k.count++; k.members.push(el); } else clusters.push({ value, count: 1, members: [el] }); };
+    for (const el of this.items) {
+      if (!el.isConnected) continue;
+      const st = this.style(el);
+      if (name === 'weights' && this.text(el)) add(Math.round((parseInt(st.fontWeight, 10) || 400) / 100) * 100, el, (a, b) => a === b);
+      else if (name === 'textColors' && this.text(el)) {
+        const c0 = rgb(st.color);
+        if (!c0) continue;
+        const g = this.ground(el), o = c0[3] ?? 1;
+        const mixed = [0, 1, 2].map((i) => c0[i] * o + g[i] * (1 - o));
+        const L = labOf(mixed);
+        if (Math.hypot(L[1], L[2]) >= 0.04) continue; // a semantic colour (a link, an accent) is not a level of grey
+        add(mixed, el, (a, b) => { const x = labOf(a), y = labOf(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) * 100 <= 4; });
+      } else if (name === 'gaps' && /flex/.test(st.display) && /column/.test(st.flexDirection) && this.kids(el).length >= 3) {
+        const g = px(st.rowGap === 'normal' ? 0 : st.rowGap);
+        if (g >= 8) add(g, el, (a, b) => Math.abs(a - b) <= 1);
+      }
+    }
+    clusters.sort((a, b) => b.count - a.count);
+    const sample = clusters.reduce((n, k) => n + k.count, 0);
+    c = { sample, clusters, share: (value) => (clusters.find((k) => k.value === value)?.count ?? 0) / Math.max(1, sample) };
+    this.#census.set(name, c);
+    return c;
+  }
+  // An element's font metrics (docs/briefs/craft-hard-rules.md, metrics): cap height, x-height, the font's ascent and
+  // descent, half-leading, and its first line's baseline. Measured on a canvas, memoised per font for the pass; null
+  // when the page's font isn't loaded yet (a fallback's metrics are not the page's). Reads only.
+  #metrics = new Map(); #ctx = null;
+  metrics(el) {
+    const s = this.style(el), font = s.font || `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    try { if (document.fonts && !document.fonts.check(font)) return null; } catch { return null; }
+    let m = this.#metrics.get(font);
+    if (!m) {
+      this.#ctx ??= document.createElement('canvas').getContext('2d');
+      const ctx = this.#ctx; ctx.font = font;
+      const H = ctx.measureText('H'), x = ctx.measureText('x');
+      m = { capHeight: H.actualBoundingBoxAscent, xHeight: x.actualBoundingBoxAscent, ascent: H.fontBoundingBoxAscent, descent: H.fontBoundingBoxDescent };
+      this.#metrics.set(font, m);
+    }
+    const fs = px(s.fontSize), lh = s.lineHeight === 'normal' ? fs * 1.2 : px(s.lineHeight);
+    const halfLeading = (lh - (m.ascent + m.descent)) / 2;
+    // the first line's baseline: the top of its words' box plus the font's ascent
+    let baseline = null;
+    for (const n of el.childNodes) {
+      if (n.nodeType !== 3 || !letters(n.nodeValue)) continue;
+      const r = document.createRange(); r.selectNodeContents(n);
+      const q = r.getClientRects()[0];
+      if (q) { baseline = q.top + (q.height - (m.ascent + m.descent)) / 2 + m.ascent; break; }
+    }
+    return { ...m, halfLeading, lineHeight: lh, baseline };
   }
   // the ground an element's text sits on: the nearest painted background up the tree, else the page's
   ground(el) {
@@ -74,6 +137,14 @@ export class Facts {
 }
 
 export { rgb, utility, classesOf } from './craft-read.js';
+
+// sRGB → OKLab, for the census's colour clusters
+function labOf([r, g, b]) {
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const [R, G, B] = [lin(r), lin(g), lin(b)];
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B), m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B), q = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q];
+}
 
 // The theme as the rules see it: the overlay's decisions, each measured on the page once (a token written as
 // calc(var(--spacing) * 3) is known in px, a colour written as oklch() in rgb). The probe is the one write the engine
@@ -202,6 +273,7 @@ export class Craft {
     try {
       this.#theme.colors();
       const facts = new Facts();
+      facts.items = items.filter((i) => i.checked !== false).map((i) => i.el);
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
       // craft judges what it can reach: an element outside the project's source has no line to fix, so it is left be
       const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.#rules });

@@ -1236,7 +1236,175 @@ export const contentSize = {
   },
 };
 
+// ── hard rules, layer 1: font metrics (facts.metrics) ─────────
+
+// one line of words, owned by this element (its own text, a single line box)
+const oneLine = (el, facts) => facts.text(el) && lineCount(el, facts) <= 1;
+
+// #6. Baseline alignment: text of different sizes side by side lines up on its baseline, not its centre.
+export const baselineAlign = {
+  id: 'craft/baseline-align', family: 'craft', number: [6], tier: TIER.legibility, owns: ['align'], once: 'ancestor', reads: ['style', 'kids', 'metrics'],
+  threshold: { off: 1 },
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || /baseline/.test(s.alignItems)) return [];
+    // a pill, tag or button draws a box, and a box is rightly centred on the words: only bare words share a baseline
+    const drawn = (k) => { const ks = facts.style(k); return !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(ks.backgroundColor) || parseFloat(ks.borderTopWidth) > 0 || (ks.boxShadow && ks.boxShadow !== 'none'); };
+    const words = facts.kids(el).filter((k) => oneLine(k, facts) && !k.querySelector('svg, img') && !drawn(k));
+    if (words.length < 2) return [];
+    const sizes = new Set(words.map((k) => px(facts.style(k).fontSize)));
+    if (sizes.size < 2) return [];
+    const lines = words.map((k) => facts.metrics(k)?.baseline).filter((b) => b !== null && b !== undefined);
+    if (lines.length < 2) return [];
+    const off = Math.max(...lines) - Math.min(...lines);
+    if (off <= this.threshold.off) return [];
+    const cls = utility(el, 'items');
+    return [{
+      ...say(this.id, { off }),
+      key: this.id, text: cls ?? 'align-items', props: ['align-items'], value: s.alignItems, n: off,
+      evidence: { off: Math.round(off * 10) / 10, sizes: [...sizes] }, confidence: 0.86,
+      suggest: { kind: 'class', from: cls ?? '', to: 'items-baseline', why: 'one baseline for both sizes', sets: { alignItems: 'baseline' } },
+    }];
+  },
+};
+
+// #4. An icon beside words is centred on the capitals' middle, not the line box.
+export const iconCap = {
+  id: 'craft/icon-cap', family: 'craft', number: [4], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'metrics'],
+  threshold: { off: 1, icon: 32 },
+  // judged from the row that holds the icon (the reader doesn't read inside svg), and drawn on that row
+  check({ el, facts }) {
+    const ps = facts.style(el);
+    if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection) || !/center/.test(ps.alignItems)) return [];
+    const icon = [...el.children].find((k) => k.localName === 'svg');
+    if (!icon) return [];
+    const parent = el;
+    const r = facts.rect(icon);
+    if (r.height > this.threshold.icon || r.height < 4) return [];
+    const host = facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k));
+    if (!host || lineCount(host, facts) > 1) return [];
+    const m = facts.metrics(host);
+    if (!m?.baseline) return [];
+    const off = (r.top + r.height / 2) - (m.baseline - m.capHeight / 2);
+    if (Math.abs(off) <= this.threshold.off) return [];
+    const whole = Math.round(off * (devicePixelRatio || 1)) / (devicePixelRatio || 1);
+    return [{
+      ...say(this.id, { off }),
+      key: this.id, text: 'svg', props: ['align-items'], value: `${Math.round(off * 10) / 10}px`, n: off,
+      evidence: { off: Math.round(off * 10) / 10, cap: m.capHeight }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Nudge it ${whole > 0 ? 'up' : 'down'} by ${fmt(Math.abs(whole))} (translate-y-[${-whole}px]), or size it to the capitals.` },
+    }];
+  },
+};
+
+// #5. Trim the leading: padding next to a single line of words looks bigger than it is.
+export const trimLeading = {
+  id: 'craft/trim-leading', family: 'craft', number: [5], tier: TIER.craft, owns: ['text-box'], once: 'ancestor', reads: ['style', 'metrics'],
+  threshold: { leading: 3, share: 0.25 },
+  check({ el, facts }) {
+    if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).length) return [];
+    const s = facts.style(el);
+    if (/trim/.test(s.textBoxTrim ?? s.getPropertyValue('text-box-trim') ?? '')) return [];
+    if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || px(s.borderTopWidth) > 0)) return [];
+    const m = facts.metrics(el), pt = px(s.paddingTop);
+    if (!m || pt <= 0 || m.halfLeading < this.threshold.leading) return [];
+    // every font has room above its capitals; what a person didn't choose is the line's own extra space
+    if (m.halfLeading < pt * this.threshold.share) return [];
+    const unseen = m.halfLeading + (m.ascent - m.capHeight);
+    const trim = globalThis.CSS?.supports?.('text-box-trim', 'trim-both');
+    return [{
+      ...say(this.id, { pad: pt, seen: pt + unseen }),
+      key: this.id, text: 'padding-top', props: ['padding-top'], value: `${pt}px`, n: pt,
+      evidence: { padding: pt, unseen: Math.round(unseen * 10) / 10 }, confidence: 0.82,
+      suggest: trim ? { kind: 'class', from: '', to: '[text-box:trim-both_cap_alphabetic]', why: 'the padding measured from the letters', sets: { textBoxTrim: 'trim-both' } }
+        : { kind: 'advice', text: `Take about ${fmt(Math.round(unseen))} off the top and bottom padding, or trim the text box.` },
+    }];
+  },
+};
+
+// ── hard rules, layer 2: the page's own habits (facts.census) ─────────
+
+const WEIGHTS = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
+
+// #17. Two or three weights: a weight the page barely uses, when it already has three or more.
+export const weightLevels = {
+  id: 'craft/weight-levels', family: 'craft', number: [17], tier: TIER.craft, owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'census'],
+  threshold: { sample: 20, minority: 0.1 },
+  check({ el, facts }) {
+    if (!facts.text(el) || !facts.census) return [];
+    const c = facts.census('weights');
+    if (c.sample < this.threshold.sample || c.clusters.length <= 3) return [];
+    const w = Math.round((parseInt(facts.style(el).fontWeight, 10) || 400) / 100) * 100;
+    if (c.share(w) > this.threshold.minority) return [];
+    const majority = c.clusters.slice(0, 3).map((k) => k.value);
+    if (majority.includes(w)) return [];
+    const near = majority.slice().sort((a, b) => Math.abs(a - w) - Math.abs(b - w))[0];
+    const cls = classesOf(el).split(/\s+/).find((k) => /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/.test(k));
+    return [{
+      ...say(this.id, { w, used: majority.sort((a, b) => a - b).join(', ') }),
+      key: this.id, text: cls ?? `font-weight ${w}`, props: ['font-weight'], value: String(w), n: w,
+      evidence: { weight: w, majority, sample: c.sample }, confidence: 0.82,
+      suggest: cls ? { kind: 'class', from: cls, to: `font-${WEIGHTS[near]}`, why: `${near}, one the page already uses`, sets: { fontWeight: String(near) } } : { kind: 'advice', text: `Use weight ${near}, one the page already uses.` },
+    }];
+  },
+};
+
+// #17. Two or three text greys: a neutral text colour the page barely uses, when it already has three or more.
+export const greyLevels = {
+  id: 'craft/grey-levels', family: 'craft', number: [17], tier: TIER.craft, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground', 'census'],
+  threshold: { sample: 20, minority: 0.1 },
+  check({ el, facts }, theme) {
+    if (!facts.text(el) || !facts.census) return [];
+    const c = facts.census('textColors');
+    if (c.sample < this.threshold.sample || c.clusters.length <= 3) return [];
+    const k = c.clusters.find((x) => x.members.includes(el));
+    if (!k || k.count / c.sample > this.threshold.minority || c.clusters.slice(0, 3).includes(k)) return [];
+    const majority = c.clusters.slice(0, 3);
+    const near = majority.map((x) => x.value).sort((a, b) => Math.hypot(...a.map((v, i) => v - k.value[i])) - Math.hypot(...b.map((v, i) => v - k.value[i])))[0];
+    const token = theme.nearestColor(near, 24);
+    const cls = colourClass(el, 'text', theme) ?? classesOf(el).split(/\s+/).find((x) => /^text-\[#/.test(x)) ?? null;
+    return [{
+      ...say(this.id, { used: majority.length }),
+      key: this.id, text: cls ?? 'color', props: ['color'], value: hex(k.value), n: k.count,
+      evidence: { colour: hex(k.value), majority: majority.map((x) => hex(x.value)) }, confidence: 0.82,
+      suggest: token && cls ? { kind: 'class', from: cls, to: `text-${token.short}`, why: 'a grey the page already uses' } : { kind: 'advice', text: `Use ${hex(near)}, a grey the page already uses.` },
+    }];
+  },
+};
+
+// #12. Vertical rhythm: a stack whose gap is off the gaps the page keeps to.
+export const rhythm = {
+  id: 'craft/rhythm', family: 'craft', number: [12], tier: TIER.craft, owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'census'],
+  threshold: { sample: 6, off: 2, majority: 0.6 },
+  check({ el, facts }, theme) {
+    if (!facts.census) return [];
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || !/column/.test(s.flexDirection) || facts.kids(el).length < 3) return [];
+    const g = px(s.rowGap === 'normal' ? 0 : s.rowGap);
+    if (g < 8) return [];
+    const c = facts.census('gaps');
+    if (c.sample < this.threshold.sample) return [];
+    // the rhythm: the clusters that together cover most of the page
+    const steps = [];
+    let covered = 0;
+    for (const k of c.clusters) { if (covered / c.sample >= this.threshold.majority) break; steps.push(k.value); covered += k.count; }
+    // a minority: a tenth of the page or less, and a lone value always (on a small page one place is over a tenth)
+    if (steps.some((v) => Math.abs(v - g) <= this.threshold.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
+    const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
+    const step = theme.nearest('spacing', near, 0.5);
+    const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
+    return [{
+      ...say(this.id, { g, steps: steps.map((v) => fmt(v)).join(' and ') }),
+      key: this.id, text: cls ?? 'gap', props: ['row-gap'], value: `${g}px`, n: g,
+      evidence: { gap: g, rhythm: steps, sample: c.sample }, confidence: 0.82,
+      suggest: step && cls ? { kind: 'class', from: cls, to: `gap-${step.short}`, why: `${fmt(near)}, the page’s rhythm`, sets: { rowGap: near, columnGap: near } } : { kind: 'advice', text: `Use ${fmt(near)}, the page’s rhythm.` },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
-  textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize];
+  textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
+  baselineAlign, iconCap, trimLeading,
+  weightLevels, greyLevels, rhythm];

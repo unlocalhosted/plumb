@@ -207,6 +207,36 @@ export const CRAFT = {
     line: `This is fixed at ${px(w)}, and its words need ${px(need)}. Let it fit its words.`,
     reason: 'Fixed sizes break with real content and translations.',
   }),
+  'baseline-align': ({ off }) => ({
+    label: 'Words sit at different heights',
+    line: `Text of two sizes side by side, centred, so their baselines are ${px(off)} apart. Line them up on the baseline.`,
+    reason: 'Tops and centres of different sizes don’t line up to the eye; baselines do.',
+  }),
+  'icon-cap': ({ off }) => ({
+    label: 'Icon sits off the text',
+    line: `The icon’s centre is ${px(Math.abs(off))} ${off > 0 ? 'below' : 'above'} the middle of the capitals beside it.`,
+    reason: 'Centring on the line box puts icons low; the eye reads the capitals’ middle.',
+  }),
+  'trim-leading': ({ pad, seen }) => ({
+    label: 'Padding looks bigger than it is',
+    line: `${px(pad)} of padding above these words looks like ${px(seen)}: the line adds its own space.`,
+    reason: 'A text box carries invisible space above and below the letters.',
+  }),
+  'weight-levels': ({ w, used }) => ({
+    label: 'One weight too many',
+    line: `Weight ${w} appears here, but the page mostly uses ${used}. Use one of those.`,
+    reason: 'Two or three weights make a clear hierarchy; every extra level weakens the others.',
+  }),
+  'grey-levels': ({ used }) => ({
+    label: 'One grey too many',
+    line: `This text grey isn’t one of the ${used} greys the page mostly uses.`,
+    reason: 'Two or three text colours make a clear hierarchy; a fourth reads as a mistake.',
+  }),
+  rhythm: ({ g, steps }) => ({
+    label: 'Off the page’s rhythm',
+    line: `This stack is ${px(g)} apart; the page keeps to ${steps}.`,
+    reason: 'Repeating a few gaps down the page is what makes it feel even.',
+  }),
 };
 
 // A rule's words as the finding's fields: what (its label), title (its line), because (its reason).
