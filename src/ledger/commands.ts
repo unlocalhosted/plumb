@@ -73,7 +73,8 @@ export async function ledgerCommand(command: string, report: Report, options: Co
   }, text => process.stdout.write(text));
   const ledger = await readLedger(report.root);
   const groups = findingGroups(report);
-  const current = new Map([...groups].map(([key, group]) => [key, group.entry]));
+  // A family with no tokens is a setup step (read.tokens.<family>), never debt to carry.
+  const current = new Map([...groups].filter(([, group]) => group.finding.rule !== 'config/no-tokens').map(([key, group]) => [key, group.entry]));
   let entries = [...ledger.entries];
   const moves: { from: string; to: string }[] = [];
   let message = '';
@@ -109,7 +110,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
       const identity = (entry: LedgerEntry) => JSON.stringify([entry.rule, entry.owner, entry.prop, entry.authored, entry.resolved, entryCount(entry)]);
       // Refuse ambiguous many-to-one moves. A site must retain every field
       // except path/anchor; changed source text needs an explicit acceptance.
-      const missing = entries.filter(entry => entry.kind !== 'decision' && !current.has(entry.key));
+      const missing = entries.filter(entry => entry.kind !== 'decision' && entry.kind !== 'declined' && !current.has(entry.key));
       const vanished = await Promise.all(missing.map(async entry => !await anchorExists(report.root, entry)));
       const orphaned = missing.filter((_, index) => vanished[index]);
       for (const entry of orphaned) {
@@ -134,7 +135,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
       const count = current.get(entry.key)?.count ?? 0;
       return count ? [{ ...entry, count: Math.min(entryCount(entry), count) }] : [];
     });
-    if (options.prune) entries = entries.filter(entry => entry.kind === 'decision' ? decisionKeys.has(entry.key) : current.has(entry.key));
+    if (options.prune) entries = entries.filter(entry => entry.kind === 'declined' || (entry.kind === 'decision' ? decisionKeys.has(entry.key) : current.has(entry.key)));
     message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${count(entries.length, 'entry', 'entries')}.`;
   } else throw new UsageError(`Unknown ledger command: ${command}.`);
   await writeLedger(report.root, entries);

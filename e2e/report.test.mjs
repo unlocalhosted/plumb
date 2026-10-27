@@ -104,6 +104,8 @@ test('large first-run summary fits one screen and every detail command selects i
 
 test('ledger default shows only new sites, caps groups, and keeps debt available through combined filters', async t => {
   const root = await reportFixture(t);
+  // A family with no tokens is a setup gap, never baselined; this test is about debt, so give z-index a token.
+  await appendFile(join(root, 'src/styles.css'), '\n@theme { --z-popup: 40; }\n');
   run(root, ['baseline']);
   const clean = run(root).stdout;
   assert.match(clean, /0 new findings\nno findings/);

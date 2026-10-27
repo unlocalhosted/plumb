@@ -1,0 +1,57 @@
+/* React Plumber proposal fb5472179e9f: spacing, colour, radius, type, motion. Keep what you want, rename or delete the rest. */
+:root {
+  /* why: Used by margin and padding at src/App.tsx:13 and src/styles.css:13 (drafted) */
+  --spacing-xs: 4px;
+  /* why: Used by margin and padding at 5 places in 1 file (drafted) */
+  --spacing-sm: 8px;
+  /* why: Used by margin and padding at 6 places in 1 file (drafted) */
+  --spacing-md: 12px;
+  /* why: Used by padding at src/App.tsx:16 and src/styles.css:8 (drafted) */
+  --spacing-lg: 16px;
+  /* why: Used by padding at src/App.tsx:5 (drafted) */
+  --spacing-xl: 20px;
+  /* why: Used by text colour at src/styles.css:6 and src/styles.css:7 (drafted) */
+  --color-gray-10: #222;
+  /* why: Used by text colour at src/App.tsx:17 (drafted) */
+  --color-gray-9: #333;
+  /* why: Used by text colour at src/styles.css:13 (drafted) */
+  --color-gray-8: #444;
+  /* why: Used by text colour at src/styles.css:12 (drafted) */
+  --color-blue-2: #1d4ed8;
+  /* why: Used by text colour at src/styles.css:5 and src/styles.css:9 (drafted) */
+  --color-gray-7: #666;
+  /* why: Used by background at src/styles.css:11 (drafted) */
+  --color-blue-1: #2563eb;
+  /* why: Used by text colour at src/styles.css:10 (drafted) */
+  --color-gray-6: #888;
+  /* why: Used by text colour at src/App.tsx:19 (drafted) */
+  --color-gray-5: #999;
+  /* why: Used by borders at src/styles.css:8 (drafted) */
+  --color-gray-4: #ddd;
+  /* why: Used by background at src/styles.css:13 (drafted) */
+  --color-gray-3: #e5e7eb;
+  /* why: Used by background at src/styles.css:12 (drafted) */
+  --color-gray-2: #eef2ff;
+  /* why: Used by background and text colour at src/App.tsx:16, src/styles.css:11, src/styles.css:8 (drafted) */
+  --color-gray-1: #fff;
+  /* why: Used by borders at src/styles.css:11, src/styles.css:12, src/styles.css:8 (drafted) */
+  --radius-md: 6px;
+  /* why: Used by borders at src/styles.css:13 (drafted) */
+  --radius-lg: 9px;
+  /* why: Used by text size at src/styles.css:10, src/styles.css:13, src/styles.css:9 (drafted) */
+  --text-xs: 0.75rem;
+  /* why: Used by text size at src/App.tsx:18, src/styles.css:11, src/styles.css:5 (drafted) */
+  --text-sm: 0.875rem;
+  /* why: Used by text size at src/App.tsx:17 (drafted) */
+  --text-base: 1rem;
+  /* why: Used by text size at src/styles.css:7 (drafted) */
+  --text-lg: 1.125rem;
+  /* why: Used by text size at src/styles.css:6 (drafted) */
+  --text-2xl: 1.5rem;
+  /* why: Used by line height at src/styles.css:9 (drafted) */
+  --leading-140: 1.4;
+  /* why: Used by motion at src/styles.css:11 and src/styles.css:12 (drafted) */
+  --duration-base: 150ms;
+  /* why: Used by motion at src/styles.css:11 and src/styles.css:12 (drafted) */
+  --ease-ease-out: ease-out;
+}

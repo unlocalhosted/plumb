@@ -234,7 +234,7 @@ export function fit(measure: Measure, values: Value[], context: FitContext = {})
       name: names.get(entry)!, value, sites: siteCount, files: fileCount, examples,
       absorbs: members.filter(member => !exact.includes(member)).map(member => ({ value: member.text, sites: member.sites, via: entry.via.get(member) ?? 'snap' }))
         .sort((a, b) => b.sites - a.sites || (a.value < b.value ? -1 : 1)),
-      why: draftedWhy([...props].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([prop]) => prop), siteCount, fileCount),
+      why: draftedWhy([...props].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([prop]) => prop), siteCount, fileCount, [...new Set(members.flatMap(member => member.examples))].sort()),
       written: ladder !== 'tailwind-numeric',
     };
   };

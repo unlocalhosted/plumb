@@ -131,19 +131,19 @@ test('init refuses overwrite, force prints diff and records baseline under repla
   run(directory, ['check']);
 });
 
-test('tokenless repeated values become inferred proposals without creating theme tokens', async t => {
+test('a family with no tokens gets a proposed theme file first; the repeated values are not made into config tokens', async t => {
   const directory = await fixture(t);
   const css = '.a { gap: 12px; }\n.b { padding: 12px; }\n.c { margin: 12px; }\n.d { gap: 15px; }\n';
   await file(directory, 'src/styles.css', css);
-  run(directory, ['init']);
+  const initialized = run(directory, ['init']).stdout;
+  assert.match(initialized, /Wrote \d+ tokens to src\/theme\.css/);
   const config = await readFile(join(directory, 'plumber.config.ts'), 'utf8');
-  assert.match(config, /"origin": "inferred"/);
-  assert.match(config, /"name": "inferred:spacing:12px"/);
-  assert.doesNotMatch(config, /inferred:spacing:15px/);
-  assert.equal(await readFile(join(directory, 'src/styles.css'), 'utf8'), css);
+  assert.doesNotMatch(config, /"origin": "inferred"|inferred:spacing/);
+  // The stylesheet only gains the import; the new tokens live in their own file, each with a drafted reason.
+  assert.equal(await readFile(join(directory, 'src/styles.css'), 'utf8'), '@import "./theme.css";\n' + css);
+  assert.match(await readFile(join(directory, 'src/theme.css'), 'utf8'), /--spacing-\w+: 12px;/);
   run(directory, ['check']);
   const decision = (await entries(directory)).find(entry => entry.kind === 'decision' && entry.value === '12px');
-  assert.equal(decision.origin, 'inferred');
   assert.equal(decision.inferred, true);
 });
 

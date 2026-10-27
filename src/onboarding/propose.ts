@@ -186,8 +186,8 @@ export async function loadProposal(root: string, options: { config?: string; fam
 }
 
 /** The same check `plumber state` runs: two Tailwind entries read the first and say so elsewhere. */
-export async function checkProject(root: string, config?: string): Promise<Report> {
-  const run = (entry?: string) => check({ root, ledger: false, ...(config ? { config } : {}), ...(entry ? { entry } : {}) });
+export async function checkProject(root: string, config?: string, listHabits = false): Promise<Report> {
+  const run = (entry?: string) => check({ root, ledger: false, ...(listHabits ? { listHabits } : {}), ...(config ? { config } : {}), ...(entry ? { entry } : {}) });
   try { return await run(); }
   catch (error) {
     if (!(error instanceof UsageError) || !/^Multiple Tailwind entry files/.test(error.message)) throw error;

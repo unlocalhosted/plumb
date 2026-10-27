@@ -67,8 +67,10 @@ export function propLabel(prop: string): string {
 }
 
 /** The factual sentence behind a token, from evidence, marked as drafted (decided 2026-10-14). */
-export function draftedWhy(props: string[], sites: number, files: number): string {
+export function draftedWhy(props: string[], sites: number, files: number, examples: string[] = []): string {
   const labels = [...new Set(props.map(propLabel))].slice(0, 2);
   const used = labels.length ? `Used by ${labels.join(' and ')} at ` : 'Used at ';
-  return `${used}${sites} ${sites === 1 ? 'place' : 'places'} in ${files} ${files === 1 ? 'file' : 'files'} (drafted)`;
+  // A few places read better as the places themselves; many read as a count.
+  if (sites <= 3 && examples.length === sites) return `${used}${examples.join(sites === 2 ? ' and ' : ', ')} (drafted)`;
+  return `${used}${sites} places in ${files} ${files === 1 ? 'file' : 'files'} (drafted)`;
 }

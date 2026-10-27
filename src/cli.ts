@@ -277,9 +277,16 @@ async function main(): Promise<void> {
     let preview = '';
     let result: Awaited<ReturnType<typeof initProject>>;
     try {
+      const { terminalAsker } = await import('./onboarding/ask.js');
+      const answers = new Map(familyArgs.map(item => { const [name, answer] = item.split('='); return [name!, answer === 'skip' ? 'skip' as const : 'keep' as const]; }));
+      // Questions are asked in a terminal; without one, or with --yes, every question takes its default.
+      const interactive = process.stdin.isTTY === true && !args.values.yes && !args.values.json;
+      const asker = interactive ? terminalAsker(text => process.stdout.write(text)) : undefined;
+      if (interactive) preview = '';
       result = await analyzing(() => initProject(resolve(options.root ?? process.cwd()), { ...options,
-        ...(args.values.force === undefined ? {} : { force: args.values.force }) },
-        text => { preview += text; }));
+        ...(args.values.force === undefined ? {} : { force: args.values.force }),
+        ...(args.values.json ? { quiet: true } : {}), ...(answers.size ? { families: answers } : {}), ...(args.values.preset === undefined ? {} : { preset: args.values.preset }), ...(asker ? { asker } : {}) },
+        text => { if (interactive) process.stdout.write(text); else preview += text; }));
     } finally {
       if (preview) (args.values.json ? process.stderr : process.stdout).write(preview);
     }

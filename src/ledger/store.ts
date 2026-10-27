@@ -28,7 +28,8 @@ export function parseLedger(text: string, path: string): LedgerEntry[] {
 }
 export async function readLedger(root: string): Promise<{ exists: boolean; entries: LedgerEntry[] }> {
   const path = ledgerPath(root);
-  try { return { exists: true, entries: parseLedger(await readFile(path, 'utf8'), path) }; }
+  // A ledger that only remembers what was declined has recorded no baseline yet.
+  try { const entries = parseLedger(await readFile(path, 'utf8'), path); return { exists: !entries.length || entries.some(entry => entry.kind !== 'declined'), entries }; }
   catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { exists: false, entries: [] }; throw error; }
 }
 export async function writeLedger(root: string, entries: LedgerEntry[]): Promise<void> {

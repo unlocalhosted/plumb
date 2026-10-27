@@ -59,7 +59,7 @@
                     "via": "snap"
                   }
                 ],
-                "why": "Used by margin and padding at 2 places in 2 files (drafted)",
+                "why": "Used by margin and padding at src/App.tsx:13 and src/styles.css:13 (drafted)",
                 "written": true
               },
               {
@@ -127,7 +127,7 @@
                     "via": "snap"
                   }
                 ],
-                "why": "Used by padding at 2 places in 2 files (drafted)",
+                "why": "Used by padding at src/App.tsx:16 and src/styles.css:8 (drafted)",
                 "written": true
               },
               {
@@ -139,7 +139,7 @@
                   "src/App.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:5 (drafted)",
                 "written": true
               }
             ],
@@ -185,7 +185,7 @@
               {
                 "name": "--spacing-xs",
                 "value": "4px",
-                "why": "Used by margin and padding at 2 places in 2 files (drafted)"
+                "why": "Used by margin and padding at src/App.tsx:13 and src/styles.css:13 (drafted)"
               },
               {
                 "name": "--spacing-sm",
@@ -200,12 +200,12 @@
               {
                 "name": "--spacing-lg",
                 "value": "16px",
-                "why": "Used by padding at 2 places in 2 files (drafted)"
+                "why": "Used by padding at src/App.tsx:16 and src/styles.css:8 (drafted)"
               },
               {
                 "name": "--spacing-xl",
                 "value": "20px",
-                "why": "Used by padding at 1 place in 1 file (drafted)"
+                "why": "Used by padding at src/App.tsx:5 (drafted)"
               }
             ]
           }
@@ -236,7 +236,7 @@
                   "src/styles.css:7"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "why": "Used by text colour at src/styles.css:6 and src/styles.css:7 (drafted)",
                 "written": true
               },
               {
@@ -248,7 +248,7 @@
                   "src/App.tsx:17"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/App.tsx:17 (drafted)",
                 "written": true
               },
               {
@@ -260,7 +260,7 @@
                   "src/styles.css:13"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/styles.css:13 (drafted)",
                 "written": true
               },
               {
@@ -272,7 +272,7 @@
                   "src/styles.css:12"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/styles.css:12 (drafted)",
                 "written": true
               },
               {
@@ -291,7 +291,7 @@
                     "via": "merge"
                   }
                 ],
-                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "why": "Used by text colour at src/styles.css:5 and src/styles.css:9 (drafted)",
                 "written": true
               },
               {
@@ -303,7 +303,7 @@
                   "src/styles.css:11"
                 ],
                 "absorbs": [],
-                "why": "Used by background at 1 place in 1 file (drafted)",
+                "why": "Used by background at src/styles.css:11 (drafted)",
                 "written": true
               },
               {
@@ -315,7 +315,7 @@
                   "src/styles.css:10"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/styles.css:10 (drafted)",
                 "written": true
               },
               {
@@ -327,7 +327,7 @@
                   "src/App.tsx:19"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/App.tsx:19 (drafted)",
                 "written": true
               },
               {
@@ -339,7 +339,7 @@
                   "src/styles.css:8"
                 ],
                 "absorbs": [],
-                "why": "Used by borders at 1 place in 1 file (drafted)",
+                "why": "Used by borders at src/styles.css:8 (drafted)",
                 "written": true
               },
               {
@@ -351,7 +351,7 @@
                   "src/styles.css:13"
                 ],
                 "absorbs": [],
-                "why": "Used by background at 1 place in 1 file (drafted)",
+                "why": "Used by background at src/styles.css:13 (drafted)",
                 "written": true
               },
               {
@@ -363,7 +363,7 @@
                   "src/styles.css:12"
                 ],
                 "absorbs": [],
-                "why": "Used by background at 1 place in 1 file (drafted)",
+                "why": "Used by background at src/styles.css:12 (drafted)",
                 "written": true
               },
               {
@@ -383,7 +383,7 @@
                     "via": "merge"
                   }
                 ],
-                "why": "Used by background and text colour at 3 places in 2 files (drafted)",
+                "why": "Used by background and text colour at src/App.tsx:16, src/styles.css:11, src/styles.css:8 (drafted)",
                 "written": true
               }
             ],
@@ -427,62 +427,62 @@
               {
                 "name": "--color-gray-10",
                 "value": "#222",
-                "why": "Used by text colour at 2 places in 1 file (drafted)"
+                "why": "Used by text colour at src/styles.css:6 and src/styles.css:7 (drafted)"
               },
               {
                 "name": "--color-gray-9",
                 "value": "#333",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/App.tsx:17 (drafted)"
               },
               {
                 "name": "--color-gray-8",
                 "value": "#444",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/styles.css:13 (drafted)"
               },
               {
                 "name": "--color-blue-2",
                 "value": "#1d4ed8",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/styles.css:12 (drafted)"
               },
               {
                 "name": "--color-gray-7",
                 "value": "#666",
-                "why": "Used by text colour at 2 places in 1 file (drafted)"
+                "why": "Used by text colour at src/styles.css:5 and src/styles.css:9 (drafted)"
               },
               {
                 "name": "--color-blue-1",
                 "value": "#2563eb",
-                "why": "Used by background at 1 place in 1 file (drafted)"
+                "why": "Used by background at src/styles.css:11 (drafted)"
               },
               {
                 "name": "--color-gray-6",
                 "value": "#888",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/styles.css:10 (drafted)"
               },
               {
                 "name": "--color-gray-5",
                 "value": "#999",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/App.tsx:19 (drafted)"
               },
               {
                 "name": "--color-gray-4",
                 "value": "#ddd",
-                "why": "Used by borders at 1 place in 1 file (drafted)"
+                "why": "Used by borders at src/styles.css:8 (drafted)"
               },
               {
                 "name": "--color-gray-3",
                 "value": "#e5e7eb",
-                "why": "Used by background at 1 place in 1 file (drafted)"
+                "why": "Used by background at src/styles.css:13 (drafted)"
               },
               {
                 "name": "--color-gray-2",
                 "value": "#eef2ff",
-                "why": "Used by background at 1 place in 1 file (drafted)"
+                "why": "Used by background at src/styles.css:12 (drafted)"
               },
               {
                 "name": "--color-gray-1",
                 "value": "#fff",
-                "why": "Used by background and text colour at 3 places in 2 files (drafted)"
+                "why": "Used by background and text colour at src/App.tsx:16, src/styles.css:11, src/styles.css:8 (drafted)"
               }
             ]
           }
@@ -533,7 +533,7 @@
                     "via": "merge"
                   }
                 ],
-                "why": "Used by borders at 3 places in 1 file (drafted)",
+                "why": "Used by borders at src/styles.css:11, src/styles.css:12, src/styles.css:8 (drafted)",
                 "written": true
               },
               {
@@ -545,7 +545,7 @@
                   "src/styles.css:13"
                 ],
                 "absorbs": [],
-                "why": "Used by borders at 1 place in 1 file (drafted)",
+                "why": "Used by borders at src/styles.css:13 (drafted)",
                 "written": true
               }
             ],
@@ -563,12 +563,12 @@
               {
                 "name": "--radius-md",
                 "value": "6px",
-                "why": "Used by borders at 3 places in 1 file (drafted)"
+                "why": "Used by borders at src/styles.css:11, src/styles.css:12, src/styles.css:8 (drafted)"
               },
               {
                 "name": "--radius-lg",
                 "value": "9px",
-                "why": "Used by borders at 1 place in 1 file (drafted)"
+                "why": "Used by borders at src/styles.css:13 (drafted)"
               }
             ]
           }
@@ -611,7 +611,7 @@
                     "via": "snap"
                   }
                 ],
-                "why": "Used by text size at 3 places in 1 file (drafted)",
+                "why": "Used by text size at src/styles.css:10, src/styles.css:13, src/styles.css:9 (drafted)",
                 "written": true
               },
               {
@@ -625,7 +625,7 @@
                   "src/styles.css:5"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 3 places in 2 files (drafted)",
+                "why": "Used by text size at src/App.tsx:18, src/styles.css:11, src/styles.css:5 (drafted)",
                 "written": true
               },
               {
@@ -643,7 +643,7 @@
                     "via": "snap"
                   }
                 ],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/App.tsx:17 (drafted)",
                 "written": true
               },
               {
@@ -655,7 +655,7 @@
                   "src/styles.css:7"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/styles.css:7 (drafted)",
                 "written": true
               },
               {
@@ -667,7 +667,7 @@
                   "src/styles.css:6"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/styles.css:6 (drafted)",
                 "written": true
               }
             ],
@@ -692,27 +692,27 @@
               {
                 "name": "--text-xs",
                 "value": "0.75rem",
-                "why": "Used by text size at 3 places in 1 file (drafted)"
+                "why": "Used by text size at src/styles.css:10, src/styles.css:13, src/styles.css:9 (drafted)"
               },
               {
                 "name": "--text-sm",
                 "value": "0.875rem",
-                "why": "Used by text size at 3 places in 2 files (drafted)"
+                "why": "Used by text size at src/App.tsx:18, src/styles.css:11, src/styles.css:5 (drafted)"
               },
               {
                 "name": "--text-base",
                 "value": "1rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/App.tsx:17 (drafted)"
               },
               {
                 "name": "--text-lg",
                 "value": "1.125rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/styles.css:7 (drafted)"
               },
               {
                 "name": "--text-2xl",
                 "value": "1.5rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/styles.css:6 (drafted)"
               }
             ]
           },
@@ -733,7 +733,7 @@
                   "src/styles.css:9"
                 ],
                 "absorbs": [],
-                "why": "Used by line height at 1 place in 1 file (drafted)",
+                "why": "Used by line height at src/styles.css:9 (drafted)",
                 "written": true
               }
             ],
@@ -745,7 +745,7 @@
               {
                 "name": "--leading-140",
                 "value": "1.4",
-                "why": "Used by line height at 1 place in 1 file (drafted)"
+                "why": "Used by line height at src/styles.css:9 (drafted)"
               }
             ]
           }
@@ -782,7 +782,7 @@
                     "via": "merge"
                   }
                 ],
-                "why": "Used by motion at 2 places in 1 file (drafted)",
+                "why": "Used by motion at src/styles.css:11 and src/styles.css:12 (drafted)",
                 "written": true
               }
             ],
@@ -800,7 +800,7 @@
               {
                 "name": "--duration-base",
                 "value": "150ms",
-                "why": "Used by motion at 2 places in 1 file (drafted)"
+                "why": "Used by motion at src/styles.css:11 and src/styles.css:12 (drafted)"
               }
             ]
           },
@@ -822,7 +822,7 @@
                   "src/styles.css:12"
                 ],
                 "absorbs": [],
-                "why": "Used by motion at 2 places in 1 file (drafted)",
+                "why": "Used by motion at src/styles.css:11 and src/styles.css:12 (drafted)",
                 "written": true
               }
             ],
@@ -834,7 +834,7 @@
               {
                 "name": "--ease-ease-out",
                 "value": "ease-out",
-                "why": "Used by motion at 2 places in 1 file (drafted)"
+                "why": "Used by motion at src/styles.css:11 and src/styles.css:12 (drafted)"
               }
             ]
           }
@@ -888,7 +888,7 @@
                   "src/App.tsx:15"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:15 (drafted)",
                 "written": false
               },
               {
@@ -908,7 +908,7 @@
                     "via": "merge"
                   }
                 ],
-                "why": "Used by gap and padding at 3 places in 1 file (drafted)",
+                "why": "Used by gap and padding at src/App.tsx:16, src/App.tsx:5, src/App.tsx:7 (drafted)",
                 "written": false
               },
               {
@@ -922,7 +922,7 @@
                   "src/App.tsx:8"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 3 places in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:11, src/App.tsx:15, src/App.tsx:8 (drafted)",
                 "written": false
               },
               {
@@ -934,7 +934,7 @@
                   "src/App.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:5 (drafted)",
                 "written": false
               }
             ],
@@ -987,7 +987,7 @@
                   "src/App.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "why": "Used by text colour at src/App.tsx:5 (drafted)",
                 "written": true
               },
               {
@@ -1000,7 +1000,7 @@
                   "src/App.tsx:9"
                 ],
                 "absorbs": [],
-                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "why": "Used by text colour at src/App.tsx:12 and src/App.tsx:9 (drafted)",
                 "written": true
               },
               {
@@ -1013,7 +1013,7 @@
                   "src/App.tsx:16"
                 ],
                 "absorbs": [],
-                "why": "Used by background at 2 places in 1 file (drafted)",
+                "why": "Used by background at src/App.tsx:15 and src/App.tsx:16 (drafted)",
                 "written": true
               },
               {
@@ -1026,7 +1026,7 @@
                   "src/App.tsx:8"
                 ],
                 "absorbs": [],
-                "why": "Used by borders at 2 places in 1 file (drafted)",
+                "why": "Used by borders at src/App.tsx:11 and src/App.tsx:8 (drafted)",
                 "written": true
               },
               {
@@ -1052,22 +1052,22 @@
               {
                 "name": "--color-gray-900",
                 "value": "oklch(21% 0.034 264.665)",
-                "why": "Used by text colour at 1 place in 1 file (drafted)"
+                "why": "Used by text colour at src/App.tsx:5 (drafted)"
               },
               {
                 "name": "--color-gray-700",
                 "value": "oklch(37.3% 0.034 259.733)",
-                "why": "Used by text colour at 2 places in 1 file (drafted)"
+                "why": "Used by text colour at src/App.tsx:12 and src/App.tsx:9 (drafted)"
               },
               {
                 "name": "--color-blue-600",
                 "value": "oklch(54.6% 0.245 262.881)",
-                "why": "Used by background at 2 places in 1 file (drafted)"
+                "why": "Used by background at src/App.tsx:15 and src/App.tsx:16 (drafted)"
               },
               {
                 "name": "--color-gray-200",
                 "value": "oklch(92.8% 0.006 264.531)",
-                "why": "Used by borders at 2 places in 1 file (drafted)"
+                "why": "Used by borders at src/App.tsx:11 and src/App.tsx:8 (drafted)"
               },
               {
                 "name": "--color-white",
@@ -1158,7 +1158,7 @@
                   "src/App.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 3 places in 1 file (drafted)",
+                "why": "Used by text size at src/App.tsx:15, src/App.tsx:16, src/App.tsx:5 (drafted)",
                 "written": true
               },
               {
@@ -1171,7 +1171,7 @@
                   "src/App.tsx:9"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 2 places in 1 file (drafted)",
+                "why": "Used by text size at src/App.tsx:12 and src/App.tsx:9 (drafted)",
                 "written": true
               },
               {
@@ -1183,7 +1183,7 @@
                   "src/App.tsx:6"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/App.tsx:6 (drafted)",
                 "written": true
               }
             ],
@@ -1195,17 +1195,17 @@
               {
                 "name": "--text-sm",
                 "value": "0.875rem",
-                "why": "Used by text size at 3 places in 1 file (drafted)"
+                "why": "Used by text size at src/App.tsx:15, src/App.tsx:16, src/App.tsx:5 (drafted)"
               },
               {
                 "name": "--text-base",
                 "value": "1rem",
-                "why": "Used by text size at 2 places in 1 file (drafted)"
+                "why": "Used by text size at src/App.tsx:12 and src/App.tsx:9 (drafted)"
               },
               {
                 "name": "--text-2xl",
                 "value": "1.5rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/App.tsx:6 (drafted)"
               }
             ]
           }
@@ -1241,7 +1241,7 @@
                   "src/App.tsx:8"
                 ],
                 "absorbs": [],
-                "why": "Used by shadows at 2 places in 1 file (drafted)",
+                "why": "Used by shadows at src/App.tsx:11 and src/App.tsx:8 (drafted)",
                 "written": true
               }
             ],
@@ -1253,7 +1253,7 @@
               {
                 "name": "--shadow-sm",
                 "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-                "why": "Used by shadows at 2 places in 1 file (drafted)"
+                "why": "Used by shadows at src/App.tsx:11 and src/App.tsx:8 (drafted)"
               }
             ]
           }
@@ -1321,7 +1321,7 @@
                   "src/components/ui/card.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by gap at 2 places in 2 files (drafted)",
+                "why": "Used by gap at src/App.tsx:7 and src/components/ui/card.tsx:5 (drafted)",
                 "written": false
               },
               {
@@ -1334,7 +1334,7 @@
                   "src/components/ui/card.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 2 places in 2 files (drafted)",
+                "why": "Used by padding at src/components/ui/button.tsx:4 and src/components/ui/card.tsx:5 (drafted)",
                 "written": false
               },
               {
@@ -1346,7 +1346,7 @@
                   "src/App.tsx:7"
                 ],
                 "absorbs": [],
-                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:7 (drafted)",
                 "written": false
               }
             ],
@@ -1394,7 +1394,7 @@
                   "src/components/ui/card.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by borders at 2 places in 2 files (drafted)",
+                "why": "Used by borders at src/components/ui/button.tsx:4 and src/components/ui/card.tsx:5 (drafted)",
                 "written": true
               }
             ],
@@ -1406,7 +1406,7 @@
               {
                 "name": "--radius-lg",
                 "value": "0.5rem",
-                "why": "Used by borders at 2 places in 2 files (drafted)"
+                "why": "Used by borders at src/components/ui/button.tsx:4 and src/components/ui/card.tsx:5 (drafted)"
               }
             ]
           }
@@ -1441,7 +1441,7 @@
                   "src/App.tsx:12"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/App.tsx:12 (drafted)",
                 "written": true
               },
               {
@@ -1467,7 +1467,7 @@
                   "src/components/ui/card.tsx:6"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/components/ui/card.tsx:6 (drafted)",
                 "written": true
               }
             ],
@@ -1479,7 +1479,7 @@
               {
                 "name": "--text-xs",
                 "value": "0.75rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/App.tsx:12 (drafted)"
               },
               {
                 "name": "--text-sm",
@@ -1489,7 +1489,7 @@
               {
                 "name": "--text-lg",
                 "value": "1.125rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/components/ui/card.tsx:6 (drafted)"
               }
             ]
           }
@@ -1578,7 +1578,7 @@
                   "src/components/ui/card.tsx:5"
                 ],
                 "absorbs": [],
-                "why": "Used by gap at 1 place in 1 file (drafted)",
+                "why": "Used by gap at src/components/ui/card.tsx:5 (drafted)",
                 "written": false
               },
               {
@@ -1590,7 +1590,7 @@
                   "src/App.tsx:7"
                 ],
                 "absorbs": [],
-                "why": "Used by gap at 1 place in 1 file (drafted)",
+                "why": "Used by gap at src/App.tsx:7 (drafted)",
                 "written": false
               },
               {
@@ -1628,7 +1628,7 @@
                     "via": "snap"
                   }
                 ],
-                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "why": "Used by padding at src/App.tsx:7 (drafted)",
                 "written": false
               }
             ],
@@ -1729,7 +1729,7 @@
                   "src/components/ui/card.tsx:6"
                 ],
                 "absorbs": [],
-                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "why": "Used by text size at src/components/ui/card.tsx:6 (drafted)",
                 "written": true
               }
             ],
@@ -1755,7 +1755,7 @@
               {
                 "name": "--text-lg",
                 "value": "1.125rem",
-                "why": "Used by text size at 1 place in 1 file (drafted)"
+                "why": "Used by text size at src/components/ui/card.tsx:6 (drafted)"
               }
             ]
           }

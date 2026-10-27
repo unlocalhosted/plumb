@@ -55,7 +55,7 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
   const statuses = new Map<string, Map<string, NonNullable<Site['ledger']>>>();
   for (const group of groups.values()) {
     const entry = accepted.get(group.entry.key);
-    const allowance = entry && entry.kind !== 'decision' ? Math.min(entryCount(entry), group.sites.length) : 0;
+    const allowance = entry && (entry.kind === 'debt' || entry.kind === 'exception') ? Math.min(entryCount(entry), group.sites.length) : 0;
     const sites = new Map<string, NonNullable<Site['ledger']>>();
     group.sites.forEach((site, index) => {
       const status = index < allowance ? entry!.kind === 'exception' ? 'exception' : 'debt' : 'new';
@@ -63,7 +63,8 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
       if (status === 'debt') summary.debt++;
       else if (status === 'exception') summary.exceptions++;
       else if (changed && !changed.has(site.file)) summary.outOfScope++;
-      else summary.new++;
+      // A family with no tokens is a setup step, not a new finding to count.
+      else if (group.finding.rule !== 'config/no-tokens') summary.new++;
     });
     statuses.set(group.entry.key, sites);
   }

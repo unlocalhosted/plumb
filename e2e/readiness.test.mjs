@@ -21,13 +21,13 @@ function run(root, args, input = '', expected = 0, env = {}) {
   assert.equal(result.status, expected, result.stderr + result.stdout);
   return result.stdout;
 }
-async function fixture(t, host = config, sources = {}) {
+async function fixture(t, host = config, sources = {}, init = []) {
   const root = await mkdtemp(join(repo, 'fixtures/.readiness-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true });
   await writeFile(join(root, 'vite.config.mjs'), host);
   for (const [file, source] of Object.entries(sources)) await writeFile(join(root, file), source);
-  run(root, ['init', '--force']);
+  run(root, ['init', '--force', ...init]);
   return root;
 }
 async function api(t, root, runtime) {
@@ -353,7 +353,8 @@ test('framework-only tokens stay missing across every judged family', async t =>
 .box { padding: 13px; color: #123456; border-radius: 11px; font-size: 19px; transition: opacity 137ms; box-shadow: 1px 1px 3px #123; z-index: 7; }
 `,
     'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="box" />; }',
-  });
+    // init proposes a theme for these values; this test is about the families the person left without tokens.
+  }, ['--yes', ...['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'].flatMap(family => ['--family', `${family}=skip`])]);
   const checked = JSON.parse(run(root, ['check', '--json']));
   const { report } = await api(t, root);
   const ready = await report(), doctor = run(root, ['doctor'], '', 1);
