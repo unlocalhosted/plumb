@@ -174,27 +174,27 @@ export const CRAFT = {
   }),
   'text-wrap-role': ({ heading, lines }) => ({
     label: heading ? 'Heading lines uneven' : 'Ragged paragraph',
-    line: heading ? `This heading breaks across ${lines} lines with uneven lengths. Use text-balance.` : `This text runs ${lines} lines with no care for its last one. Use text-pretty.`,
+    line: heading ? `This heading breaks into ${lines} uneven lines. Use text-balance.` : `${lines} lines, and the last one is left to chance. Use text-pretty.`,
     reason: heading ? 'Balanced lines read as one thought.' : 'Pretty wrapping avoids a lonely last word.',
   }),
   'continuous-corners': ({ r }) => ({
     label: 'Corners could be smoother',
-    line: `${px(r)} round corners on a large surface. A squircle corner looks softer at the same size.`,
+    line: `${px(r)} round corners on a big surface. A squircle looks softer.`,
     reason: 'Curvature that eases in looks gentler than a circle’s arc.',
   }),
   'optical-sizing': ({ family }) => ({
     label: 'Optical size turned off',
     line: `${family} has an optical-size axis, but it’s switched off here.`,
-    reason: 'Small text gets sturdier shapes and large text finer ones when the font picks its optical size.',
+    reason: 'With optical size on, small text gets sturdier shapes and big text finer ones.',
   }),
   'tinted-shadow': ({ ground }) => ({
     label: 'Grey shadow on colour',
-    line: `A grey shadow on a ${ground} ground looks dirty. Tint it with the ground’s hue.`,
+    line: `A grey shadow on ${ground} looks dirty. Tint it with that colour.`,
     reason: 'Real shadows on colour take the colour, darker.',
   }),
   'eased-scrim': () => ({
     label: 'Scrim has a hard edge',
-    line: 'This fade over the image is a straight line from dark to clear, so its edge shows.',
+    line: 'This fade goes from dark to clear in a straight line, so its edge shows.',
     reason: 'An eased fade (more stops, dropping fast then slow) has no visible edge.',
   }),
   'pure-black-white': ({ black }) => ({
@@ -209,7 +209,7 @@ export const CRAFT = {
   }),
   'baseline-align': ({ off }) => ({
     label: 'Words sit at different heights',
-    line: `Text of two sizes side by side, centred, so their baselines are ${px(off)} apart. Line them up on the baseline.`,
+    line: `Two sizes, centred, so their baselines are ${px(off)} apart. Align them.`,
     reason: 'Tops and centres of different sizes don’t line up to the eye; baselines do.',
   }),
   'icon-cap': ({ off }) => ({
@@ -219,7 +219,7 @@ export const CRAFT = {
   }),
   'trim-leading': ({ pad, seen }) => ({
     label: 'Padding looks bigger than it is',
-    line: `${px(pad)} of padding above these words looks like ${px(seen)}: the line adds its own space.`,
+    line: `${px(pad)} of padding looks like ${px(seen)}. The line adds its own space.`,
     reason: 'A text box carries invisible space above and below the letters.',
   }),
   'weight-levels': ({ w, used }) => ({
@@ -237,32 +237,42 @@ export const CRAFT = {
     line: `This stack is ${px(g)} apart; the page keeps to ${steps}.`,
     reason: 'Repeating a few gaps down the page is what makes it feel even.',
   }),
+  'optical-centre': ({ by, dir }) => ({
+    label: 'Icon looks off-centre',
+    line: `Centred by its box, the icon looks off. Move it ${px(by)} ${dir}.`,
+    reason: 'The eye centres a shape by its weight, not its box.',
+  }),
+  overshoot: ({ rd, sq }) => ({
+    label: 'Round icon looks smaller',
+    line: `The round icon is ${px(rd)}, the square ones ${px(sq)}. Make it a bit bigger.`,
+    reason: 'A circle covers less than a square of the same width, so it reads smaller.',
+  }),
+  'stroke-weight': ({ w, usual, big }) => ({
+    label: big ? 'Icon stroke too heavy' : 'Icon stroke doesn’t match',
+    line: big ? `This big icon’s stroke grew to ${px(w)}.` : `This icon’s stroke is ${px(w)}. Beside words this weight you use ${px(usual)}.`,
+    reason: 'An icon’s line should weigh what the words beside it weigh.',
+  }),
+  'scroll-cue': ({ x }) => ({
+    label: 'Hidden content, no hint',
+    line: `This area scrolls ${x ? 'sideways' : 'down'}, but has no scrollbar or fade to say so.`,
+    reason: 'Without an edge cue, people think they’ve seen everything.',
+  }),
+  'press-feedback': ({ idiom }) => ({
+    label: 'No response to a press',
+    line: `Nothing changes on press. Your other buttons use ${idiom}.`,
+    reason: 'A press that shows nothing feels like it didn’t register.',
+  }),
+  'exit-faster': ({ enter, exit }) => ({
+    label: 'Leaves as slowly as it came',
+    line: `It opens and closes in ${enter}ms. Close it in ${exit}ms.`,
+    reason: 'People are done with it when they close it. Waiting feels slow.',
+  }),
+  interruptible: () => ({
+    label: 'Can’t reverse midway',
+    line: 'Open and close are keyframes, so closing midway jumps to the start.',
+    reason: 'A transition reverses from where it is.',
+  }),
   // ── headless rules (pairs, probes, structure: craft-headless.js) ──
-  'dark-elevation': ({ blur }) => ({
-    label: 'Shadow does nothing in dark',
-    line: `This ${px(blur)} shadow can’t show on a dark surface.`,
-    reason: 'In the dark, a surface rises by getting lighter, or by a light edge on top.',
-  }),
-  'dark-weight': ({ weight, size }) => ({
-    label: 'Light text looks heavy on dark',
-    line: `Weight ${weight}, ${px(size)}: light on dark looks bolder than on white.`,
-    reason: 'Light text glows into a dark ground. Smooth it, or lighten the weight in dark.',
-  }),
-  'skeleton-match': ({ was, now }) => ({
-    label: 'Skeleton is the wrong size',
-    line: `The skeleton is ${px(was)} tall. What loads in is ${px(now)}.`,
-    reason: 'When the real content lands, everything under it jumps.',
-  }),
-  'scroll-cue-seen': () => ({
-    label: 'No sign there is more to scroll',
-    line: 'The edges look the same at the top as at the end.',
-    reason: 'People can’t tell more is hidden. Fade the edge that has more behind it.',
-  }),
-  'spinner-timing': ({ ms }) => ({
-    label: 'Spinner flashes',
-    line: `On a quick reply this spinner shows for just ${ms}ms.`,
-    reason: 'A blink is worse than nothing. Wait 200ms, then keep it up for 500ms.',
-  }),
   // ── end of headless rules ──
 };
 

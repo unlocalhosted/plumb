@@ -1403,9 +1403,225 @@ export const rhythm = {
   },
 };
 
+// ── ink (layer 3): what an icon actually draws ──
+
+const iconOnly = (el, facts) => {
+  const kids = facts.kids(el);
+  return kids.length === 1 && kids[0].localName === 'svg' && !facts.text(el) && !el.textContent.trim() ? kids[0] : null;
+};
+
+// #2. An icon-only control centres the icon's weight, not its box: a play triangle centred by its box looks left.
+export const opticalCentre = {
+  id: 'craft/optical-centre', family: 'craft', number: [2], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'ink'],
+  threshold: { lean: 0.06, off: 1, icon: 32 },
+  check({ el, facts }) {
+    if (!el.matches(CONTROL)) return [];
+    const svg = iconOnly(el, facts);
+    if (!svg) return [];
+    const r = facts.rect(svg), c = facts.rect(el);
+    if (r.width > this.threshold.icon || r.height > this.threshold.icon) return [];
+    const ink = facts.ink(svg);
+    if (!ink?.bbox) return [];
+    const mid = { x: ink.bbox.x + ink.bbox.w / 2, y: ink.bbox.y + ink.bbox.h / 2 };
+    const lean = { x: (ink.centroid.x - mid.x) / ink.bbox.w, y: (ink.centroid.y - mid.y) / ink.bbox.h };
+    if (Math.abs(lean.x) < this.threshold.lean && Math.abs(lean.y) < this.threshold.lean) return []; // a symmetric shape
+    // where the eye puts the icon's middle: halfway between its box's middle and its weight
+    const seen = { x: r.left + (mid.x + ink.centroid.x) / 2, y: r.top + (mid.y + ink.centroid.y) / 2 };
+    const move = { x: c.left + c.width / 2 - seen.x, y: c.top + c.height / 2 - seen.y };
+    const axis = Math.abs(move.x) >= Math.abs(move.y) ? 'x' : 'y', by = move[axis];
+    if (Math.abs(by) < this.threshold.off) return [];
+    const whole = Math.round(by), dir = axis === 'x' ? (by > 0 ? 'right' : 'left') : (by > 0 ? 'down' : 'up');
+    const cls = `${whole < 0 ? '-' : ''}translate-${axis}-${Math.abs(whole) === 1 ? 'px' : `[${Math.abs(whole)}px]`}`;
+    return [{
+      ...say(this.id, { by: Math.abs(by), dir }),
+      key: this.id, text: 'svg', props: ['translate'], value: `${Math.round(by * 10) / 10}px`, n: by,
+      evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: 0.84,
+      suggest: { kind: 'advice', text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
+    }];
+  },
+};
+
+// #3. In a set of icons, round ones are drawn a little bigger than square ones, or they look smaller.
+export const overshoot = {
+  id: 'craft/overshoot', family: 'craft', number: [3], tier: TIER.advisory, owns: ['size'], once: 'ancestor', reads: ['kids', 'rect', 'ink'],
+  threshold: { set: 3, over: 1.04 },
+  check({ el, facts }) {
+    const svgs = facts.kids(el).map((k) => (k.localName === 'svg' ? k : iconOnly(k, facts))).filter(Boolean);
+    if (svgs.length < this.threshold.set) return [];
+    const w0 = facts.rect(svgs[0]).width;
+    if (svgs.some((g) => Math.abs(facts.rect(g).width - w0) > 0.5)) return []; // one set shares one size
+    const inks = svgs.map((g) => facts.ink(g));
+    if (inks.some((i) => !i?.bbox)) return [];
+    const square = (b) => Math.abs(b.w - b.h) / Math.max(b.w, b.h) <= 0.06;
+    const round = inks.filter((i) => square(i.bbox) && Math.abs(i.fill - Math.PI / 4) <= 0.05);
+    const box = inks.filter((i) => square(i.bbox) && i.fill >= 0.9);
+    if (!round.length || !box.length) return [];
+    const big = (i) => Math.max(i.bbox.w, i.bbox.h), sq = Math.max(...box.map(big)), rd = Math.min(...round.map(big));
+    if (rd >= sq * this.threshold.over) return [];
+    return [{
+      ...say(this.id, { rd, sq }),
+      key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
+      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: 0.8,
+      suggest: { kind: 'advice', text: 'Draw the round icon about 6% bigger (scale-[1.06]) so it reads the same size.' },
+    }];
+  },
+};
+
+// #50. An icon's stroke follows the weight of the words beside it, the way this app pairs them.
+const weightBand = (w) => ((parseInt(w, 10) || 400) >= 600 ? 'bold' : 'regular');
+const strokePairs = (facts) => {
+  const out = [];
+  for (const el of facts.items) {
+    if (!el.isConnected) continue;
+    const svg = facts.kids(el).find((k) => k.localName === 'svg');
+    if (!svg) continue;
+    const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
+    const w = host && facts.stroke(svg);
+    if (w) out.push({ el, svg, w, band: weightBand(facts.style(host).fontWeight) });
+  }
+  return out;
+};
+export const strokeWeight = {
+  id: 'craft/stroke-weight', family: 'craft', number: [50], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['kids', 'style', 'census'],
+  threshold: { sample: 8, off: 0.4, big: 40, heavy: 3 },
+  check({ el, facts }) {
+    const svg = facts.kids(el).find((k) => k.localName === 'svg');
+    const w = svg && facts.stroke(svg);
+    if (!w) return [];
+    const r = facts.rect(svg);
+    if (r.width >= this.threshold.big && w > this.threshold.heavy) {
+      return [{ ...say(this.id, { w, big: true }), key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
+        evidence: { stroke: Math.round(w * 10) / 10, size: Math.round(r.width) }, confidence: 0.84,
+        suggest: { kind: 'advice', text: 'Keep the stroke at the small size’s width as the icon grows (absoluteStrokeWidth, or [stroke-width:1.5]).' } }];
+    }
+    const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
+    if (!host) return [];
+    // the app's own pairing, learnt once per pass: for each weight band, the stroke most of its icons use
+    facts.strokes ??= strokePairs(facts);
+    const band = weightBand(facts.style(host).fontWeight), same = facts.strokes.filter((p) => p.band === band);
+    if (same.length < this.threshold.sample) return [];
+    const counts = new Map();
+    for (const p of same) { const k = Math.round(p.w * 4) / 4; counts.set(k, (counts.get(k) ?? 0) + 1); }
+    const [usual, n] = [...counts].sort((a, b) => b[1] - a[1])[0];
+    const mine = counts.get(Math.round(w * 4) / 4) ?? 0;
+    if (Math.abs(w - usual) < this.threshold.off || mine / same.length > 0.25 || n / same.length < 0.6) return [];
+    return [{
+      ...say(this.id, { w, usual }),
+      key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
+      evidence: { stroke: Math.round(w * 10) / 10, usual, band, sample: same.length }, confidence: 0.84,
+      suggest: { kind: 'advice', text: `Use the ${fmt(usual)} stroke the rest of the app pairs with this weight ([stroke-width:${usual}]).` },
+    }];
+  },
+};
+
+// #75 (static half). A scroll area with no scrollbar shows nothing at its edge: people don't know there is more.
+export const scrollCue = {
+  id: 'craft/scroll-cue', family: 'craft', number: [75], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
+  check({ el, facts }) {
+    const s = facts.style(el);
+    const y = /auto|scroll/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 4;
+    const x = !y && /auto|scroll/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 4;
+    if (!y && !x || el === document.scrollingElement || el === document.body) return [];
+    const b = facts.box(el);
+    const bar = y ? el.offsetWidth - el.clientWidth - b.bl - b.br : el.offsetHeight - el.clientHeight - b.bt - b.bb;
+    if (bar > 0) return []; // a scrollbar is the cue
+    const faded = (st) => st && (/gradient/.test(st.maskImage ?? '') || /gradient/.test(st.webkitMaskImage ?? ''));
+    const layered = /local/.test(s.backgroundAttachment);
+    const edge = [el, el.parentElement].filter(Boolean).some((n) => ['::before', '::after'].some((p) => /gradient/.test(getComputedStyle(n, p).backgroundImage)));
+    if (faded(s) || layered || edge) return [];
+    return [{
+      ...say(this.id, { x }),
+      key: this.id, text: utility(el, 'overflow') ?? 'overflow', props: [y ? 'overflow-y' : 'overflow-x'], value: y ? s.overflowY : s.overflowX, n: 0,
+      evidence: { hidden: Math.round(y ? el.scrollHeight - el.clientHeight : el.scrollWidth - el.clientWidth) }, confidence: 0.8,
+      suggest: { kind: 'advice', text: `Fade the ${x ? 'sides' : 'bottom'} where more is hidden: a mask-image gradient, or a background with background-attachment: local.` },
+    }];
+  },
+};
+
+// ── motion, static halves (the headless probes confirm them) ──
+
+// the class list's utilities under one variant, e.g. data-[state=open]:
+const variantOf = (el, v) => classesOf(el).split(/\s+/).filter((c) => c.startsWith(v)).map((c) => c.slice(v.length));
+const ms = (cls) => { const m = /^duration-(\d+)$/.exec(cls ?? ''); return m ? +m[1] : null; };
+const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
+
+// #31. A control answers a press within 100ms. Judged against the app: when some of its controls press and this one
+// doesn't, the press it uses is the fix (the engine never brings a style the app doesn't have).
+const pressIdiom = (facts) => {
+  const counts = new Map();
+  for (const el of facts.items) {
+    if (!el.isConnected || !el.matches(CONTROL)) continue;
+    for (const c of classesOf(el).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0];
+  return top ? { cls: top[0], n: top[1] } : null;
+};
+let ACTIVE = null; // selectors with :active in this document's sheets, read once per sheet count
+const activeSelectors = () => {
+  if (ACTIVE?.n === document.styleSheets.length) return ACTIVE.list;
+  const list = [];
+  const walk = (rules) => { for (const r of rules) { if (r.selectorText?.includes(':active')) list.push(r.selectorText.replace(/:active/g, '')); else if (r.cssRules) walk(r.cssRules); } };
+  for (const sh of document.styleSheets) { try { walk(sh.cssRules); } catch {} }
+  ACTIVE = { n: document.styleSheets.length, list };
+  return list;
+};
+export const pressFeedback = {
+  id: 'craft/press-feedback', family: 'craft', number: [31], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['style', 'census'],
+  threshold: { idiom: 2 },
+  check({ el, facts }) {
+    if (!el.matches('button, [role="button"]') || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
+    if (/(^|\s)active:/.test(classesOf(el)) || el.hasAttribute('aria-pressed')) return [];
+    facts.press ??= pressIdiom(facts) ?? false;
+    if (!facts.press || facts.press.n < this.threshold.idiom) return []; // an app that never presses is a page finding, headless
+    if (activeSelectors().some((sel) => { try { return sel.trim() && el.matches(sel); } catch { return false; } })) return [];
+    return [{
+      ...say(this.id, { idiom: facts.press.cls }),
+      key: this.id, text: facts.press.cls, props: ['transform'], value: 'none', n: 0,
+      evidence: { idiom: facts.press.cls, uses: facts.press.n }, confidence: 0.82,
+      suggest: { kind: 'class', from: '', to: facts.press.cls, why: 'the press the rest of the app uses' },
+    }];
+  },
+};
+
+// #68. A surface leaves faster than it came: the open and closed states share one duration.
+export const exitFaster = {
+  id: 'craft/exit-faster', family: 'craft', number: [68], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['style'],
+  check({ el }) {
+    const open = variantOf(el, 'data-[state=open]:'), closed = variantOf(el, 'data-[state=closed]:');
+    if (!open.length || !closed.length) return [];
+    if (closed.some((c) => ms(c) !== null)) return []; // the exit has its own duration
+    const own = classesOf(el).split(/\s+/).map(ms).find((n) => n !== null) ?? open.map(ms).find((n) => n !== null) ?? 150;
+    if (own < 80) return [];
+    const exit = [...STEPS].reverse().find((n) => n <= own * 0.8);
+    if (!exit) return [];
+    return [{
+      ...say(this.id, { enter: own, exit }),
+      key: this.id, text: `data-[state=closed]:duration-${exit}`, props: ['transition-duration'], value: `${own}ms`, n: own,
+      evidence: { enter: own, exit }, confidence: 0.8,
+      suggest: { kind: 'class', from: '', to: `data-[state=closed]:duration-${exit}`, why: 'leaving is quicker than arriving' },
+    }];
+  },
+};
+
+// #64. Motion that can be interrupted: keyframes on both states restart from their first frame when reversed.
+export const interruptible = {
+  id: 'craft/interruptible', family: 'craft', number: [64], tier: TIER.advisory, owns: ['motion'], once: 'ancestor', reads: ['style'],
+  check({ el }) {
+    const keyframed = (list) => list.some((c) => /^animate-/.test(c));
+    if (!keyframed(variantOf(el, 'data-[state=open]:')) || !keyframed(variantOf(el, 'data-[state=closed]:'))) return [];
+    return [{
+      ...say(this.id),
+      key: this.id, text: 'animate', props: ['animation'], value: 'keyframes', n: 0,
+      evidence: { keyframes: true }, confidence: 0.8,
+      suggest: { kind: 'advice', text: 'Drive open and closed with a transition on the state, so a close midway reverses from where it is.' },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading,
-  weightLevels, greyLevels, rhythm, ...RUN_RULES];
+  weightLevels, greyLevels, rhythm,
+  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];

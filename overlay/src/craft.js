@@ -29,6 +29,59 @@ const FLOOR = 0.8; // findings under this confidence are never shown
 const px = (v) => parseFloat(v) || 0;
 const letters = (s) => /\S/.test(s);
 
+// Ink (docs/briefs/craft-hard-rules.md, ink): what an inline icon actually draws, from its pixels. An off-DOM clone
+// with its computed paint inlined is rasterised at 4× in idle time; the result is kept by what it draws (one icon used
+// forty times is rasterised once). Until it lands a rule reads null and says nothing; when it lands, every Craft that
+// asked is told, and judges the page again.
+const INK_SCALE = 4;
+const INK = { done: new Map(), queue: new Map(), timer: 0, crafts: new Set() };
+const PAINT = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'opacity', 'fill-opacity', 'stroke-opacity', 'fill-rule', 'display', 'visibility'];
+function inkMarkup(svg, r) {
+  const clone = svg.cloneNode(true);
+  const from = [svg, ...svg.querySelectorAll('*')], to = [clone, ...clone.querySelectorAll('*')];
+  from.forEach((n, i) => {
+    const cs = getComputedStyle(n), d = to[i];
+    d.removeAttribute('class');
+    for (const p of PAINT) d.style.setProperty(p, cs.getPropertyValue(p));
+  });
+  const W = Math.round(r.width * INK_SCALE), H = Math.round(r.height * INK_SCALE);
+  if (!svg.getAttribute('viewBox')) clone.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', W); clone.setAttribute('height', H);
+  clone.style.width = `${W}px`; clone.style.height = `${H}px`; clone.style.color = '#000'; clone.style.translate = 'none'; clone.style.transform = 'none';
+  return { markup: new XMLSerializer().serializeToString(clone), W, H };
+}
+async function inkOf({ markup, W, H }) {
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup);
+  await img.decode();
+  const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(W, H) : Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, W, H);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1, a = 0, cx = 0, cy = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const v = d[(y * W + x) * 4 + 3] / 255;
+    if (v <= 0.1) continue;
+    a += v; cx += v * (x + 0.5); cy += v * (y + 0.5);
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 < 0) return { bbox: null, centroid: null, area: 0, fill: 0 };
+  const k = INK_SCALE, bbox = { x: x0 / k, y: y0 / k, w: (x1 - x0 + 1) / k, h: (y1 - y0 + 1) / k };
+  return { bbox, centroid: { x: cx / a / k, y: cy / a / k }, area: a / (k * k), fill: a / (k * k) / (bbox.w * bbox.h) };
+}
+function inkFlush() {
+  INK.timer = 0;
+  const batch = [...INK.queue]; INK.queue.clear();
+  Promise.all(batch.map(([key, job]) => inkOf(job).then((v) => INK.done.set(key, v), () => INK.done.set(key, false))))
+    .then(() => { for (const c of INK.crafts) c.inked(); });
+}
+function inkWant(key, job) {
+  if (INK.queue.has(key)) return;
+  INK.queue.set(key, job);
+  INK.timer ||= (typeof requestIdleCallback === 'function' ? requestIdleCallback(inkFlush, { timeout: 300 }) : setTimeout(inkFlush, 50));
+}
+
 // The measuring layer: every read the rules make, memoised for one pass. Reads only.
 export class Facts {
   #rects = new Map(); #styles = new Map(); #kids = new Map(); #text = new Map();
@@ -58,7 +111,7 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
@@ -126,6 +179,36 @@ export class Facts {
       if (q) { baseline = q.top + (q.height - (m.ascent + m.descent)) / 2 + m.ascent; break; }
     }
     return { ...m, halfLeading, lineHeight: lh, baseline };
+  }
+  // An inline icon's ink, in px of its own box: { bbox, centroid, area, fill } (fill = area / bbox area); null while it is
+  // rasterised (it lands in idle time and the page is judged again), for anything that isn't a small inline svg, and
+  // when it could not be read.
+  #ink = new Map();
+  ink(svg) {
+    if (svg?.localName !== 'svg') return null;
+    if (this.#ink.has(svg)) return this.#ink.get(svg);
+    const r = this.rect(svg);
+    let v = null;
+    if (r.width >= 4 && r.height >= 4 && r.width <= 64 && r.height <= 64) {
+      const job = inkMarkup(svg, r), key = `${job.W}x${job.H}|${job.markup}`;
+      const hit = INK.done.get(key);
+      if (hit === undefined) inkWant(key, job); else v = hit || null;
+    }
+    this.#ink.set(svg, v);
+    return v;
+  }
+  // An icon's stroke as drawn, in px: the first stroked shape's width, scaled from its viewBox; null for a filled icon.
+  stroke(svg) {
+    if (svg?.localName !== 'svg') return null;
+    const r = this.rect(svg), vb = svg.viewBox?.baseVal;
+    const scale = vb && vb.width > 0 ? r.width / vb.width : 1;
+    for (const n of [svg, ...svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse')]) {
+      const cs = getComputedStyle(n);
+      if (n === svg && n.children.length) continue; // the root only sets what its shapes inherit
+      if (cs.stroke === 'none' || cs.display === 'none' || !(px(cs.strokeWidth) > 0)) continue;
+      return cs.vectorEffect === 'non-scaling-stroke' ? px(cs.strokeWidth) : px(cs.strokeWidth) * scale;
+    }
+    return null;
   }
   // The headless facts (craft-headless.js): another condition's page, a gesture's timeline, the element's source.
   // Null in the live overlay, so the rules that need them stay quiet there.
@@ -262,7 +345,10 @@ function markOf(f) {
 
 export class Craft {
   #rules; #theme; #cache = new WeakMap(); // el → { sig, marks }
+  // told when a late fact (an icon's ink) lands: judge the page again
+  onFacts = null;
   constructor({ rules = RULES, theme } = {}) {
+    INK.crafts.add(this);
     this.#rules = rules;
     this.#theme = theme instanceof Theme ? theme : new Theme(theme ?? {});
   }
@@ -271,6 +357,7 @@ export class Craft {
 
   // Everything measured is measured again on the next run (a resize, a write, the page changed under us).
   invalidate() { this.#cache = new WeakMap(); }
+  inked() { this.invalidate(); this.onFacts?.(); }
 
   // items: [{ id, el, marks, dims, file }]. Returns the same items with each element's craft marks appended. One
   // measuring pass; no write to the page except the theme's colour probe, which runs first.

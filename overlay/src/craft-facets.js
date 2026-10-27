@@ -27,7 +27,7 @@ const TABLE = {
   size: [['width', 'height', 'min-width', 'max-width', 'min-height', 'max-height', 'inline-size', 'block-size'], ['w', 'h', 'size', 'min-w', 'max-w', 'min-h', 'max-h']],
   color: [['color', 'opacity'], ['opacity']],
   background: [['background', 'background-color', 'background-image'], ['bg']],
-  border: [['border', 'border-color', 'border-width', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'outline', 'outline-color', 'outline-width'], ['border', 'outline', 'ring']],
+  border: [['border', 'border-color', 'border-width', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'outline', 'outline-color', 'outline-width', 'stroke-width'], ['border', 'outline', 'ring', 'stroke']],
   shadow: [['box-shadow'], ['shadow']],
   'font-size': [['font-size'], []],
   'font-weight': [['font-weight', '-webkit-font-smoothing'], ['antialiased', 'subpixel-antialiased']],
