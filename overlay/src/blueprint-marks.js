@@ -474,7 +474,7 @@ export class MarkLayer {
       // what a screen reader hears: the line itself, then what is picked; no internal words (docs/copy/voice.md)
       const said = mark.title.replace(/`/g, '').replace(/\.?$/, '.');
       node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? '' : 'Known, recorded. '}${said}${fix?.to ? ` Picked ${fix.to}.` : ''}`);
-      node.hit.dataset.ledger = mark.ledger;
+      node.hit.dataset.ledger = mark.soft && mark.family === 'craft' ? 'soft' : mark.ledger; // an advisory is shown, not counted
       // what else this mark answers for: the findings the verdict folded under it (verdict.js)
       node.hit.dataset.also = (mark.also ?? []).map((x) => x.rule).join(' ');
       node.hit.toggleAttribute('aria-current', fix?.kind === 'current');

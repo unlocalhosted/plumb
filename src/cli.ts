@@ -42,7 +42,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
-       plumber propose [--family <name>] [--json] [--root <dir>] [--config <path>]
+       plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
        plumber habits [--json] [--root <dir>] [--config <path>]
        plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumber explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -51,7 +51,8 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber report [--markdown] [--since <git-ref>] [--root <dir>]
        plumber parity <tokens.json> [--format dtcg] [--strict] [--json]
 
-       plumber init | baseline [--force]
+       plumber init [--yes] [--family <name>=keep|skip] [--preset <name>|none] [--force]
+       plumber baseline [--force]
        plumber accept <key> --why "…"
        plumber accept --rule <rule> --site <file:line> --why "…"
        plumber accept-decisions [--why "…"]
@@ -90,7 +91,7 @@ async function main(): Promise<void> {
           yes: { type: 'boolean' }, json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
-          family: { type: 'string', multiple: true }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
+          family: { type: 'string', multiple: true }, preset: { type: 'string' }, decline: { type: 'string', multiple: true }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
@@ -129,9 +130,15 @@ async function main(): Promise<void> {
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
   const familyArgs: string[] = args.values.family ?? [];
   const family = familyArgs.at(-1);
-  if (familyArgs.length && !(deciding || ['check', 'propose'].includes(command))) throw new UsageError('--family requires plumber check, decisions or propose and a known family.\n  → plumber check --help');
+  if (familyArgs.length && !(deciding || ['check', 'propose', 'init'].includes(command))) throw new UsageError('--family requires plumber check, decisions, propose or init and a known family.\n  → plumber check --help');
   if (familyArgs.length && (deciding || command === 'check') && (familyArgs.length > 1 || !families.includes(family!))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
   if (command === 'propose' && familyArgs.length && (familyArgs.length > 1 || !proposalFamilies.includes(family as never))) throw new UsageError(`--family takes one of ${proposalFamilies.join(', ')}.\n  → plumber propose --family type`);
+  if (command === 'init') for (const item of familyArgs) {
+    const [name, answer, ...rest] = item.split('=');
+    if (!proposalFamilies.includes(name as never) || rest.length || answer !== undefined && !['keep', 'skip'].includes(answer)) throw new UsageError(`--family ${item}: use a family (${proposalFamilies.join(', ')}) with keep or skip.\n  → plumber init --family type=skip`);
+  }
+  if (args.values.decline?.length && command !== 'propose') throw new UsageError('--decline requires plumber propose.\n  → plumber propose --decline spacing=13px');
+  if (args.values.decline?.length && args.values.write) throw new UsageError('Choose --decline or --write.\n  → plumber propose --write');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
   if (command === 'craft' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
@@ -149,7 +156,7 @@ async function main(): Promise<void> {
   if (comparingTokens && !args.positionals[1]?.trim()) throw new UsageError('Provide a token export path for plumber parity.\n  → plumber parity tokens.json');
   if (args.values.changed && args.values.base !== undefined) throw new UsageError('Choose --changed (HEAD) or --base.\n  → plumber check --changed');
   const installAgents = validateAgents(Array.isArray(args.values.agent) ? args.values.agent : []);
-  if (args.values.write && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.\n  → plumber install --overlay --write');
+  if (args.values.write && command !== 'propose' && (!args.values.overlay || args.values.list)) throw new UsageError('--write requires install --overlay; omit --list.\n  → plumber install --overlay --write');
   if (command === 'install' && args.values.overlay && (args.values.hooks || args.values.ci || installAgents.length)) throw new UsageError('Install --overlay sets up host wiring only; omit --hooks, --ci and --agent.\n  → plumber install --overlay');
   if (args.values.hooks && installAgents.length) throw new UsageError('Use install --agent for selected agents and their hooks; --hooks installs both hooks only.\n  → plumber install --hooks');
   if (args.values.hooks && args.values.ci) throw new UsageError('Choose install --hooks for hooks only, or install --ci for agents, docs and CI.\n  → plumber install --ci');
@@ -194,8 +201,19 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'propose') {
-    // Chaos to system: harvest, cluster, ladder, name. Reads only.
+    // Chaos to system: harvest, cluster, ladder, name. Reads only, unless --write puts the tokens in your theme.
     const { loadProposal, formatProposal } = await import('./onboarding/propose.js');
+    if (args.values.decline?.length) {
+      const { declineValues } = await import('./onboarding/decline.js');
+      process.stdout.write(await declineValues(options.root, args.values.decline));
+      return;
+    }
+    if (args.values.write) {
+      const { proposeAndWrite } = await import('./onboarding/write.js');
+      const { text } = await analyzing(() => proposeAndWrite(options.root, { ...(options.config ? { config: options.config } : {}), ...(family ? { family: family as never } : {}) }));
+      process.stdout.write(text);
+      return;
+    }
     const { proposal } = await withCliProgress(options.root, !!args.values.json, () => loadProposal(options.root, { ...(options.config ? { config: options.config } : {}), ...(family ? { family: family as never } : {}) }));
     process.stdout.write(args.values.json ? `${JSON.stringify(proposal, null, 2)}\n` : formatProposal(proposal, rows => table(rows, [{ width: 18 }, { weight: 1 }, { width: 5, align: 'right' }, { width: 4, align: 'right' }, { width: 22, ink: 'dim' }, { weight: 2, ink: 'dim' }])));
     return;
@@ -217,7 +235,7 @@ async function main(): Promise<void> {
       await atomicWrite(resolve(sarifFile), `${JSON.stringify(sarif(craftReport(options.root, findings)), null, 2)}\n`);
     }
     process.stdout.write(args.values.json ? `${JSON.stringify({ schemaVersion: 1, tool, root: options.root, routes: pages, findings }, null, 2)}\n` : formatCraft(pages, findings, options.root));
-    process.exitCode = findings.length ? 1 : 0;
+    process.exitCode = findings.some((finding) => finding.severity === 'error') ? 1 : 0;
     return;
   }
   if (command === 'install' && args.values.overlay) {

@@ -172,6 +172,41 @@ export const CRAFT = {
     line: `${text} is cut at the end, where the name is.`,
     reason: 'Cut paths and ids in the middle.',
   }),
+  'text-wrap-role': ({ heading, lines }) => ({
+    label: heading ? 'Heading lines uneven' : 'Ragged paragraph',
+    line: heading ? `This heading breaks across ${lines} lines with uneven lengths. Use text-balance.` : `This text runs ${lines} lines with no care for its last one. Use text-pretty.`,
+    reason: heading ? 'Balanced lines read as one thought.' : 'Pretty wrapping avoids a lonely last word.',
+  }),
+  'continuous-corners': ({ r }) => ({
+    label: 'Corners could be smoother',
+    line: `${px(r)} round corners on a large surface. A squircle corner looks softer at the same size.`,
+    reason: 'Curvature that eases in looks gentler than a circle’s arc.',
+  }),
+  'optical-sizing': ({ family }) => ({
+    label: 'Optical size turned off',
+    line: `${family} has an optical-size axis, but it’s switched off here.`,
+    reason: 'Small text gets sturdier shapes and large text finer ones when the font picks its optical size.',
+  }),
+  'tinted-shadow': ({ ground }) => ({
+    label: 'Grey shadow on colour',
+    line: `A grey shadow on a ${ground} ground looks dirty. Tint it with the ground’s hue.`,
+    reason: 'Real shadows on colour take the colour, darker.',
+  }),
+  'eased-scrim': () => ({
+    label: 'Scrim has a hard edge',
+    line: 'This fade over the image is a straight line from dark to clear, so its edge shows.',
+    reason: 'An eased fade (more stops, dropping fast then slow) has no visible edge.',
+  }),
+  'pure-black-white': ({ black }) => ({
+    label: black ? 'Pure black area' : 'Pure white area',
+    line: black ? 'A large area of pure black. A tinted near-black reads better.' : 'A large area of pure white, outside your surface colour.',
+    reason: black ? 'Pure black is harsh next to anything with colour.' : 'Your other surfaces are tinted; this one escaped.',
+  }),
+  'content-size': ({ w, need }) => ({
+    label: 'Fixed width crushes its words',
+    line: `This is fixed at ${px(w)}, and its words need ${px(need)}. Let it fit its words.`,
+    reason: 'Fixed sizes break with real content and translations.',
+  }),
 };
 
 // A rule's words as the finding's fields: what (its label), title (its line), because (its reason).

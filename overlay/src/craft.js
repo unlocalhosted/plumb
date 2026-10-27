@@ -21,6 +21,7 @@
 import { RULES } from './craft-rules.js';
 import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL } from './craft-read.js';
+import { TIER } from './craft-facets.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -84,6 +85,16 @@ export class Theme {
   constructor({ decisions } = {}) { this.#decisions = decisions ?? (() => null); }
   // [{ name, short, px }] for radius and spacing; [{ name, short, rgb }] for color; [] while the decisions load
   scale(family) { return this.#measure()[family] ?? []; }
+  // whether a font family has an optical-size axis: two hidden spans set at opsz 8 and opsz 144 measure differently
+  // (the theme's probe is the one write the engine makes, before any element is read); memoised per family
+  #axes = new Map();
+  hasOpsz(family) {
+    if (this.#axes.has(family)) return this.#axes.get(family);
+    const span = (o) => { const e = document.createElement('span'); e.textContent = 'Hamburgefonstiv 0123'; e.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-family:${family};font-size:40px;font-variation-settings:"opsz" ${o}`; document.body.append(e); const w = e.getBoundingClientRect().width; e.remove(); return w; };
+    const has = Math.abs(span(8) - span(144)) > 0.5;
+    this.#axes.set(family, has);
+    return has;
+  }
   // whether the project's own theme names a token (a framework default is not the project's): --tracking-wide
   has(name) { const d = this.#decisions(); return Array.isArray(d) && d.some((x) => x.name === name && x.origin !== 'framework'); }
   // whether the decisions are in at all (before they load, nothing can be judged against them)
@@ -163,7 +174,8 @@ function markOf(f) {
   const suggest = f.suggest ?? null;
   const action = suggest?.kind === 'class' ? `Change \`${suggest.from}\` to \`${suggest.to}\`${suggest.why ? `: ${suggest.why}` : ''}.` : suggest?.text ?? '';
   return {
-    key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: false,
+    key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
+    ...(f.tier !== undefined ? { tier: f.tier } : {}),
     text: f.text, props: f.props ?? [], value: f.value, n: f.n,
     title: f.title, because: f.because, action, what: f.what,
     choices: [], pick: null,

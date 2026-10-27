@@ -72,7 +72,8 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     const hit = found.get(key);
     if (hit) continue; // a list's rows share one site
     const declaration: Declaration = { prop: record.rule, value: record.text, refs: [], when: [], site, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
-    found.set(key, makeFinding({ key, rule: record.rule, family: 'craft', severity: 'error', sites: [site], declaration, decisions: [],
+    // an advisory finding (a judgement of taste) is a note: shown, never failing the run
+    found.set(key, makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }));
   }
   return [...found.values()].sort((a, b) => a.sites[0]!.file.localeCompare(b.sites[0]!.file) || a.sites[0]!.line - b.sites[0]!.line || a.rule.localeCompare(b.rule));

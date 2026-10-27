@@ -45,7 +45,7 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600 } = {}) {
         if (hit) { hit.count++; continue; }
         found.set(key, {
           rule: m.rule, title: m.title, because: m.because, action: m.action, text: m.text, value: m.value ?? null,
-          confidence: m.craft?.confidence ?? null, evidence: m.craft?.evidence ?? {}, suggest: m.craft?.suggest ?? null,
+          confidence: m.craft?.confidence ?? null, evidence: m.craft?.evidence ?? {}, suggest: m.craft?.suggest ?? null, soft: !!m.soft,
           file: site?.file ?? item.file ?? null, line: site?.line ?? null, column: site?.column ?? null,
           component: site?.component ?? null, tag: item.el.localName, count: 1,
         });

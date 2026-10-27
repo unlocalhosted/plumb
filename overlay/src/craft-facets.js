@@ -13,7 +13,8 @@
  * `color` includes opacity as it affects text: faded text, low contrast and disabled-by-opacity are one facet.
  * ───────────────────────────────────────────────────────── */
 
-export const TIER = { access: 0, legibility: 1, theme: 2, craft: 3 };
+// advisory: a judgement of taste, shown softly and never failing a run (docs/briefs/craft-hard-rules.md)
+export const TIER = { access: 0, legibility: 1, theme: 2, craft: 3, advisory: 4 };
 
 // facet → [props, utility bases]
 const TABLE = {
@@ -22,20 +23,24 @@ const TABLE = {
   'margin-x': [['margin-left', 'margin-right', 'margin-inline'], ['m', 'mx', 'ml', 'mr', 'ms', 'me']],
   'margin-y': [['margin-top', 'margin-bottom', 'margin-block'], ['m', 'my', 'mt', 'mb']],
   gap: [['gap', 'row-gap', 'column-gap'], ['gap', 'gap-x', 'gap-y', 'space-x', 'space-y']],
-  radius: [['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius'], ['rounded']],
+  radius: [['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius', 'corner-shape'], ['rounded', 'corner']],
   size: [['width', 'height', 'min-width', 'max-width', 'min-height', 'max-height', 'inline-size', 'block-size'], ['w', 'h', 'size', 'min-w', 'max-w', 'min-h', 'max-h']],
   color: [['color', 'opacity'], ['opacity']],
   background: [['background', 'background-color', 'background-image'], ['bg']],
   border: [['border', 'border-color', 'border-width', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'outline', 'outline-color', 'outline-width'], ['border', 'outline', 'ring']],
   shadow: [['box-shadow'], ['shadow']],
   'font-size': [['font-size'], []],
-  'font-weight': [['font-weight'], []],
+  'font-weight': [['font-weight', '-webkit-font-smoothing'], ['antialiased', 'subpixel-antialiased']],
   'line-height': [['line-height'], ['leading']],
   'letter-spacing': [['letter-spacing'], ['tracking']],
-  'font-features': [['font-variant-numeric', 'font-feature-settings'], ['tabular-nums', 'proportional-nums', 'lining-nums', 'oldstyle-nums']],
+  'font-features': [['font-variant-numeric', 'font-feature-settings', 'font-optical-sizing', 'font-variation-settings'], ['tabular-nums', 'proportional-nums', 'lining-nums', 'oldstyle-nums']],
   'text-flow': [['text-overflow', 'text-wrap', 'text-indent', 'white-space', 'hanging-punctuation'], ['truncate', 'text-balance', 'text-pretty', 'text-wrap', 'text-nowrap', 'indent', 'whitespace', 'text-ellipsis', 'text-clip']],
   transform: [['transform', 'translate', 'scale', 'rotate', 'animation'], ['translate', 'scale', 'rotate', 'animate']],
   stacking: [['z-index', 'isolation'], ['z', 'isolate']],
+  motion: [['transition', 'transition-property', 'transition-duration', 'transition-timing-function', 'animation', 'animation-duration'], ['transition', 'duration', 'ease', 'delay', 'animate']],
+  align: [['align-items', 'justify-content', 'justify-items', 'align-self', 'place-items'], ['items', 'justify', 'self', 'place']],
+  interaction: [['touch-action', '-webkit-tap-highlight-color', 'user-select'], ['touch', 'select']],
+  'text-box': [['text-box-trim', 'text-box-edge'], []],
   scroll: [['overflow', 'overflow-x', 'overflow-y', 'scrollbar-gutter', 'scroll-margin-top', 'overscroll-behavior'], ['overflow', 'scroll-mt', 'overscroll']],
 };
 const BY_PROP = new Map();

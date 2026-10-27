@@ -642,7 +642,7 @@ export const tabularNums = {
 
 // #18. No widows in headings: balance the lines.
 export const headingWidow = {
-  id: 'craft/heading-widow', family: 'craft', number: [18], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'text'],
+  id: 'craft/heading-widow', family: 'craft', number: [18], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', refines: ['craft/text-wrap-role'], reads: ['style', 'text'],
   threshold: { words: 3 },
   check({ el, facts }) {
     if (!el.matches('h1, h2, h3') || !facts.text(el)) return [];
@@ -1041,6 +1041,202 @@ export const middleTruncate = {
   },
 };
 
+// ── hard rules, layer 0: decisions about noise, no new primitive (docs/briefs/craft-hard-rules.md) ─────────
+
+// sRGB → OKLab [L, a, b] and chroma
+function oklab([r, g, b]) {
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const [R, G, B] = [lin(r), lin(g), lin(b)];
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B), m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B), q = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q];
+}
+const chroma = (rgbv) => { const [, a, b] = oklab(rgbv); return Math.hypot(a, b); };
+const hueOf = (rgbv) => { const [, a, b] = oklab(rgbv); return ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360; };
+
+// #48. text-wrap by role: headings balance, running text pretty.
+export const textWrapRole = {
+  id: 'craft/text-wrap-role', family: 'craft', number: [48], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  threshold: { width: 300 },
+  check({ el, facts }) {
+    if (!facts.text(el)) return [];
+    const s = facts.style(el);
+    if (/balance|pretty|nowrap/.test(`${s.textWrap ?? ''} ${s.textWrapStyle ?? ''} ${s.textWrapMode ?? ''}`) || s.whiteSpace === 'nowrap' || s.textOverflow === 'ellipsis') return [];
+    const body = px(facts.style(document.body).fontSize) || 16, fs = px(s.fontSize);
+    const heading = el.matches('h1, h2, h3, h4') || fs >= body * 1.5;
+    // the lines as drawn: their widths, from the words' own boxes
+    const range = document.createRange(); range.selectNodeContents(el);
+    const rows = new Map();
+    for (const q of range.getClientRects()) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
+    const widths = [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, w]) => w.r - w.l);
+    const lines = widths.length;
+    if (lines < 2) return [];
+    const ratio = widths.at(-1) / Math.max(...widths.slice(0, -1));
+    // a heading whose last line is less than half the others: visibly uneven; running text whose last line is a
+    // near-orphan (under 15% of the others), only on a wide block
+    const uneven = heading && ratio < 0.5;
+    const block = !heading && el.matches('p, li, dd, blockquote') && lines >= 3 && facts.rect(el).width >= this.threshold.width && ratio < 0.15;
+    if (!uneven && !block) return [];
+    const to = heading ? 'text-balance' : 'text-pretty';
+    return [{
+      ...say(this.id, { heading, lines }),
+      key: this.id, text: 'text-wrap', props: ['text-wrap'], value: s.textWrap ?? 'wrap', n: lines,
+      evidence: { lines, heading, ratio: Math.round(ratio * 100) / 100 }, confidence: 0.82,
+      suggest: { kind: 'class', from: '', to, why: heading ? 'even lines' : 'no lonely last word', sets: { textWrap: heading ? 'balance' : 'pretty', textWrapStyle: heading ? 'balance' : 'pretty' } },
+    }];
+  },
+};
+
+// #40. Continuous corners, where the browser draws them: an advisory (taste), on large surfaces only.
+export const continuousCorners = {
+  id: 'craft/continuous-corners', family: 'craft', number: [40], tier: TIER.advisory, owns: ['radius'], once: 'ancestor', reads: ['style', 'rect'],
+  threshold: { size: 160, radius: 16 },
+  check({ el, facts }) {
+    if (!globalThis.CSS?.supports?.('corner-shape', 'squircle')) return [];
+    const s = facts.style(el), r = facts.rect(el);
+    const rad = px(s.borderTopLeftRadius);
+    if (r.width < this.threshold.size || r.height < this.threshold.size || rad < this.threshold.radius) return [];
+    // a plain round corner computes as superellipse(1); anything else is already shaped on purpose
+    if (!/^(round|superellipse\(1\))?$/.test(s.getPropertyValue('corner-shape').trim())) return [];
+    if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || s.boxShadow !== 'none')) return [];
+    return [{
+      ...say(this.id, { r: rad }),
+      key: this.id, tier: TIER.advisory, text: utility(el, 'rounded') ?? 'border-radius', props: ['border-radius'], value: `${rad}px`, n: rad,
+      evidence: { radius: rad, width: r.width, height: r.height }, confidence: 0.8,
+      suggest: { kind: 'class', from: '', to: '[corner-shape:squircle]', why: 'a smoother curve at the same size', sets: { cornerShape: 'squircle' } },
+    }];
+  },
+};
+
+// #49. Optical sizing on, when the font has the axis.
+export const opticalSizing = {
+  id: 'craft/optical-sizing', family: 'craft', number: [49], tier: TIER.craft, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
+  threshold: {},
+  check({ el, facts }, theme) {
+    if (!facts.text(el)) return [];
+    const s = facts.style(el);
+    const off = s.fontOpticalSizing === 'none' || /"opsz"/.test(s.fontVariationSettings ?? '');
+    if (!off) return [];
+    // the axis is only judged where this element itself turns it off (not where it inherits it)
+    const parent = el.parentElement && facts.style(el.parentElement);
+    if (parent && parent.fontOpticalSizing === s.fontOpticalSizing && parent.fontVariationSettings === s.fontVariationSettings) return [];
+    const family = s.fontFamily.split(',')[0].replace(/["']/g, '').trim();
+    if (!theme.hasOpsz?.(family)) return [];
+    const cls = classesOf(el).split(/\s+/).find((c) => /^\[font-(optical-sizing|variation-settings):/.test(c));
+    return [{
+      ...say(this.id, { family }),
+      key: this.id, text: cls ?? 'font-optical-sizing', props: ['font-optical-sizing'], value: s.fontOpticalSizing, n: 0,
+      evidence: { family, settings: s.fontVariationSettings }, confidence: 0.84,
+      suggest: { kind: 'advice', text: cls ? `Remove ${cls} so the font picks its optical size.` : 'Remove font-optical-sizing: none (or the fixed "opsz") so the font picks its optical size.' },
+    }];
+  },
+};
+
+// #21 + #52. A grey shadow on a coloured ground: tint it.
+export const tintedShadow = {
+  id: 'craft/tinted-shadow', family: 'craft', number: [21, 52], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style', 'ground'],
+  threshold: { ground: 0.03, shadow: 0.01, alpha: 0.1 },
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (s.boxShadow === 'none' || !el.parentElement) return [];
+    const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
+    const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > this.threshold.alpha);
+    if (!colours.length) return [];
+    const ground = facts.ground(el.parentElement);
+    if (chroma(ground) <= this.threshold.ground || !colours.every((c) => chroma(c) < this.threshold.shadow)) return [];
+    const h = Math.round(hueOf(ground)), a = Math.max(...colours.map((c) => c[3]));
+    return [{
+      ...say(this.id, { ground: hex(ground) }),
+      key: this.id, text: utility(el, 'shadow') ?? 'box-shadow', props: ['box-shadow'], value: s.boxShadow, n: a,
+      evidence: { ground: hex(ground), hue: h }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Tint the shadow: oklch(0.3 0.05 ${h} / ${a.toFixed(2)}) in place of its grey.` },
+    }];
+  },
+};
+
+// #56. A two-stop scrim over an image: ease it.
+export const easedScrim = {
+  id: 'craft/eased-scrim', family: 'craft', number: [56], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  threshold: { length: 80 },
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (!/^linear-gradient\(/.test(s.backgroundImage) || /,\s*linear-gradient/.test(s.backgroundImage) || s.position !== 'absolute') return [];
+    const stops = [...s.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0]));
+    if (stops.length !== 2) return [];
+    const clear = stops.find((c) => c[3] === 0), dark = stops.find((c) => c[3] >= 0.5 && oklab(c)[0] < 0.2);
+    if (!clear || !dark) return [];
+    const r = facts.rect(el);
+    if (Math.max(r.width, r.height) < this.threshold.length) return [];
+    // over media: an image, a video or a picture beside it or around it, covering half of it or more
+    const media = [...(el.parentElement?.querySelectorAll('img, video, picture') ?? [])].find((m) => {
+      const q = m.getBoundingClientRect();
+      const w = Math.max(0, Math.min(q.right, r.right) - Math.max(q.left, r.left)), h = Math.max(0, Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top));
+      return w * h >= r.width * r.height * 0.5;
+    });
+    if (!media) return [];
+    const c = `rgb(${dark.slice(0, 3).join('_')}`;
+    return [{
+      ...say(this.id, {}),
+      key: this.id, text: 'background-image', props: ['background-image'], value: 'linear', n: 2,
+      evidence: { dark: hex(dark) }, confidence: 0.83,
+      suggest: { kind: 'advice', text: `Ease it: bg-[linear-gradient(to_top,${c}/${dark[3]})_0%,${c}/${(dark[3] * 0.6).toFixed(2)})_30%,${c}/${(dark[3] * 0.25).toFixed(2)})_60%,transparent_100%)].` },
+    }];
+  },
+};
+
+// #25. No pure black or white on large areas (white only where the theme's surfaces are tinted; else it is taste).
+export const pureBlackWhite = {
+  id: 'craft/pure-black-white', family: 'craft', number: [25], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  threshold: { share: 0.25, area: 200000 },
+  check({ el, facts }, theme) {
+    if (el === document.body || el === document.documentElement) return [];
+    const s = facts.style(el), c = rgb(s.backgroundColor);
+    if (!c || c[3] < 1) return [];
+    const black = c[0] === 0 && c[1] === 0 && c[2] === 0, white = c[0] === 255 && c[1] === 255 && c[2] === 255;
+    if (!black && !white) return [];
+    const r = facts.rect(el), area = r.width * r.height;
+    if (area < this.threshold.area && area < innerWidth * innerHeight * this.threshold.share) return [];
+    // a colour the theme names (bg-surface that happens to be white) is the project's decision, not an escape
+    const own = colourClass(el, 'bg', theme);
+    if (own && theme.colors().some((t) => own === `bg-${t.short}`)) return [];
+    const tinted = theme.colors().find((t) => /surface|paper|ground|background/.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
+    const near = black ? theme.nearestColor([20, 20, 22], 40) : tinted;
+    const tier = black || tinted ? TIER.craft : TIER.advisory;
+    return [{
+      ...say(this.id, { black }),
+      key: this.id, tier, text: own ?? 'background-color', props: ['background-color'], value: hex(c), n: area,
+      evidence: { colour: hex(c), area: Math.round(area) }, confidence: 0.8,
+      suggest: near && own ? { kind: 'class', from: own, to: `bg-${near.short}`, why: black ? 'a near-black from your theme' : 'your tinted surface' } : { kind: 'advice', text: black ? 'Use a tinted near-black, 2–3% toward your brand hue.' : 'Tint it 2–3% toward your brand hue, or use your surface colour.' },
+    }];
+  },
+};
+
+// #33. A fixed width that crushes its words: let it fit them.
+export const contentSize = {
+  id: 'craft/content-size', family: 'craft', number: [33], tier: TIER.craft, owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  threshold: { slack: 0.2 },
+  check({ el, facts }) {
+    if (!el.matches('button, a, [role="button"], span, label') || el.matches('input, td, th, img')) return [];
+    if (!facts.text(el)) return [];
+    const parent = el.parentElement && facts.style(el.parentElement);
+    if (parent && /grid/.test(parent.display)) return [];
+    const cls = classesOf(el).split(/\s+/).find((c) => /^w-(\[\d+(\.\d+)?px\]|\d+(\.\d+)?)$/.test(c));
+    if (!cls) return [];
+    const s = facts.style(el), b = facts.box(el), r = facts.rect(el);
+    const inner = r.width - b.pl - b.pr - b.bl - b.br;
+    const range = document.createRange(); range.selectNodeContents(el);
+    const need = Math.max(...[...range.getClientRects()].map((q) => q.right), 0) - Math.min(...[...range.getClientRects()].map((q) => q.left), Infinity);
+    const overflow = el.scrollWidth > el.clientWidth + 1 || lineCount(el, facts) > 1 && s.whiteSpace !== 'normal';
+    if (!(overflow || (need > 0 && (inner - need) / inner < this.threshold.slack && lineCount(el, facts) > 1))) return [];
+    return [{
+      ...say(this.id, { w: r.width, need: Math.ceil(need + b.pl + b.pr) }),
+      key: this.id, text: cls, props: ['width'], value: `${r.width}px`, n: r.width,
+      evidence: { width: r.width, need }, confidence: 0.82,
+      suggest: { kind: 'class', from: cls, to: 'w-auto', why: 'fits its words', sets: { width: 'auto' } },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
-  truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate];
+  truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
+  textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize];

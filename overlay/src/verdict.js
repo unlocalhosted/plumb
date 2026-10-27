@@ -69,7 +69,7 @@ function annotate(m, byId) {
   if (m.facets) return { ...m, also: [...(m.also ?? [])] };
   if (m.family === 'craft') {
     const r = byId.get(m.rule) ?? {};
-    return { ...m, tier: r.tier ?? TIER.craft, facets: r.owns ?? [], once: r.once ?? 'ancestor', refines: r.refines ?? [], also: [] };
+    return { ...m, tier: m.tier ?? r.tier ?? TIER.craft, facets: r.owns ?? [], once: r.once ?? 'ancestor', refines: r.refines ?? [], also: [] };
   }
   // a drift mark is about the property it sets (its class names it when the declaration doesn't)
   const facets = [...new Set([...(m.props ?? []).map(facetOf), facetOfClass(m.text ?? '')].filter(Boolean))].slice(0, 1);

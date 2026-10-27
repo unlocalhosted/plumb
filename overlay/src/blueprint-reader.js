@@ -263,7 +263,8 @@ export class Reader {
     const checked = order.filter((i) => i.state === 'ready' && i.checked).length;
     const notChecked = read - checked;
     const outsideSource = order.filter((i) => i.state === 'ready' && i.outsideSource).length;
-    const drift = order.reduce((n, i) => n + (marksOf.get(i.id) ?? i.marks).filter((m) => m.ledger === 'new').length, 0);
+    // an advisory mark (soft) is shown, but the count is of problems
+    const drift = order.reduce((n, i) => n + (marksOf.get(i.id) ?? i.marks).filter((m) => m.ledger === 'new' && !(m.soft && m.family === 'craft')).length, 0);
     const on = order.reduce((n, i) => n + i.dims.length, 0);
     const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}`;
     if (key !== this.#progress) {
