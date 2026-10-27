@@ -293,10 +293,47 @@ export const CRAFT = {
     line: 'The edges look the same at the top as at the end.',
     reason: 'People can’t tell more is hidden. Fade the edge that has more behind it.',
   }),
-  'spinner-timing': ({ ms }) => ({
+  'spinner-timing': ({ ms, press }) => ({
     label: 'Spinner flashes',
-    line: `On a quick reply this spinner shows for just ${ms}ms.`,
+    line: press ? `The spinner shows ${ms}ms after the press and flashes on quick replies.` : `On a quick reply this spinner shows for just ${ms}ms.`,
     reason: 'A blink is worse than nothing. Wait 200ms, then keep it up for 500ms.',
+  }),
+  'press-feedback-probe': ({ first }) => ({
+    label: 'No response to a press',
+    line: first === null ? 'Nothing changes while this is pressed.' : `It answers a press after ${first}ms.`,
+    reason: 'Answered within 100ms, a press feels connected. Later, it feels broken.',
+  }),
+  'interruptible-probe': () => ({
+    label: 'Jumps when reversed',
+    line: 'Closed halfway, it jumps back to the start of its exit.',
+    reason: 'Keyframes restart from the first frame. A transition reverses from where it is.',
+  }),
+  'menu-pointerdown': () => ({
+    label: 'Menu opens late',
+    line: 'This menu waits for the mouse button to come back up.',
+    reason: 'Opening on the press feels instant, and lets people press, drag and release to pick.',
+  }),
+  'tooltip-delay': ({ kind, ms }) => ({
+    label: { quick: 'Tooltip flickers', slow: 'Tooltip is slow', skip: 'Next tooltip waits again', cool: 'Tooltip forgets too fast' }[kind],
+    line: { quick: `The tooltip shows after ${ms}ms, so it flickers as the mouse passes.`, slow: `The tooltip takes ${ms}ms to show.`,
+      skip: `Moving to the next tooltip waits ${ms}ms again.`, cool: `Coming back after 100ms waits ${ms}ms again.` }[kind],
+    reason: { quick: 'Wait about 500ms for the first one, so a pass-over shows nothing.', slow: 'Past a second, people think there isn’t one. About 500ms works.',
+      skip: 'Once one is open, the next should show at once.', cool: 'Keep the wait off for about 300ms after one closes.' }[kind],
+  }),
+  'palette-motion': ({ enter, combo }) => ({
+    label: 'Shortcut opens slowly',
+    line: `${combo} opens it with a ${enter}ms entrance.`,
+    reason: 'A shortcut people use all day shouldn’t make them wait on motion.',
+  }),
+  'submenu-path': () => ({
+    label: 'Submenu closes on the way',
+    line: 'The submenu closes when the pointer crosses the next item.',
+    reason: 'People cut corners. Give it a safe triangle, or 300ms of grace.',
+  }),
+  overdrag: ({ kind }) => ({
+    label: kind === 'dead' ? 'Hard stop when dragged' : 'No limit when dragged',
+    line: kind === 'dead' ? 'Drag it past its end and it stops dead.' : 'Drag it as far as you like and it follows, with no limit.',
+    reason: 'Past its limit, something should give: move less than the pointer, then spring back.',
   }),
   // ── end of headless rules ──
 };

@@ -201,6 +201,43 @@ export function heightsAt(keysIn) {
   return keysIn.map((k) => { const el = fromKey(k); return { at: k, h: el ? round1(el.getBoundingClientRect().height) : null, n: el ? [...el.children].filter((c) => c.getClientRects().length).length : null }; });
 }
 
+// ── probes: what a gesture did ──────────────────────────────
+
+// The elements a gesture may be tried on, by key. A control inside a form, a submit button, a link and a disabled
+// control are never in the list: a probe presses buttons, it never submits, follows or sends anything.
+export function candidates() {
+  const seen = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && !el.closest('plumb-overlay, [inert], [hidden]'); };
+  const safe = (el) => !el.closest('form') && !el.form && !el.closest('a[href]') && el.getAttribute('type') !== 'submit' && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+  const all = [...document.body.querySelectorAll('button, [role="button"]')].filter((e) => seen(e) && safe(e));
+  const keysOf = (list) => list.map(pathKey);
+  return {
+    presses: keysOf(all.filter((e) => !e.matches('[aria-pressed], [aria-expanded], [aria-haspopup], [role="tab"]'))),
+    toggles: keysOf(all.filter((e) => e.matches('[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded], [aria-controls]'))),
+    menus: keysOf(all.filter((e) => e.matches('[aria-haspopup="menu"], [aria-haspopup="true"]'))),
+    tooltips: keysOf(all.filter((e) => e.matches('[data-state="closed"], [aria-describedby], [data-tooltip]') && !e.matches('[aria-haspopup], [aria-expanded]'))),
+    // things that follow a finger: touch-action taken off the browser. A drawer from a library that ships its own give (Vaul) is not tried.
+    drags: [...document.body.querySelectorAll('*')].filter((e) => seen(e) && !e.closest('[data-vaul-drawer], [data-vaul-handle]') && !e.matches('input, textarea, select, [role="slider"]') && /^(none|pan-x|pan-y)$/.test(getComputedStyle(e).touchAction)).map(pathKey),
+  };
+}
+
+// gesture|place → what the gesture did there. A record may be put under two places (a surface and its trigger); the
+// rule that reads it speaks on one of them.
+const probes = new Map();
+const tooltipKind = (r) => (r.t1 !== null && r.t1 < 200 ? 'quick' : r.t1 !== null && r.t1 > 1000 ? 'slow' : r.t2 !== null && r.t2 > 150 ? 'skip' : r.t3 !== null && r.t3 > 150 ? 'cool' : null);
+export function probesIn(list) {
+  probes.clear();
+  const led = new Set();
+  for (const { gesture, k, rec } of list) {
+    // a delay is the provider's, not one trigger's: the first trigger with each kind of trouble speaks for them all
+    if (gesture === 'tooltip') { const kind = tooltipKind(rec); if (kind && !led.has(kind)) { led.add(kind); rec.lead = kind; } }
+    probes.set(`${gesture}|${k}`, rec);
+  }
+  resetKeys();
+}
+// the element a toggle's finding is drawn on: its surface when that is on the page at rest, else its trigger
+const placed = (el, p) => pathKey(el) === (p.surface && fromKey(p.surface) ? p.surface : p.trigger);
+const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
+
 // ── rules ───────────────────────────────────────────────────
 
 const isHighlight = (l) => l.inset && l.y >= 1 && l.rgb && oklab(l.rgb)[0] > 0.7 && l.rgb[3] <= 0.15;
@@ -290,11 +327,156 @@ export const scrollCueSeen = {
   },
 };
 
+// #68, measured. Open it and close it and read the animations: the exit is no quicker than the entrance. The same rule
+// as the still half in craft-rules.js (the same facet): when both speak, the measured one is kept.
+export const exitFasterProbe = {
+  id: 'craft/exit-faster', family: 'craft', number: [68], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
+  threshold: { instant: 80, ratio: 0.9 },
+  check({ el, facts }) {
+    const p = facts.probe(el, 'toggle');
+    if (!p || p.exit === null || p.enter < this.threshold.instant || !placed(el, p) || p.exit / p.enter <= this.threshold.ratio) return [];
+    const under = STEPS.filter((n) => n <= p.enter * 0.8);
+    const step = under.sort((a, b) => Math.abs(a - p.enter * 0.7) - Math.abs(b - p.enter * 0.7))[0];
+    const to = step ? `data-[state=closed]:duration-${step}` : null;
+    return [{
+      ...say(this.id, { enter: Math.round(p.enter), exit: step ?? Math.round(p.enter * 0.7) }),
+      key: this.id, text: to ?? 'transition-duration', props: ['transition-duration'], value: `${Math.round(p.enter)}ms`, n: p.enter,
+      evidence: { enter: Math.round(p.enter), exit: Math.round(p.exit), measured: true }, confidence: 0.92,
+      suggest: to && p.surface && fromKey(p.surface) ? { kind: 'class', from: '', to, why: 'leaving is quicker than arriving' }
+        : { kind: 'advice', text: `Close it in about ${Math.round(p.enter * 0.7)}ms: a shorter duration on the closed state.` },
+    }];
+  },
+};
+
+// #64, measured. Close it 40% into its entrance: the motion must carry on from where it is. Keyframes cannot: the exit
+// is a new animation that begins at its own first frame (a frame-to-frame jump can't tell that from a fast transition).
+export const interruptibleProbe = {
+  id: 'craft/interruptible', family: 'craft', number: [64], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
+  check({ el, facts }) {
+    const p = facts.probe(el, 'toggle');
+    if (!p?.restart || !placed(el, p)) return [];
+    return [{
+      ...say('craft/interruptible-probe', {}),
+      key: this.id, text: 'animation', props: ['animation'], value: 'keyframes', n: 1,
+      evidence: { restarted: true, opacityStep: Math.round(p.jump.opacity * 100) / 100, measured: true }, confidence: 0.92,
+      suggest: { kind: 'advice', text: 'Drive open and closed with a transition on the state, so a close midway reverses from where it is.' },
+    }];
+  },
+};
+
+// #31, measured. Press it and read its style every frame: something changes within 100ms, or the press says nothing.
+// Judged against the app, as its still half is: it speaks when the app's other controls do answer a press (two or more
+// use an active: style), and says that style. A page that never answers a press is a page finding, not one button's.
+export const pressFeedbackProbe = {
+  id: 'craft/press-feedback', family: 'craft', number: [31], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:press'],
+  threshold: { within: 100, idiom: 2 },
+  check({ el, facts }) {
+    const p = facts.probe(el, 'press');
+    if (!p || (p.first !== null && p.first <= this.threshold.within)) return [];
+    const counts = new Map();
+    for (const e of facts.items ?? []) if (e.isConnected && e.matches('button, [role="button"]')) for (const c of classesOf(e).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
+    const [idiom, uses] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? [];
+    if (!idiom || uses < this.threshold.idiom) return [];
+    return [{
+      ...say('craft/press-feedback-probe', { first: p.first === null ? null : Math.round(p.first) }),
+      key: this.id, text: idiom, props: ['transform'], value: 'none', n: p.first ?? 0,
+      evidence: { firstChangeMs: p.first === null ? null : Math.round(p.first), idiom, uses, measured: true }, confidence: 0.92,
+      suggest: { kind: 'class', from: '', to: idiom, why: 'the press the rest of the app uses' },
+    }];
+  },
+};
+
+// #61. A menu opens on the press, not after the button comes back up.
+export const menuPointerdown = {
+  id: 'craft/menu-pointerdown', family: 'craft', number: [61], tier: TIER.craft, owns: ['interaction'], once: 'ancestor', reads: ['probe:menu-down'],
+  check({ el, facts }) {
+    const p = facts.probe(el, 'menu-down');
+    if (!p || p.down) return [];
+    return [{
+      ...say(this.id, {}),
+      key: this.id, text: 'menu', props: ['touch-action'], value: 'click', n: 0,
+      evidence: { openedOnPress: false, measured: true }, confidence: 0.88,
+      suggest: { kind: 'advice', text: 'Open it on pointerdown, as Radix’s DropdownMenu and Base UI’s Menu do, so a press-drag-release can pick an item.' },
+    }];
+  },
+};
+
+// #60. Tooltips wait a beat for the first, then none for the next.
+export const tooltipDelay = {
+  id: 'craft/tooltip-delay', family: 'craft', number: [60], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:tooltip'],
+  check({ el, facts }) {
+    const p = facts.probe(el, 'tooltip');
+    if (!p?.lead) return [];
+    const ms = { quick: p.t1, slow: p.t1, skip: p.t2, cool: p.t3 }[p.lead];
+    return [{
+      ...say(this.id, { kind: p.lead, ms: Math.round(ms) }),
+      key: `${this.id}@${p.lead}`, text: 'tooltip', props: ['transition-delay'], value: `${Math.round(ms)}ms`, n: ms,
+      evidence: { first: p.t1 === null ? null : Math.round(p.t1), next: p.t2 === null ? null : Math.round(p.t2), back: p.t3 === null ? null : Math.round(p.t3), measured: true }, confidence: 0.88,
+      suggest: { kind: 'advice', text: 'On the tooltip provider: delayDuration={500} skipDelayDuration={300}.' },
+    }];
+  },
+};
+
+// #62. What a keyboard shortcut opens is there at once: no entrance on something used a hundred times a day.
+export const paletteMotion = {
+  id: 'craft/palette-motion', family: 'craft', number: [62], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:keys'],
+  threshold: { enter: 100 },
+  check({ el, facts }) {
+    const p = facts.probe(el, 'keys');
+    if (!p || p.enter < this.threshold.enter) return [];
+    return [{
+      ...say(this.id, { enter: Math.round(p.enter), combo: p.combo }),
+      key: this.id, text: 'animate-in', props: ['animation'], value: `${Math.round(p.enter)}ms`, n: p.enter,
+      // the surface is not on the page at rest: the probe read where its code lives while it was open
+      evidence: { combo: p.combo, enter: Math.round(p.enter), measured: true, ...(p.site ? { at: p.site } : {}) }, confidence: 0.88,
+      suggest: { kind: 'advice', text: 'Open it with no entrance, or a fade under 80ms. Take animate-in off it.' },
+    }];
+  },
+};
+
+// #59. A submenu stays open while the pointer crosses the next item on its way to it.
+export const submenuPath = {
+  id: 'craft/submenu-path', family: 'craft', number: [59], tier: TIER.legibility, owns: ['interaction'], once: 'ancestor', reads: ['probe:submenu'],
+  check({ el, facts }) {
+    const p = facts.probe(el, 'submenu');
+    if (!p?.lost) return [];
+    return [{
+      ...say(this.id, { crossed: p.crossed }),
+      key: this.id, text: 'submenu', props: ['pointer-events'], value: 'closes', n: p.crossed,
+      evidence: { crossed: p.crossed, lostAtStep: p.step, measured: true }, confidence: 0.88,
+      suggest: { kind: 'advice', text: 'Use a menu with a safe triangle (Radix or Base UI), or give the submenu 300ms of grace before it closes.' },
+    }];
+  },
+};
+
+// #65. Dragged past its end, something gives: it moves less than the pointer and springs back, or it stops dead.
+export const overdrag = {
+  id: 'craft/overdrag', family: 'craft', number: [65], tier: TIER.advisory, owns: ['transform'], once: 'ancestor', reads: ['probe:drag'],
+  check({ el, facts }) {
+    const p = facts.probe(el, 'drag');
+    if (!p || (p.kind !== 'dead' && p.kind !== 'free')) return [];
+    return [{
+      ...say(this.id, { kind: p.kind }),
+      key: this.id, tier: TIER.advisory, text: 'touch-action', props: ['touch-action'], value: p.kind, n: p.past,
+      evidence: { kind: p.kind, moved: p.moved, measured: true }, confidence: 0.82,
+      suggest: { kind: 'advice', text: 'Past its limit, move it by a third of the pointer’s travel (x = limit + over × 0.3). Vaul and Motion’s dragElastic do this for you.' },
+    }];
+  },
+};
+
 // #66, the half that waits. A spinner that shows for a blink on a fast reply is worse than none.
 export const spinnerTiming = {
   id: 'craft/spinner-timing', family: 'craft', number: [66], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['other:held', 'probe:press'], pairs: ['held'],
-  threshold: { flash: 200, slow: 1000 },
+  threshold: { flash: 200, slow: 1000, press: 150 },
   check({ el, facts }) {
+    // a press that starts a request: the spinner shows on the press itself, so it would flash on a fast reply
+    const press = facts.probe(el, 'spinner-press');
+    if (press && press.delay < this.threshold.press) return [{
+      ...say(this.id, { ms: Math.round(press.delay), press: true }),
+      key: `${this.id}@press`, text: 'spinner', props: ['animation'], value: `${Math.round(press.delay)}ms`, n: press.delay,
+      evidence: { afterPressMs: Math.round(press.delay), measured: true }, confidence: 0.88,
+      suggest: { kind: 'advice', text: 'Show it after 200ms, then keep it for at least 500ms (spin-delay: delay 200, minDuration 500).' },
+    }];
     const rec = facts.other('held')?.spinner(el);
     if (!rec || rec.fast === null || rec.slow === null || rec.fast >= this.threshold.flash || rec.slow < this.threshold.slow) return [];
     return [{
@@ -308,11 +490,11 @@ export const spinnerTiming = {
 
 export const HEADLESS = {
   other: (condition) => pairs.get(condition) ?? null,
-  probe: () => null,
+  probe: (el, gesture) => (probes.size ? probes.get(`${gesture}|${pathKey(el)}`) ?? null : null),
   source: () => null,
 };
 
-export const RUN_RULES = [darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming];
+export const RUN_RULES = [darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

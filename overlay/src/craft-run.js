@@ -17,15 +17,66 @@
  *  scrollers · prep { key }   → the scroll containers; scroll one into view with its content hidden
  *  skeletons · heights { keys } → the skeletons now and their containers' sizes
  *  pair { condition, data }   → hand another condition's page in (before the run); reset forgets them all
+ *  candidates                 → what a gesture may be tried on: { presses, toggles, menus, tooltips } (keys of places)
+ *  frame { key }              → scroll an element into view; its centre
+ *  now · sample · taken · since · tip · state · surfaces · where · anchor · subtrigger · spinning   the probe's reads
+ *  probes { list }            → hand the recorded gestures in (before the run)
  * ───────────────────────────────────────────────────────── */
 import { locate } from './locate.js';
-import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey } from './craft-headless.js';
+import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn } from './craft-headless.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // The runner's questions of the page, apart from the run itself
-function operate(options) {
+async function operate(options) {
   const { op } = options;
+  const rec = window.__plumbRec;
+  if (op === 'candidates') { resetKeys(); return candidates(); }
+  if (op === 'frame') {
+    const el = fromKey(options.key);
+    if (!el) return null;
+    el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+    const r = el.getBoundingClientRect();
+    return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, x: r.x, y: r.y, w: r.width, h: r.height };
+  }
+  if (op === 'rect') { const r = fromKey(options.key)?.getBoundingClientRect(); return r ? { cx: r.x + r.width / 2, cy: r.y + r.height / 2, x: r.x, y: r.y, w: r.width, h: r.height } : null; }
+  if (op === 'now') return performance.now();
+  if (op === 'sample') return rec.sample(options.key, options.props, options.ms);
+  if (op === 'taken') return { frames: await rec.samples.get(options.id), events: JSON.parse(JSON.stringify(rec.events)) };
+  if (op === 'since') return JSON.parse(JSON.stringify(rec.since(options.t0, options.except)));
+  if (op === 'tip') return rec.tip(options.ms, options.other, options.at);
+  if (op === 'state') {
+    const el = fromKey(options.key);
+    const menus = [...document.querySelectorAll('[role="menu"]')].filter((m) => m.getClientRects().length);
+    return { expanded: el?.getAttribute('aria-expanded') === 'true', menus: menus.length, open: el?.getAttribute('data-state') === 'open' };
+  }
+  if (op === 'surfaces') return [...document.querySelectorAll('[cmdk-root], [role="dialog"], [role="alertdialog"], [role="listbox"]')].filter((e) => e.getClientRects().length && !e.closest('plumb-overlay')).map(pathKey);
+  if (op === 'where') {
+    const el = fromKey(options.key);
+    const at = el && await locate(el, { explain: true, batch: true }).catch(() => null);
+    return at?.file ? { file: at.file, line: at.line, column: at.column, component: at.component ?? null } : null;
+  }
+  if (op === 'anchor') { const el = document.querySelector('main') ?? document.body.firstElementChild; return el ? pathKey(el) : ''; }
+  if (op === 'subtrigger') {
+    const sub = [...document.querySelectorAll('[role="menu"] [aria-haspopup]:not([aria-haspopup="false"])')].find((e) => e.getClientRects().length);
+    if (!sub) return null;
+    const menu = sub.closest('[role="menu"]');
+    const rects = (nodes) => [...nodes].filter((n) => n !== sub && n.getClientRects().length).map((n) => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+    const r = sub.getBoundingClientRect(), m = menu.getBoundingClientRect();
+    return { key: pathKey(sub), cx: r.x + r.width / 2, cy: r.y + r.height / 2, h: r.height, menu: { x: m.x, y: m.y, w: m.width, h: m.height }, siblings: rects(menu.querySelectorAll('[role^="menuitem"]')) };
+  }
+  if (op === 'submenu') {
+    const sub = fromKey(options.key);
+    const menus = [...document.querySelectorAll('[role="menu"]')].filter((m) => m.getClientRects().length);
+    const inner = menus.find((m) => !m.contains(sub));
+    if (!inner) return null;
+    const r = inner.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height };
+  }
+  if (op === 'spinning') return [...(rec?.live?.values() ?? [])].map((v) => v.t0).concat((rec?.spinners ?? []).map((v) => v.t0));
+  if (op === 'events') return JSON.parse(JSON.stringify(rec.events));
+  if (op === 'tips') return [...document.querySelectorAll('[role="tooltip"]')].filter((n) => n.isConnected).length;
+  if (op === 'probes') { probesIn(options.list); return true; }
   if (op === 'needs') {
     const fetched = performance.getEntriesByType('resource').some((e) => (e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest') && !e.name.includes('/__plumb/'));
     return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched };
@@ -78,8 +129,10 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, ...r
       const marks = item.marks.filter((m) => m.family === 'craft');
       if (!marks.length) continue;
       const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
-      const site = at?.file ? at : null;
       for (const m of marks) {
+        // a finding about something that isn't on the page at rest (a palette) names where its code lives itself
+        const own = m.craft?.evidence?.at;
+        const site = own?.file ? own : at?.file ? at : null;
         const key = [m.rule, m.text, site ? `${site.file}:${site.line}:${site.column}` : item.file ?? ''].join('|');
         const hit = found.get(key);
         if (hit) { hit.count++; continue; }

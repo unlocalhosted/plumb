@@ -16,7 +16,7 @@ const run = promisify(execFile);
 export const built = () => readFile(cli).then(() => true, () => false);
 
 // `app` is src/App.jsx; `files` more files under src/; `api` answers /api/<name> with JSON from the dev server
-export async function fixture(t, app, { files = {}, api = {}, styles = '', handlers } = {}) {
+export async function fixture(t, app, { files = {}, api = {}, styles = '', handlers, track = [] } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.craft-hl-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
@@ -31,6 +31,7 @@ export async function fixture(t, app, { files = {}, api = {}, styles = '', handl
     plugins: [tailwindcss(), plumb({ watch: false }), {
       name: 'fixture-api',
       configureServer(s) {
+        s.middlewares.use((req, res, next) => { const p = req.url.split('?')[0]; if (track.includes(p)) hits[p] = (hits[p] ?? 0) + 1; next(); });
         s.middlewares.use('/api', (req, res, next) => {
           const name = req.url.split('?')[0].replace(/^\//, '');
           hits[name] = (hits[name] ?? 0) + 1;
