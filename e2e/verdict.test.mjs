@@ -172,10 +172,13 @@ test('The icon button: one fix on the theme’s steps (pl-s4 pr-s6, never pl-5);
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
   for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /rounded-control bg-accent pl-s4 pr-s6 py-s3/);
+  // the write reloads the page by itself; let that land, then read the page again
+  await page.waitForTimeout(800);
   await page.reload();
+  await page.waitForLoadState('load');
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  await blueprint(page, overlay);
+  try { await blueprint(page, overlay); } catch { await page.keyboard.press('Escape'); await page.waitForTimeout(500); await blueprint(page, overlay); }
   await page.waitForTimeout(600);
   // quiet: no mark of any family is drawn on it
   const after = await page.evaluate(() => {

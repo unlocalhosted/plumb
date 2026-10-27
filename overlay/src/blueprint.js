@@ -26,6 +26,10 @@ import { Glass, GLASS_CSS } from './blueprint-glass.js';
 import { Panel, PANEL_CSS } from './blueprint-panel.js';
 import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
+import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
+import { boxEdit } from './inplace.js';
+import { post, request } from './api.js';
+import { locate } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -36,7 +40,7 @@ const LAYER_CSS = `
   .bp[data-on] > :is(.labels, svg) { opacity: 1; transition-duration: var(--pl-dur-dim); }
   @media (prefers-reduced-motion: reduce) { .bp > :is(.labels, svg) { transition: none; } }
 `;
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -44,7 +48,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel; #craft; #items = []; #selection;
+  #panel; #craft; #items = []; #selection; #changes;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -56,7 +60,10 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
-    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el) });
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)) });
+    this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el),
+      changes: this.#changes, steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
+    this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
     this.#panel = new Panel(root, { host, marks: this.#marks });
@@ -66,6 +73,7 @@ export class Blueprint {
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
   key(key) {
     if (!this.active) return false;
+    if (this.#selection.key(key)) return true;
     // with an element selected, . and , step through its problems
     if (this.#selection.el && (key === '.' || key === ',')) return this.#selection.step(key === '.' ? 1 : -1) || true;
     return this.#panel.key(key);
@@ -174,7 +182,7 @@ export class Blueprint {
   #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); };
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
-  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#selection.point(e.clientX, e.clientY); };
+  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
   // the reader's reading of an element, or of the nearest ancestor it read
   #itemOf(el) { return el ? this.#items.find((i) => i.el === el) ?? null : null; }
   // A click on the page: the innermost element under it that the reader read (else the element itself) is selected;
@@ -192,6 +200,26 @@ export class Blueprint {
     }
     this.#selection.select(el, this.#itemOf(el));
   };
+  // Apply in the Changes sidebar: each element's changes written as one class edit on its own line (POST swap), the
+  // hash read now; the page reloads and the element is read again
+  async #apply(batch) {
+    const out = [];
+    for (const b of batch) {
+      const edit = boxEdit(b.el, b.props);
+      if (!edit) { out.push({ el: b.el, ok: false, why: 'Only padding and margin can be applied from here for now.' }); continue; }
+      try {
+        const at = await locate(b.el);
+        if (!at?.file) throw new Error('Can’t reach this in your code.');
+        const props = await request('props', { file: at.file, line: at.line, column: at.column });
+        if (!props?.hash) throw new Error('Can’t read this element.');
+        const result = await post('swap', { file: at.file, hash: props.hash, line: props.line ?? at.line, column: props.column ?? at.column, from: edit.from, to: edit.to });
+        this.#host.wrote?.(result, `Applied ${edit.to} in ${at.file.split('/').pop()}`);
+        this.invalidate({ file: at.file });
+        out.push({ el: b.el, ok: true });
+      } catch (error) { out.push({ el: b.el, ok: false, why: /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t apply.' }); }
+    }
+    return out;
+  }
   // Esc lets go of the selection before it leaves blueprint; true when there was one
   deselect() { return this.#selection.clear(); }
   get selected() { return this.#selection.el; }

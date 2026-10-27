@@ -15,6 +15,9 @@
 import { esc } from './choices.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 
+// a property as a person says it: padding-right → right padding
+const said = (prop) => { const [k, side] = prop.split('-'); return side && !/gap/.test(prop) ? `${side} ${k}` : prop.replace('-', ' '); };
+
 export const CHANGES_CSS = `
   .cg { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); width: 300px; max-width: calc(100vw - 2 * var(--pl-space-6));
     max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px); display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto;
@@ -34,12 +37,12 @@ export const CHANGES_CSS = `
   .cg .el .x { all: unset; margin-inline-start: auto; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; color: var(--pl-ink-2); cursor: pointer; }
   @media (hover: hover) and (pointer: fine) { .cg .el .x:hover { background: var(--pl-coral-soft); color: var(--pl-coral-ink); } }
   .cg .el .x:focus-visible { outline: 2px solid var(--pl-sky); }
-  .cg .ch { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
-  .cg .ch i { width: 13px; height: 13px; color: var(--pl-sky); flex: none; }
-  .cg .ch i svg { display: block; width: 100%; height: 100%; }
-  .cg .ch .from { font: var(--pl-card-code); color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-ink-2) 60%, transparent); }
-  .cg .ch .to { font: var(--pl-card-code); color: var(--pl-ink); }
-  .cg .ch .prop { min-width: 92px; }
+  .cg .chg { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .cg .chg i { width: 13px; height: 13px; color: var(--pl-sky); flex: none; }
+  .cg .chg i svg { display: block; width: 100%; height: 100%; }
+  .cg .chg .from { font: var(--pl-card-code); color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-ink-2) 60%, transparent); }
+  .cg .chg .to { font: var(--pl-card-code); color: var(--pl-ink); }
+  .cg .chg .prop { min-width: 92px; }
   .cg .el .why { margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-coral); }
   .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-rule); }
   .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-text-label); }
@@ -76,6 +79,7 @@ export class Changes {
     });
   }
 
+  has(el) { return this.#items.has(el); }
   get count() { return [...this.#items.values()].reduce((n, i) => n + i.props.size, 0); }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #byIndex(i) { return [...this.#items.keys()][i]; }
@@ -127,7 +131,7 @@ export class Changes {
     for (const r of results) {
       const item = this.#items.get(r.el);
       if (!item) continue;
-      if (r.ok) this.#items.delete(r.el); else item.why = r.why ?? 'React Plumber refused the write.';
+      if (r.ok) this.#items.delete(r.el); else item.why = r.why ?? 'Couldn’t apply.';
     }
     this.#busy = false;
     if (!this.#items.has(this.#at)) this.#at = [...this.#items.keys()][0] ?? null;
@@ -143,8 +147,8 @@ export class Changes {
     this.#el.innerHTML = `<div class="top"><b>Changes</b><span>${els.length} element${els.length === 1 ? '' : 's'} · ${n} change${n === 1 ? '' : 's'}</span></div>
       <div class="rows" role="list">${els.map(([el, i], k) => `<div class="el" role="listitem" tabindex="0" data-i="${k}"${el === this.#at ? ' aria-current="true"' : ''}>
         <div class="name"><span class="pl-tag">${esc(i.name)}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(i.name)}" title="Discard">${X}</button></div>
-        ${[...i.props].map(([prop, c]) => `<div class="ch"><i>${BLOCK_ICONS[KIND(prop)] ?? ''}</i><span class="prop">${esc(prop)}</span><span class="from">${esc(c.from.token ?? Math.round(c.from.n))}</span>→<span class="to">${esc(c.to.token)}</span></div>`).join('')}
+        ${[...i.props].map(([prop, c]) => `<div class="chg"><i>${BLOCK_ICONS[KIND(prop)] ?? ''}</i><span class="prop">${esc(said(prop))}</span><span class="from">${esc(Math.round(c.from.n))}</span>→<span class="to">${esc(`${Math.round(c.to.n)}${c.to.token ? ` (${c.to.token})` : ''}`)}</span></div>`).join('')}
         ${i.why ? `<div class="why">${esc(i.why)}</div>` : ''}</div>`).join('')}</div>
-      <div class="foot"><span class="keys">J K step</span><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Writing…' : `Accept ${n}`}</button></div>`;
+      <div class="foot"><span class="keys">J K step</span><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Applying…' : `Apply ${n} change${n === 1 ? '' : 's'}`}</button></div>`;
   }
 }

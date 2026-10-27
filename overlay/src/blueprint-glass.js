@@ -41,9 +41,13 @@ export class Glass {
     root.prepend(this.#el); // under everything the overlay draws
     this.#el.addEventListener('wheel', this.#wheel, { passive: false });
     // a click on the glass is a click on the page under it: the blueprint selects what is there (select.js)
-    this.#el.addEventListener('click', (e) => this.onClick?.(e));
+    this.#el.addEventListener('click', (e) => { if (this.#pressed) { this.#pressed = false; return; } this.onClick?.(e); });
+    // a press the blueprint takes (a drag on a band) is not also a click
+    this.#el.addEventListener('pointerdown', (e) => { this.#pressed = !!this.onPress?.(e); });
   }
-  onClick = null;
+  onClick = null; onPress = null; #pressed = false;
+  // the cursor over the glass: what a press there would do ('' for the default)
+  cursor(c) { if (this.#el.style.cursor !== c) this.#el.style.cursor = c; }
 
   get passing() { return this.#passing; }
 
