@@ -59,45 +59,6 @@ async function blueprint(page, overlay) {
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
 }
 
-// Every craft mark drawn, by its rule and the element it is on: the hit's id names the mark's key.
-const craftMarks = (page) => page.evaluate(() => {
-  const root = document.querySelector('plumb-overlay').shadowRoot;
-  return [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.includes(':craft/')).map((h) => { const r = h.getBoundingClientRect(); return { id: h.dataset.id, rule: h.dataset.id.split(':craft/')[1].split('@')[0], label: h.getAttribute('aria-label'), x: r.left, y: r.top, w: r.width, h: r.height }; });
-});
-// The panel's craft rows: [{ rule, text, what }].
-const craftRows = (overlay) => overlay.locator('.bpp .row[data-key^="craft/"]').evaluateAll((rows) => rows.map((r) => ({ key: r.dataset.key, rule: r.dataset.key.split('|')[0], text: r.querySelector('code').textContent, what: r.querySelector('.what').textContent })));
-const rectOf = (page, id) => page.locator(`#${id}`).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
-// the elements a row lights when pointed at, as boxes
-const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
-const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
-
-// Points at a row, and says which page elements light up.
-async function pointRow(page, overlay, key) {
-  await overlay.locator('.bpp .head').click();
-  await overlay.locator(`.bpp .row[data-key^="${key}"]`).first().hover();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
-  return lit(page);
-}
-// Opens a mark's chooser by a real click on its box, and returns the words it shows.
-async function openMark(page, overlay, id) {
-  const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-  const hint = overlay.locator('.bp .bp-hint[data-on]');
-  await hint.waitFor({ timeout: 3000 });
-  const hinted = await hint.innerText();
-  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.waitFor({ timeout: 5000 });
-  await ch.locator('.read .note').waitFor({ timeout: 5000 });
-  return { hinted, title: await ch.getAttribute('aria-label'), note: await ch.locator('.read .note').innerText(), because: await ch.locator('.read .because').innerText(), steps: await ch.locator('.cmp .opt').count() };
-}
-
-// the craft marks whose box sits on one element
-const on = async (page, id) => {
-  const r = await page.evaluate((id) => { const el = document.getElementById(id); const b = el.getBoundingClientRect(); return { l: b.left, t: b.top, r: Math.max(b.right, b.left + el.scrollWidth), b: b.bottom }; }, id);
-  return (await craftMarks(page)).filter((m) => m.x + m.w / 2 >= r.l - 2 && m.x + m.w / 2 <= r.r + 20 && m.y + m.h / 2 >= r.t - 2 && m.y + m.h / 2 <= r.b + 2);
-};
 const PAGE = `
 const Icon = () => <svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>;
 const members = [['Ada Lovelace', 'Owner'], ['Grace Hopper', 'Admin'], ['Alan Turing', 'Member']];
@@ -120,14 +81,6 @@ export function App() {
 }
 `;
 
-// every mark drawn on an element, of any family: [{ id, rule }]
-const marksOnEl = (page, id) => page.evaluate((id) => {
-  const el = document.getElementById(id).getBoundingClientRect();
-  return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
-    .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2)
-    .map((h) => ({ id: h.id, rule: h.id.includes(':craft/') ? h.id.split(':craft/')[1].split('@')[0] : 'drift' }));
-}, id);
-const run = (page) => page.evaluate(() => window.__plumb.craft({ timeout: 30000 }));
 
 
 
