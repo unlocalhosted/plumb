@@ -138,8 +138,11 @@ export class Facts {
         const c0 = rgb(st.color);
         if (!c0) continue;
         const g = this.ground(el), o = c0[3] ?? 1;
+        // the page's greys are the words on its own surfaces: words on a coloured fill or an inverted one (a dark button
+        // on a light page) belong to that fill
         const G = labOf(g);
-        if (Math.hypot(G[1], G[2]) >= 0.04) continue; // words on a coloured fill (a button, a badge) belong to that fill, not the page's greys
+        this.pageL ??= labOf(this.ground(document.body))[0];
+        if (Math.hypot(G[1], G[2]) >= 0.04 || Math.abs(G[0] - this.pageL) > 0.25) continue;
         const mixed = [0, 1, 2].map((i) => c0[i] * o + g[i] * (1 - o));
         const L = labOf(mixed);
         if (Math.hypot(L[1], L[2]) >= 0.04) continue; // a semantic colour (a link, an accent) is not a level of grey
