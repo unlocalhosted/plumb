@@ -1,5 +1,5 @@
 // The craft engine as a person meets it (docs/briefs/craft-engine.md): blueprint on, and the mentor's rules read on the
-// rendered page. For each first-wave rule: the element that breaks it carries a mark and a panel row with the right
+// rendered page. For each first-wave rule: the element that breaks it carries a mark and, held in the fix panel, a cause with the right
 // suggestion; the element beside it that follows the rule carries nothing; a well-built page yields no craft finding.
 // Real Vite with the plugin on a fixture page, real React 19, real Chromium.
 import assert from 'node:assert/strict';
@@ -11,6 +11,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
+import { applyFix, cause, engineMark, litNow, openMark, same } from './helpers/fix.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
@@ -64,52 +65,7 @@ const craftMarks = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay').shadowRoot;
   return [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.includes(':craft/')).map((h) => { const r = h.getBoundingClientRect(); return { id: h.dataset.id, rule: h.dataset.id.split(':craft/')[1].split('@')[0], label: h.getAttribute('aria-label'), x: r.left, y: r.top, w: r.width, h: r.height }; });
 });
-// The panel's craft rows: [{ rule, text, what }].
-const craftRows = (overlay) => overlay.locator('.bpp .row[data-key^="craft/"]').evaluateAll((rows) => rows.map((r) => ({ key: r.dataset.key, rule: r.dataset.key.split('|')[0], text: r.querySelector('code').textContent, what: r.querySelector('.what').textContent })));
 const rectOf = (page, id) => page.locator(`#${id}`).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
-// the elements a row lights when pointed at, as boxes
-const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
-const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
-
-// Points at a row, and says which page elements light up.
-async function pointRow(page, overlay, key) {
-  await overlay.locator('.bpp .head').click();
-  await overlay.locator(`.bpp .row[data-key^="${key}"]`).first().hover();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
-  return lit(page);
-}
-// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
-// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
-// options it offers.
-async function openMark(page, overlay, id) {
-  const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-  const hint = overlay.locator('.bp .bp-hint[data-on]');
-  await hint.waitFor({ timeout: 3000 });
-  const hinted = await hint.innerText();
-  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
-  await page.mouse.move(2, 2);
-  await page.waitForTimeout(150);
-  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
-  await page.keyboard.press('i');
-  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
-  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
-}
-// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
-async function applyFix(page, overlay) {
-  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
-  await overlay.locator('.cg:not([hidden]) .ok').click();
-}
-// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
-async function whyLines(page, overlay) {
-  const out = [];
-  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
-  return out;
-}
 
 // One page per rule: the element that breaks it beside the one that follows it, on the demo's theme
 // (radius tag 6, control 8, card 12; spacing s1 4, s2 8, s3 12, s4 16, s6 24; colours ink, ink-muted, …).
@@ -151,20 +107,19 @@ test('Concentric corners (#8/#41): a 12px child in 4px padding of a 12px corner 
   // the mark sits on the child's top-left corner
   const child = await rectOf(page, 'cc-bad-child');
   assert.ok(Math.abs(marks[0].x - child.x) < 8 && Math.abs(marks[0].y - child.y) < 8, `the arc is at the corner: ${JSON.stringify({ mark: marks[0], child })}`);
-  // the panel: one row for the cause, its class, its noun, one place
-  const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/concentric-radius');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['rounded-card', 'Corner doesn’t match its parent · 1 place']]);
-  // pointing at the row lights the breaking child, not the good one
-  const glow = await pointRow(page, overlay, 'craft/concentric-radius');
-  assert.ok(glow.some((g) => same(g, child)), `the row lights the child: ${JSON.stringify(glow)}`);
-  const good = await rectOf(page, 'cc-good-child');
-  assert.ok(!glow.some((g) => same(g, good)), 'and not the concentric one');
-  await page.mouse.move(5, 5);
-  // the mark's note says the change; the chooser says why and what to do, and offers no scale to pick from
+  // the mark's note says the change; a click puts the cause in hand: its class, its noun, one place, the finding's line
+  const suggested = (await engineMark(page, 'cc-bad-child', 'craft/concentric-radius')).suggest.to;
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /rounded-card → rounded-control/);
   assert.match(words.line, /^This 12px corner sits 4px inside a 12px corner\. Use 8px\./);
-  assert.equal(words.target, 'rounded-control', 'the suggestion is the one target');
+  assert.deepEqual([words.cls, words.what], ['rounded-card', 'Corner doesn’t match its parent · 1 place']);
+  // the cause lights the breaking child, not the good one
+  const glow = words.glow;
+  assert.ok(glow.some((g) => same(g, child)), `the cause lights the child: ${JSON.stringify(glow)}`);
+  const good = await rectOf(page, 'cc-good-child');
+  assert.ok(!glow.some((g) => same(g, good)), 'and not the concentric one');
+  // the engine's suggestion is the one target
+  assert.equal(suggested, 'rounded-control', 'the suggestion is the one target');
   assert.deepEqual(errors, []);
 });
 
@@ -183,17 +138,17 @@ test('Inner ≤ outer spacing (#7): groups 8px apart with 16px inside are marked
     const [a, b] = await page.locator(`#${id} > span`).evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
     assert.ok(marks.some((m) => m.y + m.h / 2 > a - 2 && m.y + m.h / 2 < b + 20 && m.y >= a - 2), `a mark in ${id}'s gap: ${JSON.stringify(marks)} between ${a} and ${b}`);
   }
-  const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/inner-outer-spacing');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['gap-s4', 'Group falls apart · 2 places']]);
-  const glow = await pointRow(page, overlay, 'craft/inner-outer-spacing');
-  const [badA, badB, goodA] = await Promise.all(['io-bad-a', 'io-bad-b', 'io-good-a'].map((id) => rectOf(page, id)));
-  assert.ok(glow.some((g) => same(g, badA)) && glow.some((g) => same(g, badB)), `both groups light: ${JSON.stringify(glow)}`);
-  assert.ok(!glow.some((g) => same(g, goodA)), 'the well-spaced group does not');
-  await page.mouse.move(5, 5);
+  // one cause for both places, in hand from a click on either glow
+  const suggested = (await engineMark(page, 'io-bad-a', 'craft/inner-outer-spacing')).suggest.to;
+  const [badA, badB, goodA] = await Promise.all(['io-bad-a', 'io-bad-b', 'io-good-a'].map((id) => rectOf(page, id))); // before the cause is tried on them
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /gap-s4 → gap-s2/);
-  assert.equal(words.target, 'gap-s2');
   assert.match(words.line, /^Items here are 16px apart, but the groups are only 8px apart\./);
+  assert.deepEqual([words.cls, words.what], ['gap-s4', 'Group falls apart · 2 places']);
+  const glow = words.glow;
+  assert.ok(glow.some((g) => same(g, badA)) && glow.some((g) => same(g, badB)), `both groups light: ${JSON.stringify(glow)} against ${JSON.stringify([badA, badB])}`);
+  assert.ok(!glow.some((g) => same(g, goodA)), 'the well-spaced group does not');
+  assert.equal(suggested, 'gap-s2');
   assert.deepEqual(errors, []);
 });
 
@@ -209,16 +164,16 @@ test('Text colour via opacity (#57): faded text is marked and told the token it 
   assert.match(marks[0].label, /^This text uses opacity 0\.65\. Use ink-muted, the colour it shows as\./);
   const bad = await rectOf(page, 'op-bad');
   assert.ok(marks[0].x >= bad.x - 2 && marks[0].x <= bad.right + 12 && marks[0].y >= bad.y - 4 && marks[0].y <= bad.bottom, `the bracket is at the words: ${JSON.stringify({ mark: marks[0], bad })}`);
-  const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/text-opacity');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['opacity-65', 'Faded with opacity · 1 place']]);
-  const glow = await pointRow(page, overlay, 'craft/text-opacity');
+  // the cause in hand: its class, its noun, one place; the faded paragraph lights, the coloured one does not
+  const suggested = (await engineMark(page, 'op-bad', 'craft/text-opacity')).suggest.to;
+  const words = await openMark(page, overlay, marks[0].id);
+  assert.deepEqual([words.cls, words.what], ['opacity-65', 'Faded with opacity · 1 place']);
+  const glow = words.glow;
   const good = await rectOf(page, 'op-good');
   assert.ok(glow.some((g) => same(g, bad)) && !glow.some((g) => same(g, good)), `the faded paragraph lights, the coloured one does not: ${JSON.stringify(glow)}`);
-  await page.mouse.move(5, 5);
   // the suggestion names the theme colour the faded text actually shows here: ink at 65% over the ground is ink-muted
-  const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /opacity-65 → text-ink-muted/);
-  assert.equal(words.target, 'text-ink-muted');
+  assert.equal(suggested, 'text-ink-muted');
   assert.match(words.line, /^This text uses opacity 0\.65\. Use ink-muted, the colour it shows as\./);
   assert.deepEqual(errors, []);
 });
@@ -235,16 +190,17 @@ test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and i
   assert.match(marks[0].label, /^Moved by -16\.5px, 0px, so it lands between pixels\./);
   const bad = await rectOf(page, 'hp-bad');
   assert.ok(Math.abs(marks[0].x - bad.x) < 2 && Math.abs(marks[0].y - bad.y) < 2, `the box is on the label: ${JSON.stringify({ mark: marks[0], bad })}`);
-  const rows = (await craftRows(overlay)).filter((r) => r.rule === 'craft/half-pixel');
-  assert.deepEqual(rows.map((r) => [r.text, r.what]), [['-translate-x-1/2', 'Blurry text · 1 place']]);
-  const glow = await pointRow(page, overlay, 'craft/half-pixel');
+  const words = await openMark(page, overlay, marks[0].id);
+  assert.deepEqual([words.cls, words.what], ['-translate-x-1/2', 'Blurry text · 1 place']);
+  const glow = words.glow;
   const good = await rectOf(page, 'hp-good');
   assert.ok(glow.some((g) => same(g, bad)) && !glow.some((g) => same(g, good)), `the odd label lights, the even one does not: ${JSON.stringify(glow)}`);
-  await page.mouse.move(5, 5);
-  const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /Make it 34px wide, so half of it is a whole number\./);
-  assert.equal(words.target, null, 'advice: nothing to take');
-  assert.match(words.line, /Moved by -16\.5px, 0px, so it lands between pixels\. Make it 34px wide, so half of it is a whole number\./);
+  // advice: the sentence is all there is; nothing to pick, nothing to take
+  assert.equal((await engineMark(page, 'hp-bad', 'craft/half-pixel')).suggest.kind, 'advice');
+  assert.equal(words.target, null, 'advice: nothing to pick');
+  assert.equal(await overlay.locator('.fx .take').count(), 0, 'advice: nothing to take');
+  assert.match(`${words.line} ${words.say}`, /Moved by -16\.5px, 0px, so it lands between pixels\..* Make it 34px wide, so half of it is a whole number\./);
   assert.deepEqual(errors, []);
 });
 
@@ -265,7 +221,10 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     const want = [...known[app ? 'GOOD' : 'demo'], ...(!app && overlayBars ? ['scroll-cue'] : [])].sort();
     const marks = await craftMarks(page);
     assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
-    assert.deepEqual([...new Set((await craftRows(overlay)).map((r) => r.rule.replace('craft/', '')))].sort(), want, `craft rows on ${app ? 'the well-built page' : 'the demo'}`);
+    // the fix panel agrees: nothing to fix on the well-built page; on the demo at least one cause for each rule
+    const line = (await overlay.locator('.fx .line').innerText()).replace(/\s+/g, ' ');
+    if (app) assert.match(line, /Everything matches your system|^0 problems/, `the well-built page has nothing to fix: ${line}`);
+    else assert.ok(Number(line.match(/(\d+) causes?/)?.[1]) >= want.length, `a cause for every rule: ${line}`);
     assert.deepEqual(errors, []);
     await page.close();
   }
@@ -282,11 +241,14 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   await blueprint(page, overlay);
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/concentric-radius')), null, { timeout: 10000 });
   const [mark] = (await craftMarks(page)).filter((m) => m.rule === 'concentric-radius');
-  await openMark(page, overlay, mark.id);
-  // ↑ on the target previews it: the child wears the suggested class on the page
-  await page.keyboard.press('ArrowUp');
+  // a click on the glow puts the cause in hand, and the suggestion is tried at once: the child wears the suggested class
+  const [mx, my] = (await overlay.locator(`.bp .hit[data-id="${mark.id}"]`).getAttribute('data-at')).split(',').map(Number);
+  await page.mouse.move(mx, my);
+  await page.waitForTimeout(250);
+  await page.mouse.click(mx, my);
   await page.waitForFunction(() => document.getElementById('cc-bad-child').classList.contains('rounded-control'), null, { timeout: 3000 });
   assert.equal(await page.locator('#cc-bad-child').evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '8px');
+  // and it can be taken: trying it must not make the finding (and with it the cause\u2019s plan) vanish; applyFix says if it did
   await applyFix(page, overlay);
   for (let i = 0; i < 100 && !/rounded-control/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-control bg-ground/, 'the class is swapped where it was, in source');
