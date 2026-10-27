@@ -13,6 +13,8 @@
  * `color` includes opacity as it affects text: faded text, low contrast and disabled-by-opacity are one facet.
  * ───────────────────────────────────────────────────────── */
 
+import { SPEC } from './craft-read.js';
+
 // advisory: a judgement of taste, shown softly and never failing a run (docs/briefs/craft-hard-rules.md)
 export const TIER = { access: 0, legibility: 1, theme: 2, craft: 3, advisory: 4 };
 
@@ -59,11 +61,16 @@ export function facetOfClass(cls) {
   return best;
 }
 
-// The server's findings, by rule prefix or habit id: their tier and facets, until the server writes its own.
+// The server's findings, by rule prefix or habit id: their tier, from the spec when it names the rule (habits/*), else by prefix.
 export const TIERS = [
   [/^habits\/(?:hover-gate|focus-outline|reduced-motion-fade|viewport-dynamic|safe-area-fallback|logical-inline)$/, TIER.access],
   [/^habits\/(?:font-metrics|real-quotes|transition-named|no-ease-in|composited-motion)$/, TIER.legibility],
   [/^habits\//, TIER.theme],
   [/^(?:provenance|spacing|radius|color|type|elevation|z|motion|ownership|existence)\b/, TIER.theme],
 ];
-export function tierOf(rule) { for (const [re, t] of TIERS) if (re.test(rule ?? '')) return t; return TIER.theme; }
+export function tierOf(rule) {
+  const s = SPEC.rule(rule ?? '');
+  if (typeof s.tier === 'number') return s.tier;
+  for (const [re, t] of TIERS) if (re.test(rule ?? '')) return t;
+  return TIER.theme;
+}

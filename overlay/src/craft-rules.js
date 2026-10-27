@@ -42,8 +42,9 @@
  *  anchor-offset       #73     an anchor target clears the sticky header
  *  middle-truncate     #76     a path or id is cut in the middle, not at the end
  *
- * Thresholds live on the rule, so noise is tuned in one place. Every rule says nothing when its evidence is
- * ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
+ * Every number a rule compares against lives in the spec (craft-spec.js, docs/briefs/craft-spec.md): a rule reads
+ * `theme.spec(this.id)` and never holds a threshold, a target or a tier of its own. Every rule says nothing when its
+ * evidence is ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
 import { rgb, utility, classesOf } from './craft-read.js';
 import { TIER } from './craft-facets.js';
@@ -71,10 +72,10 @@ function cornerShows(el, s) {
 
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
 export const concentricRadius = {
-  id: 'craft/concentric-radius', family: 'craft', number: [8, 41], tier: TIER.craft, owns: ['radius'], once: 'ancestor', reads: ['rect', 'style', 'parent'],
-  threshold: { tolerance: 1.5, minParentRadius: 4 },
+  id: 'craft/concentric-radius', family: 'craft', number: [8, 41], owns: ['radius'], once: 'ancestor', reads: ['rect', 'style', 'parent'],
   check({ el, facts }, theme) {
-    const { tolerance, minParentRadius } = this.threshold;
+    const T = theme.spec(this.id);
+    const { tolerance, minParentRadius } = T;
     const s = facts.style(el);
     const r = px(s.borderTopLeftRadius);
     if (!uniform(s, 'radius', r) || !cornerShows(el, s)) return [];
@@ -128,9 +129,9 @@ const gapOf = (s, axis) => axis === 'x' ? px(s.columnGap) : axis === 'y' ? px(s.
 
 // #7. Inner spacing ≤ outer spacing: the gap inside a group is smaller than the gap between groups.
 export const innerOuterSpacing = {
-  id: 'craft/inner-outer-spacing', family: 'craft', number: [7], tier: TIER.craft, owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'parent'],
-  threshold: { min: 0.5 },
+  id: 'craft/inner-outer-spacing', family: 'craft', number: [7], owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'parent'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     const axis = flowAxis(s);
     if (!axis) return [];
@@ -145,7 +146,7 @@ export const innerOuterSpacing = {
     if (paxis !== 'both' && axis !== 'both' && paxis !== axis) return [];
     const G = gapOf(ps, paxis);
     if (G <= 0 || facts.kids(parent).length < 2) return [];
-    if (g <= G + this.threshold.min) return [];
+    if (g <= G + T.min) return [];
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
     const step = theme.floor('spacing', G);
     const text = cls ?? 'gap';
@@ -161,9 +162,9 @@ export const innerOuterSpacing = {
 
 // #57. color-mix instead of opacity for text colour.
 export const textOpacity = {
-  id: 'craft/text-opacity', family: 'craft', number: [57], tier: TIER.craft, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
-  threshold: { within: 32 },
+  id: 'craft/text-opacity', family: 'craft', number: [57], owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     const o = parseFloat(s.opacity);
     if (!(o > 0 && o < 1) || !facts.text(el) || REPLACED.has(el.localName)) return [];
@@ -173,7 +174,7 @@ export const textOpacity = {
     const ground = facts.ground(el);
     const mixed = [0, 1, 2].map((i) => Math.round(color[i] * o + ground[i] * (1 - o)));
     const cls = utility(el, 'opacity');
-    const near = theme.nearestColor(mixed, this.threshold.within);
+    const near = theme.nearestColor(mixed, T.within);
     const text = cls ?? 'opacity';
     // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
     const own = colourClass(el, 'text', theme);
@@ -189,9 +190,8 @@ export const textOpacity = {
 
 // #37. Never land on half pixels: a pure translation whose offset is fractional in device pixels blurs text and lines.
 export const halfPixel = {
-  id: 'craft/half-pixel', family: 'craft', number: [37], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { slack: 0.05 },
-  check({ el, facts }) {
+  id: 'craft/half-pixel', family: 'craft', number: [37], owns: ['transform'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     const r = facts.rect(el);
     // the whole translation: the transform matrix plus the individual `translate` (Tailwind v4's -translate-x-1/2),
@@ -214,7 +214,8 @@ export const halfPixel = {
     if (s.animationName !== 'none') return [];
     const hairline = r.width <= 1.01 || r.height <= 1.01;
     if (!facts.text(el) && !hairline) return [];
-    const dpr = devicePixelRatio || 1, { slack } = this.threshold;
+    const T = theme.spec(this.id);
+    const dpr = devicePixelRatio || 1, { slack } = T;
     const off = (v) => { const dv = Math.abs(v * dpr - Math.round(v * dpr)); return dv > slack && dv < 1 - slack; };
     const fx = off(e), fy = off(f);
     if (!fx && !fy) return [];
@@ -235,10 +236,10 @@ export const halfPixel = {
 
 // #38. Hairlines are 0.5px on a 2× screen: a divider drawn 1px wide there is twice as heavy as it means to be.
 export const hairline = {
-  id: 'craft/hairline', family: 'craft', number: [38], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { minDpr: 2 },
-  check({ el, facts }) {
-    if ((devicePixelRatio || 1) < this.threshold.minDpr) return [];
+  id: 'craft/hairline', family: 'craft', number: [38], owns: ['border'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if ((devicePixelRatio || 1) < T.minDpr) return [];
     const s = facts.style(el), r = facts.rect(el);
     // a divider: a 1px rule (an <hr>, or a box one pixel tall or wide), or a box drawn by one 1px side only
     const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] !== 'none' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
@@ -259,12 +260,12 @@ export const hairline = {
 
 // #39. An image gets a faint inner outline, so a light picture doesn't bleed into a light page (or dark into dark).
 export const imageOutline = {
-  id: 'craft/image-outline', family: 'craft', number: [39], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'rect', 'ground'],
-  threshold: { minSize: 20, sameGround: 0.12 },
-  check({ el, facts }) {
+  id: 'craft/image-outline', family: 'craft', number: [39], owns: ['border'], once: 'ancestor', reads: ['style', 'rect', 'ground'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (el.localName !== 'img' || !el.complete || !el.naturalWidth) return [];
     const r = facts.rect(el), s = facts.style(el);
-    if (r.width < this.threshold.minSize || r.height < this.threshold.minSize) return [];
+    if (r.width < T.minSize || r.height < T.minSize) return [];
     if (s.outlineStyle !== 'none' && px(s.outlineWidth) > 0) return [];
     if (s.boxShadow !== 'none' || (px(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none')) return [];
     // the picture's edge, sampled small; a cross-origin picture can't be read, so it says nothing
@@ -280,7 +281,7 @@ export const imageOutline = {
     } catch { return []; }
     const lum = ([r0, g0, b0]) => (0.2126 * r0 + 0.7152 * g0 + 0.0722 * b0) / 255;
     const ground = facts.ground(el);
-    if (Math.abs(lum(edge) - lum(ground)) > this.threshold.sameGround) return [];
+    if (Math.abs(lum(edge) - lum(ground)) > T.sameGround) return [];
     const dark = lum(ground) < 0.5;
     return [{
       ...say(this.id, {}),
@@ -302,12 +303,12 @@ function shadows(value) {
 
 // #51. Layered shadows: one big blur reads as a smudge; a few layers read as ambient and direct light.
 export const layeredShadow = {
-  id: 'craft/layered-shadow', family: 'craft', number: [51, 53], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style'],
-  threshold: { blur: 16 },
-  check({ el, facts }) {
+  id: 'craft/layered-shadow', family: 'craft', number: [51, 53], owns: ['shadow'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     const layers = shadows(s.boxShadow).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
-    if (layers.length !== 1 || layers[0].blur < this.threshold.blur) return [];
+    if (layers.length !== 1 || layers[0].blur < T.blur) return [];
     const l = layers[0];
     const cls = utility(el, 'shadow');
     const text = cls ?? 'box-shadow';
@@ -336,9 +337,8 @@ function keyframes(name) {
 
 // #63. Never scale from 0: an entrance from nothing looks like it came from nowhere.
 export const scaleFromZero = {
-  id: 'craft/scale-from-zero', family: 'craft', number: [63], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style'],
-  threshold: {},
-  check({ el, facts }) {
+  id: 'craft/scale-from-zero', family: 'craft', number: [63], owns: ['transform'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     if (!s.animationName || s.animationName === 'none') return [];
     const found = [];
@@ -363,12 +363,12 @@ export const scaleFromZero = {
 
 // #74. A large z-index on an element in the flow is a z-index war: give its component its own stacking context.
 export const zIndexWar = {
-  id: 'craft/z-index-war', family: 'craft', number: [74], tier: TIER.craft, owns: ['stacking'], once: 'ancestor', reads: ['style'],
-  threshold: { above: 100 },
-  check({ el, facts }) {
+  id: 'craft/z-index-war', family: 'craft', number: [74], owns: ['stacking'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     const z = parseInt(s.zIndex, 10);
-    if (!(z > this.threshold.above) || s.position === 'fixed') return [];
+    if (!(z > T.above) || s.position === 'fixed') return [];
     // a top-level overlay (a direct child of body, or a dialog) is allowed its height
     if (el.parentElement === document.body || el.matches('dialog, [role="dialog"], [popover]')) return [];
     const cls = utility(el, 'z');
@@ -394,9 +394,9 @@ function contentLeft(el, facts) {
 // #1. Align content, not boxes: a filled, padded row whose words fall off the column its siblings' words share bleeds
 // out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
 export const contentAlign = {
-  id: 'craft/content-align', family: 'craft', number: [1], tier: TIER.craft, owns: ['margin-x'], once: 'ancestor', reads: ['style', 'rect', 'kids', 'parent'],
-  threshold: { min: 4, siblings: 2 },
+  id: 'craft/content-align', family: 'craft', number: [1], owns: ['margin-x'], once: 'ancestor', reads: ['style', 'rect', 'kids', 'parent'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const parent = el.parentElement;
     if (!parent || parent === document.body) return [];
     const ps = facts.style(parent);
@@ -404,7 +404,7 @@ export const contentAlign = {
     const s = facts.style(el);
     const pl = px(s.paddingLeft);
     const filled = (rgb(s.backgroundColor)?.[3] ?? 0) > 0 || s.boxShadow !== 'none';
-    if (!filled || pl < this.threshold.min) return [];
+    if (!filled || pl < T.min) return [];
     const r = facts.rect(el), pr = facts.rect(parent);
     const column = pr.left + px(ps.borderLeftWidth) + px(ps.paddingLeft);
     if (Math.abs(r.left - column) > 0.5) return []; // the row already bleeds, or sits elsewhere
@@ -415,7 +415,7 @@ export const contentAlign = {
     if (!peers.some((k) => !isFilled(k))) return [];
     // the edge its peers' words share
     const edges = peers.filter((k) => !isFilled(k)).map((k) => contentLeft(k, facts)).filter((x) => x !== null);
-    if (edges.length < this.threshold.siblings) return [];
+    if (edges.length < T.siblings) return [];
     const onColumn = edges.filter((x) => Math.abs(x - column) < 1).length;
     if (onColumn < Math.ceil(edges.length * 0.6)) return [];
     const mine = contentLeft(el, facts);
@@ -498,16 +498,16 @@ function lineCount(el, facts) {
 
 // #9. Equal padding isn't equal: a text button wants about twice as much padding across as down.
 export const buttonPadding = {
-  id: 'craft/button-padding', family: 'craft', round: { '*': 'up' }, number: [9], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { ratio: 1.5, maxHeight: 56 },
+  id: 'craft/button-padding', family: 'craft', round: { '*': 'up' }, number: [9], owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches(CONTROL) || el.matches('a[href]') && !utility(el, 'px') && !utility(el, 'p')) return [];
     if (!/[\p{L}\p{N}]/u.test(words(el))) return [];
     const b = facts.box(el), r = facts.rect(el), s = facts.style(el);
-    if (r.height > this.threshold.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
+    if (r.height > T.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
     if (Math.abs(r.width - r.height) < 2 && px(s.borderTopLeftRadius) >= r.height / 2 - 1) return []; // a round button
-    if (b.pl / b.pt >= this.threshold.ratio) return [];
-    const want = b.pt * 2;
+    if (b.pl / b.pt >= T.ratio) return [];
+    const want = b.pt * T.want.ratio;
     const cls = utility(el, 'px') ?? utility(el, 'p', { not: /^[trblxyse](?:-|$)/ });
     const to = cls?.startsWith('p-') ? `${space(theme, want, 'px')} ${space(theme, b.pt, 'py')}` : space(theme, want, 'px');
     return [{
@@ -521,9 +521,9 @@ export const buttonPadding = {
 
 // #10. The icon side gets less padding: a glyph box carries its own whitespace.
 export const iconSide = {
-  id: 'craft/icon-side', family: 'craft', round: { '*': 'down' }, number: [10], tier: TIER.craft, owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
-  threshold: { min: 8, less: 2 },
+  id: 'craft/icon-side', family: 'craft', round: { '*': 'down' }, number: [10], owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches(CONTROL)) return [];
     const kids = facts.kids(el);
     const icon = (k) => k && (k.localName === 'svg' || k.localName === 'img' || k.matches('[data-icon], [aria-hidden="true"]') && !/\S/.test(k.textContent ?? '') || k.querySelector?.('svg') && !/\S/.test(k.textContent ?? ''));
@@ -532,9 +532,9 @@ export const iconSide = {
     const lead = icon(kids[0]) && !(kids.length === 1 && !facts.text(el)), tail = kids.length > 0 && icon(kids.at(-1)) && !lead;
     if (!lead && !tail) return [];
     const b = facts.box(el);
-    if (b.pl < this.threshold.min || Math.abs(b.pl - b.pr) > 0.5) return [];
+    if (b.pl < T.min || Math.abs(b.pl - b.pr) > 0.5) return [];
     const side = lead ? 'l' : 'r', other = lead ? 'r' : 'l';
-    const less = b.pl - 4 >= 4 ? b.pl - 4 : b.pl - this.threshold.less;
+    const less = b.pl - T.want.less >= 4 ? b.pl - T.want.less : b.pl - T.less;
     const cls = utility(el, 'px');
     return [{
       ...say(this.id, { side: b.pl, less }),
@@ -547,38 +547,38 @@ export const iconSide = {
 
 // #13. 45–75 characters a line for reading text.
 export const measure = {
-  id: 'craft/measure', family: 'craft', number: [13], tier: TIER.legibility, owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { max: 90, chars: 240 },
-  check({ el, facts }) {
+  id: 'craft/measure', family: 'craft', number: [13], owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('p, li, dd, blockquote') || !facts.text(el)) return [];
     const text = words(el);
-    if (text.length < this.threshold.chars) return [];
+    if (text.length < T.chars) return [];
     const s = facts.style(el), r = facts.rect(el), b = facts.box(el);
     const fs = px(s.fontSize), width = r.width - b.pl - b.pr;
     // the average glyph of running text is about half an em wide
     const perLine = width / (fs * 0.5);
-    if (perLine <= this.threshold.max || lineCount(el, facts) < 3) return [];
+    if (perLine <= T.max || lineCount(el, facts) < 3) return [];
     const cls = utility(el, 'max-w');
     return [{
       ...say(this.id, { chars: Math.round(perLine) }),
       key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${Math.round(perLine)}ch`, n: Math.round(perLine),
       evidence: { perLine: Math.round(perLine), width, fontSize: fs }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: 'max-w-prose', why: 'about 65 characters a line' },
+      suggest: { kind: 'class', from: cls ?? '', to: 'max-w-prose', why: `about ${T.want.target} characters a line` },
     }];
   },
 };
 
 // #14. Line height shrinks as size grows: body about 1.5, headings 1.1–1.25.
 export const leading = {
-  id: 'craft/leading', family: 'craft', number: [14], tier: TIER.legibility, owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { large: 30, loose: 1.4, small: 18, tight: 1.3 },
-  check({ el, facts }) {
+  id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
     const s = facts.style(el), fs = px(s.fontSize), lh = px(s.lineHeight);
     if (!lh || !fs) return [];
     const ratio = lh / fs, lines = lineCount(el, facts);
-    const big = fs >= this.threshold.large && ratio > this.threshold.loose && lines >= 1;
-    const cramped = fs <= this.threshold.small && ratio < this.threshold.tight && lines >= 3;
+    const big = fs >= T.large && ratio > T.loose && lines >= 1;
+    const cramped = fs <= T.small && ratio < T.tight && lines >= 3;
     if (!big && !cramped) return [];
     const cls = utility(el, 'leading');
     const to = big ? 'leading-tight' : 'leading-normal';
@@ -586,28 +586,28 @@ export const leading = {
       ...say(this.id, { big, size: fs, ratio: ratio.toFixed(2) }),
       key: `${this.id}@${big ? 'loose' : 'tight'}`, text: cls ?? 'line-height', props: ['line-height'], value: ratio.toFixed(2), n: ratio,
       evidence: { fontSize: fs, lineHeight: lh, ratio, lines }, confidence: 0.83,
-      suggest: { kind: 'class', from: cls ?? '', to, why: big ? 'line height 1.25' : 'line height 1.5' },
+      suggest: { kind: 'class', from: cls ?? '', to, why: big ? `line height ${T.want.display.target}` : `line height ${T.want.body.target}` },
     }];
   },
 };
 
 // #15. Tighten large type; space out small capitals.
 export const tracking = {
-  id: 'craft/tracking', family: 'craft', number: [15], tier: TIER.legibility, owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text'],
-  threshold: { caps: 14, large: 36 },
+  id: 'craft/tracking', family: 'craft', number: [15], owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
     const s = facts.style(el), fs = px(s.fontSize);
     const ls = s.letterSpacing === 'normal' ? 0 : px(s.letterSpacing);
-    const caps = s.textTransform === 'uppercase' && fs <= this.threshold.caps && ls / fs < 0.02;
-    const large = fs >= this.threshold.large && ls > 0;
+    const caps = s.textTransform === 'uppercase' && fs <= T.caps && ls / fs < 0.02;
+    const large = fs >= T.large && ls > 0;
     if (!caps && !large) return [];
     const cls = utility(el, 'tracking');
     return [{
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: trackingStep(theme, caps), why: caps ? '0.05em more letter spacing' : '0.025em less letter spacing', sets: { letterSpacing: fs * (caps ? 0.05 : -0.025) } },
+      suggest: { kind: 'class', from: cls ?? '', to: trackingStep(theme, caps), why: caps ? `${T.want.caps.target}em more letter spacing` : `${-T.want.display.target}em less letter spacing`, sets: { letterSpacing: fs * (caps ? T.want.caps.target : T.want.display.target) } },
     }];
   },
 };
@@ -622,14 +622,14 @@ function trackingStep(theme, caps) {
 
 // #16. Tabular numbers where numbers line up: a column of figures in a table.
 export const tabularNums = {
-  id: 'craft/tabular-nums', family: 'craft', number: [16], tier: TIER.legibility, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
-  threshold: { rows: 3 },
-  check({ el, facts }) {
+  id: 'craft/tabular-nums', family: 'craft', number: [16], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('td, th, [role="cell"], [role="gridcell"]')) return [];
     const text = words(el);
     if (!/^[\s$€£¥₹+\-−–.,:%()\d]+$/.test(text) || (text.match(/\d/g) ?? []).length < 2) return [];
     const table = el.closest('table, [role="table"], [role="grid"]');
-    if (!table || rowsOf(facts, table) < this.threshold.rows) return [];
+    if (!table || rowsOf(facts, table) < T.rows) return [];
     const s = facts.style(el);
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];
@@ -644,15 +644,15 @@ export const tabularNums = {
 
 // #18. No widows in headings: balance the lines.
 export const headingWidow = {
-  id: 'craft/heading-widow', family: 'craft', number: [18], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', refines: ['craft/text-wrap-role'], reads: ['style', 'text'],
-  threshold: { words: 3 },
-  check({ el, facts }) {
+  id: 'craft/heading-widow', family: 'craft', number: [18], owns: ['text-flow'], once: 'ancestor', refines: ['craft/text-wrap-role'], reads: ['style', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('h1, h2, h3') || !facts.text(el)) return [];
     const s = facts.style(el);
     if (/balance|pretty/.test(`${s.textWrap ?? ''} ${s.textWrapStyle ?? ''}`)) return [];
     const nodes = [...el.childNodes].filter((n) => n.nodeType === 3 && /\S/.test(n.data));
     const last = nodes.at(-1);
-    if (!last || words(el).split(' ').length < this.threshold.words) return [];
+    if (!last || words(el).split(' ').length < T.words) return [];
     const m = /(\S+)(\s+)(\S+)\s*$/.exec(last.data);
     if (!m) return [];
     const at = (start, end) => { const r = document.createRange(); r.setStart(last, start); r.setEnd(last, end); return r.getClientRects()[0]; };
@@ -670,12 +670,12 @@ export const headingWidow = {
 
 // #20. One light source: shadows fall the same way, down.
 export const oneLight = {
-  id: 'craft/one-light', family: 'craft', number: [20], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style'],
-  threshold: { blur: 2 },
-  check({ el, facts }) {
+  id: 'craft/one-light', family: 'craft', number: [20], owns: ['shadow'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     if (s.position === 'fixed') return []; // a drawer may cast to its side
-    const off = shadows(s.boxShadow).filter((l) => !l.inset && l.blur >= this.threshold.blur && (l.y < 0 || Math.abs(l.x) > Math.abs(l.y) + 2));
+    const off = shadows(s.boxShadow).filter((l) => !l.inset && l.blur >= T.blur && (l.y < 0 || Math.abs(l.x) > Math.abs(l.y) + 2));
     if (!off.length) return [];
     const l = off[0], cls = utility(el, 'shadow');
     return [{
@@ -689,15 +689,15 @@ export const oneLight = {
 
 // #23. Translucent borders on elevated surfaces.
 export const borderOnShadow = {
-  id: 'craft/border-on-shadow', family: 'craft', number: [23], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['style', 'ground'],
-  threshold: { blur: 4, grey: 24 },
+  id: 'craft/border-on-shadow', family: 'craft', number: [23], owns: ['border'], once: 'ancestor', reads: ['style', 'ground'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
-    if (!shadows(s.boxShadow).some((l) => !l.inset && l.blur >= this.threshold.blur)) return [];
+    if (!shadows(s.boxShadow).some((l) => !l.inset && l.blur >= T.blur)) return [];
     if (!['Top', 'Right', 'Bottom', 'Left'].every((k) => px(s[`border${k}Width`]) >= 1 && s[`border${k}Style`] !== 'none')) return [];
     const c = rgb(s.borderTopColor);
     if (!c || c[3] < 1) return [];
-    if (Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]) > this.threshold.grey) return []; // a coloured border is a decision
+    if (Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]) > T.grey) return []; // a coloured border is a decision
     const dark = (0.2126 * facts.ground(el)[0] + 0.7152 * facts.ground(el)[1] + 0.0722 * facts.ground(el)[2]) / 255 < 0.5;
     const cls = colourClass(el, 'border', theme);
     const to = dark ? 'border-white/10' : 'border-black/10';
@@ -712,9 +712,9 @@ export const borderOnShadow = {
 
 // #24. Perceptual contrast for small text (APCA).
 export const contrast = {
-  id: 'craft/contrast', family: 'craft', number: [24], tier: TIER.access, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
-  threshold: { small: 60, bold: 50, large: 45 },
+  id: 'craft/contrast', family: 'craft', number: [24], owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const ns = facts.style(n); if (ns.backgroundImage !== 'none') return []; if (alpha(rgb(ns.backgroundColor)) > 0.5) break; }
@@ -731,8 +731,8 @@ export const contrast = {
     const text = over([c[0], c[1], c[2], alpha(c) * fade], ground);
     const fs = px(s.fontSize), w = parseInt(s.fontWeight, 10) || 400;
     // APCA reads weight as size: a heavier stroke reads like a larger one, so the floor falls with both
-    const large = fs >= 24 || fs >= 18 && w >= 600;
-    const need = large ? this.threshold.large : fs >= 14 && w >= 600 ? this.threshold.bold : this.threshold.small;
+    const large = fs >= T.largeAt || fs >= T.boldLargeAt && w >= T.boldWeight;
+    const need = large ? T.large : fs >= T.boldAt && w >= T.boldWeight ? T.bold : T.small;
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     return [{
@@ -746,12 +746,12 @@ export const contrast = {
 
 // #26. Disabled is not just lower opacity: a faded coloured control loses its words.
 export const disabledContrast = {
-  id: 'craft/disabled-contrast', family: 'craft', number: [26], tier: TIER.access, owns: ['color'], once: 'ancestor', refines: ['craft/contrast', 'craft/text-opacity'],
+  id: 'craft/disabled-contrast', family: 'craft', number: [26], owns: ['color'], once: 'ancestor', refines: ['craft/contrast', 'craft/text-opacity'],
   // an inactive control (and the words inside it) is judged by this rule alone, whether it passes or not: WCAG 1.4.3
   // exempts it from text contrast, and its opacity is a state, not a colour choice
   scope: ({ el }) => disabled(el), reads: ['style', 'ground'],
-  threshold: { min: 45 },
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches(':disabled, [aria-disabled="true"]') || !el.matches('button, [role="button"], input, a')) return [];
     const s = facts.style(el), o = parseFloat(s.opacity);
     if (!(o < 1)) return [];
@@ -761,7 +761,7 @@ export const disabledContrast = {
     const base = alpha(fill) > 0 ? over(fill, parentGround) : parentGround;
     const shownText = over([...over(c, base).slice(0, 3), o], parentGround), shownFill = over([...base.slice(0, 3), o], parentGround);
     const lc = Math.abs(apca(shownText, shownFill));
-    if (lc >= this.threshold.min) return [];
+    if (lc >= T.min) return [];
     const cls = utility(el, 'disabled:opacity') ?? utility(el, 'opacity');
     return [{
       ...say(this.id, { o, lc: Math.round(lc) }),
@@ -774,14 +774,14 @@ export const disabledContrast = {
 
 // #27. Hit targets at least 24px, even when the drawing is smaller.
 export const hitTarget = {
-  id: 'craft/hit-target', family: 'craft', number: [27], tier: TIER.access, owns: ['size', 'padding-y'], once: 'ancestor', reads: ['rect', 'style', 'text'],
-  threshold: { min: 24, long: 64 },
-  check({ el, facts }) {
+  id: 'craft/hit-target', family: 'craft', number: [27], owns: ['size', 'padding-y'], once: 'ancestor', reads: ['rect', 'style', 'text'],
+  check({ el, facts }, theme) {
     if (!el.matches('button, [role="button"], a[href], input:not([type="hidden"]), select, summary, [role="checkbox"], [role="switch"], [role="tab"]') || disabled(el)) return [];
     // a link inside a sentence is as tall as the line, and that is right
     if (el.matches('a[href]') && el.parentElement && facts.text(el.parentElement) && facts.style(el).display === 'inline') return [];
     if (el.matches('input[type="checkbox"], input[type="radio"]') && el.closest('label')) return []; // its label is the target
-    const r = facts.rect(el), { min, long } = this.threshold;
+    const T = theme.spec(this.id);
+    const r = facts.rect(el), { min, long } = T;
     // a wide, short row (a summary across the page) is easy to hit along its length
     if (r.width >= min && r.height >= min || r.width === 0 || r.height === 0 || Math.max(r.width, r.height) >= long) return [];
     const short = Math.min(r.width, r.height);
@@ -796,12 +796,12 @@ export const hitTarget = {
 
 // #34. One avatar and icon size per list.
 export const mediaSize = {
-  id: 'craft/media-size', family: 'craft', number: [34], tier: TIER.craft, owns: ['size'], once: 'ancestor', reads: ['rect', 'kids'],
-  threshold: { min: 12, near: 12 },
+  id: 'craft/media-size', family: 'craft', number: [34], owns: ['size'], once: 'ancestor', reads: ['rect', 'kids'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('img, svg, [data-avatar]')) return [];
     const r = facts.rect(el);
-    if (r.width < this.threshold.min) return [];
+    if (r.width < T.min) return [];
     // the row it sits in: the nearest ancestor (three levels up at most) with siblings of its own kind
     let row = el.parentElement;
     for (let i = 0; row && i < 3; i++, row = row.parentElement) {
@@ -816,7 +816,7 @@ export const mediaSize = {
     const count = new Map(); for (const w of sizes) count.set(w, (count.get(w) ?? 0) + 1);
     const [mode, times] = [...count].sort((a, b) => b[1] - a[1])[0] ?? [];
     const mine = Math.round(r.width);
-    if (!mode || mine === mode || times < 2 || times <= sizes.length / 2 || Math.abs(mine - mode) > this.threshold.near) return [];
+    if (!mode || mine === mode || times < 2 || times <= sizes.length / 2 || Math.abs(mine - mode) > T.near) return [];
     const cls = utility(el, 'size') ?? utility(el, 'w');
     return [{
       ...say(this.id, { mine, mode }),
@@ -832,9 +832,8 @@ const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 
 
 // #35. Truncate with intent: what is cut off shows in full on hover.
 export const truncateIntent = {
-  id: 'craft/truncate-intent', family: 'craft', number: [35], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style'],
-  threshold: {},
-  check({ el, facts }) {
+  id: 'craft/truncate-intent', family: 'craft', number: [35], owns: ['text-flow'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     if (!truncated(el, s)) return [];
     for (let n = el, i = 0; n && i < 3; n = n.parentElement, i++) if (n.hasAttribute('title') || n.hasAttribute('aria-label') || n.hasAttribute('data-tooltip')) return [];
@@ -849,14 +848,14 @@ export const truncateIntent = {
 
 // #36. A large scroll area keeps room for its scrollbar, so its content doesn't shift when one appears.
 export const scrollbarGutter = {
-  id: 'craft/scrollbar-gutter', family: 'craft', number: [36], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { width: 280, height: 200 },
-  check({ el, facts }) {
+  id: 'craft/scrollbar-gutter', family: 'craft', number: [36], owns: ['scroll'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el);
     if (!/auto/.test(s.overflowY) || s.scrollbarGutter !== 'auto') return [];
     const r = facts.rect(el);
-    if (r.width < this.threshold.width || r.height < this.threshold.height) return [];
+    if (r.width < T.width || r.height < T.height) return [];
     return [{
       ...say(this.id, {}),
       key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow', props: ['scrollbar-gutter'], value: 'auto', n: 0,
@@ -878,9 +877,8 @@ function hoverWeights() {
 
 // #42. Bold on hover must not shift layout.
 export const boldHover = {
-  id: 'craft/bold-hover', family: 'craft', number: [42], tier: TIER.legibility, owns: ['font-weight'], once: 'ancestor', reads: ['style'],
-  threshold: {},
-  check({ el, facts }) {
+  id: 'craft/bold-hover', family: 'craft', number: [42], owns: ['font-weight'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
     if (!facts.text(el)) return [];
     const cls = classesOf(el).split(/\s+/).find((c) => /(?:^|:)(?:group-)?hover:font-(?!mono|sans|serif)/.test(c));
     const css = !cls && hoverWeights().some((sel) => { try { return sel && el.matches(sel); } catch { return false; } });
@@ -898,9 +896,8 @@ export const boldHover = {
 
 // #45. Hanging punctuation: an opening quote hangs outside the text edge.
 export const hangingQuote = {
-  id: 'craft/hanging-quote', family: 'craft', number: [45], tier: TIER.craft, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'text'],
-  threshold: {},
-  check({ el, facts }) {
+  id: 'craft/hanging-quote', family: 'craft', number: [45], owns: ['text-flow'], once: 'ancestor', reads: ['style', 'text'],
+  check({ el, facts }, theme) {
     if (!el.matches('blockquote, blockquote > p, q, p') || !facts.text(el)) return [];
     const first = [...el.childNodes].find((n) => n.nodeType === 3 && /\S/.test(n.data));
     if (!first || !/^\s*["“‘'«]/.test(first.data) || first !== el.firstChild && el.firstChild?.nodeType !== 3) return [];
@@ -918,9 +915,8 @@ export const hangingQuote = {
 
 // #46. Capitals get the case feature, so hyphens, brackets and @ sit at their height.
 export const capsCase = {
-  id: 'craft/caps-case', family: 'craft', number: [46], tier: TIER.craft, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
-  threshold: {},
-  check({ el, facts }) {
+  id: 'craft/caps-case', family: 'craft', number: [46], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
+  check({ el, facts }, theme) {
     if (!facts.text(el)) return [];
     const s = facts.style(el);
     if (s.textTransform !== 'uppercase' && !/^[^a-z]*[A-Z]{3}[^a-z]*$/.test(words(el))) return [];
@@ -947,16 +943,16 @@ function hsl([r, g, b]) {
 
 // #55. Interpolate gradients in OKLCH/OKLab: sRGB goes grey between saturated colours.
 export const gradientSpace = {
-  id: 'craft/gradient-space', family: 'craft', number: [55], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style'],
-  threshold: { saturation: 0.45, hue: 60 },
-  check({ el, facts }) {
+  id: 'craft/gradient-space', family: 'craft', number: [55], owns: ['background'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const bg = facts.style(el).backgroundImage;
     if (!/gradient\(/.test(bg) || /\bin (?:oklab|oklch|lab|lch|hsl|display-p3)/.test(bg)) return [];
     const c = stops(bg).filter((x) => alpha(x) > 0.5).map(hsl);
     if (c.length < 2) return [];
     const [a, b] = [c[0], c.at(-1)];
     const dh = Math.min(Math.abs(a[0] - b[0]), 360 - Math.abs(a[0] - b[0]));
-    if (a[1] < this.threshold.saturation || b[1] < this.threshold.saturation || dh < this.threshold.hue) return [];
+    if (a[1] < T.saturation || b[1] < T.saturation || dh < T.hue) return [];
     const cls = classesOf(el).split(/\s+/).find((k) => /^bg-(?:linear|gradient)-to-[a-z]+$/.test(k));
     return [{
       ...say(this.id, {}),
@@ -969,12 +965,12 @@ export const gradientSpace = {
 
 // #70. Inputs at least 16px, or iOS Safari zooms the page on focus.
 export const inputZoom = {
-  id: 'craft/input-zoom', family: 'craft', number: [70], tier: TIER.access, owns: ['font-size'], once: 'ancestor', reads: ['style'],
-  threshold: { min: 16 },
-  check({ el, facts }) {
+  id: 'craft/input-zoom', family: 'craft', number: [70], owns: ['font-size'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
     const fs = px(facts.style(el).fontSize);
-    if (fs >= this.threshold.min) return [];
+    if (fs >= T.min) return [];
     // only a class known to be a size under 16px is swapped; a theme's own size name (text-small) gets advice
     const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 99) < 16);
     return [{
@@ -1005,8 +1001,7 @@ function stickyHeader(facts) {
 
 // #73. scroll-margin-top on anchor targets, so the sticky header doesn't cover the heading you jumped to.
 export const anchorOffset = {
-  id: 'craft/anchor-offset', family: 'craft', round: { '*': 'up' }, number: [73], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style'],
-  threshold: {},
+  id: 'craft/anchor-offset', family: 'craft', round: { '*': 'up' }, number: [73], owns: ['scroll'], once: 'ancestor', reads: ['style'],
   check({ el, facts }, theme) {
     if (!el.id || !el.matches('h1, h2, h3, h4, section, article, [id]:is(h5, h6)')) return [];
     // an id is only a place people land when something links to it (a link on the page, or the address itself)
@@ -1030,10 +1025,9 @@ export const anchorOffset = {
 
 // #76. Truncate paths and ids in the middle: their ends carry the meaning.
 export const middleTruncate = {
-  id: 'craft/middle-truncate', family: 'craft', number: [76], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', refines: ['craft/truncate-intent'],
+  id: 'craft/middle-truncate', family: 'craft', number: [76], owns: ['text-flow'], once: 'ancestor', refines: ['craft/truncate-intent'],
   scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)), reads: ['style'],
-  threshold: {},
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     const t = words(el);
     if (!truncated(el, s) || !pathLike(t)) return [];
@@ -1060,9 +1054,9 @@ const hueOf = (rgbv) => { const [, a, b] = oklab(rgbv); return ((Math.atan2(b, a
 
 // #48. text-wrap by role: headings balance, running text pretty.
 export const textWrapRole = {
-  id: 'craft/text-wrap-role', family: 'craft', number: [48], tier: TIER.legibility, owns: ['text-flow'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { width: 300 },
-  check({ el, facts }) {
+  id: 'craft/text-wrap-role', family: 'craft', number: [48], owns: ['text-flow'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
     const s = facts.style(el);
     if (/balance|pretty|nowrap/.test(`${s.textWrap ?? ''} ${s.textWrapStyle ?? ''} ${s.textWrapMode ?? ''}`) || s.whiteSpace === 'nowrap' || s.textOverflow === 'ellipsis') return [];
@@ -1078,8 +1072,8 @@ export const textWrapRole = {
     const ratio = widths.at(-1) / Math.max(...widths.slice(0, -1));
     // a heading whose last line is less than half the others: visibly uneven; running text whose last line is a
     // near-orphan (under 15% of the others), only on a wide block
-    const uneven = heading && ratio < 0.5;
-    const block = !heading && el.matches('p, li, dd, blockquote') && lines >= 3 && facts.rect(el).width >= this.threshold.width && ratio < 0.15;
+    const uneven = heading && ratio < T.uneven;
+    const block = !heading && el.matches('p, li, dd, blockquote') && lines >= 3 && facts.rect(el).width >= T.width && ratio < T.orphan;
     if (!uneven && !block) return [];
     const to = heading ? 'text-balance' : 'text-pretty';
     return [{
@@ -1093,20 +1087,21 @@ export const textWrapRole = {
 
 // #40. Continuous corners, where the browser draws them: an advisory (taste), on large surfaces only.
 export const continuousCorners = {
-  id: 'craft/continuous-corners', family: 'craft', number: [40], tier: TIER.advisory, owns: ['radius'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { size: 160, radius: 16 }, judge: true,
-  check({ el, facts }) {
+  id: 'craft/continuous-corners', family: 'craft', number: [40], owns: ['radius'], once: 'ancestor', reads: ['style', 'rect'],
+  judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!globalThis.CSS?.supports?.('corner-shape', 'squircle')) return [];
     const s = facts.style(el), r = facts.rect(el);
     const rad = px(s.borderTopLeftRadius);
-    if (r.width < this.threshold.size * 0.75 || r.height < this.threshold.size * 0.75 || rad < this.threshold.radius * 0.75) return [];
-    const grey = r.width < this.threshold.size || r.height < this.threshold.size || rad < this.threshold.radius;
+    if (r.width < T.size * 0.75 || r.height < T.size * 0.75 || rad < T.radius * 0.75) return [];
+    const grey = r.width < T.size || r.height < T.size || rad < T.radius;
     // a plain round corner computes as superellipse(1); anything else is already shaped on purpose
     if (!/^(round|superellipse\(1\))?$/.test(s.getPropertyValue('corner-shape').trim())) return [];
     if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || s.boxShadow !== 'none')) return [];
     return [{
       ...say(this.id, { r: rad }),
-      key: this.id, tier: TIER.advisory, text: utility(el, 'rounded') ?? 'border-radius', props: ['border-radius'], value: `${rad}px`, n: rad,
+      key: this.id, tier: T.tier, text: utility(el, 'rounded') ?? 'border-radius', props: ['border-radius'], value: `${rad}px`, n: rad,
       evidence: { radius: rad, width: r.width, height: r.height }, confidence: grey ? GREY : 0.8,
       suggest: { kind: 'class', from: '', to: '[corner-shape:squircle]', why: 'a smoother curve at the same size', sets: { cornerShape: 'squircle' } },
     }];
@@ -1115,8 +1110,7 @@ export const continuousCorners = {
 
 // #49. Optical sizing on, when the font has the axis.
 export const opticalSizing = {
-  id: 'craft/optical-sizing', family: 'craft', number: [49], tier: TIER.craft, owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
-  threshold: {},
+  id: 'craft/optical-sizing', family: 'craft', number: [49], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
     if (!facts.text(el)) return [];
     const s = facts.style(el);
@@ -1139,18 +1133,19 @@ export const opticalSizing = {
 
 // #21 + #52. A grey shadow on a coloured ground: tint it.
 export const tintedShadow = {
-  id: 'craft/tinted-shadow', family: 'craft', number: [21, 52], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style', 'ground'],
-  threshold: { ground: 0.03, shadow: 0.01, alpha: 0.1 }, judge: true,
-  check({ el, facts }) {
+  id: 'craft/tinted-shadow', family: 'craft', number: [21, 52], owns: ['shadow'], once: 'ancestor', reads: ['style', 'ground'],
+  judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
     const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
-    const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > this.threshold.alpha);
+    const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > T.alpha);
     if (!colours.length) return [];
     const ground = facts.ground(el.parentElement);
     // a barely coloured ground (two thirds of the way to the line) is the grey band: is the grey shadow dirty there?
-    if (chroma(ground) <= this.threshold.ground * 0.66 || !colours.every((c) => chroma(c) < this.threshold.shadow)) return [];
-    const grey = chroma(ground) <= this.threshold.ground;
+    if (chroma(ground) <= T.ground * 0.66 || !colours.every((c) => chroma(c) < T.shadow)) return [];
+    const grey = chroma(ground) <= T.ground;
     const h = Math.round(hueOf(ground)), a = Math.max(...colours.map((c) => c[3]));
     return [{
       ...say(this.id, { ground: hex(ground) }),
@@ -1163,9 +1158,10 @@ export const tintedShadow = {
 
 // #56. A two-stop scrim over an image: ease it.
 export const easedScrim = {
-  id: 'craft/eased-scrim', family: 'craft', number: [56], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { length: 80 }, judge: true,
-  check({ el, facts }) {
+  id: 'craft/eased-scrim', family: 'craft', number: [56], owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     if (!/^linear-gradient\(/.test(s.backgroundImage) || /,\s*linear-gradient/.test(s.backgroundImage) || s.position !== 'absolute') return [];
     const stops = [...s.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0]));
@@ -1173,8 +1169,8 @@ export const easedScrim = {
     const clear = stops.find((c) => c[3] === 0), dark = stops.find((c) => c[3] >= 0.5 && oklab(c)[0] < 0.2);
     if (!clear || !dark) return [];
     const r = facts.rect(el);
-    if (Math.max(r.width, r.height) < this.threshold.length * 0.7) return [];
-    const grey = Math.max(r.width, r.height) < this.threshold.length; // a short fade: does its edge show?
+    if (Math.max(r.width, r.height) < T.length * 0.7) return [];
+    const grey = Math.max(r.width, r.height) < T.length; // a short fade: does its edge show?
     // over media: an image, a video or a picture beside it or around it, covering half of it or more
     const media = [...(el.parentElement?.querySelectorAll('img, video, picture') ?? [])].find((m) => {
       const q = m.getBoundingClientRect();
@@ -1194,24 +1190,26 @@ export const easedScrim = {
 
 // #25. No pure black or white on large areas (white only where the theme's surfaces are tinted; else it is taste).
 export const pureBlackWhite = {
-  id: 'craft/pure-black-white', family: 'craft', number: [25], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { share: 0.25, area: 200000 }, judge: true,
+  id: 'craft/pure-black-white', family: 'craft', number: [25], owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  judge: true,
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el), c = rgb(s.backgroundColor);
     if (!c || c[3] < 1) return [];
     const black = c[0] === 0 && c[1] === 0 && c[2] === 0, white = c[0] === 255 && c[1] === 255 && c[2] === 255;
     if (!black && !white) return [];
     const r = facts.rect(el), area = r.width * r.height;
-    const big = (k) => area >= this.threshold.area * k || area >= innerWidth * innerHeight * this.threshold.share * k;
+    const big = (k) => area >= T.area * k || area >= innerWidth * innerHeight * T.share * k;
     if (!big(0.5)) return [];
     const grey = !big(1); // half the size: is it large enough to glare?
     // a colour the theme names (bg-surface that happens to be white) is the project's decision, not an escape
     const own = colourClass(el, 'bg', theme);
     if (own && theme.colors().some((t) => own === `bg-${t.short}`)) return [];
     const tinted = theme.colors().find((t) => /surface|paper|ground|background/.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
-    const near = black ? theme.nearestColor([20, 20, 22], 40) : tinted;
-    const tier = black || tinted ? TIER.craft : TIER.advisory;
+    const near = black ? theme.nearestColor([20, 20, 22], T.within) : tinted;
+    // white outside a tinted theme is taste, unless the spec makes the rule a note already
+    const tier = black || tinted ? T.tier : Math.max(T.tier, TIER.advisory);
     return [{
       ...say(this.id, { black }),
       key: this.id, tier, text: own ?? 'background-color', props: ['background-color'], value: hex(c), n: area,
@@ -1223,9 +1221,9 @@ export const pureBlackWhite = {
 
 // #33. A fixed width that crushes its words: let it fit them.
 export const contentSize = {
-  id: 'craft/content-size', family: 'craft', number: [33], tier: TIER.craft, owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
-  threshold: { slack: 0.2 },
-  check({ el, facts }) {
+  id: 'craft/content-size', family: 'craft', number: [33], owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('button, a, [role="button"], span, label') || el.matches('input, td, th, img')) return [];
     if (!facts.text(el)) return [];
     const parent = el.parentElement && facts.style(el.parentElement);
@@ -1237,7 +1235,7 @@ export const contentSize = {
     const range = document.createRange(); range.selectNodeContents(el);
     const need = Math.max(...[...range.getClientRects()].map((q) => q.right), 0) - Math.min(...[...range.getClientRects()].map((q) => q.left), Infinity);
     const overflow = el.scrollWidth > el.clientWidth + 1 || lineCount(el, facts) > 1 && s.whiteSpace !== 'normal';
-    if (!(overflow || (need > 0 && (inner - need) / inner < this.threshold.slack && lineCount(el, facts) > 1))) return [];
+    if (!(overflow || (need > 0 && (inner - need) / inner < T.slack && lineCount(el, facts) > 1))) return [];
     return [{
       ...say(this.id, { w: r.width, need: Math.ceil(need + b.pl + b.pr) }),
       key: this.id, text: cls, props: ['width'], value: `${r.width}px`, n: r.width,
@@ -1254,9 +1252,9 @@ const oneLine = (el, facts) => facts.text(el) && lineCount(el, facts) <= 1;
 
 // #6. Baseline alignment: text of different sizes side by side lines up on its baseline, not its centre.
 export const baselineAlign = {
-  id: 'craft/baseline-align', family: 'craft', number: [6], tier: TIER.legibility, owns: ['align'], once: 'ancestor', reads: ['style', 'kids', 'metrics'],
-  threshold: { off: 1 },
-  check({ el, facts }) {
+  id: 'craft/baseline-align', family: 'craft', number: [6], owns: ['align'], once: 'ancestor', reads: ['style', 'kids', 'metrics'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const s = facts.style(el);
     if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || /baseline/.test(s.alignItems)) return [];
     // a pill, tag or button draws a box, and a box is rightly centred on the words: only bare words share a baseline
@@ -1268,7 +1266,7 @@ export const baselineAlign = {
     const lines = words.map((k) => facts.metrics(k)?.baseline).filter((b) => b !== null && b !== undefined);
     if (lines.length < 2) return [];
     const off = Math.max(...lines) - Math.min(...lines);
-    if (off <= this.threshold.off) return [];
+    if (off <= T.off) return [];
     const cls = utility(el, 'items');
     return [{
       ...say(this.id, { off }),
@@ -1281,23 +1279,23 @@ export const baselineAlign = {
 
 // #4. An icon beside words is centred on the capitals' middle, not the line box.
 export const iconCap = {
-  id: 'craft/icon-cap', family: 'craft', number: [4], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'metrics'],
-  threshold: { off: 1, icon: 32 },
+  id: 'craft/icon-cap', family: 'craft', number: [4], owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'metrics'],
   // judged from the row that holds the icon (the reader doesn't read inside svg), and drawn on that row
-  check({ el, facts }) {
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const ps = facts.style(el);
     if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection) || !/center/.test(ps.alignItems)) return [];
     const icon = [...el.children].find((k) => k.localName === 'svg');
     if (!icon) return [];
     const parent = el;
     const r = facts.rect(icon);
-    if (r.height > this.threshold.icon || r.height < 4) return [];
+    if (r.height > T.icon || r.height < 4) return [];
     const host = facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k));
     if (!host || lineCount(host, facts) > 1) return [];
     const m = facts.metrics(host);
     if (!m?.baseline) return [];
     const off = (r.top + r.height / 2) - (m.baseline - m.capHeight / 2);
-    if (Math.abs(off) <= this.threshold.off) return [];
+    if (Math.abs(off) <= T.off) return [];
     const whole = Math.round(off * (devicePixelRatio || 1)) / (devicePixelRatio || 1);
     return [{
       ...say(this.id, { off }),
@@ -1310,17 +1308,17 @@ export const iconCap = {
 
 // #5. Trim the leading: padding next to a single line of words looks bigger than it is.
 export const trimLeading = {
-  id: 'craft/trim-leading', family: 'craft', number: [5], tier: TIER.craft, owns: ['text-box'], once: 'ancestor', reads: ['style', 'metrics'],
-  threshold: { leading: 3, share: 0.25 },
-  check({ el, facts }) {
+  id: 'craft/trim-leading', family: 'craft', number: [5], owns: ['text-box'], once: 'ancestor', reads: ['style', 'metrics'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).length) return [];
     const s = facts.style(el);
     if (/trim/.test(s.textBoxTrim ?? s.getPropertyValue('text-box-trim') ?? '')) return [];
     if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || px(s.borderTopWidth) > 0)) return [];
     const m = facts.metrics(el), pt = px(s.paddingTop);
-    if (!m || pt <= 0 || m.halfLeading < this.threshold.leading) return [];
+    if (!m || pt <= 0 || m.halfLeading < T.leading) return [];
     // every font has room above its capitals; what a person didn't choose is the line's own extra space
-    if (m.halfLeading < pt * this.threshold.share) return [];
+    if (m.halfLeading < pt * T.share) return [];
     const unseen = m.halfLeading + (m.ascent - m.capHeight);
     const trim = globalThis.CSS?.supports?.('text-box-trim', 'trim-both');
     return [{
@@ -1339,14 +1337,14 @@ const WEIGHTS = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 5
 
 // #17. Two or three weights: a weight the page barely uses, when it already has three or more.
 export const weightLevels = {
-  id: 'craft/weight-levels', family: 'craft', number: [17], tier: TIER.craft, owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'census'],
-  threshold: { sample: 20, minority: 0.1 },
-  check({ el, facts }) {
+  id: 'craft/weight-levels', family: 'craft', number: [17], owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'census'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el) || !facts.census) return [];
     const c = facts.census('weights');
-    if (c.sample < this.threshold.sample || c.clusters.length <= 3) return [];
+    if (c.sample < T.sample || c.clusters.length <= 3) return [];
     const w = Math.round((parseInt(facts.style(el).fontWeight, 10) || 400) / 100) * 100;
-    if (c.share(w) > this.threshold.minority) return [];
+    if (c.share(w) > T.minority) return [];
     const majority = c.clusters.slice(0, 3).map((k) => k.value);
     if (majority.includes(w)) return [];
     const near = majority.slice().sort((a, b) => Math.abs(a - w) - Math.abs(b - w))[0];
@@ -1362,17 +1360,17 @@ export const weightLevels = {
 
 // #17. Two or three text greys: a neutral text colour the page barely uses, when it already has three or more.
 export const greyLevels = {
-  id: 'craft/grey-levels', family: 'craft', number: [17], tier: TIER.craft, owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground', 'census'],
-  threshold: { sample: 20, minority: 0.1 },
+  id: 'craft/grey-levels', family: 'craft', number: [17], owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground', 'census'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.text(el) || !facts.census) return [];
     const c = facts.census('textColors');
-    if (c.sample < this.threshold.sample || c.clusters.length <= 3) return [];
+    if (c.sample < T.sample || c.clusters.length <= 3) return [];
     const k = c.clusters.find((x) => x.members.includes(el));
-    if (!k || k.count / c.sample > this.threshold.minority || c.clusters.slice(0, 3).includes(k)) return [];
+    if (!k || k.count / c.sample > T.minority || c.clusters.slice(0, 3).includes(k)) return [];
     const majority = c.clusters.slice(0, 3);
     const near = majority.map((x) => x.value).sort((a, b) => Math.hypot(...a.map((v, i) => v - k.value[i])) - Math.hypot(...b.map((v, i) => v - k.value[i])))[0];
-    const token = theme.nearestColor(near, 24);
+    const token = theme.nearestColor(near, T.within);
     const cls = colourClass(el, 'text', theme) ?? classesOf(el).split(/\s+/).find((x) => /^text-\[#/.test(x)) ?? null;
     return [{
       ...say(this.id, { used: majority.length }),
@@ -1385,22 +1383,22 @@ export const greyLevels = {
 
 // #12. Vertical rhythm: a stack whose gap is off the gaps the page keeps to.
 export const rhythm = {
-  id: 'craft/rhythm', family: 'craft', number: [12], tier: TIER.craft, owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'census'],
-  threshold: { sample: 6, off: 2, majority: 0.6 },
+  id: 'craft/rhythm', family: 'craft', number: [12], owns: ['gap'], once: 'ancestor', reads: ['style', 'kids', 'census'],
   check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!facts.census) return [];
     const s = facts.style(el);
     if (!/flex/.test(s.display) || !/column/.test(s.flexDirection) || facts.kids(el).length < 3) return [];
     const g = px(s.rowGap === 'normal' ? 0 : s.rowGap);
     if (g < 8) return [];
     const c = facts.census('gaps');
-    if (c.sample < this.threshold.sample) return [];
+    if (c.sample < T.sample) return [];
     // the rhythm: the clusters that together cover most of the page
     const steps = [];
     let covered = 0;
-    for (const k of c.clusters) { if (covered / c.sample >= this.threshold.majority) break; steps.push(k.value); covered += k.count; }
+    for (const k of c.clusters) { if (covered / c.sample >= T.majority) break; steps.push(k.value); covered += k.count; }
     // a minority: a tenth of the page or less, and a lone value always (on a small page one place is over a tenth)
-    if (steps.some((v) => Math.abs(v - g) <= this.threshold.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
+    if (steps.some((v) => Math.abs(v - g) <= T.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
     const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
     const step = theme.nearest('spacing', near, 0.5);
     const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
@@ -1422,31 +1420,32 @@ const iconOnly = (el, facts) => {
 
 // #2. An icon-only control centres the icon's weight, not its box: a play triangle centred by its box looks left.
 export const opticalCentre = {
-  id: 'craft/optical-centre', family: 'craft', number: [2], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'ink'],
-  threshold: { lean: 0.06, off: 1, icon: 32, sure: 1.4 }, judge: true,
-  check({ el, facts }) {
+  id: 'craft/optical-centre', family: 'craft', number: [2], owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'ink'],
+  judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches(CONTROL)) return [];
     const svg = iconOnly(el, facts);
     if (!svg) return [];
     const r = facts.rect(svg), c = facts.rect(el);
-    if (r.width > this.threshold.icon || r.height > this.threshold.icon) return [];
+    if (r.width > T.icon || r.height > T.icon) return [];
     const ink = facts.ink(svg);
     if (!ink?.bbox) return [];
     const mid = { x: ink.bbox.x + ink.bbox.w / 2, y: ink.bbox.y + ink.bbox.h / 2 };
     const lean = { x: (ink.centroid.x - mid.x) / ink.bbox.w, y: (ink.centroid.y - mid.y) / ink.bbox.h };
-    if (Math.abs(lean.x) < this.threshold.lean && Math.abs(lean.y) < this.threshold.lean) return []; // a symmetric shape
+    if (Math.abs(lean.x) < T.lean && Math.abs(lean.y) < T.lean) return []; // a symmetric shape
     // where the eye puts the icon's middle: halfway between its box's middle and its weight
     const seen = { x: r.left + (mid.x + ink.centroid.x) / 2, y: r.top + (mid.y + ink.centroid.y) / 2 };
     const move = { x: c.left + c.width / 2 - seen.x, y: c.top + c.height / 2 - seen.y };
     const axis = Math.abs(move.x) >= Math.abs(move.y) ? 'x' : 'y', by = move[axis];
-    if (Math.abs(by) < this.threshold.off) return [];
+    if (Math.abs(by) < T.off) return [];
     const whole = Math.round(by), dir = axis === 'x' ? (by > 0 ? 'right' : 'left') : (by > 0 ? 'down' : 'up');
     const cls = `${whole < 0 ? '-' : ''}translate-${axis}-${Math.abs(whole) === 1 ? 'px' : `[${Math.abs(whole)}px]`}`;
     return [{
       ...say(this.id, { by: Math.abs(by), dir }),
       key: this.id, text: 'svg', props: ['translate'], value: `${Math.round(by * 10) / 10}px`, n: by,
       // a nudge of 1 to 1.4px is the grey band: whether the eye sees it depends on the shape (the judge looks)
-      evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: Math.abs(by) < this.threshold.sure ? GREY : 0.84,
+      evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: Math.abs(by) < T.sure ? GREY : 0.84,
       suggest: { kind: 'advice', text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
     }];
   },
@@ -1454,11 +1453,12 @@ export const opticalCentre = {
 
 // #3. In a set of icons, round ones are drawn a little bigger than square ones, or they look smaller.
 export const overshoot = {
-  id: 'craft/overshoot', family: 'craft', number: [3], tier: TIER.advisory, owns: ['size'], once: 'ancestor', reads: ['kids', 'rect', 'ink'],
-  threshold: { set: 3, over: 1.04 }, judge: true,
-  check({ el, facts }) {
+  id: 'craft/overshoot', family: 'craft', number: [3], owns: ['size'], once: 'ancestor', reads: ['kids', 'rect', 'ink'],
+  judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const svgs = facts.kids(el).map((k) => (k.localName === 'svg' ? k : iconOnly(k, facts))).filter(Boolean);
-    if (svgs.length < this.threshold.set) return [];
+    if (svgs.length < T.set) return [];
     const w0 = facts.rect(svgs[0]).width;
     if (svgs.some((g) => Math.abs(facts.rect(g).width - w0) > 0.5)) return []; // one set shares one size
     const inks = svgs.map((g) => facts.ink(g));
@@ -1468,7 +1468,7 @@ export const overshoot = {
     const box = inks.filter((i) => square(i.bbox) && i.fill >= 0.9);
     if (!round.length || !box.length) return [];
     const big = (i) => Math.max(i.bbox.w, i.bbox.h), sq = Math.max(...box.map(big)), rd = Math.min(...round.map(big));
-    if (rd >= sq * this.threshold.over) return [];
+    if (rd >= sq * T.over) return [];
     return [{
       ...say(this.id, { rd, sq }),
       key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
@@ -1494,14 +1494,14 @@ const strokePairs = (facts) => {
   return out;
 };
 export const strokeWeight = {
-  id: 'craft/stroke-weight', family: 'craft', number: [50], tier: TIER.craft, owns: ['border'], once: 'ancestor', reads: ['kids', 'style', 'census'],
-  threshold: { sample: 8, off: 0.4, big: 40, heavy: 3 },
-  check({ el, facts }) {
+  id: 'craft/stroke-weight', family: 'craft', number: [50], owns: ['border'], once: 'ancestor', reads: ['kids', 'style', 'census'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const svg = facts.kids(el).find((k) => k.localName === 'svg');
     const w = svg && facts.stroke(svg);
     if (!w) return [];
     const r = facts.rect(svg);
-    if (r.width >= this.threshold.big && w > this.threshold.heavy) {
+    if (r.width >= T.big && w > T.heavy) {
       return [{ ...say(this.id, { w, big: true }), key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
         evidence: { stroke: Math.round(w * 10) / 10, size: Math.round(r.width) }, confidence: 0.84,
         suggest: { kind: 'advice', text: 'Keep the stroke at the small size’s width as the icon grows (absoluteStrokeWidth, or [stroke-width:1.5]).' } }];
@@ -1511,12 +1511,12 @@ export const strokeWeight = {
     // the app's own pairing, learnt once per pass: for each weight band, the stroke most of its icons use
     facts.strokes ??= strokePairs(facts);
     const band = weightBand(facts.style(host).fontWeight), same = facts.strokes.filter((p) => p.band === band);
-    if (same.length < this.threshold.sample) return [];
+    if (same.length < T.sample) return [];
     const counts = new Map();
     for (const p of same) { const k = Math.round(p.w * 4) / 4; counts.set(k, (counts.get(k) ?? 0) + 1); }
     const [usual, n] = [...counts].sort((a, b) => b[1] - a[1])[0];
     const mine = counts.get(Math.round(w * 4) / 4) ?? 0;
-    if (Math.abs(w - usual) < this.threshold.off || mine / same.length > 0.25 || n / same.length < 0.6) return [];
+    if (Math.abs(w - usual) < T.off || mine / same.length > 0.25 || n / same.length < 0.6) return [];
     return [{
       ...say(this.id, { w, usual }),
       key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
@@ -1528,8 +1528,8 @@ export const strokeWeight = {
 
 // #75 (static half). A scroll area with no scrollbar shows nothing at its edge: people don't know there is more.
 export const scrollCue = {
-  id: 'craft/scroll-cue', family: 'craft', number: [75], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
-  check({ el, facts }) {
+  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
+  check({ el, facts }, theme) {
     const s = facts.style(el);
     const y = /auto|scroll/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 4;
     const x = !y && /auto|scroll/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 4;
@@ -1579,13 +1579,13 @@ const activeSelectors = () => {
   return list;
 };
 export const pressFeedback = {
-  id: 'craft/press-feedback', family: 'craft', number: [31], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['style', 'census'],
-  threshold: { idiom: 2 },
-  check({ el, facts }) {
+  id: 'craft/press-feedback', family: 'craft', number: [31], owns: ['motion'], once: 'ancestor', reads: ['style', 'census'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     if (!el.matches('button, [role="button"]') || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
     if (/(^|\s)active:/.test(classesOf(el)) || el.hasAttribute('aria-pressed')) return [];
     facts.press ??= pressIdiom(facts) ?? false;
-    if (!facts.press || facts.press.n < this.threshold.idiom) return []; // an app that never presses is a page finding, headless
+    if (!facts.press || facts.press.n < T.idiom) return []; // an app that never presses is a page finding, headless
     if (activeSelectors().some((sel) => { try { return sel.trim() && el.matches(sel); } catch { return false; } })) return [];
     return [{
       ...say(this.id, { idiom: facts.press.cls }),
@@ -1598,14 +1598,15 @@ export const pressFeedback = {
 
 // #68. A surface leaves faster than it came: the open and closed states share one duration.
 export const exitFaster = {
-  id: 'craft/exit-faster', family: 'craft', number: [68], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['style'],
-  check({ el }) {
+  id: 'craft/exit-faster', family: 'craft', number: [68], owns: ['motion'], once: 'ancestor', reads: ['style'],
+  check({ el }, theme) {
+    const T = theme.spec(this.id);
     const open = variantOf(el, 'data-[state=open]:'), closed = variantOf(el, 'data-[state=closed]:');
     if (!open.length || !closed.length) return [];
     if (closed.some((c) => ms(c) !== null)) return []; // the exit has its own duration
     const own = classesOf(el).split(/\s+/).map(ms).find((n) => n !== null) ?? open.map(ms).find((n) => n !== null) ?? 150;
-    if (own < 80) return [];
-    const exit = [...STEPS].reverse().find((n) => n <= own * 0.8);
+    if (own < T.instant) return [];
+    const exit = [...STEPS].reverse().find((n) => n <= own * T.ratio);
     if (!exit) return [];
     return [{
       ...say(this.id, { enter: own, exit }),
@@ -1618,8 +1619,8 @@ export const exitFaster = {
 
 // #64. Motion that can be interrupted: keyframes on both states restart from their first frame when reversed.
 export const interruptible = {
-  id: 'craft/interruptible', family: 'craft', number: [64], tier: TIER.advisory, owns: ['motion'], once: 'ancestor', reads: ['style'],
-  check({ el }) {
+  id: 'craft/interruptible', family: 'craft', number: [64], owns: ['motion'], once: 'ancestor', reads: ['style'],
+  check({ el }, theme) {
     const keyframed = (list) => list.some((c) => /^animate-/.test(c));
     if (!keyframed(variantOf(el, 'data-[state=open]:')) || !keyframed(variantOf(el, 'data-[state=closed]:'))) return [];
     return [{

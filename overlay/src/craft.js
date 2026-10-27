@@ -5,25 +5,25 @@
  * is off the scale; craft says a value on the scale is still wrong here, because a rule of good making relates it to
  * its neighbours. The engine measures, compares, and speaks only when the evidence is plain.
  *
- *  rules      plain objects (craft-rules.js): { id, family: 'craft', reads, threshold, check(facts, theme) → findings }.
- *             A rule never touches the DOM; it reads facts and returns findings with evidence, confidence, a why and
- *             a suggestion (a class change, or advice when no safe edit exists)
+ *  rules      plain objects (craft-rules.js): { id, family: 'craft', owns, reads, check(facts, theme) → findings }.
+ *             A rule never touches the DOM; it reads facts, compares them against the spec (theme.spec(id): the
+ *             standard as this project's config tunes it, craft-spec.js) and returns findings with evidence,
+ *             confidence, a why and a suggestion (a class change, or advice when no safe edit exists)
  *  facts      one measuring pass per run, reads only, memoised per element (rect, style, kids, text) and reachable
  *             for an element's relatives through the same accessors, so nothing is measured twice in a pass
  *  theme      the overlay's decisions: scale(family) → [{ name, short, px }], colors() → [{ name, short, rgb }];
  *             colours are measured once per decisions load with a probe, before any element is read
  *  marks      a finding becomes a mark the overlay already draws and groups: ledger 'new', glyph 'craft', props for
  *             its place, `rule|text` for its cause row, choices [] (writing a suggestion is the next layer)
- *  noise      a confidence floor (FLOOR), per-rule thresholds on the rule, and a finding dropped when an ancestor
- *             carries the same one with the same text (one row of a nested list is enough)
+ *  noise      a confidence floor (FLOOR), per-rule thresholds in the spec, a rule the spec turns off never run, and a
+ *             finding dropped when an ancestor carries the same one with the same text (one row of a nested list is enough)
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate()
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
 import { verdicts } from './verdict.js';
-import { rgb, VIRTUAL } from './craft-read.js';
+import { rgb, VIRTUAL, SPEC } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
-import { resolveSpec, specFor } from './craft-spec.js';
 import { request } from './api.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
@@ -242,16 +242,16 @@ function labOf([r, g, b]) {
   return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q];
 }
 
-// The spec (docs/briefs/craft-spec.md): the standard until the project's own arrives from the server (`spec`), then
-// that; every Craft is told, and judges the page again. One per page, shared by every Theme.
-const SPEC = { value: resolveSpec(), loaded: false, loading: null, crafts: new Set() };
+// The spec (docs/briefs/craft-spec.md) is asked of the server once per page (`spec`); until it lands the standard
+// judges (craft-read.js SPEC); when it lands every Craft is told, and judges the page again.
+const LOAD = { loading: null, crafts: new Set() };
 function loadSpec() {
-  if (SPEC.loaded || SPEC.loading) return;
-  SPEC.loading = request('spec', {}).then((s) => {
-    if (!s?.principles) { SPEC.loading = null; return; } // the server is still reading: asked again on the next pass
+  if (SPEC.loaded || LOAD.loading) return;
+  LOAD.loading = request('spec', {}).then((s) => {
+    if (!s?.principles) { LOAD.loading = null; return; } // the server is still reading: asked again on the next pass
     SPEC.value = s; SPEC.loaded = true;
-    for (const c of SPEC.crafts) c.specChanged();
-  }).catch(() => { SPEC.loading = null; });
+    for (const c of LOAD.crafts) c.specChanged();
+  }).catch(() => { LOAD.loading = null; });
 }
 export const spec = { get loaded() { return SPEC.loaded; }, get value() { return SPEC.value; }, load: loadSpec };
 
@@ -276,7 +276,7 @@ export class Theme {
     return has;
   }
   // the spec's entry for a rule: { enabled, tier, ...thresholds, want } (the standard until the project's own arrives)
-  spec(id) { return specFor(SPEC.value, id) ?? { enabled: true }; }
+  spec(id) { return SPEC.rule(id); }
   // the token policy and target: { create, name, file, shape, hash }
   tokens() { return SPEC.value.tokens; }
   get specLoaded() { return SPEC.loaded; }
@@ -374,12 +374,21 @@ export class Craft {
   onFacts = null;
   constructor({ rules = RULES, theme } = {}) {
     INK.crafts.add(this);
-    SPEC.crafts.add(this);
+    LOAD.crafts.add(this);
     this.#rules = rules;
     this.#theme = theme instanceof Theme ? theme : new Theme(theme ?? {});
     loadSpec();
   }
-  get rules() { return this.#rules; }
+  // the rules as the spec has them: a rule the spec turns off is not run at all; a tier the spec sets is the rule's
+  #spec = null; #active = null;
+  get rules() {
+    if (this.#active && this.#spec === SPEC.value) return this.#active;
+    this.#spec = SPEC.value;
+    return (this.#active = this.#rules.flatMap((r) => {
+      const s = this.#theme.spec(r.id);
+      return s.enabled === false ? [] : [Object.assign(Object.create(r), { tier: typeof s.tier === 'number' ? s.tier : r.tier ?? TIER.craft })];
+    }));
+  }
   get theme() { return this.#theme; }
 
   // Everything measured is measured again on the next run (a resize, a write, the page changed under us).
@@ -398,7 +407,7 @@ export class Craft {
       facts.items = items.filter((i) => i.checked !== false).map((i) => i.el);
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
       // craft judges what it can reach: an element outside the project's source has no line to fix, so it is left be
-      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.#rules });
+      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {
@@ -423,8 +432,9 @@ export class Craft {
     const marks = [];
     // a special case that covers this element is its authority, firing or not: the general rules it refines don't run
     const quiet = new Set();
-    for (const rule of this.#rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
-    for (const rule of this.#rules) {
+    const rules = this.rules;
+    for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
+    for (const rule of rules) {
       if (quiet.has(rule.id)) continue;
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's

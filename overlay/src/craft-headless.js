@@ -267,18 +267,18 @@ const isHighlight = (l) => l.inset && l.y >= 1 && l.rgb && oklab(l.rgb)[0] > 0.7
 
 // #54. In the dark scheme a shadow doesn't lift a surface: it needs a lighter surface or a light edge.
 export const darkElevation = {
-  id: 'craft/dark-elevation', family: 'craft', number: [54], tier: TIER.craft, owns: ['background', 'shadow'], once: 'ancestor', reads: ['style', 'other:dark'], pairs: ['dark'],
-  threshold: { blur: 4, alpha: 0.05, lift: 0.03, ground: 0.3 },
-  check({ el, facts }) {
+  id: 'craft/dark-elevation', family: 'craft', number: [54], owns: ['background', 'shadow'], once: 'ancestor', reads: ['style', 'other:dark'], pairs: ['dark'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const dark = facts.other('dark');
     const d = dark?.get(el);
-    if (!d || dark.bodyL >= this.threshold.ground || d.pos === 'fixed') return [];
+    if (!d || dark.bodyL >= T.ground || d.pos === 'fixed') return [];
     const layers = layersOf(d.sh);
-    const lifts = layers.filter((l) => !l.inset && l.blur >= this.threshold.blur && (l.rgb?.[3] ?? 1) >= this.threshold.alpha);
+    const lifts = layers.filter((l) => !l.inset && l.blur >= T.blur && (l.rgb?.[3] ?? 1) >= T.alpha);
     const bg = d.bg;
     if (!lifts.length || !bg || bg[3] < 0.95 || layers.some(isHighlight)) return [];
     const lift = oklab(bg)[0] - oklab(d.gp)[0];
-    if (lift > this.threshold.lift || /dark:inset-shadow/.test(classesOf(el))) return [];
+    if (lift > T.lift || /dark:inset-shadow/.test(classesOf(el))) return [];
     const blur = Math.max(...lifts.map((l) => l.blur));
     return [{
       ...say(this.id, { blur }),
@@ -293,16 +293,16 @@ export const darkElevation = {
 // text is measured and speaks as a note. Regular small text is the grey band: it may glow too, or may not (an eye
 // decides, when asked: `judge`), so it is held below the floor and shown only if the judge said yes.
 export const darkWeight = {
-  id: 'craft/dark-weight', family: 'craft', number: [44], tier: TIER.advisory, owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'other:dark'], pairs: ['dark'], judge: true,
-  threshold: { weight: 500, size: 20, grey: 14, ink: 0.8, ground: 0.3 },
-  check({ el, facts }) {
+  id: 'craft/dark-weight', family: 'craft', number: [44], owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'other:dark'], pairs: ['dark'], judge: true,
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const dark = facts.other('dark');
     const d = dark?.get(el);
     if (!d || !facts.text(el)) return [];
     const test = (r, heavy) => {
       const fg = r.fg, ground = r.bg?.[3] > 0.5 ? r.bg : r.gp, w = parseInt(r.fw, 10) || 400;
-      return r.own && fg && oklab(fg)[0] > this.threshold.ink && oklab(ground)[0] < this.threshold.ground && r.sm !== 'antialiased'
-        && (heavy ? w >= this.threshold.weight && px(r.fs) < this.threshold.size : w < this.threshold.weight && px(r.fs) <= this.threshold.grey);
+      return r.own && fg && oklab(fg)[0] > T.ink && oklab(ground)[0] < T.ground && r.sm !== 'antialiased'
+        && (heavy ? w >= T.weight && px(r.fs) < T.size : w < T.weight && px(r.fs) <= T.grey);
     };
     const heavy = test(d, true), grey = !heavy && test(d, false);
     if ((!heavy || !dark.first(this.id, el, (r) => test(r, true))) && !grey) return [];
@@ -311,7 +311,7 @@ export const darkWeight = {
     if (s.fontWeight !== d.fw || s.letterSpacing !== d.ls || /dark:antialiased|dark:font-/.test(classesOf(el))) return [];
     return [{
       ...say(this.id, { weight: parseInt(d.fw, 10) || 400, size: px(d.fs) }),
-      key: this.id, tier: TIER.advisory, text: utility(el, 'font') ?? 'font-weight', props: ['font-weight'], value: d.fw, n: parseInt(d.fw, 10) || 400,
+      key: this.id, tier: T.tier, text: utility(el, 'font') ?? 'font-weight', props: ['font-weight'], value: d.fw, n: parseInt(d.fw, 10) || 400,
       evidence: { weight: d.fw, size: d.fs, ink: `rgb(${d.fg.slice(0, 3).join(', ')})`, words: (el.textContent ?? '').trim().slice(0, 40) }, confidence: heavy ? 0.82 : 0.7,
       suggest: { kind: 'advice', text: 'Add dark:antialiased to the page’s root, so light text keeps the weight you chose.' },
     }];
@@ -320,14 +320,14 @@ export const darkWeight = {
 
 // #77. A skeleton is the shape of what will land: the same height, the same number of rows.
 export const skeletonMatch = {
-  id: 'craft/skeleton-match', family: 'craft', number: [77], tier: TIER.legibility, owns: ['size'], once: 'ancestor', reads: ['rect', 'other:held'], pairs: ['held'],
-  threshold: { height: 4 },
-  check({ el, facts }) {
+  id: 'craft/skeleton-match', family: 'craft', number: [77], owns: ['size'], once: 'ancestor', reads: ['rect', 'other:held'], pairs: ['held'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const rec = facts.other('held')?.skeleton(el);
     if (!rec || rec.after.h === null) return [];
     const delta = rec.after.h - rec.before.h;
     // the container's own growth. A layout shift inside it can come from anything above it, so it is only evidence
-    if (Math.abs(delta) <= this.threshold.height) return [];
+    if (Math.abs(delta) <= T.height) return [];
     return [{
       ...say(this.id, { was: rec.before.h, now: rec.after.h, rows: rec.before.n, rowsNow: rec.after.n }),
       key: this.id, text: 'skeleton', props: ['height'], value: `${rec.before.h}px`, n: Math.abs(delta),
@@ -341,8 +341,8 @@ export const skeletonMatch = {
 // more is there. The still half (craft/scroll-cue in craft-rules.js) can ask `facts.other('scrolled').cue(el)`:
 // true clears it, false confirms it. This rule speaks by itself only when the pair saw no cue.
 export const scrollCueSeen = {
-  id: 'craft/scroll-cue', family: 'craft', number: [75], tier: TIER.legibility, owns: ['scroll'], once: 'ancestor', reads: ['style', 'other:scrolled'], pairs: ['scrolled'],
-  check({ el, facts }) {
+  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'other:scrolled'], pairs: ['scrolled'],
+  check({ el, facts }, theme) {
     if (facts.other('scrolled')?.cue(el) !== false) return [];
     return [{
       ...say('craft/scroll-cue-seen', {}),
@@ -356,20 +356,20 @@ export const scrollCueSeen = {
 // #68, measured. Open it and close it and read the animations: the exit is no quicker than the entrance. The same rule
 // as the still half in craft-rules.js (the same facet): when both speak, the measured one is kept.
 export const exitFasterProbe = {
-  id: 'craft/exit-faster', family: 'craft', number: [68], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
-  threshold: { instant: 80, ratio: 0.9 },
-  check({ el, facts }) {
+  id: 'craft/exit-faster', family: 'craft', number: [68], owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const p = facts.probe(el, 'toggle');
-    if (!p || p.exit === null || p.enter < this.threshold.instant || !placed(el, p) || p.exit / p.enter <= this.threshold.ratio) return [];
-    const under = STEPS.filter((n) => n <= p.enter * 0.8);
-    const step = under.sort((a, b) => Math.abs(a - p.enter * 0.7) - Math.abs(b - p.enter * 0.7))[0];
+    if (!p || p.exit === null || p.enter < T.instant || !placed(el, p) || p.exit / p.enter <= T.measuredRatio) return [];
+    const under = STEPS.filter((n) => n <= p.enter * T.ratio);
+    const step = under.sort((a, b) => Math.abs(a - p.enter * T.want.ratio) - Math.abs(b - p.enter * T.want.ratio))[0];
     const to = step ? `data-[state=closed]:duration-${step}` : null;
     return [{
-      ...say(this.id, { enter: Math.round(p.enter), exit: step ?? Math.round(p.enter * 0.7) }),
+      ...say(this.id, { enter: Math.round(p.enter), exit: step ?? Math.round(p.enter * T.want.ratio) }),
       key: this.id, text: to ?? 'transition-duration', props: ['transition-duration'], value: `${Math.round(p.enter)}ms`, n: p.enter,
       evidence: { enter: Math.round(p.enter), exit: Math.round(p.exit), measured: true }, confidence: 0.92,
       suggest: to && p.surface && fromKey(p.surface) ? { kind: 'class', from: '', to, why: 'leaving is quicker than arriving' }
-        : { kind: 'advice', text: `Close it in about ${Math.round(p.enter * 0.7)}ms: a shorter duration on the closed state.` },
+        : { kind: 'advice', text: `Close it in about ${Math.round(p.enter * T.want.ratio)}ms: a shorter duration on the closed state.` },
     }];
   },
 };
@@ -377,8 +377,8 @@ export const exitFasterProbe = {
 // #64, measured. Close it 40% into its entrance: the motion must carry on from where it is. Keyframes cannot: the exit
 // is a new animation that begins at its own first frame (a frame-to-frame jump can't tell that from a fast transition).
 export const interruptibleProbe = {
-  id: 'craft/interruptible', family: 'craft', number: [64], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
-  check({ el, facts }) {
+  id: 'craft/interruptible', family: 'craft', number: [64], owns: ['motion'], once: 'ancestor', reads: ['probe:toggle'],
+  check({ el, facts }, theme) {
     const p = facts.probe(el, 'toggle');
     if (!p?.restart || !placed(el, p)) return [];
     return [{
@@ -394,15 +394,15 @@ export const interruptibleProbe = {
 // Judged against the app, as its still half is: it speaks when the app's other controls do answer a press (two or more
 // use an active: style), and says that style. A page that never answers a press is a page finding, not one button's.
 export const pressFeedbackProbe = {
-  id: 'craft/press-feedback', family: 'craft', number: [31], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:press'],
-  threshold: { within: 100, idiom: 2 },
-  check({ el, facts }) {
+  id: 'craft/press-feedback', family: 'craft', number: [31], owns: ['motion'], once: 'ancestor', reads: ['probe:press'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const p = facts.probe(el, 'press');
-    if (!p || (p.first !== null && p.first <= this.threshold.within)) return [];
+    if (!p || (p.first !== null && p.first <= T.within)) return [];
     const counts = new Map();
     for (const e of facts.items ?? []) if (e.isConnected && e.matches('button, [role="button"]')) for (const c of classesOf(e).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
     const [idiom, uses] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? [];
-    if (!idiom || uses < this.threshold.idiom) return [];
+    if (!idiom || uses < T.idiom) return [];
     return [{
       ...say('craft/press-feedback-probe', { first: p.first === null ? null : Math.round(p.first) }),
       key: this.id, text: idiom, props: ['transform'], value: 'none', n: p.first ?? 0,
@@ -414,8 +414,8 @@ export const pressFeedbackProbe = {
 
 // #61. A menu opens on the press, not after the button comes back up.
 export const menuPointerdown = {
-  id: 'craft/menu-pointerdown', family: 'craft', number: [61], tier: TIER.craft, owns: ['interaction'], once: 'ancestor', reads: ['probe:menu-down'],
-  check({ el, facts }) {
+  id: 'craft/menu-pointerdown', family: 'craft', number: [61], owns: ['interaction'], once: 'ancestor', reads: ['probe:menu-down'],
+  check({ el, facts }, theme) {
     const p = facts.probe(el, 'menu-down');
     if (!p || p.down) return [];
     return [{
@@ -429,8 +429,9 @@ export const menuPointerdown = {
 
 // #60. Tooltips wait a beat for the first, then none for the next.
 export const tooltipDelay = {
-  id: 'craft/tooltip-delay', family: 'craft', number: [60], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:tooltip', 'source'],
-  check({ el, facts }) {
+  id: 'craft/tooltip-delay', family: 'craft', number: [60], owns: ['motion'], once: 'ancestor', reads: ['probe:tooltip', 'source'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const p = facts.probe(el, 'tooltip');
     if (!p?.lead) return [];
     const ms = { quick: p.t1, slow: p.t1, skip: p.t2, cool: p.t3 }[p.lead];
@@ -438,12 +439,12 @@ export const tooltipDelay = {
     const provider = facts.source(el)?.provider;
     const first = p.lead === 'quick' || p.lead === 'slow';
     const name = provider?.library === 'base-ui' ? (first ? 'delay' : null) : first ? 'delayDuration' : 'skipDelayDuration';
-    const to = first ? 500 : 300;
+    const to = first ? T.want.first : T.want.skip;
     const from = name ? provider?.props?.[name] ?? null : null;
     const suggest = provider && name && from !== to
       ? { kind: 'prop', component: provider.component, name, from, to, why: first ? 'about half a second for the first' : 'no wait for the next, for a moment',
         text: `Set ${name}={${to}} on <${provider.component}>${from === null ? '' : ` (now ${from})`}.`, site: { file: provider.file, line: provider.line, column: provider.column, hash: provider.hash } }
-      : { kind: 'advice', text: 'On the tooltip provider: delayDuration={500} skipDelayDuration={300}.' };
+      : { kind: 'advice', text: `On the tooltip provider: delayDuration={${T.want.first}} skipDelayDuration={${T.want.skip}}.` };
     return [{
       ...say(this.id, { kind: p.lead, ms: Math.round(ms) }),
       key: `${this.id}@${p.lead}`, text: 'tooltip', props: ['transition-delay'], value: `${Math.round(ms)}ms`, n: ms,
@@ -455,11 +456,11 @@ export const tooltipDelay = {
 
 // #62. What a keyboard shortcut opens is there at once: no entrance on something used a hundred times a day.
 export const paletteMotion = {
-  id: 'craft/palette-motion', family: 'craft', number: [62], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['probe:keys'],
-  threshold: { enter: 100 },
-  check({ el, facts }) {
+  id: 'craft/palette-motion', family: 'craft', number: [62], owns: ['motion'], once: 'ancestor', reads: ['probe:keys'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const p = facts.probe(el, 'keys');
-    if (!p || p.enter < this.threshold.enter) return [];
+    if (!p || p.enter < T.enter) return [];
     return [{
       ...say(this.id, { enter: Math.round(p.enter), combo: p.combo }),
       key: this.id, text: 'animate-in', props: ['animation'], value: `${Math.round(p.enter)}ms`, n: p.enter,
@@ -472,8 +473,8 @@ export const paletteMotion = {
 
 // #59. A submenu stays open while the pointer crosses the next item on its way to it.
 export const submenuPath = {
-  id: 'craft/submenu-path', family: 'craft', number: [59], tier: TIER.legibility, owns: ['interaction'], once: 'ancestor', reads: ['probe:submenu'],
-  check({ el, facts }) {
+  id: 'craft/submenu-path', family: 'craft', number: [59], owns: ['interaction'], once: 'ancestor', reads: ['probe:submenu'],
+  check({ el, facts }, theme) {
     const p = facts.probe(el, 'submenu');
     if (!p?.lost) return [];
     return [{
@@ -487,13 +488,14 @@ export const submenuPath = {
 
 // #65. Dragged past its end, something gives: it moves less than the pointer and springs back, or it stops dead.
 export const overdrag = {
-  id: 'craft/overdrag', family: 'craft', number: [65], tier: TIER.advisory, owns: ['transform'], once: 'ancestor', reads: ['probe:drag'],
-  check({ el, facts }) {
+  id: 'craft/overdrag', family: 'craft', number: [65], owns: ['transform'], once: 'ancestor', reads: ['probe:drag'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     const p = facts.probe(el, 'drag');
     if (!p || (p.kind !== 'dead' && p.kind !== 'free')) return [];
     return [{
       ...say(this.id, { kind: p.kind }),
-      key: this.id, tier: TIER.advisory, text: 'touch-action', props: ['touch-action'], value: p.kind, n: p.past,
+      key: this.id, tier: T.tier, text: 'touch-action', props: ['touch-action'], value: p.kind, n: p.past,
       evidence: { kind: p.kind, moved: p.moved, measured: true }, confidence: 0.82,
       suggest: { kind: 'advice', text: 'Past its limit, move it by a third of the pointer’s travel (x = limit + over × 0.3). Vaul and Motion’s dragElastic do this for you.' },
     }];
@@ -516,8 +518,8 @@ const tapDecided = (el) => !!el.closest('[style*="tap-highlight"]') || tapRules(
 
 // #71. A control built from a div: phones flash it grey on a tap, and a drag on it also scrolls the page.
 export const touchManipulation = {
-  id: 'craft/touch-manipulation', family: 'craft', number: [71], tier: TIER.access, owns: ['interaction'], once: 'ancestor', reads: ['style', 'source'],
-  check({ el, facts }) {
+  id: 'craft/touch-manipulation', family: 'craft', number: [71], owns: ['interaction'], once: 'ancestor', reads: ['style', 'source'],
+  check({ el, facts }, theme) {
     if (el.matches(NATIVE)) return [];
     const source = facts.source(el);
     if (!source) return [];
@@ -542,19 +544,19 @@ export const touchManipulation = {
 
 // #66, the half that waits. A spinner that shows for a blink on a fast reply is worse than none.
 export const spinnerTiming = {
-  id: 'craft/spinner-timing', family: 'craft', number: [66], tier: TIER.craft, owns: ['motion'], once: 'ancestor', reads: ['other:held', 'probe:press'], pairs: ['held'],
-  threshold: { flash: 200, slow: 1000, press: 150 },
-  check({ el, facts }) {
+  id: 'craft/spinner-timing', family: 'craft', number: [66], owns: ['motion'], once: 'ancestor', reads: ['other:held', 'probe:press'], pairs: ['held'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
     // a press that starts a request: the spinner shows on the press itself, so it would flash on a fast reply
     const press = facts.probe(el, 'spinner-press');
-    if (press && press.delay < this.threshold.press) return [{
+    if (press && press.delay < T.press) return [{
       ...say(this.id, { ms: Math.round(press.delay), press: true }),
       key: `${this.id}@press`, text: 'spinner', props: ['animation'], value: `${Math.round(press.delay)}ms`, n: press.delay,
       evidence: { afterPressMs: Math.round(press.delay), measured: true }, confidence: 0.88,
       suggest: { kind: 'advice', text: 'Show it after 200ms, then keep it for at least 500ms (spin-delay: delay 200, minDuration 500).' },
     }];
     const rec = facts.other('held')?.spinner(el);
-    if (!rec || rec.fast === null || rec.slow === null || rec.fast >= this.threshold.flash || rec.slow < this.threshold.slow) return [];
+    if (!rec || rec.fast === null || rec.slow === null || rec.fast >= T.flash || rec.slow < T.slow) return [];
     return [{
       ...say(this.id, { ms: Math.round(rec.fast), flash: true }),
       key: `${this.id}@flash`, text: 'spinner', props: ['animation'], value: `${Math.round(rec.fast)}ms`, n: rec.fast,

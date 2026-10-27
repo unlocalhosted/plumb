@@ -8,6 +8,8 @@ import { UsageError } from '../errors.js';
 import { code, calls, hoverGated, positivePseudo, selector, directionSpecific } from './css.js';
 import { pixels, resolveValue } from '../decisions/resolve.js';
 import { tokens, oklab } from '../rules/families.js';
+import { resolveSpec, specRules } from '../../overlay/src/craft-spec.js';
+import type { PlumbConfig } from '../config.js';
 
 export const builtins = [
   { id: 'hover-gate', severity: 'error', reason: 'Touch can leave a hover style stuck after a tap.', fix: 'Wrap only the hover branch in @media (hover: hover) and (pointer: fine).' },
@@ -27,6 +29,14 @@ export const builtins = [
   { id: 'color-scheme', severity: 'warn', reason: 'Without color-scheme a dark theme keeps light scrollbars, form controls and autofill.', fix: 'Set color-scheme: dark (Tailwind scheme-dark) where the dark theme applies, or scheme-light-dark on the root.' },
 ] as const;
 export type BuiltinHabit = typeof builtins[number]['id'];
+/** The craft spec's word on each habit (docs/briefs/craft-spec.md): off, or another severity. Keyed by habit id. */
+export type HabitOverrides = ReadonlyMap<string, { enabled: boolean; severity: HabitSeverity | null }>;
+export function habitOverrides(config: Pick<PlumbConfig, 'craft' | 'craftLayers'>): HabitOverrides {
+  const out = new Map<string, { enabled: boolean; severity: HabitSeverity | null }>();
+  if (!config.craft && !config.craftLayers?.length) return out;
+  for (const rule of specRules(resolveSpec(config.craft, config.craftLayers ?? []))) if (rule.habit && (!rule.enabled || rule.from.severity)) out.set(rule.short, { enabled: rule.enabled, severity: rule.severity as HabitSeverity | null });
+  return out;
+}
 export interface HabitSummary { id: string; reason: string; severity: HabitSeverity; enabled: boolean; breaks: number | null }
 
 export function validateHabits(entries: unknown[]): void {
@@ -79,10 +89,12 @@ const easeIn = (value: string) => tokens(value.toLowerCase()).some(token => toke
 }));
 
 /** This receives only source-glob declarations. Companions never certify a computed cascade. */
-export function judgeHabits(declarations: Declaration[], entries: (string | CustomHabit)[], classContexts: ReadonlyMap<Declaration, string>, hoverVariants: string[] = [], list = false, managedFocus: ReadonlySet<Declaration> = new Set()): { findings: Finding[]; summaries: HabitSummary[] } {
+export function judgeHabits(declarations: Declaration[], entries: (string | CustomHabit)[], classContexts: ReadonlyMap<Declaration, string>, hoverVariants: string[] = [], list = false, managedFocus: ReadonlySet<Declaration> = new Set(), overrides: HabitOverrides = new Map()): { findings: Finding[]; summaries: HabitSummary[] } {
   const selected = new Map(entries.map(entry => [typeof entry === 'string' ? entry : entry.id, entry]));
-  const active = new Set(list ? builtins.map(habit => habit.id) : [...selected.keys()].filter(id => !['z-named', 'motion-tokens'].includes(id)));
-  if (!active.size) return { findings: [], summaries: builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: habit.severity, enabled: false, breaks: null })) };
+  // a habit the craft spec turns off is not judged, listed or not; one it re-grades carries that severity
+  const active = new Set((list ? builtins.map(habit => habit.id) : [...selected.keys()].filter(id => !['z-named', 'motion-tokens'].includes(id))).filter(id => overrides.get(id)?.enabled !== false));
+  const graded = (id: string, severity: HabitSeverity): HabitSeverity => overrides.get(id)?.severity ?? severity;
+  if (!active.size) return { findings: [], summaries: builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: graded(habit.id, habit.severity), enabled: false, breaks: null })) };
   const eligible = declarations.filter(d => !d.opaque && d.origin !== 'keyframes');
   const values = new Map<string, string>(), pseudos = new Map<string, boolean>();
   const value = (d: Declaration) => { const raw = d.authoredCss ?? d.value; if (!values.has(raw)) values.set(raw, valueOf(d)); return values.get(raw)!; };
@@ -144,7 +156,8 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
   const compiled = (list ? [] : entries).filter((entry): entry is CustomHabit => typeof entry !== 'string').map(habit => ({ habit, test: compilePredicate(habit.when) }));
   const findings = new Map<string, Finding>(), counts = new Map<string, Set<string>>();
   const ruleTimes = new Map<string, number>();
-  function add(id: string, d: Declaration, reason: string, severity: HabitSeverity, fix: string): void {
+  function add(id: string, d: Declaration, reason: string, graded0: HabitSeverity, fix: string): void {
+    const severity = graded(id, graded0);
     const occurrence = JSON.stringify([d.site, d.prop, d.value, d.when]);
     const seen = counts.get(id) ?? new Set<string>(); seen.add(occurrence); counts.set(id, seen);
     const key = `habits/${id}:${d.prop}:${d.value}:${selector(d.when)}:${fix}`;
@@ -256,7 +269,7 @@ export function judgeHabits(declarations: Declaration[], entries: (string | Cust
     if (darkened) add(habit.id, darkened, habit.reason, habit.severity, habit.fix);
   }
   for (const d of declarations) if (!d.opaque) for (const { habit, test } of compiled) if (test(d)) add(habit.id, d, habit.message, habit.severity ?? 'error', habit.message);
-  const summaries: HabitSummary[] = builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: habit.severity, enabled: selected.has(habit.id), breaks: active.has(habit.id) ? counts.get(habit.id)?.size ?? 0 : null }));
+  const summaries: HabitSummary[] = builtins.map(habit => ({ id: habit.id, reason: habit.reason, severity: graded(habit.id, habit.severity), enabled: selected.has(habit.id) && overrides.get(habit.id)?.enabled !== false, breaks: active.has(habit.id) ? counts.get(habit.id)?.size ?? 0 : null }));
   for (const { habit } of compiled) summaries.push({ id: habit.id, reason: habit.message, severity: habit.severity ?? 'error', enabled: true, breaks: counts.get(habit.id)?.size ?? 0 });
   for (const [id, duration] of ruleTimes) profileDuration(`rule:habits/${id}`, duration);
   return { findings: [...findings.values()], summaries };

@@ -5,7 +5,7 @@ import type { DecisionRecord } from '../decisions/index.js';
 import { familyProvenance, findingsForFamily, groupByValue, presentProvenance, resolutionContext } from '../rules/provenance.js';
 import { judgedFamilies, isJudged, familiesFor, varUses } from '../rules/families.js';
 import { judgeOwnership } from '../ownership/judge.js';
-import { judgeHabits } from '../habits/index.js';
+import { habitOverrides, judgeHabits } from '../habits/index.js';
 import { judgeImitation } from '../imitation/index.js';
 import { indexDefinitions } from '../rules/attribution.js';
 import { references } from '../collect/source.js';
@@ -188,8 +188,9 @@ export class JudgementState {
   }
   habits(declarations: Declaration[], config: PlumbConfig, contexts: Map<Declaration, string>, hover: string[], list?: boolean, managedFocus: ReadonlySet<Declaration> = new Set()) {
     const files = byFile(declarations); this.habitCache.keep(new Set(files.keys()));
-    const results = [...files].map(([file, ds]) => this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d)), ...ds.map(d => managedFocus.has(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list, managedFocus)));
-    const summaries = judgeHabits([], config.habits ?? [], new Map(), hover, list).summaries;
+    const overrides = habitOverrides(config);
+    const results = [...files].map(([file, ds]) => this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d)), ...ds.map(d => managedFocus.has(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list, managedFocus, overrides)));
+    const summaries = judgeHabits([], config.habits ?? [], new Map(), hover, list, new Set(), overrides).summaries;
     for (const result of results) for (const summary of summaries) if (summary.breaks !== null) summary.breaks += result.summaries.find(s => s.id === summary.id)?.breaks ?? 0;
     const customIds = new Set((config.habits ?? []).flatMap(entry => typeof entry === 'string' ? [] : [entry.id]));
     const findings = mergeFindings(results.map(r => r.findings), declarations).sort((a, b) => Number(customIds.has(a.rule.slice(7))) - Number(customIds.has(b.rule.slice(7))));

@@ -5,6 +5,12 @@
  * module of their own so craft.js, craft-rules.js and verdict.js import them without a cycle.
  * ───────────────────────────────────────────────────────── */
 
+import { resolveSpec, specFor } from './craft-spec.js';
+
+// The spec in effect on this page (docs/briefs/craft-spec.md): the standard until the project's own arrives from the
+// server (craft.js asks for it), then that. `rule(id)` is the resolved entry for one rule: { enabled, tier, …values }.
+export const SPEC = { value: resolveSpec(), loaded: false, rule(id) { return specFor(SPEC.value, id) ?? { enabled: true }; } };
+
 // 'rgb(r, g, b)' or 'rgba(r, g, b, a)' → [r, g, b, a]; null for anything else (a colour the page never resolved)
 export function rgb(s) {
   const m = String(s ?? '').match(/^rgba?\(([^)]+)\)$/);
