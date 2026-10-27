@@ -2,6 +2,8 @@ import { relative, resolve } from 'node:path';
 import { UsageError } from './errors.js';
 import { ask, desktop, hold, inside, open, settle, sleep } from './craft-page.js';
 import type { Browser, Page } from './craft-page.js';
+import { hasAnswers, judge } from './craft-judge.js';
+import type { Grey } from './craft-judge.js';
 import { takeProbes } from './craft-probe.js';
 import { makeFinding } from './messages.js';
 import { tool } from './report.js';
@@ -10,10 +12,10 @@ import type { Declaration, Finding, Report, Site } from './report.js';
 /** One craft finding as the page reports it (overlay/src/craft-run.js), with its source site. */
 export interface CraftRecord {
   rule: string; title: string; because: string; action: string; text: string; value: unknown; confidence: number | null;
-  evidence: Record<string, unknown>; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
+  evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[] }
-export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean }
+export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean }
 
 const missing = `The headless run needs Playwright, an optional dependency.
   → npm i -D playwright && npx playwright install chromium
@@ -129,7 +131,15 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probes ${JSON.stringify(list)?.slice(0, 1500)}\n`);
           if (list?.length) await ask(page, { op: 'probes', list });
         }
-        const result = await page.evaluate((timeout) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft({ timeout }), options.timeout) as Omit<CraftPage, 'route' | 'url'> & { route: string; url: string };
+        // the grey band is looked at only when there is an eye to ask (--judge) or answers already kept
+        const asking = options.judge === true, grey = asking || await hasAnswers(options.root);
+        const result = await page.evaluate((o) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(o), { timeout: options.timeout, grey }) as Omit<CraftPage, 'route' | 'url'> & { route: string; url: string; grey?: Grey[] };
+        if (process.env.PLUMBER_DEBUG && result.grey) process.stderr.write(`craft: grey ${JSON.stringify(result.grey)?.slice(0, 800)}\n`);
+        if (result.grey) {
+          // a model is never asked when CI is set: the answers kept in the project are all there is
+          result.findings.push(...await judge(page, result.grey, { root: options.root, asking: asking && !process.env.CI }));
+          delete result.grey;
+        }
         pages.push({ ...result, route, url });
       } finally { await page.close(); }
     }

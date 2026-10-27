@@ -25,6 +25,8 @@
 import { locate } from './locate.js';
 import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
 import { request } from './api.js';
+import { Facts, Theme } from './craft.js';
+import { RULES } from './craft-rules.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -117,7 +119,34 @@ async function prepareSources() {
   sourcesIn(found);
 }
 
-export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, ...rest } = {}) {
+// The grey band (docs/briefs/craft-hard-rules.md, judge): what the rules marked `judge` measured but would not stand
+// behind (confidence from 0.6 up to the floor). The engine drops these; the headless run hands them to the judge.
+async function greyPass() {
+  // every element with a box: the reader keeps only the ones it has something to say about
+  const els = [...document.body.querySelectorAll('*')].filter((el) => !el.closest('plumb-overlay') && !el.closest('svg') && el.getClientRects().length && !['script', 'style', 'noscript'].includes(el.localName));
+  const facts = new Facts();
+  facts.items = els;
+  const theme = new Theme({});
+  const out = [];
+  for (const el of els) {
+    const item = { el };
+    for (const rule of RULES) {
+      if (!rule.judge) continue;
+      let found = [];
+      try { found = rule.check({ el: item.el, facts }, theme) ?? []; } catch {}
+      for (const f of found) {
+        if (!((f.confidence ?? 0) >= 0.6 && f.confidence < 0.8)) continue;
+        const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
+        if (!at?.file) continue;
+        out.push({ rule: rule.id, at: pathKey(item.el), title: f.title, because: f.because, what: f.what, text: f.text, value: f.value ?? null, evidence: f.evidence ?? {}, confidence: f.confidence,
+          file: at.file, line: at.line, column: at.column, component: at.component ?? null, tag: item.el.localName, count: 1 });
+      }
+    }
+  }
+  return out.slice(0, 12);
+}
+
+export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, ...rest } = {}) {
   if (op) return operate({ op, ...rest });
   resetKeys();
   await prepareSources();
@@ -158,7 +187,10 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, ...r
         });
       }
     }
-    return { route: location.pathname + location.search, url: location.href, read: blueprint.items.length, complete, findings: JSON.parse(JSON.stringify([...found.values()])) };
+    const result = { route: location.pathname + location.search, url: location.href, read: blueprint.items.length, complete, findings: JSON.parse(JSON.stringify([...found.values()])) };
+    // asked for only when there is an eye to ask (a judge flag, or answers already kept): otherwise the result is as it was
+    if (grey) result.grey = JSON.parse(JSON.stringify(await greyPass()));
+    return result;
   } finally {
     if (!was) blueprint.leave({ instant: true });
   }

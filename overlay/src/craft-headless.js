@@ -289,27 +289,30 @@ export const darkElevation = {
   },
 };
 
-// #44. Light text on a dark ground looks heavier than it is: the page takes the weight back, once.
+// #44. Light text on a dark ground looks heavier than it is: the page takes the weight back, once. Medium and bold small
+// text is measured and speaks as a note. Regular small text is the grey band: it may glow too, or may not (an eye
+// decides, when asked: `judge`), so it is held below the floor and shown only if the judge said yes.
 export const darkWeight = {
-  id: 'craft/dark-weight', family: 'craft', number: [44], tier: TIER.advisory, owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'other:dark'], pairs: ['dark'],
-  threshold: { weight: 500, size: 20, ink: 0.8, ground: 0.3 },
+  id: 'craft/dark-weight', family: 'craft', number: [44], tier: TIER.advisory, owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'other:dark'], pairs: ['dark'], judge: true,
+  threshold: { weight: 500, size: 20, grey: 14, ink: 0.8, ground: 0.3 },
   check({ el, facts }) {
     const dark = facts.other('dark');
     const d = dark?.get(el);
     if (!d || !facts.text(el)) return [];
-    const test = (r) => {
-      const fg = r.fg, ground = r.bg?.[3] > 0.5 ? r.bg : r.gp;
-      return r.own && fg && oklab(fg)[0] > this.threshold.ink && oklab(ground)[0] < this.threshold.ground && (parseInt(r.fw, 10) || 400) >= this.threshold.weight
-        && px(r.fs) < this.threshold.size && r.sm !== 'antialiased';
+    const test = (r, heavy) => {
+      const fg = r.fg, ground = r.bg?.[3] > 0.5 ? r.bg : r.gp, w = parseInt(r.fw, 10) || 400;
+      return r.own && fg && oklab(fg)[0] > this.threshold.ink && oklab(ground)[0] < this.threshold.ground && r.sm !== 'antialiased'
+        && (heavy ? w >= this.threshold.weight && px(r.fs) < this.threshold.size : w < this.threshold.weight && px(r.fs) <= this.threshold.grey);
     };
-    if (!test(d) || !dark.first(this.id, el, test)) return [];
+    const heavy = test(d, true), grey = !heavy && test(d, false);
+    if ((!heavy || !dark.first(this.id, el, (r) => test(r, true))) && !grey) return [];
     const s = facts.style(el);
     // the same weight and spacing in the light page: the dark scheme left the type alone
     if (s.fontWeight !== d.fw || s.letterSpacing !== d.ls || /dark:antialiased|dark:font-/.test(classesOf(el))) return [];
     return [{
       ...say(this.id, { weight: parseInt(d.fw, 10) || 400, size: px(d.fs) }),
       key: this.id, tier: TIER.advisory, text: utility(el, 'font') ?? 'font-weight', props: ['font-weight'], value: d.fw, n: parseInt(d.fw, 10) || 400,
-      evidence: { weight: d.fw, size: d.fs, ink: `rgb(${d.fg.slice(0, 3).join(', ')})` }, confidence: 0.82,
+      evidence: { weight: d.fw, size: d.fs, ink: `rgb(${d.fg.slice(0, 3).join(', ')})`, words: (el.textContent ?? '').trim().slice(0, 40) }, confidence: heavy ? 0.82 : 0.7,
       suggest: { kind: 'advice', text: 'Add dark:antialiased to the page’s root, so light text keeps the weight you chose.' },
     }];
   },
