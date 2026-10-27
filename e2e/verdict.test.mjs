@@ -10,6 +10,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
+import { applyFix, openMark } from './helpers/fix.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
@@ -63,54 +64,6 @@ const craftMarks = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay').shadowRoot;
   return [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.includes(':craft/')).map((h) => { const r = h.getBoundingClientRect(); return { id: h.dataset.id, rule: h.dataset.id.split(':craft/')[1].split('@')[0], label: h.getAttribute('aria-label'), x: r.left, y: r.top, w: r.width, h: r.height }; });
 });
-// The panel's craft rows: [{ rule, text, what }].
-const craftRows = (overlay) => overlay.locator('.bpp .row[data-key^="craft/"]').evaluateAll((rows) => rows.map((r) => ({ key: r.dataset.key, rule: r.dataset.key.split('|')[0], text: r.querySelector('code').textContent, what: r.querySelector('.what').textContent })));
-const rectOf = (page, id) => page.locator(`#${id}`).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, right: r.right, bottom: r.bottom }; });
-// the elements a row lights when pointed at, as boxes
-const lit = (page) => page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect')].map((o) => ({ x: +o.getAttribute('x') - 0.75, y: +o.getAttribute('y') - 0.75, w: +o.getAttribute('width') + 1.5, h: +o.getAttribute('height') + 1.5 })));
-const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
-
-// Points at a row, and says which page elements light up.
-async function pointRow(page, overlay, key) {
-  await overlay.locator('.bpp .head').click();
-  await overlay.locator(`.bpp .row[data-key^="${key}"]`).first().hover();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
-  return lit(page);
-}
-// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
-// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
-// options it offers.
-async function openMark(page, overlay, id) {
-  const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
-  const b = await (async (h) => { const [x, y] = (await h.getAttribute('data-at')).split(',').map(Number); return { x: x - 0.5, y: y - 0.5, width: 1, height: 1 }; })(hit); // where the zone is aimed at (its first piece), not its bounding box
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-  const hint = overlay.locator('.bp .bp-hint[data-on]');
-  await hint.waitFor({ timeout: 3000 });
-  const hinted = await hint.innerText();
-  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
-  await page.mouse.move(2, 2);
-  await page.waitForTimeout(150);
-  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
-  await page.keyboard.press('i');
-  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
-  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
-  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
-}
-// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
-async function applyFix(page, overlay) {
-  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
-  await overlay.locator('.cg:not([hidden]) .ok').click();
-}
-// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
-async function whyLines(page, overlay) {
-  const out = [];
-  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
-  return out;
-}
-
-
 // the craft marks whose box sits on one element
 const on = async (page, id) => {
   const r = await page.evaluate((id) => { const el = document.getElementById(id); const b = el.getBoundingClientRect(); return { l: b.left, t: b.top, r: Math.max(b.right, b.left + el.scrollWidth), b: b.bottom }; }, id);
@@ -182,7 +135,9 @@ test('The icon button: one fix on the theme’s steps (pl-s4 pr-s6, never pl-5);
   const invite = await on(page, 'invite');
   const pad = invite.filter((m) => m.rule === 'button-padding');
   assert.equal(pad.length, 1, JSON.stringify(invite));
-  await openMark(page, overlay, pad[0].id);
+  const words = await openMark(page, overlay, pad[0].id, { options: true });
+  assert.equal(words.target, 's6', 'the pick is 24px on the right (s6), 16px on the left (s4)');
+  assert.deepEqual(words.options.map((o) => o.tk), ['s1', 's2', 's3', 's4', 's6']);
   await applyFix(page, overlay);
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
