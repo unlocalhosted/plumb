@@ -237,7 +237,7 @@ test('Why, as a drawing and on demand: the reason sits at the element’s side; 
   assert.deepEqual(errors, []);
 });
 
-test('No fix the theme can take: the scale shows a hollow bar where the step would be, and i says what to add', { timeout: 120000 }, async (t) => {
+test('No step the theme has: the scale shows a hollow bar where the step would be, and the mark carries the token that fills it', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
@@ -250,7 +250,11 @@ test('No fix the theme can take: the scale shows a hollow bar where the step wou
   for (let i = 0; i < 3 && !(await overlay.locator('.sel .stair[data-kind="no-step"]').count()); i++) { await page.keyboard.press('.'); await page.waitForTimeout(200); }
   assert.equal(await overlay.locator('.sel .stair[data-kind="no-step"] .gap').count(), 1);
   await page.keyboard.press('i');
-  assert.match(await overlay.locator('.sel .why').innerText(), /Your theme has no letter-spacing step for this\. Add one, then use it here\./);
+  assert.match(await overlay.locator('.sel .why').innerText(), /^11px capitals with no letter spacing\./);
+  // the suggestion is a token the theme can add (docs/briefs/craft-spec.md §4 c); the panel shows it when it learns the kind
+  const suggest = await page.evaluate(() => { const i = window.__plumb.overlay.blueprintReader.items.find((x) => x.el.id === 'status'); return i.marks.find((m) => m.rule === 'craft/tracking')?.craft.suggest; });
+  assert.equal(suggest.kind, 'token');
+  assert.deepEqual([suggest.name, suggest.value, suggest.then.to], ['--tracking-caps', '0.06em', 'tracking-caps']);
   // Enter takes nothing
   await page.keyboard.press('Enter');
   await page.waitForTimeout(200);

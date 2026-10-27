@@ -24,6 +24,7 @@ import type { StructureEntry } from '../structure/index.js';
 import type { Props } from './props.js';
 import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
+import { addToken, topBlocks } from '../onboarding/write.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
@@ -72,6 +73,9 @@ export interface StructureResult {
   provider?: { file: string; line: number; column: number; hash: string; component: string; library: string | null; props: StructureEntry['props'] };
 }
 export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string }[] }
+/** A new token for the theme (a craft suggestion of kind token), then the class that uses it (docs/briefs/craft-spec.md §4). */
+export interface TokenOptions { file: string; hash: string; name: string; value: string; why?: string; then?: SwapOptions }
+export interface TokenResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; then?: ApplyResult }
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
@@ -653,6 +657,63 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return setJsxProp(_file, source, facts.location.start, name, value);
     }, `${name}={${JSON.stringify(value)}}`);
+  }
+  /** A token added to the theme file the spec names, in the shape the file has, then (when asked) the class swap that
+   * uses it. Two guarded writes, two undo handles; a swap that is refused puts the theme back as it was. */
+  async token(options: TokenOptions): Promise<TokenResult> {
+    const { file, hash, name, value, why, then } = options ?? {} as TokenOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof name !== 'string' || typeof value !== 'string') throw new UsageError('A token write requires file, hash, name and value.');
+    if (!/^--[a-z][a-z0-9-]*$/.test(name)) throw new UsageError('A token name is --family-name, in lowercase.');
+    if (!/^[^;{}<>\r\n]{1,80}$/.test(value.trim()) || !value.trim()) throw new UsageError('A token value is one CSS value, under eighty characters.');
+    if (why !== undefined && (typeof why !== 'string' || /[\r\n*]/.test(why) || why.length > 120)) throw new UsageError('A token why is one short line.');
+    // the server says where tokens go and whether they may be made (plumber spec): the client only repeats it
+    const spec = await this.request<ProjectSpec>('spec');
+    if (spec.tokens.create === false) throw new UsageError('Your config forbids new tokens (craft.tokens.create). Add it to your theme by hand.');
+    if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Tokens go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
+    const path = this.file(file), shape = spec.tokens.shape ?? 'theme', clean = value.trim();
+    const label = `${name}: ${clean}`;
+    const write = await this.serialize(async (): Promise<Omit<TokenResult, 'then'>> => {
+      if (spec.tokens.new) throw new UsageError(`Create ${spec.tokens.file} first (plumber propose --write makes it), then add tokens to it.`);
+      const identity = await this.editableFile(path);
+      if (!/\.css$/.test(path)) throw new UsageError('Tokens are written to a stylesheet.');
+      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
+      let next: string | null = null, before: string;
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+        await this.sameFile(path, identity);
+        const bytes = Buffer.alloc(info.size);
+        let offset = 0;
+        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
+        before = bytes.subarray(0, offset).toString('utf8');
+        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
+        const declared = new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}]+)`).exec(before);
+        if (declared && declared[1]!.trim() === clean) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null }; // already there: nothing to write
+        if (declared) throw new UsageError(`${name} is already ${declared[1]!.trim()} in ${file}. Pick another name.`);
+        next = addToken(before, shape, { name, value: clean, why: why ?? 'added by React Plumber' } as Parameters<typeof addToken>[2]).css;
+        // the stylesheet's last guard: the same blocks as before (or one more), and the declaration in it
+        const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
+        if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || !next.includes(`${name}: ${clean};`)) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+        await this.sameFile(path, identity);
+        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
+        await this.sameFile(path, identity);
+      } finally { await handle.close(); }
+      await this.reconcile([path]);
+      const hashAfter = sourceHash(next);
+      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
+      const undo = this.record(path, before, hashAfter, 1, label);
+      return { revision: this.revision, file: path, hash: hashAfter, applied: [`token:${name}`], written: true, undo };
+    });
+    if (!then) return write;
+    try {
+      const swapped = await this.swap(then);
+      return { ...write, then: swapped };
+    } catch (error) {
+      // the class could not follow: the theme goes back as it was, so nothing is half done
+      if (write.undo) await this.undo(write.undo.id).catch(() => {});
+      throw error;
+    }
   }
   /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person
    * accepted on several elements of one file, or the rows of one line. Each swap is found against the file as it is. */

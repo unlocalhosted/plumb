@@ -58,6 +58,14 @@ function put(css: string, selector: RegExp, header: string, body: string[], comm
   return { css: (css.trimEnd() ? css.trimEnd() + '\n\n' : '') + added.join('\n') + '\n', added };
 }
 
+/** One token into the theme, in the shape it has (docs/briefs/craft-spec.md §4, candidate c): `@theme`, shadcn's
+ * `@theme inline`, or `:root`. The block is extended in place; a file with no such block gets one. Reads nothing. */
+export function addToken(css: string, shape: Shape, token: Token): { css: string; added: string[] } {
+  if (shape === 'root') return put(css, /^:root$/, ':root', lines([token]));
+  if (shape === 'shadcn') return put(css, /^@theme inline$/, '@theme inline', lines([token]));
+  return put(css, /^@theme$/, '@theme', lines([token]));
+}
+
 /** `@import "./theme.css";` after the imports a stylesheet already begins with. */
 export function addImport(css: string, specifier: string): { css: string; added: string[] } {
   if (new RegExp(`@import\\s+(?:url\\()?["']${specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`).test(css)) return { css, added: [] };

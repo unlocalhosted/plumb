@@ -146,6 +146,7 @@ function stepFor(theme, family, px, round = 'nearest') {
 // rule of a higher tier. Otherwise the fix is withdrawn and the mark says why not.
 function verify(k, el, byId, rules, facts, theme, before) {
   const edit = k.craft?.suggest;
+  if (edit?.kind === 'token') return verifyToken(k, el, rules, facts, theme, before);
   if (edit?.kind !== 'class') return;
   const rule = byId.get(k.rule);
   // 1. on the theme: a numeric or arbitrary step is rewritten to the theme's own, when the theme names its steps
@@ -187,6 +188,26 @@ function verify(k, el, byId, rules, facts, theme, before) {
   if (triable && after.some((f) => f.rule === k.rule || (edit.composed ?? []).includes(f.rule))) return withdraw(k, 'no-step', 'None of your steps settles it.');
   if (rewritten) setEdit(k, el, list, { ...edit, sets, rewritten: true });
   k.proof = { theme: rewritten ? 'rewritten' : 'on', quiet: triable ? true : 'untried', above: triable ? 'clear' : 'untried' };
+}
+
+// A new token (docs/briefs/craft-spec.md §4 c): nothing on the page can wear it yet, so it is tried by what it sets.
+// Kept, the mark still says the theme has no step here (`whyNot: 'no-step'`), and the suggestion says what fills it.
+function verifyToken(k, el, rules, facts, theme, before) {
+  const edit = k.craft.suggest, sets = edit.sets ?? {};
+  const triable = Object.keys(sets).length > 0;
+  if (triable) {
+    const after = facts.with(el, { sets }, (virtual) => rules.flatMap((r) => {
+      if (r.id !== k.rule && !((r.tier ?? TIER.craft) < k.tier)) return [];
+      try { return (r.check({ el, facts: virtual }, theme) ?? []).filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => ({ ...f, rule: r.id, tier: r.tier ?? TIER.craft })); } catch { return []; }
+    }));
+    const was = new Set(before.map((m) => m.rule));
+    const woke = after.find((f) => f.tier < k.tier && !was.has(f.rule));
+    if (woke) return withdraw(k, 'higher-tier', `That would make it ${woke.what?.toLowerCase() ?? 'worse'}.`, woke.rule);
+    if (after.some((f) => f.rule === k.rule)) return withdraw(k, 'no-step', 'None of your steps settles it.');
+  }
+  k.whyNot = 'no-step';
+  k.action = edit.text;
+  k.proof = { theme: 'new', quiet: triable ? true : 'untried', above: triable ? 'clear' : 'untried' };
 }
 
 function withdraw(k, whyNot, text, by) {

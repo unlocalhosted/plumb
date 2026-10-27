@@ -258,7 +258,15 @@ export const spec = { get loaded() { return SPEC.loaded; }, get value() { return
 // The theme as the rules see it: the overlay's decisions, each measured on the page once (a token written as
 // calc(var(--spacing) * 3) is known in px, a colour written as oklch() in rgb). The probe is the one write the engine
 // makes to the page, and it runs before any element is read in a pass.
-const MEASURE = { radius: { prop: 'border-top-left-radius', keep: /^--radius-/ }, spacing: { prop: 'padding-left', keep: /^--spacing-/ }, color: { prop: 'color', keep: /^--color-/ } };
+// type steps are measured at 100px, so a relative value reads back as its em (0.05em → 5px → 0.05) and a unitless line
+// height as its ratio; `own` says whether the project's theme names the step (a framework default is not the project's)
+const MEASURE = {
+  radius: { prop: 'border-top-left-radius', keep: /^--radius-/ }, spacing: { prop: 'padding-left', keep: /^--spacing-/ }, color: { prop: 'color', keep: /^--color-/ },
+  tracking: { prop: 'letter-spacing', keep: /^--tracking-[a-z0-9-]+$/, family: 'type', font: 100 },
+  leading: { prop: 'line-height', keep: /^--leading-[a-z0-9-]+$/, family: 'type', font: 100 },
+  text: { prop: 'font-size', keep: /^--text-[a-z0-9]+$/, family: 'type' },
+  weight: { prop: 'font-weight', keep: /^--font-weight-[a-z0-9-]+$/, family: 'type' },
+};
 export class Theme {
   #decisions; #measured = null; #seen = null;
   // decisions() → the decisions array (the widget's, from the server), or null while it loads
@@ -304,19 +312,23 @@ export class Theme {
     const probe = document.createElement('i');
     probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
     document.body.append(probe);
-    const out = { radius: [], spacing: [], color: [] };
+    const out = Object.fromEntries(Object.keys(MEASURE).map((k) => [k, []]));
     for (const dec of d) {
-      const m = MEASURE[dec.family];
-      if (!m || !m.keep.test(dec.name)) continue;
-      // the token's own definition first, else the variable (an inline theme defines no variable per step)
-      probe.style.removeProperty(m.prop);
-      probe.style.setProperty(m.prop, dec.value);
-      if (!probe.style.getPropertyValue(m.prop)) probe.style.setProperty(m.prop, `var(${dec.name})`);
-      const got = getComputedStyle(probe).getPropertyValue(m.prop);
-      const short = dec.name.replace(m.keep, '');
-      if (dec.family === 'color') { const c = rgb(got); if (c && c[3] > 0.99) out.color.push({ name: dec.name, short, rgb: c.slice(0, 3) }); }
-      else { const n = parseFloat(got); if (Number.isFinite(n)) out[dec.family].push({ name: dec.name, short, px: n }); }
+      for (const [key, m] of Object.entries(MEASURE)) {
+        if ((m.family ?? key) !== dec.family || !m.keep.test(dec.name)) continue;
+        // the token's own definition first, else the variable (an inline theme defines no variable per step)
+        probe.style.fontSize = m.font ? `${m.font}px` : '';
+        probe.style.removeProperty(m.prop);
+        probe.style.setProperty(m.prop, dec.value);
+        if (!probe.style.getPropertyValue(m.prop)) probe.style.setProperty(m.prop, `var(${dec.name})`);
+        const got = getComputedStyle(probe).getPropertyValue(m.prop);
+        const short = dec.name.replace(/^--(?:radius|spacing|color|tracking|leading|text|font-weight)-/, ''), own = dec.origin !== 'framework';
+        if (key === 'color') { const c = rgb(got); if (c && c[3] > 0.99) out.color.push({ name: dec.name, short, rgb: c.slice(0, 3), own }); }
+        else if (key === 'weight') { const n = parseInt(got, 10); if (Number.isFinite(n)) out.weight.push({ name: dec.name, short, n, own }); }
+        else { const n = parseFloat(got); if (Number.isFinite(n)) out[key].push({ name: dec.name, short, px: n, own, ...(m.font ? { em: n / m.font, unitless: !/px|r?em|%|calc/.test(String(dec.value)) } : {}) }); }
+      }
     }
+    probe.style.fontSize = '';
     probe.remove();
     this.#seen = d;
     return (this.#measured = out);

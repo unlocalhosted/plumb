@@ -50,6 +50,11 @@ import { rgb, utility, classesOf } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { RUN_RULES } from './craft-headless.js';
+import { recommend, recommendColour } from './craft-recommend.js';
+
+// a class candidate where no class sets the property (the value comes from a stylesheet) is said, not written
+const asAdvice = (rec, said) => (rec.kind === 'class' ? { kind: 'advice', text: said(rec) } : rec);
+const RADII = (v) => ({ borderRadius: v, borderTopLeftRadius: v, borderTopRightRadius: v, borderBottomLeftRadius: v, borderBottomRightRadius: v });
 
 const px = (v) => parseFloat(v) || 0;
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
@@ -106,11 +111,12 @@ export const concentricRadius = {
     const wanted = Math.max(0, drawnR - p);
     if (Math.abs(drawnr - wanted) <= tolerance) return [];
     const cls = utility(el, 'rounded', { not: SIDE_RADIUS });
-    const step = theme.nearest('radius', wanted, tolerance) ?? (wanted <= tolerance ? { short: 'none', px: 0 } : null);
     const text = cls ?? 'border-radius';
-    const suggest = step && cls ? { kind: 'class', from: cls, to: `rounded-${step.short}`, why: `${fmt(step.px)}: ${fmt(drawnR)} minus ${fmt(p)}` }
-      : step ? { kind: 'advice', text: `Use ${fmt(step.px)} (rounded-${step.short}).` }
-      : { kind: 'advice', text: `None of your radius steps is near ${fmt(wanted)}. Add one, or change the padding.` };
+    const rec = wanted <= tolerance && !theme.nearest('radius', wanted, tolerance) ? { kind: 'class', from: cls ?? '', to: 'rounded-none', why: `0px: ${fmt(drawnR)} minus ${fmt(p)}` }
+      : recommend({ family: 'radius', prefix: 'rounded', job: 'nested', want: { min: wanted - tolerance, max: wanted + tolerance, target: wanted }, exact: tolerance, from: cls ?? '', sets: RADII, theme,
+        label: 'this corner wants', advice: () => `None of your radius steps is near ${fmt(wanted)}. Add one, or change the padding.` });
+    if (rec.kind === 'class') rec.why = `${fmt(theme.scale('radius').find((s) => `rounded-${s.short}` === rec.to)?.px ?? wanted)}: ${fmt(drawnR)} minus ${fmt(p)}`;
+    const suggest = cls ? rec : asAdvice(rec, (r) => `Use ${fmt(wanted)} (${r.to}).`);
     return [{
       ...say(this.id, { r: drawnr, p, R: drawnR, wanted }),
       key: `${this.id}@${c.name}`, text, props: [c.prop], value: `${r}px`, n: r,
@@ -148,10 +154,11 @@ export const innerOuterSpacing = {
     if (G <= 0 || facts.kids(parent).length < 2) return [];
     if (g <= G + T.min) return [];
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
-    const step = theme.floor('spacing', G);
     const text = cls ?? 'gap';
-    const suggest = step && cls ? { kind: 'class', from: cls, to: `gap-${step.short}`, why: `${fmt(step.px)}, tighter than the ${fmt(G)} between groups` }
-      : { kind: 'advice', text: step ? `Make the gap ${fmt(step.px)} (gap-${step.short}) or less.` : `Make the gap smaller than ${fmt(G)}.` };
+    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'inner', want: { min: 0, max: G, target: G }, round: 'down', from: cls ?? '', token: false, theme,
+      advice: () => `Make the gap smaller than ${fmt(G)}.` });
+    if (rec.kind === 'class') rec.why = `${rec.why.split(' (')[0]}, tighter than the ${fmt(G)} between groups`;
+    const suggest = cls ? rec : asAdvice(rec, (r) => `Make the gap ${r.why.split(',')[0]} (${r.to}) or less.`);
     return [{
       ...say(this.id, { g, G }),
       key: this.id, text, props: ['gap'], value: `${g}px`, n: g,
@@ -178,8 +185,9 @@ export const textOpacity = {
     const text = cls ?? 'opacity';
     // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
     const own = colourClass(el, 'text', theme);
-    const suggest = near && cls ? { kind: 'class', from: [cls, own].filter(Boolean).join(' '), to: `text-${near.short}`, why: 'the colour it shows as now' }
-      : { kind: 'advice', text: near ? `Use the colour ${near.short} instead of opacity ${o}.` : `Use a colour instead of opacity ${o}: color-mix(in oklab, currentColor ${Math.round(o * 100)}%, transparent), or a muted text token near ${hex(mixed)}.` };
+    const rec = recommendColour({ rgb: mixed, prefix: 'text', from: [cls, own].filter(Boolean).join(' '), within: T.within, theme, why: 'the colour it shows as now',
+      advice: `Use a colour instead of opacity ${o}: color-mix(in oklab, currentColor ${Math.round(o * 100)}%, transparent), or a muted text token near ${hex(mixed)}.` });
+    const suggest = cls ? rec : asAdvice(rec, () => `Use the colour ${near.short} instead of opacity ${o}.`);
     return [{
       ...say(this.id, { o, near: near?.short }),
       key: this.id, text, props: ['color'], value: String(o), n: o,
@@ -420,10 +428,11 @@ export const contentAlign = {
     if (onColumn < Math.ceil(edges.length * 0.6)) return [];
     const mine = contentLeft(el, facts);
     if (mine === null || Math.abs(mine - column - pl) > 1) return [];
-    const step = theme.nearest('spacing', pl, 0.5);
     const cls = utility(el, 'px') ?? utility(el, 'pl') ?? utility(el, 'p');
-    const suggest = step && cls ? { kind: 'class', from: '', to: `-mx-${step.short}`, why: `pulls the row out by its ${fmt(pl)} padding` }
-      : { kind: 'advice', text: `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` };
+    const rec = recommend({ family: 'spacing', prefix: '-mx', job: 'bleed', want: { min: pl - 0.5, max: pl + 0.5, target: pl }, from: '', token: false, theme,
+      advice: () => `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` });
+    if (rec.kind === 'class') rec.why = `pulls the row out by its ${fmt(pl)} padding`;
+    const suggest = cls && rec.kind === 'class' ? rec : { kind: 'advice', text: `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` };
     return [{
       ...say(this.id, { pl }),
       key: this.id, text: cls ?? 'padding-left', props: ['margin-left'], value: `${pl}px`, n: pl,
@@ -442,14 +451,6 @@ const words = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
 const alpha = (c) => c?.[3] ?? 0;
 // a over b, both [r, g, b, a]
 const over = (a, b) => [0, 1, 2].map((i) => a[i] * alpha(a) + b[i] * (1 - alpha(a))).concat(1);
-// a spacing utility for a px value: the theme's named step when one is that close, else Tailwind's numeric step
-const space = (theme, value, prefix) => { const t = theme.nearest('spacing', value, 0.5); return t ? `${prefix}-${t.short}` : numeric(theme, value, prefix); };
-// a numeric Tailwind step (`size-9`) when the project's --spacing unit divides the value, else the exact length
-function numeric(theme, value, prefix) {
-  const unit = theme.unit?.();
-  const n = unit ? value / unit : NaN;
-  return Number.isFinite(n) && Math.abs(n - Math.round(n * 4) / 4) < 0.01 ? `${prefix}-${Math.round(n * 4) / 4}` : `${prefix}-[${fmt(value)}]`;
-}
 const PALETTE = /^(?:black|white|transparent|current|inherit|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})(?:\/[\d.]+)?$|^\[(?:#|rgb|hsl|oklch|oklab|color-mix|var\(--color)/;
 // whether `prefix-rest` names a colour: one of the theme's, Tailwind's palette, or an arbitrary colour
 const isColour = (rest, theme) => PALETTE.test(rest) || (theme?.colors?.() ?? []).some((c) => rest === c.short || rest.startsWith(`${c.short}/`));
@@ -509,12 +510,16 @@ export const buttonPadding = {
     if (b.pl / b.pt >= T.ratio) return [];
     const want = b.pt * T.want.ratio;
     const cls = utility(el, 'px') ?? utility(el, 'p', { not: /^[trblxyse](?:-|$)/ });
-    const to = cls?.startsWith('p-') ? `${space(theme, want, 'px')} ${space(theme, b.pt, 'py')}` : space(theme, want, 'px');
+    // the sides: a step at least the ratio asks, nearest twice the top; with `p-` the top keeps its own step
+    const sides = recommend({ family: 'spacing', prefix: 'px', job: 'button', want: { min: b.pt * T.ratio, target: want }, round: 'up', from: cls ?? '', token: false, sets: (v) => ({ paddingLeft: v, paddingRight: v }), theme });
+    const top = cls?.startsWith('p-') ? recommend({ family: 'spacing', prefix: 'py', job: 'button', want: { min: b.pt - 0.5, max: b.pt + 0.5, target: b.pt }, from: '', token: false, sets: (v) => ({ paddingTop: v, paddingBottom: v }), theme }) : null;
+    const to = sides.kind === 'class' ? `${sides.to}${top?.kind === 'class' ? ` ${top.to}` : ''}` : null;
+    const sets = { ...(sides.sets ?? { paddingLeft: want, paddingRight: want }), ...(top?.kind === 'class' ? top.sets : {}) };
     return [{
       ...say(this.id, { side: b.pl }),
       key: this.id, text: cls ?? 'padding', props: ['padding-left', 'padding-right'], value: `${b.pl}px`, n: b.pl,
       evidence: { across: b.pl, down: b.pt }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to, why: `${fmt(want)} on the sides, ${fmt(b.pt)} on top`, sets: { paddingLeft: want, paddingRight: want } } : { kind: 'advice', text: `Use ${fmt(want)} on the sides and ${fmt(b.pt)} on top.` },
+      suggest: cls && to ? { kind: 'class', from: cls, to, why: `${fmt(want)} on the sides, ${fmt(b.pt)} on top`, sets, ...(sides.alternatives ? { alternatives: sides.alternatives } : {}) } : { kind: 'advice', text: `Use ${fmt(want)} on the sides and ${fmt(b.pt)} on top.` },
     }];
   },
 };
@@ -536,11 +541,14 @@ export const iconSide = {
     const side = lead ? 'l' : 'r', other = lead ? 'r' : 'l';
     const less = b.pl - T.want.less >= 4 ? b.pl - T.want.less : b.pl - T.less;
     const cls = utility(el, 'px');
+    const iconSide = recommend({ family: 'spacing', prefix: `p${side}`, job: 'icon', want: { max: b.pl - T.less, target: less }, round: 'down', from: cls ?? '', token: false, sets: (v) => ({ [lead ? 'paddingLeft' : 'paddingRight']: v }), theme });
+    const textSide = recommend({ family: 'spacing', prefix: `p${other}`, job: 'text', want: { min: b.pl - 0.5, max: b.pl + 0.5, target: b.pl }, from: '', token: false, theme });
+    const to = iconSide.kind === 'class' && textSide.kind === 'class' ? `${iconSide.to} ${textSide.to}` : null;
     return [{
       ...say(this.id, { side: b.pl, less }),
       key: this.id, text: cls ?? 'padding', props: [lead ? 'padding-left' : 'padding-right'], value: `${b.pl}px`, n: b.pl,
       evidence: { padding: b.pl, side: lead ? 'left' : 'right' }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `${space(theme, less, `p${side}`)} ${space(theme, b.pl, `p${other}`)}`, why: `${fmt(less)} by the icon, ${fmt(b.pl)} by the text`, sets: { [lead ? 'paddingLeft' : 'paddingRight']: less } } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
+      suggest: cls && to ? { kind: 'class', from: cls, to, why: `${fmt(less)} by the icon, ${fmt(b.pl)} by the text`, sets: iconSide.sets ?? { [lead ? 'paddingLeft' : 'paddingRight']: less } } : { kind: 'advice', text: `Pad the icon side ${fmt(less)}, the text side ${fmt(b.pl)}.` },
     }];
   },
 };
@@ -581,12 +589,13 @@ export const leading = {
     const cramped = fs <= T.small && ratio < T.tight && lines >= 3;
     if (!big && !cramped) return [];
     const cls = utility(el, 'leading');
-    const to = big ? 'leading-tight' : 'leading-normal';
+    const want = big ? T.want.display : T.want.body;
     return [{
       ...say(this.id, { big, size: fs, ratio: ratio.toFixed(2) }),
       key: `${this.id}@${big ? 'loose' : 'tight'}`, text: cls ?? 'line-height', props: ['line-height'], value: ratio.toFixed(2), n: ratio,
       evidence: { fontSize: fs, lineHeight: lh, ratio, lines }, confidence: 0.83,
-      suggest: { kind: 'class', from: cls ?? '', to, why: big ? `line height ${T.want.display.target}` : `line height ${T.want.body.target}` },
+      suggest: recommend({ family: 'leading', prefix: 'leading', job: big ? 'display' : 'body', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ lineHeight: v * fs }), theme,
+        label: big ? 'big text wants' : 'body text wants', advice: (v) => `Use a line height of ${v} here.` }),
     }];
   },
 };
@@ -603,22 +612,16 @@ export const tracking = {
     const large = fs >= T.large && ls > 0;
     if (!caps && !large) return [];
     const cls = utility(el, 'tracking');
+    const want = caps ? T.want.caps : T.want.display;
     return [{
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: trackingStep(theme, caps), why: caps ? `${T.want.caps.target}em more letter spacing` : `${-T.want.display.target}em less letter spacing`, sets: { letterSpacing: fs * (caps ? T.want.caps.target : T.want.display.target) } },
+      suggest: recommend({ family: 'tracking', prefix: 'tracking', job: caps ? 'caps' : 'display', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ letterSpacing: v * fs }), theme,
+        label: caps ? 'small capitals need' : 'big text wants', advice: (v) => `Use ${v}em of letter spacing here.` }),
     }];
   },
 };
-
-// The letter-spacing step to suggest: the project's own when its theme names one (wide for small capitals, tight for
-// large type), else Tailwind's name (which the verdict withdraws when the theme lacks it).
-function trackingStep(theme, caps) {
-  const names = caps ? ['wider', 'wide', 'widest'] : ['tight', 'tighter'];
-  const own = names.find((n) => theme?.has?.(`--tracking-${n}`));
-  return `tracking-${own ?? names[0]}`;
-}
 
 // #16. Tabular numbers where numbers line up: a column of figures in a table.
 export const tabularNums = {
@@ -822,7 +825,7 @@ export const mediaSize = {
       ...say(this.id, { mine, mode }),
       key: this.id, text: cls ?? 'size', props: ['width'], value: `${mine}px`, n: mine,
       evidence: { mine, mode, of: sizes.length }, confidence: 0.86,
-      suggest: cls ? { kind: 'class', from: cls, to: numeric(theme, mode, cls.replace(/^!|!$/g, '').split('-')[0]), why: `${mode}px, like the rest` } : { kind: 'advice', text: `Make it ${mode}px, like the rest.` },
+      suggest: cls ? { ...recommend({ family: 'spacing', prefix: cls.replace(/^!|!$/g, '').split('-')[0], job: 'media', want: { min: mode - 0.5, max: mode + 0.5, target: mode }, from: cls, token: false, theme, advice: () => `Make it ${mode}px, like the rest.` }), why: `${mode}px, like the rest` } : { kind: 'advice', text: `Make it ${mode}px, like the rest.` },
     }];
   },
 };
@@ -1013,12 +1016,13 @@ export const anchorOffset = {
     if (px(s.scrollMarginTop) >= h - 0.5) return [];
     const parentMargin = [...document.querySelectorAll('html, body')].some((n) => px(facts.style(n).scrollPaddingTop) >= h - 0.5);
     if (parentMargin) return [];
-    const to = numeric(theme, Math.ceil(h), 'scroll-mt');
+    const rec = recommend({ family: 'spacing', prefix: 'scroll-mt', job: 'header', want: { min: Math.ceil(h), target: Math.ceil(h) }, round: 'up', from: utility(el, 'scroll-mt') ?? '', token: false, sets: (v) => ({ scrollMarginTop: v }), theme,
+      advice: () => `Give it scroll-margin-top: ${fmt(Math.ceil(h))}, the header’s height.` });
     return [{
       ...say(this.id, { id: el.id, header: h }),
       key: this.id, text: utility(el, 'scroll-mt') ?? 'scroll-margin-top', props: ['scroll-margin-top'], value: s.scrollMarginTop, n: px(s.scrollMarginTop),
       evidence: { header: h, margin: px(s.scrollMarginTop) }, confidence: 0.85,
-      suggest: { kind: 'class', from: utility(el, 'scroll-mt') ?? '', to, why: `the header’s ${fmt(Math.ceil(h))}` },
+      suggest: rec.kind === 'class' ? { ...rec, why: `the header’s ${fmt(Math.ceil(h))}` } : rec,
     }];
   },
 };
@@ -1353,7 +1357,7 @@ export const weightLevels = {
       ...say(this.id, { w, used: majority.sort((a, b) => a - b).join(', ') }),
       key: this.id, text: cls ?? `font-weight ${w}`, props: ['font-weight'], value: String(w), n: w,
       evidence: { weight: w, majority, sample: c.sample }, confidence: 0.82,
-      suggest: cls ? { kind: 'class', from: cls, to: `font-${WEIGHTS[near]}`, why: `${near}, one the page already uses`, sets: { fontWeight: String(near) } } : { kind: 'advice', text: `Use weight ${near}, one the page already uses.` },
+      suggest: cls ? { ...((r) => (r.kind === 'class' ? r : { kind: 'class', from: cls, to: `font-${WEIGHTS[near]}` }))(recommend({ family: 'weight', prefix: 'font', job: 'body', want: { min: near, max: near, target: near }, from: cls, token: false, theme })), why: `${near}, one the page already uses`, sets: { fontWeight: String(near) } } : { kind: 'advice', text: `Use weight ${near}, one the page already uses.` },
     }];
   },
 };
@@ -1370,13 +1374,13 @@ export const greyLevels = {
     if (!k || k.count / c.sample > T.minority || c.clusters.slice(0, 3).includes(k)) return [];
     const majority = c.clusters.slice(0, 3);
     const near = majority.map((x) => x.value).sort((a, b) => Math.hypot(...a.map((v, i) => v - k.value[i])) - Math.hypot(...b.map((v, i) => v - k.value[i])))[0];
-    const token = theme.nearestColor(near, T.within);
     const cls = colourClass(el, 'text', theme) ?? classesOf(el).split(/\s+/).find((x) => /^text-\[#/.test(x)) ?? null;
+    const rec = recommendColour({ rgb: near, prefix: 'text', from: cls ?? '', within: T.within, theme, why: 'a grey the page already uses', advice: `Use ${hex(near)}, a grey the page already uses.` });
     return [{
       ...say(this.id, { used: majority.length }),
       key: this.id, text: cls ?? 'color', props: ['color'], value: hex(k.value), n: k.count,
       evidence: { colour: hex(k.value), majority: majority.map((x) => hex(x.value)) }, confidence: 0.82,
-      suggest: token && cls ? { kind: 'class', from: cls, to: `text-${token.short}`, why: 'a grey the page already uses' } : { kind: 'advice', text: `Use ${hex(near)}, a grey the page already uses.` },
+      suggest: cls ? rec : asAdvice(rec, () => `Use ${hex(near)}, a grey the page already uses.`),
     }];
   },
 };
@@ -1400,13 +1404,13 @@ export const rhythm = {
     // a minority: a tenth of the page or less, and a lone value always (on a small page one place is over a tenth)
     if (steps.some((v) => Math.abs(v - g) <= T.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
     const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
-    const step = theme.nearest('spacing', near, 0.5);
     const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
+    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'stack', want: { min: near - 0.5, max: near + 0.5, target: near }, from: cls ?? '', token: false, sets: (v) => ({ rowGap: v, columnGap: v }), theme, advice: () => `Use ${fmt(near)}, the page’s rhythm.` });
     return [{
       ...say(this.id, { g, steps: steps.map((v) => fmt(v)).join(' and ') }),
       key: this.id, text: cls ?? 'gap', props: ['row-gap'], value: `${g}px`, n: g,
       evidence: { gap: g, rhythm: steps, sample: c.sample }, confidence: 0.82,
-      suggest: step && cls ? { kind: 'class', from: cls, to: `gap-${step.short}`, why: `${fmt(near)}, the page’s rhythm`, sets: { rowGap: near, columnGap: near } } : { kind: 'advice', text: `Use ${fmt(near)}, the page’s rhythm.` },
+      suggest: cls && rec.kind === 'class' ? { ...rec, why: `${fmt(near)}, the page’s rhythm` } : { kind: 'advice', text: `Use ${fmt(near)}, the page’s rhythm.` },
     }];
   },
 };
