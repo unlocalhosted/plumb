@@ -96,6 +96,8 @@ export class Changes {
   // that hash, so an edit made to the file in between is refused as stale rather than written over
   site(el, site) { const item = this.#items.get(el); if (item && !item.site) item.site = site; }
   siteOf(el) { return this.#items.get(el)?.site ?? null; }
+  // why the last write left something unwritten (the first element's reason), else null
+  get why() { for (const i of this.#items.values()) if (i.why) return i.why; return null; }
   get count() { return [...this.#items.values()].reduce((n, i) => n + i.props.size + i.swaps.size, 0); }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #byIndex(i) { return [...this.#items.keys()][i]; }

@@ -231,13 +231,13 @@ export class Blueprint {
     const near = this.#marks.magnet;
     if (near && this.#fix.holdEl(near)) return;
     const hit = this.#under(e.clientX, e.clientY);
-    if (!hit || hit === document.body || hit === document.documentElement) { this.#selection.clear(); return; }
+    if (!hit || hit === document.body || hit === document.documentElement) { this.#fix.release(); this.#selection.clear(); return; }
     let el = hit;
     while (el && el !== document.body && !this.#itemOf(el)) el = el.parentElement;
     if (!el || el === document.body) {
       // nothing read up the chain: a quiet element is selected as it is, but a wrapper holding read elements (the app's
       // root, a page section) is the page's background, and a click there lets go
-      if (this.#items.some((i) => hit.contains(i.el))) { this.#selection.clear(); return; }
+      if (this.#items.some((i) => hit.contains(i.el))) { this.#fix.release(); this.#selection.clear(); return; }
       el = hit;
     }
     // the fix panel: a click on an element with a problem puts its cause in hand; on anything else, lets go
@@ -270,13 +270,19 @@ export class Blueprint {
   // Apply from the fix panel: each new token is written to the theme with its class swap (POST token), then every
   // class change Changes holds goes out in one guarded write per file
   async #applyAll(tokens) {
+    const refused = [];
+    let said = null;
     for (const t of tokens) {
       const s = t.suggest, el = t.els[0], site = el ? await this.#siteOf(el).catch(() => null) : null;
-      if (!site) continue;
-      await post('token', { file: s.file, hash: s.hash, name: s.name, value: s.value, why: s.why, then: { file: site.file, hash: site.hash, line: site.line, column: site.column, from: s.then?.from ?? '', to: s.then?.to } }).catch(() => null);
+      // a token not written (its place unread, or the server refused it) is said, not folded away as done
+      if (!site) { refused.push(t); said ??= 'Couldn’t find where this is written.'; continue; }
+      await post('token', { file: s.file, hash: s.hash, name: s.name, value: s.value, why: s.why, then: { file: site.file, hash: site.hash, line: site.line, column: site.column, from: s.then?.from ?? '', to: s.then?.to } })
+        .catch((error) => { refused.push(t); said ??= /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t add the token.'; });
     }
     if (this.#changes.count) await this.#changes.accept();
-    else if (tokens.length) this.#host.remember?.();
+    else if (tokens.length > refused.length) this.#host.remember?.();
+    // what did not land (a token refused, or a class change still in Changes: stale, or failed): say so
+    return { count: this.#changes.count + refused.length, why: this.#changes.why ?? said, refused };
   }
   async #apply(batch) {
     try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}

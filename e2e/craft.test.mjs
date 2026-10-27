@@ -223,7 +223,7 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
     // the fix panel agrees: nothing to fix on the well-built page; on the demo at least one cause for each rule
     const line = (await overlay.locator('.fx .line').innerText()).replace(/\s+/g, ' ');
-    if (app) assert.match(line, /Everything matches your system|^0 problems/, `the well-built page has nothing to fix: ${line}`);
+    if (app) assert.match(line, /Everything matches your system|^Nothing off in what was checked|^0 problems/, `the well-built page has nothing to fix: ${line}`);
     else assert.ok(Number(line.match(/(\d+) causes?/)?.[1]) >= want.length, `a cause for every rule: ${line}`);
     assert.deepEqual(errors, []);
     await page.close();

@@ -45,6 +45,7 @@ export const FIX_CSS = `
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff1f8f; box-shadow: 0 0 0 3px rgb(255 31 143 / .14); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: #8b8a85; font-weight: 450; }
+  .fx .count .err { color: #c2304f; font-weight: 550; }
   .fx .grow { flex: 1; }
   .fx .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: #1c1b19; color: #fff; font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 1px 2px rgb(0 0 0 / .2); transition: transform 160ms ${SPRING}, opacity 160ms; }
@@ -156,7 +157,7 @@ function darkGround() {
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 export class FixPanel {
-  #el; #host; #groups = []; #code = 0; #at = 0; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #on = false;
+  #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #on = false;
 
   // host: { hold(group), release(), view(), pick(i), take(), applyAll(tokens) → Promise, spotlight(els) }
   constructor(root, host) {
@@ -179,17 +180,31 @@ export class FixPanel {
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   get holding() { return this.#holding; }
 
-  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#on = on; this.#el.hidden = !on; if (!on) { this.#holding = false; this.#done = false; } this.render(); }
+  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
+  // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
+  // causes stay as they were read before, and the new reading is taken when the cause is put down
   set(items) {
+    if (this.#holding) { this.#pending = items; return; }
+    this.#pending = null;
     ({ groups: this.#groups, code: this.#code } = groupsOf(items));
     if (this.#holding && !this.#live()[this.#at]) this.#at = Math.max(0, this.#live().length - 1);
     this.render();
   }
   // the reader's progress: settled once every element is read (what a script waiting on the page can watch)
-  progress(p) { this.#el.toggleAttribute('data-settled', !!p && p.read === p.total); }
+  progress(p) { this.#progress = p; this.#el.toggleAttribute('data-settled', !!p && p.read === p.total); this.render(); }
+  // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
+  // made while it was tried is the page's)
+  #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
   #live() { return this.#groups.filter((g) => !this.#taken.has(g.key)); }
-  #cause() { return this.#holding ? this.#live()[this.#at] ?? null : null; }
+  // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
+  // previewed), so the cause is kept as it was read; its place in the list follows it
+  #cause() {
+    if (!this.#holding || !this.#held) return null;
+    const live = this.#live(), i = live.findIndex((g) => g.key === this.#held.key);
+    if (i >= 0) { this.#at = i; this.#held = live[i]; }
+    return this.#held;
+  }
 
   // Put a cause in hand: the selection holds its first place with every other place as its group; the panel shows
   // its options and tries the suggested one at once
@@ -197,20 +212,24 @@ export class FixPanel {
     const live = this.#live();
     if (!live.length) return;
     this.#at = (i + live.length) % live.length;
-    this.#holding = true; this.#done = false; this.#previewed = null;
+    this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null;
     const g = live[this.#at];
+    this.#held = g;
     this.#host.hold(g);
     this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
     this.render(true);
   }
   // a glow clicked on the page: its cause
   holdMark(el, mark) {
+    // the cause already in hand: nothing to do (holding it again would read its own preview as how it is now)
+    if (this.#holding && this.#held?.members.some((m) => m.el === el && m.mark.key === mark?.key)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el && m.mark.key === mark?.key));
     if (i < 0) return false;
     this.hold(i);
     return true;
   }
   holdEl(el) {
+    if (this.#holding && this.#held?.members.some((m) => m.el === el)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el));
     if (i < 0) return false;
     this.hold(i);
@@ -220,7 +239,7 @@ export class FixPanel {
     if (!this.#holding) return false;
     const g = this.#cause();
     if (g) this.#unpreviewToken(g);
-    this.#holding = false;
+    this.#letGo(false);
     this.#host.release();
     this.#host.spotlight([]);
     this.render();
@@ -231,6 +250,7 @@ export class FixPanel {
     const g = this.#cause();
     if (g) this.#unpreviewToken(g);
     this.#host.release();
+    this.#holding = false;
     this.hold(this.#at + by);
   }
   take() {
@@ -245,19 +265,43 @@ export class FixPanel {
     this.#taken.set(g.key, g);
     this.#host.release();
     this.#host.spotlight([]);
-    if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#holding = false; this.render(); }
+    if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#letGo(true); this.render(); }
   }
   async apply() {
     if (!this.#taken.size || this.#writing) return;
     this.#fixed = [...this.#taken.values()].flatMap((g) => g.members.map((m) => m.el));
-    this.#writing = true; this.#holding = false; this.#host.release(); this.#host.spotlight([]);
+    this.#writing = true; this.#letGo(true); this.#host.release(); this.#host.spotlight([]);
     this.render();
-    try { await this.#host.applyAll([...this.#tokens.values()]); }
-    finally { this.#writing = false; this.#taken.clear(); this.#tokens.clear(); this.render(); }
+    let left = { count: 0 };
+    try { left = (await this.#host.applyAll([...this.#tokens.values()])) ?? left; }
+    catch (error) { left = { count: this.#taken.size, why: error?.message }; }
+    finally {
+      this.#writing = false;
+      // what didn't land stays taken, with why; A tries again (the file is read again first)
+      if (!left.count) { this.#error = null; this.#taken.clear(); this.#tokens.clear(); }
+      else {
+        this.#error = left.why ?? 'Couldn’t write it.';
+        // only tokens were refused: the causes written are done; the refused ones stay taken
+        if (left.count === left.refused?.length) {
+          const keep = new Set([...this.#tokens].filter(([, t]) => left.refused.includes(t)).map(([k]) => k));
+          for (const k of [...this.#taken.keys()]) if (!keep.has(k)) this.#taken.delete(k);
+          for (const k of [...this.#tokens.keys()]) if (!keep.has(k)) this.#tokens.delete(k);
+        }
+      }
+      this.#html = ''; this.render();
+    }
   }
 
   key(k) {
     if (!this.#on || this.#writing) return false;
+    // Enter on something with focus is that thing's: a button here is pressed (a specimen is already picked, so Enter
+    // takes it, as anywhere); a glow on the page, with nothing in hand, holds its own cause (with a cause in hand, the
+    // glow a click left focused is that cause's, and Enter takes it)
+    if (k === 'Enter') {
+      const a = this.#el.getRootNode().activeElement;
+      if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
+      if (!this.#holding && a?.classList?.contains('hit')) return false;
+    }
     if ((k === 'a' || k === 'A') && this.#taken.size) { this.apply(); return true; }
     if (!this.#holding) {
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
@@ -298,8 +342,8 @@ export class FixPanel {
     else if (!g) {
       const places = live.reduce((n, x) => n + x.members.length, 0);
       html = places
-        ? `<div class="line"><i class="dot"></i><span class="count">${plural(places, 'problem')} <span>· ${plural(live.length, 'cause')}</span></span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${taken ? `${plural(taken, 'change')} ready` : 'Everything matches your system'}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
+        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : `${plural(places, 'problem')} <span>· ${plural(live.length, 'cause')}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
+        : `<div class="line"><span class="count"><span>${this.#error ? esc(this.#error) : taken ? `${plural(taken, 'change')} ready` : this.#progress?.notChecked ? `Nothing off in what was checked · ${this.#progress.notChecked} not checked` : 'Everything matches your system'}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous cause">‹</button>${this.#at + 1} of ${live.length}<button class="next" aria-label="Next cause">›</button></span><span class="what">${esc(g.what)} · ${plural(g.members.length, 'place')}</span></div>`;

@@ -141,6 +141,9 @@ export class Selection {
   refresh(item) {
     if (!this.#el) return;
     if (!this.#el.isConnected) return this.clear();
+    // while a fix is being tried, the re-read sees the page as previewed: its own problem is gone from it. The
+    // problem in hand stays as it was read until the preview is taken or put back
+    if (this.#previewing && this.#plan) return this.draw();
     const was = this.current?.key;
     this.#item = item ?? null;
     // the same problem stays current through a re-read (the order can change); else the first one not yet taken
