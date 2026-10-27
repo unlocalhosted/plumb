@@ -6,8 +6,8 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, PropsResult, SetOptions, SwapOptions, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
-export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'try' | 'refresh'>;
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'decisions' | 'why' | 'try' | 'refresh' | 'many';
+export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'try' | 'refresh'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
@@ -69,7 +69,7 @@ export class Session extends EventEmitter {
     if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
-    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
+    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
@@ -106,6 +106,7 @@ export class Session extends EventEmitter {
   props(...args: Parameters<Engine['props']>) { return this.call('props', args); }
   set(...args: Parameters<Engine['set']>) { return this.call('set', args); }
   swap(...args: Parameters<Engine['swap']>) { return this.call('swap', args); }
+  swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }
   undo(...args: Parameters<Engine['undo']>) { return this.call('undo', args); }
   history(...args: Parameters<Engine['history']>) { return this.call('history', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }

@@ -61,25 +61,32 @@ const X = '<svg viewBox="0 0 12 12" width="11" height="11"><path d="M3 3l6 6M9 3
 
 export class Changes {
   #el; #items = new Map(); // element → { name, props: Map<prop, { from, to, original: [value, priority] }>, why }
-  #at = null; #busy = false; #onAccept; #onSelect;
+  #at = null; #busy = false; #onAccept; #onSelect; #onShow; #onDiscard; #rows = [];
 
   // onAccept([{ el, name, props: [{ prop, from, to }] }]) → Promise<[{ el, ok, why? }]>; onSelect(el) lights it
-  constructor(root, { onAccept, onSelect } = {}) {
+  // onShow(): the sidebar appears (what sits where it opens makes room)
+  constructor(root, { onAccept, onSelect, onShow, onDiscard } = {}) {
+    this.#onShow = onShow;
+    this.#onDiscard = onDiscard;
     this.#onAccept = onAccept;
     this.#onSelect = onSelect;
     this.#el = Object.assign(document.createElement('aside'), { className: 'cg', hidden: true });
     this.#el.setAttribute('aria-label', 'Changes on this page');
     root.append(this.#el);
     this.#el.addEventListener('click', (e) => {
-      const row = e.target.closest('.el');
-      if (e.target.closest('.x') && row) return this.discard(this.#byIndex(+row.dataset.i));
-      if (row) return this.select(this.#byIndex(+row.dataset.i));
+      const row = e.target.closest('.el'), els = row ? this.#rows[+row.dataset.i]?.els ?? [] : [];
+      if (e.target.closest('.x') && row) { for (const el of els) this.discard(el); return; }
+      if (row && els[0]) return this.select(els[0]);
       if (e.target.closest('.all')) return this.discardAll();
       if (e.target.closest('.ok')) return this.accept();
     });
   }
 
   has(el) { return this.#items.has(el); }
+  // where an element's changes will be written, and its file's hash when its first change was taken: Apply sends
+  // that hash, so an edit made to the file in between is refused as stale rather than written over
+  site(el, site) { const item = this.#items.get(el); if (item && !item.site) item.site = site; }
+  siteOf(el) { return this.#items.get(el)?.site ?? null; }
   get count() { return [...this.#items.values()].reduce((n, i) => n + i.props.size + i.swaps.size, 0); }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #byIndex(i) { return [...this.#items.keys()][i]; }
@@ -131,6 +138,7 @@ export class Changes {
     if (!item) return;
     for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); }
     for (const c of item.swaps.values()) c.undo?.();
+    this.#onDiscard?.(el);
     if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
     this.#items.delete(el);
     if (this.#at === el) this.#at = [...this.#items.keys()][0] ?? null;
@@ -141,12 +149,22 @@ export class Changes {
   async accept() {
     if (this.#busy || !this.#items.size) return;
     this.#busy = true; this.render();
-    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write) }));
+    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write), site: i.site ?? null }));
     const results = (await this.#onAccept?.(batch).catch((error) => batch.map((b) => ({ el: b.el, ok: false, why: error?.message })))) ?? [];
     for (const r of results) {
       const item = this.#items.get(r.el);
       if (!item) continue;
-      if (r.ok) this.#items.delete(r.el); else item.why = r.why ?? 'Couldn’t apply.';
+      if (r.ok) {
+        // the source carries it now: the preview's inline styles go, the page shows what was written
+        for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) r.el.style.setProperty(prop, v, p); else r.el.style.removeProperty(prop); }
+        for (const c of item.swaps.values()) c.release?.();
+        if (!r.el.getAttribute('style')?.trim()) r.el.removeAttribute('style');
+        this.#items.delete(r.el);
+      } else {
+        item.why = r.why ?? 'Couldn’t apply.';
+        // the file moved on: the next Apply reads it again (the edit is still checked against the element's classes)
+        if (/changed after/i.test(item.why)) item.site = null;
+      }
     }
     this.#busy = false;
     if (!this.#items.has(this.#at)) this.#at = [...this.#items.keys()][0] ?? null;
@@ -155,16 +173,28 @@ export class Changes {
 
   render() {
     const n = this.count;
+    const was = !this.#el.hidden;
     this.#el.hidden = !n;
     if (!n) return;
+    if (!was) this.#onShow?.();
     this.#el.setAttribute('aria-busy', String(this.#busy));
-    const els = [...this.#items];
-    this.#el.innerHTML = `<div class="top"><b>Changes</b><span>${els.length} element${els.length === 1 ? '' : 's'} · ${n} change${n === 1 ? '' : 's'}</span></div>
-      <div class="rows" role="list">${els.map(([el, i], k) => `<div class="el" role="listitem" tabindex="0" data-i="${k}"${el === this.#at ? ' aria-current="true"' : ''}>
-        <div class="name"><span class="pl-tag">${esc(i.name)}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(i.name)}" title="Discard">${X}</button></div>
-        ${[...i.swaps.values()].map((c) => `<div class="chg"><i></i><span class="prop">${esc(c.label)}</span><span class="from">${esc(c.from)}</span>→<span class="to">${esc(c.to)}</span></div>`).join('')}
-        ${[...i.props].map(([prop, c]) => `<div class="chg"><i>${BLOCK_ICONS[KIND(prop)] ?? ''}</i><span class="prop">${esc(said(prop))}</span><span class="from">${esc(Math.round(c.from.n))}</span>→<span class="to">${esc(`${Math.round(c.to.n)}${c.to.token ? ` (${c.to.token})` : ''}`)}</span></div>`).join('')}
-        ${i.why ? `<div class="why">${esc(i.why)}</div>` : ''}</div>`).join('')}</div>
-      <div class="foot"><span class="keys">J K step</span><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Applying…' : `Apply ${n} change${n === 1 ? '' : 's'}`}</button></div>`;
+    // elements with the same changes (the rows of one list, the places of one cause) are one row: ×12
+    const rows = [];
+    for (const [el, i] of this.#items) {
+      const lines = [...i.swaps.values()].map((c) => `<div class="chg"><i></i><span class="prop">${esc(c.label)}</span><span class="from">${esc(c.from)}</span>→<span class="to">${esc(c.to)}</span></div>`)
+        .concat([...i.props].map(([prop, c]) => `<div class="chg"><i>${BLOCK_ICONS[KIND(prop)] ?? ''}</i><span class="prop">${esc(said(prop))}</span><span class="from">${esc(Math.round(c.from.n))}</span>→<span class="to">${esc(`${Math.round(c.to.n)}${c.to.token ? ` (${c.to.token})` : ''}`)}</span></div>`)).join('');
+      const sig = `${i.name}|${lines}|${i.why ?? ''}`;
+      const row = rows.find((r) => r.sig === sig);
+      if (row) row.els.push(el); else rows.push({ sig, els: [el], name: i.name, lines, why: i.why });
+    }
+    this.#rows = rows;
+    const elements = this.#items.size;
+    this.#el.innerHTML = `<div class="top"><b>Changes</b><span>${elements} element${elements === 1 ? '' : 's'} · ${n} change${n === 1 ? '' : 's'}</span></div>
+      <div class="rows" role="list">${rows.map((r, k) => `<div class="el" role="listitem" tabindex="0" data-i="${k}"${r.els.includes(this.#at) ? ' aria-current="true"' : ''}>
+        <div class="name"><span class="pl-tag">${esc(r.name)}${r.els.length > 1 ? ` ×${r.els.length}` : ''}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(r.name)}" title="Discard">${X}</button></div>
+        ${r.lines}
+        ${r.why ? `<div class="why">${esc(r.why)}</div>` : ''}</div>`).join('')}</div>
+      <div class="foot"><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Applying…' : `Apply ${n} change${n === 1 ? '' : 's'}`}</button></div>`;
   }
+
 }

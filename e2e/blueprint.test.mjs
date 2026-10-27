@@ -156,10 +156,11 @@ test('Alt+B dims the page and lifts every drift in view where it lives; one labe
     return { mid: r.left + r.width / 2, from: a.right, to: b.left };
   });
   assert.ok(gap.mid >= gap.from - 2 && gap.mid <= gap.to + 2, `the gap mark is in the gap (${JSON.stringify(gap)})`);
-  // a label is a shortcut: a click opens its region's first drift
+  // a label is a shortcut: a click selects its element, its first drift current
   await overlay.locator('.bp .lbl').first().click();
-  await chooser(overlay).waitFor({ timeout: 5000 });
+  await selected(overlay).waitFor({ timeout: 5000 });
   await page.keyboard.press('Escape');
+  await selected(overlay).waitFor({ state: 'detached', timeout: 5000 });
   assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'true');
   assert.deepEqual(errors, []);
 });
@@ -264,6 +265,19 @@ test('Only drift is drawn, and the panel groups it by cause: places most first; 
 });
 
 const chooser = (overlay) => overlay.locator('.ch .card[role="dialog"]');
+// the fix in place (select.js): the selected element, its options, the Changes sidebar
+const selected = (overlay) => overlay.locator('.sel .ring');
+const option = (overlay, token) => overlay.locator(`.sel .stair .opt[data-i][title="${token}"]`).first();
+const sidebar = (overlay) => overlay.locator('.cg:not([hidden])');
+// pick an option on the selected element and take it: Enter puts it in Changes once its exact edit is read
+async function take(page, overlay, token) {
+  await overlay.locator('.sel .stair').waitFor({ timeout: 10000 });
+  // a staircase or swatches: the option by its token; a single target: it is the one
+  if (token && await overlay.locator('.sel .stair .opt[data-i]').count()) { const o = option(overlay, token); await o.waitFor({ timeout: 10000 }); await o.click(); }
+  const before = await overlay.locator('.cg:not([hidden]) .chg').count();
+  for (let i = 0; i < 40; i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); if (await overlay.locator('.cg:not([hidden]) .chg').count() > before) return; }
+  throw new Error('the option was not taken');
+}
 const markFor = (overlay, text) => hits(overlay).and(overlay.locator(`[aria-label*="${text}"]`));
 // a real click on the mark's box (Playwright's click would scroll the page to reach a fixed SVG rect, moving every mark)
 async function clickMark(page, overlay, text) {
@@ -275,90 +289,67 @@ async function clickMark(page, overlay, text) {
 const dock = (overlay) => overlay.locator('.dock');
 // pick a step by the token it names, in whichever form the family uses
 const pickStep = (overlay, token) => chooser(overlay).locator('.cmp .opt[data-pick]').filter({ hasText: token }).first().click();
-const noMark = (page, text) => page.waitForFunction((t) => ![...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((r) => r.getAttribute('aria-label').includes(t)), text, { timeout: 15000 });
+// no mark names the text (an applied change reloads the page when the dev server can't hot-swap it: read through it)
+async function noMark(page, text) {
+  for (let i = 0; ; i++) {
+    try { return await page.waitForFunction((t) => { const r = document.querySelector('plumb-overlay')?.shadowRoot; return !!r && !r.querySelector('.bp').hidden && ![...r.querySelectorAll('.bp .hit')].some((h) => h.getAttribute('aria-label').includes(t)); }, text, { timeout: 15000 }); }
+    catch (error) { if (i > 3 || !/context was destroyed|navigation/i.test(error.message)) throw error; await page.waitForLoadState('load'); }
+  }
+}
 
-test('A mark opens its chooser; a pick previews on the page; Write puts it in source and the mark goes', { timeout: 120000 }, async (t) => {
+test('A mark selects its element; an option previews on the page; Enter and Apply put it in source and the mark goes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
-
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
-  const before = Number((await say(overlay).innerText()).match(/(\d+) off/)[1]);
   await clickMark(page, overlay, 'gap-[10px]');
-  // the chooser, beside the row, names the finding and offers the family's steps; nothing opens the reading card
-  const ch = chooser(overlay);
-  await ch.waitFor();
-  assert.match(await ch.getAttribute('aria-label'), /^`?gap-\[10px\]`? hardcodes 10px/);
+  // the element is selected with that drift current; nothing opens over it
+  await selected(overlay).waitFor();
+  assert.equal(await chooser(overlay).count(), 0, 'no card');
   assert.equal(await overlay.locator('.w:not([hidden])').count(), 0, 'the reading card stays closed');
-  const row = await page.locator('#sync-row').boundingBox();
-  let box = null;
-  for (let i = 0; i < 40 && !box; i++) { box = await ch.boundingBox(); if (!box) await page.waitForTimeout(50); } // the chooser settles into place
-  assert.ok(box, 'the chooser has a place');
-  assert.ok(box.x >= row.x + row.width || box.x + box.width <= row.x || box.y >= row.y + row.height || box.y + box.height <= row.y, 'the chooser stands beside the element, never over it');
-  await ch.locator('.read .edit').filter({ hasText: /2 tokens fit/ }).waitFor();
-
-  // pointing at a step previews it on the page; leaving puts it back
-  const s2 = ch.locator('.cmp .opt[data-pick]').filter({ hasText: /s2/ }).first();
-  await s2.hover();
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
-  await page.mouse.move(5, 5);
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '10px');
-
-  // picking keeps the preview; the mark says what it becomes; the dock counts the pick and offers Write
-  await s2.click();
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
-  await overlay.locator('.bp .hit[aria-label*="gap-[10px]"][aria-label*="Picked gap-s2"]').waitFor();
-  await say(overlay).filter({ hasText: `${before} off · 1 picked` }).waitFor();
-  await ch.locator('.change').filter({ hasText: /gap-s2/ }).waitFor();
-
-  // Write: one edit lands in source, the preview lifts once the page carries it, the mark leaves, the count drops
-  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
-  await say(overlay).filter({ hasText: 'Wrote 1 edit to App.jsx' }).waitFor({ timeout: 15000 });
+  // the theme's steps are offered on the element; picking one previews it on the page
+  await option(overlay, 's2').click();
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('sync-row')).gap === '8px', null, { timeout: 5000 });
+  // Enter takes it: the Changes sidebar has it; Apply writes it
+  await take(page, overlay);
+  assert.match(await sidebar(overlay).innerText(), /Apply 1 change/);
+  await sidebar(overlay).locator('.ok').click();
+  for (let i = 0; i < 100 && !/gap-s2 py-\[10px\]/.test(await readFile(join(root, 'src/App.jsx'), 'utf8')); i++) await page.waitForTimeout(100);
   assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /gap-s2 py-\[10px\]/);
   await noMark(page, 'gap-[10px]');
-  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null, null, { timeout: 15000 });
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the page carries the change from source');
   await overlay.locator('.bp .hit[aria-label*="py-[10px]"]').waitFor({ timeout: 15000 }); // the row’s other drift is still marked
-  await say(overlay).filter({ hasText: `${before - 1} off in view` }).waitFor({ timeout: 15000 });
-  assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden === false), true, 'blueprint stays on');
   assert.deepEqual(errors, []);
 });
 
-test('Several drifts are picked from their marks and written together, one apply per file', { timeout: 120000 }, async (t) => {
+test('Several elements’ changes are applied together, one write per file', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
-
   await clickMark(page, overlay, 'rounded-[14px]');
-  await chooser(overlay).locator('.cmp').waitFor();
-  const radius = await chooser(overlay).locator('.cmp .opt[data-pick]').first();
-  const token = (await radius.getAttribute('aria-label')).split(',')[0];
-  await radius.click();
-  await chooser(overlay).locator('.nav').waitFor();
+  await take(page, overlay);
   await clickMark(page, overlay, 'gap-[3px]');
-  await chooser(overlay).filter({ hasText: /gap-\[3px\]/ }).waitFor();
-  await pickStep(overlay, /s1/);
-  await say(overlay).filter({ hasText: /2 picked/ }).waitFor();
-  assert.notEqual(await page.locator('#sync-row').getAttribute('style'), null);
-  assert.notEqual(await page.locator('#beta-chip').getAttribute('style'), null);
-
-  await chooser(overlay).getByRole('button', { name: 'Write 2 edits' }).click();
-  await say(overlay).filter({ hasText: 'Wrote 2 edits to App.jsx' }).waitFor({ timeout: 15000 });
-  const source = await readFile(join(root, 'src/App.jsx'), 'utf8');
-  assert.match(source, new RegExp(`px-\\[14px\\] ${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} bg-white`));
+  await take(page, overlay, 's1');
+  assert.match(await sidebar(overlay).innerText(), /2 elements · 2 changes/);
+  let writes = 0;
+  await page.route('**/swaps', (route) => { writes++; route.continue(); });
+  await sidebar(overlay).locator('.ok').click();
+  const file = join(root, 'src/App.jsx');
+  for (let i = 0; i < 100 && /gap-\[3px\]/.test(await readFile(file, 'utf8')); i++) await page.waitForTimeout(100);
+  const source = await readFile(file, 'utf8');
+  assert.doesNotMatch(source, /rounded-\[14px\]/);
   assert.match(source, /gap-s1 rounded-\[5px\]/);
+  assert.equal(writes, 1, 'one write for the file');
   await noMark(page, 'rounded-[14px]');
   await noMark(page, 'gap-[3px]');
-  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null && document.getElementById('beta-chip').getAttribute('style') === null, null, { timeout: 15000 });
   assert.deepEqual(errors, []);
 });
 
-test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves nothing previewed', { timeout: 120000 }, async (t) => {
+test('Backspace drops a change; Discard all drops the rest; leaving blueprint leaves nothing previewed and nothing written', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -366,41 +357,32 @@ test('Undo lifts every pick; a pressed step unpicks; leaving blueprint leaves no
   const before = await footprint(page);
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
-
   await clickMark(page, overlay, 'gap-[10px]');
-  await pickStep(overlay, /s2/);
-  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
-  // the pressed step, clicked again, unpicks
-  await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').click();
-  await say(overlay).filter({ hasText: /off in view.* · Alt\+B/ }).waitFor();
-  // Unpick redraws the chooser under the pointer. Chromium can enter the new step on a later frame:
-  // zero queued picks still permits a hover preview. Exercise that state, then leave before checking cleanup.
-  const unpicked = chooser(overlay).locator('.cmp .opt[data-pick]').filter({ hasText: /s2/ }).first();
-  await unpicked.hover();
-  assert.equal(await unpicked.getAttribute('aria-pressed'), 'false');
-  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
-  await page.mouse.move(5, 5);
-  await page.waitForFunction(() => document.getElementById('sync-row').getAttribute('style') === null, null, { timeout: 5000 });
-  // Undo from the dock lifts picks on more than one element
-  await pickStep(overlay, /s2/);
+  await take(page, overlay, 's2');
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px');
+  await page.keyboard.press('Backspace');
+  await sidebar(overlay).waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+  assert.equal(await overlay.locator('.cg:not([hidden])').count(), 0);
+  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
+  // two elements, then Discard all
+  await take(page, overlay, 's2');
   await clickMark(page, overlay, 'gap-[3px]');
-  await pickStep(overlay, /s1/);
-  await say(overlay).filter({ hasText: /2 picked/ }).waitFor();
-  await dock(overlay).getByRole('button', { name: 'Undo' }).click();
-  await say(overlay).filter({ hasText: /off in view.* · Alt\+B/ }).waitFor();
+  await take(page, overlay, 's1');
+  await sidebar(overlay).locator('.all').click();
+  assert.equal(await overlay.locator('.cg:not([hidden])').count(), 0);
   assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
   assert.equal(await page.locator('#beta-chip').getAttribute('style'), null);
-  // picks pending when the mode is left are lifted with it
-  await pickStep(overlay, /s1/);
-  await page.keyboard.press('Escape'); // closes the chooser
-  await chooser(overlay).waitFor({ state: 'hidden' });
-  await page.keyboard.press('Escape'); // leaves blueprint
+  // changes pending when the mode is left are lifted with it
+  await clickMark(page, overlay, 'gap-[10px]');
+  await take(page, overlay, 's2');
+  // Esc lets go of what has focus, then the element, then leaves blueprint
+  for (let i = 0; i < 4 && await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden === false); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   await off(page);
   assert.equal(await footprint(page), before, 'nothing is left on the page');
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written');
 });
 
-test('A write the server refuses as stale is said so; Read again recovers the pick and writes', { timeout: 120000 }, async (t) => {
+test('A write the server refuses as stale is said so on its row; Apply again reads the file again and writes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -408,31 +390,26 @@ test('A write the server refuses as stale is said so; Read again recovers the pi
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
-  await pickStep(overlay, /s2/);
-  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
-
-  // The first apply is answered as the server answers a file that changed since it was read (changing the file on
-  // disk here would make the dev server reload the page); the next apply reaches the real server.
+  await take(page, overlay, 's2');
+  // The first write is answered as the server answers a file that changed since it was read (changing the file on
+  // disk here would make the dev server reload the page); the next reaches the real server.
   let refused = 0;
-  await page.route('**/apply', (route) => {
+  await page.route('**/swaps', (route) => {
     if (refused++) return route.continue();
     route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'The file changed since the overlay read it. Read it again.' }) });
   });
   const file = join(root, 'src/App.jsx');
-  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
-  await say(overlay).filter({ hasText: 'App.jsx changed since React Plumber read it' }).waitFor({ timeout: 15000 });
+  await sidebar(overlay).locator('.ok').click();
+  await sidebar(overlay).locator('.why').filter({ hasText: 'This file changed after we checked it. Check again.' }).waitFor({ timeout: 15000 });
   assert.match(await readFile(file, 'utf8'), /gap-\[10px\] py-\[10px\]/, 'nothing was written');
   assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the preview stays');
-  await overlay.locator('.bp .hit[aria-label*="Picked gap-s2"]').waitFor();
-  await dock(overlay).getByRole('button', { name: 'Read again' }).click();
-  await dock(overlay).getByRole('button', { name: 'Write 1' }).waitFor({ timeout: 15000 });
-  await dock(overlay).getByRole('button', { name: 'Write 1' }).click();
-  await say(overlay).filter({ hasText: 'Wrote 1 edit to App.jsx' }).waitFor({ timeout: 15000 });
+  await sidebar(overlay).locator('.ok').click();
+  for (let i = 0; i < 100 && !/gap-s2 py-\[10px\]/.test(await readFile(file, 'utf8')); i++) await page.waitForTimeout(100);
   assert.match(await readFile(file, 'utf8'), /gap-s2 py-\[10px\]/);
   assert.equal(refused, 2);
 });
 
-test('Keyboard only: Tab reaches a mark, Enter opens its chooser, a digit picks, Enter writes, Esc returns to the mark', { timeout: 120000 }, async (t) => {
+test('Keyboard only: Tab reaches a mark, Enter selects its element, arrows pick, Enter takes, Tab reaches Apply, Enter writes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -448,26 +425,23 @@ test('Keyboard only: Tab reaches a mark, Enter opens its chooser, a digit picks,
   }
   assert.ok(label, 'Tab reaches the chip’s gap mark');
   await page.keyboard.press('Enter');
-  await chooser(overlay).locator('.cmp .opt').first().waitFor();
-  // focus lands on a step; 1 picks the first live step
-  assert.match((await active())?.cls ?? '', /opt/);
-  await page.keyboard.press('1');
-  await say(overlay).filter({ hasText: /1 picked/ }).waitFor();
-  assert.equal(await chooser(overlay).locator('.cmp .opt[aria-pressed="true"]').count(), 1);
-  // Esc closes the chooser and puts focus back on the mark
-  await page.keyboard.press('Escape');
-  await chooser(overlay).waitFor({ state: 'hidden' });
-  assert.equal((await active())?.cls, 'hit');
-  assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden === false), true, 'one Esc closes the chooser only');
-  // Enter reopens it; Enter in the chooser writes the queue
+  await selected(overlay).waitFor();
+  await overlay.locator('.sel .stair').waitFor();
+  await page.keyboard.press('ArrowUp');
+  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  assert.equal(await overlay.locator('.cg:not([hidden])').count(), 1, `the change is taken: ${await page.evaluate(() => { const r = document.querySelector('plumb-overlay').shadowRoot; return JSON.stringify({ sel: r.querySelectorAll('.sel .ring').length, stair: r.querySelector('.sel .stair')?.innerHTML.slice(0, 200), tag: r.querySelector('.sel .pl-tag')?.textContent, active: r.activeElement?.getAttribute('aria-label') }); })}`);
+  // Tab to Apply, Enter writes
+  let onApply = false;
+  for (let i = 0; i < 60 && !onApply; i++) { await page.keyboard.press('Tab'); onApply = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.classList.contains('ok') ?? false); }
+  assert.ok(onApply, 'Tab reaches Apply');
   await page.keyboard.press('Enter');
-  await chooser(overlay).locator('.cmp .opt').first().waitFor();
-  await page.keyboard.press('Enter');
-  await say(overlay).filter({ hasText: /Wrote 1 edit to App\.jsx/ }).waitFor({ timeout: 15000 });
-  assert.notEqual(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'));
+  const file = join(root, 'src/App.jsx');
+  const was = await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8');
+  for (let i = 0; i < 100 && (await readFile(file, 'utf8')) === was; i++) await page.waitForTimeout(100);
+  assert.notEqual(await readFile(file, 'utf8'), was);
 });
 
-test('The punch list: every drift in view in rows; arrows move, Enter opens that chooser, Backspace unpicks', { timeout: 120000 }, async (t) => {
+test('The Changes sidebar: a row per element changed; a click on a row selects it; × drops just that one', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -475,44 +449,19 @@ test('The punch list: every drift in view in rows; arrows move, Enter opens that
   await page.keyboard.press('Alt+B');
   await say(overlay).filter({ hasText: /off in view/ }).waitFor({ timeout: 20000 });
   await clickMark(page, overlay, 'gap-[10px]');
-  await pickStep(overlay, /s2/);
-  await page.keyboard.press('Escape');
-
-  await dock(overlay).getByRole('button', { name: 'Every drift in view' }).click();
-  const list = overlay.locator('.pl .card[role="dialog"]');
-  await list.waitFor();
-  assert.match(await list.locator('.top .title').innerText(), /off · 1 picked/);
-  const rows = list.getByRole('option');
-  const n = await rows.count();
-  assert.equal(n, await hits(overlay).count(), 'one row per mark in view');
-  assert.equal(await list.locator('.file').first().innerText(), 'App.jsx');
-  const picked = rows.filter({ hasText: /gap-\[10px\]/ });
-  assert.match(await picked.innerText(), /gap-s2/);
-  assert.equal(await picked.getAttribute('aria-selected'), 'true');
-  // Backspace on the picked row lifts it; the title and the page follow
-  await picked.focus();
-  await page.keyboard.press('Backspace');
-  await list.locator('.top .title').filter({ hasText: /^In view · \d+ off$/ }).waitFor();
-  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
-  // arrows walk the rows; Enter opens that drift's chooser and closes the list
-  const active = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.getAttribute('aria-label'));
-  await rows.first().focus();
-  await page.keyboard.press('ArrowDown');
-  const second = await active();
-  assert.equal(second, await rows.nth(1).getAttribute('aria-label'));
-  await page.keyboard.press('Enter');
-  await list.waitFor({ state: 'hidden' });
-  const ch = chooser(overlay);
-  await ch.waitFor();
-  assert.ok(second.startsWith((await ch.getAttribute('aria-label'))), 'the chooser is for the row chosen');
-  // Esc closes the chooser, L opens the list from the keyboard, Esc closes it
-  await page.keyboard.press('Escape');
-  await ch.waitFor({ state: 'hidden' });
-  await page.keyboard.press('l');
-  await list.waitFor();
-  await page.keyboard.press('Escape');
-  await list.waitFor({ state: 'hidden' });
-  assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden === false), true);
+  await take(page, overlay, 's2');
+  await clickMark(page, overlay, 'gap-[3px]');
+  await take(page, overlay, 's1');
+  const rows = sidebar(overlay).locator('.el');
+  assert.equal(await rows.count(), 2);
+  // a click on the first row selects its element again
+  await rows.first().locator('.name').click();
+  await selected(overlay).waitFor();
+  // × on the second drops it and puts that element back
+  await rows.nth(1).locator('.x').click();
+  assert.equal(await sidebar(overlay).locator('.el').count(), 1);
+  assert.equal(await page.locator('#beta-chip').getAttribute('style'), null);
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the other change stays');
   assert.deepEqual(errors, []);
 });
 
@@ -579,7 +528,7 @@ test('With motion: turning around mid-fade and removing the overlay both leave n
   assert.deepEqual(errors, []);
 });
 
-test('A weight reads as a number in the chooser, never as pixels', { timeout: 90000 }, async (t) => {
+test('A weight reads as a number on the element, never as pixels', { timeout: 90000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -590,9 +539,14 @@ test('A weight reads as a number in the chooser, never as pixels', { timeout: 90
   await mark.waitFor();
   const b = await mark.boundingBox();
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  const ch = chooser(overlay);
-  await ch.waitFor();
-  assert.equal((await ch.locator('.change .delta').innerText()).trim(), '600');
+  await selected(overlay).waitFor();
+  // pointing at its words says the weight as a number
+  const el = await page.evaluate(() => { const r = [...document.querySelectorAll('[class*="font-semibold"]')][0].getBoundingClientRect(); return { x: r.left + 4, y: r.top + r.height / 2 }; });
+  await page.mouse.move(el.x, el.y);
+  await overlay.locator('.bm-at').waitFor({ timeout: 3000 });
+  const pill = await overlay.locator('.bm-at').innerText();
+  assert.match(pill, /weight 600/);
+  assert.doesNotMatch(pill, /600px/);
   await page.keyboard.press('Escape');
   assert.deepEqual(errors, []);
 });
@@ -695,7 +649,7 @@ test('Drawn only where it can be seen: a drawer over part of an element cuts its
   assert.deepEqual(errors, []);
 });
 
-test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter, one pick, and Write sends one edit', { timeout: 120000 }, async (t) => {
+test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter selects them all, one take, one write', { timeout: 150000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url, root } = await demo(t);
@@ -710,27 +664,21 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one row; Enter
   const row = rowsOf(overlay).filter({ has: page.locator('code', { hasText: /^rounded-\[3px\]/ }) });
   await row.waitFor({ timeout: 10000 });
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bpp .row')].some((r) => /^rounded-\[3px\]/.test(r.querySelector('code').textContent) && r.querySelector('.n').textContent === '36'), null, { timeout: 10000 });
-  assert.match(await row.locator('.what').innerText(), /off the scale · 36 places · 1 line$/);
   await row.click();
   assert.equal(await row.getAttribute('aria-current'), 'true');
-  // all 36 cells light up
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length === 36, null, { timeout: 3000 });
-  // Enter: one chooser for the whole cause
+  // Enter: one cell selected, the other 35 go with it
   await page.keyboard.press('Enter');
-  const ch = chooser(overlay);
-  await ch.waitFor();
-  assert.match(await ch.locator('.grp').innerText(), /Fixes 36 places · 1 source line/);
-  const step = ch.locator('.cmp .opt[data-pick]').first();
-  await step.waitFor();
-  await step.click();
-  // every place is picked, and the row says what they become
-  await row.locator('.to').waitFor({ state: 'attached', timeout: 10000 }); // the list may have folded while the chooser was in use
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .write')?.textContent.trim() === 'Write 1', null, { timeout: 10000 });
-  await overlay.locator('.dock .write').click();
-  await say(overlay).filter({ hasText: /Wrote 1 edit to App\.jsx/ }).waitFor({ timeout: 15000 });
+  await selected(overlay).waitFor();
+  assert.match(await overlay.locator('.sel .pl-tag').innerText(), /×36/);
+  await take(page, overlay);
+  let writes = 0;
+  await page.route('**/swaps', (route) => { writes++; route.continue(); });
+  await sidebar(overlay).locator('.ok').click();
+  for (let i = 0; i < 100 && /rounded-\[3px\]/.test(await readFile(source, 'utf8')); i++) await page.waitForTimeout(100);
   const now = await readFile(source, 'utf8');
   assert.equal((now.match(/rounded-\[3px\]/g) ?? []).length, 0, 'the line no longer carries the drift');
   assert.equal(now.split('\n').length, was.split('\n').length, 'one line changed in place');
+  assert.equal(writes, 1, 'one write');
   assert.deepEqual(errors, []);
 });
 

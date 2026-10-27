@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, FACET_SAID, glyphOf } from './inplace.js';
+import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -59,6 +59,8 @@ export const SELECT_CSS = `
   .sel .bm > .off[data-current] { --c: var(--pl-coral); filter: saturate(1.2); }
   .sel .pl-tag .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pill-ink, var(--pl-lilac-ink)); margin-right: 1px; }
   .sel .pl-tag .rail { display: inline-flex; gap: 3px; margin-left: 3px; }
+  .sel .pl-tag .places { margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .sel .sib { position: fixed; box-sizing: border-box; border-radius: 6px; border: 1px solid color-mix(in oklab, var(--pl-sky) 70%, transparent); }
   .sel .pl-tag .rail i { width: 5px; height: 5px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--pill-ink, var(--pl-lilac-ink)); }
   .sel .pl-tag .rail i.on { background: var(--pill-ink, var(--pl-lilac-ink)); }
   @media (prefers-reduced-motion: reduce) { .sel .ring, .sel .bm, .sel .ghost, .sel .stair { animation: none !important; } }
@@ -66,14 +68,16 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; // why: 0 hidden, 1 the line, 2.. the folded ones
+  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
   // steps(family) → the theme's scale [{ token, n }]
   // read(el) → the element's full reading (each theme choice's exact class edit)
-  constructor(root, { tokenOf, health, onChange, changes, steps, read }) {
+  // site(el) → { file, line, column, hash } read now (where its changes will be written)
+  constructor(root, { tokenOf, health, onChange, changes, steps, read, site }) {
     this.#read = read;
+    this.#site = site;
     this.#tokenOf = tokenOf;
     this.#health = health;
     this.#onChange = onChange;
@@ -92,10 +96,21 @@ export class Selection {
 
   // Select an element (and its reading, when the reader has one); selecting the selected element steps to its next
   // problem.
-  select(el, item) {
-    if (el === this.#el) { this.step(1); return; }
+  // `chosen`: { key, rule, group } when a pin, a label or a panel row chose one of its problems (and the other places
+  // of that problem's cause, [{ el, item, key }])
+  select(el, item, chosen = null) {
+    if (el === this.#el && !chosen) { this.step(1); return; }
+    // chosen again (Enter on its focused mark): the fix shown is taken
+    if (el === this.#el && chosen && this.current?.key === chosen.key && this.#plan) { this.accept(); return; }
     this.#unpreview();
     this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#taken = new Set(); this.#why = 0;
+    this.#group = chosen?.group ?? [];
+    if (chosen) {
+      // the problem chosen by its key; a craft finding folded under another is found through the one it rides on
+      let i = this.problems.findIndex((m) => m.key === chosen.key);
+      if (i < 0 && String(chosen.rule).startsWith('craft/')) i = this.problems.findIndex((m) => m.rule === chosen.rule || (m.also ?? []).some((a) => a.rule === chosen.rule));
+      if (i >= 0) this.#at = i;
+    }
     this.#onChange?.(el);
     this.#layer.hidden = false;
     this.draw(true);
@@ -125,7 +140,7 @@ export class Selection {
   clear() {
     if (!this.#el) return false;
     this.#unpreview();
-    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null;
+    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null; this.#group = [];
     this.#onChange?.(null);
     this.#layer.replaceChildren(); this.#layer.hidden = true;
     pointAt(this.#pill, [], 0, 0);
@@ -150,7 +165,7 @@ export class Selection {
     if (plan.kind === 'swap') {
       const at = Math.max(0, Math.min(plan.options.length - 1, plan.at + by));
       this.#plan = { ...plan, at };
-      if (plan.options[at].write) swapPreview(el, plan.options[at].write, true, this.#memo);
+      swapPreview(el, plan.options[at].write, true, this.#memo, plan.options[at].styles);
     } else { this.#plan = moved(plan, by); preview(el, this.#plan, true); }
     this.#previewing = true;
     this.draw();
@@ -166,14 +181,29 @@ export class Selection {
       const memo = this.#memo;
       // the sidebar keeps the classes as written: the preview is put back while it records them, then shown again
       swapPreview(el, null, false, memo);
-      this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo) });
-      swapPreview(el, opt.write, true, memo);
+      this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo), release: () => swapRelease(el, memo) });
+      swapPreview(el, opt.write, true, memo, opt.styles);
+      // the same edit at every other place of the cause whose classes carry it
+      for (const g of this.#group) {
+        if (!String(opt.write.from).split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) continue;
+        const m = {};
+        this.#changes.put(g.el, g.el.localName, g.key ?? problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(g.el, null, false, m), release: () => swapRelease(g.el, m) });
+        swapPreview(g.el, opt.write, true, m, opt.styles);
+      }
       this.#memo = {};
     } else {
       preview(el, plan, true);
       for (const p of plan.props) this.#changes.set(el, el.localName, p.prop, p.from, p.to, p.original);
+      // every other place of the cause takes the same steps
+      for (const g of this.#group) for (const p of plan.props) {
+        const original = [g.el.style.getPropertyValue(p.prop), g.el.style.getPropertyPriority(p.prop)];
+        g.el.style.setProperty(p.prop, `${p.to.n}px`, 'important');
+        this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to, original);
+      }
     }
     this.#previewing = false; // Changes owns the preview now
+    // the file as it is now, for every element that just took its first change
+    for (const at of [el, ...this.#group.map((g) => g.el)]) if (this.#changes.has(at) && !this.#changes.siteOf(at)) this.#site?.(at).then((s) => s && this.#changes.site(at, s)).catch(() => {});
     this.#taken.add(problem.key);
     this.#plan = null;
     const next = this.problems.findIndex((m, i) => i !== this.#at && !this.#taken.has(m.key));
@@ -199,6 +229,14 @@ export class Selection {
       this.draw();
     } });
     return true;
+  }
+  // Changes dropped an element's change: whatever this selection previews on it goes too.
+  discarded(el) {
+    if (el !== this.#el) return;
+    this.#unpreview();
+    this.#taken = new Set();
+    this.#plan = null;
+    this.draw();
   }
   // The cursor over the selected element's bands says what can be dragged.
   cursor(x, y) {
@@ -227,12 +265,13 @@ export class Selection {
     const claimed = new Set(problems.flatMap((m) => m.facets ?? []));
     const now = new Set(current?.facets ?? []);
     const state = this.#health?.() === 'failed' ? 'disabled' : this.#item ? 'ready' : 'loading';
+    const places = this.#group.length ? `<span class="places">×${this.#group.length + 1}</span>` : '';
     const rail = problems.length > 1 ? `<span class="rail">${problems.map((_, i) => `<i${i === this.#at ? ' class="on"' : ''}></i>`).join('')}</span>` : '';
     const bm = boxModel(el, {
       name: el.localName, tokenOf: this.#tokenOf,
       // a band is coral when a problem on this element claims its property
       claimed: (prop) => claimed.has(facetOf(prop)),
-      tag: { before: this.#item?.file ? '<span class="dot"></span>' : '', after: rail },
+      tag: { before: this.#item?.file ? '<span class="dot"></span>' : '', after: rail + places },
     });
     this.#bands = bm.bands;
     const r = el.getBoundingClientRect();
@@ -249,12 +288,15 @@ export class Selection {
         if (plan.options.some((o) => !o.write) && !plan.reading && this.#read) {
           plan.reading = true;
           const key = current.key;
+          plan.key = key;
           this.#read(el).then((full) => {
             const m = full?.marks?.find((x) => x.key === key);
-            if (!m || this.#plan !== plan) return;
-            plan.options = plan.options.map((o) => { const c = m.choices?.find((x) => (x.label ?? x.name) === o.label); return c?.edit ? { ...o, write: { from: c.edit.from, to: c.edit.to } } : o; });
+            // the plan may have moved on (an arrow made a new one): the edits go to whichever plan is current for it
+            const now = this.#plan;
+            if (!m || !now || now.key !== key || this.#el !== el) return;
+            now.options = now.options.map((o) => { const c = m.choices?.find((x) => (x.label ?? x.name) === o.label); return c?.edit ? { ...o, write: { from: c.edit.from, to: c.edit.to } } : o; });
             this.draw();
-          }).catch(() => {});
+          }).catch(() => { if (this.#plan?.key === key) this.#plan.reading = false; });
         }
         const o = plan.options;
         const control = o.every((x) => x.swatch) ? swatches(plan.facet ?? 'colour', { steps: o.map((x) => ({ token: x.label, swatch: x.swatch })), current: null, picked: o[plan.at].label, drift: plan.now?.swatch ? { label: plan.now.label, swatch: plan.now.swatch } : undefined })
@@ -284,9 +326,17 @@ export class Selection {
       const more = this.#why === 1 && also.length ? ` <span class="more">· also ${also.length}</span>` : '';
       fix += `<div class="why" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + (fix.includes('class="stair"') ? 56 : 12)}px">${esc(String(text).replace(/`/g, ''))}${more}</div>`;
     }
-    this.#layer.innerHTML = fix + ring + bm.html;
+    const sibs = this.#group.filter((g) => g.el.isConnected).map((g) => { const q = g.el.getBoundingClientRect(); return `<div class="sib" style="left:${q.left - 2}px;top:${q.top - 2}px;width:${q.width + 4}px;height:${q.height + 4}px"></div>`; }).join('');
+    this.#layer.innerHTML = fix + sibs + ring + bm.html;
     // the control: a click on an option picks it (and previews it)
     for (const opt of this.#layer.querySelectorAll('.stair .opt[data-i]')) opt.addEventListener('click', () => { this.#move(+opt.dataset.i - this.#plan.at); });
+    // pointing at the control previews the target on the page; leaving it puts the page back (until it is taken)
+    const stair = this.#layer.querySelector('.stair[data-kind="swap"], .stair:not([data-kind])');
+    if (stair && this.#plan) {
+      // a real move over it, not a redraw under a still pointer
+      stair.addEventListener('pointermove', (e) => { if (!this.#previewing && (e.movementX || e.movementY)) this.#move(0); });
+      stair.addEventListener('pointerleave', () => { this.#unpreview(); });
+    }
     // the current problem's bands draw strongest
     for (const b of this.#layer.querySelectorAll('.bm > .off')) {
       const at = this.#bands.find((x) => x.off && Math.abs(x.x - parseFloat(b.style.left)) < 0.6 && Math.abs(x.y - parseFloat(b.style.top)) < 0.6);

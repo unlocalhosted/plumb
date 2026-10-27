@@ -77,7 +77,9 @@ async function pointRow(page, overlay, key) {
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
   return lit(page);
 }
-// Opens a mark's chooser by a real click on its box, and returns the words it shows.
+// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
+// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
+// options it offers.
 async function openMark(page, overlay, id) {
   const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
   const b = await hit.boundingBox();
@@ -86,11 +88,28 @@ async function openMark(page, overlay, id) {
   await hint.waitFor({ timeout: 3000 });
   const hinted = await hint.innerText();
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.waitFor({ timeout: 5000 });
-  await ch.locator('.read .note').waitFor({ timeout: 5000 });
-  return { hinted, title: await ch.getAttribute('aria-label'), note: await ch.locator('.read .note').innerText(), because: await ch.locator('.read .because').innerText(), steps: await ch.locator('.cmp .opt').count() };
+  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
+  await page.mouse.move(2, 2);
+  await page.waitForTimeout(150);
+  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
+  await page.keyboard.press('i');
+  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
+  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
 }
+// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
+async function applyFix(page, overlay) {
+  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  await overlay.locator('.cg:not([hidden]) .ok').click();
+}
+// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
+async function whyLines(page, overlay) {
+  const out = [];
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
+  return out;
+}
+
 
 // the craft marks whose box sits on one element
 const on = async (page, id) => {
@@ -163,11 +182,8 @@ test('The icon button: one fix on the theme’s steps (pl-s4 pr-s6, never pl-5);
   const invite = await on(page, 'invite');
   const pad = invite.filter((m) => m.rule === 'button-padding');
   assert.equal(pad.length, 1, JSON.stringify(invite));
-  const words = await openMark(page, overlay, pad[0].id);
-  assert.match(words.note, /Change px-s3 to pl-s4 pr-s6/);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.locator('.cmp .opt', { hasText: 'pl-s4 pr-s6' }).click();
-  await overlay.locator('.dock .write').click();
+  await openMark(page, overlay, pad[0].id);
+  await applyFix(page, overlay);
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
   for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);

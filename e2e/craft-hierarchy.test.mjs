@@ -77,7 +77,9 @@ async function pointRow(page, overlay, key) {
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
   return lit(page);
 }
-// Opens a mark's chooser by a real click on its box, and returns the words it shows.
+// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
+// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
+// options it offers.
 async function openMark(page, overlay, id) {
   const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
   const b = await hit.boundingBox();
@@ -86,10 +88,26 @@ async function openMark(page, overlay, id) {
   await hint.waitFor({ timeout: 3000 });
   const hinted = await hint.innerText();
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.waitFor({ timeout: 5000 });
-  await ch.locator('.read .note').waitFor({ timeout: 5000 });
-  return { hinted, title: await ch.getAttribute('aria-label'), note: await ch.locator('.read .note').innerText(), because: await ch.locator('.read .because').innerText(), steps: await ch.locator('.cmp .opt').count() };
+  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
+  await page.mouse.move(2, 2);
+  await page.waitForTimeout(150);
+  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
+  await page.keyboard.press('i');
+  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
+  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
+}
+// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
+async function applyFix(page, overlay) {
+  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  await overlay.locator('.cg:not([hidden]) .ok').click();
+}
+// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
+async function whyLines(page, overlay) {
+  const out = [];
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
+  return out;
 }
 
 const PAGE = `
@@ -127,9 +145,10 @@ test('Colour trio: faded text that cannot be read is one contrast mark with the 
   await page.waitForTimeout(500);
   const faded = await on(page, 'faded');
   assert.deepEqual(faded.map((m) => m.rule), ['contrast'], JSON.stringify(faded));
-  const words = await openMark(page, overlay, faded[0].id);
-  assert.match(words.title + words.note, /Contrast \d+ at 14px/);
-  assert.deepEqual(await alsoOf(overlay), ['also: Faded with opacity']);
+  await openMark(page, overlay, faded[0].id);
+  const lines = await whyLines(page, overlay);
+  assert.match(lines[0], /^Contrast \d+ at 14px\..* · also 1$/);
+  assert.match(lines[1], /^This text uses opacity 0\.3/);
   await page.keyboard.press('Escape');
   // the one that still reads keeps the polish finding alone
   assert.deepEqual((await on(page, 'faded-ok')).map((m) => m.rule), ['text-opacity']);
@@ -137,7 +156,7 @@ test('Colour trio: faded text that cannot be read is one contrast mark with the 
   assert.deepEqual(off.map((m) => m.rule), ['disabled-contrast'], JSON.stringify(off));
   // inside its scope the disabled rule is the only judge: no fade or contrast finding is even made, so nothing folds
   await openMark(page, overlay, off[0].id);
-  assert.deepEqual(await alsoOf(overlay), []);
+  assert.doesNotMatch((await whyLines(page, overlay))[0], /also/);
   await page.keyboard.press('Escape');
   assert.deepEqual(await on(page, 'off-ok'), []);
   assert.deepEqual(errors, []);
@@ -152,7 +171,7 @@ test('Truncation pair: a cut-off path is judged by middle-truncate alone; a cut-
   const path = await on(page, 'path');
   assert.deepEqual(path.map((m) => m.rule), ['middle-truncate'], JSON.stringify(path));
   await openMark(page, overlay, path[0].id);
-  assert.deepEqual(await alsoOf(overlay), []);
+  assert.doesNotMatch((await whyLines(page, overlay))[0], /also/);
   await page.keyboard.press('Escape');
   assert.deepEqual((await on(page, 'sentence')).map((m) => m.rule), ['truncate-intent']);
   // one row per kept cause: the folded one makes none
@@ -171,13 +190,13 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   const pair = await on(page, 'pair');
   assert.deepEqual(pair.map((m) => m.rule), ['button-padding'], JSON.stringify(pair));
   assert.deepEqual(await on(page, 'pair-ok'), []);
-  const words = await openMark(page, overlay, pair[0].id);
+  await openMark(page, overlay, pair[0].id);
   // the composed edit: button-padding's 24px across, then icon-side run on that page takes 4px off the icon side
-  assert.match(words.note, /Change px-s3 to pl-s4 pr-s6: 24px on the sides, 12px on top; 20px by the icon, 24px by the text\./);
-  assert.deepEqual(await alsoOf(overlay), ['with: Too much space by the icon']);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.locator('.cmp .opt', { hasText: 'pl-s4 pr-s6' }).click();
-  await overlay.locator('.dock .write').click();
+  assert.match(await overlay.locator('.sel .stair').innerText(), /s6/);
+  const lines = await whyLines(page, overlay);
+  assert.match(lines[0], / · also 1$/);
+  assert.match(lines[1], /The icon side has the same/);
+  await applyFix(page, overlay);
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="pair"'));
   for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
@@ -204,17 +223,18 @@ test('Rows from one JSX line: the cause is picked once from the panel and writte
   assert.match(await row.locator('.what').innerText(), /3 places · 1 line/);
   await row.click();
   await page.keyboard.press('Enter');
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.waitFor();
-  await ch.locator('.cmp .opt', { hasText: 'px-s4' }).click();
-  // three rows picked, one edit to write
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .write')?.textContent.trim() === 'Write 1', null, { timeout: 10000 });
-  await overlay.locator('.dock .write').click();
+  // one row selected, the other two go with it; Enter takes the fix for all three, Apply writes once
+  await overlay.locator('.sel .ring').waitFor();
+  assert.match(await overlay.locator('.sel .pl-tag').innerText(), /×3/);
+  let writes = 0;
+  await page.route('**/swaps', (route) => { writes++; route.continue(); });
+  await applyFix(page, overlay);
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="rows"'));
   for (let i = 0; i < 100 && !/px-s4/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-control bg-surface px-s4 py-s2 text-body">Go \{n\}/);
   await page.waitForTimeout(500);
-  assert.doesNotMatch(await overlay.locator('.dock').innerText(), /refused/i);
+  assert.equal(writes, 1, 'one write');
+  assert.equal(await overlay.locator('.cg:not([hidden]) .why').count(), 0, 'nothing refused');
   assert.deepEqual(errors, []);
 });

@@ -451,7 +451,8 @@ class PlumbOverlay extends HTMLElement {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
-  choose(element, mark, id, options) { return this.#fixer.open(element, mark, id, options); }
+  // a pin, a label or a panel row: with blueprint on, the element is selected and the fix is taken on it (select.js)
+  choose(element, mark, id, options) { if (this.#blueprint?.active) return this.#blueprint.choose(element, mark, options?.group); return this.#fixer.open(element, mark, id, options); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
   changed() { this.#dock(); this.#blueprint?.refresh(); }
   wrote(result, text) { this.#history?.wrote(result, text); }
@@ -667,7 +668,9 @@ class PlumbOverlay extends HTMLElement {
     else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
     else if (event.key === 'Escape' && this.#fixer?.isOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.close(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
-    else if (this.#blueprint?.active && !this.#pinned && !this.#fixer?.isOpen && !this.#fixer?.listOpen && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event) && this.#blueprint.key(event.key)) { event.preventDefault(); event.stopPropagation(); }
+    // (Enter or Space on a focused control of the overlay, Apply in Changes, presses that control)
+    else if (this.#blueprint?.active && !this.#pinned && !this.#fixer?.isOpen && !this.#fixer?.listOpen && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)
+      && !((event.key === 'Enter' || event.key === ' ') && event.composedPath()[0]?.closest?.('.cg button, .cg [role="listitem"]')) && this.#blueprint.key(event.key)) { event.preventDefault(); event.stopPropagation(); }
     // L: the punch list, when nothing on the page is being typed into
     else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#ready?.close(); this.#fixer.toggleList(); }
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }

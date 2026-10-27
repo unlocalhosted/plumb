@@ -60,9 +60,9 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)) });
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => this.#panel.open(false), onDiscard: (el) => this.#selection.discarded(el) });
     this.#selection = new Selection(root, { tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => this.#marks.select(el),
-      changes: this.#changes, read: (el) => host.read(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
+      changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => host.ordered?.() });
@@ -136,6 +136,7 @@ export class Blueprint {
     clearTimeout(this.#timer);
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
     this.#selection.clear();
+    this.#changes.discardAll(); // nothing previewed is left on the page
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
@@ -200,28 +201,49 @@ export class Blueprint {
     }
     this.#selection.select(el, this.#itemOf(el));
   };
-  // Apply in the Changes sidebar: each element's changes written as one class edit on its own line (POST swap), the
-  // hash read now; the page reloads and the element is read again
+  // Where an element is written: its line and its file's hash now.
+  async #siteOf(el) {
+    const at = await locate(el);
+    if (!at?.file) return null;
+    const props = await request('props', { file: at.file, line: at.line, column: at.column });
+    return props?.hash ? { file: at.file, line: props.line ?? at.line, column: props.column ?? at.column, hash: props.hash } : null;
+  }
+  // Apply in the Changes sidebar: every element's changes as one class edit on its own line, all of one file's in one
+  // write (POST swaps) with the hash read when the first change was taken; the page reloads and is read again
   async #apply(batch) {
-    const out = [];
+    const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
     for (const b of batch) {
       // every change on the element as one class edit against its classes as written
       const edit = elementEdit(b.classes, b.writes ?? [], b.props);
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
+      const site = b.site ?? await this.#siteOf(b.el).catch(() => null);
+      if (!site) { out.push({ el: b.el, ok: false, why: 'Can’t reach this in your code.' }); continue; }
+      const f = files.get(site.file) ?? files.set(site.file, { hash: site.hash, edits: [], els: [] }).get(site.file);
+      f.edits.push({ line: site.line, column: site.column, from: edit.from, to: edit.to });
+      f.els.push(b.el);
+    }
+    for (const [file, f] of files) {
       try {
-        const at = await locate(b.el);
-        if (!at?.file) throw new Error('Can’t reach this in your code.');
-        const props = await request('props', { file: at.file, line: at.line, column: at.column });
-        if (!props?.hash) throw new Error('Can’t read this element.');
-        const result = await post('swap', { file: at.file, hash: props.hash, line: props.line ?? at.line, column: props.column ?? at.column, from: edit.from, to: edit.to });
-        this.#host.wrote?.(result, `Applied ${edit.to} in ${at.file.split('/').pop()}`);
-        this.invalidate({ file: at.file });
-        out.push({ el: b.el, ok: true });
-      } catch (error) { out.push({ el: b.el, ok: false, why: /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t apply.' }); }
+        // the write reloads the page when the dev server can't hot-swap it: blueprint comes back on after it
+        this.#host.remember?.(`Applied ${f.edits.length === 1 ? f.edits[0].to : `${f.edits.length} changes`} in ${file.split('/').pop()}`);
+        const result = await post('swaps', { file, hash: f.hash, edits: f.edits });
+        this.#host.wrote?.(result, `Applied ${f.els.length === 1 ? f.edits[0].to : `${f.els.length} changes`} in ${file.split('/').pop()}`);
+        this.invalidate({ file });
+        for (const el of f.els) out.push({ el, ok: true });
+      } catch (error) {
+        this.#host.forgetResume?.();
+        const why = /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t apply.';
+        for (const el of f.els) out.push({ el, ok: false, why });
+      }
     }
     return out;
   }
-  // Esc lets go of the selection before it leaves blueprint; true when there was one
+  // A pin, a label or a panel row chose a problem: its element is selected with that problem current, and the other
+  // places of its cause go with it (a fix taken there is taken at every place that offers the same one).
+  choose(el, mark, group) {
+    this.#selection.select(el, this.#itemOf(el), { key: mark?.key, rule: mark?.rule, group: (group ?? []).filter((g) => g.el !== el).map((g) => ({ el: g.el, item: this.#itemOf(g.el), key: g.mark?.key })) });
+  }
+    // Esc lets go of the selection before it leaves blueprint; true when there was one
   deselect() { return this.#selection.clear(); }
   get selected() { return this.#selection.el; }
   #unpoint = () => this.#marks.point(null);

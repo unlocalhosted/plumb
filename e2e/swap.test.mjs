@@ -95,3 +95,20 @@ test('refused, file untouched: an insert on a component, a class that cannot sit
   assert.match(JSON.stringify(stale.body), /changed since/i);
   assert.equal(await api.read(), before.replace('py-2">x', 'py-3">x'));
 });
+
+test('swaps: several elements of one file in one write, the file parses, a stale hash refuses all of them', { timeout: 60000 }, async (t) => {
+  const api = await project(t);
+  const text = await api.read();
+  const lineOf = (id) => text.split('\n').findIndex((l) => l.includes(`id="${id}"`)) + 1;
+  const props = await api.call('props', { file: 'src/App.tsx', line: lineOf('plain'), column: 3 });
+  const edits = [{ line: lineOf('plain'), column: 3, from: 'px-4', to: 'px-6' }, { line: lineOf('multi'), column: 3, from: 'py-2', to: 'py-3' }, { line: lineOf('plain'), column: 3, from: 'px-4', to: 'px-6' }];
+  const result = await api.call('swaps', { file: 'src/App.tsx', hash: props.body.hash, edits }, 'POST');
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  const after = await api.read();
+  assert.ok(after.includes('<p id="plain" className="px-6 py-2">x</p>'));
+  assert.ok(after.includes('className={`\n    px-4\n    py-3\n  `}'));
+  assert.ok(parses(after));
+  const stale = await api.call('swaps', { file: 'src/App.tsx', hash: props.body.hash, edits: [{ line: lineOf('plain'), column: 3, from: 'px-6', to: 'px-8' }] }, 'POST');
+  assert.notEqual(stale.status, 200);
+  assert.equal(await api.read(), after);
+});

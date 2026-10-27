@@ -78,7 +78,9 @@ async function pointRow(page, overlay, key) {
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .light rect').length > 0, null, { timeout: 3000 });
   return lit(page);
 }
-// Opens a mark's chooser by a real click on its box, and returns the words it shows.
+// Selects a mark's element by a real click on its box, and returns what the fix in place shows: the hint the mark
+// gives when pointed at, the target on the control (or none when the fix is advice), its one line (i), and how many
+// options it offers.
 async function openMark(page, overlay, id) {
   const hit = overlay.locator(`.bp .hit[data-id="${id}"]`);
   const b = await hit.boundingBox();
@@ -87,10 +89,26 @@ async function openMark(page, overlay, id) {
   await hint.waitFor({ timeout: 3000 });
   const hinted = await hint.innerText();
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  await ch.waitFor({ timeout: 5000 });
-  await ch.locator('.read .note').waitFor({ timeout: 5000 });
-  return { hinted, title: await ch.getAttribute('aria-label'), note: await ch.locator('.read .note').innerText(), because: await ch.locator('.read .because').innerText(), steps: await ch.locator('.cmp .opt').count() };
+  await overlay.locator('.sel .ring').waitFor({ timeout: 5000 });
+  await page.mouse.move(2, 2);
+  await page.waitForTimeout(150);
+  const target = (await overlay.locator('.sel .stair .target').count()) ? await overlay.locator('.sel .stair .target').innerText() : null;
+  await page.keyboard.press('i');
+  const line = await overlay.locator('.sel .why').innerText({ timeout: 3000 });
+  await page.keyboard.press('i'); if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  if (await overlay.locator('.sel .why').count()) await page.keyboard.press('i');
+  return { hinted, target: target?.replace(/^→\s*/, '') ?? null, line, steps: await overlay.locator('.sel .stair .opt[data-i]').count() };
+}
+// Takes the selected element's fix (Enter) and applies it (Apply in Changes).
+async function applyFix(page, overlay) {
+  for (let i = 0; i < 40 && !(await overlay.locator('.cg:not([hidden])').count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  await overlay.locator('.cg:not([hidden]) .ok').click();
+}
+// The words i shows, one press at a time: the line (with · also n), then each folded finding's line.
+async function whyLines(page, overlay) {
+  const out = [];
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('i'); await page.waitForTimeout(100); if (!(await overlay.locator('.sel .why').count())) break; out.push(await overlay.locator('.sel .why').innerText()); }
+  return out;
 }
 
 // One page per rule: the element that breaks it beside the one that follows it, on the demo's theme
@@ -175,10 +193,8 @@ test('Concentric corners (#8/#41): a 12px child in 4px padding of a 12px corner 
   // the mark's note says the change; the chooser says why and what to do, and offers no scale to pick from
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /rounded-card → rounded-control/);
-  assert.match(words.title, /^This 12px corner sits 4px inside a 12px corner/);
-  assert.match(words.note, /Change rounded-card to rounded-control: 8px: 12px minus 4px\./);
-  assert.match(words.because, /Inner radius = outer radius minus the padding/);
-  assert.equal(words.steps, 1, "the suggestion is the one choice");
+  assert.match(words.line, /^This 12px corner sits 4px inside a 12px corner\. Use 8px\./);
+  assert.equal(words.target, 'rounded-control', 'the suggestion is the one target');
   assert.deepEqual(errors, []);
 });
 
@@ -206,8 +222,8 @@ test('Inner ≤ outer spacing (#7): groups 8px apart with 16px inside are marked
   await page.mouse.move(5, 5);
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /gap-s4 → gap-s2/);
-  assert.match(words.note, /Change gap-s4 to gap-s2: 8px, tighter than the 8px between groups\./);
-  assert.match(words.because, /close together as one group/);
+  assert.equal(words.target, 'gap-s2');
+  assert.match(words.line, /^Items here are 16px apart, but the groups are only 8px apart\./);
   assert.deepEqual(errors, []);
 });
 
@@ -232,8 +248,8 @@ test('Text colour via opacity (#57): faded text is marked and told the token it 
   // the suggestion names the theme colour the faded text actually shows here: ink at 65% over the ground is ink-muted
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /opacity-65 → text-ink-muted/);
-  assert.match(words.note, /Change opacity-65 to text-ink-muted: the colour it shows as now\./);
-  assert.match(words.because, /Opacity changes with whatever is behind/);
+  assert.equal(words.target, 'text-ink-muted');
+  assert.match(words.line, /^This text uses opacity 0\.65\. Use ink-muted, the colour it shows as\./);
   assert.deepEqual(errors, []);
 });
 
@@ -257,8 +273,8 @@ test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and i
   await page.mouse.move(5, 5);
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /Make it 34px wide, so half of it is a whole number\./);
-  assert.match(words.note, /Make it 34px wide, so half of it is a whole number\./);
-  assert.match(words.because, /blur when they sit between two pixels/);
+  assert.equal(words.target, null, 'advice: nothing to take');
+  assert.match(words.line, /Moved by -16\.5px, 0px, so it lands between pixels\. Make it 34px wide, so half of it is a whole number\./);
   assert.deepEqual(errors, []);
 });
 
@@ -295,19 +311,16 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/concentric-radius')), null, { timeout: 10000 });
   const [mark] = (await craftMarks(page)).filter((m) => m.rule === 'concentric-radius');
   await openMark(page, overlay, mark.id);
-  const ch = overlay.locator('.ch .card[role="dialog"]');
-  const step = ch.locator('.cmp .opt', { hasText: 'rounded-control' });
-  // pointing previews: the child wears the suggested class on the page
-  await step.hover();
+  // ↑ on the target previews it: the child wears the suggested class on the page
+  await page.keyboard.press('ArrowUp');
   await page.waitForFunction(() => document.getElementById('cc-bad-child').classList.contains('rounded-control'), null, { timeout: 3000 });
   assert.equal(await page.locator('#cc-bad-child').evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '8px');
-  await step.click();
-  await overlay.locator('.dock .write').click();
+  await applyFix(page, overlay);
   for (let i = 0; i < 100 && !/rounded-control/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-control bg-ground/, 'the class is swapped where it was, in source');
   assert.doesNotMatch(await line(), /rounded-card/);
   // the write is in the history: Undo puts the source back
-  await overlay.locator('.wt').filter({ hasText: /Wrote rounded-control/ }).waitFor({ timeout: 10000 });
+  await overlay.locator('.wt').filter({ hasText: /Applied rounded-control/ }).waitFor({ timeout: 10000 });
   await overlay.locator('.wt').getByRole('button', { name: 'Undo' }).click();
   for (let i = 0; i < 100 && !/rounded-card/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-card bg-ground/);

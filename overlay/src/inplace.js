@@ -173,27 +173,45 @@ export function swapPlanOf(problem) {
   if (problem.family === 'craft') {
     const fix = problem.craft?.suggest;
     if (fix?.kind !== 'class') return null;
-    return { kind: 'swap', facet: problem.facets?.[0], options: [{ token: fix.to, label: fix.to, n: null, write: { from: fix.from ?? '', to: fix.to } }], at: 0, now: null };
+    const styles = Object.fromEntries(Object.entries(fix.sets ?? {}).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), typeof v === 'number' ? `${v}px` : v]));
+    return { kind: 'swap', facet: problem.facets?.[0], options: [{ token: fix.to, label: fix.to, n: null, write: { from: fix.from ?? '', to: fix.to }, styles }], at: 0, now: null };
   }
   const choices = problem.choices ?? [];
   if (!choices.length) return null;
-  return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: c.n ?? null, swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null })),
+  // the page previews a choice as the value it stands for, on the properties the mark is about (a token class may not
+  // exist in the page's CSS until it is written)
+  const styleOf = (c) => { const v = Number.isFinite(c.n) && /^(spacing|radius|type|size|layout)$/.test(problem.family) && !/weight/.test((problem.props ?? []).join()) ? `${c.n}px` : c.value; return v ? Object.fromEntries((problem.props ?? []).map((p) => [p, v])) : {}; };
+  return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: c.n ?? null, swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
     at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: problem.n ?? null, swatch: problem.family === 'color' ? problem.value : null } };
 }
 
-// A class edit previewed on the element (classes swapped), or put back: the inverse of exactly what was done.
-export function swapPreview(el, write, on, memo) {
+// An option previewed on the element (its classes swapped, and the values it stands for as inline styles the overlay
+// owns), or put back: the inverse of exactly what was done.
+export function swapPreview(el, write, on, memo, styles = {}) {
   if (on) {
     if (memo.done) swapPreview(el, null, false, memo);
-    const removed = word(write.from).filter((c) => el.classList.contains(c)), added = word(write.to).filter((c) => !el.classList.contains(c));
+    const removed = word(write?.from).filter((c) => el.classList.contains(c)), added = word(write?.to).filter((c) => !el.classList.contains(c));
     for (const c of removed) el.classList.remove(c);
     for (const c of added) el.classList.add(c);
-    memo.done = { removed, added };
+    const had = Object.keys(styles).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]);
+    for (const [p, v] of Object.entries(styles)) el.style.setProperty(p, v, 'important');
+    memo.done = { removed, added, had, attr: had.length ? el.getAttribute('style') === null : false };
   } else if (memo.done) {
     for (const c of memo.done.added) el.classList.remove(c);
     for (const c of memo.done.removed) el.classList.add(c);
+    for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
+    if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
     memo.done = null;
   }
+}
+
+// After the source carries an option: the inline styles its preview set are let go; the classes stay (React renders
+// them from the source now).
+export function swapRelease(el, memo) {
+  if (!memo.done) return;
+  for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
+  if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
+  memo.done = null;
 }
 
 // a class edit applied to a class list: `from` out, `to` in where the first of `from` stood (else at the end)

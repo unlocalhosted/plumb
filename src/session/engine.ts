@@ -60,6 +60,7 @@ function parsesAsBefore(file: string, before: string, next: string): void {
   if (errors(next) > errors(before)) throw new UsageError('The change would leave the file unable to parse, so nothing was written.');
 }
 
+export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string }[] }
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
@@ -598,6 +599,33 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return swapClasses(_file, source, facts.location.start, names(from), names(to));
     }, `${from || '—'} → ${to}`);
+  }
+  /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person
+   * accepted on several elements of one file, or the rows of one line. Each swap is found against the file as it is. */
+  async swaps(options: SwapsOptions): Promise<ApplyResult> {
+    const { file, hash, edits } = options ?? {} as SwapsOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || !Array.isArray(edits) || !edits.length || edits.length > 200) throw new UsageError('Swaps requires file, hash and one to two hundred edits.');
+    const names = (v: string) => v.split(/\s+/).filter(Boolean);
+    const path = this.file(file);
+    // one swap per element: the same element twice with the same edit is one
+    const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}`, e])).values()];
+    const starts: { start: number; from: string[]; to: string[] }[] = [];
+    for (const e of unique) {
+      if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || !e.to.trim() || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs from and to (at most eight classes).');
+      this.position(e.line); this.position(e.column);
+      const facts = await this.elementFacts(path, e.line, e.column);
+      if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+      if (!names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+      starts.push({ start: facts.location.start, from: names(e.from), to: names(e.to) });
+    }
+    return this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
+      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      const changes = starts.map(s => swapClasses(_file, source, s.start, s.from, s.to)).sort((a, b) => b.start - a.start);
+      for (let i = 1; i < changes.length; i++) if (changes[i]!.end > changes[i - 1]!.start) throw new UsageError('Two of these changes touch the same classes; apply them one at a time.');
+      let next = source;
+      for (const c of changes) next = next.slice(0, c.start) + c.replacement + next.slice(c.end);
+      return { start: 0, end: source.length, replacement: next, at: changes.at(-1)!.at };
+    }, `${unique.length} change${unique.length === 1 ? '' : 's'}`);
   }
   /** The text-at write: one string (JSX text, an attribute or a literal) addressed by the id text-at returned. */
   applyTextAt(options: ApplyTextAtOptions): Promise<ApplyResult> {

@@ -95,6 +95,11 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'apply-text-at') return session.applyTextAt(params as unknown as Parameters<Session['applyTextAt']>[0]);
   if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
   if (method === 'props') return session.props(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!);
+  if (method === 'swaps') {
+    const edits = (params as { edits?: unknown }).edits;
+    if (!Array.isArray(edits)) throw new UsageError('Swaps requires edits.');
+    return session.swaps({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: edits.map((e: Record<string, unknown>) => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '' })) });
+  }
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')! });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
   if (method === 'undo') return session.undo(text(params, 'id')!);
@@ -163,8 +168,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -225,7 +230,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'try', 'health', 'refresh'].includes(method);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'try', 'health', 'refresh'].includes(method);
       let result: unknown;
       if (current) result = await dispatchRequest(current, method, params, options, json);
       else {
@@ -332,7 +337,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'try', 'decisions', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});
