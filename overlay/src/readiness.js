@@ -103,7 +103,7 @@ export const READY_CSS = `
     opacity: 0; transform: translateY(4px); transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .rd-callout[data-in] { opacity: 1; transform: none; }
   /* a write's toast (history.js) sits where the callout sits: the callout steps up above it while it shows */
-  .wt[data-on] ~ .rd-callout, .rd-callout:has(~ .wt[data-on]) { inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4) + 48px); }
+  .wt[data-on] ~ .rd-callout, .rd-callout:has(~ .wt[data-on]), .tip[data-on] ~ .rd-callout, .rd-callout:has(~ .tip[data-on]) { inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4) + 72px); }
   .rd-callout .text { flex: 1; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rd-callout .text b { font-weight: 600; color: var(--pl-ink); }
   .rd-callout .btn { all: unset; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-on-accent); background: var(--pl-accent); cursor: pointer; white-space: nowrap; }

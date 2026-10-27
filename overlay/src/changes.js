@@ -24,6 +24,8 @@ export const CHANGES_CSS = `
     background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .cg[hidden] { display: none; }
+  /* the element being changed sits on the right: the sidebar opens on the left, so it never covers it */
+  .cg[data-side="start"] { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   .cg .top { display: flex; align-items: baseline; gap: var(--pl-space-3); padding: var(--pl-space-5) var(--pl-space-5) var(--pl-space-3); }
   .cg .top b { font: var(--pl-card-title); }
   .cg .top span { font: var(--pl-card-meta); color: var(--pl-ink-2); }
@@ -84,6 +86,11 @@ export class Changes {
   }
 
   has(el) { return this.#items.has(el); }
+  // Keeps clear of an element's box: the side of the screen it is not on.
+  avoid(rect) {
+    const side = rect && rect.left + rect.width / 2 > innerWidth * 0.55 ? 'start' : 'end';
+    if (this.#el.dataset.side !== side) this.#el.dataset.side = side;
+  }
   // where an element's changes will be written, and its file's hash when its first change was taken: Apply sends
   // that hash, so an edit made to the file in between is refused as stale rather than written over
   site(el, site) { const item = this.#items.get(el); if (item && !item.site) item.site = site; }
