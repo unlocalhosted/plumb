@@ -32,6 +32,7 @@ import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
 import { Help, HELP_CSS, HELP_ICON } from './help.js';
 import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
 import { Craft } from './craft.js';
+import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -435,6 +436,7 @@ class PlumbOverlay extends HTMLElement {
     const promise = (async () => {
       const found = await locate(element, { explain: true, batch: true });
       if (!found?.file) return { status: 'unplaced', outsideSource: found?.reason === 'resolve-refusal' && !!found.detail?.file, file: found?.detail?.file };
+      this.#learnSource(element, found);
       return this.#readAt(found, element, { want: 'marks', computed, batch: true });
     })().catch(error => ({ status: error?.starting ? 'starting' : 'error' }));
     // an answer that still needs its classes traced is not the element's reading yet
@@ -442,6 +444,23 @@ class PlumbOverlay extends HTMLElement {
     this.#marksCache.set(element, promise);
     promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     return promise;
+  }
+  // craft: what the source says about an element (its component, library, handlers), for the rules that judge by it
+  // (touch handling, a tooltip provider's delays). Asked only for the elements those rules can judge; when answers
+  // land, the page is judged again once.
+  #sourced = new WeakSet(); #resourced = 0;
+  #learnSource(element, found) {
+    if (this.#sourced.has(element) || !Number.isFinite(found.line)) return;
+    const candidate = element.matches?.('[role="button"], [data-state], [aria-haspopup]')
+      || (!element.matches?.('button, a[href], input, select, textarea, summary, label, option') && getComputedStyle(element).cursor === 'pointer');
+    if (!candidate) return;
+    this.#sourced.add(element);
+    request('structure', { file: found.file, line: found.line, column: found.column }).then((s) => {
+      if (!s || s.error) return;
+      setSource(element, s);
+      clearTimeout(this.#resourced);
+      this.#resourced = setTimeout(() => this.#blueprint?.themeChanged(), 120);
+    }).catch(() => {});
   }
   get health() { return this.#health; }
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)

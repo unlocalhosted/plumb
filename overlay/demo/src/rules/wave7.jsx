@@ -1,6 +1,6 @@
-const Play = () => <svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 1 L14 8 L2 15 Z" /></svg>;
+const Play = () => <svg width="24" height="24" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 1 L14 8 L2 15 Z" /></svg>;
 const Square = ({ s = 16 }) => <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x={(16 - s) / 2} y={(16 - s) / 2} width={s} height={s} /></svg>;
-const Round = () => <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" /></svg>;
+const Round = ({ r = 8 }) => <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r={r} /></svg>;
 const Line = ({ w = 1.5, size = 16 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={w} aria-hidden="true"><path d="M4 12h16M12 4v16" /></svg>;
 const rows = ['Inbox', 'Drafts', 'Sent', 'Archive', 'Spam', 'Trash', 'Starred', 'Snoozed'];
 const tall = Array.from({ length: 12 }, (_, i) => <p key={i} className="text-body">Row {i + 1}</p>);
@@ -10,7 +10,7 @@ export function App() {
       <div className="grid grid-cols-2 gap-s8">
         <div><button id="optical-centre-bad" className="flex size-10 items-center justify-center rounded-control bg-surface"><Play /></button></div>
         <div><button id="optical-centre-good" className="flex size-10 items-center justify-center rounded-control bg-surface"><Square s={14} /></button></div>
-        <div id="overshoot-bad" className="flex gap-s2"><Square /><Square /><Round /></div>
+        <div id="overshoot-bad" className="flex gap-s2"><Square /><Square /><Round r={7.5} /></div>
         <div id="overshoot-good" className="flex gap-s2"><Square s={15} /><Square s={15} /><Round /></div>
         <ul className="flex flex-col gap-s1">
           {rows.map((r) => <li key={r} className="flex items-center gap-s2 text-body"><Line />{r}</li>)}

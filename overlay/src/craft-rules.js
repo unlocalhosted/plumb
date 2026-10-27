@@ -435,6 +435,7 @@ export const contentAlign = {
 
 // ── wave three ──────────────────────────────────────────────
 
+const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
 const CONTROL = 'button, [role="button"], a[href], input[type="button"], input[type="submit"], input[type="reset"], summary';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
 const words = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -1093,19 +1094,20 @@ export const textWrapRole = {
 // #40. Continuous corners, where the browser draws them: an advisory (taste), on large surfaces only.
 export const continuousCorners = {
   id: 'craft/continuous-corners', family: 'craft', number: [40], tier: TIER.advisory, owns: ['radius'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { size: 160, radius: 16 },
+  threshold: { size: 160, radius: 16 }, judge: true,
   check({ el, facts }) {
     if (!globalThis.CSS?.supports?.('corner-shape', 'squircle')) return [];
     const s = facts.style(el), r = facts.rect(el);
     const rad = px(s.borderTopLeftRadius);
-    if (r.width < this.threshold.size || r.height < this.threshold.size || rad < this.threshold.radius) return [];
+    if (r.width < this.threshold.size * 0.75 || r.height < this.threshold.size * 0.75 || rad < this.threshold.radius * 0.75) return [];
+    const grey = r.width < this.threshold.size || r.height < this.threshold.size || rad < this.threshold.radius;
     // a plain round corner computes as superellipse(1); anything else is already shaped on purpose
     if (!/^(round|superellipse\(1\))?$/.test(s.getPropertyValue('corner-shape').trim())) return [];
     if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || s.boxShadow !== 'none')) return [];
     return [{
       ...say(this.id, { r: rad }),
       key: this.id, tier: TIER.advisory, text: utility(el, 'rounded') ?? 'border-radius', props: ['border-radius'], value: `${rad}px`, n: rad,
-      evidence: { radius: rad, width: r.width, height: r.height }, confidence: 0.8,
+      evidence: { radius: rad, width: r.width, height: r.height }, confidence: grey ? GREY : 0.8,
       suggest: { kind: 'class', from: '', to: '[corner-shape:squircle]', why: 'a smoother curve at the same size', sets: { cornerShape: 'squircle' } },
     }];
   },
@@ -1138,7 +1140,7 @@ export const opticalSizing = {
 // #21 + #52. A grey shadow on a coloured ground: tint it.
 export const tintedShadow = {
   id: 'craft/tinted-shadow', family: 'craft', number: [21, 52], tier: TIER.craft, owns: ['shadow'], once: 'ancestor', reads: ['style', 'ground'],
-  threshold: { ground: 0.03, shadow: 0.01, alpha: 0.1 },
+  threshold: { ground: 0.03, shadow: 0.01, alpha: 0.1 }, judge: true,
   check({ el, facts }) {
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
@@ -1146,12 +1148,14 @@ export const tintedShadow = {
     const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > this.threshold.alpha);
     if (!colours.length) return [];
     const ground = facts.ground(el.parentElement);
-    if (chroma(ground) <= this.threshold.ground || !colours.every((c) => chroma(c) < this.threshold.shadow)) return [];
+    // a barely coloured ground (two thirds of the way to the line) is the grey band: is the grey shadow dirty there?
+    if (chroma(ground) <= this.threshold.ground * 0.66 || !colours.every((c) => chroma(c) < this.threshold.shadow)) return [];
+    const grey = chroma(ground) <= this.threshold.ground;
     const h = Math.round(hueOf(ground)), a = Math.max(...colours.map((c) => c[3]));
     return [{
       ...say(this.id, { ground: hex(ground) }),
       key: this.id, text: utility(el, 'shadow') ?? 'box-shadow', props: ['box-shadow'], value: s.boxShadow, n: a,
-      evidence: { ground: hex(ground), hue: h }, confidence: 0.82,
+      evidence: { ground: hex(ground), hue: h }, confidence: grey ? GREY : 0.82,
       suggest: { kind: 'advice', text: `Tint the shadow: oklch(0.3 0.05 ${h} / ${a.toFixed(2)}) in place of its grey.` },
     }];
   },
@@ -1160,7 +1164,7 @@ export const tintedShadow = {
 // #56. A two-stop scrim over an image: ease it.
 export const easedScrim = {
   id: 'craft/eased-scrim', family: 'craft', number: [56], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { length: 80 },
+  threshold: { length: 80 }, judge: true,
   check({ el, facts }) {
     const s = facts.style(el);
     if (!/^linear-gradient\(/.test(s.backgroundImage) || /,\s*linear-gradient/.test(s.backgroundImage) || s.position !== 'absolute') return [];
@@ -1169,7 +1173,8 @@ export const easedScrim = {
     const clear = stops.find((c) => c[3] === 0), dark = stops.find((c) => c[3] >= 0.5 && oklab(c)[0] < 0.2);
     if (!clear || !dark) return [];
     const r = facts.rect(el);
-    if (Math.max(r.width, r.height) < this.threshold.length) return [];
+    if (Math.max(r.width, r.height) < this.threshold.length * 0.7) return [];
+    const grey = Math.max(r.width, r.height) < this.threshold.length; // a short fade: does its edge show?
     // over media: an image, a video or a picture beside it or around it, covering half of it or more
     const media = [...(el.parentElement?.querySelectorAll('img, video, picture') ?? [])].find((m) => {
       const q = m.getBoundingClientRect();
@@ -1181,7 +1186,7 @@ export const easedScrim = {
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'background-image', props: ['background-image'], value: 'linear', n: 2,
-      evidence: { dark: hex(dark) }, confidence: 0.83,
+      evidence: { dark: hex(dark) }, confidence: grey ? GREY : 0.83,
       suggest: { kind: 'advice', text: `Ease it: bg-[linear-gradient(to_top,${c}/${dark[3]})_0%,${c}/${(dark[3] * 0.6).toFixed(2)})_30%,${c}/${(dark[3] * 0.25).toFixed(2)})_60%,transparent_100%)].` },
     }];
   },
@@ -1190,7 +1195,7 @@ export const easedScrim = {
 // #25. No pure black or white on large areas (white only where the theme's surfaces are tinted; else it is taste).
 export const pureBlackWhite = {
   id: 'craft/pure-black-white', family: 'craft', number: [25], tier: TIER.craft, owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
-  threshold: { share: 0.25, area: 200000 },
+  threshold: { share: 0.25, area: 200000 }, judge: true,
   check({ el, facts }, theme) {
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el), c = rgb(s.backgroundColor);
@@ -1198,7 +1203,9 @@ export const pureBlackWhite = {
     const black = c[0] === 0 && c[1] === 0 && c[2] === 0, white = c[0] === 255 && c[1] === 255 && c[2] === 255;
     if (!black && !white) return [];
     const r = facts.rect(el), area = r.width * r.height;
-    if (area < this.threshold.area && area < innerWidth * innerHeight * this.threshold.share) return [];
+    const big = (k) => area >= this.threshold.area * k || area >= innerWidth * innerHeight * this.threshold.share * k;
+    if (!big(0.5)) return [];
+    const grey = !big(1); // half the size: is it large enough to glare?
     // a colour the theme names (bg-surface that happens to be white) is the project's decision, not an escape
     const own = colourClass(el, 'bg', theme);
     if (own && theme.colors().some((t) => own === `bg-${t.short}`)) return [];
@@ -1208,7 +1215,7 @@ export const pureBlackWhite = {
     return [{
       ...say(this.id, { black }),
       key: this.id, tier, text: own ?? 'background-color', props: ['background-color'], value: hex(c), n: area,
-      evidence: { colour: hex(c), area: Math.round(area) }, confidence: 0.8,
+      evidence: { colour: hex(c), area: Math.round(area) }, confidence: grey ? GREY : 0.8,
       suggest: near && own ? { kind: 'class', from: own, to: `bg-${near.short}`, why: black ? 'a near-black from your theme' : 'your tinted surface' } : { kind: 'advice', text: black ? 'Use a tinted near-black, 2–3% toward your brand hue.' : 'Tint it 2–3% toward your brand hue, or use your surface colour.' },
     }];
   },
@@ -1416,7 +1423,7 @@ const iconOnly = (el, facts) => {
 // #2. An icon-only control centres the icon's weight, not its box: a play triangle centred by its box looks left.
 export const opticalCentre = {
   id: 'craft/optical-centre', family: 'craft', number: [2], tier: TIER.craft, owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'ink'],
-  threshold: { lean: 0.06, off: 1, icon: 32 },
+  threshold: { lean: 0.06, off: 1, icon: 32, sure: 1.4 }, judge: true,
   check({ el, facts }) {
     if (!el.matches(CONTROL)) return [];
     const svg = iconOnly(el, facts);
@@ -1438,7 +1445,8 @@ export const opticalCentre = {
     return [{
       ...say(this.id, { by: Math.abs(by), dir }),
       key: this.id, text: 'svg', props: ['translate'], value: `${Math.round(by * 10) / 10}px`, n: by,
-      evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: 0.84,
+      // a nudge of 1 to 1.4px is the grey band: whether the eye sees it depends on the shape (the judge looks)
+      evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: Math.abs(by) < this.threshold.sure ? GREY : 0.84,
       suggest: { kind: 'advice', text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
     }];
   },
@@ -1447,7 +1455,7 @@ export const opticalCentre = {
 // #3. In a set of icons, round ones are drawn a little bigger than square ones, or they look smaller.
 export const overshoot = {
   id: 'craft/overshoot', family: 'craft', number: [3], tier: TIER.advisory, owns: ['size'], once: 'ancestor', reads: ['kids', 'rect', 'ink'],
-  threshold: { set: 3, over: 1.04 },
+  threshold: { set: 3, over: 1.04 }, judge: true,
   check({ el, facts }) {
     const svgs = facts.kids(el).map((k) => (k.localName === 'svg' ? k : iconOnly(k, facts))).filter(Boolean);
     if (svgs.length < this.threshold.set) return [];
@@ -1464,7 +1472,8 @@ export const overshoot = {
     return [{
       ...say(this.id, { rd, sq }),
       key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
-      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: 0.8,
+      // as big as the squares but not over them is the grey band: stroke icons' ink is a soft measure
+      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd >= sq ? GREY : 0.8,
       suggest: { kind: 'advice', text: 'Draw the round icon about 6% bigger (scale-[1.06]) so it reads the same size.' },
     }];
   },
@@ -1525,6 +1534,7 @@ export const scrollCue = {
     const y = /auto|scroll/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 4;
     const x = !y && /auto|scroll/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 4;
     if (!y && !x || el === document.scrollingElement || el === document.body) return [];
+    if (facts.other('scrolled')?.cue(el) === true) return []; // headless: scrolled to its end, its edge did change
     const b = facts.box(el);
     const bar = y ? el.offsetWidth - el.clientWidth - b.bl - b.br : el.offsetHeight - el.clientHeight - b.bt - b.bb;
     if (bar > 0) return []; // a scrollbar is the cue

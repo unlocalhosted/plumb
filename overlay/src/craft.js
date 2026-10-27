@@ -404,7 +404,7 @@ export class Craft {
       if (quiet.has(rule.id)) continue;
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
-      for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
+      for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
     }
     this.#cache.set(el, { sig, marks });
     return marks;
