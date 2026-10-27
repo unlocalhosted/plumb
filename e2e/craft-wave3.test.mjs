@@ -48,7 +48,7 @@ async function open(t, launched, url, dpr = 1) {
   }
   const overlay = page.locator('plumb-overlay');
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
   return { page, errors, overlay };
 }
 // the craft marks of one rule, as boxes on the page

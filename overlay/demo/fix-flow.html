@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix flow · React Plumber</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  .top { max-width: 1100px; margin: 0 auto; padding: 22px 16px 10px; display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+  .top h1 { font-size: 18px; margin: 0; }
+  .top p { margin: 0; opacity: .7; font-size: 13px; max-width: 78ch; }
+  .top .acts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .top button { font: inherit; font-size: 12px; padding: 3px 9px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  .top button[aria-pressed="true"] { background: currentColor; }
+  .top button[aria-pressed="true"] span { color: #ecebe7; }
+  #stage { max-width: 1100px; margin: 0 auto; padding: 0 16px 24px; }
+  plumb-overlay { display: none !important; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Fix flow</h1>
+  <p>One thing in hand, one language on the page (heat), one panel to act. Click a glow or press ↵ to start; ↑ ↓ try a step (the page moves), ↵ take, → skip, A apply, Esc put it down. Or jump to a state:</p>
+  <div class="acts" id="states"></div>
+</div>
+<div id="stage"></div>
+<script type="module">
+  /* ─────────────────────────────────────────────────────────
+   * FIX FLOW · STORYBOARD
+   *
+   * The page shows only heat. Everything you act with is in one panel, docked at the bottom centre. Nothing is ever
+   * placed against an element, so nothing can collide. Layers, bottom to top: page · heat · pill · panel.
+   *
+   * The unit is a cause (one class, every place it is used): one decision, every place moves.
+   *
+   *  STAGE 0  rest        heat on everything off; the panel is one line: "7 problems · 6 causes   Fix ↵"
+   *  STAGE 1  in hand     the hottest cause (or the glow clicked) is held: its zones pulse, the rest go quiet; the
+   *                       panel opens (spring, 260ms) to the cause: its class, its places, the steps, Take / Skip
+   *  STAGE 2  trying      ↑ ↓ (or a click on a step): the page glides to that value (320ms) and the heat shrinks
+   *                       with it; on the system's own step the heat is gone: that is how you know it is right
+   *  STAGE 3  taken       ↵: the cause is kept (as previewed), its zones cool to nothing, the count on Apply ticks
+   *                       up, and the next cause slides into the panel (180ms)
+   *  STAGE 4  no fix      a cause the theme can't fix shows its sentence and only Skip
+   *  STAGE 5  applying    A: "Writing 3 changes to 2 files…" in the panel; then the panel goes back to one line
+   *  STAGE 6  all clear   nothing left. The page itself celebrates; nothing is said:
+   *       0ms             the last write lands
+   *      60ms             every fixed element clicks into place: down 3px, a spring back past rest, settle
+   *                       (45ms apart, in page order), like a drawer closing
+   *    ~500ms             the whole page takes one breath (1 → 1.006 → 1)
+   *    ~600ms             the panel draws a small ✓, and it bursts: confetti made of the overlay's own pieces
+   *                       (padding chips hatched green, gap bars striped purple, margin discs dotted orange, a few
+   *                       ink ✓s) pop up from it, tumble, fall under gravity and fade (~1.5s); then the panel folds
+   * ───────────────────────────────────────────────────────── */
+
+  const TIMING = {
+    open:     260,   // the panel opens to a cause (spring)
+    glide:    320,   // the page moving to a tried step
+    cool:     360,   // a taken cause's heat going out
+    next:     180,   // the next cause sliding into the panel
+    write:    900,   // pretend write time
+    clear:    1700,  // the all-clear's marks
+    click:    60,    // the first fixed element clicks into place
+    clickGap: 45,    // between elements
+    breath:   480,   // after the last click, the page breathes
+    check:    600,   // the panel’s ✓ draws, once the page has had its moment
+    fold:     2300,  // the panel folds back, after the confetti has fallen
+  };
+  /* the click: a drawer closing. Down a few px, back past rest, settle */
+  const CLICK = { drop: 3, over: -1, ms: 420 };
+  /* the burst: confetti from the ✓, the overlay's own pieces */
+  const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin: 9, life: 1600, size: [7, 11] };
+  /* the breath: the whole page swells a hair and settles */
+  const BREATH = { scale: 1.006, ms: 620 };
+  const HEAT = { min: 0.3, gain: 2.2, rest: 0.7, quiet: 0.22, blur: [2.6, 4.4], thin: 1.5 };
+  const INK = { system: '#00a3ff', diff: '#ff1f8f' };
+  const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
+
+  /* ── the page and what is off on it ── */
+  const PAGE = `
+    <div class="pg">
+      <header class="hd"><h1 data-m="title">Team settings</h1><button class="btn" data-m="invite"><i></i>Invite</button></header>
+      <section class="card" data-m="card">
+        <span class="eyebrow" data-m="status">Status</span>
+        <p>Three people can see this workspace.</p>
+        <ul class="list" data-m="list">
+          <li><span>Ada Lovelace</span><span class="role">Owner</span></li>
+          <li><span>Grace Hopper</span><span class="role">Admin</span></li>
+          <li><span>Alan Turing</span><span class="role">Member</span></li>
+        </ul>
+      </section>
+      <section class="card second" data-m="danger">
+        <span class="eyebrow">Danger zone</span>
+        <p>Delete this workspace and everything in it.</p>
+      </section>
+    </div>`;
+  // A cause: its class, what it is in words, where it is used, how it is drawn, and its steps (css per step; `now` is
+  // the page as found, `fix` is the system's own step). No steps: the theme can't fix it, only say what is off.
+  const CAUSES = [
+    { cls: 'p-[18px]', what: 'padding off the scale', els: ['card', 'danger'], kind: 'padding',
+      steps: [{ t: 's3', n: 12 }, { t: 's4', n: 16 }, { t: 's5', n: 20 }, { t: 's6', n: 24 }].map((s) => ({ ...s, css: { padding: `${s.n}px` } })), now: 18, fix: 's4' },
+    { cls: 'px-s3', what: 'sides too tight for words', els: ['invite'], kind: 'padding',
+      steps: [{ t: 'px-s3', n: 12, lr: [12, 12], v: '12px', css: { paddingLeft: '12px', paddingRight: '12px' } }, { t: 'pl-s4 pr-s6', n: 24, lr: [16, 24], v: '16 · 24px', css: { paddingLeft: '16px', paddingRight: '24px' } }], now: 'px-s3', fix: 'pl-s4 pr-s6' },
+    { cls: 'gap-[10px]', what: 'gap off the scale', els: ['list'], kind: 'gap',
+      steps: [{ t: 's1', n: 4 }, { t: 's2', n: 8 }, { t: 's3', n: 12 }].map((s) => ({ ...s, css: { rowGap: `${s.n}px` } })), now: 10, fix: 's2' },
+    { cls: 'mt-[22px]', what: 'space above off the scale', els: ['danger'], kind: 'margin',
+      steps: [{ t: 's5', n: 20 }, { t: 's6', n: 24 }].map((s) => ({ ...s, css: { marginTop: `${s.n - 14}px` } })), now: 22, fix: 's6' },
+    { cls: 'text-[11px]', what: 'text size between two steps', els: ['status'], kind: 'type',
+      steps: [{ t: 'tiny', n: 10 }, { t: 'small', n: 12 }, { t: 'body', n: 13 }].map((s) => ({ ...s, css: { fontSize: `${s.n}px` } })), now: 11, fix: 'small' },
+    { cls: 'font-semibold', what: 'a weight your theme doesn’t have', els: ['title'], kind: 'type',
+      steps: [{ t: 'medium', n: 500 }, { t: 'bold', n: 700 }].map((s) => ({ ...s, css: { fontWeight: String(s.n) } })), now: 600, fix: 'medium' },
+    // nothing on the theme fits: the options are new tokens (the recommendation engine's candidate c), each a value in
+    // the spec's range for small capitals (0.05–0.1em), named in the theme's way; taking one adds it, then uses it
+    { cls: 'tracking', what: 'small capitals need letter spacing', els: ['status'], kind: 'type', now: 0, unit: 'em',
+      token: { name: '--tracking-caps', cls: 'tracking-caps', file: 'src/styles.css' },
+      steps: [0.04, 0.06, 0.08].map((n) => ({ t: 'new', n, v: `${n}em`, css: { letterSpacing: `${n}em` } })), fix: 'new', fixN: 0.06 },
+  ];
+
+  /* ── the stage ── */
+  const host = document.getElementById('stage');
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>
+    :host { display: block; --sys: ${INK.system}; --diff: ${INK.diff}; }
+    .frame { position: relative; height: 640px; border-radius: 14px; overflow: hidden; background: #f7f7f5; box-shadow: 0 1px 0 rgb(0 0 0 / .04), 0 10px 30px -12px rgb(0 0 0 / .25); }
+    .pg { padding: 28px 40px; display: flex; flex-direction: column; gap: 14px; font: 15px/1.45 system-ui, sans-serif; color: #1c1b19; max-width: 640px; }
+    .hd { display: flex; align-items: center; justify-content: space-between; }
+    .hd h1 { margin: 0; font: 600 20px/1.2 system-ui, sans-serif; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 8px; padding: 8px 12px; font: 500 14px/1 system-ui, sans-serif; background: #3b5bdb; color: white; }
+    .btn i { width: 8px; height: 8px; border-radius: 50%; background: #0b0b0b; }
+    .card { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 12px; background: white; box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
+    .card.second { margin-top: 8px; }
+    .card p { margin: 0; }
+    .eyebrow { font: 600 11px/1 system-ui, sans-serif; text-transform: uppercase; color: #6b6b70; }
+    .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .list li { display: flex; justify-content: space-between; }
+    .role { color: #8a8a90; }
+    .page [data-m] { transition: padding ${TIMING.glide}ms ${EASE}, row-gap ${TIMING.glide}ms ${EASE}, margin ${TIMING.glide}ms ${EASE}, font-size ${TIMING.glide}ms ${EASE}, font-weight ${TIMING.glide}ms linear; }
+
+    svg.ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    svg.ink .heat { mix-blend-mode: multiply; transition: opacity 220ms ease-out; }
+    svg.ink .heat.dots { mix-blend-mode: normal; }
+    svg.ink .hit { pointer-events: all; fill: transparent; cursor: pointer; }
+    .pill { position: absolute; pointer-events: none; height: 24px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; white-space: pre;
+      font: 600 12px/1 ui-monospace, monospace; background: #1c1b19; color: #fff; box-shadow: 0 2px 10px rgb(0 0 0 / .2); }
+    .pill .from { color: #ff7ab8; } .pill .to { color: #6fd0ff; } .pill .n { opacity: .6; }
+
+    /* the panel: the only thing you act with. A light, translucent sheet that belongs to the page: a hairline edge,
+       a soft layered shadow, ink and paper; colour only where it means something (magenta = as it is, blue = the
+       system's step) */
+    .panel { position: absolute; left: 50%; bottom: 20px; translate: -50% 0; width: 520px; max-width: calc(100% - 32px); box-sizing: border-box;
+      background: rgb(255 255 255 / .78); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+      border-radius: 18px; color: #1c1b19; font: 13px/1.35 system-ui, sans-serif; overflow: hidden;
+      box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
+      transition: height ${TIMING.open}ms ${SPRING}; }
+    .panel button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+    .panel kbd { font: 500 10.5px/1 ui-monospace, monospace; color: #8b8a85; margin-left: 2px; }
+
+    /* rest: one quiet line */
+    .panel .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
+    .panel .line .dot, .panel .cause .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--diff); box-shadow: 0 0 0 3px rgb(255 31 143 / .14); flex: none; }
+    .panel .line .count { color: #1c1b19; font-weight: 550; }
+    .panel .line .count span { color: #8b8a85; font-weight: 450; }
+    .panel .grow { flex: 1; }
+    .panel .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: #1c1b19; color: #fff; font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 1px 2px rgb(0 0 0 / .2); transition: transform 160ms ${SPRING}, opacity 160ms; }
+    .panel .primary:active { transform: scale(.97); }
+    .panel .primary kbd { color: rgb(255 255 255 / .55); }
+    .panel .primary[disabled] { opacity: .28; cursor: default; }
+    .panel .ghost { height: 32px; padding: 0 10px; border-radius: 10px; color: #55544f; display: inline-flex; align-items: center; gap: 5px; transition: background 140ms; }
+    .panel .ghost:hover { background: rgb(0 0 0 / .045); }
+    .panel .apply { height: 32px; padding: 0 6px 0 12px; border-radius: 11px; display: inline-flex; align-items: center; gap: 8px; font-weight: 550; color: #1c1b19;
+      box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); transition: box-shadow 140ms, opacity 160ms; }
+    .panel .apply .badge { min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 7px; background: #1c1b19; color: #fff; font: 600 11px/20px ui-monospace, monospace; text-align: center; }
+    .panel .apply[disabled] { opacity: .35; cursor: default; }
+    .panel .apply[disabled] .badge { background: rgb(0 0 0 / .12); color: #55544f; }
+
+    /* in hand: the cause, its ruler, the actions */
+    .panel .cause { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 16px 12px 4px 18px; }
+    .panel .cause .cls { font: 600 14px/1.2 ui-monospace, monospace; letter-spacing: -.01em; }
+    .panel .cause .what { grid-column: 2; color: #8b8a85; }
+    .panel .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: #8b8a85; font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .panel .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #55544f; }
+    .panel .cause .nav button:hover { background: rgb(0 0 0 / .05); }
+    .panel .cause .dot { grid-row: span 1; }
+
+    /* the steps as specimens: each option drawn as the space (or type) it is, at a fixed scale, in order; the page's
+       own value among them in magenta; the pick in ink; the system's step named in blue */
+    .panel .specimens { display: flex; gap: 6px; padding: 10px 14px 6px; }
+    .panel .sp { flex: 1 1 0; min-width: 0; display: grid; justify-items: center; gap: 6px; padding: 10px 4px 9px; border-radius: 12px; position: relative;
+      color: #b4b3ad; transition: background 180ms ease-out, color 180ms ease-out, transform 260ms ${SPRING}, box-shadow 180ms; }
+    /* hover is a hint, not a state: no background or ring (those mean selected), only the drawing and its number a
+       step darker */
+    .panel button.sp:not([aria-pressed="true"]):hover .v { color: #55544f; }
+    .panel .sp svg { width: 52px; height: 40px; overflow: visible; }
+    .panel .sp .v { font: 600 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #8b8a85; letter-spacing: -.01em; }
+    .panel .sp[aria-pressed="true"] .v { color: #1c1b19; }
+    .panel .sp .tk { font: 500 10.5px/1 ui-monospace, monospace; color: #a3a29c; }
+    /* a colour per property (the devtools convention): padding green, margin orange, gap purple; type is ink */
+    .panel .sp { --hue: 0 140 230; --space: rgb(var(--hue) / .42); --space-line: rgb(var(--hue) / .35); --word: #8b8a85; }
+    .panel .sp[data-kind="padding"] { --hue: 26 158 98; }
+    .panel .sp[data-kind="margin"] { --hue: 226 128 10; }
+    .panel .sp[data-kind="gap"] { --hue: 122 92 240; }
+    .panel .sp .space-fill { fill: var(--space); }
+    .panel .sp .space-line { stroke: var(--space-line); }
+    .panel .sp .word { fill: var(--word); }
+    .panel button.sp:not([aria-pressed="true"]):hover { --space: rgb(var(--hue) / .62); --space-line: rgb(var(--hue) / .5); --word: #55544f; }
+    .panel .sp[aria-pressed="true"] { --space: rgb(var(--hue)); --space-line: rgb(var(--hue)); --word: #1c1b19; }
+    .panel .sp.off { --space: #b4b3ad; --space-line: #c9c8c2; --word: #b4b3ad; }
+    .panel .sp[aria-pressed="true"] { background: #fff; color: #1c1b19;
+      box-shadow: 0 0 0 1.5px #1c1b19, 0 1px 2px rgb(0 0 0 / .06), 0 6px 14px -6px rgb(0 0 0 / .18); }
+    .panel .sp[aria-pressed="true"] .tk { color: #55544f; }
+    .panel .sp.off { opacity: .45; cursor: not-allowed; }
+    .panel .sp.off .v { text-decoration: line-through; text-decoration-thickness: 1px; color: #8b8a85; }
+    .panel .note { margin: 2px 18px 0; padding: 8px 10px; border-radius: 10px; background: rgb(0 0 0 / .035); color: #55544f; font-size: 12px; line-height: 1.45; }
+    .panel .note code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
+    .panel .say { padding: 8px 18px 14px; color: #55544f; max-width: 52ch; }
+    .panel .acts { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; margin-top: 4px; border-top: .5px solid rgb(0 0 0 / .08); }
+    .panel .body { animation: slide ${TIMING.next}ms ${EASE} both; }
+    @keyframes slide { from { opacity: 0; translate: 10px 0; } }
+    /* the all-clear: a small ✓ that draws itself; the celebration is the page's, not the panel's */
+    .panel .done { justify-content: center; gap: 8px; padding: 0 16px; }
+    .panel .check { width: 18px; height: 18px; }
+    .panel .check path { fill: none; stroke: #1c1b19; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; animation: draw 340ms ${TIMING.check}ms ${EASE} forwards; }
+    .panel .done .words { font-weight: 600; opacity: 0; animation: rise 280ms ${TIMING.check + 160}ms ${EASE} forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @keyframes rise { from { opacity: 0; translate: 0 2px; } to { opacity: 1; translate: 0 0; } }
+    @media (prefers-reduced-motion: reduce) { .panel .check path { animation: none; stroke-dashoffset: 0; } .panel .done .words { animation: none; opacity: 1; } }
+    .panel .writing { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; color: #55544f; }
+    .panel .writing i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #1c1b19; border-top-color: transparent; animation: spin .7s linear infinite; }
+    @keyframes spin { to { rotate: 1turn; } }
+    .reg { position: absolute; inset: 0; pointer-events: none; }
+    .reg g { stroke: var(--sys); stroke-width: 1.5px; fill: none; transform-box: fill-box; transform-origin: center; }
+    @media (prefers-reduced-motion: reduce) { .panel, .panel .sp, .page [data-m] { transition: none; } .panel .body { animation: none; } }
+  </style>
+  <div class="frame" tabindex="0"><div class="page">${PAGE}</div><svg class="ink"></svg><div class="panel" role="region" aria-label="Fix"></div></div>`;
+  const frame = root.querySelector('.frame'), page = root.querySelector('.page'), svg = root.querySelector('svg.ink'), panel = root.querySelector('.panel');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── state: one object, one render ── */
+  const S = { stage: 0, at: 0, pick: null, taken: [], skipped: [], done: new Set(), pointed: null, hand: null, fixed: [] };
+  const live = () => CAUSES.filter((c) => !S.done.has(c.cls));
+  const cause = () => live()[S.at] ?? null;
+
+  /* ── measuring the page ── */
+  const rel = (el) => { const f = frame.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - f.left, y: r.top - f.top, w: r.width, h: r.height }; };
+  const px = (v) => parseFloat(v) || 0;
+  // a value as px on an element: em against its font size, 'normal' spacing as 0
+  const pxOn = (v, el) => (String(v).endsWith('em') ? parseFloat(v) * parseFloat(getComputedStyle(el).fontSize) : px(v));
+  const elOf = (k) => page.querySelector(`[data-m="${k}"]`);
+  const fixStep = (c) => c.steps.find((s) => (c.fixN !== undefined ? s.n === c.fixN : s.t === c.fix));
+  // how far off a cause is right now, against its fix: bands of space, or the words
+  function zonesOf(c) {
+    const out = [];
+    for (const k of c.els) {
+      // off is measured against the scale, not against our suggestion: any step on it is right, so the heat is the
+      // distance to the nearest step (the page's value as it is right now, mid-glide included)
+      const el = elOf(k), A = rel(el), cs = getComputedStyle(el);
+      const dist = (st) => Object.entries(st.css).reduce((d, [p, v]) => d + Math.abs(px(cs[p === 'padding' ? 'paddingTop' : p]) - pxOn(v, el)), 0);
+      const want = c.steps.length ? [...c.steps].sort((x, y) => dist(x) - dist(y))[0].css : {};
+      if (c.kind === 'type') {
+        const r = document.createRange(); r.selectNodeContents(el); const f = frame.getBoundingClientRect();
+        const prop = Object.keys(want)[0], a = px(cs[prop]), b = pxOn(want[prop], el);
+        const off = c.steps.length ? Math.abs(a - b) / (prop === 'fontWeight' ? 400 : prop === 'letterSpacing' ? px(cs.fontSize) * 0.1 : b) : 0.25;
+        if (c.steps.length && off < 0.005) continue;
+        out.push({ k, off, words: [...r.getClientRects()].map((q) => [q.left - f.left, q.top - f.top, q.width, q.height]), bands: [] });
+        continue;
+      }
+      const bands = []; let off = 0;
+      if (c.kind === 'padding') {
+        for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+          const p = `padding${side}`; if (!(p in want) && !('padding' in want)) continue;
+          const a = px(cs[p]), b = px(want[p] ?? want.padding), d = a - b; if (Math.abs(d) < 0.25) continue;
+          off = Math.max(off, Math.abs(d) / Math.max(b, 4));
+          const L = Math.min(px(cs.paddingLeft), px(want.paddingLeft ?? want.padding ?? cs.paddingLeft)), R = Math.min(px(cs.paddingRight), px(want.paddingRight ?? want.padding ?? cs.paddingRight));
+          const T = Math.min(px(cs.paddingTop), px(want.paddingTop ?? want.padding ?? cs.paddingTop)), B = Math.min(px(cs.paddingBottom), px(want.paddingBottom ?? want.padding ?? cs.paddingBottom));
+          if (side === 'Top') bands.push([A.x + L, A.y + T, A.w - L - R, Math.abs(d), d > 0]);
+          if (side === 'Bottom') bands.push([A.x + L, A.y + A.h - B - Math.abs(d), A.w - L - R, Math.abs(d), d > 0]);
+          if (side === 'Left') bands.push([A.x + L, A.y + T, Math.abs(d), A.h - T - B, d > 0]);
+          if (side === 'Right') bands.push([A.x + A.w - R - Math.abs(d), A.y + T, Math.abs(d), A.h - T - B, d > 0]);
+        }
+      }
+      if (c.kind === 'gap') {
+        const kids = [...el.children].map(rel), d = px(cs.rowGap) - px(want.rowGap);
+        off = Math.abs(d) / px(want.rowGap);
+        if (Math.abs(d) >= 0.25) for (let i = 0; i + 1 < kids.length; i++) bands.push([A.x, kids[i + 1].y - Math.abs(d), A.w, Math.abs(d), d > 0]);
+      }
+      if (c.kind === 'margin') {
+        const d = px(cs.marginTop) - px(want.marginTop);
+        off = Math.abs(d) / (px(want.marginTop) + 14);
+        if (Math.abs(d) >= 0.25) bands.push([A.x, A.y - Math.abs(d), A.w, Math.abs(d), d > 0]);
+      }
+      if (bands.length) out.push({ k, off, bands, words: [] });
+    }
+    return out;
+  }
+  const heatOf = (off) => Math.min(1, HEAT.min + off * HEAT.gain);
+
+  /* ── drawing: heat, the pill, the panel ── */
+  function draw() {
+    const held = S.stage >= 1 && S.stage <= 4 ? cause() : null;
+    let defs = `<pattern id="dots" width="3.5" height="3.5" patternUnits="userSpaceOnUse"><circle cx="1.75" cy="1.75" r=".95" fill="${INK.system}" stroke="#fff" stroke-width=".6"/></pattern>`, body = '';
+    live().forEach((c, ci) => {
+      for (const z of zonesOf(c)) {
+        const h = c.steps.length ? heatOf(z.off) : HEAT.min, blur = HEAT.blur[0] + (HEAT.blur[1] - HEAT.blur[0]) * h, id = `${ci}-${z.k}`;
+        const mine = held === c, other = held && !mine;
+        const o = (other ? HEAT.quiet : 1) * h * HEAT.rest + (mine ? 0.25 : 0);
+        defs += `<filter id="f${id}" filterUnits="userSpaceOnUse" x="0" y="0" width="2000" height="2000"><feGaussianBlur stdDeviation="${blur}"/><feComponentTransfer><feFuncA type="linear" slope="1.3"/></feComponentTransfer></filter><filter id="d${id}" filterUnits="userSpaceOnUse" x="0" y="0" width="2000" height="2000"><feGaussianBlur stdDeviation=".45"/></filter>`;
+        let warm = '', dots = '', hit = '';
+        for (const [x, y, w, hh, more] of z.bands) {
+          const tw = Math.max(w, HEAT.thin), th = Math.max(hh, HEAT.thin), tx = x - (tw - w) / 2, ty = y - (th - hh) / 2;
+          if (more) warm += `<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" fill="${INK.diff}"/>`;
+          else dots += `<rect x="${tx - 2}" y="${ty - 2}" width="${tw + 4}" height="${th + 4}" fill="url(#dots)"/>`;
+          hit += `<rect class="hit" data-c="${c.cls}" x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${hh + 12}"/>`;
+        }
+        for (const [x, y, w, hh] of z.words) { warm += `<rect x="${x}" y="${y + hh * 0.15}" width="${w}" height="${hh * 0.7}" rx="${hh * 0.35}" fill="${INK.diff}"/>`; hit += `<rect class="hit" data-c="${c.cls}" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${hh + 8}"/>`; }
+        body += `${warm ? `<g class="heat${mine ? ' mine' : ''}" style="opacity:${o}" filter="url(#f${id})">${warm}</g>` : ''}${dots ? `<g class="heat dots${mine ? ' mine' : ''}" style="opacity:${o}" filter="url(#d${id})">${dots}</g>` : ''}${hit}`;
+      }
+    });
+    svg.innerHTML = `<defs>${defs}</defs>${body}`;
+    // the held cause breathes
+    if (!still) for (const g of svg.querySelectorAll('.heat.mine')) { const o = +g.style.opacity; g.animate([{ opacity: o }, { opacity: Math.min(1, o + 0.3) }, { opacity: o }], { duration: 1100, iterations: Infinity, easing: 'ease-in-out' }); }
+    pill();
+  }
+  // pointing at a glow: one pill by the pointer (only when nothing is in hand: then the panel says it all)
+  function pill() {
+    frame.querySelector('.pill')?.remove();
+    if (!S.pointed || S.stage !== 0 || !S.hand) return;
+    const c = CAUSES.find((x) => x.cls === S.pointed);
+    const el = document.createElement('span'); el.className = 'pill';
+    el.innerHTML = c.steps.length ? `<span class="from">${c.cls}</span> → <span class="to">${c.fix}</span>${c.els.length > 1 ? ` <span class="n">×${c.els.length}</span>` : ''}` : `<span class="from">${c.cls}</span> <span class="n">no fix</span>`;
+    frame.append(el);
+    Object.assign(el.style, { left: `${S.hand.x + 14}px`, top: `${S.hand.y + 18}px` });
+  }
+
+  /* ── the panel, by stage ── */
+  // A specimen: the option drawn as the space it is. The space is what is hatched (the overlay's own word for
+  // padding and gaps); the content is left blank with two lines of words in it, so a bigger step reads as more room,
+  // not as smaller content. Space at SCALE px of drawing per px of page; a gap at its true size. Type as itself.
+  const SCALE = 0.62;
+  let hatchN = 0;
+  // the space is blue (the system's ink: the hue of space, as in an inspector), the words are ink, the box a hairline
+  function specimen(c, n, lr) {
+    const id = `h${hatchN++}`;
+    // the property's own pattern: padding hatched, margin dotted, a gap striped
+    const pattern = c.kind === 'margin' ? `<pattern id="${id}" width="3" height="3" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r=".8" class="space-fill"/></pattern>`
+      : c.kind === 'gap' ? `<pattern id="${id}" width="4" height="2.5" patternUnits="userSpaceOnUse"><rect width="4" height="1" class="space-fill"/></pattern>`
+      : `<pattern id="${id}" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.1" height="3" class="space-fill"/></pattern>`;
+    const defs = (clip = '') => `<defs>${pattern}${clip}</defs>`;
+    // one or two lines of words, always inside the room they are given
+    const words = (x, y, w, h) => {
+      const fit = Math.max(2, w);
+      if (h < 9) return `<rect x="${x}" y="${y + h / 2 - 1}" width="${fit * 0.7}" height="2" rx="1" class="word" opacity=".7"/>`;
+      return `<rect x="${x}" y="${y + h / 2 - 3.5}" width="${fit * 0.78}" height="2" rx="1" class="word" opacity=".7"/><rect x="${x}" y="${y + h / 2 + 1.5}" width="${fit * 0.52}" height="2" rx="1" class="word" opacity=".45"/>`;
+    };
+    if (c.cls === 'tracking') return `<svg viewBox="0 0 52 40"><text x="26" y="25" text-anchor="middle" class="word" style="font: 600 11px system-ui, sans-serif; letter-spacing: ${n}em">CAPS</text></svg>`;
+    if (c.kind === 'type') {
+      const weight = c.cls.startsWith('font') ? n : 500, size = c.cls.startsWith('font') ? 22 : Math.min(28, n * 1.7);
+      return `<svg viewBox="0 0 52 40"><text x="26" y="27" text-anchor="middle" class="word" style="font: ${weight} ${size}px system-ui, sans-serif">Ag</text></svg>`;
+    }
+    if (c.kind === 'gap' || c.kind === 'margin') {
+      // two rows of words with the space between them hatched, at its true height
+      const g = n, top = 20 - g / 2 - 7;
+      return `<svg viewBox="0 0 52 40">${defs()}${words(9, top, 34, 7)}<rect x="9" y="${top + 7}" width="34" height="${g}" rx="1.5" fill="url(#${id})"/><rect x="9.25" y="${top + 7.25}" width="33.5" height="${Math.max(0, g - .5)}" rx="1.5" fill="none" class="space-line" stroke-width=".5"/>${words(9, top + 7 + g, 34, 7)}</svg>`;
+    }
+    // padding: a card whose padding ring is hatched (clipped to its rounded corners), its content blank with words in it
+    const sides = c.cls.startsWith('px') ? 'x' : 'all', W = 50, H = 38, x0 = 1, y0 = 1, r = 6;
+    const [pl, pr] = (lr ?? [n, n]).map((v) => v * SCALE), pv = sides === 'x' ? 6 : n * SCALE;
+    const ix = x0 + pl, iy = y0 + pv, iw = Math.max(4, W - pl - pr), ih = Math.max(4, H - 2 * pv);
+    const clip = `<clipPath id="${id}c"><rect x="${x0}" y="${y0}" width="${W}" height="${H}" rx="${r}"/></clipPath>`;
+    return `<svg viewBox="0 0 52 40">${defs(clip)}<g clip-path="url(#${id}c)"><path fill-rule="evenodd" fill="url(#${id})" d="M${x0} ${y0}h${W}v${H}h${-W}Z M${ix} ${iy}v${ih}h${iw}v${-ih}Z"/></g><rect x="${x0 + .5}" y="${y0 + .5}" width="${W - 1}" height="${H - 1}" rx="${r - .5}" fill="none" class="space-line" stroke-width="1"/><rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" rx="1.5" fill="#fff"/>${words(ix + 3, iy, iw - 6, ih)}</svg>`;
+  }
+  // the options in order, the page's own value slotted where it falls
+  function specimens(c) {
+    const unit = c.unit ?? (c.cls.startsWith('font') ? '' : 'px');
+    const items = c.steps.map((st, i) => ({ n: st.n, html: `<button class="sp" data-kind="${c.kind}" data-i="${i}"${st.t === c.fix ? ' title="what the rule suggests"' : ''} aria-pressed="${S.pick === i}">${specimen(c, st.n, st.lr)}<span class="v">${st.v ?? `${st.n}${unit}`}</span><span class="tk">${c.token ? 'new token' : st.t}</span></button>` }));
+    // the page's own value, where it falls among them: shown so you see where you are, greyed out because it isn't
+    // a choice (it's off the scale)
+    if (typeof c.now === 'number' && !c.steps.some((st) => st.n === c.now)) items.push({ n: c.now, html: `<div class="sp off" data-kind="${c.kind}" aria-disabled="true" title="what it is now: off the scale">${specimen(c, c.now)}<span class="v">${c.now}${unit}</span><span class="tk">now</span></div>` });
+    items.sort((x, y) => x.n - y.n);
+    return `<div class="specimens">${items.map((x) => x.html).join('')}</div>`;
+  }
+  const total = () => live().reduce((n, c) => n + c.els.length, 0);
+  function renderPanel(slide = false) {
+    const c = cause(), taken = S.taken.length;
+    const apply = `<button class="apply" ${taken ? '' : 'disabled'}>Apply <span class="badge">${taken}</span></button>`;
+    let html = '';
+    if (S.stage === 0) {
+      html = total()
+        ? `<div class="line"><i class="dot"></i><span class="count">${total()} problems <span>· ${live().length} causes</span></span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
+        : `<div class="line"><span class="count"><span>Everything matches your system</span></span></div>`;
+    } else if (S.stage === 5) {
+      html = `<div class="writing"><i></i>Writing ${taken} ${taken === 1 ? 'change' : 'changes'} to your code</div>`;
+    } else if (S.stage === 6) {
+      html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">Done</span></div>`;
+    } else if (c) {
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${c.cls}</span><span class="nav"><button class="prev" aria-label="Previous cause">‹</button>${S.at + 1} of ${live().length}<button class="next" aria-label="Next cause">›</button></span><span class="what">${c.what} · ${c.els.length} ${c.els.length === 1 ? 'place' : 'places'}</span></div>`;
+      const note = c.token ? `<div class="note">Your theme has no letter-spacing step. Taking one adds <code>${c.token.name}</code> to <code>${c.token.file}</code> and uses <code>${c.token.cls}</code> here.</div>` : '';
+      const middle = c.steps.length ? note + specimens(c) : `<div class="say">${c.say}</div>`;
+      const acts = `<div class="acts">${c.steps.length ? `<button class="primary take" ${S.pick === null ? 'disabled' : ''}>Take <kbd>↵</kbd></button>` : ''}<button class="ghost skip">Skip <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
+      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${middle}${acts}</div>`;
+    }
+    const from = panel.offsetHeight;
+    panel.innerHTML = html;
+    const to = panel.scrollHeight;
+    if (!still && from && from !== to) { panel.style.height = `${from}px`; panel.offsetHeight; panel.style.height = `${to}px`; setTimeout(() => (panel.style.height = ''), TIMING.open + 20); }
+  }
+
+  /* ── the flow ── */
+  // try a step: the page moves to it, at every place of the cause
+  function tryStep(i) {
+    const c = cause(); if (!c?.steps.length) return;
+    S.pick = Math.max(0, Math.min(c.steps.length - 1, i)); S.stage = 2;
+    for (const k of c.els) Object.assign(elOf(k).style, c.steps[S.pick].css);
+    follow(); renderPanel();
+  }
+  function putBack(c) { for (const k of c.els) for (const p of Object.keys(c.steps[0]?.css ?? {})) elOf(k).style.removeProperty(p.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())); }
+  // redraw every frame while the page glides, so the heat shrinks with it
+  function follow(ms = TIMING.glide + 60) { const t0 = performance.now(); const f = () => { draw(); if (performance.now() - t0 < ms) requestAnimationFrame(f); }; requestAnimationFrame(f); }
+  function hold(i = 0) { S.at = Math.max(0, Math.min(live().length - 1, i)); S.pick = null; const c = cause(); S.stage = c ? (c.steps.length ? 1 : 4) : 0; if (c?.steps.length) tryStep(c.steps.indexOf(fixStep(c))); else { draw(); renderPanel(true); } }
+  function take() {
+    const c = cause(); if (!c || S.pick === null) return;
+    S.taken.push({ c, step: c.steps[S.pick] }); S.done.add(c.cls); S.stage = 3;
+    follow(TIMING.cool);
+    setTimeout(() => (live().length ? hold(Math.min(S.at, live().length - 1)) : rest()), TIMING.cool / 2);
+    renderPanel();
+  }
+  function skip() { const c = cause(); if (!c) return; if (S.stage === 2) putBack(c); S.pick = null; follow(); S.at = (S.at + 1) % live().length; hold(S.at); renderPanel(true); }
+  function rest() { const c = cause(); if (c && S.stage === 2) putBack(c); S.stage = 0; S.pick = null; follow(); renderPanel(); }
+  function apply() {
+    if (!S.taken.length) return;
+    S.stage = 5; renderPanel();
+    setTimeout(() => {
+      S.fixed.push(...S.taken);
+      S.taken = []; S.stage = live().length ? 0 : 6; renderPanel(); draw();
+      if (S.stage === 6) celebrate();
+    }, TIMING.write);
+  }
+  // The page celebrates: every fixed element clicks into place, one after another, then the page breathes once.
+  // Motion on the elements' own `translate` and `scale`, so nothing they already do is disturbed.
+  function celebrate() {
+    const fold = () => setTimeout(() => { S.stage = 0; renderPanel(); }, TIMING.fold);
+    if (still) return fold();
+    const els = [...new Set(S.fixed.flatMap((f) => f.c.els))].map(elOf).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    els.forEach((el, i) => el.animate(
+      [{ translate: '0 0' }, { translate: `0 ${CLICK.drop}px`, offset: 0.28, easing: 'cubic-bezier(.3, 0, .6, 1)' }, { translate: `0 ${CLICK.over}px`, offset: 0.62, easing: 'cubic-bezier(.3, 0, .4, 1)' }, { translate: '0 0' }],
+      { duration: CLICK.ms, delay: TIMING.click + i * TIMING.clickGap }));
+    const pg = page.querySelector('.pg');
+    pg.style.transformOrigin = '50% 40%';
+    pg.animate([{ scale: '1' }, { scale: String(BREATH.scale), offset: 0.45, easing: 'cubic-bezier(.3, 0, .2, 1)' }, { scale: '1' }],
+      { duration: BREATH.ms, delay: TIMING.click + els.length * TIMING.clickGap + TIMING.breath - CLICK.ms / 2, easing: 'ease-in-out' });
+    setTimeout(burst, TIMING.check + 180);
+    fold();
+  }
+  // The burst: pieces painted once onto small canvases (hatch, stripes, dots, a ✓), then thrown from the ✓ with a real
+  // trajectory: up and out, spinning, pulled down by gravity, fading in their last third.
+  function burst() {
+    const at = panel.querySelector('.check')?.getBoundingClientRect(), f = frame.getBoundingClientRect();
+    if (!at) return;
+    const ox = at.left + at.width / 2 - f.left, oy = at.top + at.height / 2 - f.top;
+    const cv = document.createElement('canvas'), dpr = devicePixelRatio || 1;
+    cv.width = frame.clientWidth * dpr; cv.height = frame.clientHeight * dpr;
+    Object.assign(cv.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', pointerEvents: 'none' });
+    frame.append(cv);
+    const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+    const HUES = { pad: '#1a9e62', gap: '#7a5cf0', mar: '#e2800a', ink: '#1c1b19' };
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const kinds = ['pad', 'pad', 'gap', 'gap', 'mar', 'mar', 'ink'];
+    const parts = Array.from({ length: BURST.pieces }, (_, i) => {
+      const a = -Math.PI / 2 + rand(-BURST.spread, BURST.spread), v = rand(...BURST.speed), size = rand(...BURST.size);
+      return { kind: kinds[i % kinds.length], x: ox, y: oy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(0, Math.PI * 2), vr: rand(-BURST.spin, BURST.spin), size, wobble: rand(0, 6) };
+    });
+    // each kind drawn as the overlay draws that thing
+    const paint = (p, alpha) => {
+      const s = p.size, c = HUES[p.kind];
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = alpha;
+      ctx.scale(1, Math.abs(Math.cos(p.r * 0.6 + p.wobble)) * 0.6 + 0.4); // a flat chip turning in the air
+      if (p.kind === 'pad') { // a hatched square
+        ctx.fillStyle = '#fff'; ctx.fillRect(-s / 2, -s / 2, s, s); ctx.strokeStyle = c; ctx.lineWidth = 1.2; ctx.strokeRect(-s / 2, -s / 2, s, s);
+        ctx.beginPath(); for (let k = -s; k < s; k += 2.6) { ctx.moveTo(k - s / 2, s / 2); ctx.lineTo(k + s / 2, -s / 2); } ctx.save(); ctx.rect(-s / 2, -s / 2, s, s); ctx.clip(); ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+      } else if (p.kind === 'gap') { // a striped bar
+        const w = s * 1.5, h = s * 0.62; ctx.fillStyle = c; for (let k = 0; k < 3; k++) ctx.fillRect(-w / 2, -h / 2 + k * (h / 2.5), w, h / 5);
+      } else if (p.kind === 'mar') { // a dotted disc
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.globalAlpha = alpha * 0.25; ctx.fill(); ctx.globalAlpha = alpha;
+        for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 0]]) { ctx.beginPath(); ctx.arc(dx * s * 0.2, dy * s * 0.2, 1, 0, Math.PI * 2); ctx.fill(); }
+      } else { // an ink ✓
+        ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(-s * 0.4, 0); ctx.lineTo(-s * 0.1, s * 0.3); ctx.lineTo(s * 0.45, -s * 0.35); ctx.stroke();
+      }
+      ctx.restore();
+    };
+    let last = performance.now(); const t0 = last;
+    const tick = (now) => {
+      const dt = Math.min(0.033, (now - last) / 1000), t = now - t0; last = now;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      for (const p of parts) {
+        p.vy += BURST.gravity * dt; p.vx *= 0.992; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+        paint(p, Math.max(0, Math.min(1, (BURST.life - t) / (BURST.life / 3))));
+      }
+      if (t < BURST.life) requestAnimationFrame(tick); else cv.remove();
+    };
+    requestAnimationFrame(tick);
+  }
+  function clear() {
+    if (still) return;
+    const W = frame.clientWidth, H = frame.clientHeight, m = 26, s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('class', 'reg'); s.setAttribute('width', W); s.setAttribute('height', H);
+    const at = [[m, m, -1, -1], [W - m, m, 1, -1], [m, H - m, -1, 1], [W - m, H - m, 1, 1]];
+    s.innerHTML = at.map(([x, y]) => `<g transform="translate(${x} ${y})"><g><circle r="7"/><path d="M-11 0H11M0 -11V11"/></g></g>`).join('');
+    frame.append(s);
+    [...s.querySelectorAll('g > g')].forEach((g, i) => { const [, , dx, dy] = at[i]; g.animate([{ opacity: 0, transform: `translate(${dx * 14}px, ${dy * 14}px) rotate(${dx * dy * 50}deg) scale(.7)`, easing: SPRING }, { opacity: 1, transform: 'none', offset: 0.35 }, { opacity: 1, transform: 'none', offset: 0.8, easing: 'ease-in' }, { opacity: 0, transform: 'scale(.92)' }], { duration: TIMING.clear, delay: i * 45, fill: 'both' }); });
+    setTimeout(() => s.remove(), TIMING.clear + 200);
+  }
+
+  /* ── input ── */
+  panel.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('start')) hold(0);
+    else if (b.classList.contains('sp')) tryStep(+b.dataset.i);
+    else if (b.classList.contains('prev')) { const c = cause(); if (S.stage === 2) putBack(c); hold((S.at - 1 + live().length) % live().length); }
+    else if (b.classList.contains('next')) skip();
+    else if (b.classList.contains('take')) take();
+    else if (b.classList.contains('skip')) skip();
+    else if (b.classList.contains('apply')) apply();
+    frame.focus();
+  });
+  svg.addEventListener('pointerover', (e) => { const c = e.target.closest?.('.hit')?.dataset.c; if (c && c !== S.pointed) { S.pointed = c; pill(); } });
+  svg.addEventListener('pointermove', (e) => { const f = frame.getBoundingClientRect(); S.hand = { x: e.clientX - f.left, y: e.clientY - f.top }; if (S.pointed) pill(); });
+  svg.addEventListener('pointerout', (e) => { if (!e.relatedTarget?.closest?.('.hit')) { S.pointed = null; pill(); } });
+  // clicking a glow puts its cause in hand
+  svg.addEventListener('click', (e) => { const cls = e.target.closest?.('.hit')?.dataset.c; if (!cls) return; const c0 = cause(); if (c0 && S.stage === 2) putBack(c0); S.pointed = null; hold(live().findIndex((c) => c.cls === cls)); frame.focus(); });
+  frame.addEventListener('keydown', (e) => {
+    const k = e.key, c = cause();
+    if (S.stage === 0 && k === 'Enter' && live().length) hold(0);
+    else if (S.stage >= 1 && S.stage <= 4) {
+      if (k === 'ArrowUp' && c?.steps.length) tryStep((S.pick ?? -1) + 1);
+      else if (k === 'ArrowDown' && c?.steps.length) tryStep((S.pick ?? c.steps.length) - 1);
+      else if (k === 'Enter') take();
+      else if (k === 'ArrowRight' || k === 'Tab') { e.preventDefault(); skip(); }
+      else if (k === 'ArrowLeft') { if (S.stage === 2) putBack(c); S.at = (S.at - 1 + live().length) % live().length; hold(S.at); }
+      else if (k === 'Escape') rest();
+      else return;
+    } else return;
+    if (k.startsWith('Arrow') || k === 'Enter' || k === 'Tab') e.preventDefault();
+  });
+  frame.addEventListener('keydown', (e) => { if ((e.key === 'a' || e.key === 'A') && S.taken.length && S.stage !== 5) apply(); });
+
+  /* ── jump to a state ── */
+  const reset = () => { for (const k of ['title', 'invite', 'card', 'status', 'list', 'danger']) elOf(k).removeAttribute('style'); Object.assign(S, { stage: 0, at: 0, pick: null, taken: [], done: new Set(), fixed: [] }); };
+  const STATES = [
+    ['rest', () => { reset(); draw(); renderPanel(); }],
+    ['in hand', () => { reset(); hold(0); }],
+    ['trying', () => { reset(); hold(0); setTimeout(() => tryStep(2), 400); }],
+    ['taken, next', () => { reset(); hold(0); setTimeout(take, 400); }],
+    ['new token', () => { reset(); hold(6); }],
+    ['applying', () => { reset(); hold(0); setTimeout(() => { take(); setTimeout(() => { take(); setTimeout(apply, 500); }, 500); }, 400); }],
+    ['all clear', () => { reset(); hold(0); const next = () => (live().length ? (take(), setTimeout(next, TIMING.cool + 80)) : setTimeout(apply, 200)); setTimeout(next, 400); }],
+  ];
+  const bar = document.getElementById('states');
+  for (const [name, go] of STATES) { const b = document.createElement('button'); b.innerHTML = `<span>${name}</span>`; b.onclick = () => { go(); frame.focus(); }; bar.append(b); }
+
+  requestAnimationFrame(() => document.fonts.ready.then(() => { draw(); renderPanel(); frame.focus(); }));
+  addEventListener('resize', draw);
+</script>
+</body>
+</html>

@@ -56,7 +56,7 @@ async function open(t, launched, url) {
 // Blueprint on, and the view read to the end (the panel's header stops counting readings).
 async function blueprint(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
 }
 
 // Every craft mark drawn, by its rule and the element it is on: the hit's id names the mark's key.
@@ -259,7 +259,7 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     const { page, errors, overlay } = await open(t, launched, url + query);
     await blueprint(page, overlay);
     await page.waitForTimeout(500); // the rest of the page is read off-screen after the view
-    await page.waitForFunction(() => /on this page|Everything matches your system|not checked/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.bpp .meta').textContent), null, { timeout: 10000 });
+    await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.hasAttribute('data-settled'), null, { timeout: 10000 });
     // and where scrollbars take no width (a Mac, a phone), its short scrolling list has nothing to say it scrolls (#75)
     const overlayBars = await page.evaluate(() => { const d = Object.assign(document.createElement('div'), { style: 'overflow:scroll;width:50px;height:50px;position:absolute' }); document.body.append(d); const w = d.offsetWidth - d.clientWidth; d.remove(); return w === 0; });
     const want = [...known[app ? 'GOOD' : 'demo'], ...(!app && overlayBars ? ['scroll-cue'] : [])].sort();

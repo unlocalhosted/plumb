@@ -29,6 +29,7 @@ import { Selection, SELECT_CSS } from './select.js'; // the element is the targe
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
 import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
+import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { post, request } from './api.js';
 import { locate } from './locate.js';
 
@@ -41,7 +42,7 @@ const LAYER_CSS = `
   .bp[data-on] > :is(.labels, svg) { opacity: 1; transition-duration: var(--pl-dur-dim); }
   @media (prefers-reduced-motion: reduce) { .bp > :is(.labels, svg) { transition: none; } }
 `;
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS + FIX_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -65,17 +66,29 @@ export class Blueprint {
     this.#walk = new Walkthrough(root);
     this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: (shown) => { if (shown) this.#panel.open(false); queueMicrotask(() => this.#focus()); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
     this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
-      changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
+      onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => { host.ordered?.(); this.#focus(); } });
     this.#panel = new Panel(root, { host, marks: this.#marks });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); }, enrich: (items) => this.#craft.enrich(items) });
+    // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
+    // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
+    this.#fix = new FixPanel(root, {
+      hold: (g) => { const [first, ...rest] = g.members; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
+      release: () => this.#selection.clear(),
+      view: () => this.#selection.view,
+      pick: (i) => this.#selection.pick(i),
+      take: () => this.#selection.accept(),
+      spotlight: (els) => this.#marks.spotlight(els),
+      applyAll: (tokens) => this.#applyAll(tokens),
+    });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
   key(key) {
     if (!this.active) return false;
+    if (this.#fix.key(key)) return true;
     if (this.#selection.key(key)) return true;
     // with an element selected, . and , step through its problems
     if (this.#selection.el && (key === '.' || key === ',')) return this.#selection.step(key === '.' ? 1 : -1) || true;
@@ -126,6 +139,7 @@ export class Blueprint {
     } else this.#reader.refresh(); // turned back on while fading out: draw what's already read
     this.#glass.on();
     this.#panel.show(true);
+    this.#fix.show(true);
     this.#set('entering');
     if (instant || still()) return this.#on();
     // one frame at opacity 0 before the fade, so the transition has somewhere to start
@@ -145,6 +159,7 @@ export class Blueprint {
     this.#marks.dim('shown');
     this.#marks.clear();
     this.#panel.show(false);
+    this.#fix.show(false);
     this.#set('leaving');
     if (instant || still()) return this.#off();
     this.#timer = setTimeout(() => this.#off(), FADE_OUT);
@@ -194,6 +209,7 @@ export class Blueprint {
   }
   // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
   #offerWalk() {
+    return; // the fix panel walks you through causes itself (Enter on Fix); the old walkthrough named the ring and Changes
     if (this.#state !== 'on' || this.#walk.active) return;
     const steps = this.#craft.theme.scale('spacing').filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n);
     this.#walk.offer(this.#items, (i) => {
@@ -213,7 +229,7 @@ export class Blueprint {
   #click = (e) => {
     // magnetism: a pointer near a zone takes that zone's element
     const near = this.#marks.magnet;
-    if (near) { this.#selection.select(near, this.#itemOf(near)); return; }
+    if (near && this.#fix.holdEl(near)) return;
     const hit = this.#under(e.clientX, e.clientY);
     if (!hit || hit === document.body || hit === document.documentElement) { this.#selection.clear(); return; }
     let el = hit;
@@ -224,7 +240,8 @@ export class Blueprint {
       if (this.#items.some((i) => hit.contains(i.el))) { this.#selection.clear(); return; }
       el = hit;
     }
-    this.#selection.select(el, this.#itemOf(el));
+    // the fix panel: a click on an element with a problem puts its cause in hand; on anything else, lets go
+    if (!this.#fix.holdEl(el)) this.#fix.release();
   };
   // Where an element is written: its line and its file's hash now.
   async #siteOf(el) {
@@ -237,6 +254,7 @@ export class Blueprint {
   // write (POST swaps) with the hash read when the first change was taken; the page reloads and is read again
   // The all-clear: problems were left before a write, and once the page is read again none are. The count before the
   // write is kept in the session, so a write that reloads the page still ends in its all-clear.
+  #fix;
   #lastDrift = 0;
   #clearAfterWrite(p) {
     if (p.read === p.total) {
@@ -244,10 +262,21 @@ export class Blueprint {
       try { wrote = JSON.parse(sessionStorage.getItem('plumb:wrote') ?? 'null'); } catch {}
       if (wrote && p.drift === 0 && wrote.drift > 0 && Date.now() - wrote.t < 20000) {
         try { sessionStorage.removeItem('plumb:wrote'); } catch {}
-        this.#marks.allClear();
+        this.#fix.celebrate();
       }
     }
     if (p.read === p.total) this.#lastDrift = p.drift;
+  }
+  // Apply from the fix panel: each new token is written to the theme with its class swap (POST token), then every
+  // class change Changes holds goes out in one guarded write per file
+  async #applyAll(tokens) {
+    for (const t of tokens) {
+      const s = t.suggest, el = t.els[0], site = el ? await this.#siteOf(el).catch(() => null) : null;
+      if (!site) continue;
+      await post('token', { file: s.file, hash: s.hash, name: s.name, value: s.value, why: s.why, then: { file: site.file, hash: site.hash, line: site.line, column: site.column, from: s.then?.from ?? '', to: s.then?.to } }).catch(() => null);
+    }
+    if (this.#changes.count) await this.#changes.accept();
+    else if (tokens.length) this.#host.remember?.();
   }
   async #apply(batch) {
     try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}
@@ -282,6 +311,7 @@ export class Blueprint {
   // A pin, a label or a panel row chose a problem: its element is selected with that problem current, and the other
   // places of its cause go with it (a fix taken there is taken at every place that offers the same one).
   choose(el, mark, group) {
+    if (this.#fix.holdMark(el, mark)) return;
     this.#selection.select(el, this.#itemOf(el), { key: mark?.key, rule: mark?.rule, group: (group ?? []).filter((g) => g.el !== el).map((g) => ({ el: g.el, item: this.#itemOf(g.el), key: g.mark?.key })) });
   }
     // Esc lets go of the selection before it leaves blueprint; true when there was one

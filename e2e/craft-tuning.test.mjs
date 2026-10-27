@@ -100,7 +100,7 @@ test('the live overlay judges by the same config: the marks on the page follow i
     catch (error) { if (i > 2 || !/context was destroyed|navigation/i.test(error.message)) throw error; await page.waitForLoadState('load'); }
   }
   await page.keyboard.press('Alt+B');
-  await page.locator('plumb-overlay').locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
+  await page.locator('plumb-overlay').locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
   await page.waitForFunction(() => window.__plumb.overlay.blueprintReader.items.some((i) => i.el.id === 'hit' && i.marks.some((m) => m.rule === 'craft/hit-target')), null, { timeout: 15000 });
   const rules = await page.evaluate(() => Object.fromEntries(['measure', 'hit', 'loose', 'caps'].map((id) => { const i = window.__plumb.overlay.blueprintReader.items.find((x) => x.el.id === id); return [id, (i?.marks ?? []).filter((m) => m.family === 'craft').map((m) => [m.rule, m.craft.suggest.kind])]; })));
   const of = (list, rule) => list.filter(([r]) => r === rule).map(([, kind]) => kind);

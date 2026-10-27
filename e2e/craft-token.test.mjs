@@ -87,7 +87,7 @@ test('in the live overlay the token suggestion is a verified mark: it keeps the 
   await page.evaluate(() => window.__plumb.ready());
   // blueprint on, the page read to the end
   await page.keyboard.press('Alt+B');
-  await page.locator('plumb-overlay').locator('.bpp .meta').filter({ hasText: /on this page|Everything matches your system|not checked/ }).waitFor({ timeout: 20000 });
+  await page.locator('plumb-overlay').locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
   await page.waitForFunction(() => window.__plumb.overlay.blueprintReader.items.some((i) => i.el.id === 'caps' && i.marks.some((m) => m.rule === 'craft/tracking')), null, { timeout: 15000 });
   // the mark as the overlay holds it: the hollow bar's reason, the proof that the token settles the rule, the sentence
   const mark = await page.evaluate(() => { const item = window.__plumb.overlay.blueprintReader.items.find((i) => i.el.id === 'caps'); const m = item.marks.find((m) => m.rule === 'craft/tracking'); return { whyNot: m.whyNot, proof: m.proof, kind: m.craft.suggest.kind, action: m.action, name: m.craft.suggest.name }; });

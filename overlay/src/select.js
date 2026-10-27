@@ -68,14 +68,15 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #onFrame; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
+  #onFrame; #onDraw; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
   // steps(family) → the theme's scale [{ token, n }]
   // read(el) → the element's full reading (each theme choice's exact class edit)
   // site(el) → { file, line, column, hash } read now (where its changes will be written)
-  constructor(root, { tokenOf, health, onChange, changes, steps, read, site, onFrame }) {
+  constructor(root, { tokenOf, health, onChange, changes, steps, read, site, onFrame, onDraw }) {
+    this.#onDraw = onDraw; // the fix panel reads the plan (view) every time it changes
     this.#onFrame = onFrame; // every frame of a glide: the page's other marks follow the reflow
     this.#read = read;
     this.#site = site;
@@ -91,6 +92,26 @@ export class Selection {
   }
 
   get el() { return this.#el; }
+  // What the fix panel shows for the current problem, read-only: its options (value, label, whether its exact edit is
+  // known), which is picked, the value as it is now, or why there is nothing to pick (and the suggestion, a new token)
+  get view() {
+    const m = this.current;
+    if (!this.#el || !m) return null;
+    const p = this.#plan, suggest = m.craft?.suggest ?? null;
+    if (this.#taken.has(m.key)) return { mark: m, taken: true };
+    if (!p) return { mark: m, ready: false, whyNot: m.whyNot ?? (suggest?.kind === 'advice' ? 'advice' : null), suggest };
+    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write })), at: p.at, now: p.now, suggest };
+    return { mark: m, ready: true, kind: 'space', prop: p.main.prop, options: p.steps.map((x) => ({ label: x.token, n: x.n, ok: true })), at: p.at, now: { label: `${p.main.from.n}px`, n: p.main.from.n }, suggest };
+  }
+  // Pick an option of the current plan by its index: the page glides to it
+  pick(i) {
+    const p = this.#plan;
+    if (!p) return false;
+    const at = p.kind === 'swap' ? p.at : p.at;
+    if (i === at && this.#previewing) return true;
+    this.#move(i - at);
+    return true;
+  }
   // the problems on the selected element, one per facet, in the verdict's order
   get problems() { return (this.#item?.marks ?? []).filter((m) => m.family === 'craft' || m.ledger === 'new'); }
   get current() { return this.problems[this.#at] ?? null; }
@@ -181,6 +202,7 @@ export class Selection {
       this.#plan = { ...plan, at };
       swapPreview(el, plan.options[at].write, true, this.#memo, plan.options[at].styles);
     } else { this.#plan = moved(plan, by); preview(el, this.#plan, true); }
+    this.#groupPreview(true);
     this.#previewing = true;
     this.draw();
     this.#follow();
@@ -190,6 +212,9 @@ export class Selection {
   accept() {
     const plan = this.#plan, el = this.#el, problem = this.current;
     if (!plan || !el || !this.#changes || !problem) return false;
+    // the other places' previews hand over to Changes: put back, then recorded and shown again below
+    for (const g of this.#group) { const m = this.#gmemo.get(g.el); if (!m) continue; if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } }
+    this.#gmemo.clear();
     if (plan.kind === 'swap') {
       const opt = plan.options[plan.at];
       if (!opt.write) return false; // its exact edit is still being read
@@ -259,7 +284,31 @@ export class Selection {
     const band = this.#el && this.#bands.find((b) => b.prop && SPACING_PROPS.has(b.prop) && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
     return band ? cursorOf(band.prop) : '';
   }
+  // Every other place of the cause previews what the selected one previews, and goes back with it
+  #gmemo = new Map(); // el → { memo (a class swap's), had: [[prop, value, priority]] (a spacing preview's) }
+  #groupPreview(on) {
+    const plan = this.#plan;
+    for (const g of this.#group) {
+      if (!g.el.isConnected) continue;
+      let m = this.#gmemo.get(g.el);
+      if (!on) {
+        if (!m) continue;
+        glide(g.el, () => { if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } });
+        this.#gmemo.delete(g.el);
+        continue;
+      }
+      if (!plan) continue;
+      if (!m) this.#gmemo.set(g.el, (m = { memo: {}, had: [] }));
+      if (plan.kind === 'swap') {
+        const opt = plan.options[plan.at];
+        if (String(opt.write?.from ?? '').split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) swapPreview(g.el, opt.write, true, m.memo, opt.styles);
+      } else {
+        glide(g.el, () => { for (const pr of plan.props) { if (!m.had.some(([x]) => x === pr.prop)) m.had.push([pr.prop, g.el.style.getPropertyValue(pr.prop), g.el.style.getPropertyPriority(pr.prop)]); g.el.style.setProperty(pr.prop, `${pr.to.n}px`, 'important'); } });
+      }
+    }
+  }
   #unpreview() {
+    this.#groupPreview(false);
     if (this.#previewing && this.#el && this.#plan) {
       if (this.#plan.kind === 'swap') swapPreview(this.#el, null, false, this.#memo);
       else if (!this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
@@ -285,6 +334,7 @@ export class Selection {
     }
   }
   draw(fresh = false) {
+    queueMicrotask(() => this.#onDraw?.());
     const el = this.#el;
     if (!el) return;
     if (!el.isConnected) { this.clear(); return; }
