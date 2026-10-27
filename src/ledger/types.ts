@@ -2,7 +2,7 @@ import type { Declaration, Finding, Site } from '../report.js';
 
 export interface LedgerEntry {
   key: string;
-  kind: 'debt' | 'exception' | 'decision';
+  kind: 'debt' | 'exception' | 'decision' | 'declined';
   count?: number;
   resolved?: string;
   why?: string;

@@ -15,7 +15,7 @@ export function parseLedger(text: string, path: string): LedgerEntry[] {
     try { entry = JSON.parse(line) as LedgerEntry; }
     catch { throw new UsageError(`Invalid ledger JSON at ${path}:${index + 1}.`); }
     if (!entry || typeof entry !== 'object' || Array.isArray(entry) || typeof entry.key !== 'string' || !entry.key ||
-        !['debt', 'exception', 'decision'].includes(entry.kind) || entry.count !== undefined && (!Number.isSafeInteger(entry.count) || entry.count < 1) ||
+        !['debt', 'exception', 'decision', 'declined'].includes(entry.kind) || entry.count !== undefined && (!Number.isSafeInteger(entry.count) || entry.count < 1) ||
         ['resolved', 'why', 'by', 'on', 'rule', 'family', 'owner', 'prop', 'authored', 'path', 'anchor', 'value', 'origin', 'tier'].some(field => field in entry && typeof entry[field as keyof LedgerEntry] !== 'string') ||
         entry.inferred !== undefined && typeof entry.inferred !== 'boolean' ||
         entry.refs !== undefined && (!Array.isArray(entry.refs) || entry.refs.some(ref => typeof ref !== 'string'))) {

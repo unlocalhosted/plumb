@@ -26,6 +26,7 @@ import { formatCheck } from './cli-report.js';
 import { table, wrap } from './cli-table.js';
 import { inspectLedger, ledgerCommand } from './ledger/commands.js';
 import { initProject } from './adoption/init.js';
+import { proposalFamilies } from './onboarding/propose.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { readiness, applyReadinessFix } from './readiness/index.js';
 import { createInterface } from 'node:readline';
@@ -41,6 +42,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
+       plumber propose [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumber habits [--json] [--root <dir>] [--config <path>]
        plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumber explain <file> [--json] [--verbose] [--root <dir>] [--config <path>]
@@ -68,7 +70,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
   --verbose        Include internal notes in text output
   --all            Show the full human report
   --broken         Show broken styles
-  --family <name>  Show findings in one token family
+  --family <name>  Show findings, or a proposal, for one token family
   --file <path>    Show findings at a path or glob (quote globs)
   --rule <id>      Show one rule or rule category
   --new            Show only new sites
@@ -88,7 +90,7 @@ async function main(): Promise<void> {
           yes: { type: 'boolean' }, json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
           base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
-          family: { type: 'string' }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
+          family: { type: 'string', multiple: true }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
@@ -125,7 +127,11 @@ async function main(): Promise<void> {
   const mutating = ['init', 'baseline', 'accept', 'accept-decisions', 'ledger'].includes(command);
   const inspecting = command === 'show' || command === 'why';
   const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
-  if (args.values.family !== undefined && (!(deciding || command === 'check') || !families.includes(args.values.family))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
+  const familyArgs: string[] = args.values.family ?? [];
+  const family = familyArgs.at(-1);
+  if (familyArgs.length && !(deciding || ['check', 'propose'].includes(command))) throw new UsageError('--family requires plumber check, decisions or propose and a known family.\n  → plumber check --help');
+  if (familyArgs.length && (deciding || command === 'check') && (familyArgs.length > 1 || !families.includes(family!))) throw new UsageError('--family requires plumber check or decisions and a known family.\n  → plumber check --help');
+  if (command === 'propose' && familyArgs.length && (familyArgs.length > 1 || !proposalFamilies.includes(family as never))) throw new UsageError(`--family takes one of ${proposalFamilies.join(', ')}.\n  → plumber propose --family type`);
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
   if (command === 'craft' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
@@ -185,6 +191,13 @@ async function main(): Promise<void> {
     const { readState, formatState } = await import('./onboarding/state.js');
     const state = await withCliProgress(options.root, !!args.values.json, () => readState({ root: options.root, ...(options.config ? { config: options.config } : {}) }));
     process.stdout.write(args.values.json ? `${JSON.stringify(state, null, 2)}\n` : formatState(state, rows => table(rows, [{ width: 9 }, { weight: 2 }, { width: 5, align: 'right' }, { width: 9, ink: 'dim' }])));
+    return;
+  }
+  if (command === 'propose') {
+    // Chaos to system: harvest, cluster, ladder, name. Reads only.
+    const { loadProposal, formatProposal } = await import('./onboarding/propose.js');
+    const { proposal } = await withCliProgress(options.root, !!args.values.json, () => loadProposal(options.root, { ...(options.config ? { config: options.config } : {}), ...(family ? { family: family as never } : {}) }));
+    process.stdout.write(args.values.json ? `${JSON.stringify(proposal, null, 2)}\n` : formatProposal(proposal, rows => table(rows, [{ width: 18 }, { weight: 1 }, { width: 5, align: 'right' }, { width: 4, align: 'right' }, { width: 22, ink: 'dim' }, { weight: 2, ink: 'dim' }])));
     return;
   }
   if (command === 'craft') {
@@ -276,8 +289,8 @@ async function main(): Promise<void> {
       process.stdout.write(`${commands}${commands ? '\n' : ''}${summary}`);
       if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
     } else process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : formatCheck(report, {
-      ...Object.fromEntries(['all', 'broken', 'family', 'file', 'rule', 'new', 'debt'].filter(flag => args.values[flag as keyof typeof args.values] !== undefined)
-        .map(flag => [flag, args.values[flag as keyof typeof args.values]])),
+      ...Object.fromEntries(['all', 'broken', 'family', 'file', 'rule', 'new', 'debt'].filter(flag => flag === 'family' ? family !== undefined : args.values[flag as keyof typeof args.values] !== undefined)
+        .map(flag => [flag, flag === 'family' ? family : args.values[flag as keyof typeof args.values]])),
     }, args.values.verbose, await stateSentence(report, options.config)));
     process.exitCode = !report.config.path && !report.ledger?.exists ? 0 : report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
   };
@@ -404,7 +417,7 @@ async function main(): Promise<void> {
     return;
   }
   if (deciding) {
-    const records = report.decisions.filter(record => args.values.family === undefined || record.family === args.values.family);
+    const records = report.decisions.filter(record => family === undefined || record.family === family);
     const columns = [{ width: 9 }, { weight: 3 }, { weight: 2 }, { weight: 3, path: true, ink: 'dim' as const }];
     process.stdout.write(args.values.json ? `${JSON.stringify(records, null, 2)}\n` : records.map(record =>
       table([[record.family, record.name, record.value, `${relative(report.root, record.source.file)}:${record.source.line}`]], columns, { indent: 0 }).join('\n') + '\n' +

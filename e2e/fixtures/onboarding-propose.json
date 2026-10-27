@@ -1,0 +1,1828 @@
+{
+  "onboard-bare": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R1",
+      "name": "Bare",
+      "kind": "plain"
+    },
+    "hash": "fb5472179e9f",
+    "shape": "root",
+    "target": {
+      "file": "src/theme.css",
+      "create": true,
+      "importedFrom": "src/styles.css"
+    },
+    "families": [
+      {
+        "family": "spacing",
+        "sites": 16,
+        "files": 2,
+        "setInCode": 0,
+        "summary": "Spacing: 11 values in use snap to 5 steps (xs…xl).",
+        "scales": [
+          {
+            "measure": "spacing",
+            "ladder": "grid-4",
+            "values": 11,
+            "sites": 16,
+            "files": 2,
+            "considered": [
+              {
+                "ladder": "grid-4",
+                "distance": 0.75
+              },
+              {
+                "ladder": "grid-8",
+                "distance": 2.13
+              }
+            ],
+            "steps": [
+              {
+                "name": "--spacing-xs",
+                "value": "4px",
+                "sites": 2,
+                "files": 2,
+                "examples": [
+                  "src/App.tsx:13",
+                  "src/styles.css:13"
+                ],
+                "absorbs": [
+                  {
+                    "value": "2px",
+                    "sites": 1,
+                    "via": "snap"
+                  },
+                  {
+                    "value": "6px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by margin and padding at 2 places in 2 files (drafted)",
+                "written": true
+              },
+              {
+                "name": "--spacing-sm",
+                "value": "8px",
+                "sites": 5,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11",
+                  "src/styles.css:7",
+                  "src/styles.css:9"
+                ],
+                "absorbs": [],
+                "why": "Used by margin and padding at 5 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--spacing-md",
+                "value": "12px",
+                "sites": 6,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11",
+                  "src/styles.css:12",
+                  "src/styles.css:14"
+                ],
+                "absorbs": [
+                  {
+                    "value": "10px",
+                    "sites": 1,
+                    "via": "merge"
+                  },
+                  {
+                    "value": "11px",
+                    "sites": 1,
+                    "via": "merge"
+                  },
+                  {
+                    "value": "13px",
+                    "sites": 1,
+                    "via": "merge"
+                  },
+                  {
+                    "value": "14px",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by margin and padding at 6 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--spacing-lg",
+                "value": "16px",
+                "sites": 2,
+                "files": 2,
+                "examples": [
+                  "src/App.tsx:16",
+                  "src/styles.css:8"
+                ],
+                "absorbs": [
+                  {
+                    "value": "18px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by padding at 2 places in 2 files (drafted)",
+                "written": true
+              },
+              {
+                "name": "--spacing-xl",
+                "value": "20px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "10px",
+                "into": "12px",
+                "sites": 1
+              },
+              {
+                "value": "11px",
+                "into": "12px",
+                "sites": 1
+              },
+              {
+                "value": "13px",
+                "into": "12px",
+                "sites": 1
+              },
+              {
+                "value": "14px",
+                "into": "12px",
+                "sites": 1
+              }
+            ],
+            "near": [
+              [
+                "6px",
+                "8px"
+              ],
+              [
+                "16px",
+                "18px"
+              ],
+              [
+                "18px",
+                "20px"
+              ]
+            ],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--spacing-xs",
+                "value": "4px",
+                "why": "Used by margin and padding at 2 places in 2 files (drafted)"
+              },
+              {
+                "name": "--spacing-sm",
+                "value": "8px",
+                "why": "Used by margin and padding at 5 places in 1 file (drafted)"
+              },
+              {
+                "name": "--spacing-md",
+                "value": "12px",
+                "why": "Used by margin and padding at 6 places in 1 file (drafted)"
+              },
+              {
+                "name": "--spacing-lg",
+                "value": "16px",
+                "why": "Used by padding at 2 places in 2 files (drafted)"
+              },
+              {
+                "name": "--spacing-xl",
+                "value": "20px",
+                "why": "Used by padding at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "color",
+        "sites": 16,
+        "files": 2,
+        "setInCode": 0,
+        "summary": "Colour: 14 colours in use snap to 12 steps (gray-10…gray-1).",
+        "scales": [
+          {
+            "measure": "color",
+            "ladder": "as-found",
+            "values": 14,
+            "sites": 16,
+            "files": 2,
+            "considered": [],
+            "steps": [
+              {
+                "name": "--color-gray-10",
+                "value": "#222",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:6",
+                  "src/styles.css:7"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-9",
+                "value": "#333",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:17"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-8",
+                "value": "#444",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:13"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-blue-2",
+                "value": "#1d4ed8",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:12"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-7",
+                "value": "#666",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:5",
+                  "src/styles.css:9"
+                ],
+                "absorbs": [
+                  {
+                    "value": "#676767",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-blue-1",
+                "value": "#2563eb",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11"
+                ],
+                "absorbs": [],
+                "why": "Used by background at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-6",
+                "value": "#888",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:10"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-5",
+                "value": "#999",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:19"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-4",
+                "value": "#ddd",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:8"
+                ],
+                "absorbs": [],
+                "why": "Used by borders at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-3",
+                "value": "#e5e7eb",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:13"
+                ],
+                "absorbs": [],
+                "why": "Used by background at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-2",
+                "value": "#eef2ff",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:12"
+                ],
+                "absorbs": [],
+                "why": "Used by background at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-1",
+                "value": "#fff",
+                "sites": 3,
+                "files": 2,
+                "examples": [
+                  "src/App.tsx:16",
+                  "src/styles.css:11",
+                  "src/styles.css:8"
+                ],
+                "absorbs": [
+                  {
+                    "value": "#fafafa",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by background and text colour at 3 places in 2 files (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "#676767",
+                "into": "#666",
+                "sites": 1
+              },
+              {
+                "value": "#fafafa",
+                "into": "#fff",
+                "sites": 1
+              }
+            ],
+            "near": [
+              [
+                "#1d4ed8",
+                "#2563eb"
+              ],
+              [
+                "#888",
+                "#999"
+              ],
+              [
+                "#ddd",
+                "#e5e7eb"
+              ],
+              [
+                "#e5e7eb",
+                "#eef2ff"
+              ],
+              [
+                "#eef2ff",
+                "#fff"
+              ]
+            ],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--color-gray-10",
+                "value": "#222",
+                "why": "Used by text colour at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-9",
+                "value": "#333",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-8",
+                "value": "#444",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-blue-2",
+                "value": "#1d4ed8",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-7",
+                "value": "#666",
+                "why": "Used by text colour at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--color-blue-1",
+                "value": "#2563eb",
+                "why": "Used by background at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-6",
+                "value": "#888",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-5",
+                "value": "#999",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-4",
+                "value": "#ddd",
+                "why": "Used by borders at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-3",
+                "value": "#e5e7eb",
+                "why": "Used by background at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-2",
+                "value": "#eef2ff",
+                "why": "Used by background at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-1",
+                "value": "#fff",
+                "why": "Used by background and text colour at 3 places in 2 files (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "radius",
+        "sites": 4,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Radius: 3 corner sizes in use snap to 2 steps (md…lg).",
+        "scales": [
+          {
+            "measure": "radius",
+            "ladder": "as-found",
+            "values": 3,
+            "sites": 4,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "grid-4",
+                "distance": 1.5
+              },
+              {
+                "ladder": "grid-8",
+                "distance": 1.5
+              },
+              {
+                "ladder": "as-found",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--radius-md",
+                "value": "6px",
+                "sites": 3,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11",
+                  "src/styles.css:12",
+                  "src/styles.css:8"
+                ],
+                "absorbs": [
+                  {
+                    "value": "5px",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by borders at 3 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--radius-lg",
+                "value": "9px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:13"
+                ],
+                "absorbs": [],
+                "why": "Used by borders at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "5px",
+                "into": "6px",
+                "sites": 1
+              }
+            ],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--radius-md",
+                "value": "6px",
+                "why": "Used by borders at 3 places in 1 file (drafted)"
+              },
+              {
+                "name": "--radius-lg",
+                "value": "9px",
+                "why": "Used by borders at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "type",
+        "sites": 10,
+        "files": 2,
+        "setInCode": 0,
+        "summary": "Type: 6 sizes in use snap to 5 steps (xs…2xl).",
+        "scales": [
+          {
+            "measure": "type-size",
+            "ladder": "tailwind-type",
+            "values": 6,
+            "sites": 9,
+            "files": 2,
+            "considered": [
+              {
+                "ladder": "tailwind-type",
+                "distance": 0.22
+              }
+            ],
+            "steps": [
+              {
+                "name": "--text-xs",
+                "value": "0.75rem",
+                "sites": 3,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:10",
+                  "src/styles.css:13",
+                  "src/styles.css:9"
+                ],
+                "absorbs": [
+                  {
+                    "value": "13px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by text size at 3 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "sites": 3,
+                "files": 2,
+                "examples": [
+                  "src/App.tsx:18",
+                  "src/styles.css:11",
+                  "src/styles.css:5"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 3 places in 2 files (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-base",
+                "value": "1rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:17"
+                ],
+                "absorbs": [
+                  {
+                    "value": "17px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:7"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-2xl",
+                "value": "1.5rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:6"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [
+              [
+                "12px",
+                "13px"
+              ],
+              [
+                "13px",
+                "14px"
+              ],
+              [
+                "17px",
+                "18px"
+              ]
+            ],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--text-xs",
+                "value": "0.75rem",
+                "why": "Used by text size at 3 places in 1 file (drafted)"
+              },
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "why": "Used by text size at 3 places in 2 files (drafted)"
+              },
+              {
+                "name": "--text-base",
+                "value": "1rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--text-2xl",
+                "value": "1.5rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              }
+            ]
+          },
+          {
+            "measure": "line-height",
+            "ladder": "as-found",
+            "values": 1,
+            "sites": 1,
+            "files": 1,
+            "considered": [],
+            "steps": [
+              {
+                "name": "--leading-140",
+                "value": "1.4",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:9"
+                ],
+                "absorbs": [],
+                "why": "Used by line height at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--leading-140",
+                "value": "1.4",
+                "why": "Used by line height at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "motion",
+        "sites": 4,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Motion: 2 durations in use snap to 1 step.",
+        "scales": [
+          {
+            "measure": "duration",
+            "ladder": "as-found",
+            "values": 2,
+            "sites": 2,
+            "files": 1,
+            "considered": [],
+            "steps": [
+              {
+                "name": "--duration-base",
+                "value": "150ms",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11",
+                  "src/styles.css:12"
+                ],
+                "absorbs": [
+                  {
+                    "value": "160ms",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by motion at 2 places in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "160ms",
+                "into": "150ms",
+                "sites": 1
+              }
+            ],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--duration-base",
+                "value": "150ms",
+                "why": "Used by motion at 2 places in 1 file (drafted)"
+              }
+            ]
+          },
+          {
+            "measure": "easing",
+            "ladder": "as-found",
+            "values": 1,
+            "sites": 2,
+            "files": 1,
+            "considered": [],
+            "steps": [
+              {
+                "name": "--ease-ease-out",
+                "value": "ease-out",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/styles.css:11",
+                  "src/styles.css:12"
+                ],
+                "absorbs": [],
+                "why": "Used by motion at 2 places in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--ease-ease-out",
+                "value": "ease-out",
+                "why": "Used by motion at 2 places in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skipped": [],
+    "notes": []
+  },
+  "onboard-framework": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R2",
+      "name": "Framework",
+      "kind": "tailwind"
+    },
+    "hash": "1e4dcb06352f",
+    "shape": "theme",
+    "target": {
+      "file": "src/index.css",
+      "create": false,
+      "importedFrom": null
+    },
+    "families": [
+      {
+        "family": "spacing",
+        "sites": 8,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Spacing: Tailwind's numeric scale, 4 steps in use.",
+        "scales": [
+          {
+            "measure": "spacing",
+            "ladder": "tailwind-numeric",
+            "values": 5,
+            "sites": 8,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "tailwind-numeric",
+                "distance": 0.13
+              }
+            ],
+            "steps": [
+              {
+                "name": "--spacing-2",
+                "value": "8px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:15"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-3",
+                "value": "12px",
+                "sites": 3,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:16",
+                  "src/App.tsx:5",
+                  "src/App.tsx:7"
+                ],
+                "absorbs": [
+                  {
+                    "value": "13px",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by gap and padding at 3 places in 1 file (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-4",
+                "value": "16px",
+                "sites": 3,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:15",
+                  "src/App.tsx:8"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 3 places in 1 file (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-6",
+                "value": "24px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "written": false
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "13px",
+                "into": "12px",
+                "sites": 1
+              }
+            ],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--spacing",
+                "value": "0.25rem",
+                "why": "Tailwind's numeric scale, kept as yours (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "color",
+        "sites": 11,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Colour: 5 colours in use (gray-900…white).",
+        "scales": [
+          {
+            "measure": "color",
+            "ladder": "framework",
+            "values": 5,
+            "sites": 11,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--color-gray-900",
+                "value": "oklch(21% 0.034 264.665)",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-700",
+                "value": "oklch(37.3% 0.034 259.733)",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:12",
+                  "src/App.tsx:9"
+                ],
+                "absorbs": [],
+                "why": "Used by text colour at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-blue-600",
+                "value": "oklch(54.6% 0.245 262.881)",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:15",
+                  "src/App.tsx:16"
+                ],
+                "absorbs": [],
+                "why": "Used by background at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-gray-200",
+                "value": "oklch(92.8% 0.006 264.531)",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:8"
+                ],
+                "absorbs": [],
+                "why": "Used by borders at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--color-white",
+                "value": "#fff",
+                "sites": 4,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:15",
+                  "src/App.tsx:8"
+                ],
+                "absorbs": [],
+                "why": "Used by background and text colour at 4 places in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--color-gray-900",
+                "value": "oklch(21% 0.034 264.665)",
+                "why": "Used by text colour at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-700",
+                "value": "oklch(37.3% 0.034 259.733)",
+                "why": "Used by text colour at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--color-blue-600",
+                "value": "oklch(54.6% 0.245 262.881)",
+                "why": "Used by background at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--color-gray-200",
+                "value": "oklch(92.8% 0.006 264.531)",
+                "why": "Used by borders at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--color-white",
+                "value": "#fff",
+                "why": "Used by background and text colour at 4 places in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "radius",
+        "sites": 4,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Radius: 1 corner size in use.",
+        "scales": [
+          {
+            "measure": "radius",
+            "ladder": "framework",
+            "values": 1,
+            "sites": 4,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--radius-lg",
+                "value": "0.5rem",
+                "sites": 4,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:15",
+                  "src/App.tsx:8"
+                ],
+                "absorbs": [],
+                "why": "Used by borders at 4 places in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--radius-lg",
+                "value": "0.5rem",
+                "why": "Used by borders at 4 places in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "type",
+        "sites": 6,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Type: 3 sizes in use (sm…2xl).",
+        "scales": [
+          {
+            "measure": "type-size",
+            "ladder": "framework",
+            "values": 3,
+            "sites": 6,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "sites": 3,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:15",
+                  "src/App.tsx:16",
+                  "src/App.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 3 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-base",
+                "value": "1rem",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:12",
+                  "src/App.tsx:9"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 2 places in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-2xl",
+                "value": "1.5rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:6"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "why": "Used by text size at 3 places in 1 file (drafted)"
+              },
+              {
+                "name": "--text-base",
+                "value": "1rem",
+                "why": "Used by text size at 2 places in 1 file (drafted)"
+              },
+              {
+                "name": "--text-2xl",
+                "value": "1.5rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "elevation",
+        "sites": 2,
+        "files": 1,
+        "setInCode": 0,
+        "summary": "Shadows: 1 shadow in use.",
+        "scales": [
+          {
+            "measure": "elevation",
+            "ladder": "framework",
+            "values": 1,
+            "sites": 2,
+            "files": 1,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--shadow-sm",
+                "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+                "sites": 2,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:8"
+                ],
+                "absorbs": [],
+                "why": "Used by shadows at 2 places in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--shadow-sm",
+                "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+                "why": "Used by shadows at 2 places in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skipped": [],
+    "notes": []
+  },
+  "onboard-partial": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R3",
+      "name": "Partial",
+      "kind": "preset"
+    },
+    "hash": "647ec2962603",
+    "shape": "shadcn",
+    "target": {
+      "file": "src/index.css",
+      "create": false,
+      "importedFrom": null
+    },
+    "families": [
+      {
+        "family": "spacing",
+        "sites": 8,
+        "files": 3,
+        "setInCode": 0,
+        "summary": "Spacing: Tailwind's numeric scale, 4 steps in use.",
+        "scales": [
+          {
+            "measure": "spacing",
+            "ladder": "tailwind-numeric",
+            "values": 4,
+            "sites": 8,
+            "files": 3,
+            "considered": [
+              {
+                "ladder": "tailwind-numeric",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--spacing-2",
+                "value": "8px",
+                "sites": 3,
+                "files": 2,
+                "examples": [
+                  "src/components/ui/button.tsx:4",
+                  "src/components/ui/card.tsx:7"
+                ],
+                "absorbs": [],
+                "why": "Used by gap and padding at 3 places in 2 files (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-3",
+                "value": "12px",
+                "sites": 2,
+                "files": 2,
+                "examples": [
+                  "src/App.tsx:7",
+                  "src/components/ui/card.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by gap at 2 places in 2 files (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-4",
+                "value": "16px",
+                "sites": 2,
+                "files": 2,
+                "examples": [
+                  "src/components/ui/button.tsx:4",
+                  "src/components/ui/card.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 2 places in 2 files (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-6",
+                "value": "24px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:7"
+                ],
+                "absorbs": [],
+                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "written": false
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--spacing",
+                "value": "0.25rem",
+                "why": "Tailwind's numeric scale, kept as yours (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "radius",
+        "sites": 2,
+        "files": 2,
+        "setInCode": 0,
+        "summary": "Radius: 1 corner size in use.",
+        "scales": [
+          {
+            "measure": "radius",
+            "ladder": "framework",
+            "values": 1,
+            "sites": 2,
+            "files": 2,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--radius-lg",
+                "value": "0.5rem",
+                "sites": 2,
+                "files": 2,
+                "examples": [
+                  "src/components/ui/button.tsx:4",
+                  "src/components/ui/card.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by borders at 2 places in 2 files (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--radius-lg",
+                "value": "0.5rem",
+                "why": "Used by borders at 2 places in 2 files (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "type",
+        "sites": 7,
+        "files": 3,
+        "setInCode": 0,
+        "summary": "Type: 3 sizes in use (xs…lg).",
+        "scales": [
+          {
+            "measure": "type-size",
+            "ladder": "framework",
+            "values": 3,
+            "sites": 7,
+            "files": 3,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--text-xs",
+                "value": "0.75rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:12"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "sites": 5,
+                "files": 3,
+                "examples": [
+                  "src/App.tsx:10",
+                  "src/App.tsx:11",
+                  "src/App.tsx:9"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 5 places in 3 files (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/components/ui/card.tsx:6"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--text-xs",
+                "value": "0.75rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              },
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "why": "Used by text size at 5 places in 3 files (drafted)"
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skipped": [
+      {
+        "family": "color",
+        "reason": "Your theme already has colour tokens."
+      }
+    ],
+    "notes": []
+  },
+  "onboard-chaos": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R3",
+      "name": "Partial",
+      "kind": "preset"
+    },
+    "hash": "55965eaba84b",
+    "shape": "shadcn",
+    "target": {
+      "file": "src/index.css",
+      "create": false,
+      "importedFrom": null
+    },
+    "families": [
+      {
+        "family": "spacing",
+        "sites": 14,
+        "files": 4,
+        "setInCode": 0,
+        "summary": "Spacing: Tailwind's numeric scale, 5 steps in use.",
+        "scales": [
+          {
+            "measure": "spacing",
+            "ladder": "tailwind-numeric",
+            "values": 9,
+            "sites": 14,
+            "files": 4,
+            "considered": [
+              {
+                "ladder": "tailwind-numeric",
+                "distance": 0.64
+              }
+            ],
+            "steps": [
+              {
+                "name": "--spacing-2",
+                "value": "8px",
+                "sites": 7,
+                "files": 3,
+                "examples": [
+                  "src/App.tsx:11",
+                  "src/App.tsx:12",
+                  "src/App.tsx:14"
+                ],
+                "absorbs": [
+                  {
+                    "value": "7px",
+                    "sites": 2,
+                    "via": "merge"
+                  },
+                  {
+                    "value": "10px",
+                    "sites": 1,
+                    "via": "merge"
+                  },
+                  {
+                    "value": "9px",
+                    "sites": 1,
+                    "via": "merge"
+                  }
+                ],
+                "why": "Used by padding and gap at 7 places in 3 files (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-3",
+                "value": "12px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/components/ui/card.tsx:5"
+                ],
+                "absorbs": [],
+                "why": "Used by gap at 1 place in 1 file (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-3.5",
+                "value": "14px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:7"
+                ],
+                "absorbs": [],
+                "why": "Used by gap at 1 place in 1 file (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-4",
+                "value": "16px",
+                "sites": 4,
+                "files": 4,
+                "examples": [
+                  "src/Admin.tsx:4",
+                  "src/App.tsx:14",
+                  "src/components/ui/button.tsx:4"
+                ],
+                "absorbs": [
+                  {
+                    "value": "18px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by padding at 4 places in 4 files (drafted)",
+                "written": false
+              },
+              {
+                "name": "--spacing-6",
+                "value": "24px",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/App.tsx:7"
+                ],
+                "absorbs": [
+                  {
+                    "value": "26px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by padding at 1 place in 1 file (drafted)",
+                "written": false
+              }
+            ],
+            "offLadder": [],
+            "merged": [
+              {
+                "value": "7px",
+                "into": "8px",
+                "sites": 2
+              },
+              {
+                "value": "10px",
+                "into": "8px",
+                "sites": 1
+              },
+              {
+                "value": "9px",
+                "into": "8px",
+                "sites": 1
+              }
+            ],
+            "near": [
+              [
+                "12px",
+                "14px"
+              ],
+              [
+                "14px",
+                "16px"
+              ],
+              [
+                "16px",
+                "18px"
+              ]
+            ],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--spacing",
+                "value": "0.25rem",
+                "why": "Tailwind's numeric scale, kept as yours (drafted)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "family": "type",
+        "sites": 9,
+        "files": 5,
+        "setInCode": 0,
+        "summary": "Type: 4 sizes in use snap to 2 steps (sm…lg).",
+        "scales": [
+          {
+            "measure": "type-size",
+            "ladder": "framework",
+            "values": 4,
+            "sites": 9,
+            "files": 5,
+            "considered": [
+              {
+                "ladder": "framework",
+                "distance": 0
+              }
+            ],
+            "steps": [
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "sites": 8,
+                "files": 5,
+                "examples": [
+                  "src/Admin.tsx:4",
+                  "src/App.tsx:10",
+                  "src/App.tsx:11"
+                ],
+                "absorbs": [
+                  {
+                    "value": "13px",
+                    "sites": 3,
+                    "via": "snap"
+                  },
+                  {
+                    "value": "15px",
+                    "sites": 1,
+                    "via": "snap"
+                  }
+                ],
+                "why": "Used by text size at 8 places in 5 files (drafted)",
+                "written": true
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "sites": 1,
+                "files": 1,
+                "examples": [
+                  "src/components/ui/card.tsx:6"
+                ],
+                "absorbs": [],
+                "why": "Used by text size at 1 place in 1 file (drafted)",
+                "written": true
+              }
+            ],
+            "offLadder": [],
+            "merged": [],
+            "near": [
+              [
+                "13px",
+                "0.875rem"
+              ],
+              [
+                "0.875rem",
+                "15px"
+              ]
+            ],
+            "nearMore": 0,
+            "tokens": [
+              {
+                "name": "--text-sm",
+                "value": "0.875rem",
+                "why": "Used by text size at 8 places in 5 files (drafted)"
+              },
+              {
+                "name": "--text-lg",
+                "value": "1.125rem",
+                "why": "Used by text size at 1 place in 1 file (drafted)"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skipped": [
+      {
+        "family": "color",
+        "reason": "Your theme already has colour tokens."
+      },
+      {
+        "family": "radius",
+        "reason": "Your theme already has radius tokens."
+      }
+    ],
+    "notes": [
+      "--radius is set 2 times: 8px in src/legacy.css:3, 6px in src/index.css:19. Your cascade ends on 6px, so that is the one used."
+    ]
+  },
+  "onboard-clean": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R4",
+      "name": "Clean",
+      "kind": "preset"
+    },
+    "hash": "cb009c4a29a2",
+    "shape": null,
+    "target": null,
+    "families": [],
+    "skipped": [
+      {
+        "family": "spacing",
+        "reason": "Your theme already has spacing tokens."
+      },
+      {
+        "family": "color",
+        "reason": "Your theme already has colour tokens."
+      },
+      {
+        "family": "radius",
+        "reason": "Your theme already has radius tokens."
+      },
+      {
+        "family": "type",
+        "reason": "Your theme already has type tokens."
+      }
+    ],
+    "notes": []
+  },
+  "onboard-v3": {
+    "schemaVersion": 1,
+    "state": {
+      "rung": "R0",
+      "name": "Blocked",
+      "kind": "v3"
+    },
+    "hash": "",
+    "shape": null,
+    "target": null,
+    "families": [],
+    "skipped": [],
+    "notes": [],
+    "blocked": {
+      "sentence": "Tailwind 3.4: Plumber judges Tailwind 4. Your 31 theme values come with the upgrade.",
+      "next": "npx @tailwindcss/upgrade"
+    }
+  }
+}
