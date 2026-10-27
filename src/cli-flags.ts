@@ -27,7 +27,7 @@ export const commandFlags: Record<string, readonly string[]> = {
   fix: [...common, 'yes'],
   report: [...report, 'markdown', 'since'],
   parity: [...report, 'format', 'strict'],
-  craft: [...report, 'url', 'routes', 'sarif', 'timeout'],
+  craft: [...report, 'url', 'routes', 'sarif', 'timeout', 'no-pairs'],
   serve: [...common, 'port', 'stdio', 'overlay', 'origin', 'served-root'],
 };
 

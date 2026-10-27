@@ -60,7 +60,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber show <key|rule> | why <file:line>
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
        plumber check [--sarif | --agent | --format github]
-       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>]
+       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
-          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' },
+          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' },
           overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
@@ -228,7 +228,7 @@ async function main(): Promise<void> {
     if (sarifFile !== undefined && (typeof sarifFile !== 'string' || !sarifFile.trim())) throw new UsageError('--sarif needs a file to write.\n  → plumber craft --url <address> --sarif craft.sarif');
     const routes = [...(args.values.routes ?? []), ...args.positionals.slice(1)].flatMap(route => route.split(',')).filter(Boolean);
     const { craftRun, craftFindings, craftReport, formatCraft } = await import('./craft-run.js');
-    const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout });
+    const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout, pairs: !args.values['no-pairs'] });
     const findings = craftFindings(pages, options.root);
     if (typeof sarifFile === 'string') {
       const { atomicWrite } = await import('./atomic-write.js');

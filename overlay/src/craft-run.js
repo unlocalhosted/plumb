@@ -10,12 +10,52 @@
  *    text, value, confidence, evidence, file, line, column, component, tag, count }] }
  *
  *  dedupe  rows of a list share one site: one finding per rule, text and source site, `count` says how many elements
+ *
+ * The runner's other questions (src/craft-run.ts), asked as window.__plumb.craft({ op, … }):
+ *  needs                      → { dark, scrolled, held }: which pairs this page gives a reason to take
+ *  snapshot                   → one record per element of the page as it is (asked of a page under a condition)
+ *  scrollers · prep { key }   → the scroll containers; scroll one into view with its content hidden
+ *  skeletons · heights { keys } → the skeletons now and their containers' sizes
+ *  pair { condition, data }   → hand another condition's page in (before the run); reset forgets them all
  * ───────────────────────────────────────────────────────── */
 import { locate } from './locate.js';
+import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey } from './craft-headless.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function craftRun(overlay, { timeout = 60000, quiet = 600 } = {}) {
+// The runner's questions of the page, apart from the run itself
+function operate(options) {
+  const { op } = options;
+  if (op === 'needs') {
+    const fetched = performance.getEntriesByType('resource').some((e) => (e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest') && !e.name.includes('/__plumb/'));
+    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched };
+  }
+  if (op === 'snapshot') { resetKeys(); return snapshot(); }
+  if (op === 'scrollers') { resetKeys(); return scrollers(); }
+  if (op === 'prep') {
+    const el = fromKey(options.key);
+    if (!el) return null;
+    if (!document.getElementById('plumb-hide')) document.head.append(Object.assign(document.createElement('style'), { id: 'plumb-hide', textContent: '[data-plumb-hide] * { visibility: hidden !important; }' }));
+    for (const old of document.querySelectorAll('[data-plumb-hide]')) old.removeAttribute('data-plumb-hide');
+    el.setAttribute('data-plumb-hide', '');
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const at = options.at === 'end' ? el.scrollHeight : 0;
+    el.scrollTop = at;
+    const r = el.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height, max: el.scrollHeight - el.clientHeight };
+  }
+  if (op === 'unprep') { for (const old of document.querySelectorAll('[data-plumb-hide]')) old.removeAttribute('data-plumb-hide'); return true; }
+  if (op === 'skeletons') { resetKeys(); return skeletons(); }
+  if (op === 'heights') { resetKeys(); return heightsAt(options.keys); }
+  if (op === 'recorded') return JSON.parse(JSON.stringify({ now: performance.now(), spinners: window.__plumbRec?.spinners ?? [], shifts: window.__plumbRec?.shifts ?? [] }));
+  if (op === 'pair') { pairIn(options.condition, options.data); return true; }
+  if (op === 'reset') { pairsReset(); return true; }
+  throw new Error(`Unknown craft operation ${op}.`);
+}
+
+export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, ...rest } = {}) {
+  if (op) return operate({ op, ...rest });
+  resetKeys();
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
   const was = blueprint.active;
