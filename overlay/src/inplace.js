@@ -20,10 +20,38 @@ export const SPACING_PROPS = new Set(Object.values(PROPS).map(([p]) => p));
 
 const px = (v) => parseFloat(v) || 0;
 
+// The reason as a drawing (docs/briefs/insight-not-noise.md §2.4): one per kind of evidence, so 32 rules need ten.
 export const GLYPHS = {
   // a ratio of two lengths: the long side and the short side, as lengths
   ratio: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="3.2" rx="1.6" fill="currentColor"/><rect x="3" y="14.8" width="9" height="3.2" rx="1.6" fill="currentColor" opacity=".55"/></svg>',
+  // two corners that should share a centre, and don't
+  arcs: '<svg viewBox="0 0 24 24"><path d="M3 21V11a8 8 0 0 1 8-8h10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 21v-7a3 3 0 0 1 3-3h10" fill="none" stroke="currentColor" stroke-width="2" opacity=".55"/></svg>',
+  // text on its ground, and how far apart they are
+  contrast: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="13" height="13" rx="3" fill="currentColor" opacity=".3"/><text x="8.5" y="13" font-size="9" font-weight="700" text-anchor="middle" fill="currentColor">A</text><rect x="2" y="19" width="9" height="2.4" rx="1.2" fill="currentColor"/></svg>',
+  // a minimum size drawn against the element
+  size: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"/><rect x="8" y="8" width="8" height="8" rx="2" fill="currentColor"/></svg>',
+  // a line's length against the measure
+  measure: '<svg viewBox="0 0 24 24"><path d="M2 8h20M2 13h14M2 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 4v18" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.6 1.6"/></svg>',
+  // letters, and the space between them
+  letters: '<svg viewBox="0 0 24 24"><text x="12" y="16" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor" letter-spacing="2">AB</text><path d="M3 20h18" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>',
+  // off the pixel grid: a line between two rows of pixels
+  pixel: '<svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1" opacity=".4"/><path d="M3 9h18" stroke="currentColor" stroke-width="2.4"/></svg>',
+  // one light, the shadow under the thing it lights
+  light: '<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.4" fill="currentColor"/><rect x="8" y="9" width="12" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10" y="18.5" width="10" height="2.4" rx="1.2" fill="currentColor" opacity=".45"/></svg>',
+  // the same thing, one of them different
+  same: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19.5" cy="12" r="3.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+  // a moment: a timeline with a jump
+  time: '<svg viewBox="0 0 24 24"><path d="M2 16h8l2-8 2 8h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  // a value between two steps of the scale
+  scale: '<svg viewBox="0 0 24 24"><rect x="2" y="15" width="3" height="5" rx="1" fill="currentColor"/><rect x="7" y="12" width="3" height="8" rx="1" fill="currentColor"/><rect x="12" y="9" width="3" height="11" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.4"/><rect x="17" y="6" width="3" height="14" rx="1" fill="currentColor"/></svg>',
 };
+// which drawing a rule's evidence takes
+const KIND = { 'button-padding': 'ratio', 'icon-side': 'ratio', 'inner-outer-spacing': 'ratio', 'content-align': 'ratio', 'concentric-radius': 'arcs',
+  contrast: 'contrast', 'disabled-contrast': 'contrast', 'text-opacity': 'contrast', 'hit-target': 'size', 'input-zoom': 'size', measure: 'measure', 'heading-widow': 'measure',
+  'hanging-quote': 'measure', leading: 'measure', tracking: 'letters', 'caps-case': 'letters', 'tabular-nums': 'same', 'media-size': 'same', 'half-pixel': 'pixel', hairline: 'pixel',
+  'one-light': 'light', 'layered-shadow': 'light', 'border-on-shadow': 'light', 'image-outline': 'light', 'gradient-space': 'light', 'bold-hover': 'time', 'scale-from-zero': 'time',
+  'truncate-intent': 'measure', 'middle-truncate': 'measure', 'scrollbar-gutter': 'time', 'anchor-offset': 'measure', 'z-index-war': 'same' };
+export const glyphOf = (problem) => GLYPHS[problem?.family === 'craft' ? KIND[String(problem.rule).replace(/^craft\//, '')] ?? 'scale' : 'scale'];
 
 /**
  * The plan for a problem whose verified fix sets spacing on `el`. steps: the theme's spacing scale ([{ token, n }],

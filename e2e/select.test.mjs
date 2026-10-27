@@ -214,3 +214,46 @@ test('A quiet element selects with nothing coral; a click on the empty page lets
   assert.equal(await page.evaluate(() => !document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp').hidden), true, 'blueprint is still on');
   assert.deepEqual(errors, []);
 });
+
+test('Why, as a drawing and on demand: the reason sits at the element’s side; i shows the one line, then what is folded under it, then hides', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  const [x, y] = await center(page, 'invite', 0.5, 0.85);
+  await page.mouse.click(x, y);
+  await page.waitForTimeout(300);
+  const why = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.sel .why')?.textContent ?? null);
+  assert.equal(await overlay.locator('.sel .reason').count(), 1);
+  assert.equal(await why(), null, 'no words at rest');
+  await page.keyboard.press('i');
+  assert.match(await why(), /^12px on every side\. Text buttons need about twice as much on the sides\. · also 1$/);
+  assert.ok((await why()).length <= 90);
+  await page.keyboard.press('i');
+  assert.match(await why(), /The icon side has the same/);
+  await page.keyboard.press('i');
+  assert.equal(await why(), null);
+  assert.deepEqual(errors, []);
+});
+
+test('No fix the theme can take: the scale shows a hollow bar where the step would be, and i says what to add', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await blueprint(page, overlay);
+  await page.waitForTimeout(600);
+  const [x, y] = await center(page, 'status', 0.3, 0.5);
+  await page.mouse.click(x, y);
+  await page.waitForTimeout(300);
+  // step to the letter-spacing problem: this theme has no letter-spacing steps
+  for (let i = 0; i < 3 && !(await overlay.locator('.sel .stair[data-kind="no-step"]').count()); i++) { await page.keyboard.press('.'); await page.waitForTimeout(200); }
+  assert.equal(await overlay.locator('.sel .stair[data-kind="no-step"] .gap').count(), 1);
+  await page.keyboard.press('i');
+  assert.match(await overlay.locator('.sel .why').innerText(), /Your theme has no letter-spacing step for this\. Add one, then use it here\./);
+  // Enter takes nothing
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  assert.equal(await overlay.locator('.cg:not([hidden])').count(), 0);
+  assert.deepEqual(errors, []);
+});

@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, FACET_SAID } from './inplace.js';
+import { planOf, moved, preview, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -35,6 +35,13 @@ export const SELECT_CSS = `
   .sel .stair { position: fixed; pointer-events: auto; padding: 2px 4px; border-radius: 9px; background: var(--pl-paper); box-shadow: 0 1px 3px rgb(0 0 0 / .18); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
   .sel .reason { position: fixed; width: 20px; height: 20px; padding: 2px; box-sizing: border-box; border-radius: 6px; color: var(--pl-coral-ink); background: var(--pl-coral-soft); }
   .sel .reason svg { display: block; width: 100%; height: 100%; }
+  .sel .reason[data-big] { width: 40px; height: 40px; padding: 6px; }
+  .sel .why { position: fixed; max-width: 320px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.35 var(--pl-sans); background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 3px rgb(0 0 0 / .2); animation: pl-pop 200ms var(--pl-spring-pop) both; }
+  .sel .why .more { color: var(--pl-ink-2); }
+  /* no verified fix: the scale with a hollow bar where the step would be, or the target struck by a higher rule */
+  .sel .stair .gap { display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-ink) 35%, transparent); vertical-align: middle; }
+  .sel .stair .struck { position: relative; display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--pl-sky); vertical-align: middle; }
+  .sel .stair .struck::after { content: ''; position: absolute; left: -2px; right: -2px; top: 6px; height: 2px; border-radius: 2px; background: var(--pl-coral); rotate: -20deg; }
   /* accepted, not written: marching ants, the claimed bands mint */
   .sel[data-state="accepted"] .ring { border: 0; background-image: repeating-linear-gradient(90deg, var(--pl-sky) 0 5px, transparent 5px 9px), repeating-linear-gradient(90deg, var(--pl-sky) 0 5px, transparent 5px 9px), repeating-linear-gradient(0deg, var(--pl-sky) 0 5px, transparent 5px 9px), repeating-linear-gradient(0deg, var(--pl-sky) 0 5px, transparent 5px 9px);
     background-size: 100% 1.5px, 100% 1.5px, 1.5px 100%, 1.5px 100%; background-position: 0 0, 0 100%, 0 0, 100% 0; background-repeat: no-repeat; border-radius: 0; animation: sel-march 600ms linear infinite; }
@@ -59,7 +66,7 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set();
+  #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; // why: 0 hidden, 1 the line, 2.. the folded ones
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
@@ -88,7 +95,7 @@ export class Selection {
   select(el, item) {
     if (el === this.#el) { this.step(1); return; }
     this.#unpreview();
-    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#taken = new Set();
+    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#taken = new Set(); this.#why = 0;
     this.#onChange?.(el);
     this.#layer.hidden = false;
     this.draw(true);
@@ -111,7 +118,7 @@ export class Selection {
     if (n < 2) return false;
     this.#unpreview();
     this.#at = (this.#at + by + n) % n;
-    this.#plan = null;
+    this.#plan = null; this.#why = 0;
     this.draw();
     return true;
   }
@@ -128,6 +135,7 @@ export class Selection {
   // accepts it into Changes; Backspace drops the element's change. True when used.
   key(key) {
     if (!this.#el) return false;
+    if (key === 'i') { const n = 2 + (this.current?.also?.length ?? 0); this.#why = (this.#why + 1) % n; this.draw(); return true; }
     if (key === 'Backspace' && this.#changes?.has(this.#el)) { this.#changes.discard(this.#el); this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
     const plan = this.#plan;
     if (!plan) return false;
@@ -258,8 +266,23 @@ export class Selection {
         const stair = stepper(plan.main.prop, { steps: plan.steps, current: plan.main.from.token, picked: plan.steps[plan.at].token });
         fix = `<div class="ghost" style="left:${g.left - 3}px;top:${g.top - 3}px;width:${g.width + 6}px;height:${g.height + 6}px"></div>`
           + `<div class="stair" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + 12}px">${stair}</div>`
-          + `<span class="reason" style="left:${g.left + g.width + 10}px;top:${r.top + r.height / 2 - 10}px">${GLYPHS.ratio}</span>`;
+          + `<span class="reason"${this.#why ? " data-big" : ""} style="left:${g.left + g.width + 10}px;top:${r.top + r.height / 2 - (this.#why ? 20 : 10)}px">${glyphOf(current)}</span>`;
       }
+    }
+    // no verified fix: the reason is still drawn, and the scale says why not (a hollow bar, or a struck target)
+    if (current && !fix && state === 'ready' && !this.#taken.has(current.key)) {
+      const whyNot = current.whyNot ?? (current.craft?.suggest?.kind === 'advice' ? 'advice' : null);
+      if (whyNot === 'no-step') fix = `<div class="stair" data-kind="no-step" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + 12}px"><span class="gap" title="no step"></span></div>`;
+      else if (whyNot === 'higher-tier') fix = `<div class="stair" data-kind="higher-tier" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + 12}px"><span class="struck" title="a more important rule says no"></span></div>`;
+    }
+    // the reason, drawn at the element's side: bigger while its words are shown
+    if (current && state === 'ready' && !this.#taken.has(current.key) && !/class="reason"/.test(fix)) fix += `<span class="reason"${this.#why ? ' data-big' : ''} style="left:${r.right + 10}px;top:${r.top + r.height / 2 - (this.#why ? 20 : 10)}px">${glyphOf(current)}</span>`;
+    // i: the one line (what is wrong), then each folded finding's; the advice when no fix is offered
+    if (current && this.#why) {
+      const also = current.also ?? [];
+      const text = this.#why === 1 ? `${current.title}${current.craft?.suggest?.kind === 'advice' ? ` ${current.craft.suggest.text}` : ''}` : also[this.#why - 2]?.title ?? '';
+      const more = this.#why === 1 && also.length ? ` <span class="more">· also ${also.length}</span>` : '';
+      fix += `<div class="why" style="left:${Math.max(4, r.left - 4)}px;top:${r.bottom + (fix.includes('class="stair"') ? 56 : 12)}px">${esc(String(text).replace(/`/g, ''))}${more}</div>`;
     }
     this.#layer.innerHTML = fix + ring + bm.html;
     // the control: a click on an option picks it (and previews it)
