@@ -26,6 +26,7 @@ export const libraryFamilies: readonly LibraryFamily[] = [
   family('ark', 'Ark UI', /^@ark-ui\/.+$/, components('Ark UI')),
   family('shadcn', 'shadcn/ui', /^shadcn$/, { support: 'supported', judged: 'the generated components as your own source; the shadcn theme shape is read' }, ['components.json']),
   family('tailwind-merge', 'tailwind-merge', /^tailwind-merge$/, classes),
+  family('clsx', 'clsx', /^(?:clsx|classnames)$/, classes),
 ];
 
 export const librariesRegistry: readonly Detector[] = [{

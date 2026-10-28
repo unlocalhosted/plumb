@@ -133,3 +133,9 @@ test('tailwind-merge: found; supported through the class helper', async t => {
   const item = find(list, 'tailwind-merge');
   assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/cn.js', 1]);
 });
+
+test('clsx: clsx or classnames is found; supported through the class helper', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', clsx: '^2.1.0' } }, 'src/A.jsx': "import clsx from 'clsx';\nexport const A = ({ on }) => <div className={clsx('p-s4', on && 'text-ink')} />;\n" }, 'libraries');
+  const item = find(list, 'clsx');
+  assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/A.jsx', 1]);
+});
