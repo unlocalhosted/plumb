@@ -10,6 +10,7 @@ import { count, plural } from '../messages.js';
 import { packageManager, packageMetadata, resolvedTailwind, tailwindSetupProblem } from '../setup-messages.js';
 import { discoverProject, matchProjectFiles, projectSourceFiles, tailwindEntryCandidates } from '../project.js';
 import { workspaceApps } from '../cli-project.js';
+import { projectFacts } from '../project-facts/index.js';
 import { components, pixels } from '../decisions/resolve.js';
 import { nodeName, unwrap } from '../collect/source.js';
 import { familiesFor, isJudged, judgedFamilies, oklab, tokens } from '../rules/families.js';
@@ -78,8 +79,6 @@ const colourName = (family: string) => family === 'color' ? 'colour' : family;
 const file = (root: string, path: string) => relative(root, path).replaceAll('\\', '/') || '.';
 const listOf = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
 
-// Libraries the brief names as signals. Scoped packages collapse to their scope.
-const libraryPattern = /^(?:(@radix-ui|@base-ui-components|@headlessui|@mui|@chakra-ui|@emotion|@mantine)\/.+|(styled-components|daisyui|tailwind-variants|class-variance-authority))$/;
 const styledPattern = /^(?:styled-components|@emotion\/.+|@stitches\/react|@linaria\/.+|goober|styled-jsx)$/;
 const taggedTemplate = /\b(?:styled|css|keyframes|createGlobalStyle)\b[^`\n]{0,80}`/;
 const templateTags = new Set(['styled', 'css', 'keyframes', 'createGlobalStyle']);
@@ -265,8 +264,10 @@ export async function readState(options: StateOptions): Promise<ProjectState> {
   const declared = dependencies.tailwindcss ?? null;
   const declaredMajor = declared?.match(/\d+/)?.[0];
   const installed = await resolvedTailwind(root).catch(() => null);
-  const major = declaredMajor !== undefined ? Number(declaredMajor) : installed ? Number(installed.split('.')[0]) : null;
-  const libraries = [...new Set(Object.keys(dependencies).flatMap(name => { const match = libraryPattern.exec(name); return match ? [match[1] ?? match[2]!] : []; }))].sort();
+  // Installed beats declared: what runs is what is judged (owner decision 1).
+  const major = installed ? Number(installed.split('.')[0]) : declaredMajor !== undefined ? Number(declaredMajor) : null;
+  const facts = await projectFacts(root);
+  const libraries = [...new Set((facts.libraries.value ?? []).map(item => String(item.detail?.package ?? '').replace(/^(@[^/]+)\/.*$/, '$1')))].sort();
   const styledDependency = Object.keys(dependencies).filter(name => styledPattern.test(name)).sort()[0];
   const everything = await projectSourceFiles(root, config);
   const sources = everything.filter(item => /\.[jt]sx?$/.test(item));

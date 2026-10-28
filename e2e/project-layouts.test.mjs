@@ -180,3 +180,24 @@ test('two-host-configs: vite wins by registry order, next.config.js is kept as a
   assert.match(doctor.stdout, /vite\.config\.ts:1[^\n]*also next\.config\.js, ignored/);
   assert.doesNotMatch(doctor.stdout, /Host could not be established/);
 });
+
+test('tailwind-declared-not-installed: one message from one place; state names the rung', async t => {
+  const project = await fixture(t, viteApp());
+  for (const args of [[], ['--json']]) {
+    const result = await run(project, args, 2);
+    assert.equal(result.stderr, '✗ Tailwind 4 is in package.json but not installed.\n  → npm install\n');
+  }
+  const state = json(await run(project, ['state', '--json']));
+  assert.equal(state.rung, 'R0'); assert.equal(state.kind, 'not-installed');
+  assert.equal(state.sentence, 'Tailwind 4 is in package.json but not installed.');
+});
+
+test('plain-css-react: a React app with stylesheets and no Tailwind is judged as plain CSS', async t => {
+  const project = await fixture(t, { 'package.json': { dependencies: { react: '*' } }, 'src/App.jsx': "import './styles.css'; export const App = () => <div className=\"card\" />;\n", 'src/styles.css': ':root { --space-4: 1rem; }\n.card { padding: var(--space-4); }\n' });
+  const result = await run(project, ['--json'], 0);
+  assert.equal(result.stderr, '');
+  const report = json(result);
+  assert.equal(report.tailwind.entry, null);
+  const state = json(await run(project, ['state', '--json']));
+  assert.equal(state.numbers.tailwind.major, null);
+});

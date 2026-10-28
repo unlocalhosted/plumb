@@ -71,3 +71,32 @@ matrix rows and test files ran, and the counts.
   and no writes.
 - Rows: `two-host-configs` (doctor). `e2e/project-layouts.test.mjs`, `e2e/readiness.test.mjs`, `e2e/hosts.test.mjs`:
   71/71 (with `PLUMBER_CHROMIUM`).
+
+## L4: `styling`, `react` and `libraries` facts, with the support model
+
+Owner direction (mid-task) reshaped this layer: three detection systems on one foundation, each detected thing
+carrying a support level declared by its detector.
+
+- `src/project-facts/support.ts`: `Support = supported | partial | unsupported`; `Detected { id, label, support,
+  judged?, skipped?, next?, source, evidence, detail? }`; `describeDetected()` gives the one-line form
+  (`styled-components (src/Button.tsx:3); not judged yet. …`).
+- `src/project-facts/styling/`: registry with `styling.tailwind` (one `require.resolve`, memoised; installed beats
+  declared for the major, owner decision 1; v4 supported, v3 and declared-not-installed `unsupported` with the step
+  out) and `styling.plain` (React without Tailwind, supported). `tokens.ts` names the token source: shadcn
+  `@theme inline` (with `components.json`), `@theme`, `:root` custom properties, or a JS theme object. The styling
+  context carries a bounded list of stylesheets under the source folders (membership applied).
+- `src/project-facts/libraries/`: one registry entry per family (`libraryFamilies`): Radix, Base UI
+  (`@base-ui-components/*`), Headless UI, MUI, Chakra, Emotion, Mantine, styled-components, daisyUI,
+  tailwind-variants, CVA, each with a support note. The remaining families (`@base-ui/react`, React Aria, Ark,
+  shadcn, tailwind-merge, clsx) land one per commit in L6.
+- `src/project-facts/project/react.ts`: `react` fact (`installed`, `declared`) from one resolve.
+- Consumers: `resolvedTailwind`, `tailwindSetupProblem`, `checkingPlainCss`, `overlaySetupNotice`
+  (`src/setup-messages.ts`), `tailwindVersion` (`src/project.ts`), `locate.react-dev` (`src/readiness/index.ts`),
+  `readState` major precedence and `libraries` (`src/onboarding/state.ts`; the regex at line 82 is gone).
+- `fixtures/onboard-v3/node_modules/tailwindcss/package.json` (3.4.17) added so the v3 fixture's installed version
+  is v3; without it the resolve walked up to this repo's Tailwind 4 and installed-beats-declared flipped the rung.
+- Deviation: the Tailwind CSS *entry* is still chosen by `discoverProject` (it needs the full membership glob and
+  the app-entry tie-break); the styling fact records the first importing stylesheet as evidence only.
+- Rows: `tailwind-declared-not-installed`, `plain-css-react`. Ran `e2e/cli-setup.test.mjs`,
+  `e2e/onboarding-state.test.mjs`, `e2e/project-layouts.test.mjs`, `e2e/adoption.test.mjs` (53/53);
+  `e2e/readiness.test.mjs`, `e2e/hosts.test.mjs`, `e2e/next-install.test.mjs` (79/79 with layouts).

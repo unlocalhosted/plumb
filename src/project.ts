@@ -1,5 +1,4 @@
 import { readFile, stat } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { appTailwindEntry } from './collect/entries.js';
 import { unreadable } from './diagnostics.js';
@@ -8,6 +7,7 @@ import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
 import { ownSourcePath, sourceSelectors } from './source-boundary.js';
 import { projectIgnore, staticIgnore } from './project-facts/checkouts.js';
+import { tailwindInstalled } from './project-facts/index.js';
 import { userMessage, UsageError } from './errors.js';
 import type { PlumbConfig } from './config.js';
 import type { FileCounts, Report } from './report.js';
@@ -72,19 +72,12 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
 
 async function tailwindVersion(entry: string | null): Promise<string | null> {
   if (entry === null) return null;
-  const require = createRequire(resolve(dirname(entry), 'package.json'));
-  let packagePath: string;
-  try {
-    packagePath = require.resolve('tailwindcss/package.json');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') return null;
-    throw error;
+  const installed = tailwindInstalled(dirname(entry));
+  if (installed instanceof Error) {
+    if ((installed as NodeJS.ErrnoException).code) throw installed;
+    throw new UsageError(`Fix tailwindcss/package.json: ${installed.message.replace(/^Tailwind package\.json has no version \((.*)\)\.$/, 'version must be a string at $1.')}`);
   }
-  const metadata: unknown = JSON.parse(await readFile(packagePath, 'utf8'));
-  if (metadata === null || typeof metadata !== 'object' || !('version' in metadata) || typeof metadata.version !== 'string') {
-    throw new UsageError(`Fix tailwindcss/package.json at ${packagePath}: version must be a string.`);
-  }
-  return metadata.version;
+  return installed;
 }
 
 export async function discoverProject(root: string, config: PlumbConfig, known?: readonly string[]): Promise<{

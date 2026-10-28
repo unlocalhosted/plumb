@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFile, realpath, stat } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { check } from '../index.js';
 import { projectDecision } from '../decisions/availability.js';
@@ -170,8 +169,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     'Clicking an element cannot locate its source.', await configFix('locate.plugin', step('Add React Plumber to the dev host.', 'plumber install --overlay --write')));
   add('locate.order', 'locate', status(host?.ordered), host?.ordered ? 'React Plumber precedes JSX transforms' : host?.ordered === false ? 'React Plumber must precede JSX transforms' : 'JSX plugin order needs verification', evidence('plugin', 'Plugin order relative to JSX transforms'),
     'Source locations may point at transformed code.', await configFix('locate.order', manual('Move plumb() before plugins that transform JSX/TSX.')));
-  let react = false;
-  try { createRequire(join(root, 'package.json')).resolve('react'); react = true; } catch {}
+  const react = facts.react.value?.installed ?? false;
   const reactDev = !react ? 'missing' : runtime ? status(runtime.development) : 'unknown';
   add('locate.react-dev', 'locate', reactDev, reactDev === 'ok' ? 'Development host has React installed' : 'React development build needs verification', [{ file: 'package.json', line: 1, text: react ? 'React resolves; browser fibers are not inspected by the server' : 'React does not resolve' }],
     'Clicking an element may not find its React component.', step(react ? 'Run the development app; production React has no development source fibers.' : 'Install React in the project.', react ? `${packageManager(root)} run dev` : `${packageManager(root)} ${packageManager(root) === 'npm' ? 'install' : 'add'} react react-dom`));

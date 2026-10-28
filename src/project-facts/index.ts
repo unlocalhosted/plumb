@@ -9,7 +9,7 @@ import { known, resolveFact, unknown } from './facts.js';
 import type { Claim } from './facts.js';
 import { createContext, runRegistry } from './detector.js';
 import type { Context, Detector, PackageJson } from './detector.js';
-import { forgetCheckouts, scanCheckouts, staticIgnore } from './checkouts.js';
+import { forgetCheckouts, projectIgnore, scanCheckouts, staticIgnore } from './checkouts.js';
 import type { Checkout } from './checkouts.js';
 import { workspaceManifest } from './project/workspace-manifest.js';
 import type { Workspace } from './project/workspace-manifest.js';
@@ -20,9 +20,19 @@ import { pmLockfile } from './project/pm-lockfile.js';
 import { hostConfig, bundlerConfigFiles as bundlerConfigsIn } from './project/host-config.js';
 import type { Host } from './project/host-config.js';
 import { hostManifest } from './project/host-manifest.js';
+import { reactResolve } from './project/react.js';
+import type { React } from './project/react.js';
+import { stylingRegistry, tokenSource } from './styling/index.js';
+import type { TokenSource } from './styling/index.js';
+import { librariesRegistry } from './libraries/index.js';
+import type { Detected } from './support.js';
 
 export type { Fact, Evidence, Claim, Source } from './facts.js';
-export type { Workspace, PackageManager, Checkout, Host };
+export type { Workspace, PackageManager, Checkout, Host, React, Detected, TokenSource };
+export type { Support, SupportNote } from './support.js';
+export { describeDetected } from './support.js';
+export { tailwindInstalled } from './styling/index.js';
+export { libraryFamilies } from './libraries/index.js';
 
 
 export interface App { path: string; kind: string; tailwind: string | null }
@@ -42,16 +52,23 @@ export interface ProjectFacts {
   host: Fact<Host>;
   /** Folders under the root that are their own checkout; out of membership. */
   checkouts: Fact<Checkout[]>;
+  react: Fact<React>;
+  /** Every styling system found, each with its support level, plus where the tokens live. */
+  styling: Fact<{ systems: Detected[]; tokens: TokenSource | null }>;
+  /** Component libraries and class helpers found, each with its support level. */
+  libraries: Fact<Detected[]>;
 }
+export type Styling = { systems: Detected[]; tokens: TokenSource | null };
 /** `root` is an override (R4); `host` is what a running plugin observed (R3: observed beats declared). */
 export interface Overrides { root?: string; observed?: { host?: string } }
 
 /** Registry order is precedence within one source (R3). */
-export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, pmManifest, pmLockfile, hostConfig, hostManifest];
+export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, pmManifest, pmLockfile, hostConfig, hostManifest, reactResolve];
 
 const workspaceDetectors = projectRegistry.filter(item => item.id.startsWith('workspace.'));
 const pmDetectors = projectRegistry.filter(item => item.id.startsWith('pm.'));
 const hostDetectors = projectRegistry.filter(item => item.id.startsWith('host.'));
+const reactDetectors = projectRegistry.filter(item => item.id.startsWith('react.'));
 // Memoised for the process (R5). A folder's cache is keyed by the mtimes of the folder and its package.json, so a
 // config file or lockfile added beside it, or a changed manifest, is seen at once; no watcher is needed.
 const ttl = 2000;
@@ -149,6 +166,30 @@ async function appsOf(root: string, workspace: Workspace): Promise<App[]> {
   return apps;
 }
 
+/** Stylesheets the styling detectors may read: the source folders, membership applied, bounded. */
+async function cssFilesOf(root: string): Promise<string[]> {
+  const files = await glob(['*.{css,scss,sass,less}', '{src,app,styles,css}/**/*.{css,scss,sass,less}'], { cwd: root, ignore: await projectIgnore(root), absolute: false, followSymbolicLinks: false });
+  return files.sort().slice(0, 200);
+}
+export function reactOf(root: string): Fact<React> {
+  const claims = (runRegistry(reactDetectors, context(resolve(root))).react ?? []) as Claim<React>[];
+  return claims.length ? resolveFact(claims) : known<React>({ installed: false, declared: null }, 'inferred', [{ file: 'package.json', line: 1, text: 'no react dependency' }]);
+}
+/** Every styling system and the token source, from a context that carries the stylesheets (sync once the lists are in). */
+export function stylingOf(root: string, cssFiles: string[] = []): Fact<Styling> {
+  const ctx = createContext(resolve(root), { cssFiles });
+  const claims = (runRegistry(stylingRegistry, ctx).styling ?? []) as Claim<Detected>[];
+  const systems = claims.flatMap(item => item.value ? [item.value] : []);
+  const tokens = tokenSource(ctx);
+  if (!systems.length) return unknown<Styling>([{ file: 'package.json', line: 1, text: 'no styling system found' }]);
+  return known<Styling>({ systems, tokens }, systems.some(item => item.source === 'observed') ? 'observed' : systems[0]!.source, systems.flatMap(item => item.evidence));
+}
+export function librariesOf(root: string): Fact<Detected[]> {
+  const claims = (runRegistry(librariesRegistry, context(resolve(root))).libraries ?? []) as Claim<Detected>[];
+  const found = claims.flatMap(item => item.value ? [item.value] : []);
+  return known<Detected[]>(found, 'declared', found.length ? found.flatMap(item => item.evidence) : [{ file: 'package.json', line: 1, text: 'no component library dependency' }]);
+}
+
 /** The facts for the project at `start`, memoised for the process (R5). Never throws (section 3 invariant). */
 export function projectFacts(start: string, overrides: Overrides = {}): Promise<ProjectFacts> {
   const key = `${resolve(start)}\0${JSON.stringify(overrides)}`;
@@ -176,8 +217,10 @@ async function compute(start: string, overrides: Overrides): Promise<ProjectFact
   const apps: Fact<App[]> = workspace.value ? known(await appsOf(folder, workspace.value), 'inferred', workspace.evidence) :
     workspace.source === 'unknown' ? unknown(workspace.evidence) : known<App[]>([], 'inferred', workspace.evidence);
   const checkouts = await scanCheckouts(folder);
+  const cssFiles = await cssFilesOf(folder);
   return {
     root, boundary: boundaryOf(folder), repo: repoOf(folder), workspace, apps, packageManager: packageManagerOf(folder), host: hostOf(folder, overrides.observed?.host),
+    react: reactOf(folder), styling: stylingOf(folder, cssFiles), libraries: librariesOf(folder),
     checkouts: known(checkouts, checkouts.length ? (checkouts.every(item => item.source === 'declared') ? 'declared' : 'observed') : 'inferred', checkouts.length ? checkouts.map(item => item.evidence) : [{ file: '.', line: 1, text: 'no nested checkout' }]),
   };
 }

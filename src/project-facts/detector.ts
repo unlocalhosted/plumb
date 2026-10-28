@@ -24,6 +24,8 @@ export interface Context {
   manifest(): PackageJson | undefined | Error;
   /** All dependency ranges of the root manifest, every section merged. */
   dependencies(): Record<string, string>;
+  /** Stylesheets under the root's source folders (bounded, membership applied); only the styling detectors read them. */
+  cssFiles?: string[];
   /** A file relative to the root, for evidence. */
   file(path: string): string;
   evidence(file: string, line: number, text: string): Evidence;
@@ -37,11 +39,11 @@ export interface Detector {
   detect(ctx: Context): Claims;
 }
 
-export function createContext(root: string): Context {
+export function createContext(root: string, lists: { cssFiles?: string[] } = {}): Context {
   const files = new Map<string, string | undefined | Error>();
   let parsed: PackageJson | undefined | Error | null = null;
   const ctx: Context = {
-    root,
+    root, ...lists,
     read(file) {
       const path = isAbsolute(file) ? file : join(root, file);
       if (!files.has(path)) {
