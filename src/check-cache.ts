@@ -11,6 +11,7 @@ import { ResolverFactory } from 'oxc-resolver';
 import { componentFiles, fileHash } from './ownership/cache.js';
 import { tailwindGraph } from './lower/tailwind.js';
 import { discoverProject, ignore } from './project.js';
+import { tailwindInstall } from './project-facts/styling/index.js';
 import { dataConfig } from './data-config.js';
 import type { CheckOptions } from './index.js';
 import type { Report } from './report.js';
@@ -72,8 +73,7 @@ export class CheckCache {
     const base = cacheDirectory(root);
     // Package metadata determines the reported compiler version even when
     // every stylesheet byte stays the same. Resolve it afresh at admission.
-    let compilerPackage: string | undefined;
-    try { compilerPackage = createRequire(css ?? join(root, 'package.json')).resolve('tailwindcss/package.json'); } catch { /* Plain CSS can have no Tailwind package. */ }
+    const compilerPackage = tailwindInstall(css ? dirname(css) : root).file ?? undefined; // plain CSS can have no Tailwind package
     const key = hash(JSON.stringify(['checked-v3', buildHash, process.versions.v8, root, config, text, !!options.verbose,
       compilerPackage, compilerPackage ? fileHash(compilerPackage) : null]));
     return new CheckCache(root, join(base, 'checked', key), config, css, patterns, tokenPatterns);

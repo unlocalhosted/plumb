@@ -201,3 +201,92 @@ test('plain-css-react: a React app with stylesheets and no Tailwind is judged as
   const state = json(await run(project, ['state', '--json']));
   assert.equal(state.numbers.tailwind.major, null);
 });
+
+// ---- L5: the facts are public. Cross-cutting checks run on every row below.
+import { access, cp, symlink } from 'node:fs/promises';
+import { createServer } from 'vite';
+const repo = fileURLToPath(new URL('../', import.meta.url));
+/** (b) every known fact carries evidence, and every evidence file exists under the root. */
+export async function checkFacts(root, facts) {
+  assert.equal(facts.experimental, true);
+  for (const [name, fact] of Object.entries(facts)) {
+    if (name === 'experimental') continue;
+    assert.ok(['override', 'observed', 'declared', 'inferred', 'unknown'].includes(fact.source), `${name}.source`);
+    if (fact.source === 'unknown') continue;
+    assert.ok(fact.evidence.length >= 1, `${name} has evidence`);
+    for (const item of fact.evidence) {
+      assert.ok(typeof item.file === 'string' && Number.isInteger(item.line) && item.line > 0 && typeof item.text === 'string', `${name} evidence shape`);
+      await access(join(root, item.file)).catch(() => assert.fail(`${name}: evidence file ${item.file} is missing`));
+    }
+  }
+}
+/** A Vite dev server with plumb() on the fixture, serving /__plumb/readiness. */
+async function viteReadiness(t, root, pluginOptions = '') {
+  await mkdir(join(root, 'node_modules/@unlocalhosted'), { recursive: true });
+  await symlink(repo, join(root, 'node_modules/@unlocalhosted/react-plumber')).catch(error => { if (error.code !== 'EEXIST') throw error; });
+  await symlink(join(repo, 'node_modules/vite'), join(root, 'node_modules/vite')).catch(error => { if (error.code !== 'EEXIST') throw error; });
+  await writeFile(join(root, 'vite.config.mjs'), `import { plumb } from '@unlocalhosted/react-plumber/vite';\nexport default { plugins: [plumb({ watch: false${pluginOptions} })] };\n`);
+  const server = await createServer({ root, logLevel: 'silent', server: { host: '127.0.0.1', port: 0, watch: null } });
+  try {
+    await server.listen();
+    const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+    let response;
+    for (let i = 0; i < 200; i++) {
+      response = await fetch(`${base}/__plumb/readiness`);
+      if (response.status !== 503) break;
+      await new Promise(done => setTimeout(done, 30));
+    }
+    assert.equal(response.status, 200, await response.clone().text());
+    return await response.json();
+  } finally { await server.close(); }
+}
+/** (a) the same answer from every entry point: state's facts and readiness's project, host and root source aside. */
+function sameFacts(fromState, fromReadiness) {
+  const strip = ({ host, root, ...rest }) => ({ ...rest, root: { ...root, source: undefined, evidence: undefined }, hostId: host.value?.id });
+  assert.deepEqual(strip(fromReadiness), strip(fromState));
+  assert.equal(fromReadiness.host.source, 'observed');
+}
+
+test('facts are public: state --json, doctor and the readiness route show the same facts with evidence (nested-worktrees)', { timeout: 180000 }, async t => {
+  const project = await fixture(t, viteApp());
+  await installTailwind(project.root);
+  await put(project.root, { '.gitignore': 'node_modules\nvite.config.mjs\n' });
+  git(project.root, 'init', '-q'); git(project.root, 'add', '-A'); git(project.root, 'commit', '-q', '-m', 'app');
+  for (const name of ['a', 'b']) git(project.root, 'worktree', 'add', '-q', join('.claude/worktrees', name), '-b', name);
+  const state = json(await run(project, ['state', '--json']));
+  await checkFacts(project.root, state.facts);
+  assert.deepEqual(state.facts.checkouts.value.map(item => [item.path, item.kind, item.evidence.file]), [['.claude/worktrees/a', 'worktree', '.claude/worktrees/a/.git'], ['.claude/worktrees/b', 'worktree', '.claude/worktrees/b/.git']]);
+  assert.equal(state.facts.checkouts.source, 'observed');
+  assert.match(state.facts.checkouts.value[0].evidence.text, /^gitdir: /);
+  assert.deepEqual([state.facts.root.value, state.facts.boundary.value, state.facts.repo.value, state.facts.workspace.value, state.facts.packageManager.value, state.facts.host.value.id], ['.', '.', '.', null, 'npm', 'vite']);
+  assert.equal(state.facts.styling.value.systems[0].id, 'tailwind');
+  assert.equal(state.facts.styling.value.systems[0].support, 'supported');
+  assert.equal(state.facts.styling.value.tokens.kind, '@theme');
+  const doctor = await run(project, ['doctor'], 1);
+  const projectTable = doctor.stdout.split('\nProject\n')[1].split('\nDiagnostics\n')[0];
+  assert.match(projectTable, /^Root:\s+\.\s+declared: package\.json:1/m);
+  assert.match(projectTable, /^Workspace:\s+none\s+inferred: package\.json:1 no workspaces key/m);
+  assert.match(projectTable, /^Checkouts:\s+2 nested, excluded\s+\.claude\/worktrees\/a \(worktree/m);
+  assert.match(projectTable, /^Styling:\s+Tailwind 4/m);
+  const ready = await viteReadiness(t, project.root);
+  sameFacts(json(await run(project, ['state', '--json'])).facts, ready.project);
+  assert.ok(ready.project.checkouts.value.length === 2);
+  const source = ready.requirements.find(item => item.id === 'locate.source');
+  assert.equal(source.status, 'ok');
+  assert.ok(source.evidence.every(item => !item.file.startsWith('.claude/')), 'nothing from the worktrees');
+  // Inside a worktree, its own .git file is the fence: boundary and repo are that folder.
+  const inside = json(await run(project, ['state', '--json', '--root', '.claude/worktrees/a']));
+  assert.deepEqual([inside.facts.boundary.value, inside.facts.repo.value, inside.facts.checkouts.value], ['.', '.', []]);
+});
+
+test('override-wins through Vite: plumb({ root }) is an override the readiness project block reports', { timeout: 180000 }, async t => {
+  const project = await fixture(t, viteApp({ 'package.json': { name: 'root', type: 'module', workspaces: ['apps/*'], dependencies: { react: '*', vite: '*', tailwindcss: '^4' } }, 'apps/web/package.json': { dependencies: { react: '*' } } }));
+  await installTailwind(project.root);
+  const ready = await viteReadiness(t, project.root, ", root: '.'");
+  assert.equal(ready.project.root.source, 'override');
+  assert.equal(ready.project.root.value, '.');
+  assert.equal(ready.project.workspace.value.tool, 'npm');
+  assert.equal(ready.requirements.find(item => item.id === 'locate.host').status, 'ok');
+  const plain = await viteReadiness(t, project.root);
+  assert.equal(plain.project.root.source, 'declared');
+});

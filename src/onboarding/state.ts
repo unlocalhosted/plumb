@@ -10,7 +10,8 @@ import { count, plural } from '../messages.js';
 import { packageManager, packageMetadata, resolvedTailwind, tailwindSetupProblem } from '../setup-messages.js';
 import { discoverProject, matchProjectFiles, projectSourceFiles, tailwindEntryCandidates } from '../project.js';
 import { workspaceApps } from '../cli-project.js';
-import { projectFacts } from '../project-facts/index.js';
+import { projectFacts, publicFacts } from '../project-facts/index.js';
+import type { PublicFacts } from '../project-facts/index.js';
 import { components, pixels } from '../decisions/resolve.js';
 import { nodeName, unwrap } from '../collect/source.js';
 import { familiesFor, isJudged, judgedFamilies, oklab, tokens } from '../rules/families.js';
@@ -65,6 +66,8 @@ export interface ProjectState {
   next: string;
   numbers: StateNumbers;
   evidence: Evidence[];
+  /** The project facts (experimental for one release): the same object the readiness route publishes as `project`. */
+  facts?: PublicFacts;
 }
 
 export interface StateOptions {
@@ -247,6 +250,11 @@ function blocked(kind: string, sentence: string, next: string, numbers: StateNum
 
 /** The state of a project, named from evidence: docs/briefs/onboarding.md section 1. Writes nothing. */
 export async function readState(options: StateOptions): Promise<ProjectState> {
+  const state = await stateOf(options);
+  // The report header reads the sentence only; `state` itself carries the facts.
+  return options.report ? state : { ...state, facts: publicFacts(await projectFacts(resolve(options.root))) };
+}
+async function stateOf(options: StateOptions): Promise<ProjectState> {
   const root = resolve(options.root);
   if (!options.report) {
     const { workspace, apps } = await workspaceApps(root);

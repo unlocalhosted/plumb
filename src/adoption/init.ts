@@ -1,6 +1,7 @@
 import { statePath } from '../paths.js';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { hasShadcnConfig } from '../project-facts/index.js';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { loadConfig } from '../config.js';
@@ -77,7 +78,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
     const componentList = discoverComponents(root, await projectSourceFiles(root, {}), {}, new Map(), true).components;
     let from = componentSource(root);
     const shadcnFile = join(root, 'components.json');
-    const hasShadcn = existsSync(shadcnFile);
+    const hasShadcn = hasShadcnConfig(root);
     if (hasShadcn) {
       const shadcn = JSON.parse(await readFile(shadcnFile, 'utf8')) as { aliases?: { ui?: string; components?: string } };
       from = shadcn.aliases?.ui ?? shadcn.aliases?.components ?? 'directory:src/components/ui';

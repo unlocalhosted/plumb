@@ -12,6 +12,7 @@ import { readLedger } from '../ledger/store.js';
 import { check } from '../index.js';
 import { userMessage } from '../errors.js';
 import { tailwindSetupProblem } from '../setup-messages.js';
+import { describeFacts } from '../project-facts/index.js';
 import { count } from '../messages.js';
 import { table } from '../cli-table.js';
 import type { Cell } from '../cli-table.js';
@@ -80,5 +81,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
   ok &&= !actionableRequirements(ready).some(item => item.status === 'missing');
-  return { text: formatReadiness(ready) + '\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
+  // One row per fact: value, then how it is known and the first evidence line (R8).
+  const project = describeFacts(ready.project).map(([name, value, where]): Cell[] => [`${name}:`, { text: value, path: /^(?:Root|Boundary|Repo)$/.test(name) }, { text: oneLine(where), ink: 'dim' }]);
+  return { text: formatReadiness(ready) + '\nProject\n' + table(project, [{ width: 16 }, { weight: 1 }, { weight: 3 }], { indent: 0, gap: 1 }).join('\n') + '\n\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }

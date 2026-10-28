@@ -13,7 +13,8 @@ import { CheckCache } from '../check-cache.js';
 import { defaultSource, discoverProject, projectSourceFiles } from '../project.js';
 import { containsPath, sourceBoundary } from '../source-boundary.js';
 import { tailwindSetupProblem, packageManager } from '../setup-messages.js';
-import { projectFacts } from '../project-facts/index.js';
+import { projectFacts, publicFacts } from '../project-facts/index.js';
+import type { PublicFacts } from '../project-facts/index.js';
 import { readLedger } from '../ledger/store.js';
 import { UsageError, userMessage } from '../errors.js';
 import { diff, parse, walk } from '../adoption/overlay.js';
@@ -35,6 +36,8 @@ export interface Requirement {
 }
 export interface ReadinessReport {
   schemaVersion: 1;
+  /** The project facts (experimental for one release): the same object `plumber state --json` prints as `facts`. */
+  project: PublicFacts;
   capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off'; requirements: string[]; available?: boolean }[];
   requirements: Requirement[];
 }
@@ -48,7 +51,7 @@ export interface Runtime {
   polling?: boolean;
   watching?: boolean;
 }
-export interface ReadinessOptions { root: string; config?: string; runtime?: Runtime; report?: () => Promise<Report>; sourceEvidence?: () => Promise<string[]> }
+export interface ReadinessOptions { root: string; config?: string; rootOverride?: boolean; runtime?: Runtime; report?: () => Promise<Report>; sourceEvidence?: () => Promise<string[]> }
 const labels: Record<Capability, string> = { read: 'Read', remember: 'Remember', fast: 'Fast', locate: 'Locate', preview: 'Preview', write: 'Write in place', blueprint: 'Blueprint', system: 'System panel' };
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const status = (value: boolean | undefined): Status => value === undefined ? 'unknown' : value ? 'ok' : 'missing';
@@ -135,7 +138,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Warm runs reuse the whole report' : 'Warm runs cannot reuse the whole report', configEvidence,
     'Each run repeats analysis instead of reusing the whole report.', step(plain ? 'Remove executable presets or CSS plugins, or keep the normal analysis path.' : `Use a plain-data default export in ${configFile}: no imports, calls or functions.`, config ? 'plumber doctor' : 'plumber init'));
 
-  const facts = await projectFacts(root, runtime ? { observed: { host: runtime.host } } : {});
+  const facts = await projectFacts(root, { ...(options.rootOverride ? { root } : {}), ...(runtime ? { observed: { host: runtime.host } } : {}) });
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }
   const hostFile = host ? relative(root, host.file) : 'package.json';
@@ -214,7 +217,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('system.state', 'system', started ? 'ok' : 'unknown', started?.sentence ?? 'The project state could not be read',
     [{ file: started?.numbers.tailwind.entry ?? 'package.json', line: 1, text: started ? `${started.rung} ${started.name}${started.flags.length ? ` · ${started.flags.join(', ')}` : ''}` : 'No state' }],
     'The system panel cannot say where this project starts.', step('Run plumber doctor to see what blocks reading the project.', 'plumber doctor'));
-  return { schemaVersion: 1, capabilities: (Object.keys(labels) as Capability[]).map(id => {
+  return { schemaVersion: 1, project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.some(item => item.status === 'unknown');
     const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
     return { id, label: labels[id], status: essentialMissing ? 'off' : missing || unknown ? 'degraded' : 'full', requirements: checks.map(item => item.id), ...(id === 'system' ? { available: false } : {}) };

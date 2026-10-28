@@ -100,7 +100,9 @@ export function findRoot(start: string): string | null {
 /** The declared workspace at one folder, from the registry: a claim with a value, a declared null, unknown, or nothing. */
 function workspaceAt(folder: string): Fact<Workspace> {
   const claims = runRegistry(workspaceDetectors, context(folder)).workspace as Claim<Workspace>[] | undefined;
-  return claims?.length ? resolveFact(claims) : unknown([]);
+  if (claims?.length) return resolveFact(claims);
+  // Nothing on disk speaks of a workspace: a single project, inferred from the absence (R1: never from presence).
+  return context(folder).exists('package.json') ? known<Workspace>(null, 'inferred', [{ file: 'package.json', line: 1, text: 'no workspaces key or workspace file' }]) : unknown([]);
 }
 
 /** Nearest declared workspace wins; otherwise the Git checkout bounds shared source; otherwise the root itself. Sync for hot paths. */
@@ -228,3 +230,36 @@ async function compute(start: string, overrides: Overrides): Promise<ProjectFact
 
 /** Bundler configs under the root that may name the app's entry (vite, rollup, webpack). */
 export const bundlerConfigFiles = (root: string): string[] => bundlerConfigsIn(context(resolve(root)));
+
+/** Only detectors may ask this (R6): shadcn's components.json beside an `@theme inline` block names the token shape. */
+export const hasShadcnConfig = (root: string): boolean => context(resolve(root)).exists('components.json');
+
+/** The facts as every entry point publishes them (R8): folders relative to the root, so two runs on two machines agree. */
+export function publicFacts(facts: ProjectFacts): PublicFacts {
+  const root = facts.root.value ?? '.';
+  const folder = (fact: Fact<string>): Fact<string> => ({ ...fact, value: fact.value === null ? null : relative(root, fact.value).replaceAll('\\', '/') || '.' });
+  return { experimental: true, ...facts, root: folder(facts.root), boundary: folder(facts.boundary), repo: folder(facts.repo) };
+}
+export interface PublicFacts extends ProjectFacts { experimental: true }
+
+const sourceText = (fact: Fact<unknown>) => fact.source;
+const where = (fact: Fact<unknown>) => fact.evidence[0] ? `${fact.evidence[0].file}:${fact.evidence[0].line}${fact.evidence[0].text ? ` ${fact.evidence[0].text}` : ''}` : '';
+const also = (fact: Fact<unknown>) => fact.conflicts?.length ? `; also ${fact.conflicts.map(item => item.evidence[0]?.file ?? item.detector).join(', ')}, ignored` : '';
+/** One row per fact for doctor: name, value, then the source and the first evidence line. */
+export function describeFacts(facts: PublicFacts): [name: string, value: string, where: string][] {
+  const styling = facts.styling.value;
+  return [
+    ['Root', facts.root.value ?? 'none', `${sourceText(facts.root)}: ${where(facts.root)}`],
+    ['Boundary', facts.boundary.value ?? 'none', `${sourceText(facts.boundary)}: ${where(facts.boundary)}`],
+    ['Repo', facts.repo.value ?? 'none', `${sourceText(facts.repo)}: ${where(facts.repo)}`],
+    ['Workspace', facts.workspace.value ? `${facts.workspace.value.tool} (${facts.workspace.value.patterns.join(', ') || 'no patterns'})` : facts.workspace.source === 'unknown' ? 'unknown' : 'none', `${sourceText(facts.workspace)}: ${where(facts.workspace) || 'no workspace file'}${also(facts.workspace)}`],
+    ...(facts.workspace.value ? [['Apps', String(facts.apps.value?.length ?? 0), facts.apps.value?.map(app => app.path).join(', ') ?? ''] as [string, string, string]] : []),
+    ['Package manager', facts.packageManager.value ?? 'unknown', `${sourceText(facts.packageManager)}: ${where(facts.packageManager)}${also(facts.packageManager)}`],
+    ['Host', facts.host.value?.id ?? 'none', `${sourceText(facts.host)}: ${where(facts.host)}${also(facts.host)}`],
+    ['React', facts.react.value?.installed ? 'installed' : facts.react.value?.declared ? 'declared, not installed' : 'none', `${sourceText(facts.react)}: ${where(facts.react)}`],
+    ['Styling', styling?.systems.length ? styling.systems.map(item => item.label).join(', ') : 'none', styling?.systems.map(item => `${item.label}: ${item.evidence[0]?.file}:${item.evidence[0]?.line}`).join('; ') ?? where(facts.styling)],
+    ['Tokens', styling?.tokens ? styling.tokens.kind : 'none', styling?.tokens ? `${styling.tokens.evidence.file}:${styling.tokens.evidence.line} ${styling.tokens.evidence.text}` : ''],
+    ['Libraries', facts.libraries.value?.length ? facts.libraries.value.map(item => item.label).join(', ') : 'none', facts.libraries.value?.map(item => `${item.label}: ${item.evidence[0]?.file}:${item.evidence[0]?.line}`).join('; ') ?? ''],
+    ['Checkouts', facts.checkouts.value?.length ? `${facts.checkouts.value.length} nested, excluded` : 'none', facts.checkouts.value?.map(item => `${item.path} (${item.kind}, ${item.evidence.file}:${item.evidence.line})`).join(', ') ?? ''],
+  ];
+}

@@ -98,7 +98,226 @@
         "class-variance-authority"
       ]
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 9,
+                  "text": "tailwindcss: ^4.1.0"
+                },
+                {
+                  "file": "src/index.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": "^4.1.0",
+                "entry": "src/index.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": {
+            "kind": "shadcn",
+            "evidence": {
+              "file": "src/index.css",
+              "line": 22,
+              "text": "@theme inline with components.json"
+            }
+          }
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 9,
+            "text": "tailwindcss: ^4.1.0"
+          },
+          {
+            "file": "src/index.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [
+          {
+            "id": "radix",
+            "label": "Radix",
+            "support": "partial",
+            "judged": "your own class names and styles on its elements",
+            "skipped": "Radix's own styles",
+            "next": "nothing to do; plumb skips it",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 6,
+                "text": "@radix-ui/react-slot: ^1.1.0"
+              }
+            ],
+            "detail": {
+              "package": "@radix-ui/react-slot"
+            }
+          },
+          {
+            "id": "cva",
+            "label": "CVA",
+            "support": "supported",
+            "judged": "class names are read through the helper",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 7,
+                "text": "class-variance-authority: ^0.7.0"
+              }
+            ],
+            "detail": {
+              "package": "class-variance-authority"
+            }
+          }
+        ],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 6,
+            "text": "@radix-ui/react-slot: ^1.1.0"
+          },
+          {
+            "file": "package.json",
+            "line": 7,
+            "text": "class-variance-authority: ^0.7.0"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-partial": {
     "schemaVersion": 1,
@@ -200,7 +419,226 @@
         "class-variance-authority"
       ]
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 9,
+                  "text": "tailwindcss: ^4.1.0"
+                },
+                {
+                  "file": "src/index.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": "^4.1.0",
+                "entry": "src/index.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": {
+            "kind": "shadcn",
+            "evidence": {
+              "file": "src/index.css",
+              "line": 19,
+              "text": "@theme inline with components.json"
+            }
+          }
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 9,
+            "text": "tailwindcss: ^4.1.0"
+          },
+          {
+            "file": "src/index.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [
+          {
+            "id": "radix",
+            "label": "Radix",
+            "support": "partial",
+            "judged": "your own class names and styles on its elements",
+            "skipped": "Radix's own styles",
+            "next": "nothing to do; plumb skips it",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 6,
+                "text": "@radix-ui/react-slot: ^1.1.0"
+              }
+            ],
+            "detail": {
+              "package": "@radix-ui/react-slot"
+            }
+          },
+          {
+            "id": "cva",
+            "label": "CVA",
+            "support": "supported",
+            "judged": "class names are read through the helper",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 7,
+                "text": "class-variance-authority: ^0.7.0"
+              }
+            ],
+            "detail": {
+              "package": "class-variance-authority"
+            }
+          }
+        ],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 6,
+            "text": "@radix-ui/react-slot: ^1.1.0"
+          },
+          {
+            "file": "package.json",
+            "line": 7,
+            "text": "class-variance-authority: ^0.7.0"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-framework": {
     "schemaVersion": 1,
@@ -307,7 +745,177 @@
       },
       "libraries": []
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 7,
+                  "text": "tailwindcss: ^4.1.0"
+                },
+                {
+                  "file": "src/index.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": "^4.1.0",
+                "entry": "src/index.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 7,
+            "text": "tailwindcss: ^4.1.0"
+          },
+          {
+            "file": "src/index.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-bare": {
     "schemaVersion": 1,
@@ -417,7 +1025,182 @@
       },
       "libraries": []
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": null,
+                "entry": null
+              },
+              "support": "supported"
+            },
+            {
+              "id": "plain-css",
+              "label": "plain CSS",
+              "support": "supported",
+              "source": "inferred",
+              "evidence": [
+                {
+                  "file": "src/styles.css",
+                  "line": 1,
+                  "text": "stylesheet"
+                }
+              ]
+            }
+          ],
+          "tokens": {
+            "kind": "custom-properties",
+            "evidence": {
+              "file": "src/styles.css",
+              "line": 1,
+              "text": ":root custom properties"
+            }
+          }
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          },
+          {
+            "file": "src/styles.css",
+            "line": 1,
+            "text": "stylesheet"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-chaos": {
     "schemaVersion": 1,
@@ -540,7 +1323,226 @@
           "src/legacy.css"
         ]
       }
-    ]
+    ],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 9,
+                  "text": "tailwindcss: ^4.1.0"
+                },
+                {
+                  "file": "src/admin.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": "^4.1.0",
+                "entry": "src/admin.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": {
+            "kind": "shadcn",
+            "evidence": {
+              "file": "src/index.css",
+              "line": 29,
+              "text": "@theme inline with components.json"
+            }
+          }
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 9,
+            "text": "tailwindcss: ^4.1.0"
+          },
+          {
+            "file": "src/admin.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [
+          {
+            "id": "radix",
+            "label": "Radix",
+            "support": "partial",
+            "judged": "your own class names and styles on its elements",
+            "skipped": "Radix's own styles",
+            "next": "nothing to do; plumb skips it",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 6,
+                "text": "@radix-ui/react-slot: ^1.1.0"
+              }
+            ],
+            "detail": {
+              "package": "@radix-ui/react-slot"
+            }
+          },
+          {
+            "id": "cva",
+            "label": "CVA",
+            "support": "supported",
+            "judged": "class names are read through the helper",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "package.json",
+                "line": 7,
+                "text": "class-variance-authority: ^0.7.0"
+              }
+            ],
+            "detail": {
+              "package": "class-variance-authority"
+            }
+          }
+        ],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 6,
+            "text": "@radix-ui/react-slot: ^1.1.0"
+          },
+          {
+            "file": "package.json",
+            "line": 7,
+            "text": "class-variance-authority: ^0.7.0"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-v3": {
     "schemaVersion": 1,
@@ -601,7 +1603,169 @@
       "libraries": [],
       "themeValues": 31
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^18.3.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 3",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 11,
+                  "text": "tailwindcss: ^3.4.17"
+                },
+                {
+                  "file": "node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 3.4.17"
+                }
+              ],
+              "detail": {
+                "major": 3,
+                "installed": "3.4.17",
+                "declared": "^3.4.17",
+                "entry": null
+              },
+              "support": "unsupported",
+              "skipped": "Tailwind 3; plumb judges Tailwind 4",
+              "next": "npx @tailwindcss/upgrade"
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 11,
+            "text": "tailwindcss: ^3.4.17"
+          },
+          {
+            "file": "node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 3.4.17"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-monorepo": {
     "schemaVersion": 1,
@@ -686,7 +1850,179 @@
           "packages/ui"
         ]
       }
-    ]
+    ],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 5,
+            "text": "workspaces: apps/*, packages/*"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": {
+          "tool": "npm",
+          "patterns": [
+            "apps/*",
+            "packages/*"
+          ]
+        },
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 5,
+            "text": "workspaces: apps/*, packages/*"
+          }
+        ]
+      },
+      "apps": {
+        "value": [
+          {
+            "path": "apps/admin",
+            "kind": "Vite",
+            "tailwind": "4"
+          },
+          {
+            "path": "apps/web",
+            "kind": "Vite",
+            "tailwind": "4"
+          },
+          {
+            "path": "packages/ui",
+            "kind": "library",
+            "tailwind": "4"
+          }
+        ],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 5,
+            "text": "workspaces: apps/*, packages/*"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": null,
+                "entry": null
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-monorepo/apps/web": {
     "schemaVersion": 1,
@@ -778,7 +2114,180 @@
       },
       "libraries": []
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "../../package.json",
+            "line": 5,
+            "text": "workspaces: apps/*, packages/*"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../../../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": {
+          "id": "vite",
+          "configFile": null
+        },
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 9,
+            "text": "vite: ^7.0.0"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "package.json",
+                  "line": 8,
+                  "text": "tailwindcss: ^4.1.0"
+                },
+                {
+                  "file": "src/index.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": "^4.1.0",
+                "entry": "src/index.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 8,
+            "text": "tailwindcss: ^4.1.0"
+          },
+          {
+            "file": "src/index.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "onboard-monorepo/apps/admin": {
     "schemaVersion": 1,
@@ -876,7 +2385,178 @@
       },
       "libraries": []
     },
-    "evidence": []
+    "evidence": [],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "../../package.json",
+            "line": 5,
+            "text": "workspaces: apps/*, packages/*"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../../../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": {
+          "id": "vite",
+          "configFile": null
+        },
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 7,
+            "text": "vite: ^7.0.0"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": "^19.0.0"
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "../../../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": null,
+                "entry": null
+              },
+              "support": "supported"
+            },
+            {
+              "id": "plain-css",
+              "label": "plain CSS",
+              "support": "supported",
+              "source": "inferred",
+              "evidence": [
+                {
+                  "file": "src/styles.css",
+                  "line": 1,
+                  "text": "stylesheet"
+                }
+              ]
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          },
+          {
+            "file": "src/styles.css",
+            "line": 1,
+            "text": "stylesheet"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   },
   "two-entries": {
     "schemaVersion": 1,
@@ -946,6 +2626,166 @@
           "src/second.css"
         ]
       }
-    ]
+    ],
+    "facts": {
+      "experimental": true,
+      "root": {
+        "value": ".",
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "package.json"
+          }
+        ]
+      },
+      "boundary": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "repo": {
+        "value": "../..",
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "../../.git",
+            "line": 1,
+            "text": "git checkout"
+          }
+        ]
+      },
+      "workspace": {
+        "value": null,
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "apps": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no workspaces key or workspace file"
+          }
+        ]
+      },
+      "packageManager": {
+        "value": "npm",
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": "../../package-lock.json",
+            "line": 1,
+            "text": "package-lock.json"
+          }
+        ]
+      },
+      "host": {
+        "value": null,
+        "source": "unknown",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no vite or next dependency, config or script"
+          }
+        ]
+      },
+      "react": {
+        "value": {
+          "installed": true,
+          "declared": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "React resolves"
+          }
+        ]
+      },
+      "styling": {
+        "value": {
+          "systems": [
+            {
+              "id": "tailwind",
+              "label": "Tailwind 4",
+              "source": "observed",
+              "evidence": [
+                {
+                  "file": "src/first.css",
+                  "line": 1,
+                  "text": "@import \"tailwindcss\""
+                },
+                {
+                  "file": "../../node_modules/tailwindcss/package.json",
+                  "line": 1,
+                  "text": "installed 4.3.3"
+                }
+              ],
+              "detail": {
+                "major": 4,
+                "installed": "4.3.3",
+                "declared": null,
+                "entry": "src/first.css"
+              },
+              "support": "supported"
+            }
+          ],
+          "tokens": null
+        },
+        "source": "observed",
+        "evidence": [
+          {
+            "file": "src/first.css",
+            "line": 1,
+            "text": "@import \"tailwindcss\""
+          },
+          {
+            "file": "../../node_modules/tailwindcss/package.json",
+            "line": 1,
+            "text": "installed 4.3.3"
+          }
+        ]
+      },
+      "libraries": {
+        "value": [],
+        "source": "declared",
+        "evidence": [
+          {
+            "file": "package.json",
+            "line": 1,
+            "text": "no component library dependency"
+          }
+        ]
+      },
+      "checkouts": {
+        "value": [],
+        "source": "inferred",
+        "evidence": [
+          {
+            "file": ".",
+            "line": 1,
+            "text": "no nested checkout"
+          }
+        ]
+      }
+    }
   }
 }

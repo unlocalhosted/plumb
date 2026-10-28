@@ -43,5 +43,5 @@ export function resolveFact<T>(claims: readonly Claim<T>[], override?: { value: 
   return { value: winner.value, source: winner.source, evidence: [...winner.evidence, ...agreeing.flatMap(item => item.evidence)], ...(conflicts.length ? { conflicts } : {}) };
 }
 
-export const known = <T>(value: T, source: Exclude<Source, 'unknown'>, evidence: Evidence[]): Fact<T> => ({ value, source, evidence });
+export const known = <T>(value: T | null, source: Exclude<Source, 'unknown'>, evidence: Evidence[]): Fact<T> => ({ value, source, evidence });
 export const unknown = <T>(evidence: Evidence[] = []): Fact<T> => ({ value: null, source: 'unknown', evidence });

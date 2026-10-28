@@ -4,6 +4,6 @@ import { stylingPlainCss } from './plain-css.js';
 
 /** Every styling system an app may mix; each detector claims its own entry with evidence and a support level. */
 export const stylingRegistry: readonly Detector[] = [stylingTailwind, stylingPlainCss];
-export { tailwindInstalled, tailwindImport } from './tailwind.js';
+export { tailwindInstall, tailwindInstalled, tailwindImport } from './tailwind.js';
 export { tokenSource } from './tokens.js';
 export type { TokenSource } from './tokens.js';

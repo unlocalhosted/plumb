@@ -91,7 +91,7 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
       server.httpServer?.once('close', () => { if (!owned.restarting) void relinquish(); });
       server.middlewares.use(createHandler(owned.session, {
         client: true, servedRoot: server.config.root,
-        readinessProject: { root, ...(options.config === undefined ? {} : { config: options.config }) },
+        readinessProject: { root, rootOverride: options.root !== undefined, ...(options.config === undefined ? {} : { config: options.config }) },
         readiness: {
           host: 'vite', development: !server.config.isProduction, plugin: true,
           fastRefresh: server.config.plugins.some(plugin => /^vite:react(?:-|:|$)/.test(plugin.name)),

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { hasShadcnConfig } from '../project-facts/index.js';
 import { dirname, join, relative, resolve } from 'node:path';
 import { check } from '../index.js';
 import { UsageError } from '../errors.js';
@@ -148,7 +149,7 @@ export function propose(options: ProposeOptions): Proposal {
   if (families.length) {
     if (entry) {
       const file = relative(root, entry).replaceAll('\\', '/');
-      shape = existsSync(join(root, 'components.json')) && /@theme\s+inline\b/.test(readFileSyncSafe(entry)) ? 'shadcn' : 'theme';
+      shape = hasShadcnConfig(root) && /@theme\s+inline\b/.test(readFileSyncSafe(entry)) ? 'shadcn' : 'theme';
       target = { file, create: false, importedFrom: null };
     } else {
       const main = mainStylesheet(report, root);

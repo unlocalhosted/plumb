@@ -21,7 +21,7 @@ export type { ServeInfo } from './discovery.js';
 export interface HandlerOptions {
   readiness?: Runtime;
   /** Host root remains available when analysis startup fails. */
-  readinessProject?: Pick<ReadinessOptions, 'root' | 'config'>;
+  readinessProject?: Pick<ReadinessOptions, 'root' | 'config' | 'rootOverride'>;
   token?: string; prefix?: string;
   /** Absolute directory the host serves browser source paths from. */ servedRoot?: string;
   /** Additional trusted Host authorities, including port when present. */ allowedHosts?: string[];
@@ -47,16 +47,17 @@ function position(params: Record<string, unknown>, name: string, optional = fals
   if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 1) throw new UsageError(`${name} must be a positive integer.`);
   return n;
 }
-export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness'> = {}): Promise<unknown> {
+export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
-async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness'>, json: boolean): Promise<unknown> {
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
   const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
     json ? session.readJSON(method, args) : Reflect.apply(session[method], session, args);
   if (method === 'readiness' || method === 'readiness/fix') return dispatchReadiness({
     root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
+    ...(options.readinessProject?.rootOverride ? { rootOverride: true } : {}),
     ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
     sourceEvidence: async () => (await session.health()).outsideSource ?? [],
   }, method, params);

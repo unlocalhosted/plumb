@@ -1,6 +1,7 @@
 // The craft spec as the server and the CLI see it (docs/briefs/craft-spec.md): the standard resolved with the project's
 // config, plus where a new token would be written (file, shape, hash), which only the server can know.
 import { existsSync } from 'node:fs';
+import { hasShadcnConfig } from './project-facts/index.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { resolveSpec, TIER_NAMES } from '../overlay/src/craft-spec.js';
@@ -29,7 +30,7 @@ function mainStylesheet(report: Report, root: string): string | undefined {
 
 const shapeOf = async (root: string, file: string): Promise<Shape> => {
   const text = await readFile(resolve(root, file), 'utf8').catch(() => '');
-  if (existsSync(join(root, 'components.json')) && /@theme\s+inline\b/.test(text)) return 'shadcn';
+  if (hasShadcnConfig(root) && /@theme\s+inline\b/.test(text)) return 'shadcn';
   return /@theme\b/.test(text) || /@import\s+["']tailwindcss["']/.test(text) ? 'theme' : 'root';
 };
 
