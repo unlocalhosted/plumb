@@ -144,7 +144,12 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
   const chain = [...new Set(levels.map(level => level.path))];
   const rest = input.files().filter(file => !chain.includes(file));
   const piece = [...words.split(/[^\p{L}\p{N} ]/u)].sort((a, b) => b.length - a.length)[0]!;
-  for (const group of [chain, rest]) {
+  // The project-wide search is for words that arrive from elsewhere (a prop, children). It is skipped when the element
+  // writes its own expression ({i + 1}: the words are computed here, not looked up), and for words too thin to identify
+  // one string (a lone digit matches whatever else happens to say "1").
+  const trivial = (words.match(/\p{L}/gu) ?? []).length < 2;
+  const ownExpression = element?.reason === textReasons.expression;
+  for (const group of ownExpression || trivial ? [chain] : [chain, rest]) {
     const hits: Hit[] = [];
     for (const file of group) {
       if (!cache.has(file)) {
