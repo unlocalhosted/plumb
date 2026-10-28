@@ -76,3 +76,13 @@ test('stylex: the @stylexjs import is the evidence; unsupported', async t => {
   assert.equal(item.support, 'unsupported');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
 });
+
+test('styled-components: found at the import site; unsupported; Tailwind beside it is still judged (mixed app)', async t => {
+  const { list, state } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', 'styled-components': '^6.1.0' } }, 'src/Button.jsx': "import { useState } from 'react';\nimport { Card } from './Card.jsx';\nimport styled from 'styled-components';\nexport const Button = styled.button`padding: 13px;`;\n", 'src/Card.jsx': 'export const Card = () => <div className="p-s4" />;\n' });
+  const item = find(list, 'styled-components');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Button.jsx', 3]);
+  assert.equal(find(list, 'tailwind').support, 'supported');
+  assert.ok(state.numbers.libraries.includes('styled-components'), 'the state report still names it');
+  assert.ok(!state.facts.libraries.value.some(item => item.id === 'styled-components'), 'it is a styling system, not a component library');
+});

@@ -1725,6 +1725,22 @@
               "support": "unsupported",
               "skipped": "Tailwind 3; plumb judges Tailwind 4",
               "next": "npx @tailwindcss/upgrade"
+            },
+            {
+              "id": "postcss",
+              "label": "PostCSS",
+              "support": "partial",
+              "judged": "stylesheets as authored",
+              "skipped": "declarations a PostCSS plugin generates (nesting and custom media are read as written)",
+              "next": "nothing to do; plumb reads your source CSS",
+              "source": "declared",
+              "evidence": [
+                {
+                  "file": "postcss.config.js",
+                  "line": 1,
+                  "text": "postcss.config.js"
+                }
+              ]
             }
           ],
           "tokens": null
@@ -1740,6 +1756,11 @@
             "file": "node_modules/tailwindcss/package.json",
             "line": 1,
             "text": "installed 3.4.17"
+          },
+          {
+            "file": "postcss.config.js",
+            "line": 1,
+            "text": "postcss.config.js"
           }
         ]
       },

@@ -275,7 +275,8 @@ async function stateOf(options: StateOptions): Promise<ProjectState> {
   // Installed beats declared: what runs is what is judged (owner decision 1).
   const major = installed ? Number(installed.split('.')[0]) : declaredMajor !== undefined ? Number(declaredMajor) : null;
   const facts = await projectFacts(root);
-  const libraries = [...new Set((facts.libraries.value ?? []).map(item => String(item.detail?.package ?? '').replace(/^(@[^/]+)\/.*$/, '$1')))].sort();
+  // The report's library list names every detected package, component libraries and CSS-in-JS systems alike.
+  const libraries = [...new Set([...facts.libraries.value ?? [], ...facts.styling.value?.systems ?? []].flatMap(item => item.detail?.package ? [String(item.detail.package).replace(/^(@[^/]+)\/.*$/, '$1')] : []))].filter(name => name !== 'tailwindcss').sort();
   const styledDependency = Object.keys(dependencies).filter(name => styledPattern.test(name)).sort()[0];
   const everything = await projectSourceFiles(root, config);
   const sources = everything.filter(item => /\.[jt]sx?$/.test(item));
