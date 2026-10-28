@@ -121,7 +121,7 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
 
   // 1 and 2: the element's own text and attributes, then each use site in the owner chain, innermost first.
   const levels = [{ path, line: input.line, column: input.column }, ...input.owners];
-  let translated = false, element: { file: string; line: number; reason: string } | undefined;
+  let translated = false, computed = false, element: { file: string; line: number; reason: string } | undefined;
   for (const [index, level] of levels.entries()) {
     const parsed = await load(level.path);
     if (!parsed) continue;
@@ -134,6 +134,8 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
       if (site) {
         element = { file: input.relative(level.path), line: level.line, reason: site.reason };
         if (site.reason === textReasons.translation) translated = true;
+        computed = site.element.children.some(child => child.type === 'JSXExpressionContainer' && (['BinaryExpression', 'UpdateExpression', 'UnaryExpression'].includes(child.expression.type) ||
+          child.expression.type === 'TemplateLiteral' && child.expression.expressions.length > 0));
       }
     }
   }
@@ -144,12 +146,11 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
   const chain = [...new Set(levels.map(level => level.path))];
   const rest = input.files().filter(file => !chain.includes(file));
   const piece = [...words.split(/[^\p{L}\p{N} ]/u)].sort((a, b) => b.length - a.length)[0]!;
-  // The project-wide search is for words that arrive from elsewhere (a prop, children). It is skipped when the element
-  // writes its own expression ({i + 1}: the words are computed here, not looked up), and for words too thin to identify
-  // one string (a lone digit matches whatever else happens to say "1").
+  // The project-wide search is for words that arrive from elsewhere (a looked-up value, a prop, children). It is skipped
+  // when the element computes its words itself ({i + 1}: nothing to look up), and for words too thin to identify one
+  // string (a lone digit matches whatever else happens to say "1").
   const trivial = (words.match(/\p{L}/gu) ?? []).length < 2;
-  const ownExpression = element?.reason === textReasons.expression;
-  for (const group of ownExpression || trivial ? [chain] : [chain, rest]) {
+  for (const group of computed || trivial ? [chain] : [chain, rest]) {
     const hits: Hit[] = [];
     for (const file of group) {
       if (!cache.has(file)) {
