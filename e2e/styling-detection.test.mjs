@@ -33,3 +33,10 @@ test('sass: an .scss import is found and marked unsupported; Tailwind is still j
   assert.ok(item.evidence.some(e => e.file === 'package.json' && /^sass:/.test(e.text)));
   assert.equal(find(list, 'tailwind').support, 'supported');
 });
+
+test('less: a .less import is found and marked unsupported', async t => {
+  const { list } = await detected(t, { 'src/Card.less': '.card { padding: 13px; }\n', 'src/Card.jsx': "import './Card.less';\nexport const Card = () => <div className=\"card\" />;\n" });
+  const item = find(list, 'less');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+});

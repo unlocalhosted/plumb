@@ -139,3 +139,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
   elements). Evidence is the import site (`src/Card.jsx:1`). The context now carries a bounded list of source
   modules (`sourceFiles`) and `importSite()` for evidence a person can open.
 - `styling.sass` (unsupported: .scss/.sass sources skipped; plumb reads the .css files it finds). Families may also name config files as evidence.
+- `styling.less` (unsupported: .less sources skipped).
