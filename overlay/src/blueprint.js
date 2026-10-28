@@ -100,7 +100,7 @@ export class Blueprint {
   }
   // Through the glass, for a hit test; and the glass's part while words are edited in place.
   through(fn) {
-    return this.#glass.through(fn);
+    return this.#glass.through(() => this.#marks.through(fn));
   }
   editing(on, rect) {
     if (this.active) this.#glass.editing(on, rect);

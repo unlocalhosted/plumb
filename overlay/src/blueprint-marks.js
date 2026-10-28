@@ -80,7 +80,7 @@ export const MARKS_CSS = `
   .bp .bp-hint.pill:has(.say) { height: auto; padding: 6px 10px; }
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
-  .bp .hit[data-under] { pointer-events: none; }
+  .bp .hit[data-under], .bp svg[data-through] .hit { pointer-events: none; }
   .bp g.break { transition: opacity var(--pl-dur-feedback) ease-out; opacity: 0; }
   .bp g.break[data-show] { opacity: 1; }
   .bp g.break.gone { opacity: 0; transition-duration: 240ms; }
@@ -417,6 +417,12 @@ export class MarkLayer {
     x = Math.max(8, Math.min(innerWidth - w - 8, x)); y = Math.max(8, Math.min(innerHeight - h - 8, y));
     this.#hint.style.left = `${x}px`;
     this.#hint.style.top = `${y}px`;
+  }
+
+  // Run fn with the marks' hit areas out of the way of hit tests (a caret looked up under a double-click on words that have a glow).
+  through(fn) {
+    this.#svg.toggleAttribute('data-through', true);
+    try { return fn(); } finally { this.#svg.toggleAttribute('data-through', false); }
   }
 
   // The page element under the pointer (looked for through the glass): its drifted region shows its breaks.
