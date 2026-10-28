@@ -25,6 +25,7 @@ export const libraryFamilies: readonly LibraryFamily[] = [
   family('react-aria', 'React Aria', /^(?:react-aria|react-aria-components|@react-aria\/.+|react-stately)$/, components('React Aria')),
   family('ark', 'Ark UI', /^@ark-ui\/.+$/, components('Ark UI')),
   family('shadcn', 'shadcn/ui', /^shadcn$/, { support: 'supported', judged: 'the generated components as your own source; the shadcn theme shape is read' }, ['components.json']),
+  family('tailwind-merge', 'tailwind-merge', /^tailwind-merge$/, classes),
 ];
 
 export const librariesRegistry: readonly Detector[] = [{

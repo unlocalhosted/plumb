@@ -127,3 +127,9 @@ test('shadcn: components.json is the evidence, with no package; supported as you
   assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
   assert.equal(item.detail, undefined, 'known by its config, not a dependency');
 });
+
+test('tailwind-merge: found; supported through the class helper', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', 'tailwind-merge': '^3.0.0' } }, 'src/cn.js': "import { twMerge } from 'tailwind-merge';\nexport const cn = (...a) => twMerge(a.join(' '));\n" }, 'libraries');
+  const item = find(list, 'tailwind-merge');
+  assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/cn.js', 1]);
+});

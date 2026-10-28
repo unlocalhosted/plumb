@@ -158,3 +158,4 @@ then the package.json line; a family may also be known by a config file. State e
 - React Aria (`react-aria`, `react-aria-components`, `@react-aria/*`, `react-stately`; partial).
 - Ark UI (`@ark-ui/*`; partial).
 - shadcn/ui (`components.json`, or the `shadcn` CLI package; supported: the generated components are your own source).
+- tailwind-merge (supported through the class helper).
