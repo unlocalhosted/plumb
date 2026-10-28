@@ -4,7 +4,9 @@
   "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./overlay/client.js"
+  ],
   "bin": {
     "plumber": "dist/cli.js"
   },
