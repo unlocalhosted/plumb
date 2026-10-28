@@ -86,3 +86,11 @@ test('styled-components: found at the import site; unsupported; Tailwind beside 
   assert.ok(state.numbers.libraries.includes('styled-components'), 'the state report still names it');
   assert.ok(!state.facts.libraries.value.some(item => item.id === 'styled-components'), 'it is a styling system, not a component library');
 });
+
+test('emotion: found at the import site; unsupported', async t => {
+  const { list, state } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@emotion/react': '^11.14.0', '@emotion/styled': '^11.14.0' } }, 'src/Card.jsx': "import styled from '@emotion/styled';\nexport const Card = styled.div`padding: 13px;`;\n" });
+  const item = find(list, 'emotion');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+  assert.ok(state.numbers.libraries.includes('@emotion'));
+});

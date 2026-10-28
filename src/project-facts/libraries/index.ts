@@ -17,7 +17,6 @@ export const libraryFamilies: readonly LibraryFamily[] = [
   family('headless-ui', 'Headless UI', /^@headlessui\//, components('Headless UI')),
   family('mui', 'MUI', /^@mui\//, { support: 'unsupported', skipped: 'MUI’s sx and theme styles', next: nothingToDo }),
   family('chakra', 'Chakra UI', /^@chakra-ui\//, { support: 'unsupported', skipped: 'Chakra’s style props and theme', next: nothingToDo }),
-  family('emotion', 'Emotion', /^@emotion\//, { support: 'unsupported', skipped: 'css`` and styled() templates', next: nothingToDo }),
   family('mantine', 'Mantine', /^@mantine\//, { support: 'unsupported', skipped: 'Mantine’s style props and theme', next: nothingToDo }),
   family('daisyui', 'daisyUI', /^daisyui$/, { support: 'partial', judged: 'your utilities beside its component classes', skipped: 'daisyUI’s component classes', next: nothingToDo }),
   family('tailwind-variants', 'tailwind-variants', /^tailwind-variants$/, classes),
