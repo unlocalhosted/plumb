@@ -295,6 +295,20 @@
             "detail": {
               "package": "class-variance-authority"
             }
+          },
+          {
+            "id": "shadcn",
+            "label": "shadcn/ui",
+            "support": "supported",
+            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "components.json",
+                "line": 1,
+                "text": "components.json"
+              }
+            ]
           }
         ],
         "source": "declared",
@@ -313,6 +327,11 @@
             "file": "package.json",
             "line": 7,
             "text": "class-variance-authority: ^0.7.0"
+          },
+          {
+            "file": "components.json",
+            "line": 1,
+            "text": "components.json"
           }
         ]
       },
@@ -626,6 +645,20 @@
             "detail": {
               "package": "class-variance-authority"
             }
+          },
+          {
+            "id": "shadcn",
+            "label": "shadcn/ui",
+            "support": "supported",
+            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "components.json",
+                "line": 1,
+                "text": "components.json"
+              }
+            ]
           }
         ],
         "source": "declared",
@@ -644,6 +677,11 @@
             "file": "package.json",
             "line": 7,
             "text": "class-variance-authority: ^0.7.0"
+          },
+          {
+            "file": "components.json",
+            "line": 1,
+            "text": "components.json"
           }
         ]
       },
@@ -1540,6 +1578,20 @@
             "detail": {
               "package": "class-variance-authority"
             }
+          },
+          {
+            "id": "shadcn",
+            "label": "shadcn/ui",
+            "support": "supported",
+            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "source": "declared",
+            "evidence": [
+              {
+                "file": "components.json",
+                "line": 1,
+                "text": "components.json"
+              }
+            ]
           }
         ],
         "source": "declared",
@@ -1558,6 +1610,11 @@
             "file": "package.json",
             "line": 7,
             "text": "class-variance-authority: ^0.7.0"
+          },
+          {
+            "file": "components.json",
+            "line": 1,
+            "text": "components.json"
           }
         ]
       },

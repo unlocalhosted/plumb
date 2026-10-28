@@ -120,3 +120,10 @@ test('ark: @ark-ui/react is found; partial', async t => {
   const item = find(list, 'ark');
   assert.equal(item.support, 'partial'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/D.jsx', 1]);
 });
+
+test('shadcn: components.json is the evidence, with no package; supported as your own source', async t => {
+  const { list } = await detected(t, { 'components.json': '{ "style": "new-york", "tailwind": { "css": "src/index.css" }, "aliases": { "ui": "@/components/ui" } }\n', 'src/components/ui/button.jsx': 'export const Button = () => <button className="p-s4" />;\n' }, 'libraries');
+  const item = find(list, 'shadcn');
+  assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
+  assert.equal(item.detail, undefined, 'known by its config, not a dependency');
+});

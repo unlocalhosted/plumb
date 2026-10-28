@@ -157,3 +157,4 @@ then the package.json line; a family may also be known by a config file. State e
 - `@base-ui/react` (Base UI, the current package name beside `@base-ui-components/*`; partial).
 - React Aria (`react-aria`, `react-aria-components`, `@react-aria/*`, `react-stately`; partial).
 - Ark UI (`@ark-ui/*`; partial).
+- shadcn/ui (`components.json`, or the `shadcn` CLI package; supported: the generated components are your own source).
