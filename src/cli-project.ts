@@ -1,56 +1,38 @@
-import { existsSync } from 'node:fs';
 import { table } from './cli-table.js';
-import { readFile, realpath, stat } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { readFile, stat } from 'node:fs/promises';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { glob } from 'tinyglobby';
-import { UsageError, userMessage } from './errors.js';
-import { packageMetadata, resolvedTailwind } from './setup-messages.js';
+import { UsageError } from './errors.js';
+import { projectFacts, manifestAt } from './project-facts/index.js';
+import type { App } from './project-facts/index.js';
 import { projectIgnore } from './project-facts/checkouts.js';
-import { pnpmDeclaresPackages } from './source-boundary.js';
 
 /** A shell argument, including workspace names containing spaces. */
 export const shellPath = (path: string) => /^[\w./@-]+$/.test(path) ? path : "'" + path.replaceAll("'", "'\\''") + "'";
 
-export interface WorkspaceApp { path: string; kind: string; tailwind: string | null }
+export type WorkspaceApp = App;
 /** The React apps of a workspace root, or none for a single project. `workspace` says the root declares one. */
 export async function workspaceApps(root: string): Promise<{ workspace: boolean; apps: WorkspaceApp[] }> {
-  const metadata = await packageMetadata(root);
-  let patterns: string[] = [];
-  const workspaces = metadata.workspaces;
-  if (Array.isArray(workspaces)) patterns = workspaces.filter((item): item is string => typeof item === 'string');
-  else if (workspaces && typeof workspaces === 'object' && 'packages' in workspaces && Array.isArray(workspaces.packages)) {
-    patterns = workspaces.packages.filter((item): item is string => typeof item === 'string');
-  }
-  const pnpm = resolve(root, 'pnpm-workspace.yaml');
-  let pnpmPackages = false;
-  if (existsSync(pnpm)) {
-    try {
-      const yaml = await readFile(pnpm, 'utf8');
-      pnpmPackages = pnpmDeclaresPackages(yaml); // no `packages:` = pnpm settings only, a single project
-      const block = /^packages:\s*\n((?:[ \t]+[^\n]*\n?)*)/m.exec(yaml)?.[1] ?? '';
-      patterns.push(...[...block.matchAll(/^\s*-\s*['"]?([^'"\s#]+)['"]?\s*(?:#.*)?$/gm)].map(match => match[1]!));
-      const inline = /^packages:\s*\[([^\]]*)\]/m.exec(yaml)?.[1];
-      if (inline) patterns.push(...inline.split(',').map(item => item.trim().replace(/^['"]|['"]$/g, '')));
-    } catch (error) { throw new UsageError(`Could not read pnpm-workspace.yaml: ${userMessage(error)}\n  → \${EDITOR:-vi} pnpm-workspace.yaml`); }
-  }
-  const explicit = workspaces !== undefined || pnpmPackages;
-  const selectors = patterns.length ? patterns.map(pattern => `${pattern.replace(/\/$/, '')}/package.json`) :
-    explicit ? ['**/package.json'] : ['*/package.json', '*/*/package.json'];
-  const manifests = await glob(selectors, { cwd: root, ignore: await projectIgnore(root), absolute: true, followSymbolicLinks: false });
+  const facts = await projectFacts(root);
+  const unreadable = facts.workspace.source === 'unknown' ? facts.workspace.evidence[0] : undefined;
+  if (unreadable?.file === 'package.json') throw new UsageError(`Could not read package.json at ${root}.\n  ${/not valid JSON/.test(unreadable.text) ? 'The file is not valid JSON.' : unreadable.text}\n  → plumber doctor --root ${JSON.stringify(root)}`);
+  if (unreadable) throw new UsageError(`Could not read ${unreadable.file}: ${unreadable.text}\n  → \${EDITOR:-vi} ${unreadable.file}`);
+  if (facts.workspace.value) return { workspace: true, apps: facts.apps.value ?? [] };
+  // Two sibling React apps with nothing declared still count as a workspace (until L2 of the design retires this).
+  const manifests = await glob(['*/package.json', '*/*/package.json'], { cwd: root, ignore: await projectIgnore(root), absolute: true, followSymbolicLinks: false });
   const apps: WorkspaceApp[] = [];
   for (const file of manifests.sort()) {
-    if (file === resolve(root, 'package.json')) continue;
-    const folder = dirname(file), child = await packageMetadata(folder);
+    const folder = dirname(file), child = manifestAt(folder);
+    if (!child || child instanceof Error) continue;
     const dependencies = { ...child.dependencies, ...child.devDependencies, ...child.peerDependencies };
     if (!dependencies.react && !dependencies.next) continue;
-    // Do not list a nested package twice when its parent already owns an app.
-    if (apps.some(app => relative(root, folder).startsWith(app.path + '/'))) continue;
-    const version = await resolvedTailwind(folder);
-    const declared = dependencies.tailwindcss?.match(/\d+/)?.[0];
-    apps.push({ path: relative(root, folder), kind: dependencies.next ? 'Next.js' : dependencies.vite ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? declared ?? null });
+    const path = relative(root, folder).replaceAll('\\', '/');
+    if (apps.some(app => path.startsWith(app.path + '/'))) continue;
+    const { resolvedTailwind } = await import('./setup-messages.js');
+    const version = await resolvedTailwind(folder).catch(() => null);
+    apps.push({ path, kind: dependencies.next ? 'Next.js' : dependencies.vite ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? dependencies.tailwindcss?.match(/\d+/)?.[0] ?? null });
   }
-  return { workspace: explicit || apps.length > 1, apps };
+  return { workspace: apps.length > 1, apps };
 }
 
 export async function cliProject(argument?: string, allowWorkspace = false): Promise<{ root: string; notice: string; apps?: WorkspaceApp[] }> {
@@ -63,15 +45,9 @@ export async function cliProject(argument?: string, allowWorkspace = false): Pro
     }
     throw error;
   }
-  let root = start;
-  const home = await realpath(homedir()).catch(() => homedir());
-  while (!existsSync(resolve(root, 'package.json'))) {
-    // A home directory is a boundary even when HOME belongs to another user.
-    if (root === home || root === homedir() || dirname(root) === root || /^(?:\/Users|\/home)\/[^/]+$/.test(root)) {
-      throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
-    }
-    root = dirname(root);
-  }
+  const facts = await projectFacts(start);
+  const root = facts.root.value;
+  if (root === null) throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
   const { workspace, apps } = await workspaceApps(root);
   if (workspace) {
     if (allowWorkspace) return { root, notice: '', apps };

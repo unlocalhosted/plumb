@@ -1,19 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
+import { isAbsolute, relative, resolve, sep, win32 } from 'node:path';
 import { UsageError } from './errors.js';
+import { boundaryOf } from './project-facts/index.js';
 
-/** pnpm-workspace.yaml declares a workspace only with `packages:`; without it the file is settings for one project. */
-export const pnpmDeclaresPackages = (yaml: string) => /^packages:/m.test(yaml);
-/** Nearest declared workspace wins; otherwise the Git checkout bounds shared source. */
-export function sourceBoundary(root: string): string {
-  for (let at = resolve(root);; at = dirname(at)) {
-    try { if (pnpmDeclaresPackages(readFileSync(join(at, 'pnpm-workspace.yaml'), 'utf8'))) return at; } catch {}
-    try { if (JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')).workspaces) return at; } catch {}
-    if (existsSync(join(at, '.git'))) return at;
-    if (dirname(at) === at) return resolve(root);
-  }
-}
+/** Nearest declared workspace wins; otherwise the Git checkout bounds shared source. The `boundary` fact, for sync callers. */
+export const sourceBoundary = (root: string): string => boundaryOf(root).value!;
 export function containsPath(root: string, file: string): boolean {
   const path = relative(root, file);
   return path !== '..' && !path.startsWith('..' + sep) && !isAbsolute(path);

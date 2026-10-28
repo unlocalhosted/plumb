@@ -9,6 +9,7 @@ import { UsageError } from '../errors.js';
 import { readDiscovery } from '../session/discovery.js';
 import { writeOverlay } from './overlay.js';
 import { overlaySetupNotice } from '../setup-messages.js';
+import { manifestAt, packageManagerOf } from '../project-facts/index.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -78,11 +79,9 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
   const commit = revision && /^[a-f\d]{40}$/.test(revision) ? revision : undefined;
   const pin = commit ?? `v${metadata.version}`;
   const action = `${repository}@${pin}`;
-  let dependencies = '';
-  if (existsSync(join(repo, 'package-lock.json'))) dependencies = '      - run: npm ci\n';
-  else if (existsSync(join(repo, 'pnpm-lock.yaml'))) dependencies = '      - run: corepack enable && pnpm install --frozen-lockfile\n';
-  else if (existsSync(join(repo, 'yarn.lock'))) dependencies = '      - run: corepack enable && yarn install --immutable\n';
-  else if (existsSync(join(repo, 'package.json'))) dependencies = '      - run: npm install\n';
+  const manager = packageManagerOf(repo), locked = manager.evidence.some(item => /(?:lock|shrinkwrap)/.test(item.file));
+  const install = { npm: locked ? 'npm ci' : 'npm install', pnpm: 'corepack enable && pnpm install --frozen-lockfile', yarn: 'corepack enable && yarn install --immutable', bun: 'bun install --frozen-lockfile', deno: 'deno install' }[manager.value!];
+  const dependencies = locked || manifestAt(repo) !== undefined ? `      - run: ${install}\n` : '';
   const notes = [owners.source ? `CI approvers: ${owners.logins.join(', ') || 'none'} from ${owners.source}.` : 'CI approvers: none. Set ledger-approvers in .github/workflows/plumb.yml before approving new tokens or exceptions.'];
   if (!commit) notes.push(`Action revision: ${pin}. This release tag must exist in ${repository}.`);
   if (owners.teams.length) notes.push(`CODEOWNERS teams: ${owners.teams.join(', ')}. The action accepts individual GitHub logins; add team members to ledger-approvers.`);

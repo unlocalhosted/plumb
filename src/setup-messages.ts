@@ -1,8 +1,8 @@
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { homedir } from 'node:os';
+import { packageManagerOf } from './project-facts/index.js';
+import type { PackageManager } from './project-facts/index.js';
 import { UsageError, userMessage } from './errors.js';
 import type { ClassSite } from './collect/classes.js';
 
@@ -34,16 +34,8 @@ export async function resolvedTailwind(root: string): Promise<string | null> {
     throw error;
   }
 }
-export function packageManager(root: string): 'npm' | 'pnpm' | 'yarn' | 'bun' {
-  let folder = root;
-  while (true) {
-    for (const [file, manager] of [['package-lock.json', 'npm'], ['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lock', 'bun'], ['bun.lockb', 'bun']] as const) {
-      if (existsSync(join(folder, file))) return manager;
-    }
-    if (folder === homedir() || dirname(folder) === folder) return 'npm';
-    folder = dirname(folder);
-  }
-}
+/** The `packageManager` fact's value, for install hints. */
+export const packageManager = (root: string): PackageManager => packageManagerOf(root).value!;
 export async function tailwindSetupProblem(root: string, entry: string | null, version: string | null): Promise<string | null> {
   const metadata = await packageMetadata(root);
   const declared = metadata.dependencies?.tailwindcss ?? metadata.devDependencies?.tailwindcss ?? metadata.peerDependencies?.tailwindcss;
