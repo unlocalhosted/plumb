@@ -155,3 +155,4 @@ Library families carry the import site as first evidence now (`src/Menu.jsx:1`; 
 then the package.json line; a family may also be known by a config file. State expectations regenerated (facts only).
 
 - `@base-ui/react` (Base UI, the current package name beside `@base-ui-components/*`; partial).
+- React Aria (`react-aria`, `react-aria-components`, `@react-aria/*`, `react-stately`; partial).

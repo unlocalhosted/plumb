@@ -22,6 +22,7 @@ export const libraryFamilies: readonly LibraryFamily[] = [
   family('tailwind-variants', 'tailwind-variants', /^tailwind-variants$/, classes),
   family('cva', 'CVA', /^class-variance-authority$/, classes),
   family('base-ui-react', 'Base UI', /^@base-ui\/react$/, components('Base UI')),
+  family('react-aria', 'React Aria', /^(?:react-aria|react-aria-components|@react-aria\/.+|react-stately)$/, components('React Aria')),
 ];
 
 export const librariesRegistry: readonly Detector[] = [{

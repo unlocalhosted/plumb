@@ -108,3 +108,9 @@ test('base-ui: @base-ui/react (the current package name) is found beside @base-u
   assert.equal(item.label, 'Base UI'); assert.equal(item.support, 'partial');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Menu.jsx', 1]);
 });
+
+test('react-aria: react-aria-components is found; partial', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', 'react-aria-components': '^1.5.0' } }, 'src/B.jsx': "import { Button } from 'react-aria-components';\nexport const B = () => <Button className=\"p-s4\" />;\n" }, 'libraries');
+  const item = find(list, 'react-aria');
+  assert.equal(item.support, 'partial'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/B.jsx', 1]);
+});
