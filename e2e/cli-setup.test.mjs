@@ -103,6 +103,15 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
   }
 });
 
+test('setup: a pnpm-workspace.yaml without packages is settings, so the folder is one project', async t => {
+  const settings = "allowBuilds:\n  esbuild: set this to true or false\n  workerd: set this to true or false\nminimumReleaseAgeExclude:\n  - '@unlocalhosted/react-plumber@0.2.0'\n";
+  const project = await fixture(t, { ...app, 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*' } }, 'pnpm-workspace.yaml': settings });
+  for (const args of [['--json'], ['--json', '--root', '.']]) {
+    const result = await run(project, args, '', 0);
+    assert.ok(JSON.parse(result.stdout));
+  }
+});
+
 test('setup: no source names configured globs, and never reports success', async t => {
   const project = await fixture(t, { 'package.json': { type: 'module' }, 'plumber.config.mjs': "export default { source: ['src/**'] };" });
   await run(project, [], "✗ Found no .tsx, .jsx or .css files under src/. Is this the right folder?\n  Looked in: src/** (from plumber.config.mjs `source`)\n  → change `source`, or run in your app's folder\n");

@@ -7,6 +7,7 @@ import { glob } from 'tinyglobby';
 import { UsageError, userMessage } from './errors.js';
 import { packageMetadata, resolvedTailwind } from './setup-messages.js';
 import { ignore } from './project.js';
+import { pnpmDeclaresPackages } from './source-boundary.js';
 
 /** A shell argument, including workspace names containing spaces. */
 export const shellPath = (path: string) => /^[\w./@-]+$/.test(path) ? path : "'" + path.replaceAll("'", "'\\''") + "'";
@@ -22,16 +23,18 @@ export async function workspaceApps(root: string): Promise<{ workspace: boolean;
     patterns = workspaces.packages.filter((item): item is string => typeof item === 'string');
   }
   const pnpm = resolve(root, 'pnpm-workspace.yaml');
+  let pnpmPackages = false;
   if (existsSync(pnpm)) {
     try {
       const yaml = await readFile(pnpm, 'utf8');
+      pnpmPackages = pnpmDeclaresPackages(yaml); // no `packages:` = pnpm settings only, a single project
       const block = /^packages:\s*\n((?:[ \t]+[^\n]*\n?)*)/m.exec(yaml)?.[1] ?? '';
       patterns.push(...[...block.matchAll(/^\s*-\s*['"]?([^'"\s#]+)['"]?\s*(?:#.*)?$/gm)].map(match => match[1]!));
       const inline = /^packages:\s*\[([^\]]*)\]/m.exec(yaml)?.[1];
       if (inline) patterns.push(...inline.split(',').map(item => item.trim().replace(/^['"]|['"]$/g, '')));
     } catch (error) { throw new UsageError(`Could not read pnpm-workspace.yaml: ${userMessage(error)}\n  → \${EDITOR:-vi} pnpm-workspace.yaml`); }
   }
-  const explicit = workspaces !== undefined || existsSync(pnpm);
+  const explicit = workspaces !== undefined || pnpmPackages;
   const selectors = patterns.length ? patterns.map(pattern => `${pattern.replace(/\/$/, '')}/package.json`) :
     explicit ? ['**/package.json'] : ['*/package.json', '*/*/package.json'];
   const manifests = await glob(selectors, { cwd: root, ignore, absolute: true, followSymbolicLinks: false });

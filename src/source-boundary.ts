@@ -3,10 +3,12 @@ import { realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { UsageError } from './errors.js';
 
+/** pnpm-workspace.yaml declares a workspace only with `packages:`; without it the file is settings for one project. */
+export const pnpmDeclaresPackages = (yaml: string) => /^packages:/m.test(yaml);
 /** Nearest declared workspace wins; otherwise the Git checkout bounds shared source. */
 export function sourceBoundary(root: string): string {
   for (let at = resolve(root);; at = dirname(at)) {
-    if (existsSync(join(at, 'pnpm-workspace.yaml'))) return at;
+    try { if (pnpmDeclaresPackages(readFileSync(join(at, 'pnpm-workspace.yaml'), 'utf8'))) return at; } catch {}
     try { if (JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')).workspaces) return at; } catch {}
     if (existsSync(join(at, '.git'))) return at;
     if (dirname(at) === at) return resolve(root);
