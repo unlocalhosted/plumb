@@ -55,3 +55,10 @@ test('unocss: the dependency and uno.config.ts are found; unsupported', async t 
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/main.jsx', 1]);
   assert.ok(item.evidence.some(e => e.file === 'uno.config.ts'));
 });
+
+test('panda: the styled-system import is the evidence; unsupported', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@pandacss/dev': '^0.50.0' } }, 'panda.config.ts': 'export default {};\n', 'src/Card.jsx': "import { css } from '../styled-system/css';\nexport const Card = () => <div className={css({ p: 4 })} />;\n" });
+  const item = find(list, 'panda');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+});

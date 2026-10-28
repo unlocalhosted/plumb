@@ -142,3 +142,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.less` (unsupported: .less sources skipped).
 - `styling.postcss` (partial: stylesheets as authored; plugin-generated declarations skipped). Evidence is the config file.
 - `styling.unocss` (unsupported).
+- `styling.panda` (unsupported).
