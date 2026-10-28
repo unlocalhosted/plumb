@@ -24,3 +24,12 @@ test('css-modules: a *.module.css import is found at its line, partial, beside T
   assert.match(item.judged, /\*\.module\.css/); assert.match(item.skipped, /styles object/);
   assert.equal(find(list, 'tailwind').support, 'supported');
 });
+
+test('sass: an .scss import is found and marked unsupported; Tailwind is still judged', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', sass: '^1.80.0' } }, 'src/Card.scss': '.card { padding: 13px; }\n', 'src/Card.jsx': "import './Card.scss';\nexport const Card = () => <div className=\"card\" />;\n" });
+  const item = find(list, 'sass');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+  assert.ok(item.evidence.some(e => e.file === 'package.json' && /^sass:/.test(e.text)));
+  assert.equal(find(list, 'tailwind').support, 'supported');
+});
