@@ -18,12 +18,12 @@ export const capabilityWords: Record<Capability, string> = {
   usage: 'usage (every primitive, part and site)',
   states: 'states',
   structure: 'structure (portals, slots, render props)',
-  owned: 'owned values',
+  owned: 'owned values (its own variables and providers)',
   system: 'the design system (components.json, components/ui)',
 };
 
 /** One rendered element of the library: `Slider.Thumb` at a file:line. `portal`: rendered elsewhere in the DOM; `render`: the user's element replaces the library's. */
-export interface UsageSite extends Evidence { component: string; part: string | null; structure?: 'portal' | 'render' }
+export interface UsageSite extends Evidence { component: string; part: string | null; structure?: 'portal' | 'render' | 'provider' }
 export interface Usage {
   /** Files that render at least one of the library's elements. */
   files: number;
@@ -56,6 +56,12 @@ export interface LibraryAdapter {
    * `asChild`), so the user's JSX is the one to locate. `role`: what a component is, for the craft rules.
    */
   structure?: { portal: RegExp; render: readonly string[]; role(component: string, part: string | null): Role | null };
+  /**
+   * `owned`: what is the library's, never drift. `variables`: the CSS variables it sets at runtime (`--anchor-width`),
+   * so reading one is not a dead variable. `providers`: the components and parts that configure it (`Tooltip.Provider`,
+   * `DirectionProvider`), shown in the usage map, with nothing to judge on them.
+   */
+  owned?: { variables: RegExp; providers: RegExp };
 }
 
 /** The outcome of running one capability: it ran, or it could not (a parse failure, an unknown shape), with why. */
@@ -117,7 +123,8 @@ export function collectUsage(adapter: LibraryAdapter, ctx: Context): { usage: Us
           else if (rest.length) part = [part, ...rest].filter(Boolean).join('.');
           if (component) {
             const line = lineOf(node.start);
-            const structure = adapter.structure && (part && adapter.structure.portal.test(part) ? 'portal' as const : node.attributes.some(item => item.type === 'JSXAttribute' && item.name.type === 'JSXIdentifier' && adapter.structure!.render.includes(item.name.name)) ? 'render' as const : undefined);
+            const structure = adapter.owned?.providers.test(part ? `${component}.${part}` : component) ? 'provider' as const
+              : adapter.structure && (part && adapter.structure.portal.test(part) ? 'portal' as const : node.attributes.some(item => item.type === 'JSXAttribute' && item.name.type === 'JSXIdentifier' && adapter.structure!.render.includes(item.name.name)) ? 'render' as const : undefined);
             sites.push({ file: ctx.file(file), line, text: text.slice(starts[line - 1], text.indexOf('\n', node.start) === -1 ? undefined : text.indexOf('\n', node.start)).trim().slice(0, 80), component, part, ...(structure ? { structure } : {}) });
             files.add(file);
             (perComponent.get(component) ?? perComponent.set(component, new Set()).get(component)!).add(file);

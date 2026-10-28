@@ -260,7 +260,7 @@
             "label": "Radix",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -309,7 +309,7 @@
             "label": "shadcn/ui",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui)",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -668,7 +668,7 @@
             "label": "Radix",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -717,7 +717,7 @@
             "label": "shadcn/ui",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui)",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -1644,7 +1644,7 @@
             "label": "Radix",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -1693,7 +1693,7 @@
             "label": "shadcn/ui",
             "support": "partial",
             "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui)",
+            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [

@@ -51,6 +51,8 @@ export interface Declaration {
   /** Authored CSS before compiler-generated compatibility fallbacks. */
   authoredCss?: string;
   package?: string;
+  /** The library whose runtime variable this whole value is (`var(--anchor-width)`): its decision, not judged; reading it is never a dead variable. */
+  owned?: string;
   opaque?: 'dynamic-value' | 'dynamic-class' | 'spread';
   /** A runtime value read symbolically: a token scaled or offset at runtime, or a constant step times a runtime number. */
   dynamic?: { kind: 'reference' | 'step'; by: string };

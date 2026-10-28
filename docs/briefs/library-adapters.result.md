@@ -161,7 +161,7 @@ is in `--json` (`when`), `--agent`, and `explain`. The browser suites (serve, ov
 
 ## Layer 3: Base UI structure (portals, render prop) in locate
 
-Commit: (next layer records it)
+Commit: f3fdcfb
 
 What was found first: locate already lands on the user's JSX for Base UI, both through the stamp (plumb() before
 react(): Base UI spreads `data-plumb-source` onto the element it renders, through the portal) and through the owner
@@ -205,3 +205,53 @@ $ node --test e2e/library-adapters.test.mjs
 ```
 Unverified: Next.js hosts for the portal case (the structure test runs Vite only; locate.test.mjs covers Next for plain
 elements); `render` as a function that returns a fragment or a component (not an element) is not in the fixture.
+
+## Layer 4: Base UI owned values and providers
+
+Commit: (next layer records it)
+
+What changed
+- Contract: `LibraryAdapter.owned = { variables, providers }`: the CSS variables the library sets at runtime and the
+  components/parts that configure it. Base UI: `--anchor-width/height`, `--available-width/height`,
+  `--transform-origin`, `--popup-width/height`, `--positioner-width/height`, `--active-tab-*`,
+  `--collapsible-panel-*`, `--accordion-panel-*`, `--nested-dialogs`, `--input-container-width`, `--slider-*`,
+  `--toast-*`, `--scroll-area-*`; providers `*.Provider`, `DirectionProvider`. Capabilities: all four; Base UI is
+  now `supported` and prints no notice.
+- `src/index.ts`: every `var()` of a detected library's variable is defined (never `existence/dead-var`); a value
+  that is exactly that variable gets `Declaration.owned = 'Base UI'` and `isJudged` (`src/rules/families.ts`) skips
+  it, so it is never off a scale. `calc(var(--popup-height) + 13px)` keeps its 13px judged. `owned` is in the report
+  schema. Providers are marked `structure: 'provider'` in the usage map.
+
+Commands and raw output (crafting-ui, before → after this layer)
+```
+$ node ../plumb/dist/cli.js --json | dead-var findings            (before)
+src/styles/craft.css:274 `var(--active-tab-left)` is never defined
+src/styles/craft.css:275 `var(--active-tab-top)` is never defined
+$ … findings on craft.css:274/275                                  (before)
+provenance/spacing error left var(--active-tab-left) isn't on your spacing scale
+provenance/spacing error top var(--active-tab-top) isn't on your spacing scale
+$ node ../plumb/dist/cli.js --json | dead-var findings            (after)
+dead-var findings: 0
+$ … findings on craft.css:274/275                                  (after)
+(none)
+$ node ../plumb/dist/cli.js doctor | grep -E "^Libraries|^supported|^partial"
+Libraries:       Base UI              Base UI: 9 files · Checkbox 3, Slider 3, Popover 2, Switch 1,…
+supported   Tailwind 4:        package.json:24   judged
+supported   Base UI:           src/comp…nt.tsx:5 usage (every primitive, part and site), states, st…
+$ node ../plumb/dist/cli.js 2>&1 >/dev/null | head -1
+(no "Partly judged" line any more)
+$ state --json → facts.libraries.value[0]
+supported {"usage":"judged","states":"judged","structure":"judged","owned":"judged"}
+src/pages/MultiplaneBuilder.tsx:324 Popover.Portal portal · src/pages/MultiplaneBuilder.tsx:499 Popover.Portal portal · src/specimen/CraftSpecimen.tsx:96 Popover.Portal portal
+```
+Two false findings on the owner's own app are gone (`--active-tab-left/top`, which Base UI's Tabs.Indicator sets).
+
+```
+$ node --test e2e/library-adapters.test.mjs
+ℹ pass 7  ℹ fail 0
+$ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-detection.test.mjs e2e/families.test.mjs e2e/report.test.mjs e2e/classes.test.mjs
+ℹ tests 51  ℹ pass 51  ℹ fail 0   (after regenerating the three state expectations, facts.libraries only, and pinning Base UI as supported in styling-detection)
+```
+Unverified: Base UI prop defaults (`sideOffset` and the like) are props, not CSS; plumb judges CSS, so nothing is
+flagged there and nothing was added. The variable list is from Base UI's docs as remembered, not generated from the
+installed package; an undocumented `--*` the library sets would still read as the author's.

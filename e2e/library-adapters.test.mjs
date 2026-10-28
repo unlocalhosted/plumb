@@ -16,10 +16,10 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
     'src/Pop.jsx': "import { Popover } from '@base-ui/react';\nexport const Pop = () => <Popover.Root><Popover.Trigger /><Popover.Portal><Popover.Positioner><Popover.Popup className=\"p-4\" /></Popover.Positioner></Popover.Portal></Popover.Root>;\n",
   }, 'libraries');
   const item = find(list, 'base-ui-react');
-  assert.equal(item.support, 'partial');
-  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged' });
-  assert.equal(item.judged, 'usage (every primitive, part and site), states, structure (portals, slots, render props)');
-  assert.equal(item.skipped, 'not judged yet: owned values');
+  assert.equal(item.support, 'supported');
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged', owned: 'judged' });
+  assert.equal(item.judged, 'usage (every primitive, part and site), states, structure (portals, slots, render props), owned values (its own variables and providers)');
+  assert.equal(item.skipped, undefined);
   assert.deepEqual(item.usage.sites.filter(site => site.structure).map(site => `${site.component}.${site.part} ${site.structure}`), ['Popover.Portal portal'], 'the portal part is marked');
   assert.equal(item.usage.files, 3);
   assert.deepEqual(item.usage.components, { Slider: 2, Popover: 1, Switch: 1 });
@@ -30,9 +30,9 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   ]);
   const doctor = await run(project, ['doctor'], 1);
   assert.match(doctor.stdout, /^Libraries:\s+Base UI\s+Base UI: 3 files · Slider 2, Popover 1, Switch 1/m);
-  assert.match(doctor.stdout.split('\nSupport\n')[1], /^partial\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states, st/m);
+  assert.match(doctor.stdout.split('\nSupport\n')[1], /^supported\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states, st/m);
   const check = await run(project, [], 0);
-  assert.equal(check.stderr, '! Partly judged: Base UI (src/Pop.jsx:1): usage (every primitive, part and site), states, structure (portals, slots, render props); not judged yet: owned values\n');
+  assert.equal(check.stderr, '', 'a fully understood library prints no notice');
 });
 
 test('Radix: namespace, named-part and prefixed imports name the same component and part; the bare name is its root', async t => {
@@ -61,7 +61,7 @@ test('shadcn: components.json aliases say where the generated components live; e
   assert.equal(item.support, 'partial');
   assert.deepEqual(item.usage.components, { Button: 1, Dialog: 1 });
   assert.deepEqual(sites(item), ['src/App.jsx:3 Dialog', 'src/App.jsx:3 Dialog.Content', 'src/App.jsx:3 Button']);
-  assert.match(item.skipped, /not judged yet: states, structure \(portals, slots, render props\), owned values, the design system \(components\.json, components\/ui\)/);
+  assert.match(item.skipped, /not judged yet: states, structure \(portals, slots, render props\), owned values \(its own variables and providers\), the design system \(components\.json, components\/ui\)/);
 });
 
 test('a file that will not parse makes usage unknown, with the file named; the rest is still counted and nothing crashes', async t => {
@@ -71,7 +71,7 @@ test('a file that will not parse makes usage unknown, with the file named; the r
     'src/Bad.jsx': "import { Switch } from '@base-ui/react/switch';\nexport const Bad = () => <Switch.Root>\n",
   }, 'libraries');
   const item = find(list, 'base-ui-react');
-  assert.deepEqual(item.capabilities, { usage: 'unknown', states: 'judged', structure: 'judged' });
+  assert.deepEqual(item.capabilities, { usage: 'unknown', states: 'judged', structure: 'judged', owned: 'judged' });
   assert.equal(item.support, 'partial');
   assert.match(item.skipped, /could not be read here: usage \(every primitive, part and site\)/);
   assert.ok(item.evidence.some(where => where.file === 'src/Bad.jsx' && /could not parse/.test(where.text)), JSON.stringify(item.evidence));
@@ -136,4 +136,39 @@ test('Base UI states: variants, stylesheet selectors, className and style functi
   assert.equal(report.findings.find(finding => finding.rule === 'existence/dynamic-class' && finding.declaration.site.line === 10)?.declaration.site.text, undefined);
   const explain = await run(project, ['sites', 'src/Check.jsx'], 0).catch(() => null);
   if (explain) assert.match(explain.stdout, /state: checked/);
+});
+
+// ---- Layer 4: Base UI owned values. The library's runtime variables are defined by it (never a dead variable) and
+// are its decision (never off a scale); its providers are shown in the usage map with nothing to judge.
+test('Base UI owned values: its runtime variables are neither dead nor drift; a variable of your own still is; providers are shown', async t => {
+  const { list, project } = await detected(t, {
+    'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@base-ui/react': '^1.8.0' } },
+    'src/index.css': '@import "tailwindcss";\n@theme { --spacing-s4: 1rem; --color-ink: #111; }\n.indicator { left: var(--active-tab-left); width: var(--active-tab-width); }\n.mine { left: var(--my-left); }\n',
+    'src/Tabs.jsx': [
+      "import './index.css';",
+      "import { Tabs } from '@base-ui/react/tabs';",
+      "import { Tooltip } from '@base-ui/react/tooltip';",
+      "import { DirectionProvider } from '@base-ui/react/direction-provider';",
+      'export const T = () => (',
+      '  <DirectionProvider direction="ltr"><Tooltip.Provider delay={200}>',
+      '    <Tabs.Root><Tabs.List><Tabs.Tab className="w-[var(--anchor-width)] p-[calc(var(--popup-height)+13px)]">a</Tabs.Tab><Tabs.Indicator className="indicator" /></Tabs.List></Tabs.Root>',
+      '  </Tooltip.Provider></DirectionProvider>',
+      ');',
+    ].join('\n') + '\n',
+  }, 'libraries');
+  const item = find(list, 'base-ui-react');
+  assert.equal(item.support, 'supported');
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged', owned: 'judged' });
+  assert.deepEqual(item.usage.sites.filter(site => site.structure === 'provider').map(site => `${site.component}${site.part ? `.${site.part}` : ''}`), ['DirectionProvider', 'Tooltip.Provider']);
+  const check = await run(project, ['--json'], 0);
+  assert.equal(check.stderr, '', 'a fully understood library prints no notice');
+  const report = json(check);
+  const dead = report.findings.filter(finding => finding.rule === 'existence/dead-var').map(finding => finding.title);
+  assert.deepEqual(dead, ['`var(--my-left)` is never defined'], 'only your own undefined variable is dead');
+  assert.ok(!report.findings.some(finding => finding.rule.startsWith('provenance/') && /active-tab|anchor-width/.test(finding.declaration.value)), 'the library\'s variable is not off your scale');
+  const calc = report.findings.find(finding => finding.rule.startsWith('provenance/') && /popup-height/.test(finding.declaration.value));
+  assert.ok(calc, 'the 13px beside the library variable is still judged');
+  assert.equal(calc.declaration.owned, undefined);
+  const owned = report.findings.flatMap(finding => finding.occurrences ?? [finding.declaration]).find(declaration => declaration.owned);
+  assert.equal(owned, undefined, 'owned declarations are in no finding');
 });

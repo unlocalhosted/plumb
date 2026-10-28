@@ -236,7 +236,7 @@
           "properties": { "kind": { "enum": ["element", "component"] }, "name": { "type": "string" } }
         },
         "origin": { "enum": ["class", "arbitrary", "stylesheet", "apply", "inline", "custom-property", "keyframes"] },
-        "sourceOrigin": { "enum": ["project", "framework"] }, "package": { "type": "string" },
+        "sourceOrigin": { "enum": ["project", "framework"] }, "package": { "type": "string" }, "owned": { "type": "string" },
         "authoredValue": { "type": "boolean" }, "decisionRefs": { "$ref": "#/$defs/strings" }, "authoredCss": { "type": "string" },
         "opaque": { "enum": ["dynamic-value", "dynamic-class", "spread"] }
       }

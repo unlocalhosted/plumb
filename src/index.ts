@@ -8,6 +8,7 @@ import { collectClasses } from './collect/classes.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
 import { existence, location, unreachableClasses, deadVariables } from './rules/existence.js';
+import { varUses } from './rules/families.js';
 import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
@@ -158,8 +159,19 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file));
   // A detected library's states, named on every declaration whose selector carries one of its attributes.
-  const stateAdapters = ((await projectFacts(root, { root })).libraries.value ?? []).flatMap(item => { const adapter = adapterOf(item); return adapter?.state && item.capabilities?.states === 'judged' ? [adapter] : []; });
+  const detectedLibraries = (await projectFacts(root, { root })).libraries.value ?? [];
+  const stateAdapters = detectedLibraries.flatMap(item => { const adapter = adapterOf(item); return adapter?.state && item.capabilities?.states === 'judged' ? [adapter] : []; });
   if (stateAdapters.length) for (const declaration of declarations) { const states = selectorStates(declaration.when, stateAdapters); if (states.length) declaration.when = [...declaration.when, ...states]; }
+  // A detected library's own runtime variables: reading one is reading the library, never a dead variable.
+  const owners = detectedLibraries.flatMap(item => { const adapter = adapterOf(item); return adapter?.owned && item.capabilities?.owned === 'judged' ? [{ label: item.label, variables: adapter.owned.variables }] : []; });
+  const ownedVariables = new Set<string>();
+  if (owners.length) for (const declaration of declarations) for (const use of varUses(declaration.value)) {
+    const owner = owners.find(item => item.variables.test(use.name));
+    if (!owner) continue;
+    ownedVariables.add(use.name);
+    // The whole value is the library's only when it is that one variable; `calc(var(--anchor-width) + 13px)` keeps its 13px judged.
+    if (/^var\(\s*--[\w-]+\s*(?:,[^)]*)?\)$/.test(declaration.value.trim())) declaration.owned = owner.label;
+  }
   profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
   profileProgress('phase:decisions');
@@ -167,7 +179,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const decisionsMs = performance.now() - decisionsStart;
   const provenanceStart = performance.now();
   profileProgress('phase:provenance', { declarations: declarations.length });
-  const defined = new Set([...record.defined, ...collected.styles.definedVariables,
+  const defined = new Set([...record.defined, ...collected.styles.definedVariables, ...ownedVariables,
     ...[...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations].filter(d => d.prop.startsWith('--')).map(d => d.prop)]);
   for (const sheet of collected.styles.stylesheets) for (const match of cssCode(sheet.css).matchAll(/@property\s+(--[\w-]+)/g)) defined.add(match[1]!);
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);

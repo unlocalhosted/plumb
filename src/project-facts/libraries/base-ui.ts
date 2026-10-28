@@ -9,7 +9,13 @@ const flags = new Set(['checked', 'unchecked', 'indeterminate', 'disabled', 'rea
 const valued = new Set(['orientation', 'side', 'align', 'swipe-direction', 'activation-direction', 'type', 'index', 'instant', 'position']);
 export const baseUi: LibraryAdapter = {
   family: 'base-ui',
-  capabilities: ['usage', 'states', 'structure'],
+  capabilities: ['usage', 'states', 'structure', 'owned'],
+  // Variables Base UI sets at runtime on its parts (positioners, popups, panels, tabs indicator, toasts, scroll areas,
+  // sliders), and the components that configure it.
+  owned: {
+    variables: /^--(?:anchor-(?:width|height)|available-(?:width|height)|transform-origin|popup-(?:width|height)|positioner-(?:width|height)|active-tab-(?:left|right|top|bottom|width|height)|collapsible-panel-(?:width|height)|accordion-panel-(?:width|height)|nested-dialogs|input-container-width|slider-[\w-]+|toast-[\w-]+|scroll-area-[\w-]+)$/,
+    providers: /(?:^|\.)(?:[A-Z]\w*Provider|Provider)$/,
+  },
   // `Popover.Portal` renders its subtree under body; `render` replaces the library's element with the user's.
   structure: { portal: /^Portal$/, render: ['render'], role(component, part) {
     const name = component.replace(/^./, char => char.toLowerCase()), last = part ?? component;

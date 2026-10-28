@@ -22,7 +22,8 @@ export function familiesFor(prop: string): JudgedFamily[] {
   return result;
 }
 export function isJudged(declaration: Declaration, family?: Family): boolean {
-  return declaration.origin !== 'keyframes' && declaration.sourceOrigin !== 'framework' &&
+  // A value that is a library's own runtime variable is the library's decision, not the author's.
+  return declaration.origin !== 'keyframes' && declaration.sourceOrigin !== 'framework' && !declaration.owned &&
     (!(declaration.origin === 'class' || declaration.origin === 'arbitrary' || declaration.origin === 'apply') || declaration.authoredValue === true) &&
     (family ? familiesFor(declaration.prop).includes(family as JudgedFamily) : familiesFor(declaration.prop).length > 0);
 }

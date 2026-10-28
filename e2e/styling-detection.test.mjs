@@ -93,7 +93,7 @@ test('linaria: found at the import site; unsupported', async t => {
 test('base-ui: @base-ui/react (the current package name) is found beside @base-ui-components', async t => {
   const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@base-ui/react': '^1.8.0' } }, 'src/Menu.jsx': "import { Menu } from '@base-ui/react/menu';\nexport const M = () => <Menu.Root />;\n" }, 'libraries');
   const item = find(list, 'base-ui-react');
-  assert.equal(item.label, 'Base UI'); assert.equal(item.support, 'partial');
+  assert.equal(item.label, 'Base UI'); assert.equal(item.support, 'supported', 'every capability of its adapter ran');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Menu.jsx', 1]);
 });
 
