@@ -212,12 +212,12 @@ export async function writeInteraction(page, rows, app, scratch, gate, remember)
           const root = document.querySelector('plumb-overlay')?.shadowRoot;
           const pending = root?.querySelector('.state')?.textContent ?? '';
           // Let the overlay's own reread finish before asking for independent proof.
-          if (!/Wrote 1 edit/.test(pending) || /Reload to see/.test(pending)) return null;
+          if (!/Applied 1 change/.test(pending) || /Reload to see/.test(pending)) return null;
           const reading = await window.__plumb.overlay.read(element, true);
           const probe = window.__plumbWriteProbe;
           const updated = !probe || probe.element !== element || probe.updates.length || element.getAttribute('class') !== classes;
           if (reading.status !== 'ready' || reading.hash === hash || reading.marks.some(mark => mark.key === key && mark.text === from)
-            || !updated || !/Wrote 1 edit/.test(pending) || /Reload to see/.test(pending)) return null;
+            || !updated || !/Applied 1 change/.test(pending) || /Reload to see/.test(pending)) return null;
           // Closing removes any retained preview. Computed values must come from the app's own updated source.
           window.__plumb.overlay.close();
           await new Promise(resolveSettle => setTimeout(resolveSettle, 250));
