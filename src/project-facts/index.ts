@@ -26,7 +26,7 @@ import { reactResolve } from './project/react.js';
 import type { React } from './project/react.js';
 import { stylingRegistry, tokenSource } from './styling/index.js';
 import type { TokenSource } from './styling/index.js';
-import { librariesRegistry } from './libraries/index.js';
+import { describeUsage, librariesRegistry } from './libraries/index.js';
 import type { Detected } from './support.js';
 
 export type { Fact, Evidence, Claim, Source } from './facts.js';
@@ -35,7 +35,8 @@ export type { Support, SupportNote } from './support.js';
 export { describeDetected, supportSummary, supportNotice, supportRefusal } from './support.js';
 export type { SupportSummary } from './support.js';
 export { tailwindInstalled } from './styling/index.js';
-export { libraryFamilies } from './libraries/index.js';
+export { adapterOf, capabilityWords, describeUsage, libraryAdapters, libraryFamilies, shadcnConfig, uiAliases } from './libraries/index.js';
+export type { Capability, LibraryAdapter, Usage, UsageSite, ShadcnConfig } from './libraries/index.js';
 
 
 export interface App { path: string; kind: string; tailwind: string | null }
@@ -267,7 +268,8 @@ export function describeFacts(facts: PublicFacts): [name: string, value: string,
     ['React', facts.react.value?.installed ? 'installed' : facts.react.value?.declared ? 'declared, not installed' : 'none', `${sourceText(facts.react)}: ${where(facts.react)}`],
     ['Styling', styling?.systems.length ? styling.systems.map(item => item.label).join(', ') : 'none', styling?.systems.map(item => `${item.label}: ${item.evidence[0]?.file}:${item.evidence[0]?.line}`).join('; ') ?? where(facts.styling)],
     ['Tokens', styling?.tokens ? styling.tokens.kind : 'none', styling?.tokens ? `${styling.tokens.evidence.file}:${styling.tokens.evidence.line} ${styling.tokens.evidence.text}` : ''],
-    ['Libraries', facts.libraries.value?.length ? facts.libraries.value.map(item => item.label).join(', ') : 'none', facts.libraries.value?.map(item => `${item.label}: ${item.evidence[0]?.file}:${item.evidence[0]?.line}`).join('; ') ?? ''],
+    // A library with a usage map shows how much of it the app renders; one without shows where it was first seen.
+    ['Libraries', facts.libraries.value?.length ? facts.libraries.value.map(item => item.label).join(', ') : 'none', facts.libraries.value?.map(item => `${item.label}: ${item.usage ? describeUsage(item.usage) : `${item.evidence[0]?.file}:${item.evidence[0]?.line}`}`).join('; ') ?? ''],
     ['Checkouts', facts.checkouts.value?.length ? `${facts.checkouts.value.length} nested, excluded` : 'none', facts.checkouts.value?.map(item => `${item.path} (${item.kind}, ${item.evidence.file}:${item.evidence.line})`).join(', ') ?? ''],
   ];
 }

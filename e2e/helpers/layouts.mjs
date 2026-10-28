@@ -104,3 +104,16 @@ export function sameFacts(fromState, fromReadiness) {
   assert.equal(fromReadiness.host.source, 'observed');
 }
 
+
+/** A fixture app judged through the real CLI: the detected styling systems or libraries from `state --json`. */
+export async function detected(t, files, kind = 'styling') {
+  const project = await fixture(t, viteApp(files));
+  await installTailwind(project.root);
+  const state = json(await run(project, ['state', '--json']));
+  const list = kind === 'styling' ? state.facts.styling.value.systems : state.facts.libraries.value;
+  // The check still runs: finding something unsupported is never a failure by itself.
+  const check = await run(project, ['--json'], 0);
+  assert.ok(json(check));
+  return { list, state, project };
+}
+export const find = (list, id) => { const item = list.find(item => item.id === id); assert.ok(item, `${id} in ${list.map(item => item.id)}`); return item; };

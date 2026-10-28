@@ -2,19 +2,7 @@
 // (`plumber state --json` → facts). Detection only: finding a system plumb cannot judge never fails the run.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fixture, installTailwind, json, put, run, viteApp } from './helpers/layouts.mjs';
-
-export async function detected(t, files, kind = 'styling') {
-  const project = await fixture(t, viteApp(files));
-  await installTailwind(project.root);
-  const state = json(await run(project, ['state', '--json']));
-  const list = kind === 'styling' ? state.facts.styling.value.systems : state.facts.libraries.value;
-  // The check still runs: finding something unsupported is never a failure by itself.
-  const check = await run(project, ['--json'], 0);
-  assert.ok(json(check));
-  return { list, state, project };
-}
-export const find = (list, id) => { const item = list.find(item => item.id === id); assert.ok(item, `${id} in ${list.map(item => item.id)}`); return item; };
+import { detected, find, fixture, json, put, run } from './helpers/layouts.mjs';
 
 test('css-modules: a *.module.css import is found at its line, partial, beside Tailwind', async t => {
   const { list } = await detected(t, { 'src/Card.module.css': '.card { padding: 13px; }\n', 'src/Card.jsx': "import styles from './Card.module.css';\nexport const Card = () => <div className={styles.card} />;\n" });
@@ -121,10 +109,10 @@ test('ark: @ark-ui/react is found; partial', async t => {
   assert.equal(item.support, 'partial'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/D.jsx', 1]);
 });
 
-test('shadcn: components.json is the evidence, with no package; supported as your own source', async t => {
+test('shadcn: components.json is the evidence, with no package; its generated files are the app\'s own source', async t => {
   const { list } = await detected(t, { 'components.json': '{ "style": "new-york", "tailwind": { "css": "src/index.css" }, "aliases": { "ui": "@/components/ui" } }\n', 'src/components/ui/button.jsx': 'export const Button = () => <button className="p-s4" />;\n' }, 'libraries');
   const item = find(list, 'shadcn');
-  assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
+  assert.equal(item.support, 'partial', 'usage is read; the system itself is a later layer'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
   assert.equal(item.detail, undefined, 'known by its config, not a dependency');
 });
 

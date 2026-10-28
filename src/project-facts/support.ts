@@ -1,4 +1,6 @@
 import type { ClaimSource, Evidence } from './facts.js';
+import type { Capability, CapabilityRun, LibraryAdapter, Usage } from './libraries/adapter.js';
+import { capabilityWords } from './libraries/adapter.js';
 
 /**
  * What plumb can do with a detected system or library, declared by its detector, never decided by a consumer.
@@ -23,9 +25,35 @@ export interface Detected extends SupportNote {
   source: ClaimSource;
   evidence: Evidence[];
   detail?: Record<string, string | number | boolean | null>;
+  /** Every element rendered from the library, when its adapter reads usage. */
+  usage?: Usage;
+  /** How each capability of the adapter ran: judged, or unknown with the reason in `evidence`. Absent without an adapter. */
+  capabilities?: Partial<Record<Capability, CapabilityRun>>;
 }
 
 export const nothingToDo = 'nothing to do; plumb skips it';
+const allCapabilities: Capability[] = ['usage', 'states', 'structure', 'owned'];
+/**
+ * A library's support, derived from its adapter: `supported` when every capability it needs ran; `partial` names the
+ * ones missing or unknown; without an adapter, found but not understood: its elements are judged like plain ones when
+ * the app styles them with classes, and not at all when the library styles itself.
+ */
+export function derivedSupport(family: { id: string; label: string; styled: 'classes' | 'own'; helper?: boolean }, adapter: LibraryAdapter | undefined, ran: Partial<Record<Capability, CapabilityRun>>): SupportNote {
+  if (family.helper) return { support: 'supported', judged: 'class names are read through the helper' };
+  if (!adapter) {
+    return family.styled === 'classes'
+      ? { support: 'partial', judged: 'found, not understood yet: your classes on its elements are judged like plain elements', skipped: 'its states, portals and own variables are not', next: nothingToDo }
+      : { support: 'unsupported', skipped: `${family.label}’s own styles (style props, sx, theme)`, next: nothingToDo };
+  }
+  const needed = family.id === 'shadcn' ? [...allCapabilities, 'system' as const] : allCapabilities;
+  const judged = needed.filter(item => ran[item] === 'judged'), unknown = needed.filter(item => adapter.capabilities.includes(item) && ran[item] === 'unknown'), missing = needed.filter(item => !adapter.capabilities.includes(item));
+  const words = (list: Capability[]) => list.map(item => capabilityWords[item]).join(', ');
+  if (!missing.length && !unknown.length) return { support: 'supported', judged: words(judged) };
+  const skipped = [missing.length ? `${words(missing)} ${missing.length === 1 ? 'is' : 'are'} not judged yet` : '', unknown.length ? `${words(unknown)} could not be read here` : ''].filter(Boolean).join('; ');
+  // Nothing ran yet: the app's classes on its elements are still judged like plain elements, so it is never a refusal.
+  if (!judged.length) return family.styled === 'classes' ? { support: 'partial', judged: 'your classes on its elements are judged like plain elements', skipped, next: nothingToDo } : { support: 'unsupported', skipped, next: nothingToDo };
+  return { support: 'partial', judged: words(judged), skipped, next: nothingToDo };
+}
 /** A one-line account for footers and tables: `styled-components (src/Button.tsx:3); not judged yet`. */
 export function describeDetected(item: Detected): string {
   const where = item.evidence[0] ? ` (${item.evidence[0].file}:${item.evidence[0].line})` : '';

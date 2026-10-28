@@ -259,8 +259,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "your own class names and styles on its elements",
-            "skipped": "Radix's own styles",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values are not judged yet",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -272,6 +272,14 @@
             ],
             "detail": {
               "package": "@radix-ui/react-slot"
+            },
+            "usage": {
+              "files": 0,
+              "components": {},
+              "sites": []
+            },
+            "capabilities": {
+              "usage": "judged"
             }
           },
           {
@@ -299,8 +307,10 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "supported",
-            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "support": "partial",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui) are not judged yet",
+            "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
               {
@@ -308,7 +318,55 @@
                 "line": 1,
                 "text": "components.json"
               }
-            ]
+            ],
+            "usage": {
+              "files": 1,
+              "components": {
+                "Badge": 1,
+                "Button": 1,
+                "Card": 1
+              },
+              "sites": [
+                {
+                  "file": "src/App.tsx",
+                  "line": 9,
+                  "text": "<Card title=\"Billing\">",
+                  "component": "Card",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 11,
+                  "text": "<Badge label=\"Active\" />",
+                  "component": "Badge",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 13,
+                  "text": "<Button>Change plan</Button>",
+                  "component": "Button",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 14,
+                  "text": "<Button variant=\"outline\" size=\"sm\">Cancel</Button>",
+                  "component": "Button",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 15,
+                  "text": "<Button variant=\"ghost\" size=\"sm\" className=\"p-[13px]\">Help</Button>",
+                  "component": "Button",
+                  "part": null
+                }
+              ]
+            },
+            "capabilities": {
+              "usage": "judged"
+            }
           }
         ],
         "source": "declared",
@@ -609,8 +667,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "your own class names and styles on its elements",
-            "skipped": "Radix's own styles",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values are not judged yet",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -622,6 +680,14 @@
             ],
             "detail": {
               "package": "@radix-ui/react-slot"
+            },
+            "usage": {
+              "files": 0,
+              "components": {},
+              "sites": []
+            },
+            "capabilities": {
+              "usage": "judged"
             }
           },
           {
@@ -649,8 +715,10 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "supported",
-            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "support": "partial",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui) are not judged yet",
+            "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
               {
@@ -658,7 +726,40 @@
                 "line": 1,
                 "text": "components.json"
               }
-            ]
+            ],
+            "usage": {
+              "files": 1,
+              "components": {
+                "Button": 1,
+                "Card": 1
+              },
+              "sites": [
+                {
+                  "file": "src/App.tsx",
+                  "line": 8,
+                  "text": "<Card title=\"Billing\">",
+                  "component": "Card",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 13,
+                  "text": "<Button>Change plan</Button>",
+                  "component": "Button",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 14,
+                  "text": "<Button variant=\"outline\">Cancel</Button>",
+                  "component": "Button",
+                  "part": null
+                }
+              ]
+            },
+            "capabilities": {
+              "usage": "judged"
+            }
           }
         ],
         "source": "declared",
@@ -1542,8 +1643,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "your own class names and styles on its elements",
-            "skipped": "Radix's own styles",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values are not judged yet",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -1555,6 +1656,14 @@
             ],
             "detail": {
               "package": "@radix-ui/react-slot"
+            },
+            "usage": {
+              "files": 0,
+              "components": {},
+              "sites": []
+            },
+            "capabilities": {
+              "usage": "judged"
             }
           },
           {
@@ -1582,8 +1691,10 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "supported",
-            "judged": "the generated components as your own source; the shadcn theme shape is read",
+            "support": "partial",
+            "judged": "usage (every primitive, part and site)",
+            "skipped": "states, structure (portals, slots, render props), owned values, the design system (components.json, components/ui) are not judged yet",
+            "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
               {
@@ -1591,7 +1702,40 @@
                 "line": 1,
                 "text": "components.json"
               }
-            ]
+            ],
+            "usage": {
+              "files": 1,
+              "components": {
+                "Button": 1,
+                "Card": 1
+              },
+              "sites": [
+                {
+                  "file": "src/App.tsx",
+                  "line": 8,
+                  "text": "<Card title=\"Billing\">",
+                  "component": "Card",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 13,
+                  "text": "<Button>Change plan</Button>",
+                  "component": "Button",
+                  "part": null
+                },
+                {
+                  "file": "src/App.tsx",
+                  "line": 14,
+                  "text": "<Button variant=\"outline\" className=\"px-[18px] py-[7px] text-[13px]\">Cancel</But",
+                  "component": "Button",
+                  "part": null
+                }
+              ]
+            },
+            "capabilities": {
+              "usage": "judged"
+            }
           }
         ],
         "source": "declared",
