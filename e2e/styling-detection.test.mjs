@@ -94,3 +94,10 @@ test('emotion: found at the import site; unsupported', async t => {
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
   assert.ok(state.numbers.libraries.includes('@emotion'));
 });
+
+test('linaria: found at the import site; unsupported', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@linaria/core': '^6.3.0' } }, 'src/Card.jsx': "import { css } from '@linaria/core';\nexport const card = css`padding: 13px;`;\n" });
+  const item = find(list, 'linaria');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+});

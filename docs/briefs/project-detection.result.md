@@ -147,3 +147,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.stylex` (unsupported).
 - `styling.styled-components` (unsupported). Moved out of the libraries registry; the state report's `libraries` list now draws from both facts, so its names are unchanged. `e2e/fixtures/onboarding-state.json` regenerated (facts only: onboard-v3 now shows PostCSS from its postcss.config.js).
 - `styling.emotion` (unsupported; moved out of the libraries registry).
+- `styling.linaria` (unsupported). The styling registry now covers every system the brief names.

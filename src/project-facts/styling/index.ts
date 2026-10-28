@@ -11,9 +11,10 @@ import { stylingVanillaExtract } from './vanilla-extract.js';
 import { stylingStylex } from './stylex.js';
 import { stylingStyledComponents } from './styled-components.js';
 import { stylingEmotion } from './emotion.js';
+import { stylingLinaria } from './linaria.js';
 
 /** Every styling system an app may mix; each detector claims its own entry with evidence and a support level. */
-export const stylingRegistry: readonly Detector[] = [stylingTailwind, stylingPlainCss, stylingCssModules, stylingSass, stylingLess, stylingPostcss, stylingUnocss, stylingPanda, stylingVanillaExtract, stylingStylex, stylingStyledComponents, stylingEmotion];
+export const stylingRegistry: readonly Detector[] = [stylingTailwind, stylingPlainCss, stylingCssModules, stylingSass, stylingLess, stylingPostcss, stylingUnocss, stylingPanda, stylingVanillaExtract, stylingStylex, stylingStyledComponents, stylingEmotion, stylingLinaria];
 export { tailwindInstall, tailwindInstalled, tailwindImport } from './tailwind.js';
 export { tokenSource } from './tokens.js';
 export type { TokenSource } from './tokens.js';
