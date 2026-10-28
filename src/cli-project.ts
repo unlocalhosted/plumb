@@ -6,7 +6,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { glob } from 'tinyglobby';
 import { UsageError, userMessage } from './errors.js';
 import { packageMetadata, resolvedTailwind } from './setup-messages.js';
-import { ignore } from './project.js';
+import { projectIgnore } from './project-facts/checkouts.js';
 import { pnpmDeclaresPackages } from './source-boundary.js';
 
 /** A shell argument, including workspace names containing spaces. */
@@ -37,7 +37,7 @@ export async function workspaceApps(root: string): Promise<{ workspace: boolean;
   const explicit = workspaces !== undefined || pnpmPackages;
   const selectors = patterns.length ? patterns.map(pattern => `${pattern.replace(/\/$/, '')}/package.json`) :
     explicit ? ['**/package.json'] : ['*/package.json', '*/*/package.json'];
-  const manifests = await glob(selectors, { cwd: root, ignore, absolute: true, followSymbolicLinks: false });
+  const manifests = await glob(selectors, { cwd: root, ignore: await projectIgnore(root), absolute: true, followSymbolicLinks: false });
   const apps: WorkspaceApp[] = [];
   for (const file of manifests.sort()) {
     if (file === resolve(root, 'package.json')) continue;

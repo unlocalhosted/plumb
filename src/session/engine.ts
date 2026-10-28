@@ -28,6 +28,7 @@ import { addToken, topBlocks } from '../onboarding/write.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
+import { forgetCheckouts } from '../project-facts/checkouts.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
 export type { TextRun, TextResult } from './text.js';
@@ -384,7 +385,7 @@ export class Session extends EventEmitter {
     return [...changed];
   }
   /** Reconcile retained stats; opt into a full inventory only for explicit recovery. */
-  refresh(full = false): Promise<string[]> { if (!this.refreshing) this.refreshing = this.serialize(() => this.reconcile(undefined, full)).finally(() => { this.refreshing = undefined; }); return this.refreshing; }
+  refresh(full = false): Promise<string[]> { if (!this.refreshing) { forgetCheckouts(this.root); this.refreshing = this.serialize(() => this.reconcile(undefined, full)).finally(() => { this.refreshing = undefined; }); } return this.refreshing; }
   private serializeRead<T>(run: () => Promise<T>): Promise<T> { return this.batchRead ? run() : this.serialize(run); }
   /** Coordinator holds the write barrier while one reconciliation serves this read cohort. */
   batch<T>(query: string[] | undefined, run: () => Promise<T>): Promise<T> {

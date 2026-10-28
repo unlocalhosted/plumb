@@ -7,16 +7,19 @@ import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
 import { ownSourcePath, sourceSelectors } from './source-boundary.js';
+import { projectIgnore, staticIgnore } from './project-facts/checkouts.js';
 import { userMessage, UsageError } from './errors.js';
 import type { PlumbConfig } from './config.js';
 import type { FileCounts, Report } from './report.js';
 
-export const ignore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.git/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
+/** The static part; `projectIgnore(root)` adds the nested checkouts (worktrees, submodules, vendored clones). */
+export const ignore = staticIgnore;
 export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
 const tailwindImport = /@import\s+(?:url\(\s*)?["']tailwindcss(?:\/[^"']*)?["']/;
 
 /** Warm hosts already own membership; filter their retained names instead of crawling again. */
 export async function matchProjectFiles(root: string, patterns: string | string[], known?: readonly string[]): Promise<string[]> {
+  const ignore = await projectIgnore(root);
   if (!known) return glob(patterns, { cwd: root, ignore, absolute: true, dot: true, followSymbolicLinks: false });
   const selectors = typeof patterns === 'string' ? [patterns] : patterns;
   const positive = selectors.filter(pattern => !pattern.startsWith('!')), negative = selectors.filter(pattern => pattern.startsWith('!')).map(pattern => pattern.slice(1));
