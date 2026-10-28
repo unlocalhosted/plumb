@@ -15,6 +15,7 @@ import { workspaceManifest } from './project/workspace-manifest.js';
 import type { Workspace } from './project/workspace-manifest.js';
 import { workspacePnpm } from './project/workspace-pnpm.js';
 import { workspaceNx } from './project/workspace-nx.js';
+import { workspaceDeno, workspaceLerna, workspaceTurbo } from './project/workspace-tools.js';
 import { pmManifest } from './project/pm-manifest.js';
 import type { PackageManager } from './project/pm-manifest.js';
 import { pmLockfile } from './project/pm-lockfile.js';
@@ -65,7 +66,7 @@ export type Styling = { systems: Detected[]; tokens: TokenSource | null };
 export interface Overrides { root?: string; observed?: { host?: string } }
 
 /** Registry order is precedence within one source (R3). */
-export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, workspaceNx, pmManifest, pmLockfile, hostConfig, hostManifest, reactResolve];
+export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, workspaceNx, workspaceLerna, workspaceDeno, workspaceTurbo, pmManifest, pmLockfile, hostConfig, hostManifest, reactResolve];
 
 const workspaceDetectors = projectRegistry.filter(item => item.id.startsWith('workspace.'));
 const pmDetectors = projectRegistry.filter(item => item.id.startsWith('pm.'));

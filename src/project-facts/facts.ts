@@ -38,8 +38,9 @@ export function resolveFact<T>(claims: readonly Claim<T>[], override?: { value: 
   const winner = ordered[0];
   if (!winner) return { value: null, source: 'unknown', evidence: [] };
   if (winner.source === 'unknown') return { value: null, source: 'unknown', evidence: ordered.flatMap(item => item.evidence) };
-  const conflicts = ordered.slice(1).filter(item => item.source !== 'unknown' && !same(item.value, winner.value));
-  const agreeing = ordered.slice(1).filter(item => item.source !== 'unknown' && same(item.value, winner.value));
+  // A losing claim of "none" (a settings-only file, turbo.json) is not a disagreement: its evidence joins the winner's.
+  const conflicts = ordered.slice(1).filter(item => item.source !== 'unknown' && item.value !== null && !same(item.value, winner.value));
+  const agreeing = ordered.slice(1).filter(item => item.source !== 'unknown' && (item.value === null || same(item.value, winner.value)));
   return { value: winner.value, source: winner.source, evidence: [...winner.evidence, ...agreeing.flatMap(item => item.evidence)], ...(conflicts.length ? { conflicts } : {}) };
 }
 

@@ -218,3 +218,19 @@ test('workspace-nx-no-workspaces: nx.json alone declares a workspace; its apps a
   assert.equal(both.facts.workspace.value.tool, 'npm');
   assert.equal(both.facts.workspace.conflicts[0].detector, 'workspace.nx');
 });
+
+test('workspace-turbo, lerna and deno: turbo.json is evidence only; lerna.json#packages and deno.json#workspace declare', async t => {
+  const app = { 'apps/web/package.json': { dependencies: { react: '*', next: '*' } } };
+  const turbo = await fixture(t, { 'package.json': { workspaces: ['apps/*'] }, 'turbo.json': '{ "tasks": {} }\n', ...app });
+  const state = json(await run(turbo, ['state', '--json']));
+  assert.equal(state.facts.workspace.value.tool, 'npm');
+  assert.deepEqual(state.facts.workspace.evidence.map(item => item.file), ['package.json', 'turbo.json'], 'turbo.json agrees as evidence, never as a claim');
+  const alone = await fixture(t, { 'package.json': {}, 'turbo.json': '{}\n', ...app, 'src/App.jsx': 'export const App = () => <div />;\n' });
+  assert.equal(json(await run(alone, ['state', '--json'])).facts.workspace.value, null, 'turbo.json alone is not a workspace');
+  const lerna = await fixture(t, { 'package.json': {}, 'lerna.json': '{ "packages": ["apps/*"] }\n', ...app });
+  const lernaState = json(await run(lerna, ['state', '--json']));
+  assert.deepEqual([lernaState.kind, lernaState.facts.workspace.value], ['workspace', { tool: 'lerna', patterns: ['apps/*'] }]);
+  assert.match((await run(lerna, [], 2)).stderr, /npx plumber --root apps\/web\s+Next\.js/);
+  const deno = await fixture(t, { 'package.json': {}, 'deno.json': '{ "workspace": ["./apps/web"] }\n', ...app });
+  assert.deepEqual(json(await run(deno, ['state', '--json'])).facts.workspace.value, { tool: 'deno', patterns: ['apps/web'] });
+});

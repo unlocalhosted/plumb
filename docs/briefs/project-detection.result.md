@@ -189,3 +189,7 @@ then the package.json line; a family may also be known by a config file. State e
   package managers' declarations so a repo with both keeps npm/pnpm and shows nx in `conflicts`. Row
   `workspace-nx-no-workspaces`: the app table, `--root apps/web`, `state --json` facts, the conflict. No edits to
   `cli-project.ts`, `readiness`, `state` or `install` were needed: the section-4 claim holds.
+- `workspace.lerna` (`lerna.json#packages`), `workspace.deno` (`deno.json#workspace`), `workspace.turbo`
+  (`turbo.json`: evidence only, never a claim). A losing claim of "none" now joins the winner's evidence instead
+  of counting as a conflict (`Workspace: npm (package.json:…; turbo.json)`). Row `workspace-turbo, lerna and deno`.
+  Not done from the L6 list: Rush, Moon, a Bun fixture, and hosts beyond vite/next as plugins exist.
