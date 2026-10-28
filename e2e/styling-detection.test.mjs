@@ -62,3 +62,10 @@ test('panda: the styled-system import is the evidence; unsupported', async t => 
   assert.equal(item.support, 'unsupported');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
 });
+
+test('vanilla-extract: a .css.ts import is the evidence; unsupported', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@vanilla-extract/css': '^1.17.0' } }, 'src/Card.css.ts': "import { style } from '@vanilla-extract/css';\nexport const card = style({ padding: 13 });\n", 'src/Card.jsx': "import { card } from './Card.css.ts';\nexport const Card = () => <div className={card} />;\n" });
+  const item = find(list, 'vanilla-extract');
+  assert.equal(item.support, 'unsupported');
+  assert.equal(item.evidence[0].file, 'src/Card.css.ts');
+});

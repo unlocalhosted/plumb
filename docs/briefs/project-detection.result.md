@@ -143,3 +143,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.postcss` (partial: stylesheets as authored; plugin-generated declarations skipped). Evidence is the config file.
 - `styling.unocss` (unsupported).
 - `styling.panda` (unsupported).
+- `styling.vanilla-extract` (unsupported).
