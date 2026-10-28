@@ -59,14 +59,16 @@ async function walk(root: string): Promise<Checkout[]> {
   return found.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+/** A real checkout, not a folder that happens to be named .git: a file that says `gitdir:`, or a directory with a HEAD. */
 async function gitEntry(git: string): Promise<{ directory: boolean; text: string } | undefined> {
   try {
     const text = await readFile(git, 'utf8');
-    return { directory: false, text: text.split('\n')[0]!.trim() };
+    const first = text.split('\n')[0]!.trim();
+    return first.startsWith('gitdir:') ? { directory: false, text: first } : undefined;
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
-    if (code === 'EISDIR') return { directory: true, text: '' };
-    return undefined;
+    if (code !== 'EISDIR') return undefined;
+    try { await readFile(join(git, 'HEAD'), 'utf8'); return { directory: true, text: '' }; } catch { return undefined; }
   }
 }
 

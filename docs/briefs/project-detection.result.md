@@ -193,3 +193,83 @@ then the package.json line; a family may also be known by a config file. State e
   (`turbo.json`: evidence only, never a claim). A losing claim of "none" now joins the winner's evidence instead
   of counting as a conflict (`Workspace: npm (package.json:…; turbo.json)`). Row `workspace-turbo, lerna and deno`.
   Not done from the L6 list: Rush, Moon, a Bun fixture, and hosts beyond vite/next as plugins exist.
+
+## Fix found by the wider run: a folder named `.git` is not a checkout
+
+`e2e/cli.test.mjs` writes `src/.git/hidden.css` (a `.git` *directory* holding a stylesheet) to prove the static
+ignore; the scan took `src/` for a vendored clone and dropped the app's source. A checkout now needs the real
+signal: a `.git` file that says `gitdir:`, or a `.git` directory with a `HEAD`. `e2e/cli.test.mjs` +
+`e2e/project-layouts.test.mjs` 60/60; `e2e/setup.test.mjs` 3/3 (with `PLUMBER_CHROMIUM`).
+
+## How the owner's mid-task direction changed the layer plan
+
+The design's L0b–L5 landed as planned (L1 kept the inferred two-app workspace one layer longer than the design
+said, so that nothing but the 0-apps text changed before L2). L4 became the foundation for three registries rather
+than one `styling` union: `src/project-facts/project/`, `styling/`, `libraries/`, sharing `facts.ts`
+(Fact/Claim/Evidence, the resolver, R1–R4), `detector.ts` (one read-cached context, `importSite`) and
+`support.ts` (the support level every detected thing declares). L6 then ran in three strands, one detector per
+commit: styling (10), libraries (6), workspaces (Nx, Lerna, Deno, Turborepo). The support model wired through
+check, doctor, state and readiness is its own layer after those, as directed.
+
+## Against ../crafting-ui (nested agent worktrees, settings-only pnpm-workspace.yaml, Tailwind 4, @base-ui/react)
+
+`node dist/cli.js state` (was five Tailwind entries and `split` before L0b):
+
+```
+A system, half in use: your tokens are installed; 13% of type still uses Tailwind's keys, 24% of utilities are arbitrary values.
+
+R3 Partial · own · noisy
+  spacing    2,113 of 2,866 on tokens   74%  tokens
+  …
+  24% arbitrary utilities (1519 of 6265)
+```
+
+`state --json` → `facts` (summarised):
+
+```
+root = "." | declared | package.json:1
+boundary = "." | observed | .git:1 git checkout
+repo = "." | observed | .git:1 git checkout
+workspace = null | declared | pnpm-workspace.yaml:1 settings only, no packages: key
+packageManager = "pnpm" | inferred | pnpm-lock.yaml:1
+host = { id: "vite", configFile: "vite.config.ts" } | declared | vite.config.ts:1
+react = { installed: true, declared: "^19.2.8" } | observed
+checkouts = 4 × .claude/worktrees/agent-… (worktree)
+styling = [tailwind, supported, package.json:24]; tokens = @theme (src/index.css:41)
+libraries = [base-ui-react, partial, src/components/blueprint.tsx:5]
+```
+
+`node dist/cli.js doctor`:
+
+```
+Project
+Root:            .                    declared: package.json:1 package.json
+Boundary:        .                    observed: .git:1 git checkout
+Repo:            .                    observed: .git:1 git checkout
+Workspace:       none                 declared: pnpm-workspace.yaml:1 settings only, no packages: k…
+Package manager: pnpm                 inferred: pnpm-lock.yaml:1 pnpm-lock.yaml
+Host:            vite                 declared: vite.config.ts:1 vite.config.ts
+React:           installed            observed: package.json:1 React resolves
+Styling:         Tailwind 4           Tailwind 4: package.json:24
+Tokens:          @theme               src/index.css:41 @theme
+Libraries:       Base UI              Base UI: src/components/blueprint.tsx:5
+Checkouts:       4 nested, excluded   .claude/worktrees/agent-a14af724f807f2279 (worktree, .claude/…
+
+Support
+supported   Tailwind 4:        package.json:24   judged
+partial     Base UI:           src/comp…nt.tsx:5 your own class names and styles on its elements; n…
+```
+
+Nothing in ../crafting-ui was modified (state and doctor write nothing; verified by the snapshot checks the e2e
+rows run on every CLI call).
+
+## Test totals and what did not run
+
+Per layer the relevant files ran green (counts above). The full `npm test` was not run: the laptop sat at 15 GB
+used with ~100 MB free and the compressor at 6 GB throughout, and the suite starts Chromium and Next servers.
+Playwright's default browser revision is also not downloaded on this machine; browser suites need
+`PLUMBER_CHROMIUM=$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell`.
+Suites run with that: `adoption`, `cli`, `cli-findings`, `cli-setup`, `check-cache`, `docs-cli`, `hosts`,
+`linked-locate`, `messages`, `next-install`, `onboarding-state`, `packaging`, `project-layouts`, `readiness`,
+`readiness-panel`, `reading-cache`, `release-guards` (R6 guard), `report`, `served-root`, `setup`, `shared-source`,
+`state-publication`, `styling-detection`.
