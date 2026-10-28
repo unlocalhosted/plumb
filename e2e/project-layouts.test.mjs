@@ -168,3 +168,15 @@ test('checkout-as-app: a submodule under apps/ is listed as an app and runs with
   assert.equal(inside.numbers.files.source, 1);
   assert.equal(inside.numbers.entries, 1);
 });
+
+test('two-host-configs: vite wins by registry order, next.config.js is kept as a conflict; locate.host is ok, not unknown', async t => {
+  const project = await fixture(t, viteApp({
+    'vite.config.ts': "import { defineConfig } from 'vite';\nexport default defineConfig({ plugins: [] });\n",
+    'next.config.js': 'module.exports = {};\n',
+  }));
+  await installTailwind(project.root);
+  const doctor = await run(project, ['doctor'], 1);
+  assert.match(doctor.stdout, /ok vite config found; runtime not observed \[locate\.host\]/);
+  assert.match(doctor.stdout, /vite\.config\.ts:1[^\n]*also next\.config\.js, ignored/);
+  assert.doesNotMatch(doctor.stdout, /Host could not be established/);
+});

@@ -260,9 +260,10 @@ test('install --overlay detects hosts from package.json and prints wiring withou
   const root = await project(t); await rm(join(root, 'package.json'));
   const before = await snapshot(root);
   const missing = spawnSync(process.execPath, [cli, 'install', '--overlay', '--root', root], { encoding: 'utf8', timeout: 10000 });
-  assert.ifError(missing.error); assert.equal(missing.status, 2);
-  assert.match(missing.stderr, /This is a workspace with \d+ apps\. Pick one:/);
-  assert.equal(missing.stdout, ''); assert.deepEqual(await snapshot(root), before);
+  // Without a package.json the walk lands on the nearest project above (this repo); nothing is written either way.
+  assert.ifError(missing.error); assert.equal(missing.status, 0, missing.stderr);
+  assert.match(missing.stderr, /^Using the project at \.\.\/\.\. \(plumb, package\.json\)\./);
+  assert.deepEqual(await snapshot(root), before);
 });
 
 test('overlay CLI rejects incompatible flags and malformed origins before creating a server', async t => {

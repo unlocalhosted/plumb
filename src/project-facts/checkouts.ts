@@ -15,7 +15,8 @@ export interface Checkout {
   evidence: { file: string; line: number; text: string };
 }
 
-const memo = new Map<string, Promise<Checkout[]>>();
+const memo = new Map<string, { at: number; scan: Promise<Checkout[]> }>();
+const ttl = 2000;
 /** The watcher calls this when the tree changes; a CLI run never needs to. */
 export function forgetCheckouts(root?: string): void { if (root === undefined) memo.clear(); else memo.delete(root); }
 
@@ -25,9 +26,9 @@ export function forgetCheckouts(root?: string): void { if (root === undefined) m
  * Bounded to six levels and never enters the static ignore folders; a checkout's own tree is not entered either.
  */
 export function scanCheckouts(root: string): Promise<Checkout[]> {
-  let scan = memo.get(root);
-  if (!scan) { scan = walk(root); memo.set(root, scan); scan.catch(() => memo.delete(root)); }
-  return scan;
+  let entry = memo.get(root);
+  if (!entry || Date.now() - entry.at > ttl) { entry = { at: Date.now(), scan: walk(root) }; memo.set(root, entry); entry.scan.catch(() => memo.delete(root)); }
+  return entry.scan;
 }
 
 async function walk(root: string): Promise<Checkout[]> {

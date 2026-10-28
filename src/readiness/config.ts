@@ -1,3 +1,4 @@
+import { projectFacts } from '../project-facts/index.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import MagicString from 'magic-string';
@@ -85,15 +86,12 @@ function refreshImport(ast: ReturnType<typeof parse>, source: string, module: st
 }
 
 /** Unreadable, composed and ambiguous configs retain unknown facts. No execution. */
-export async function hostConfig(root: string): Promise<HostConfig | undefined> {
-  const found: HostConfig[] = [];
-  for (const host of ['vite', 'next'] as const) for (const extension of ['ts', 'mts', 'js', 'mjs', ...(host === 'next' ? ['cjs'] : [])]) {
-    const file = join(root, `${host}.config.${extension}`);
-    try { found.push({ file, source: await readFile(file, 'utf8'), host, offsets: {}, changes: {} }); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  }
-  if (found.length !== 1) return;
-  const result = found[0]!, { file, source, host } = result;
+export async function hostConfig(root: string, chosen?: { id: string; configFile: string | null } | null): Promise<HostConfig | undefined> {
+  const fact = chosen === undefined ? (await projectFacts(root)).host.value : chosen;
+  if (!fact?.configFile || fact.id !== 'vite' && fact.id !== 'next') return;
+  const file = join(root, fact.configFile), host = fact.id;
+  const result: HostConfig = { file, source: await readFile(file, 'utf8'), host, offsets: {}, changes: {} };
+  const { source } = result;
   try {
     const ast = parse(file, source);
     let value = constant(ast, exported(ast));

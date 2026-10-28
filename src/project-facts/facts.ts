@@ -22,14 +22,14 @@ export const claim = <T>(value: T | null, source: ClaimSource, evidence: Evidenc
 export const unknownClaim = <T>(evidence: Evidence[], detector: string): Claim<T> => ({ value: null, source: 'unknown', evidence, detector });
 
 const rank: Record<Source, number> = { override: 0, observed: 1, declared: 2, inferred: 3, unknown: 4 };
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * R3: the highest-precedence claim wins; within one source, registry order wins. Every losing claim that disagrees
  * is kept in `conflicts`. Unknown claims never win over a real claim; alone, they make the fact unknown with their
  * evidence, so a consumer can still show what was read.
  */
-export function resolveFact<T>(claims: readonly Claim<T>[], override?: { value: T; evidence: Evidence[] }): Fact<T> {
+export function resolveFact<T>(claims: readonly Claim<T>[], override?: { value: T; evidence: Evidence[] }, same: (a: T | null, b: T | null) => boolean = sameJson): Fact<T> {
   if (override) {
     const conflicts = claims.filter(item => item.source !== 'unknown' && !same(item.value, override.value));
     return { value: override.value, source: 'override', evidence: override.evidence, ...(conflicts.length ? { conflicts } : {}) };

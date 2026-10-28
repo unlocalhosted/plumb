@@ -1,6 +1,6 @@
 // One detection pass, one typed, evidence-carrying object (docs/briefs/project-detection-design.md section 2).
 // Every entry point reads `value`; only the detectors in this folder read the disk for these questions (R6).
-import { realpathSync } from 'node:fs';
+import { realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { glob } from 'tinyglobby';
@@ -17,9 +17,13 @@ import { workspacePnpm } from './project/workspace-pnpm.js';
 import { pmManifest } from './project/pm-manifest.js';
 import type { PackageManager } from './project/pm-manifest.js';
 import { pmLockfile } from './project/pm-lockfile.js';
+import { hostConfig, bundlerConfigFiles as bundlerConfigsIn } from './project/host-config.js';
+import type { Host } from './project/host-config.js';
+import { hostManifest } from './project/host-manifest.js';
 
 export type { Fact, Evidence, Claim, Source } from './facts.js';
-export type { Workspace, PackageManager, Checkout };
+export type { Workspace, PackageManager, Checkout, Host };
+
 
 export interface App { path: string; kind: string; tailwind: string | null }
 export interface ProjectFacts {
@@ -34,19 +38,33 @@ export interface ProjectFacts {
   /** The React apps under the workspace patterns; empty for a single project. */
   apps: Fact<App[]>;
   packageManager: Fact<PackageManager>;
+  /** The dev host: `vite`, `next`, or a named one plumb has no plugin for; `none` when nothing speaks to it. */
+  host: Fact<Host>;
   /** Folders under the root that are their own checkout; out of membership. */
   checkouts: Fact<Checkout[]>;
 }
-export interface Overrides { root?: string }
+/** `root` is an override (R4); `host` is what a running plugin observed (R3: observed beats declared). */
+export interface Overrides { root?: string; observed?: { host?: string } }
 
 /** Registry order is precedence within one source (R3). */
-export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, pmManifest, pmLockfile];
+export const projectRegistry: readonly Detector[] = [workspaceManifest, workspacePnpm, pmManifest, pmLockfile, hostConfig, hostManifest];
 
 const workspaceDetectors = projectRegistry.filter(item => item.id.startsWith('workspace.'));
 const pmDetectors = projectRegistry.filter(item => item.id.startsWith('pm.'));
-const contexts = new Map<string, Context>();
-const context = (folder: string) => { let ctx = contexts.get(folder); if (!ctx) { ctx = createContext(folder); contexts.set(folder, ctx); } return ctx; };
-const facts = new Map<string, Promise<ProjectFacts>>();
+const hostDetectors = projectRegistry.filter(item => item.id.startsWith('host.'));
+// Memoised for the process (R5). A folder's cache is keyed by the mtimes of the folder and its package.json, so a
+// config file or lockfile added beside it, or a changed manifest, is seen at once; no watcher is needed.
+const ttl = 2000;
+const contexts = new Map<string, { stamp: string; ctx: Context }>();
+const mtime = (path: string) => { try { return String(statSync(path).mtimeMs); } catch { return '-'; } };
+const stampOf = (folder: string) => `${mtime(folder)}:${mtime(join(folder, 'package.json'))}`;
+const context = (folder: string) => {
+  const stamp = stampOf(folder);
+  let entry = contexts.get(folder);
+  if (!entry || entry.stamp !== stamp) { entry = { stamp, ctx: createContext(folder) }; contexts.set(folder, entry); }
+  return entry.ctx;
+};
+const facts = new Map<string, { at: number; stamp: string; pending: Promise<ProjectFacts> }>();
 const home = () => { try { return realpathSync(homedir()); } catch { return homedir(); } };
 /** A home directory is a boundary even when HOME belongs to another user. */
 const atHome = (folder: string) => folder === home() || folder === homedir() || dirname(folder) === folder || /^(?:\/Users|\/home)\/[^/]+$/.test(folder);
@@ -85,6 +103,18 @@ export function repoOf(root: string): Fact<string> {
   }
 }
 /** The package manager, sync for messages: declared `packageManager` beats the nearest lockfile; npm when neither. */
+/** The dev host at a folder; `observed` is what a running plugin reports and beats every file. */
+export function hostOf(root: string, observed?: string): Fact<Host> {
+  const claims = (runRegistry(hostDetectors, context(resolve(root))).host ?? []) as Claim<Host>[];
+  if (observed) claims.unshift({ value: { id: observed.split('-')[0]!, configFile: null }, source: 'observed', evidence: [{ file: 'package.json', line: 1, text: `${observed} dev server is running` }], detector: 'host.runtime' });
+  const fact = claims.length ? resolveFact(claims, undefined, (a, b) => a?.id === b?.id) : unknown<Host>([{ file: 'package.json', line: 1, text: 'no vite or next dependency, config or script' }]);
+  // A declared config has no file for the observed id: take the file from the agreeing claim so consumers can read it.
+  if (fact.value && fact.value.configFile === null) {
+    const file = claims.find(item => item.value?.id === fact.value!.id && item.value.configFile)?.value?.configFile;
+    if (file) fact.value = { ...fact.value, configFile: file };
+  }
+  return fact;
+}
 export function packageManagerOf(root: string): Fact<PackageManager> {
   const claims = runRegistry(pmDetectors, context(resolve(root))).packageManager as Claim<PackageManager>[] | undefined;
   const fact = claims?.length ? resolveFact(claims) : unknown<PackageManager>([]);
@@ -113,7 +143,8 @@ async function appsOf(root: string, workspace: Workspace): Promise<App[]> {
     if (apps.some(app => path.startsWith(app.path + '/'))) continue;
     const version = await resolvedTailwind(folder).catch(() => null);
     const declared = dependencies.tailwindcss?.match(/\d+/)?.[0];
-    apps.push({ path, kind: dependencies.next ? 'Next.js' : dependencies.vite ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? declared ?? null });
+    const host = hostOf(folder).value?.id;
+    apps.push({ path, kind: host === 'next' ? 'Next.js' : host === 'vite' ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? declared ?? null });
   }
   return apps;
 }
@@ -121,9 +152,13 @@ async function appsOf(root: string, workspace: Workspace): Promise<App[]> {
 /** The facts for the project at `start`, memoised for the process (R5). Never throws (section 3 invariant). */
 export function projectFacts(start: string, overrides: Overrides = {}): Promise<ProjectFacts> {
   const key = `${resolve(start)}\0${JSON.stringify(overrides)}`;
-  let pending = facts.get(key);
-  if (!pending) { pending = compute(start, overrides); facts.set(key, pending); pending.catch(() => facts.delete(key)); }
-  return pending;
+  const stamp = stampOf(overrides.root ?? findRoot(start) ?? start);
+  let entry = facts.get(key);
+  if (!entry || entry.stamp !== stamp || Date.now() - entry.at > ttl) {
+    entry = { at: Date.now(), stamp, pending: compute(start, overrides) }; facts.set(key, entry);
+    entry.pending.catch(() => facts.delete(key));
+  }
+  return entry.pending;
 }
 
 async function compute(start: string, overrides: Overrides): Promise<ProjectFacts> {
@@ -142,8 +177,11 @@ async function compute(start: string, overrides: Overrides): Promise<ProjectFact
     workspace.source === 'unknown' ? unknown(workspace.evidence) : known<App[]>([], 'inferred', workspace.evidence);
   const checkouts = await scanCheckouts(folder);
   return {
-    root, boundary: boundaryOf(folder), repo: repoOf(folder), workspace, apps, packageManager: packageManagerOf(folder),
+    root, boundary: boundaryOf(folder), repo: repoOf(folder), workspace, apps, packageManager: packageManagerOf(folder), host: hostOf(folder, overrides.observed?.host),
     checkouts: known(checkouts, checkouts.length ? (checkouts.every(item => item.source === 'declared') ? 'declared' : 'observed') : 'inferred', checkouts.length ? checkouts.map(item => item.evidence) : [{ file: '.', line: 1, text: 'no nested checkout' }]),
   };
 }
 
+
+/** Bundler configs under the root that may name the app's entry (vite, rollup, webpack). */
+export const bundlerConfigFiles = (root: string): string[] => bundlerConfigsIn(context(resolve(root)));

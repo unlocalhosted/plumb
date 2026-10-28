@@ -1,3 +1,4 @@
+import { bundlerConfigFiles } from '../project-facts/index.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { parseSync, visitorKeys } from 'oxc-parser';
@@ -54,8 +55,8 @@ export async function appTailwindEntry(root: string, candidates: string[], diagn
   await html(resolve(root, 'index.html'));
   // Static Rollup/Vite inputs and webpack entries cover projects without the
   // conventional HTML entry. Dynamic config remains explicitly undecidable.
-  if (!roots.length) for (const name of ['vite', 'rollup', 'webpack']) for (const extension of ['ts', 'mts', 'mjs', 'js', 'cjs']) {
-    const file = resolve(root, `${name}.config.${extension}`), text = await read(file); if (text === undefined) continue;
+  if (!roots.length) for (const name of bundlerConfigFiles(root)) {
+    const file = resolve(root, name), text = await read(file); if (text === undefined) continue;
     try {
       const parsed = parseSync(file, text); if (parsed.errors.length) throw new Error(parsed.errors[0]?.message);
       function values(node: Node): string[] {

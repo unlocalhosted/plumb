@@ -9,7 +9,7 @@ import { UsageError } from '../errors.js';
 import { readDiscovery } from '../session/discovery.js';
 import { writeOverlay } from './overlay.js';
 import { overlaySetupNotice } from '../setup-messages.js';
-import { manifestAt, packageManagerOf } from '../project-facts/index.js';
+import { manifestAt, packageManagerOf, projectFacts } from '../project-facts/index.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -99,8 +99,8 @@ export async function installOverlay(root: string, write = false): Promise<strin
 }
 
 async function overlayWiring(root: string, write = false): Promise<string> {
-  const metadata = JSON.parse(await content(join(root, 'package.json')) ?? '{}') as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
-  const dependencies = { ...metadata.dependencies, ...metadata.devDependencies };
+  const host = (await projectFacts(root)).host.value?.id;
+  const dependencies = { next: host === 'next', vite: host === 'vite' };
   if (write) {
     try { return await writeOverlay(root, dependencies.next ? 'next' : dependencies.vite ? 'vite' : undefined); }
     catch (error) {

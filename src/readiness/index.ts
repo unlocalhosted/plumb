@@ -14,6 +14,7 @@ import { CheckCache } from '../check-cache.js';
 import { defaultSource, discoverProject, projectSourceFiles } from '../project.js';
 import { containsPath, sourceBoundary } from '../source-boundary.js';
 import { tailwindSetupProblem, packageManager } from '../setup-messages.js';
+import { projectFacts } from '../project-facts/index.js';
 import { readLedger } from '../ledger/store.js';
 import { UsageError, userMessage } from '../errors.js';
 import { diff, parse, walk } from '../adoption/overlay.js';
@@ -135,8 +136,9 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Warm runs reuse the whole report' : 'Warm runs cannot reuse the whole report', configEvidence,
     'Each run repeats analysis instead of reusing the whole report.', step(plain ? 'Remove executable presets or CSS plugins, or keep the normal analysis path.' : `Use a plain-data default export in ${configFile}: no imports, calls or functions.`, config ? 'plumber doctor' : 'plumber init'));
 
+  const facts = await projectFacts(root, runtime ? { observed: { host: runtime.host } } : {});
   let host: Awaited<ReturnType<typeof hostConfig>>;
-  try { host = await hostConfig(root); } catch { /* An unreadable host config is unknown. */ }
+  try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }
   const hostFile = host ? relative(root, host.file) : 'package.json';
   const evidence = (key: string, text: string): Evidence[] => [{ file: hostFile, line: host ? host.source.slice(0, host.offsets[key] ?? 0).split('\n').length : 1, text }];
   const manual = (instruction: string) => step(`${instruction} Review ${hostFile}, then run plumber doctor.`, 'plumber doctor');
@@ -146,14 +148,10 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     try { await ownConfig(root, host.file); } catch { return fallback; }
     return { kind: 'diff', file: hostFile, hash: hash(host.source), diff: diff({ file: host.file, before: host.source, after }, root), dirty: dirty(root, host.file) };
   };
-  let declaredHost: string | undefined;
-  try {
-    const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
-    const commands = Object.values(metadata.scripts ?? {}).join(' ');
-    declaredHost = /(?:^|\s)(vite|next)(?:\s|$)/.exec(commands)?.[1] ?? /(?:^|\s)(react-scripts|parcel|astro)(?:\s|$)/.exec(commands)?.[1];
-  } catch {}
+  const declaredHost = facts.host.value?.id;
   const hostState: Status = runtime || host || declaredHost === 'vite' || declaredHost === 'next' ? 'ok' : declaredHost ? 'missing' : 'unknown';
-  add('locate.host', 'locate', hostState, runtime ? `${runtime.host} dev server is running` : host ? `${host.host} config found; runtime not observed` : declaredHost ? `${declaredHost} is declared in package.json` : 'Host could not be established', evidence('plugin', runtime?.host ?? host?.host ?? declaredHost ?? 'No single supported host config found'),
+  const hostEvidence = facts.host.evidence.length ? facts.host.evidence.map(item => ({ ...item, text: `${item.text}${facts.host.conflicts?.length ? `; also ${facts.host.conflicts.map(claim => claim.evidence[0]?.file ?? claim.detector).join(', ')}, ignored` : ''}` })) : evidence('plugin', 'No single supported host config found');
+  add('locate.host', 'locate', hostState, runtime ? `${runtime.host} dev server is running` : host ? `${host.host} config found; runtime not observed` : declaredHost ? `${declaredHost} is declared in package.json` : 'Host could not be established', hostEvidence,
     'Clicking an element may not locate its source.', step('Run the app with Vite or Next.js in development.', `${packageManager(root)} run dev`));
   const plugin = runtime?.plugin ?? host?.plugin;
   const observed = await options.sourceEvidence?.() ?? [];

@@ -52,3 +52,22 @@ matrix rows and test files ran, and the counts.
   `plumb({ root })` part lands with the readiness `project` block in L5), `lockfile-vs-packageManager` (through the
   install hint), `checkout-as-app`. `e2e/project-layouts.test.mjs` 8/8, `e2e/cli-setup.test.mjs` +
   `e2e/onboarding-state.test.mjs` 25/25.
+
+## L3: `host` fact
+
+- Detectors `host.config` (vite.config.* / next.config.*, declared; both present → vite first, next kept in
+  `conflicts`), `host.manifest` (deps next/vite, then scripts naming vite, next, react-scripts, parcel, astro,
+  remix/react-router, rsbuild, webpack, expo; inferred). A running plugin's `Runtime.host` becomes an `observed`
+  claim through `projectFacts(root, { observed: { host } })` and beats every file (owner decision 4).
+- Consumers: `hostConfig()` (`src/readiness/config.ts`) parses the fact's file and no longer chooses it;
+  `locate.host` (`src/readiness/index.ts`) reads the fact and shows the conflict in its evidence
+  (`vite.config.ts:1 vite.config.ts; also next.config.js, ignored`); `installOverlay` (`src/adoption/install.ts`)
+  takes the host from the fact; `appsOf` labels apps with `hostOf(folder)`; `src/collect/entries.ts` asks
+  `bundlerConfigFiles(root)` instead of probing config names itself (R6 covers it, owner decision 7).
+- Memo keyed by the mtimes of the folder and its package.json (plus a 2 s bound for the checkout scan), so a host
+  process whose watcher lives in the worker still sees a new config file or lockfile at once.
+- `e2e/hosts.test.mjs` "install --overlay … missing package.json" changed: with inferred workspaces gone, the walk
+  from a fixture without package.json lands on this repo as a single project; the assertion is now the walk notice
+  and no writes.
+- Rows: `two-host-configs` (doctor). `e2e/project-layouts.test.mjs`, `e2e/readiness.test.mjs`, `e2e/hosts.test.mjs`:
+  71/71 (with `PLUMBER_CHROMIUM`).
