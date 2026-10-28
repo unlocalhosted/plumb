@@ -34,3 +34,21 @@ matrix rows and test files ran, and the counts.
 - Ran: `e2e/cli-setup.test.mjs`, `e2e/onboarding-state.test.mjs`, `e2e/project-layouts.test.mjs` (28/28),
   `e2e/adoption.test.mjs`, `e2e/readiness.test.mjs` (72/72), `e2e/shared-source.test.mjs` (5/5 with
   `PLUMBER_CHROMIUM` pointing at the installed headless shell; Playwright's default revision is not downloaded here).
+
+## L2: failure behaviour and overrides
+
+- R4: `--root X` where X has a package.json is an override (`root.source = 'override'`); the workspace refusal
+  does not apply. `--root src/deep` without a package.json still walks up as before (the pinned "Using the project
+  at" notice) and is not an override.
+- R7: a declared workspace with no React app under its patterns exits 2 with
+  `Workspace (pnpm, apps/*) with no React app under those patterns: pnpm-workspace.yaml:1, packages: apps/*.`
+  and never "0 apps. Pick one:" (owner decision 3).
+- R2: a `pnpm-workspace.yaml` whose `packages:` cannot be read is unknown; the folder runs as one project with one
+  stderr notice naming the file, line and reason (today it threw).
+- R1: two sibling React apps with nothing declared are no longer a workspace (owner decision 2);
+  `e2e/cli-setup.test.mjs` "implicit" case changed in this commit.
+- A submodule under a workspace pattern is listed as an app (apps glob skips only the static folders).
+- Rows added: `workspace-pnpm-empty`, `workspace-pnpm-unparsable`, `override-wins` (CLI part; the Vite
+  `plumb({ root })` part lands with the readiness `project` block in L5), `lockfile-vs-packageManager` (through the
+  install hint), `checkout-as-app`. `e2e/project-layouts.test.mjs` 8/8, `e2e/cli-setup.test.mjs` +
+  `e2e/onboarding-state.test.mjs` 25/25.

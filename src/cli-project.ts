@@ -1,38 +1,22 @@
 import { table } from './cli-table.js';
 import { readFile, stat } from 'node:fs/promises';
-import { basename, dirname, relative, resolve } from 'node:path';
-import { glob } from 'tinyglobby';
+import { basename, relative, resolve } from 'node:path';
 import { UsageError } from './errors.js';
 import { projectFacts, manifestAt } from './project-facts/index.js';
 import type { App } from './project-facts/index.js';
-import { projectIgnore } from './project-facts/checkouts.js';
 
 /** A shell argument, including workspace names containing spaces. */
 export const shellPath = (path: string) => /^[\w./@-]+$/.test(path) ? path : "'" + path.replaceAll("'", "'\\''") + "'";
 
 export type WorkspaceApp = App;
-/** The React apps of a workspace root, or none for a single project. `workspace` says the root declares one. */
-export async function workspaceApps(root: string): Promise<{ workspace: boolean; apps: WorkspaceApp[] }> {
+/** The React apps of a workspace root, or none for a single project. `workspace` says the root declares one (R1: nothing inferred). */
+export async function workspaceApps(root: string): Promise<{ workspace: boolean; apps: WorkspaceApp[]; notice: string }> {
   const facts = await projectFacts(root);
   const unreadable = facts.workspace.source === 'unknown' ? facts.workspace.evidence[0] : undefined;
   if (unreadable?.file === 'package.json') throw new UsageError(`Could not read package.json at ${root}.\n  ${/not valid JSON/.test(unreadable.text) ? 'The file is not valid JSON.' : unreadable.text}\n  → plumber doctor --root ${JSON.stringify(root)}`);
-  if (unreadable) throw new UsageError(`Could not read ${unreadable.file}: ${unreadable.text}\n  → \${EDITOR:-vi} ${unreadable.file}`);
-  if (facts.workspace.value) return { workspace: true, apps: facts.apps.value ?? [] };
-  // Two sibling React apps with nothing declared still count as a workspace (until L2 of the design retires this).
-  const manifests = await glob(['*/package.json', '*/*/package.json'], { cwd: root, ignore: await projectIgnore(root), absolute: true, followSymbolicLinks: false });
-  const apps: WorkspaceApp[] = [];
-  for (const file of manifests.sort()) {
-    const folder = dirname(file), child = manifestAt(folder);
-    if (!child || child instanceof Error) continue;
-    const dependencies = { ...child.dependencies, ...child.devDependencies, ...child.peerDependencies };
-    if (!dependencies.react && !dependencies.next) continue;
-    const path = relative(root, folder).replaceAll('\\', '/');
-    if (apps.some(app => path.startsWith(app.path + '/'))) continue;
-    const { resolvedTailwind } = await import('./setup-messages.js');
-    const version = await resolvedTailwind(folder).catch(() => null);
-    apps.push({ path, kind: dependencies.next ? 'Next.js' : dependencies.vite ? 'Vite' : 'library', tailwind: version?.split('.')[0] ?? dependencies.tailwindcss?.match(/\d+/)?.[0] ?? null });
-  }
-  return { workspace: apps.length > 1, apps };
+  // R2: an unreadable workspace file is unknown; the folder runs as one project and the person is told once.
+  const notice = unreadable ? `Could not read ${unreadable.file}:${unreadable.line} (${unreadable.text}); checking this folder as one project.\n` : '';
+  return { workspace: !!facts.workspace.value, apps: facts.apps.value ?? [], notice };
 }
 
 export async function cliProject(argument?: string, allowWorkspace = false): Promise<{ root: string; notice: string; apps?: WorkspaceApp[] }> {
@@ -45,17 +29,23 @@ export async function cliProject(argument?: string, allowWorkspace = false): Pro
     }
     throw error;
   }
-  const facts = await projectFacts(start);
+  // R4: a --root that names a folder with package.json is an override; a refusal may not override it back.
+  const override = argument !== undefined && manifestAt(start) !== undefined;
+  const facts = await projectFacts(start, override ? { root: start } : {});
   const root = facts.root.value;
   if (root === null) throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
-  const { workspace, apps } = await workspaceApps(root);
-  if (workspace) {
-    if (allowWorkspace) return { root, notice: '', apps };
+  const { workspace, apps, notice } = await workspaceApps(root);
+  if (workspace && !override) {
+    if (allowWorkspace) return { root, notice, apps };
+    if (!apps.length) {
+      // R7: a declared workspace with nothing under its patterns is a notice with the evidence, never "0 apps. Pick one:".
+      const declared = facts.workspace.value!, where = facts.workspace.evidence[0]!;
+      throw new UsageError(`Workspace (${declared.tool}${declared.patterns.length ? `, ${declared.patterns.join(', ')}` : ''}) with no React app under ${declared.patterns.length ? 'those patterns' : 'it'}: ${where.file}:${where.line}, ${where.text}.\n  → run in an app: npx plumber --root path/to/app`);
+    }
     throw new UsageError(`This is a workspace with ${apps.length} ${apps.length === 1 ? 'app' : 'apps'}. Pick one:\n` +
-      (apps.length ? table(apps.map(app => [{ text: `npx plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n') :
-        '  → npx plumber --root path/to/app'));
+      table(apps.map(app => [{ text: `npx plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n'));
   }
-  return { root, notice: root === start ? '' : `Using the project at ${relative(start, root)} (${basename(root)}, package.json).\n` };
+  return { root, notice: notice + (root === start ? '' : `Using the project at ${relative(start, root)} (${basename(root)}, package.json).\n`), ...(workspace ? { apps } : {}) };
 }
 
 /** Fail setup before analysis creates caches or adoption writes any files. */

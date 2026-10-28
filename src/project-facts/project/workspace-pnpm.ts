@@ -24,6 +24,10 @@ export const workspacePnpm: Detector = {
     if (yaml instanceof Error) return { workspace: [unknownClaim([ctx.evidence('pnpm-workspace.yaml', 1, `could not read: ${yaml.message}`)], this.id)] };
     if (!pnpmDeclaresPackages(yaml)) return { workspace: [claim<Workspace>(null, 'declared', [ctx.evidence('pnpm-workspace.yaml', 1, 'settings only, no packages: key')], this.id)] };
     const patterns = pnpmPatterns(yaml);
-    return { workspace: [claim<Workspace>({ tool: 'pnpm', patterns }, 'declared', [ctx.evidence('pnpm-workspace.yaml', lineOf(yaml, /^packages:/m), `packages: ${patterns.join(', ') || '(empty)'}`)], this.id)] };
+    const line = lineOf(yaml, /^packages:/m);
+    // `packages:` with content the list parser cannot read is unknown, not a single project and not a workspace (R2).
+    const rest = /^packages:[ \t]*(.*)$/m.exec(yaml)?.[1]?.trim() ?? '';
+    if (!patterns.length && rest && rest !== '[]' && !rest.startsWith('#')) return { workspace: [unknownClaim([ctx.evidence('pnpm-workspace.yaml', line, `could not parse packages: ${rest.slice(0, 40)}`)], this.id)] };
+    return { workspace: [claim<Workspace>({ tool: 'pnpm', patterns }, 'declared', [ctx.evidence('pnpm-workspace.yaml', line, `packages: ${patterns.join(', ') || '(empty)'}`)], this.id)] };
   },
 };

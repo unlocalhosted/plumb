@@ -93,14 +93,15 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
   }
   await put(project.root, { 'apps/docs/package.json': { dependencies: { vite: '*', react: '*' } }, 'apps/docs/src/App.jsx': 'export const App = () => <div/>;' });
   await run(project, ['--root', 'apps/docs', '--json'], '', 0);
-  for (const workspace of ['pnpm', 'implicit']) {
-    const other = await fixture(t, {
-      'package.json': {}, ...(workspace === 'pnpm' ? { 'pnpm-workspace.yaml': "packages:\n  - 'apps/*'\n  - 'packages/*'\n" } : {}),
-      'apps/web/package.json': { dependencies: { next: '*', react: '*' } },
-      'packages/ui/package.json': { peerDependencies: { react: '*' } },
-    });
-    await run(other, [], 'This is a workspace with 2 apps. Pick one:\n' + workspaceRow('apps/web', 'Next.js · no Tailwind') + workspaceRow('packages/ui', 'library · no Tailwind'));
-  }
+  const siblings = {
+    'apps/web/package.json': { dependencies: { next: '*', react: '*' } },
+    'packages/ui/package.json': { peerDependencies: { react: '*' } },
+  };
+  const pnpm = await fixture(t, { 'package.json': {}, 'pnpm-workspace.yaml': "packages:\n  - 'apps/*'\n  - 'packages/*'\n", ...siblings });
+  await run(pnpm, [], 'This is a workspace with 2 apps. Pick one:\n' + workspaceRow('apps/web', 'Next.js · no Tailwind') + workspaceRow('packages/ui', 'library · no Tailwind'));
+  // Two sibling React apps with nothing declared are not a workspace: the folder you are in is the project.
+  const implicit = await fixture(t, { 'package.json': {}, ...siblings });
+  await run(implicit, [], `✗ Found no .tsx, .jsx or .css files under ${implicit.root}. Is this the right folder?\n  Looked in: src/**/*.{tsx,jsx,ts,js,css}, app/**/*.{tsx,jsx,ts,js,css} (default source globs)\n  → change \`source\`, or run in your app's folder\n`);
 });
 
 test('setup: a pnpm-workspace.yaml without packages is settings, so the folder is one project', async t => {

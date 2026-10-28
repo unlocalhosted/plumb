@@ -9,7 +9,7 @@ import { known, resolveFact, unknown } from './facts.js';
 import type { Claim } from './facts.js';
 import { createContext, runRegistry } from './detector.js';
 import type { Context, Detector, PackageJson } from './detector.js';
-import { forgetCheckouts, projectIgnore, scanCheckouts } from './checkouts.js';
+import { forgetCheckouts, scanCheckouts, staticIgnore } from './checkouts.js';
 import type { Checkout } from './checkouts.js';
 import { workspaceManifest } from './project/workspace-manifest.js';
 import type { Workspace } from './project/workspace-manifest.js';
@@ -98,7 +98,8 @@ export const manifestAt = (folder: string): PackageJson | undefined | Error => c
 async function appsOf(root: string, workspace: Workspace): Promise<App[]> {
   const selectors = workspace.patterns.map(pattern => `${pattern.replace(/\/$/, '')}/package.json`);
   if (!selectors.length) return [];
-  const manifests = await glob(selectors, { cwd: root, ignore: await projectIgnore(root), absolute: true, followSymbolicLinks: false });
+  // A submodule under apps/ is an app of this workspace and its own project inside; only the static folders are skipped here.
+  const manifests = await glob(selectors, { cwd: root, ignore: staticIgnore, absolute: true, followSymbolicLinks: false });
   const apps: App[] = [];
   const { resolvedTailwind } = await import('../setup-messages.js');
   for (const file of manifests.sort()) {

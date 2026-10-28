@@ -115,3 +115,56 @@ test('vendored-clone: a cloned repo under tmp/ with its own .git directory is ex
   assert.equal(plain.numbers.entries, 2, 'without .git the folder is part of the tree and both entries count');
   assert.ok(plain.flags.includes('split'));
 });
+
+test('workspace-pnpm-empty: a declared workspace with no React app under its patterns is a notice with the evidence, never "0 apps"', async t => {
+  const project = await fixture(t, { 'package.json': {}, 'pnpm-workspace.yaml': "packages:\n  - 'apps/*'\n", 'packages/ui/package.json': { dependencies: { react: '*' } } });
+  const result = await run(project, [], 2);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, '✗ Workspace (pnpm, apps/*) with no React app under those patterns: pnpm-workspace.yaml:1, packages: apps/*.\n  → run in an app: npx plumber --root path/to/app\n');
+  assert.doesNotMatch(result.stderr, /0 apps/);
+});
+
+test('workspace-pnpm-unparsable: an unreadable packages: key is unknown; the folder runs as one project with one notice', async t => {
+  const project = await fixture(t, viteApp({ 'pnpm-workspace.yaml': 'packages: {oops\n' }));
+  await installTailwind(project.root);
+  const result = await run(project, ['--json'], 0);
+  assert.ok(json(result));
+  assert.equal(result.stderr, 'Could not read pnpm-workspace.yaml:1 (could not parse packages: {oops); checking this folder as one project.\n');
+});
+
+test('override-wins: --root at a declared workspace root runs there instead of refusing', async t => {
+  const project = await fixture(t, viteApp({ 'package.json': { name: 'root', workspaces: ['apps/*'], dependencies: { react: '*', vite: '*', tailwindcss: '^4' } }, 'apps/web/package.json': { dependencies: { react: '*' } }, 'apps/web/src/App.jsx': 'export const App = () => <div />;\n' }));
+  await installTailwind(project.root);
+  const refused = await run(project, [], 2);
+  assert.match(refused.stderr, /^This is a workspace with 1 app\. Pick one:/);
+  for (const root of ['.', project.root]) {
+    const result = await run(project, ['--json', '--root', root], 0);
+    assert.equal(result.stderr, '');
+    assert.ok(json(result));
+  }
+  // --root into a subfolder without package.json still walks up and is not an override.
+  await mkdir(join(project.root, 'src/deep'), { recursive: true });
+  const walked = await run(project, ['--root', 'src/deep'], 2);
+  assert.match(walked.stderr, /This is a workspace/);
+});
+
+test('lockfile-vs-packageManager: the declared manager wins the install hint; the lockfile is a kept conflict', async t => {
+  const project = await fixture(t, { 'package.json': { packageManager: 'yarn@4.5.0', dependencies: { react: '*', tailwindcss: '^4' } }, 'pnpm-lock.yaml': '', 'src/App.jsx': 'export const App = () => <div />;\n' });
+  const result = await run(project, [], 2);
+  assert.equal(result.stderr, '✗ Tailwind 4 is in package.json but not installed.\n  → yarn install\n');
+});
+
+test('checkout-as-app: a submodule under apps/ is listed as an app and runs with its own boundary', { timeout: 120000 }, async t => {
+  const vendored = await fixture(t, viteApp());
+  git(vendored.root, 'init', '-q'); git(vendored.root, 'add', '-A'); git(vendored.root, 'commit', '-q', '-m', 'vendored');
+  const project = await fixture(t, { 'package.json': { workspaces: ['apps/*'] }, 'apps/web/package.json': { dependencies: { react: '*', next: '*' } }, '.gitignore': 'node_modules\n' });
+  git(project.root, 'init', '-q'); git(project.root, 'add', '-A'); git(project.root, 'commit', '-q', '-m', 'root');
+  git(project.root, '-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', vendored.root, 'apps/vendored');
+  await installTailwind(join(project.root, 'apps/vendored'));
+  const listed = await run(project, [], 2);
+  assert.match(listed.stderr, /npx plumber --root apps\/vendored\s+Vite · Tailwind 4/);
+  assert.match(listed.stderr, /npx plumber --root apps\/web\s+Next\.js · no Tailwind/);
+  const inside = json(await run(project, ['state', '--json', '--root', 'apps/vendored']));
+  assert.equal(inside.numbers.files.source, 1);
+  assert.equal(inside.numbers.entries, 1);
+});
