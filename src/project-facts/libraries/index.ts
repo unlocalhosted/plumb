@@ -1,12 +1,12 @@
 import type { Detector } from '../detector.js';
-import { lineOf } from '../detector.js';
+import { importSite, lineOf } from '../detector.js';
 import { claim } from '../facts.js';
 import type { Detected, SupportNote } from '../support.js';
 import { nothingToDo } from '../support.js';
 
 /** One family per entry: the packages that mean it, and what plumb does with it. */
-export interface LibraryFamily extends SupportNote { id: string; label: string; packages: RegExp }
-const family = (id: string, label: string, packages: RegExp, note: SupportNote): LibraryFamily => ({ id, label, packages, ...note });
+export interface LibraryFamily extends SupportNote { id: string; label: string; packages: RegExp; configs?: string[] }
+const family = (id: string, label: string, packages: RegExp, note: SupportNote, configs?: string[]): LibraryFamily => ({ id, label, packages, ...note, ...(configs ? { configs } : {}) });
 const classes = { support: 'supported' as const, judged: 'class names are read through the helper' };
 const components = (what: string): SupportNote => ({ support: 'partial', judged: 'your own class names and styles on its elements', skipped: `${what}'s own styles`, next: nothingToDo });
 
@@ -21,6 +21,7 @@ export const libraryFamilies: readonly LibraryFamily[] = [
   family('daisyui', 'daisyUI', /^daisyui$/, { support: 'partial', judged: 'your utilities beside its component classes', skipped: 'daisyUI’s component classes', next: nothingToDo }),
   family('tailwind-variants', 'tailwind-variants', /^tailwind-variants$/, classes),
   family('cva', 'CVA', /^class-variance-authority$/, classes),
+  family('base-ui-react', 'Base UI', /^@base-ui\/react$/, components('Base UI')),
 ];
 
 export const librariesRegistry: readonly Detector[] = [{
@@ -31,9 +32,15 @@ export const librariesRegistry: readonly Detector[] = [{
     const found: Detected[] = [];
     for (const item of libraryFamilies) {
       const name = Object.keys(dependencies).filter(key => item.packages.test(key)).sort()[0];
-      if (!name) continue;
-      const { packages: _packages, ...note } = item;
-      found.push({ ...note, source: 'declared', evidence: [ctx.evidence('package.json', lineOf(text, new RegExp(`"${name.replace(/[/@.-]/g, '\\$&')}"\\s*:`)), `${name}: ${dependencies[name]}`)], detail: { package: name } });
+      const config = item.configs?.find(file => ctx.exists(file));
+      if (!name && !config) continue;
+      const { packages, configs: _configs, ...note } = item;
+      const evidence = [];
+      const site = name ? importSite(ctx, packages) : undefined;
+      if (site) evidence.push(site);
+      if (config) evidence.push(ctx.evidence(config, 1, config));
+      if (name) evidence.push(ctx.evidence('package.json', lineOf(text, new RegExp(`"${name.replace(/[/@.-]/g, '\\$&')}"\\s*:`)), `${name}: ${dependencies[name]}`));
+      found.push({ ...note, source: 'declared', evidence, ...(name ? { detail: { package: name } } : {}) });
     }
     return found.length ? { libraries: found.map(item => claim<Detected>(item, 'declared', item.evidence, this.id)) } : {};
   },

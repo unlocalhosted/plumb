@@ -109,7 +109,10 @@ export function importSite(ctx: Context, specifier: RegExp): Evidence | undefine
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index]!;
       const match = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/.exec(line);
-      if (match && specifier.test(match[1]!)) return ctx.evidence(file, index + 1, line.trim().slice(0, 80));
+      if (!match) continue;
+      // A deep import (`@base-ui/react/menu`) names the package `@base-ui/react`; both forms are tried.
+      const id = match[1]!, pkg = /^(@[^/]+\/[^/]+|[^./][^/]*)/.exec(id)?.[1] ?? id;
+      if (specifier.test(id) || specifier.test(pkg)) return ctx.evidence(file, index + 1, line.trim().slice(0, 80));
     }
   }
   return undefined;

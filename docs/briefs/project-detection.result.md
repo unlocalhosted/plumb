@@ -148,3 +148,10 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.styled-components` (unsupported). Moved out of the libraries registry; the state report's `libraries` list now draws from both facts, so its names are unchanged. `e2e/fixtures/onboarding-state.json` regenerated (facts only: onboard-v3 now shows PostCSS from its postcss.config.js).
 - `styling.emotion` (unsupported; moved out of the libraries registry).
 - `styling.linaria` (unsupported). The styling registry now covers every system the brief names.
+
+## L6 (libraries): one family per commit
+
+Library families carry the import site as first evidence now (`src/Menu.jsx:1`; a deep import names its package),
+then the package.json line; a family may also be known by a config file. State expectations regenerated (facts only).
+
+- `@base-ui/react` (Base UI, the current package name beside `@base-ui-components/*`; partial).
