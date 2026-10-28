@@ -17,9 +17,10 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   }, 'libraries');
   const item = find(list, 'base-ui-react');
   assert.equal(item.support, 'partial');
-  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged' });
-  assert.match(item.judged, /^usage \(every primitive, part and site\), states$/);
-  assert.match(item.skipped, /^structure \(portals, slots, render props\), owned values are not judged yet$/);
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged' });
+  assert.equal(item.judged, 'usage (every primitive, part and site), states, structure (portals, slots, render props)');
+  assert.equal(item.skipped, 'not judged yet: owned values');
+  assert.deepEqual(item.usage.sites.filter(site => site.structure).map(site => `${site.component}.${site.part} ${site.structure}`), ['Popover.Portal portal'], 'the portal part is marked');
   assert.equal(item.usage.files, 3);
   assert.deepEqual(item.usage.components, { Slider: 2, Popover: 1, Switch: 1 });
   assert.deepEqual(sites(item), [
@@ -29,9 +30,9 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   ]);
   const doctor = await run(project, ['doctor'], 1);
   assert.match(doctor.stdout, /^Libraries:\s+Base UI\s+Base UI: 3 files · Slider 2, Popover 1, Switch 1/m);
-  assert.match(doctor.stdout.split('\nSupport\n')[1], /^partial\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states; st/m);
+  assert.match(doctor.stdout.split('\nSupport\n')[1], /^partial\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states, st/m);
   const check = await run(project, [], 0);
-  assert.equal(check.stderr, '! Partly judged: Base UI (src/Pop.jsx:1): usage (every primitive, part and site), states; structure (portals, slots, render props), owned values are not judged yet\n');
+  assert.equal(check.stderr, '! Partly judged: Base UI (src/Pop.jsx:1): usage (every primitive, part and site), states, structure (portals, slots, render props); not judged yet: owned values\n');
 });
 
 test('Radix: namespace, named-part and prefixed imports name the same component and part; the bare name is its root', async t => {
@@ -60,7 +61,7 @@ test('shadcn: components.json aliases say where the generated components live; e
   assert.equal(item.support, 'partial');
   assert.deepEqual(item.usage.components, { Button: 1, Dialog: 1 });
   assert.deepEqual(sites(item), ['src/App.jsx:3 Dialog', 'src/App.jsx:3 Dialog.Content', 'src/App.jsx:3 Button']);
-  assert.match(item.skipped, /the design system \(components\.json, components\/ui\) are not judged yet/);
+  assert.match(item.skipped, /not judged yet: states, structure \(portals, slots, render props\), owned values, the design system \(components\.json, components\/ui\)/);
 });
 
 test('a file that will not parse makes usage unknown, with the file named; the rest is still counted and nothing crashes', async t => {
@@ -70,9 +71,9 @@ test('a file that will not parse makes usage unknown, with the file named; the r
     'src/Bad.jsx': "import { Switch } from '@base-ui/react/switch';\nexport const Bad = () => <Switch.Root>\n",
   }, 'libraries');
   const item = find(list, 'base-ui-react');
-  assert.deepEqual(item.capabilities, { usage: 'unknown', states: 'judged' });
+  assert.deepEqual(item.capabilities, { usage: 'unknown', states: 'judged', structure: 'judged' });
   assert.equal(item.support, 'partial');
-  assert.match(item.skipped, /usage \(every primitive, part and site\) could not be read here/);
+  assert.match(item.skipped, /could not be read here: usage \(every primitive, part and site\)/);
   assert.ok(item.evidence.some(where => where.file === 'src/Bad.jsx' && /could not parse/.test(where.text)), JSON.stringify(item.evidence));
   assert.deepEqual(sites(item), ['src/Good.jsx:2 Switch.Root']);
   const state = json(await run(project, ['state', '--json']));

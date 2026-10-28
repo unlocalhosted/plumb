@@ -9,7 +9,16 @@ const flags = new Set(['checked', 'unchecked', 'indeterminate', 'disabled', 'rea
 const valued = new Set(['orientation', 'side', 'align', 'swipe-direction', 'activation-direction', 'type', 'index', 'instant', 'position']);
 export const baseUi: LibraryAdapter = {
   family: 'base-ui',
-  capabilities: ['usage', 'states'],
+  capabilities: ['usage', 'states', 'structure'],
+  // `Popover.Portal` renders its subtree under body; `render` replaces the library's element with the user's.
+  structure: { portal: /^Portal$/, render: ['render'], role(component, part) {
+    const name = component.replace(/^./, char => char.toLowerCase()), last = part ?? component;
+    if (/^tooltip/.test(name)) return /Provider$/.test(last) ? 'tooltip-provider' : 'tooltip';
+    if (/^menu/.test(name)) return /Submenu/.test(last) ? 'submenu' : 'menu';
+    if (/^(?:dialog|alertDialog)/.test(name)) return 'dialog';
+    if (/^(?:popover|previewCard)/.test(name)) return 'popover';
+    return null;
+  } },
   state(attribute, value) {
     const name = attribute.replace(/^data-/, '');
     if (value !== null && valued.has(name)) return `${name}=${value}`;

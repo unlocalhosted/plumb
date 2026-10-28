@@ -1,5 +1,7 @@
 // What a component imported from a known library is, by role. The table behind `facts.source(el).role`: it lets a
 // rule know the tooltip provider, the menu that ships a safe triangle, the icon from a library, without a probe.
+// A library with an adapter answers through its `structure` capability; the table below is for the rest.
+import { libraryAdapters } from '../project-facts/libraries/index.js';
 export type Role = 'menu' | 'submenu' | 'tooltip' | 'tooltip-provider' | 'dialog' | 'popover' | 'drawer' | 'palette' | 'skeleton' | 'spinner' | 'icon' | 'motion';
 export interface Resolved { library: string; role: Role | null }
 
@@ -17,15 +19,6 @@ const sources: { match: RegExp; library: string; roles: (m: RegExpExecArray) => 
   { match: /^@radix-ui\/react-(?:dropdown-menu|context-menu|menubar)$/, library: 'radix', roles: () => menu },
   { match: /^@radix-ui\/react-(?:dialog|alert-dialog)$/, library: 'radix', roles: () => only('dialog') },
   { match: /^@radix-ui\/react-(?:popover|hover-card)$/, library: 'radix', roles: () => only('popover') },
-  // Base UI: the package root or one component's path
-  { match: /^@base-ui(?:-components)?\/react(?:\/([\w-]+))?$/, library: 'base-ui', roles: () => (name, member) => {
-    const component = name.replace(/^./, c => c.toLowerCase());
-    if (/^tooltip/.test(component)) return tooltip(name, member);
-    if (/^menu/.test(component)) return /Submenu/.test(last(name, member)) ? 'submenu' : 'menu';
-    if (/^(?:dialog|alertDialog)/.test(component)) return 'dialog';
-    if (/^(?:popover|previewCard)/.test(component)) return 'popover';
-    return null;
-  } },
   { match: /^@headlessui\/react$/, library: 'headlessui', roles: () => name => (/^Menu/.test(name) ? 'menu' : /^Dialog/.test(name) ? 'dialog' : /^Popover/.test(name) ? 'popover' : null) },
   { match: /^vaul$/, library: 'vaul', roles: () => only('drawer') },
   { match: /^cmdk$/, library: 'cmdk', roles: () => only('palette') },
@@ -44,6 +37,14 @@ const shadcn: Record<string, Roles> = {
 
 /** The library and role of an element imported from `source` as `name` (with `member` after it), or null when the import is nothing we know. */
 export function libraryOf(source: string, name: string, member: string | null): Resolved | null {
+  for (const adapter of libraryAdapters) {
+    if (!adapter.structure || !adapter.owns(source)) continue;
+    const meaning = adapter.meaning(source, name);
+    const component = meaning.component ?? (name === '*' || name === 'default' ? member?.split('.')[0] ?? null : name);
+    if (!component) return { library: adapter.family, role: null };
+    const part = [meaning.part, ...(member ? [member] : [])].filter(Boolean).join('.') || null;
+    return { library: adapter.family, role: adapter.structure.role(component, part) };
+  }
   for (const entry of sources) {
     const m = entry.match.exec(source);
     if (m) return { library: entry.library, role: entry.roles(m)?.(name, member) ?? null };

@@ -109,7 +109,7 @@ guard this layer cares about, R6, passed).
 
 ## Layer 2: Base UI states
 
-Commit: (next layer records it)
+Commit: 9f1ee76
 
 What changed
 - Contract: `LibraryAdapter.state(attribute, value)` names the state an attribute of the library stands for
@@ -158,3 +158,50 @@ $ node --test --test-concurrency=1 e2e/classes.test.mjs e2e/inline-values.test.m
 ```
 Unverified: the human one-line finding does not print the state (it prints the class or `prop: value`); the state
 is in `--json` (`when`), `--agent`, and `explain`. The browser suites (serve, overlay) were not run for this layer.
+
+## Layer 3: Base UI structure (portals, render prop) in locate
+
+Commit: (next layer records it)
+
+What was found first: locate already lands on the user's JSX for Base UI, both through the stamp (plumb() before
+react(): Base UI spreads `data-plumb-source` onto the element it renders, through the portal) and through the owner
+stack (unstamped). The probe below ran against the owner's running crafting-ui dev server (pid 64847, :5180, started
+before this work; overlay/src/locate.js is unchanged by this layer). So the layer's work is the contract and the proof,
+not a locate change.
+
+What changed
+- Contract: `LibraryAdapter.structure = { portal, render, role }`: the parts rendered elsewhere in the DOM, the props
+  whose element or function replaces the library's element, and what a component is for the craft rules. Base UI:
+  `Portal`, `render`, the tooltip/menu/dialog/popover roles that lived in `src/structure/library.ts`.
+- `src/structure/library.ts`: `libraryOf` asks the adapters first (through `owns`/`meaning`/`structure.role`); the
+  hand-written Base UI entry is deleted. The table stays for libraries without an adapter.
+- `UsageSite.structure`: `portal` for a portal part, `render` for an element with a render prop, in `state --json`.
+- Support words: `not judged yet: owned values` (the missing list reads the same in every surface).
+- Tests: `e2e/library-structure.test.mjs` (new): a real Vite dev server, real `@base-ui/react` popover rendered under
+  body, a real headless browser; stamped and owner-stack; `Popover.Popup`, `Popover.Positioner`, `Popover.Trigger`,
+  `render={<a …/>}`, `render={(props, state) => <b …/>}` each locate to the user's `src/App.jsx` line:column, and
+  `site()` reads the user's classes on each. `e2e/library-adapters.test.mjs` pins the capability and the portal mark.
+
+Commands and raw output
+```
+$ PLUMBER_CHROMIUM=… node scratchpad/probe-popover.mjs http://localhost:5180   (crafting-ui /primitives, click "Open popover", locate the popup)
+[console] [plumb] overlay connected {status: ready, root: /Users/vijaysingh/unlocalhosted/crafting-ui, …}
+popup: tag div, stamp src/specimen/CraftSpecimen.tsx:98:15#14a659d7aff7, attrs data-open data-side data-align data-base-ui-focusable data-plumb-source
+  locate → { file: src/specimen/CraftSpecimen.tsx, line: 98, column: 15, component: Popover.Popup, via: owner-stack,
+             chain: [CraftSpecimen.tsx:98:15 Popover.Popup (usage), Primitives.tsx:180:9 CraftSpecimen, App.tsx:34:38 Primitives], index: 0 }
+positioner: stamp src/specimen/CraftSpecimen.tsx:97:13 → locate { file: src/specimen/CraftSpecimen.tsx, line: 97, column: 13, component: Popover.Positioner }
+trigger: stamp src/specimen/CraftSpecimen.tsx:95:11, attrs data-base-ui-click-trigger data-plumb-source data-popup-open data-pressed → locate { line: 95, column: 11 }
+```
+(CraftSpecimen.tsx:98 is `<Popover.Popup className="surface-motion material-raised w-60 …">`, the JSX the user wrote.)
+
+```
+$ PLUMBER_CHROMIUM=… node --test --test-concurrency=1 e2e/library-structure.test.mjs e2e/craft-structure.test.mjs e2e/styling-detection.test.mjs e2e/onboarding-state.test.mjs
+✔ Base UI stamped: a popup through a portal, a positioner, and render-prop elements locate to the JSX the user wrote
+✔ Base UI owner stack: … locate to the JSX the user wrote
+✔ structure: the server says what each element is (library, role, literal props, handlers) for Radix, Headless UI, Base UI and shadcn by file name
+(craft-structure 3/3, styling-detection 19/19; onboarding-state 3 expectations regenerated for the wording, only facts.libraries differed, then 15/15)
+$ node --test e2e/library-adapters.test.mjs
+ℹ pass 6  ℹ fail 0
+```
+Unverified: Next.js hosts for the portal case (the structure test runs Vite only; locate.test.mjs covers Next for plain
+elements); `render` as a function that returns a fragment or a component (not an element) is not in the fixture.

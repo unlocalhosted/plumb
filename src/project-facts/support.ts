@@ -49,7 +49,7 @@ export function derivedSupport(family: { id: string; label: string; styled: 'cla
   const judged = needed.filter(item => ran[item] === 'judged'), unknown = needed.filter(item => adapter.capabilities.includes(item) && ran[item] === 'unknown'), missing = needed.filter(item => !adapter.capabilities.includes(item));
   const words = (list: Capability[]) => list.map(item => capabilityWords[item]).join(', ');
   if (!missing.length && !unknown.length) return { support: 'supported', judged: words(judged) };
-  const skipped = [missing.length ? `${words(missing)} ${missing.length === 1 ? 'is' : 'are'} not judged yet` : '', unknown.length ? `${words(unknown)} could not be read here` : ''].filter(Boolean).join('; ');
+  const skipped = [missing.length ? `not judged yet: ${words(missing)}` : '', unknown.length ? `could not be read here: ${words(unknown)}` : ''].filter(Boolean).join('; ');
   // Nothing ran yet: the app's classes on its elements are still judged like plain elements, so it is never a refusal.
   if (!judged.length) return family.styled === 'classes' ? { support: 'partial', judged: 'your classes on its elements are judged like plain elements', skipped, next: nothingToDo } : { support: 'unsupported', skipped, next: nothingToDo };
   return { support: 'partial', judged: words(judged), skipped, next: nothingToDo };
