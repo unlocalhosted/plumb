@@ -182,3 +182,10 @@ then the package.json line; a family may also be known by a config file. State e
 - Rows in `e2e/styling-detection.test.mjs`: mixed app (check, doctor, Vite readiness), only-unsupported (exit 2,
   then judged once a stylesheet exists), unknown library ignored silently + partial system wording. Ran
   `styling-detection`, `project-layouts`, `cli-setup`, `onboarding-state`, `readiness`, `adoption`, `hosts`: 139/139.
+
+## L6 (workspaces): one tool per commit
+
+- `workspace.nx` (`nx.json`; `workspaceLayout.appsDir`/`libsDir`, default `apps/*`, `libs/*`), registered after the
+  package managers' declarations so a repo with both keeps npm/pnpm and shows nx in `conflicts`. Row
+  `workspace-nx-no-workspaces`: the app table, `--root apps/web`, `state --json` facts, the conflict. No edits to
+  `cli-project.ts`, `readiness`, `state` or `install` were needed: the section-4 claim holds.

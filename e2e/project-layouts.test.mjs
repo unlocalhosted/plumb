@@ -189,3 +189,32 @@ test('override-wins through Vite: plumb({ root }) is an override the readiness p
   const plain = await viteReadiness(t, project.root);
   assert.equal(plain.project.root.source, 'declared');
 });
+
+test('workspace-nx-no-workspaces: nx.json alone declares a workspace; its apps are listed and run; the fact names nx', async t => {
+  const project = await fixture(t, {
+    'package.json': { name: 'repo', private: true },
+    'nx.json': '{ "workspaceLayout": { "appsDir": "apps", "libsDir": "libs" } }\n',
+    'apps/web/package.json': { dependencies: { react: '*', vite: '*', tailwindcss: '^4' } },
+    'apps/web/project.json': '{ "name": "web" }\n',
+    'apps/web/vite.config.ts': "export default {};\n",
+    'apps/web/src/index.css': '@import "tailwindcss";\n@theme { --spacing-s4: 1rem; }\n',
+    'apps/web/src/App.jsx': 'export const App = () => <div className="p-s4" />;\n',
+    'libs/ui/package.json': { name: 'ui' },
+  });
+  await installTailwind(join(project.root, 'apps/web'));
+  const listed = await run(project, [], 2);
+  assert.match(listed.stderr, /^This is a workspace with 1 app\. Pick one:\n  npx plumber --root apps\/web\s+Vite · Tailwind 4\n$/);
+  const result = await run(project, ['--root', 'apps/web', '--json'], 0);
+  assert.ok(json(result));
+  const doctor = await run(project, ['doctor', '--root', 'apps/web'], 1);
+  assert.match(doctor.stdout, /^Workspace:\s+none/m, 'the app itself declares none');
+  const state = json(await run(project, ['state', '--json']));
+  assert.equal(state.kind, 'workspace');
+  assert.deepEqual(state.facts.workspace.value, { tool: 'nx', patterns: ['apps/*', 'libs/*'] });
+  assert.deepEqual(state.facts.workspace.evidence, [{ file: 'nx.json', line: 1, text: 'nx.json: apps/*, libs/*' }]);
+  // nx.json beside package.json#workspaces: the package manager's declaration wins, nx is a kept conflict.
+  await put(project.root, { 'package.json': { name: 'repo', private: true, workspaces: ['apps/*'] } });
+  const both = json(await run(project, ['state', '--json']));
+  assert.equal(both.facts.workspace.value.tool, 'npm');
+  assert.equal(both.facts.workspace.conflicts[0].detector, 'workspace.nx');
+});
