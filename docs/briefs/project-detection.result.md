@@ -141,3 +141,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.sass` (unsupported: .scss/.sass sources skipped; plumb reads the .css files it finds). Families may also name config files as evidence.
 - `styling.less` (unsupported: .less sources skipped).
 - `styling.postcss` (partial: stylesheets as authored; plugin-generated declarations skipped). Evidence is the config file.
+- `styling.unocss` (unsupported).

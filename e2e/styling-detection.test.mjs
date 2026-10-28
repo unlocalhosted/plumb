@@ -47,3 +47,11 @@ test('postcss: a postcss.config.js is the evidence; partial, stylesheets as auth
   assert.equal(item.support, 'partial');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['postcss.config.js', 1]);
 });
+
+test('unocss: the dependency and uno.config.ts are found; unsupported', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', unocss: '^66.0.0' } }, 'uno.config.ts': 'export default {};\n', 'src/main.jsx': "import 'virtual:uno.css';\n" });
+  const item = find(list, 'unocss');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/main.jsx', 1]);
+  assert.ok(item.evidence.some(e => e.file === 'uno.config.ts'));
+});
