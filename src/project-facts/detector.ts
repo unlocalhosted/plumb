@@ -26,6 +26,8 @@ export interface Context {
   dependencies(): Record<string, string>;
   /** Stylesheets under the root's source folders (bounded, membership applied); only the styling detectors read them. */
   cssFiles?: string[];
+  /** Source modules under the root's source folders (bounded, membership applied); detectors scan them for import sites. */
+  sourceFiles?: string[];
   /** A file relative to the root, for evidence. */
   file(path: string): string;
   evidence(file: string, line: number, text: string): Evidence;
@@ -39,7 +41,7 @@ export interface Detector {
   detect(ctx: Context): Claims;
 }
 
-export function createContext(root: string, lists: { cssFiles?: string[] } = {}): Context {
+export function createContext(root: string, lists: { cssFiles?: string[]; sourceFiles?: string[] } = {}): Context {
   const files = new Map<string, string | undefined | Error>();
   let parsed: PackageJson | undefined | Error | null = null;
   const ctx: Context = {
@@ -96,4 +98,19 @@ export function runRegistry(registry: readonly Detector[], ctx: Context): Claims
     for (const [fact, list] of Object.entries(result)) (claims[fact] ??= []).push(...list);
   }
   return claims;
+}
+
+/** The first source file that imports or requires a module matching `specifier`, with its line: the evidence a person can open. */
+export function importSite(ctx: Context, specifier: RegExp): Evidence | undefined {
+  for (const file of ctx.sourceFiles ?? []) {
+    const text = ctx.read(file);
+    if (typeof text !== 'string') continue;
+    const lines = text.split('\n');
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index]!;
+      const match = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/.exec(line);
+      if (match && specifier.test(match[1]!)) return ctx.evidence(file, index + 1, line.trim().slice(0, 80));
+    }
+  }
+  return undefined;
 }

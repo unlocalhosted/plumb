@@ -173,21 +173,26 @@ async function cssFilesOf(root: string): Promise<string[]> {
   const files = await glob(['*.{css,scss,sass,less}', '{src,app,styles,css}/**/*.{css,scss,sass,less}'], { cwd: root, ignore: await projectIgnore(root), absolute: false, followSymbolicLinks: false });
   return files.sort().slice(0, 200);
 }
+/** Source modules the styling and library detectors may scan for import sites, bounded. */
+async function sourceFilesOf(root: string): Promise<string[]> {
+  const files = await glob(['*.{tsx,jsx,ts,js,mts,mjs}', '{src,app,components,lib,pages}/**/*.{tsx,jsx,ts,js,mts,mjs}'], { cwd: root, ignore: await projectIgnore(root), absolute: false, followSymbolicLinks: false });
+  return files.sort().slice(0, 400);
+}
 export function reactOf(root: string): Fact<React> {
   const claims = (runRegistry(reactDetectors, context(resolve(root))).react ?? []) as Claim<React>[];
   return claims.length ? resolveFact(claims) : known<React>({ installed: false, declared: null }, 'inferred', [{ file: 'package.json', line: 1, text: 'no react dependency' }]);
 }
 /** Every styling system and the token source, from a context that carries the stylesheets (sync once the lists are in). */
-export function stylingOf(root: string, cssFiles: string[] = []): Fact<Styling> {
-  const ctx = createContext(resolve(root), { cssFiles });
+export function stylingOf(root: string, cssFiles: string[] = [], sourceFiles: string[] = []): Fact<Styling> {
+  const ctx = createContext(resolve(root), { cssFiles, sourceFiles });
   const claims = (runRegistry(stylingRegistry, ctx).styling ?? []) as Claim<Detected>[];
   const systems = claims.flatMap(item => item.value ? [item.value] : []);
   const tokens = tokenSource(ctx);
   if (!systems.length) return unknown<Styling>([{ file: 'package.json', line: 1, text: 'no styling system found' }]);
   return known<Styling>({ systems, tokens }, systems.some(item => item.source === 'observed') ? 'observed' : systems[0]!.source, systems.flatMap(item => item.evidence));
 }
-export function librariesOf(root: string): Fact<Detected[]> {
-  const claims = (runRegistry(librariesRegistry, context(resolve(root))).libraries ?? []) as Claim<Detected>[];
+export function librariesOf(root: string, sourceFiles: string[] = []): Fact<Detected[]> {
+  const claims = (runRegistry(librariesRegistry, createContext(resolve(root), { sourceFiles })).libraries ?? []) as Claim<Detected>[];
   const found = claims.flatMap(item => item.value ? [item.value] : []);
   return known<Detected[]>(found, 'declared', found.length ? found.flatMap(item => item.evidence) : [{ file: 'package.json', line: 1, text: 'no component library dependency' }]);
 }
@@ -219,10 +224,10 @@ async function compute(start: string, overrides: Overrides): Promise<ProjectFact
   const apps: Fact<App[]> = workspace.value ? known(await appsOf(folder, workspace.value), 'inferred', workspace.evidence) :
     workspace.source === 'unknown' ? unknown(workspace.evidence) : known<App[]>([], 'inferred', workspace.evidence);
   const checkouts = await scanCheckouts(folder);
-  const cssFiles = await cssFilesOf(folder);
+  const cssFiles = await cssFilesOf(folder), sourceFiles = await sourceFilesOf(folder);
   return {
     root, boundary: boundaryOf(folder), repo: repoOf(folder), workspace, apps, packageManager: packageManagerOf(folder), host: hostOf(folder, overrides.observed?.host),
-    react: reactOf(folder), styling: stylingOf(folder, cssFiles), libraries: librariesOf(folder),
+    react: reactOf(folder), styling: stylingOf(folder, cssFiles, sourceFiles), libraries: librariesOf(folder, sourceFiles),
     checkouts: known(checkouts, checkouts.length ? (checkouts.every(item => item.source === 'declared') ? 'declared' : 'observed') : 'inferred', checkouts.length ? checkouts.map(item => item.evidence) : [{ file: '.', line: 1, text: 'no nested checkout' }]),
   };
 }

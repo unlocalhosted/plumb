@@ -127,3 +127,14 @@ carrying a support level declared by its detector.
   `e2e/cli-findings.test.mjs`, `e2e/readiness-panel.test.mjs`, `e2e/state-publication.test.mjs`,
   `e2e/cli-setup.test.mjs` 102/102; `e2e/onboarding-state.test.mjs` + `e2e/check-cache.test.mjs` 24/24;
   the R6 guard 1/1.
+
+## L6 (styling): one detector per commit
+
+The owner's mid-task direction makes this three registries on one foundation; the project-detection layers above
+are done, so the styling registry grows here, one detector per commit, each with an e2e row in
+`e2e/styling-detection.test.mjs` (fixtures through `e2e/helpers/layouts.mjs`, shared with the layout matrix).
+Detection only: each entry says what plumb judges and skips; judging support for these systems is not built.
+
+- `styling.css-modules` (partial: declarations in `*.module.css` read as stylesheets; `styles.x` not traced to
+  elements). Evidence is the import site (`src/Card.jsx:1`). The context now carries a bounded list of source
+  modules (`sourceFiles`) and `importSite()` for evidence a person can open.
