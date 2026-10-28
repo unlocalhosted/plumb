@@ -1,18 +1,46 @@
-# React Plumber
+<h1 align="center">React Plumber</h1>
 
-[![npm](https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm)](https://www.npmjs.com/package/@unlocalhosted/react-plumber) [![release](https://img.shields.io/github/v/release/unlocalhosted/plumb?label=release)](https://github.com/unlocalhosted/plumb/releases) [![license](https://img.shields.io/npm/l/@unlocalhosted/react-plumber)](https://github.com/unlocalhosted/plumb/blob/main/LICENSE)
+<p align="center"><strong>Find where your React + Tailwind UI drifts from its design system, and fix it on the running page.</strong></p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@unlocalhosted/react-plumber"><img src="https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@unlocalhosted/react-plumber"><img src="https://img.shields.io/npm/dm/@unlocalhosted/react-plumber?color=cb3837" alt="npm downloads"></a>
+  <a href="https://github.com/unlocalhosted/plumb/releases"><img src="https://img.shields.io/github/v/release/unlocalhosted/plumb?label=release" alt="latest release"></a>
+  <a href="https://github.com/unlocalhosted/plumb/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@unlocalhosted/react-plumber" alt="license"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@unlocalhosted/react-plumber">npm</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#blueprint-fixing">Fixing from the page</a> ·
+  <a href="#3-craft-in-ci">CI</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="760" alt="Blueprint mode on a demo page: heat glows where the page is off its system; the fix panel holds gap-[10px] with 8px, 10px (now) and 12px drawn as specimens; the rows glide as each is tried; Take and Apply write gap-s2 into App.jsx"></p>
 
 ```sh
 npm install -D @unlocalhosted/react-plumber
 ```
 
-Published as [`@unlocalhosted/react-plumber`](https://www.npmjs.com/package/@unlocalhosted/react-plumber); the command it installs is `plumber`. Source and releases live at [unlocalhosted/plumb](https://github.com/unlocalhosted/plumb).
+## Why
 
-React Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and where the page falls short of the craft a good designer would expect: tight button sides, corners that don't match their parent, text faded with opacity, lines too long, targets too small to tap. In the browser, it draws every problem on the running page and fixes it in the source file, one cause at a time. In CI, it reads the same pages headlessly and fails on what you decided matters.
+Design systems drift one `p-[13px]` at a time. Linters see strings; React Plumber sees the page. It compiles your classes with your own Tailwind, measures the rendered result against your tokens, and checks the craft a good designer would: button sides, nested corners, faded text, line length, tap targets.
 
-<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="960" alt="Blueprint mode: the running page dimmed, heat where it is off, the fix panel holding one cause with its options drawn as what they are"></p>
+- **On the page.** Press **Alt+B**: heat glows only where the page is off. One panel holds one cause at a time, with its options drawn as what they are. Try them live, take one, and apply: one guarded write to the source.
+- **In the source.** Every fix is the exact class edit in the exact JSX that made the element, checked against the file's hash so it never writes over your work.
+- **In CI.** `plumber check` fails only on new drift; a ledger keeps accepted debt and reasoned exceptions. `plumber craft` reads your routes headlessly and emits text, JSON or SARIF.
+- **Yours to tune.** One spec sets what "good" means: presets (strict, balanced, relaxed), per-rule values, and how new tokens are named.
+
+Works with Vite and Next.js, Tailwind v4 or plain CSS. Node 22.18+. The command is `plumber`.
+
+<details>
+<summary><strong>What it reads, in detail</strong></summary>
 
 It compiles classes, stylesheets, `@apply` and inline styles with the project's own Tailwind, then judges every value against the project's tokens and written rules. Inline values written in code are read symbolically: constants fold, a ternary or a typed prop is read as every outcome, a token beside a runtime number is judged by the token, and `k * STAGGER` is judged by its step. The families are spacing, colour, radius, type, motion, elevation and z-index, plus team habits, component overrides and hand-built copies of components. A ledger records accepted debt and reasoned exceptions, so CI fails only on new drift. Node 22.18 or newer is required.
+
+</details>
 
 ## Quick start
 
