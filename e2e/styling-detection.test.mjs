@@ -114,3 +114,9 @@ test('react-aria: react-aria-components is found; partial', async t => {
   const item = find(list, 'react-aria');
   assert.equal(item.support, 'partial'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/B.jsx', 1]);
 });
+
+test('ark: @ark-ui/react is found; partial', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@ark-ui/react': '^4.0.0' } }, 'src/D.jsx': "import { Dialog } from '@ark-ui/react/dialog';\nexport const D = () => <Dialog.Root />;\n" }, 'libraries');
+  const item = find(list, 'ark');
+  assert.equal(item.support, 'partial'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/D.jsx', 1]);
+});
