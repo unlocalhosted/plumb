@@ -40,3 +40,10 @@ test('less: a .less import is found and marked unsupported', async t => {
   assert.equal(item.support, 'unsupported');
   assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
 });
+
+test('postcss: a postcss.config.js is the evidence; partial, stylesheets as authored', async t => {
+  const { list } = await detected(t, { 'postcss.config.js': 'export default { plugins: {} };\n' });
+  const item = find(list, 'postcss');
+  assert.equal(item.support, 'partial');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['postcss.config.js', 1]);
+});
