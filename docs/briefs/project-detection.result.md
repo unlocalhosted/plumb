@@ -160,3 +160,25 @@ then the package.json line; a family may also be known by a config file. State e
 - shadcn/ui (`components.json`, or the `shadcn` CLI package; supported: the generated components are your own source).
 - tailwind-merge (supported through the class helper).
 - clsx / classnames (supported through the class helper). The library registry now covers every family the brief names.
+
+## Support model through CLI, doctor, state and readiness
+
+- `supportSummary(styling, libraries)` (`src/project-facts/support.ts`): judged / partial / skipped lists and
+  `judgeable`, false only when something was found and none of it can be read (plain CSS without a stylesheet and
+  class helpers do not count as readable on their own). `supportNotice()` is the one message shape; `supportRefusal()`
+  the one refusal.
+- CLI (`prepareCliAnalysis`): after the pinned Tailwind checks, `!judgeable` exits 2 with
+  `Styles live in styled-components (src/App.jsx:1); React Plumber does not read styled`` and css`` templates yet.`
+  + what it judges + the next step. Otherwise one stderr line per skipped or partial system
+  (`! Not judged: styled-components (src/Button.jsx:2); not judged yet. nothing to do; plumb skips it`), in every
+  output mode, printed with the setup notices before the report rather than as a literal footer (same channel as the
+  Tailwind advisory; the human report's stdout is untouched).
+- `doctor`: a `Support` table after `Project`: support level, name, evidence, and what is judged / skipped / next.
+- `state --json`: support travels in `facts.styling.value.systems[].support` and `facts.libraries.value[].support`;
+  `state` itself keeps describing an unsupported-only app (`styled-in-js`) and never refuses.
+- Readiness: one requirement row per skipped (`missing`) or partial (`ok`) system, `read.styling.<id>` /
+  `read.library.<id>`, with the evidence and a `step` fix carrying the next step. A skipped system degrades `Read`
+  and does not turn it off. Overlay files untouched; the overlay can read these rows later.
+- Rows in `e2e/styling-detection.test.mjs`: mixed app (check, doctor, Vite readiness), only-unsupported (exit 2,
+  then judged once a stylesheet exists), unknown library ignored silently + partial system wording. Ran
+  `styling-detection`, `project-layouts`, `cli-setup`, `onboarding-state`, `readiness`, `adoption`, `hosts`: 139/139.

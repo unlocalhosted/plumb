@@ -13,7 +13,7 @@ import { CheckCache } from '../check-cache.js';
 import { defaultSource, discoverProject, projectSourceFiles } from '../project.js';
 import { containsPath, sourceBoundary } from '../source-boundary.js';
 import { tailwindSetupProblem, packageManager } from '../setup-messages.js';
-import { projectFacts, publicFacts } from '../project-facts/index.js';
+import { describeDetected, projectFacts, publicFacts, supportSummary } from '../project-facts/index.js';
 import type { PublicFacts } from '../project-facts/index.js';
 import { readLedger } from '../ledger/store.js';
 import { UsageError, userMessage } from '../errors.js';
@@ -97,6 +97,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const add = (id: string, capability: Capability, state: Status, title: string, evidence: Evidence[], loses: string, fix: Fix | null, derived: Pick<Requirement, 'derived' | 'cause'> = {}) => {
     requirements.push({ id, capability, status: state, title, evidence, loses, fix: state === 'ok' ? null : fix, ...derived });
   };
+  const facts = await projectFacts(root, { ...(options.rootOverride ? { root } : {}), ...(runtime ? { observed: { host: runtime.host } } : {}) });
   const config = options.config ? resolve(root, options.config) : allConfigNames.map(file => join(root, file)).find(existsSync);
   let loaded: Awaited<ReturnType<typeof loadConfig>> | undefined, configError = '';
   try { loaded = await loadConfig(root, options.config); } catch (error) { configError = userMessage(error); }
@@ -120,6 +121,12 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
       if (readStatus === 'ok') report = await (options.report ? options.report() : check({ root, ...(options.config ? { config: options.config } : {}) }));
     }
   } catch (error) { analysisError = userMessage(error); }
+  // One row per system plumb does not judge in full, with the evidence and the next step (the support model).
+  const support = supportSummary(facts.styling.value, facts.libraries.value);
+  for (const item of [...support.skipped, ...support.partial]) {
+    add(`read.${facts.libraries.value?.includes(item) ? 'library' : 'styling'}.${item.id}`, 'read', item.support === 'partial' ? 'ok' : 'missing', `${item.support === 'partial' ? 'Partly judged' : 'Not judged'}: ${describeDetected(item)}`,
+      item.evidence, `${item.skipped ?? item.label} ${item.support === 'partial' ? 'is' : 'are'} not judged.`, step(item.next ?? 'nothing to do; plumb skips it', 'plumber doctor'));
+  }
   if (!requirements.some(item => item.id === 'read.styles')) add('read.styles', 'read', 'unknown', 'Styles could not be checked', configEvidence, 'Drift cannot be judged.', step(`Review the CSS entry and validation errors in ${configFile}, then run plumber doctor.`, 'plumber doctor'));
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as JudgedFamily[]) {
     const token = report ? projectDecision(report, family) : undefined;
@@ -138,7 +145,6 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Warm runs reuse the whole report' : 'Warm runs cannot reuse the whole report', configEvidence,
     'Each run repeats analysis instead of reusing the whole report.', step(plain ? 'Remove executable presets or CSS plugins, or keep the normal analysis path.' : `Use a plain-data default export in ${configFile}: no imports, calls or functions.`, config ? 'plumber doctor' : 'plumber init'));
 
-  const facts = await projectFacts(root, { ...(options.rootOverride ? { root } : {}), ...(runtime ? { observed: { host: runtime.host } } : {}) });
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }
   const hostFile = host ? relative(root, host.file) : 'package.json';
@@ -219,7 +225,8 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     'The system panel cannot say where this project starts.', step('Run plumber doctor to see what blocks reading the project.', 'plumber doctor'));
   return { schemaVersion: 1, project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.some(item => item.status === 'unknown');
-    const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
+    // A system plumb skips (read.styling.*, read.library.*) degrades Read; it does not turn it off: the rest is judged.
+    const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') && !/^read\.(?:styling|library)\./.test(item.id) || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
     return { id, label: labels[id], status: essentialMissing ? 'off' : missing || unknown ? 'degraded' : 'full', requirements: checks.map(item => item.id), ...(id === 'system' ? { available: false } : {}) };
   }), requirements };
 }

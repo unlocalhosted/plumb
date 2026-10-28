@@ -2,7 +2,7 @@ import { table } from './cli-table.js';
 import { readFile, stat } from 'node:fs/promises';
 import { basename, relative, resolve } from 'node:path';
 import { UsageError } from './errors.js';
-import { projectFacts, manifestAt } from './project-facts/index.js';
+import { projectFacts, manifestAt, supportNotice, supportRefusal, supportSummary } from './project-facts/index.js';
 import type { App } from './project-facts/index.js';
 
 /** A shell argument, including workspace names containing spaces. */
@@ -57,6 +57,10 @@ export async function prepareCliAnalysis(root: string, configPath?: string, snip
   const project = await discoverProject(root, loaded.value);
   const problem = await tailwindSetupProblem(root, project.tailwind.entry, project.tailwind.version);
   if (problem) throw new UsageError(problem);
+  // Detecting something plumb cannot judge never fails the run by itself; only an app with nothing readable is refused.
+  const facts = await projectFacts(root, { root }), support = supportSummary(facts.styling.value, facts.libraries.value);
+  if (!support.judgeable) throw new UsageError(supportRefusal(support));
+  const supportLines = snippet ? '' : supportNotice(support);
   const files = (await projectSourceFiles(root, loaded.value)).filter(file => /\.(?:[jt]sx?|css)$/.test(file));
   if (!snippet) {
     let read = false;
@@ -74,7 +78,7 @@ export async function prepareCliAnalysis(root: string, configPath?: string, snip
   if (!snippet && await checkingPlainCss(root, project.tailwind.entry)) {
     const { collectClasses } = await import('./collect/classes.js');
     const collected = await collectClasses(files.filter(file => /\.[jt]sx?$/.test(file)), loaded.value.classHelpers);
-    return tailwindAdvisory(collected.sites, packageManager(root));
+    return supportLines + tailwindAdvisory(collected.sites, packageManager(root));
   }
-  return '';
+  return supportLines;
 }

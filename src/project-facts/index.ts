@@ -30,7 +30,8 @@ import type { Detected } from './support.js';
 export type { Fact, Evidence, Claim, Source } from './facts.js';
 export type { Workspace, PackageManager, Checkout, Host, React, Detected, TokenSource };
 export type { Support, SupportNote } from './support.js';
-export { describeDetected } from './support.js';
+export { describeDetected, supportSummary, supportNotice, supportRefusal } from './support.js';
+export type { SupportSummary } from './support.js';
 export { tailwindInstalled } from './styling/index.js';
 export { libraryFamilies } from './libraries/index.js';
 

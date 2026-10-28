@@ -2,7 +2,7 @@
 // (`plumber state --json` → facts). Detection only: finding a system plumb cannot judge never fails the run.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fixture, installTailwind, json, run, viteApp } from './helpers/layouts.mjs';
+import { fixture, installTailwind, json, put, run, viteApp } from './helpers/layouts.mjs';
 
 export async function detected(t, files, kind = 'styling') {
   const project = await fixture(t, viteApp(files));
@@ -138,4 +138,56 @@ test('clsx: clsx or classnames is found; supported through the class helper', as
   const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', clsx: '^2.1.0' } }, 'src/A.jsx': "import clsx from 'clsx';\nexport const A = ({ on }) => <div className={clsx('p-s4', on && 'text-ink')} />;\n" }, 'libraries');
   const item = find(list, 'clsx');
   assert.equal(item.support, 'supported'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/A.jsx', 1]);
+});
+
+// ---- The support model through the real surfaces: CLI notice and refusal, doctor Support table, readiness rows.
+import { viteReadiness } from './helpers/layouts.mjs';
+
+test('mixed app: Tailwind is judged and styled-components is named once, with evidence, in check, doctor and readiness', { timeout: 120000 }, async t => {
+  const files = { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', 'styled-components': '^6.1.0' } },
+    'src/Button.jsx': "import { Card } from './Card.jsx';\nimport styled from 'styled-components';\nexport const Button = styled.button`padding: 13px;`;\n", 'src/Card.jsx': 'export const Card = () => <div className="p-s4" />;\n' };
+  const { project } = await detected(t, files);
+  const line = '! Not judged: styled-components (src/Button.jsx:2); not judged yet. nothing to do; plumb skips it\n';
+  for (const args of [[], ['--json'], ['--agent']]) {
+    const result = await run(project, args, 0);
+    assert.equal(result.stderr, line);
+  }
+  const doctor = await run(project, ['doctor'], 1);
+  const support = doctor.stdout.split('\nSupport\n')[1].split('\nDiagnostics\n')[0];
+  assert.match(support, /^supported\s+Tailwind 4:\s+package\.json:\d+/m);
+  assert.match(support, /^unsupported\s+styled-components:\s+src\/Button\.jsx:2\s+not judged yet: styled`` and css`` templates\./m);
+  assert.match(doctor.stdout, /fix Not judged: styled-components \(src\/Button\.jsx:2\); not judged yet\.[\s\S]{0,120}\[read\.styling\.styled-components\]/);
+  assert.match(doctor.stdout, /^  degraded\s+Read$/m, 'Read is degraded, not off: Tailwind is still judged');
+  const ready = await viteReadiness(t, project.root);
+  const row = ready.requirements.find(item => item.id === 'read.styling.styled-components');
+  assert.equal(row.status, 'missing');
+  assert.deepEqual([row.evidence[0].file, row.evidence[0].line], ['src/Button.jsx', 2]);
+  assert.equal(row.fix.kind, 'step');
+  assert.equal(ready.requirements.find(item => item.id === 'read.styles').status, 'ok');
+});
+
+test('only an unsupported system: the check refuses with what was found, why, and what to do; state still describes it', async t => {
+  const project = await fixture(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', 'styled-components': '^6.1.0' } },
+    'src/App.jsx': "import styled from 'styled-components';\nconst Box = styled.div`padding: 13px;`;\nexport const App = () => <Box />;\n" });
+  const result = await run(project, [], 2);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, '✗ Styles live in styled-components (src/App.jsx:1); React Plumber does not read styled`` and css`` templates yet.\n  It judges Tailwind 4 classes, stylesheets and inline style; this app has none of those to read.\n  → nothing to do; plumb skips it. Run in an app with Tailwind 4 or stylesheets.\n');
+  const state = json(await run(project, ['state', '--json']));
+  assert.equal(state.kind, 'styled-in-js');
+  // One stylesheet beside it is enough to judge: the run goes ahead and names what it skips.
+  await put(project.root, { 'src/styles.css': '.box { padding: 13px; }\n', 'src/App.jsx': "import './styles.css';\nimport styled from 'styled-components';\nexport const App = () => <div className=\"box\" />;\n" });
+  const judged = await run(project, ['--json'], 0);
+  assert.match(judged.stderr, /^! Not judged: styled-components \(src\/App\.jsx:2\)/);
+});
+
+test('an unknown library is ignored silently; a partial system says what is and is not judged', async t => {
+  const { list, project, state } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', 'some-unknown-ui': '^1.0.0', 'left-pad': '^1.3.0' } },
+    'src/Card.module.css': '.card { padding: 13px; }\n', 'src/Card.jsx': "import styles from './Card.module.css';\nimport { Thing } from 'some-unknown-ui';\nexport const Card = () => <Thing className={styles.card} />;\n" });
+  assert.deepEqual(state.facts.libraries.value, []);
+  assert.ok(!list.some(item => /unknown|left-pad/.test(item.id)));
+  const result = await run(project, [], 0);
+  assert.equal(result.stderr, '! Partly judged: CSS Modules (src/Card.jsx:1): declarations in *.module.css, as stylesheets; class names applied through the styles object are not traced to elements\n');
+  const doctor = await run(project, ['doctor'], 1);
+  assert.match(doctor.stdout, /^partial\s+CSS Modules:\s+src\/Card\.jsx:1/m);
+  assert.match(doctor.stdout, /ok Partly judged: CSS Modules \(src\/Card\.jsx:1\)[\s\S]{0,200}\[read\.styling\.css-modules\]/);
 });

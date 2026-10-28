@@ -83,5 +83,10 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   ok &&= !actionableRequirements(ready).some(item => item.status === 'missing');
   // One row per fact: value, then how it is known and the first evidence line (R8).
   const project = describeFacts(ready.project).map(([name, value, where]): Cell[] => [`${name}:`, { text: value, path: /^(?:Root|Boundary|Repo)$/.test(name) }, { text: oneLine(where), ink: 'dim' }]);
-  return { text: formatReadiness(ready) + '\nProject\n' + table(project, [{ width: 16 }, { weight: 1 }, { weight: 3 }], { indent: 0, gap: 1 }).join('\n') + '\n\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
+  // Everything detected, with what plumb does with it: supported, partial (what is and is not), unsupported (and the next step).
+  const detected = [...ready.project.styling.value?.systems ?? [], ...ready.project.libraries.value ?? []];
+  const support = detected.map((item): Cell[] => [{ text: item.support, ...(item.support === 'unsupported' ? { ink: 'amber' as const } : {}) }, `${item.label}:`, { text: item.evidence[0] ? `${item.evidence[0].file}:${item.evidence[0].line}` : '', path: true },
+    { text: oneLine(item.support === 'supported' ? (item.judged ?? 'judged') : item.support === 'partial' ? `${item.judged ?? ''}; not ${item.skipped ?? ''}` : `not judged yet: ${item.skipped ?? ''}. ${item.next ?? ''}`), ink: 'dim' as const }]);
+  const supportTable = support.length ? '\nSupport\n' + table(support, [{ width: 11 }, { width: 18 }, { weight: 1 }, { weight: 3 }], { indent: 0, gap: 1 }).join('\n') + '\n' : '';
+  return { text: formatReadiness(ready) + '\nProject\n' + table(project, [{ width: 16 }, { weight: 1 }, { weight: 3 }], { indent: 0, gap: 1 }).join('\n') + '\n' + supportTable + '\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
 }
