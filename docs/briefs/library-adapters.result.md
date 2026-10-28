@@ -7,7 +7,7 @@ adapter implements and that ran, never written by hand.
 
 ## Layer 1: adapter contract, derived support, real usage map
 
-Commit: 99d10cb
+Commit: 2cfc382 (99d10cb amended to carry this hash)
 
 What changed
 - `src/project-facts/libraries/adapter.ts`: the `LibraryAdapter` contract (`family`, `capabilities`, `owns`,
@@ -106,3 +106,55 @@ $ node --test e2e/onboarding-state.test.mjs   (after regenerating)
 
 Unverified: the full `npm test`; the release-guards browser test (needs PLUMBER_CHROMIUM to a 1243 binary; the
 guard this layer cares about, R6, passed).
+
+## Layer 2: Base UI states
+
+Commit: (next layer records it)
+
+What changed
+- Contract: `LibraryAdapter.state(attribute, value)` names the state an attribute of the library stands for
+  (`data-checked` → `checked`, `data-orientation="horizontal"` → `orientation=horizontal`); a className/style
+  function's `state.<key>` asks with `data-<key>`. `base-ui.ts` declares the vocabulary and `capabilities:
+  ['usage', 'states']`. The detector records every non-usage capability as `judged` (it runs in analysis).
+- `Condition.kind` gains `'state'` (`src/report.ts`, `schema/report.schema.json`); the branch or selector that
+  carries it stays beside it, so habits and dedupe keys are unchanged.
+- `src/collect/states.ts`: `selectorStates` (attribute selectors in compiled variants and stylesheet rules, through
+  the detected adapters), `stateParam`/`branchState` (`(state) => state.checked ? … : …`, `({ disabled }) =>
+  disabled && …`, `=== true/false`, `=== 'value'`, `!`), `returns` (expression bodies, and block bodies with `if`
+  guarded returns).
+- `src/collect/classes.ts`: a className function on a library element is read, every return under the tests above
+  it, the parameter shadowed; on a plain element it stays opaque as before. `src/collect/inline.ts`: the same for
+  `style={(state) => ({ … })}`. `src/index.ts`: after the declarations are assembled, the selector states of the
+  detected libraries are named on each one.
+
+Commands and raw output
+```
+$ cd ../crafting-ui && node ../plumb/dist/cli.js --json | (declarations in findings with a state condition)
+21 declarations with a named state in findings
+src/pages/MultiplaneBuilder.tsx:182 color: var(--mpo-ink) → popup-open
+src/pages/MomentPage.tsx:524 data-checked:animate-[pass-pop_520ms_var(--ease-bounce)] → checked
+src/pages/MotionEntryPage.tsx:508 data-checked:animate-[pass-pop_520ms_var(--ease-bounce)] → checked
+src/pages/PatternPage.tsx:604 data-checked:animate-[pass-pop_520ms_var(--ease-bounce)] → checked
+src/pages/MultiplaneBuilder.tsx:290 data-[ending-style]:delay-[320ms] → ending-style
+src/pages/MultiplaneBuilder.tsx:378 group-data-[ending-style]/pop:[transition-timing-function:cubic-bezier(.5,0,.9,.4)] → ending-style
+$ node ../plumb/dist/cli.js explain src/pages/MomentPage.tsx | grep -B4 "state: checked" | head
+src/pages/MomentPage.tsx:524:299  data-checked:border-draw  <Checkbox.Root>
+  class  border-color: var(--draw)
+    selector: .data-checked\:border-draw[data-checked]
+    state: checked
+$ node ../plumb/dist/cli.js --json 2>&1 >/dev/null | head -1
+! Partly judged: Base UI (src/components/blueprint.tsx:5): usage (every primitive, part and site), states; structure (portals, slots, render props), owned values are not judged yet
+```
+crafting-ui has no `className={(state) => …}` function on a Base UI element (grep `className={(` over its Base UI
+files: none), so the function path is proved by the e2e fixture only (`e2e/library-adapters.test.mjs`, "Base UI
+states": ternary, destructured `&&`, `=== true`, block body with a guarded return, and a `style` function; plus the
+variant, the valued variant and a stylesheet rule).
+
+```
+$ node --test e2e/library-adapters.test.mjs
+ℹ pass 6  ℹ fail 0
+$ node --test --test-concurrency=1 e2e/classes.test.mjs e2e/inline-values.test.mjs e2e/stylesheets-inline.test.mjs e2e/habits.test.mjs e2e/styling-detection.test.mjs e2e/report.test.mjs e2e/cli.test.mjs e2e/onboarding-state.test.mjs e2e/check-cache.test.mjs
+ℹ tests 119  ℹ pass 119  ℹ fail 0
+```
+Unverified: the human one-line finding does not print the state (it prints the class or `prop: value`); the state
+is in `--json` (`when`), `--agent`, and `explain`. The browser suites (serve, overlay) were not run for this layer.

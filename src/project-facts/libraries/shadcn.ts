@@ -22,8 +22,8 @@ export function shadcnConfig(ctx: Context): ShadcnConfig | null {
 }
 
 /** The import prefixes that reach the ui folder: the `ui` alias, else `<components alias>/ui`, else `@/components/ui`. */
-export function uiAliases(ctx: Context): string[] {
-  const config = shadcnConfig(ctx), aliases = config?.aliases ?? {};
+export function uiAliases(ctx?: Context): string[] {
+  const config = ctx ? shadcnConfig(ctx) : null, aliases = config?.aliases ?? {};
   const out = new Set<string>();
   if (aliases.ui) out.add(aliases.ui);
   if (aliases.components) out.add(`${aliases.components}/ui`);
@@ -31,7 +31,7 @@ export function uiAliases(ctx: Context): string[] {
   return [...out];
 }
 
-const generated = (specifier: string, ctx: Context) => {
+const generated = (specifier: string, ctx?: Context) => {
   for (const alias of uiAliases(ctx)) if (specifier.startsWith(`${alias}/`)) return specifier.slice(alias.length + 1).replace(/\.[jt]sx?$/, '');
   const relative = /(?:^|\/)components\/ui\/([\w-]+)(?:\.[jt]sx?)?$/.exec(specifier);
   return relative?.[1] ?? null;

@@ -12,6 +12,8 @@ import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
 import { references } from './collect/source.js';
+import { selectorStates } from './collect/states.js';
+import { adapterOf, projectFacts } from './project-facts/index.js';
 import type { SourceProgram } from './collect/source.js';
 import { discoverProject, projectSourceFiles } from './project.js';
 import { readDecisions } from './decisions/index.js';
@@ -155,6 +157,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file));
+  // A detected library's states, named on every declaration whose selector carries one of its attributes.
+  const stateAdapters = ((await projectFacts(root, { root })).libraries.value ?? []).flatMap(item => { const adapter = adapterOf(item); return adapter?.state && item.capabilities?.states === 'judged' ? [adapter] : []; });
+  if (stateAdapters.length) for (const declaration of declarations) { const states = selectorStates(declaration.when, stateAdapters); if (states.length) declaration.when = [...declaration.when, ...states]; }
   profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
   profileProgress('phase:decisions');

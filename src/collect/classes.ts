@@ -19,6 +19,8 @@ import { collectionCache, sourceHash } from './cache.js';
 import { ComputedClasses, classSiteKey } from './computed.js';
 import { argumentMode, classHelperRegistry, configKeyMode } from './class-helpers.js';
 import type { ClassHelper, ClassHelperInput } from './class-helpers.js';
+import { branchState, returns, stateAdapterFor, stateParam } from './states.js';
+import type { StateParam } from './states.js';
 
 export interface ClassSite extends Site {
   token: string;
@@ -142,6 +144,9 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   const sites = new Map<string, ClassSite>();
   let classContext: string | undefined;
   let managedFocus = false;
+  // The library element whose className is being read (its adapter names states), and the state parameter in scope.
+  let stateAdapter: ReturnType<typeof stateAdapterFor>;
+  let stateScope: StateParam | undefined;
 
   function source(file: string, fullAst = false): Source {
     const cached = sources.get(file);
@@ -229,7 +234,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     if (!node) return;
     node = unwrap(node);
     const text = (value: Node) => src.text.slice(value.start, value.end);
-    const branch = (value: string) => [...conditions, { kind: 'branch' as const, text: value }];
+    const branch = (value: string) => { const state = branchState(stateScope, value); return [...conditions, { kind: 'branch' as const, text: value }, ...(state ? [state] : [])]; };
     const recur = (value: Node | null | undefined, when = conditions, nextMode = mode, nextShape = shape) => evaluate(value, src, scopes, owner, when, usage, follow, nextMode, nextShape);
     switch (node.type) {
       case 'JSXExpressionContainer': recur(node.expression); return;
@@ -327,6 +332,22 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
         }
         return;
       }
+      case 'ArrowFunctionExpression': case 'FunctionExpression': {
+        // A library calls the function with its state: every return is read, each under the tests above it.
+        const param = stateAdapter && mode === 'classes' ? stateParam(node, stateAdapter) : null;
+        if (!param) { opaque++; return; }
+        const shadow: Scope = new Map();
+        for (const item of node.params) { const block = (value: Node | null | undefined): void => { if (!value) return; if (value.type === 'Identifier') shadow.set(value.name, null); else for (const child of children(value)) block(child); }; block(item); }
+        const outer = stateScope;
+        stateScope = param;
+        for (const item of returns(node, src.text)) {
+          let when = conditions;
+          for (const test of item.when) { const state = branchState(stateScope, test); when = [...when, { kind: 'branch' as const, text: test }, ...(state ? [state] : [])]; }
+          evaluate(item.node, src, [...scopes, shadow], owner, when, usage, follow, mode, shape);
+        }
+        stateScope = outer;
+        return;
+      }
       case 'Identifier': case 'MemberExpression': {
         if (!follow) { opaque++; return; }
         const identifier = node.type === 'Identifier' ? node : node.object;
@@ -379,9 +400,11 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     for (const key of ['declarations', 'sites', 'stylesheets', 'imports', 'definedVariables'] as const) (styles[key] as unknown[]).push(...inline[key]);
     inlineMs += performance.now() - inlineStart - (parseMs - inlineParseStart);
     const imports: Scope = new Map();
+    const importSources = new Map<string, string>();
     const dialogContents = new Set<string>(), commandInputs = new Set<string>();
     for (const statement of ast.body) {
       if (statement.type !== 'ImportDeclaration') continue;
+      for (const specifier of statement.specifiers) importSources.set(specifier.local.name, String(statement.source.value));
       // Resolve only imports read as class values. Component/helper imports
       // cannot contribute literal maps and need no AST deserialization.
       for (const specifier of statement.specifiers) {
@@ -454,9 +477,11 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
           if (['className', 'class'].includes(name(attr.name))) {
             classContext = `${file}:${node.start}`;
             managedFocus = scriptContainer || dialogContainer || commandInput;
+            stateAdapter = importedFocus ? stateAdapterFor(importSources.get(element.split('.')[0]!)) : undefined;
             evaluate(attr.value, src, next, owner);
             classContext = undefined;
             managedFocus = false;
+            stateAdapter = undefined;
           }
           else if (attr.value.type === 'JSXExpressionContainer') walk(attr.value.expression, next, owner);
         }

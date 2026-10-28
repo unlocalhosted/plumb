@@ -64,10 +64,12 @@ export const librariesRegistry: readonly Detector[] = [{
       // Each capability the adapter implements runs here; one that cannot (a file that will not parse) is unknown, with why.
       const adapter = adapterFor(item.id), ran: Partial<Record<Capability, 'judged' | 'unknown'>> = {};
       let usage: Detected['usage'];
-      if (adapter?.capabilities.includes('usage')) {
-        const result = collectUsage(adapter, ctx);
-        usage = result.usage; ran.usage = result.unknown.length ? 'unknown' : 'judged';
-        evidence.push(...result.unknown);
+      for (const capability of adapter?.capabilities ?? []) {
+        if (capability === 'usage') {
+          const result = collectUsage(adapter!, ctx);
+          usage = result.usage; ran.usage = result.unknown.length ? 'unknown' : 'judged';
+          evidence.push(...result.unknown);
+        } else ran[capability] = 'judged'; // read at analysis or locate time through the adapter; nothing on disk can fail it here
       }
       const note = derivedSupport(item, adapter, ran);
       found.push({ id: item.id, label: item.label, ...note, source: 'declared', evidence, ...(name ? { detail: { package: name } } : {}), ...(usage ? { usage } : {}), ...(adapter ? { capabilities: ran } : {}) });

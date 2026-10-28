@@ -17,9 +17,9 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   }, 'libraries');
   const item = find(list, 'base-ui-react');
   assert.equal(item.support, 'partial');
-  assert.deepEqual(item.capabilities, { usage: 'judged' });
-  assert.match(item.judged, /^usage \(every primitive, part and site\)$/);
-  assert.match(item.skipped, /states, structure \(portals, slots, render props\), owned values are not judged yet/);
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged' });
+  assert.match(item.judged, /^usage \(every primitive, part and site\), states$/);
+  assert.match(item.skipped, /^structure \(portals, slots, render props\), owned values are not judged yet$/);
   assert.equal(item.usage.files, 3);
   assert.deepEqual(item.usage.components, { Slider: 2, Popover: 1, Switch: 1 });
   assert.deepEqual(sites(item), [
@@ -29,9 +29,9 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   ]);
   const doctor = await run(project, ['doctor'], 1);
   assert.match(doctor.stdout, /^Libraries:\s+Base UI\s+Base UI: 3 files · Slider 2, Popover 1, Switch 1/m);
-  assert.match(doctor.stdout.split('\nSupport\n')[1], /^partial\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\); states, st/m);
+  assert.match(doctor.stdout.split('\nSupport\n')[1], /^partial\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states; st/m);
   const check = await run(project, [], 0);
-  assert.equal(check.stderr, '! Partly judged: Base UI (src/Pop.jsx:1): usage (every primitive, part and site); states, structure (portals, slots, render props), owned values are not judged yet\n');
+  assert.equal(check.stderr, '! Partly judged: Base UI (src/Pop.jsx:1): usage (every primitive, part and site), states; structure (portals, slots, render props), owned values are not judged yet\n');
 });
 
 test('Radix: namespace, named-part and prefixed imports name the same component and part; the bare name is its root', async t => {
@@ -70,7 +70,7 @@ test('a file that will not parse makes usage unknown, with the file named; the r
     'src/Bad.jsx': "import { Switch } from '@base-ui/react/switch';\nexport const Bad = () => <Switch.Root>\n",
   }, 'libraries');
   const item = find(list, 'base-ui-react');
-  assert.deepEqual(item.capabilities, { usage: 'unknown' });
+  assert.deepEqual(item.capabilities, { usage: 'unknown', states: 'judged' });
   assert.equal(item.support, 'partial');
   assert.match(item.skipped, /usage \(every primitive, part and site\) could not be read here/);
   assert.ok(item.evidence.some(where => where.file === 'src/Bad.jsx' && /could not parse/.test(where.text)), JSON.stringify(item.evidence));
@@ -85,4 +85,54 @@ test('a library with a detector and no adapter says it is found, not understood 
   assert.equal(item.support, 'partial'); assert.equal(item.capabilities, undefined); assert.equal(item.usage, undefined);
   const check = await run(project, [], 0);
   assert.equal(check.stderr, '! Partly judged: React Aria (src/B.jsx:1): found, not understood yet: your classes on its elements are judged like plain elements; its states, portals and own variables are not\n');
+});
+
+// ---- Layer 2: Base UI states. Every declaration applied in a library state names that state: Tailwind variants on
+// its data attributes, stylesheet rules with them, and className / style functions the library calls with its state.
+const states = declaration => declaration.when.filter(condition => condition.kind === 'state').map(condition => condition.text);
+const at = (report, line, text) => {
+  const found = report.findings.flatMap(finding => (finding.occurrences ?? [finding.declaration]).map(declaration => ({ finding, declaration }))).filter(({ declaration }) => declaration.site.line === line && (text === undefined || declaration.site.text === text));
+  assert.ok(found.length, `a finding at line ${line}${text ? ` for ${text}` : ''} in ${report.findings.map(finding => `${finding.declaration.site.line} ${finding.declaration.site.text}`).join(' | ')}`);
+  return found.map(item => item.declaration);
+};
+
+test('Base UI states: variants, stylesheet selectors, className and style functions each name the state they apply in', async t => {
+  const { project } = await detected(t, {
+    'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@base-ui/react': '^1.8.0' } },
+    'src/index.css': '@import "tailwindcss";\n@theme { --spacing-s4: 1rem; --color-ink: #111; }\n.thumb[data-dragging] { padding: 13px; }\n',
+    'src/Check.jsx': [
+      "import './index.css';",
+      "import { Checkbox } from '@base-ui/react/checkbox';",
+      "import { Slider } from '@base-ui/react/slider';",
+      'export const Check = ({ wide }) => (',
+      '  <Checkbox.Root className="size-5 data-checked:bg-[#ff0000] data-[orientation=horizontal]:p-[7px]">',
+      "    <Checkbox.Indicator className={(state) => state.checked ? 'p-[13px]' : 'p-[9px]'} />",
+      "    <Checkbox.Indicator className={({ disabled, indeterminate }) => cn('m-[3px]', disabled && 'm-[5px]', indeterminate === true && 'm-[6px]')} />",
+      '    <Slider.Thumb className="thumb" style={(state) => ({ padding: state.dragging ? 13 : 7 })} />',
+      "    <Slider.Thumb className={(state) => { if (state.dragging) return 'p-[11px]'; return 'p-[1px]'; }} />",
+      "    <div className={(state) => state.checked ? 'p-[13px]' : 'p-[9px]'} />",
+      '  </Checkbox.Root>',
+      ');',
+      "const cn = (...parts) => parts.filter(Boolean).join(' ');",
+    ].join('\n') + '\n',
+  }, 'libraries');
+  const report = json(await run(project, ['--json'], 0));
+  assert.deepEqual(states(at(report, 5, 'data-checked:bg-[#ff0000]')[0]), ['checked']);
+  assert.deepEqual(states(at(report, 5, 'data-[orientation=horizontal]:p-[7px]')[0]), ['orientation=horizontal']);
+  assert.deepEqual(states(at(report, 6, 'p-[13px]')[0]), ['checked']);
+  assert.deepEqual(states(at(report, 6, 'p-[9px]')[0]), ['!checked']);
+  assert.deepEqual(states(at(report, 7, 'm-[5px]')[0]), ['disabled']);
+  assert.deepEqual(states(at(report, 7, 'm-[6px]')[0]), ['indeterminate']);
+  assert.deepEqual(at(report, 7, 'm-[3px]').map(states), [[]], 'the unconditional class has no state');
+  const style = at(report, 8).filter(declaration => declaration.origin === 'inline');
+  assert.deepEqual(style.map(declaration => [declaration.value, states(declaration)]), [['13px', ['dragging']], ['7px', ['!dragging']]]);
+  assert.deepEqual(states(at(report, 9, 'p-[11px]')[0]), ['dragging']);
+  assert.deepEqual(states(at(report, 9, 'p-[1px]')[0]), ['!dragging']);
+  const sheet = report.findings.flatMap(finding => finding.occurrences ?? [finding.declaration]).find(declaration => declaration.origin === 'stylesheet' && declaration.value === '13px');
+  assert.deepEqual(states(sheet), ['dragging'], 'a stylesheet rule on the attribute names the state too');
+  // A plain element's className function is not a library state: the class is opaque, as before.
+  assert.ok(!report.findings.some(finding => finding.declaration.site.line === 10 && finding.declaration.site.text === 'p-[13px]'));
+  assert.equal(report.findings.find(finding => finding.rule === 'existence/dynamic-class' && finding.declaration.site.line === 10)?.declaration.site.text, undefined);
+  const explain = await run(project, ['sites', 'src/Check.jsx'], 0).catch(() => null);
+  if (explain) assert.match(explain.stdout, /state: checked/);
 });

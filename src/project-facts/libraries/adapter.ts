@@ -39,10 +39,16 @@ export interface LibraryAdapter {
   family: string;
   /** The capabilities this adapter implements. Support is derived from this list, never written. */
   capabilities: readonly Capability[];
-  /** Whether `specifier` is one of this library's modules. */
-  owns(specifier: string, ctx: Context): boolean;
+  /** Whether `specifier` is one of this library's modules. `ctx` is there when a detector asks (shadcn reads its aliases). */
+  owns(specifier: string, ctx?: Context): boolean;
   /** What importing `imported` (`*`, `default` or a name) from `specifier` stands for. */
-  meaning(specifier: string, imported: string, ctx: Context): ImportMeaning;
+  meaning(specifier: string, imported: string, ctx?: Context): ImportMeaning;
+  /**
+   * `states`: the state an attribute of the library names, as a finding says it: `data-checked` → `checked`,
+   * `data-state="open"` → `open`, `data-orientation="horizontal"` → `orientation=horizontal`; null when the attribute
+   * is not a state of this library. A `className={(state) => …}` function asks with `data-<key>` for `state.<key>`.
+   */
+  state?(attribute: string, value: string | null): string | null;
 }
 
 /** The outcome of running one capability: it ran, or it could not (a parse failure, an unknown shape), with why. */

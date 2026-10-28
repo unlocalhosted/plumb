@@ -6,6 +6,9 @@ import type { SourceText } from './source.js';
 import { domainOf, evaluate, format, propertyType, typeTable } from './evaluate.js';
 import type { Binding, Scope, ScopeEntry, Sym } from './evaluate.js';
 import type { Condition } from '../report.js';
+import { branchState, returns, stateAdapterFor, stateParam } from './states.js';
+import type { StateParam } from './states.js';
+import type { LibraryAdapter } from '../project-facts/libraries/index.js';
 
 // React's actual list, including its explicitly enumerated vendor spellings.
 // facebook/react packages/react-dom-bindings/src/shared/isUnitlessNumber.js (MIT).
@@ -122,27 +125,47 @@ function referenced(sym: Extract<Sym, { type: 'concat' }>): { text: string; by: 
 
 export function collectInline(ast: Program, source: SourceText, resolveImport?: (id: string, name: string) => InlineBinding | null): SourceStyles {
   const result: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
+  const importSources = new Map<string, string>();
+  // The state parameter of a `style={(state) => …}` function a library calls; its branches name states.
+  let stateScope: StateParam | undefined;
+  const branches = (texts: string[]): Condition[] => texts.flatMap(text => { const state = branchState(stateScope, text); return [{ kind: 'branch' as const, text }, ...(state ? [state] : [])]; });
   const types = typeTable(ast);
   // `const Card: FC<Props> = ({ size }) => …` types its first parameter through the variable.
   const componentProps = new WeakMap<Node, Node>();
   interface Table { node: Node; source: SourceText; scopes: Scope[]; when: Condition[]; direct?: boolean }
-  function tables(node: Node, scopes: Scope[], when: Condition[] = []): Table[] | undefined {
+  function tables(node: Node, scopes: Scope[], when: Condition[] = [], adapter?: LibraryAdapter): Table[] | undefined {
     const direct = unwrap(node);
     if (direct.type === 'ObjectExpression') return [{ node: direct, source, scopes, when, direct: true }];
+    if (adapter && (direct.type === 'ArrowFunctionExpression' || direct.type === 'FunctionExpression')) {
+      const param = stateParam(direct, adapter);
+      if (!param) return undefined;
+      const shadow: Scope = new Map();
+      const block = (value: Node | null | undefined): void => { if (!value) return; if (value.type === 'Identifier') shadow.set(value.name, null); else if (value.type === 'AssignmentPattern') block(value.left); else if (value.type === 'ObjectPattern') for (const item of value.properties) block(item.type === 'RestElement' ? item.argument : item.value); else if (value.type === 'ArrayPattern') for (const item of value.elements) block(item); else if (value.type === 'RestElement') block(value.argument); };
+      for (const item of direct.params) block(item);
+      stateScope = param;
+      const out: Table[] = [];
+      for (const item of returns(direct, source.text)) {
+        const found = tables(item.node, [...scopes, shadow], [...when, ...branches(item.when)]);
+        if (!found) return undefined;
+        out.push(...found.map(table => ({ ...table, direct: false })));
+      }
+      return out;
+    }
     const sym = evaluate(direct, source, scopes);
     if (sym.type === 'object') return [{ node: sym.node, source: sym.source, scopes: sym.scopes, when }];
     if (sym.type === 'set' && sym.options.every(option => option.value.type === 'object')) {
-      return sym.options.map(option => { const value = option.value as Extract<Sym, { type: 'object' }>; return { node: value.node, source: value.source, scopes: value.scopes, when: [...when, ...option.when.map(text => ({ kind: 'branch' as const, text }))] }; });
+      return sym.options.map(option => { const value = option.value as Extract<Sym, { type: 'object' }>; return { node: value.node, source: value.source, scopes: value.scopes, when: [...when, ...branches(option.when)] }; });
     }
     return undefined;
   }
-  function styles(node: Node, scopes: Scope[], owner: Declaration['owner'], attribute: Site): void {
+  function styles(node: Node, scopes: Scope[], owner: Declaration['owner'], attribute: Site, adapter?: LibraryAdapter): void {
     const declarations: Declaration[] = [];
+    stateScope = undefined;
     // The site is the style attribute for values reached through a binding, and
     // the property itself when it is written in the attribute.
     const siteFor = (property: Node, table: Table) => table.direct ? sourceSite(source, property.start, source.text.slice(property.start, property.end)) : { ...attribute, text: table.source.text.slice(property.start, property.end) };
     function emit(property: Node, table: Table, key: string, sym: Sym | undefined, when: Condition[], opaque?: Declaration['opaque']): void {
-      if (sym?.type === 'set') { for (const option of sym.options) emit(property, table, key, option.value, [...when, ...option.when.map(text => ({ kind: 'branch' as const, text }))]); return; }
+      if (sym?.type === 'set') { for (const option of sym.options) emit(property, table, key, option.value, [...when, ...branches(option.when)]); return; }
       const prop = key ? propertyName(key) : '*';
       const custom = prop.startsWith('--');
       const px = (value: number) => `${format(value)}${value !== 0 && !custom && !unitless.has(key) ? 'px' : ''}`;
@@ -171,7 +194,7 @@ export function collectInline(ast: Program, source: SourceText, resolveImport?: 
         emit(property, table, String(key.value), evaluate(property.value, table.source, table.scopes), table.when);
       }
     }
-    const resolved = tables(node, scopes);
+    const resolved = tables(node, scopes, [], adapter);
     if (resolved) for (const table of resolved) properties(table, 0);
     else emit(node, { node, source, scopes, when: [] }, '', undefined, [], 'spread');
     const direct = unwrap(node).type === 'ObjectExpression';
@@ -196,6 +219,7 @@ export function collectInline(ast: Program, source: SourceText, resolveImport?: 
     }
     if (node.type === 'ImportDeclaration') {
       if (!node.specifiers.length && node.importKind !== 'type') result.imports.push({ file: source.file, specifier: node.source.value });
+      for (const specifier of node.specifiers) importSources.set(specifier.local.name, String(node.source.value));
       return;
     }
     let next = scopes;
@@ -253,7 +277,8 @@ export function collectInline(ast: Program, source: SourceText, resolveImport?: 
     if (node.type === 'JSXOpeningElement') {
       const name = nodeName(node.name);
       const owner: Declaration['owner'] = { kind: /^[A-Z]/.test(name) ? 'component' : 'element', name };
-      for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && nodeName(attr.name) === 'style' && attr.value?.type === 'JSXExpressionContainer') styles(attr.value.expression, next, owner, sourceSite(source, attr.start, source.text.slice(attr.start, attr.end)));
+      const adapter = stateAdapterFor(importSources.get(name.split('.')[0]!));
+      for (const attr of node.attributes) if (attr.type === 'JSXAttribute' && nodeName(attr.name) === 'style' && attr.value?.type === 'JSXExpressionContainer') styles(attr.value.expression, next, owner, sourceSite(source, attr.start, source.text.slice(attr.start, attr.end)), adapter);
       // JSX-valued props (slots, render nodes, object payloads) can contain
       // elements with their own styles. Continue through attribute values.
     }

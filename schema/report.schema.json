@@ -218,7 +218,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "text"],
       "properties": {
-        "kind": { "enum": ["media", "pseudo", "selector", "container", "supports", "branch", "layer"] },
+        "kind": { "enum": ["media", "pseudo", "selector", "container", "supports", "branch", "layer", "state"] },
         "text": { "type": "string" }
       }
     },

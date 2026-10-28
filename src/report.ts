@@ -27,7 +27,8 @@ export interface Site {
 }
 
 export interface Condition {
-  kind: 'media' | 'pseudo' | 'selector' | 'container' | 'supports' | 'branch' | 'layer';
+  /** `state`: a component library's state the declaration applies in (`checked`, `open`, `orientation=horizontal`), beside the selector or branch that carries it. */
+  kind: 'media' | 'pseudo' | 'selector' | 'container' | 'supports' | 'branch' | 'layer' | 'state';
   text: string;
 }
 
