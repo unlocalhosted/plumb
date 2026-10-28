@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (proposed 0.2.0)
+## 0.2.0 · 2026-10-28
 
 Everything since 0.1.0, as a person using it sees it.
 

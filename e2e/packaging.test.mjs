@@ -90,7 +90,7 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   command(consumer, 'git', ['init', '--quiet']);
   command(consumer, process.execPath, [cli, 'install', '--ci']);
   const workflow = await readFile(join(consumer, '.github/workflows/plumb.yml'), 'utf8');
-  assert.equal(metadata.version, '0.1.0');
+  assert.equal(metadata.version, '0.2.0');
   assert.ok(workflow.includes(`uses: unlocalhosted/plumb@v${metadata.version}\n`));
   assert.doesNotMatch(workflow, /@main\b/);
   const action = await readFile(join(installed, 'action.yml'), 'utf8');

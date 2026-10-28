@@ -1,6 +1,6 @@
 {
   "name": "@unlocalhosted/react-plumber",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
   "license": "MIT",
   "type": "module",
