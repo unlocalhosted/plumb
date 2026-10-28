@@ -287,7 +287,9 @@ test('packaged CLI never uses its enclosing consumer repository HEAD as a React 
   assert.equal(await readFile(join(directory, '.claude/skills/plumber/SKILL.md'), 'utf8'),
     await readFile(join(packageRoot, 'skills/plumber/SKILL.md'), 'utf8'));
   const workflow = await readFile(join(directory, '.github/workflows/plumb.yml'), 'utf8');
-  assert.match(workflow, /uses: unlocalhosted\/plumb@v0\.1\.0/);
+  // outside a Git checkout of React Plumber the pin is the packaged version's tag
+  const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+  assert.ok(workflow.includes(`uses: unlocalhosted/plumb@v${version}\n`), workflow);
   assert.doesNotMatch(workflow, /@main/);
 });
 
