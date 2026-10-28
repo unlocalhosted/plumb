@@ -144,3 +144,4 @@ Detection only: each entry says what plumb judges and skips; judging support for
 - `styling.unocss` (unsupported).
 - `styling.panda` (unsupported).
 - `styling.vanilla-extract` (unsupported).
+- `styling.stylex` (unsupported).

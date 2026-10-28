@@ -69,3 +69,10 @@ test('vanilla-extract: a .css.ts import is the evidence; unsupported', async t =
   assert.equal(item.support, 'unsupported');
   assert.equal(item.evidence[0].file, 'src/Card.css.ts');
 });
+
+test('stylex: the @stylexjs import is the evidence; unsupported', async t => {
+  const { list } = await detected(t, { 'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@stylexjs/stylex': '^0.12.0' } }, 'src/Card.jsx': "import * as stylex from '@stylexjs/stylex';\nconst s = stylex.create({ card: { padding: 13 } });\nexport const Card = () => <div {...stylex.props(s.card)} />;\n" });
+  const item = find(list, 'stylex');
+  assert.equal(item.support, 'unsupported');
+  assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['src/Card.jsx', 1]);
+});
