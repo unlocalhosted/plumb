@@ -228,7 +228,13 @@ export class Facts {
       const c = rgb(this.style(n).backgroundColor);
       if (c && c[3] > 0.5) return c;
     }
-    return rgb(this.style(document.body).backgroundColor) ?? [255, 255, 255, 1];
+    // nothing painted up the tree: the page's own background (the root's paints the whole canvas), else the browser's white.
+    // A transparent body is not black ground: it parses to [0, 0, 0, 0].
+    for (const n of [document.body, document.documentElement]) {
+      const c = rgb(this.style(n).backgroundColor);
+      if (c && c[3] > 0.5) return c;
+    }
+    return [255, 255, 255, 1];
   }
 }
 
