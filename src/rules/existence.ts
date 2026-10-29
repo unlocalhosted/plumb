@@ -52,7 +52,7 @@ export function classDeclaration(site: ClassSite): Declaration {
     site: location(site), owner: site.owner, origin: 'class', ...(site.opaque ? { opaque: site.opaque } : {}) };
 }
 export function location(site: ClassSite): Site {
-  return { file: site.file, line: site.line, column: site.column, text: site.text, ...(site.anchor ? { anchor: site.anchor } : {}) };
+  return { file: site.file, line: site.line, column: site.column, text: site.text, ...(site.anchor ? { anchor: site.anchor } : {}), ...(site.defined ? { defined: site.defined } : {}) };
 }
 export function existence(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings = new Map<string, string[]>()): Finding[] {
   const groups = new Map<string, ClassSite[]>();

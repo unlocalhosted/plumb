@@ -1,4 +1,4 @@
-import { cacheDirectory } from '../paths.js';
+import { buildId, cacheDirectory } from '../paths.js';
 import { serialize, deserialize } from 'node:v8';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -18,7 +18,7 @@ interface SerializedData extends Omit<Data, 'styles'> {
 }
 interface Receipt { data: SerializedData; dependencies: [string, string][]; resolutions: [string, string | null][] }
 export function collectionCache(root: string, helpers: ClassHelperInput[], texts: Map<string, string>) {
-  const key = sourceHash(JSON.stringify(['classes-inline-v12-managed-focus', root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
+  const key = sourceHash(JSON.stringify(['classes-inline-v12-managed-focus', buildId(), root, helpers, [...texts].map(([file, text]) => [file, sourceHash(text)])]));
   const directory = resolve(cacheDirectory(root), 'sources');
   const path = join(directory, `${key}.v8`);
   return {

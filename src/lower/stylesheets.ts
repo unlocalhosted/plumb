@@ -1,4 +1,4 @@
-import { environment, cacheDirectory } from '../paths.js';
+import { buildId, environment, cacheDirectory } from '../paths.js';
 import { profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -204,7 +204,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
   }
   const dependencies = await Promise.all([...new Set([...(entry ? [entry] : []), ...graph.roots.filter(file => usesTailwind(graph.files.get(file)!.css))])].map(file => dependency(file, graph.files.get(file)?.css)));
   const embeddedDependencies = await Promise.all(embedded.filter(sheet => usesTailwind(sheet.css)).map(sheet => dependency(sheet.source.file, sheet.css)));
-  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v3-isolated', version, entry, dependencies, embeddedDependencies, diagnostics,
+  const hash = createHash('sha256').update(JSON.stringify([tool.version, 'messages-apply-keywords-v3-isolated', buildId(), version, entry, dependencies, embeddedDependencies, diagnostics,
     [...graph.files].map(([file, sheet]) => [file, sheet.css, sheet.reached, sheet.sourceOrigin, sheet.package]), embedded.map(sheet => [sheet.source.file, sheet.source.text, sheet.css, sheet.offsets])])).digest('hex');
   const directory = resolve(cacheDirectory(root), 'stylesheets');
   const path = join(directory, `${hash}.json`);

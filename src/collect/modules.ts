@@ -1,4 +1,4 @@
-import { cacheDirectory } from '../paths.js';
+import { buildId, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -45,7 +45,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
 }> {
   const start = performance.now();
   const directory = resolve(cacheDirectory(root), 'modules');
-  const path = join(directory, `${createHash('sha256').update(`module-graph-v1\n${root}`).digest('hex')}.json`);
+  const path = join(directory, `${createHash('sha256').update(`module-graph-v1\n${buildId()}\n${root}`).digest('hex')}.json`);
   let cache: Record<string, CachedModule> = Object.create(null) as Record<string, CachedModule>;
   try { cache = Object.assign(cache, JSON.parse(await readFile(path, 'utf8')) as Record<string, CachedModule>); }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }

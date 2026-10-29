@@ -1,4 +1,4 @@
-import { cacheDirectory } from '../paths.js';
+import { buildId, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { atomicWrite } from '../atomic-write.js';
@@ -8,7 +8,7 @@ import type { CandidateCss } from '../lower/css.js';
 /** Rankings depend only on the current hint set and compilable candidates.
  * Locations, marker/existence proof and grouping still run on fresh inputs. */
 export async function suggestionCache(root: string, candidates: Map<string, CandidateCss>, hints: { token: string; prefix: string }[], readOnly = false) {
-  const key = createHash('sha256').update(JSON.stringify(['ranking-messages-v4-isolated', hints, [...candidates].map(([token, result]) => [token, !result.unreadable && !!result.css?.trim()])])).digest('hex');
+  const key = createHash('sha256').update(JSON.stringify(['ranking-messages-v4-isolated', buildId(), hints, [...candidates].map(([token, result]) => [token, !result.unreadable && !!result.css?.trim()])])).digest('hex');
   const directory = resolve(cacheDirectory(root), 'rankings');
   const path = join(directory, `${key}.json`);
   let entries: [string, string[]][] = [];

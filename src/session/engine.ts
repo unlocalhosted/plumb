@@ -55,7 +55,8 @@ export interface ApplyTextAtOptions { file: string; hash: string; id: string; fr
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 /** Names one recorded write so it can be undone after the fact. */
 export interface UndoHandle { id: string; file: string; label: string }
-export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle }
+export interface RefusedSwap { line: number; column: number; from: string; to: string; reason: string }
+export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle; /** swaps: the places that could not be written, each with its reason; the others were. */ refused?: RefusedSwap[] }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
 export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string }
 /** A write may never leave a source file that parses worse than it did: every writer's last guard. */
@@ -728,23 +729,54 @@ export class Session extends EventEmitter {
     const path = this.file(file);
     // one swap per element: the same element twice with the same edit is one
     const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}`, e])).values()];
-    const starts: { start: number; from: string[]; to: string[] }[] = [];
     for (const e of unique) {
       if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || !e.to.trim() || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs from and to (at most eight classes).');
       this.position(e.line); this.position(e.column);
-      const facts = await this.elementFacts(path, e.line, e.column);
-      if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
-      if (!names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
-      starts.push({ start: facts.location.start, from: names(e.from), to: names(e.to) });
     }
-    return this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
+    // Every place that can be written is; a place that can't (a className built at runtime, a component's usage, a
+    // class not written there) is refused on its own, with its reason. The file itself is still guarded whole: a
+    // stale hash writes nothing.
+    const refused: RefusedSwap[] = [];
+    const order = (a: { line: number; column: number }, b: { line: number; column: number }) => a.line - b.line || a.column - b.column;
+    const refuse = (e: SwapsOptions['edits'][number], error: unknown): void => {
+      if (!(error instanceof UsageError) || error.message === staleFile) throw error;
+      refused.push({ line: e.line, column: e.column, from: e.from, to: e.to, reason: error.message });
+    };
+    const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[] }[] = [];
+    for (const e of unique) {
+      try {
+        const facts = await this.elementFacts(path, e.line, e.column);
+        if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+        if (!names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+        starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to) });
+      } catch (error) { refuse(e, error); }
+    }
+    const written: SwapsOptions['edits'] = [];
+    const nothing = () => new UsageError(`${refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${[...new Set(refused.toSorted(order).map(r => r.reason))].join(' ')}`);
+    if (!starts.length) throw nothing();
+    const result = await this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      const changes = starts.map(s => swapClasses(_file, source, s.start, s.from, s.to)).sort((a, b) => b.start - a.start);
-      for (let i = 1; i < changes.length; i++) if (changes[i]!.end > changes[i - 1]!.start) throw new UsageError('Two of these changes touch the same classes; apply them one at a time.');
+      const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
+      for (const s of starts) {
+        try { changes.push({ ...swapClasses(_file, source, s.start, s.from, s.to), edit: s.edit }); }
+        catch (error) { refuse(s.edit, error); }
+      }
+      changes.sort((a, b) => b.start - a.start);
+      // two changes to the same string: the first asked for is kept, the other is refused
+      const kept: typeof changes = [];
+      for (const c of changes) {
+        const previous = kept.at(-1);
+        if (previous && c.end > previous.start) refuse(c.edit, new UsageError('Another of these changes touches the same classes; apply them one at a time.'));
+        else kept.push(c);
+      }
+      if (!kept.length) throw nothing();
       let next = source;
-      for (const c of changes) next = next.slice(0, c.start) + c.replacement + next.slice(c.end);
-      return { start: 0, end: source.length, replacement: next, at: changes.at(-1)!.at };
-    }, `${unique.length} change${unique.length === 1 ? '' : 's'}`);
+      for (const c of kept) next = next.slice(0, c.start) + c.replacement + next.slice(c.end);
+      written.push(...kept.map(c => c.edit));
+      return { start: 0, end: source.length, replacement: next, at: kept.at(-1)!.at };
+    }, `${unique.length - refused.length} change${unique.length - refused.length === 1 ? '' : 's'}`);
+    const place = (e: SwapsOptions['edits'][number]) => `swap:${e.line}:${e.column}`;
+    return { ...result, applied: written.toSorted(order).map(place), refused: refused.toSorted(order) };
   }
   /** The text-at write: one string (JSX text, an attribute or a literal) addressed by the id text-at returned. */
   applyTextAt(options: ApplyTextAtOptions): Promise<ApplyResult> {

@@ -208,11 +208,12 @@ export class ComputedClasses {
       case 'Literal': if (typeof node.value === 'string') emit(node.value, node.start + 1, embedded(node, source)?.offsets); break;
       case 'TemplateLiteral':
         if (!node.expressions.length) { const literal = embedded(node, source); if (literal) emit(literal.css, node.start + 1, literal.offsets); break; }
+        // Oxc's TS template spans include delimiters; JS spans exclude them (classes.ts)
         for (const [i, quasi] of node.quasis.entries()) {
-          const raw = quasi.value.raw;
+          const raw = quasi.value.raw, open = quasi.start + (node.quasis[0]!.start === node.start ? 1 : 0);
           for (const match of raw.matchAll(/\S+/g)) {
             const left = match.index > 0 || i === 0, right = match.index + match[0].length < raw.length || i === node.quasis.length - 1;
-            if (left && right && !match[0].includes('\\')) emit(match[0], quasi.start + 1 + match.index);
+            if (left && right && !match[0].includes('\\')) emit(match[0], open + match.index);
           }
           const expression = node.expressions[i];
           if (expression && (raw === '' && i === 0 || /\s$/.test(raw)) && (node.quasis[i + 1]?.value.raw === '' && i + 1 === node.quasis.length - 1 || /^\s/.test(node.quasis[i + 1]?.value.raw ?? ''))) recur(expression);

@@ -78,7 +78,7 @@ export function tokenReasons(decisions: Decision[]): void {
 
 /** Exact source replacement only when its spelling and property are known. */
 /** `hover:-duration-[350ms]!` → before `hover:-`, utility `duration`, after `!`; null when the value can't be told apart. */
-function utilityValue(text: string): { before: string; utility: string; after: string } | null {
+function utilityValue(text: string): { before: string; utility: string; value: string; after: string } | null {
   let depth = 0, colon = -1;
   for (let i = 0; i < text.length; i++) {
     if (text[i] === '[' || text[i] === '(') depth++;
@@ -87,32 +87,77 @@ function utilityValue(text: string): { before: string; utility: string; after: s
   }
   const lead = /^!?-?/.exec(text.slice(colon + 1))![0], after = text.endsWith('!') && !lead.includes('!') ? '!' : '';
   const base = text.slice(colon + 1 + lead.length, text.length - after.length);
-  const match = /^([a-z][a-z-]*?)-(?:\[[^\]]+\]|\([^)]+\)|[\d.]+(?:px|rem|ms|s)?|[a-z0-9.]+)$/.exec(base);
-  return match ? { before: text.slice(0, colon + 1) + lead, utility: match[1]!, after } : null;
+  const match = /^([a-z][a-z-]*?)-(\[[^\]]+\]|\([^)]+\)|[\d.]+(?:px|rem|ms|s)?|[a-z0-9.]+)$/.exec(base);
+  return match ? { before: text.slice(0, colon + 1) + lead, utility: match[1]!, value: match[2]!, after } : null;
+}
+/**
+ * A token with no utility of its own still has a class form: the same utility with `(--token)` as its value, its
+ * variants, sign and importance kept, and a type hint where the utility could mean several properties. One spelling
+ * for what people read and what is written (surfaces/edits.ts).
+ */
+export function tokenClass(d: Pick<Declaration, 'origin' | 'prop' | 'site'> & Partial<Pick<Declaration, 'value'>>, use: NonNullable<Decision['use']>): string | undefined {
+  const text = d.site.text;
+  const variable = /^var\((--[\w-]+)\)$/.exec(use.css.slice(d.prop.length + 2))?.[1];
+  if (!['class', 'arbitrary', 'apply'].includes(d.origin) || use.class || !variable || !use.css.startsWith(`${d.prop}: `) || /[\s/]/.test(text)) return undefined;
+  const at = utilityValue(text);
+  // only the value the class spells is swapped: `duration-150` or `duration-[150ms]` for 150ms, never a keyword such
+  // as transition-colors, whose value names the properties and only implies the time
+  const value = String(d.value ?? '').trim();
+  const written = at && /^\[(.*)\]$/.exec(at.value)?.[1]?.replaceAll('_', ' ');
+  if (!at || !(written !== undefined ? written === value : /^[\d.]+$/.test(at.value) && parseFloat(value) === Number(at.value))) return undefined;
+  const hint = ['text', 'border', 'ring', 'outline', 'stroke', 'decoration', 'font', 'bg', 'shadow', 'fill'].includes(at.utility)
+    ? /color|^fill$|^stroke$/.test(d.prop) ? 'color:' : /width|size|offset|thickness/.test(d.prop) ? 'length:' : d.prop === 'font-family' ? 'family-name:' : d.prop === 'font-weight' ? 'number:' : null : '';
+  return hint === null ? undefined : `${at.before}${at.utility}-(${hint}${variable})${at.after}`;
+}
+/**
+ * A keyword utility only implies its time (`transition-colors` carries the default duration), so the class that sets
+ * the token is added beside it: `duration-(--dur-quick)`, with the same variants. Nothing is swapped.
+ */
+export function tokenClassBeside(d: Pick<Declaration, 'origin' | 'prop' | 'site'>, use: NonNullable<Decision['use']>): string | undefined {
+  const text = d.site.text;
+  const variable = /^var\((--[\w-]+)\)$/.exec(use.css.slice(d.prop.length + 2))?.[1];
+  if (!['class', 'arbitrary', 'apply'].includes(d.origin) || use.class || !variable || !use.css.startsWith(`${d.prop}: `) || /[\s/]/.test(text)) return undefined;
+  const at = utilityValue(text);
+  if (!at || at.utility !== 'transition' || !/^[a-z][a-z-]*$/.test(at.value)) return undefined;
+  const utility = ({ 'transition-duration': 'duration', 'transition-delay': 'delay', 'transition-timing-function': 'ease' } as Record<string, string>)[d.prop];
+  return utility ? `${at.before}${utility}-(${variable})${at.after}` : undefined;
+}
+/**
+ * The class written for a token at a class site, one spelling for what people read and what is written: the token's
+ * own utility in place of the class (`p-4` → `p-small`, variants, sign and importance kept), the utility with the token
+ * as its value when the token has none (`duration-150` → `duration-(--dur-quick)`), or, when the class is a keyword of
+ * another utility that only implies this property (`transition-colors` carries the default duration), the token's
+ * class added beside it. A keyword is never swapped for a token of another utility.
+ */
+export function classEdit(d: Pick<Declaration, 'origin' | 'prop' | 'site'> & Partial<Pick<Declaration, 'value'>>, use: NonNullable<Decision['use']>): { to: string; beside: boolean } | undefined {
+  const text = d.site.text;
+  if (!['class', 'arbitrary', 'apply'].includes(d.origin) || /[\s/]/.test(text)) return undefined;
+  if (!use.class) {
+    const variableClass = tokenClass(d, use);
+    if (variableClass) return { to: variableClass, beside: false };
+    const beside = tokenClassBeside(d, use);
+    return beside ? { to: beside, beside: true } : undefined;
+  }
+  const at = utilityValue(text), own = utilityValue(use.class)?.utility;
+  if (at && own && at.utility !== own && /^[a-z][a-z-]*$/.test(at.value)) {
+    return at.utility === 'transition' && ['duration', 'delay', 'ease'].includes(own) ? { to: `${at.before}${use.class}${at.after}`, beside: true } : undefined;
+  }
+  // Retain variants, sign and importance, but never guess at arbitrary selectors or modifiers.
+  let depth = 0, colon = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '[') depth++;
+    else if (text[i] === ']') depth--;
+    else if (text[i] === ':' && depth === 0) colon = i;
+  }
+  const base = text.slice(colon + 1);
+  return { to: `${text.slice(0, colon + 1)}${base.startsWith('!') ? '!' : ''}${base.replace(/^!/, '').startsWith('-') ? '-' : ''}${use.class}${base.endsWith('!') ? '!' : ''}`, beside: false };
 }
 export function sourceEdit(d: Declaration, use: NonNullable<Decision['use']>): string {
   const text = d.site.text;
-  if (['class', 'arbitrary'].includes(d.origin) && use.class && !/[\s/]/.test(text)) {
-    let depth = 0, colon = -1;
-    for (let i = 0; i < text.length; i++) {
-      if (text[i] === '[') depth++;
-      else if (text[i] === ']') depth--;
-      else if (text[i] === ':' && depth === 0) colon = i;
-    }
-    const base = text.slice(colon + 1);
-    const replacement = `${text.slice(0, colon + 1)}${base.startsWith('!') ? '!' : ''}${base.replace(/^!/, '').startsWith('-') ? '-' : ''}${use.class}${base.endsWith('!') ? '!' : ''}`;
-    return `Replace \`${text}\` with \`${replacement}\`.`;
-  }
-  // A token with no utility of its own still has a class form: the same utility with `(--token)` as its value.
-  const variable = /^var\((--[\w-]+)\)$/.exec(use.css.slice(d.prop.length + 2))?.[1];
-  if (['class', 'arbitrary'].includes(d.origin) && variable && use.css.startsWith(`${d.prop}: `) && !/[\s/]/.test(text)) {
-    const at = utilityValue(text);
-    if (at) {
-      const hint = ['text', 'border', 'ring', 'outline', 'stroke', 'decoration', 'font', 'bg', 'shadow', 'fill'].includes(at.utility)
-        ? /color|^fill$|^stroke$/.test(d.prop) ? 'color:' : /width|size|offset|thickness/.test(d.prop) ? 'length:' : d.prop === 'font-family' ? 'family-name:' : d.prop === 'font-weight' ? 'number:' : null : '';
-      if (hint !== null) return `Replace \`${text}\` with \`${at.before}${at.utility}-(${hint}${variable})${at.after}\`.`;
-    }
-  }
+  const edit = classEdit(d, use);
+  if (edit) return edit.beside ? `Add \`${edit.to}\` beside \`${text}\`.` : `Replace \`${text}\` with \`${edit.to}\`.`;
+  // a class site with no class form for the token: say so, rather than hand a declaration to a className
+  if (['class', 'arbitrary', 'apply'].includes(d.origin) && !use.class && /^var\(--[\w-]+\)$/.test(use.css.slice(d.prop.length + 2))) return `No class sets \`${use.css}\` in place of \`${text}\`; set it in a stylesheet.`;
   const colon = text.indexOf(':');
   const property = text.slice(0, colon).trim().replace(/["']/g, '');
   if (colon >= 0 && property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`) === d.prop && use.css.startsWith(`${d.prop}: `)) {

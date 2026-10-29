@@ -24,6 +24,8 @@ export interface Site {
   inScope?: boolean;
   /** Authored-site identity and acceptance, independent of report grouping. */
   ledger?: { key: string; status: 'new' | 'debt' | 'exception'; why?: string };
+  /** A class read through a variable: where its literal is written, which is where it can be edited. */
+  defined?: { file: string; line: number; column: number };
 }
 
 export interface Condition {

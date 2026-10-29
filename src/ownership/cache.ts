@@ -1,4 +1,4 @@
-import { cacheDirectory } from '../paths.js';
+import { buildId, cacheDirectory } from '../paths.js';
 import { serialize as serializeReceipt, deserialize } from 'node:v8';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -68,7 +68,7 @@ function hydrate(data: GraphData): ComponentGraph {
 interface Receipt { graph: GraphData; files: [string, string | null][]; directories: [string, string[]][]; resolutions: [string, string | undefined][]; contexts: [string, string | undefined][] }
 export function componentCache(root: string, files: string[], config: PlumbConfig, includeUnused: boolean) {
   const directory = resolve(cacheDirectory(root), 'components');
-  const path = join(directory, hash(JSON.stringify(['components-v8-portal-roots', root, files, config.components, config.classHelpers, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
+  const path = join(directory, hash(JSON.stringify(['components-v8-portal-roots', buildId(), root, files, config.components, config.classHelpers, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
   return {
     read(resolveImport: (file: string, specifier: string) => string | undefined, resolveContext: (file: string, specifier: string) => string | undefined): ComponentGraph | undefined {
       let receipt: Receipt;

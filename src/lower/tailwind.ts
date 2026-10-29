@@ -1,4 +1,4 @@
-import { environment, cacheDirectory } from '../paths.js';
+import { buildId, environment, cacheDirectory } from '../paths.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { atomicWrite } from '../atomic-write.js';
@@ -99,7 +99,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
     try { cssGraph = memory?.graph ?? await tailwindGraph(entry); }
     catch (error) { return skipped(error); }
     if (memory) memory.graph = cssGraph;
-    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\nmessages-keyword-values-v7-elevation-ring-layer-refs`);
+    const key = hash(`${cssGraph.hash}\n${version}\n${tool.version}\n${buildId()}\nmessages-keyword-values-v7-elevation-ring-layer-refs`);
     const directory = resolve(cacheDirectory(root), key);
     let cached: Record<string, CandidateCss> = Object.create(null) as Record<string, CandidateCss>;
     try { cached = memory?.cached ?? Object.assign(Object.create(null) as Record<string, CandidateCss>, JSON.parse(await readFile(join(directory, 'candidates.json'), 'utf8')) as Record<string, CandidateCss>); }

@@ -301,3 +301,58 @@ test('a motion token with no utility of its own is offered in class form, varian
   assert.match(shown, /→ hover:duration-\(--dur-calm\) \(150ms\)/);
   assert.doesNotMatch(shown, /var\(--dur-calm\)/);
 });
+
+test('the agent is handed the same class form as people read', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/styles.css'), (await readFile(join(dir, 'src/styles.css'), 'utf8')) + '\n:root { --dur-calm: 150ms; }\n');
+  await writeFile(join(dir, 'src/Dur.tsx'), `export const Dur = () => <b className="duration-150" />;`);
+  const agent = text(dir, ['--agent']);
+  assert.match(agent, /- 150ms: use duration-\(--dur-calm\) or transition-duration: var\(--dur-calm\)/);
+  assert.match(agent, /replace `duration-150` with `duration-\(--dur-calm\)`/);
+});
+
+test('a keyword utility is never swapped for a token of another utility; the class that sets the time goes beside it', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/styles.css'), (await readFile(join(dir, 'src/styles.css'), 'utf8')) + '\n:root { --dur-calm: 150ms; }\n');
+  await writeFile(join(dir, 'src/Keyword.tsx'), `export const K = () => <><b className="transition-colors" /><i className="hover:transition-opacity duration-150" /></>;`);
+  const agent = text(dir, ['--agent', '--file', 'src/Keyword.tsx']);
+  // transition-colors only implies its duration: neither the var-only token nor the themed one replaces it
+  assert.doesNotMatch(agent, /transition-\(--dur-calm\)/);
+  assert.doesNotMatch(agent, /replace `transition-colors` with `duration-quick`/);
+  assert.match(agent, /replace `transition-colors` with `transition-colors duration-\(--dur-calm\)`/);
+  assert.match(agent, /replace `transition-colors` with `transition-colors duration-quick`/);
+  assert.match(agent, /replace `hover:transition-opacity` with `hover:transition-opacity hover:duration-\(--dur-calm\)`/);
+  // a class that spells the value is still swapped
+  assert.match(agent, /replace `duration-150` with `duration-\(--dur-calm\)`/);
+  const report = cli(dir, ['--file', 'src/Keyword.tsx']);
+  const edits = report.findings.flatMap(f => f.edits ?? []).filter(e => e.site.text === 'transition-colors').map(e => e.text);
+  assert.ok(edits.length, JSON.stringify(report.findings.map(f => f.title)));
+  for (const edit of edits) assert.match(edit, /^Add `duration-(\(--dur-calm\)|quick)` beside `transition-colors`\.$/, edit);
+});
+
+test('a template-literal className in .jsx and .tsx is read once per class, at its own column', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'plumber.config.ts'), `export default { css: 'src/styles.css', source: ['src/**/*.{tsx,jsx,css}'] };`);
+  const source = 'export const T = ({ x }) => <div className={`px-[13px] ${x} py-[17px]`} />;';
+  await writeFile(join(dir, 'src/T.jsx'), source);
+  await writeFile(join(dir, 'src/T.tsx'), source);
+  const report = cli(dir);
+  for (const file of ['T.jsx', 'T.tsx']) for (const token of ['px-[13px]', 'py-[17px]']) {
+    const places = new Set(report.declarations.filter(d => d.site.file.endsWith(`/${file}`) && d.site.text === token).map(d => `${d.site.line}:${d.site.column}`));
+    assert.deepEqual([...places], [`1:${source.indexOf(token) + 1}`], `${file} ${token}`);
+    const findings = checks(report).filter(f => f.sites.some(s => s.file.endsWith(`/${file}`) && s.text === token));
+    assert.ok(findings.length, `${file} ${token} is judged`);
+    for (const finding of findings) assert.equal(finding.sites.filter(s => s.file.endsWith(`/${file}`) && s.text === token).length, 1, `${file} ${token} is one site`);
+  }
+});
+
+test('why labels what it lists and says each declaration once', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'src/Why.tsx'), `export const W = ({ on }) => <div className={on ? 'p-[9px]' : 'p-[9px]'} />;`);
+  const shown = text(dir, ['why', 'src/Why.tsx:1']);
+  assert.match(shown, /^Declared on this line:\n  padding: 9px\n/m);
+  assert.match(shown, /^Tokens that fit:\n(  --spacing-\w+: \d+px\n)*  --spacing-small: 8px\n/m);
+  assert.doesNotMatch(shown, /^  decision /m);
+  const lines = shown.slice(shown.indexOf('Declared on this line:')).split('\n').filter(Boolean);
+  assert.equal(new Set(lines).size, lines.length, shown);
+});

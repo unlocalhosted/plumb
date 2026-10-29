@@ -4,7 +4,8 @@ import { lineStarts } from '../collect/source.js';
 import { cssCode } from '../collect/stylesheets.js';
 import { useFor } from '../rules/provenance.js';
 import { numericUse } from '../decisions/spacing.js';
-import { atSite, newSites } from './sites.js';
+import { atSite, newSites, pathFor } from './sites.js';
+import { classEdit } from '../messages.js';
 
 export interface StructuredEdit {
   id: string;
@@ -25,17 +26,9 @@ export interface StructuredEdit {
 export function replacement(finding: Finding, site: Site, decision: Decision, report: Report, decisionNames?: Set<string>): Pick<StructuredEdit, 'from' | 'to' | 'token'> | undefined {
   const d = atSite(finding, site);
   const use = useFor(decision, d.prop, decisionNames ?? new Set(decision.use?.class ? [...report.decisions, ...report.decisionInventory ?? []].map(d => d.name) : []));
-  if (['class', 'arbitrary', 'apply'].includes(d.origin) && use.class) {
-    // Retain variants and importance, but never guess at arbitrary selectors or modifiers.
-    const token = site.text;
-    if (/[\s/]/.test(token)) return undefined;
-    let depth = 0, colon = -1;
-    for (let i = 0; i < token.length; i++) { if (token[i] === '[') depth++; if (token[i] === ']') depth--; if (token[i] === ':' && depth === 0) colon = i; }
-    const variant = token.slice(0, colon + 1), utility = token.slice(colon + 1);
-    const negative = utility.replace(/^!/, '').startsWith('-') ? '-' : '';
-    const to = `${variant}${utility.startsWith('!') ? '!' : ''}${negative}${use.class}${utility.endsWith('!') ? '!' : ''}`;
-    return { from: token, to, token: decision.name };
-  }
+  const edit = classEdit({ ...d, site }, use);
+  if (edit) return { from: site.text, to: edit.beside ? `${site.text} ${edit.to}` : edit.to, token: decision.name };
+  if (['class', 'arbitrary', 'apply'].includes(d.origin)) return undefined;
   const colon = site.text.indexOf(':');
   if (colon < 0 || !use.css.startsWith(`${d.prop}: `)) return undefined;
   const property = site.text.slice(0, colon).trim().replace(/["']/g, '');
@@ -66,12 +59,14 @@ export function structuredEdits(report: Report, sources: ReadonlyMap<string, str
     // exceptions stay excluded; automatic agent suggestions remain new-only.
     const sites = includeDebt ? finding.sites.filter(site => site.inScope !== false && (!site.ledger || site.ledger.status === 'new' || site.ledger.status === 'debt')) : newSites(finding);
     for (const site of sites) {
-      const source = sources.get(site.file), line = starts.get(site.file)?.[site.line - 1];
+      // a class read through a variable is edited at its literal, not at the usage on the element
+      const at = site.defined && sources.has(site.defined.file) ? { ...site, ...site.defined } : site;
+      const source = sources.get(at.file), line = starts.get(at.file)?.[at.line - 1];
       if (source === undefined || line === undefined) continue;
       for (const decision of siteChoices(finding, site)) {
         let change = replacement(finding, site, decision, report, decisionNames);
         if (!change) continue;
-        let start = line + site.column - 1;
+        let start = line + at.column - 1;
         if (atSite(finding, site).origin === 'stylesheet') {
           // Replace only the authored value; keep property spelling, comments and importance.
           const colon = site.text.indexOf(':');
@@ -84,10 +79,10 @@ export function structuredEdits(report: Report, sources: ReadonlyMap<string, str
         }
         const end = start + change.from.length;
         if (source.slice(start, end) !== change.from || change.from === change.to) continue;
-        const id = sourceHash(JSON.stringify([site.file, start, end, change.from, change.to]));
+        const id = sourceHash(JSON.stringify([at.file, start, end, change.from, change.to]));
         // A utility can compile to several declarations at the same authored site.
         if (!edits.has(id)) edits.set(id, { id, findingKey: finding.key, rule: finding.rule, family: finding.family,
-          file: site.file, line: site.line, column: site.column, start, end, ...change });
+          file: at.file, line: at.line, column: at.column, start, end, ...change });
       }
     }
   }
@@ -107,9 +102,11 @@ export function refusedSites(report: Report, sources: ReadonlyMap<string, string
     if (!finding.rule.startsWith('provenance/')) continue;
     for (const site of finding.sites.filter(site => site.inScope !== false && (!site.ledger || site.ledger.status === 'new' || site.ledger.status === 'debt'))) {
       const source = sources.get(site.file), line = starts.get(site.file)?.[site.line - 1];
-      if (source === undefined || line === undefined || edited.has(`${site.file}:${site.line}:${site.column}`)) continue;
+      const defined = site.defined;
+      if (source === undefined || line === undefined || edited.has(`${site.file}:${site.line}:${site.column}`) || defined && edited.has(`${defined.file}:${defined.line}:${defined.column}`)) continue;
       const here = source.slice(line + site.column - 1, line + site.column - 1 + site.text.length) === site.text;
       const reason = finding.rule === 'provenance/opaque-inline' ? `Computed at runtime, so it cannot be edited here. ${finding.action ?? ''}`.trim()
+        : !here && defined ? `Comes from a variable defined at ${pathFor(report, defined.file)}:${defined.line}:${defined.column}; change it there.`
         : !here ? 'Written in a shared style object or imported value, not at this element; change it where it is defined.'
         : !siteChoices(finding, site).length ? finding.action || 'No token is close enough. Pick one with the design owner, or add one to the theme.'
         : 'This spelling cannot be rewritten automatically; change it by hand.';

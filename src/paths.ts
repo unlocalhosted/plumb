@@ -1,5 +1,7 @@
-import { existsSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 
 export const configNames = ['ts', 'mts', 'mjs', 'js'].map(extension => `plumber.config.${extension}`);
@@ -17,6 +19,26 @@ export const statePath = (root: string, file: string) => join(stateDirectory(roo
 export const environment = (name: string) => process.env[`PLUMBER_${name}`] ?? process.env[`PLUMB_${name}`];
 export const cacheDirectory = (root: string) => resolve(environment('CACHE_DIR') ?? statePath(root, 'cache'));
 export const isLedgerPath = (file: string) => /\/\.plumb(?:er)?\/ledger\.jsonl$/.test(file);
+
+let build: string | undefined;
+/**
+ * A hash of the built code itself. Every cache on disk is keyed by it, so a rebuild (a dev checkout, a linked
+ * package) is never served a result the previous code made, with or without a version bump.
+ */
+export function buildId(): string {
+  if (build) return build;
+  const files: string[] = [];
+  const walk = (directory: string): void => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) walk(path); else if (entry.isFile() && path.endsWith('.js')) files.push(path);
+    }
+  };
+  walk(dirname(fileURLToPath(import.meta.url)));
+  const digest = createHash('sha256');
+  for (const file of files.sort()) digest.update(file).update('\0').update(readFileSync(file)).update('\0');
+  return build = digest.digest('hex');
+}
 
 let noticed = false;
 /** Host/CLI owns the notice, so analysis workers cannot repeat it. JSON stays on stdout. */

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
-export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
 type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many';
 export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'propEdit' | 'token' | 'try' | 'refresh'>;

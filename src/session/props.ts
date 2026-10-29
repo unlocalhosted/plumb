@@ -91,7 +91,7 @@ const controlTags = new Set(['button', 'input', 'select', 'textarea']);
 const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'strong', 'em', 'small', 'label', 'a', 'li', 'code', 'blockquote']);
 
 /** A string in source which holds class names: where its content starts and ends, between the quotes. */
-interface Text { start: number; end: number; text: string }
+interface Text { start: number; end: number; text: string; quote?: string }
 type ClassName =
   | { kind: 'none' }
   | { kind: 'static'; attribute: Node; strings: Text[] }
@@ -137,6 +137,19 @@ function classNameOf(attribute: Node | undefined, source: string): ClassName {
       return strings.length ? { kind: 'static', attribute, strings }
         : { kind: 'dynamic', reason: `${name}(…) has no plain string argument to hold the class; add one by hand.` };
     }
+  }
+  // A template literal's fixed parts hold classes as plainly as a literal does. A class glued to an expression
+  // (`text-${size}`) is built at runtime: each part is narrowed to the whole classes it holds on its own.
+  if (expression.type === 'TemplateLiteral') {
+    const strings = expression.quasis.flatMap((quasi, i): Text[] => {
+      const raw = quasi.value.raw, open = quasi.start + (expression.quasis[0]!.start === expression.start ? 1 : 0); // TS spans include delimiters; JS spans don't
+      if (source.slice(open, open + raw.length) !== raw) return [];
+      const lead = i > 0 ? raw.match(/^\S*/)![0].length : 0, trail = i < expression.quasis.length - 1 ? raw.match(/\S*$/)![0].length : 0;
+      if (lead + trail >= raw.length) return [];
+      const start = open + lead, end = open + raw.length - trail;
+      return /\S/.test(raw.slice(lead, raw.length - trail)) ? [{ start, end, text: source.slice(start, end), quote: '`' }] : [];
+    });
+    if (strings.length) return { kind: 'static', attribute, strings };
   }
   const what = expression.type === 'TemplateLiteral' ? 'a template literal with expressions' : expression.type === 'ConditionalExpression' || expression.type === 'LogicalExpression' ? 'a condition' : expression.type === 'Identifier' || expression.type === 'MemberExpression' ? 'a variable' : 'an expression';
   return { kind: 'dynamic', reason: `className is built at runtime (${what}); set the class by hand.` };
@@ -297,7 +310,7 @@ export function swapClasses(file: string, text: string, start: number, from: str
   if (found.some(item => item!.string !== string)) throw new UsageError('These classes sit in different parts of the className; change them by hand.');
   // The edit is made on the string as written, token by token: escapes, quotes, line breaks and indentation stay
   // exactly as they are, and only the named classes move.
-  const raw = text.slice(string.start, string.end), delimiter = text[string.start - 1]!;
+  const raw = text.slice(string.start, string.end), delimiter = string.quote ?? text[string.start - 1]!;
   const lead = raw.match(/^\s*/)![0], rest = raw.slice(lead.length), trail = rest.match(/\s*$/)![0], core = rest.slice(0, rest.length - trail.length);
   const pieces = core ? core.split(/(\s+)/) : [];
   // [whitespace before, token] pairs; the first token has none

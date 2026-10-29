@@ -1,12 +1,11 @@
-import { allConfigNames, cacheDirectory, statePath } from './paths.js';
+import { allConfigNames, buildId, cacheDirectory, statePath } from './paths.js';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { deserialize, serialize } from 'node:v8';
-import { fileURLToPath } from 'node:url';
-import { glob, globSync } from 'tinyglobby';
+import { glob } from 'tinyglobby';
 import { ResolverFactory } from 'oxc-resolver';
 import { componentFiles, fileHash } from './ownership/cache.js';
 import { tailwindGraph } from './lower/tailwind.js';
@@ -37,8 +36,6 @@ const stamp = (file: string): string | null => {
 };
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const sourceFile = /\.(?:[cm]?[jt]sx?|css|jsonl?)$/;
-const codeDirectory = dirname(fileURLToPath(import.meta.url));
-const buildHash = hash(globSync('**/*.js', { cwd: codeDirectory, absolute: true }).sort().map(file => readFileSync(file, 'utf8')).join('\0'));
 
 export class CheckCache {
   private generation?: string;
@@ -74,7 +71,7 @@ export class CheckCache {
     // Package metadata determines the reported compiler version even when
     // every stylesheet byte stays the same. Resolve it afresh at admission.
     const compilerPackage = tailwindInstall(css ? dirname(css) : root).file ?? undefined; // plain CSS can have no Tailwind package
-    const key = hash(JSON.stringify(['checked-v3', buildHash, process.versions.v8, root, config, text, !!options.verbose,
+    const key = hash(JSON.stringify(['checked-v3', buildId(), process.versions.v8, root, config, text, !!options.verbose,
       compilerPackage, compilerPackage ? fileHash(compilerPackage) : null]));
     return new CheckCache(root, join(base, 'checked', key), config, css, patterns, tokenPatterns);
   }

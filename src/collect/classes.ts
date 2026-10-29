@@ -218,7 +218,9 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     const context = JSON.stringify([owner, conditions, dynamic]);
     for (const match of value.matchAll(/\S+/g)) {
       const token = match[0];
-      const locations = [site(src, offsets?.[match.index] ?? offset + match.index, token), ...(usage ? [{ ...usage, text: token }] : [])];
+      const literal = site(src, offsets?.[match.index] ?? offset + match.index, token);
+      // the usage site stands on the element; the edit belongs at the literal it reads
+      const locations = [literal, ...(usage ? [{ ...usage, text: token, defined: { file: literal.file, line: literal.line, column: literal.column } }] : [])];
       for (const location of locations) {
         const entry: ClassSite = { ...location, token, owner, conditions, ...(classContext ? { context: classContext } : {}), ...(managedFocus ? { managedFocus: true } : {}), ...(dynamic ? { opaque: 'dynamic-class' as const } : {}) };
         const key = `${location.file}\0${location.line}:${location.column}\0${token}\0${context}`;
