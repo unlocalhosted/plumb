@@ -231,3 +231,54 @@ test('warm collection keeps inline companion identity and revalidates imported c
   assert.ok([0, 1].includes(guarded.status));
   assert.match(guarded.stdout, /React Plumber  .* · \d+ files · \d+\.\ds/);
 });
+
+test('a class the project uses as a selector is a hook, not a broken style; a class nobody selects still is', async t => {
+  const { directory, cache } = await setup(t);
+  await writeFile(join(directory, 'src/hooks.tsx'), [
+    'export function Hooks({ root }: { root: HTMLElement }) {',
+    "  root.querySelectorAll('.hook-query svg.hook-tagged, .hook-list');",
+    "  root.closest('.hook-closest');",
+    "  const part = { sel: '.hook-part' };",
+    '  return (',
+    '    <svg>',
+    '      <style>{`.hook-sheet *{fill:#fff!important}.hook-sheet .hook-inner{display:none}[data-x="${part.sel}"] image{opacity:1}`}</style>',
+    '      <g className="hook-query hook-tagged hook-list hook-closest hook-part hook-sheet hook-inner mentioned-only still-broken" />',
+    '    </svg>',
+    '  );',
+    '}',
+    "// the .mentioned-only class is only named in a comment, which selects nothing",
+    '',
+  ].join('\n'));
+  const report = JSON.parse(run(directory, cache, ['--json']).stdout);
+  const dead = report.findings.filter(f => f.rule === 'existence/dead-class').map(f => f.declaration.value);
+  assert.ok(dead.includes('still-broken') && dead.includes('mentioned-only'), dead.join());
+  assert.deepEqual(dead.filter(name => name.startsWith('hook-')), []);
+  assert.doesNotMatch(run(directory, cache, ['check', '--broken']).stdout, /hook-/);
+});
+
+test('a dead utility with a knowable value is answered by the nearest tokens by value, not by name', async t => {
+  const directory = await mkdtemp(join(root, 'fixtures/.value-e2e-'));
+  const cache = await mkdtemp(join(tmpdir(), 'plumb-cache-e2e-'));
+  t.after(() => Promise.all([rm(directory, { recursive: true, force: true }), rm(cache, { recursive: true, force: true })]));
+  await mkdir(join(directory, 'src'));
+  await writeFile(join(directory, 'package.json'), '{"type":"module"}');
+  await writeFile(join(directory, 'src/styles.css'), [
+    '@import "tailwindcss";',
+    '@theme {',
+    '  --color-*: initial; --color-ink: #111111; --color-paper: #fafafa; --color-snow: #ffffff; --color-accent: #2563eb; --color-warning: #f59e0b;',
+    '  --spacing-*: initial; --spacing-tight: 8px; --spacing-roomy: 24px; --spacing-hair: 1px;',
+    '}',
+    '',
+  ].join('\n'));
+  await writeFile(join(directory, 'src/App.tsx'), 'import "./styles.css"; export const App = () => <div className="bg-white text-black border-white bg-white/15 p-2 p-6 bg-brnad" />;\n');
+  const findings = JSON.parse(run(directory, cache, ['--json']).stdout).findings.filter(f => f.rule === 'existence/dead-class');
+  const fix = name => findings.find(f => f.declaration.value === name)?.fix;
+  assert.match(fix('bg-white'), /^Did you mean `bg-snow` or `bg-paper`\?$/, fix('bg-white'));
+  assert.match(fix('text-black'), /^Did you mean `text-ink`/, fix('text-black'));
+  assert.match(fix('border-white'), /^Did you mean `border-snow`/);
+  assert.match(fix('bg-white/15'), /^Did you mean `bg-snow\/15` or `bg-paper\/15`/);
+  assert.match(fix('p-2'), /^Did you mean `p-tight`/, '2 steps is 8px');
+  assert.match(fix('p-6'), /^Did you mean `p-roomy`/, '6 steps is 24px');
+  assert.doesNotMatch(fix('bg-white'), /warning/);
+  assert.ok(fix('bg-brnad'), 'an unknowable value still gets the name-based answer');
+});

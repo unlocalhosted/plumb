@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { hasShadcnConfig } from './project-facts/index.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { resolveSpec, TIER_NAMES } from '../overlay/src/craft-spec.js';
+import { resolveSpec } from '../overlay/src/craft-spec.js';
 import type { ResolvedSpec, SpecRule } from '../overlay/src/craft-spec.js';
 import type { PlumbConfig } from './config.js';
 import { sourceHash } from './collect/cache.js';
@@ -86,7 +86,7 @@ export function formatSpec(spec: ProjectSpec, configPath: string | null, only?: 
   for (const p of spec.principles) {
     const rules = p.rules.filter(r => !only || r.id === only || r.short === only);
     if (!rules.length) continue;
-    lines.push('', `${p.id} · tier ${p.tier} ${TIER_NAMES[p.tier]}`, wrap(`  ${p.why}`));
+    lines.push('', p.id, wrap(`  ${p.why}`));
     for (const r of rules) {
       const state = r.habit ? `${r.enabled ? 'on' : 'off'} · ${r.severity}` : `${r.enabled ? 'on' : 'off'} · tier ${r.tierName}`;
       const by = [r.from.enabled && `on/off: ${where(r.from.enabled)}`, r.from.tier && `tier: ${where(r.from.tier)}`, r.from.severity && `severity: ${where(r.from.severity)}`].filter(Boolean).join(' · ');

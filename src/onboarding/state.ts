@@ -423,9 +423,16 @@ async function stateOf(options: StateOptions): Promise<ProjectState> {
   return finish('R3', kind, withClauses(`A system, half in use: ${owner} tokens are installed; ${tail}.`), 'plumber init');
 }
 
+const stageWords: Record<Rung, string> = { R0: "Can't be read yet", R1: 'No system yet', R2: "Tailwind's scale only", R3: 'A system, half in use', R4: 'A system, in use' };
+const kindWords: Record<string, string> = { own: 'your own tokens', preset: 'from a preset', plain: 'plain CSS', tailwind: 'Tailwind', workspace: 'several apps', v3: 'Tailwind 3', 'no-source': 'no source found', 'not-installed': 'Tailwind not installed', unreadable: 'unreadable files', 'styled-in-js': 'styles in JavaScript' };
+const flagWords: Record<Flag, string> = { conflicting: 'tokens defined twice', 'dark-split': 'dark mode defined apart', dead: 'unused tokens', dtcg: 'tokens from a design-tokens file', noisy: 'many one-off values', prefixed: 'prefixed Tailwind classes', split: 'tokens in several places', 'styled-in-js': 'styles in JavaScript', 'tokens-from-package': 'tokens from a package', unreadable: 'unreadable files' };
+/** Rung codes, kind ids and flag ids are for `--json`; people read these words. */
+export const describeState = (state: Pick<ProjectState, 'rung' | 'kind' | 'flags'>): string =>
+  [stageWords[state.rung], kindWords[state.kind] ?? state.kind, ...state.flags.map(flag => flagWords[flag] ?? flag)].join(' · ');
+
 /** The human output of `plumber state`: the sentence, then the numbers that back it. */
 export function formatState(state: ProjectState, table: (rows: string[][]) => string[]): string {
-  const lines = [state.sentence, '', `${state.rung} ${state.name} · ${state.kind}${state.flags.length ? ` · ${state.flags.join(', ')}` : ''}`];
+  const lines = [state.sentence, '', describeState(state)];
   const rows = Object.entries(state.numbers.families).map(([family, item]) => [colourName(family), `${item.onTokens.toLocaleString('en-US')} of ${item.total.toLocaleString('en-US')} on tokens`, `${item.percent}%`, item.tokened ? 'tokens' : 'no tokens']);
   if (rows.length) lines.push('', ...table(rows));
   const { arbitrary, inline, values, unusedTokens } = state.numbers;

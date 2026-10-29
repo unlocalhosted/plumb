@@ -54,7 +54,7 @@ test('plumber spec: without a config it is the standard; every value says so', {
   const text = await plumber(['spec'], root);
   assert.equal(text.code, 0, text.stderr);
   assert.match(text.stdout, /^React Plumber craft spec: preset balanced, the standard\n/);
-  assert.match(text.stdout, /access · tier 0 access/);
+  assert.match(text.stdout, /^access$/m);
   assert.match(text.stdout, /craft\/hit-target\s+on · tier access/);
   assert.match(text.stdout, /\n\s+min\s+24\s+standard\n/);
   assert.match(text.stdout, /tokens · create yes \(standard\) · name \{family\}-\{job\} \(standard\)\n  file src\/styles\.css · @theme/);

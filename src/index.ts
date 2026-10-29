@@ -5,6 +5,8 @@ import { performance } from 'node:perf_hooks';
 import { loadConfig } from './config.js';
 import { errorMessage, UsageError } from './errors.js';
 import { collectClasses } from './collect/classes.js';
+import { valueSuggestions } from './rules/value-suggestions.js';
+import { selectorHooks } from './collect/selector-hooks.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
 import { existence, location, unreachableClasses, deadVariables } from './rules/existence.js';
@@ -131,8 +133,11 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const existenceStart = performance.now();
   const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
   const existenceSites = await checkingPlainCss(root, project.tailwind.entry) ? collected.sites.filter(site => !looksLikeTailwind(site.token)) : collected.sites;
-  const findings = existence(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
+  const unfiltered = existence(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
   await ranking.save();
+  // A class the project's own source uses as a selector is a hook, not a styling mistake.
+  const hooks = await selectorHooks(files, new Set(unfiltered.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)));
+  const findings = hooks.size ? unfiltered.filter(finding => finding.rule !== 'existence/dead-class' || !hooks.has(finding.declaration.value)) : unfiltered;
   const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value), runtime?.inventory));
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
@@ -176,6 +181,12 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const decisionsStart = performance.now();
   profileProgress('phase:decisions');
   const record = await phase('record', [root, config.value, graph, lowered.theme], () => readDecisions(root, config.value, graph, lowered.theme));
+  // A dead utility with a knowable value is answered by the nearest tokens by value, not by spelling.
+  for (const finding of findings) {
+    if (finding.rule !== 'existence/dead-class' || finding.title.includes('nothing imports')) continue;
+    const near = valueSuggestions(finding.declaration.value, record.decisions, record.theme);
+    if (near) finding.action = finding.fix = `Did you mean ${near.map(name => `\`${name}\``).join(' or ')}?`;
+  }
   const decisionsMs = performance.now() - decisionsStart;
   const provenanceStart = performance.now();
   profileProgress('phase:provenance', { declarations: declarations.length });

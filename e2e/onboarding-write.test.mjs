@@ -159,3 +159,15 @@ test('a declined value is written to the ledger as declined and is never propose
   assert.doesNotMatch(await readFile(join(dir, 'src/theme.css'), 'utf8'), /20px/);
   assert.equal(run(dir, environment, ['propose', '--decline', 'nope=1'], 2).status, 2);
 });
+
+test('propose names a negative step with an n, never a double dash, and writes it', async t => {
+  const dir = await copy(t, 'onboard-bare'), environment = await env(t);
+  await writeFile(join(dir, 'src/layers.css'), '.under { z-index: -10; }\n.under2 { z-index: -10; }\n.over { z-index: 50; }\n.over2 { z-index: 50; }\n');
+  const proposed = json(dir, environment, ['propose', '--json']);
+  const names = JSON.stringify(proposed);
+  assert.match(names, /--z-n10/);
+  assert.doesNotMatch(names, /--[a-z-]+--\d/);
+  assert.match(run(dir, environment, ['propose']).stdout, /--z-n10 +-10/);
+  run(dir, environment, ['propose', '--write']);
+  assert.match(await readFile(join(dir, 'src/theme.css'), 'utf8'), /--z-n10: -10;/);
+});

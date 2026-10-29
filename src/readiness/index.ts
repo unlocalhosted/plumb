@@ -24,7 +24,7 @@ import { atomicWrite } from '../atomic-write.js';
 import { addSourceGlobs, hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
-import { readState } from '../onboarding/state.js';
+import { readState, describeState } from '../onboarding/state.js';
 
 export type Capability = 'read' | 'remember' | 'fast' | 'locate' | 'preview' | 'write' | 'blueprint' | 'system';
 export type Status = 'ok' | 'missing' | 'unknown';
@@ -223,7 +223,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   let started: Awaited<ReturnType<typeof readState>> | undefined;
   if (report) try { started = await readState({ root, ...(options.config ? { config: options.config } : {}), report }); } catch { /* An unreadable state is unknown, not a failure of readiness. */ }
   add('system.state', 'system', started ? 'ok' : 'unknown', started?.sentence ?? 'The project state could not be read',
-    [{ file: started?.numbers.tailwind.entry ?? 'package.json', line: 1, text: started ? `${started.rung} ${started.name}${started.flags.length ? ` · ${started.flags.join(', ')}` : ''}` : 'No state' }],
+    [{ file: started?.numbers.tailwind.entry ?? 'package.json', line: 1, text: started ? describeState(started) : 'No state' }],
     'The system panel cannot say where this project starts.', step('Run plumber doctor to see what blocks reading the project.', 'plumber doctor'));
   // Only a live host can show these; from the CLI they read `unknown` (verify in dev), never degraded.
   const runtimeOnly = new Set(['locate.react-dev', 'write.watcher']);

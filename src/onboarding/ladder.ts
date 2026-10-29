@@ -211,6 +211,8 @@ export function fit(measure: Measure, values: Value[], context: FitContext = {})
       (byValue ? ordered.map((_, index) => `--shadow-${index + 1}`) : shadowNames(ordered.length)).forEach((name, index) => names.set(ordered[index]!, name));
     } else if (measure === 'z') rest.forEach(entry => names.set(entry, `--z-${entry.cell.value}`));
   }
+  // A negative step reads `n10` (as tracking already does), never `--z--10`: a double dash is not a name Tailwind or CSS can address.
+  for (const [entry, name] of names) names.set(entry, name.replace(/(?<=\w)--(?=[\d.])/, '-n'));
   // Names stay unique inside a scale.
   const used = new Set<string>();
   for (const entry of kept) {

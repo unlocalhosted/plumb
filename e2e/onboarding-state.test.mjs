@@ -136,3 +136,16 @@ test('styles that live in CSS-in-JS templates are named, and prose that mentions
   });
   assert.deepEqual(stateOf(prose, cache).flags, []);
 });
+
+test('plumber state speaks plain words; the rung codes stay in --json', async t => {
+  const cache = await scratch(t);
+  const text = run(['state', '--root', fixture('onboard-chaos')], cache);
+  assert.equal(text.status, 0, text.stderr);
+  assert.doesNotMatch(text.stdout, /\bR[0-9]\b|Partial|Framework\b|\bnoisy\b|\bsplit\b|\bdtcg\b|dark-split/);
+  assert.match(text.stdout, /^A system, half in use · from a preset · .*many one-off values/m);
+  const json = JSON.parse(run(['state', '--root', fixture('onboard-chaos'), '--json'], cache).stdout);
+  assert.equal(json.rung, 'R3');
+  assert.deepEqual(json.flags, ['conflicting', 'dark-split', 'dead', 'noisy', 'split']);
+  const spec = run(['spec'], cache);
+  assert.doesNotMatch(spec.stdout, /tier [0-9]/);
+});
