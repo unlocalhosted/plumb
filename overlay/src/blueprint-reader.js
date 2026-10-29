@@ -12,8 +12,8 @@
  *             section in its own file mounting on scroll, a lazy chunk) joins the count when it appears, and a file
  *             that leaves (a route change) drops out. Where there is no server for it (the docs replay), the places
  *             are those of the rendered elements alone
- *  pool       every element under <body>, from one querySelectorAll in document order: never anything inside an
- *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read), never the overlay.
+ *  pool       every element under <body>, from one querySelectorAll in document order: inside an <svg> only what
+ *             is stamped (authored JSX: a <text> with a type class; a library's paths are drawing), never the overlay.
  *             No IntersectionObserver, no visibility check, no cap: a hidden tab reads the same page as a shown one
  *  page       stamped elements go to the server as one whole-page request (host.readPage, POST page): where each
  *             stamp resolves and the reading there, cached by file content. Elements that share a stamp and classes
@@ -157,8 +157,9 @@ export class Reader {
   #scan_(changed) {
     const pool = document.body.querySelectorAll('*');
     for (const el of pool) {
-      if (el.ownerSVGElement || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
+      // inside an <svg>, only authored JSX (stamped) is read: a <text> with a type class is a decision, a library's paths are drawing
       const stamp = el.getAttribute('data-plumb-source') ?? null;
+      if ((el.ownerSVGElement && !stamp) || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
       const classes = el.getAttribute('class')?.trim() ?? '';
       const sig = `${stamp}|${classes}`;
       let id = this.#ids.get(el);
@@ -300,9 +301,12 @@ export class Reader {
   // render it. A place from the code and the same place rendered are one place.
   #places(enriched) {
     const places = new Map();
+    // a mark's key is its line and column within its file: the place is the file and that key, so two files' marks
+    // at the same line and column are two places, each joined to its own elements
     const add = (mark, file) => {
-      let place = places.get(mark.key);
-      if (!place) places.set(mark.key, (place = { key: mark.key, file: mark.file ?? file, site: { file: mark.file ?? file, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
+      const at = mark.file ?? file, id = `${at}|${mark.key}`;
+      let place = places.get(id);
+      if (!place) places.set(id, (place = { key: mark.key, file: at, site: { file: at, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
       return place;
     };
     for (const file of this.#code.values()) for (const mark of file.marks) add(mark, file.file);

@@ -15,7 +15,8 @@ import { plumb } from '../dist/hosts/vite.js';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const rows = (n, cls) => Array.from({ length: n }, (_, i) => `      <li id="row-${cls}-${i}" className="${cls}">${i}</li>`).join('\n');
 const tall = `import { useEffect, useRef, useState } from 'react';
-import { Badge } from './Badge';
+import { Badge, Pin } from './Badge';
+import { Pin as PinB } from './Styled';
 export function Tall() {
   return <main className="p-[13px]">
     <ul className="gap-[7px]">
@@ -26,6 +27,7 @@ ${rows(30, 'rounded-[5px] text-[15px]')}
     </ul>
     <Badge className="tracking-[0.1em]">pass-through</Badge>
     <Badge className="tracking-[0.2em]">pass-through too</Badge>
+    <Pin /><PinB />
     <Row n={0} /><Row n={1} /><Row n={2} /><Row n={3} /><Row n={4} /><Row n={5} /><Row n={6} /><Row n={7} />
     <Lazy />
   </main>;
@@ -41,7 +43,15 @@ export function Lazy() {
 }
 export function Below() { return <ul>{[0, 1, 2].map((n) => <li key={n} id={'below-' + n} className="mb-[21px] rounded-[9px]">{n}</li>)}</ul>; }
 `;
-const badge = `export function Badge({ className, children }) { return <span className={className}>{children}</span>; }\n`;
+// Badge.jsx and Styled.jsx put an inline style at the same line and column: two places, each with its own element
+const badge = `export function Badge({ className, children }) { return <span className={className}>{children}</span>; }
+const A = 10, B = 3;
+export function Pin() { return <i id="pin-a" style={{ top: A + B }} className="absolute" />; }
+`;
+const styled = `export function Styled({ className, children }) { return <span className={className}>{children}</span>; }
+const A = 10, B = 3;
+export function Pin() { return <i id="pin-b" style={{ top: A + B }} className="absolute" />; }
+`;
 
 async function site(t, { ownFile = false } = {}) {
   let browser;
@@ -61,8 +71,9 @@ async function site(t, { ownFile = false } = {}) {
   return <section ref={ref} id="elsewhere" style={{ minHeight: 40 }}>{shown ? <Elsewhere /> : null}</section>;
 }
 `;
-  await writeFile(join(root, 'src/Tall.jsx'), ownFile ? tall.replace("import { Badge } from './Badge';", "import { Badge } from './Badge';\nimport { Elsewhere } from './Elsewhere.jsx';").replace('    <Lazy />\n', '    <Lazy />\n    <LazyOwn />\n') + own : tall);
+  await writeFile(join(root, 'src/Tall.jsx'), ownFile ? tall.replace("import { Pin as PinB } from './Styled';", "import { Pin as PinB } from './Styled';\nimport { Elsewhere } from './Elsewhere.jsx';").replace('    <Lazy />\n', '    <Lazy />\n    <LazyOwn />\n') + own : tall);
   await writeFile(join(root, 'src/Badge.jsx'), badge);
+  await writeFile(join(root, 'src/Styled.jsx'), styled);
   await writeFile(join(root, 'src/Elsewhere.jsx'), `export function Elsewhere() { return <p id="elsewhere-p" className="mr-[23px]">own file</p>; }\n`);
   // the demo's entry mounts its App; this page mounts the tall one instead
   const entry = await readFile(join(root, 'src/entry.jsx'), 'utf8');
@@ -165,5 +176,15 @@ test('the known gap: a section in its own file is not counted until it mounts, a
   assert.equal(after.problems, before.problems + 1);
   // the same-file section (Lazy/Below) was counted both times
   assert.deepEqual(before.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)), after.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)));
+  assert.deepEqual(errors, []);
+});
+
+test('a place on an inline style joins the element that renders it; two files with a place at one line and column are two places', { timeout: 120000 }, async (t) => {
+  const s = await site(t); if (!s) return;
+  const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
+  await opening(page);
+  const pins = await page.evaluate(() => window.__plumb.overlay.places.filter((p) => p.text === 'top: A + B').map((p) => [p.file, p.line, p.column, p.elements]));
+  assert.deepEqual(pins.sort(), [['src/Badge.jsx', 3, 55, 1], ['src/Styled.jsx', 3, 55, 1]], JSON.stringify(pins));
+  assert.ok(await page.evaluate(() => !!document.getElementById('pin-a') && !!document.getElementById('pin-b')));
   assert.deepEqual(errors, []);
 });
