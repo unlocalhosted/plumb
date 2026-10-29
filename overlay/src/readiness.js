@@ -322,11 +322,16 @@ export class Readiness {
     const writable = ticked.filter((q) => q.fix?.kind === 'diff');
     const busy = missing.some((q) => this.#row.get(q.id)?.busy);
     const fixed = missing.filter((q) => this.#row.get(q.id)?.done).length;
-    const count = fixed && !ticked.length ? `<span class="count" data-tone="on">${plural(fixed, 'fix', 'fixes')} written</span>` : `<span class="count">${ticked.length ? `${ticked.length} selected` : 'Nothing selected'}</span>`;
+    // steps only (commands to run): no Apply to wait on, the footer says what to do and Copy for agent leads
+    const commandsOnly = ticked.length && !writable.length && !busy;
+    const count = fixed && !ticked.length ? `<span class="count" data-tone="on">${esc(SETUP.written(fixed))}</span>`
+      : `<span class="count">${esc(commandsOnly ? SETUP.runThem(ticked.length) : SETUP.selected(ticked.length))}</span>`;
+    const copy = `<button class="btn${commandsOnly ? ' primary' : ''}" type="button" data-act="copy-all" ${ticked.length ? '' : 'disabled'}>${this.#copied ? SETUP.copied : SETUP.copyForAgent}</button>`;
+    const apply = commandsOnly ? '' : `<button class="btn primary" type="button" data-act="apply" ${writable.length && !busy ? '' : 'disabled'} ${busy ? 'aria-busy="true"' : ''}
+        title="${esc(SETUP.applyTitle)}">${busy ? SETUP.applying : SETUP.apply(writable.length || '').trim()}</button>`;
     return `<div class="foot">${count}
-      <button class="btn" type="button" data-act="copy-all" ${ticked.length ? '' : 'disabled'}>${this.#copied ? 'Copied' : 'Copy for agent'}</button>
-      <button class="btn primary" type="button" data-act="apply" ${writable.length && !busy ? '' : 'disabled'} ${busy ? 'aria-busy="true"' : ''}
-        title="${writable.length ? 'Writes these changes to your config' : 'Nothing ticked is a change Plumber can write: copy the steps instead'}">${busy ? 'Applying' : `Apply ${writable.length || ''}`.trim()}</button>
+      ${copy}
+      ${apply}
     </div>`;
   }
 

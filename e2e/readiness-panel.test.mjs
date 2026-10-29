@@ -88,7 +88,9 @@ test('your setup: the note, a first-time callout that stays out of the way, tick
   assert.ok(s.causes.some(c => /Fast Refresh/.test(c)), JSON.stringify(s.causes));
   assert.ok(s.chips.every(c => /^(Required|Recommended|Not confirmed yet)$/.test(c)), JSON.stringify(s.chips));
   assert.equal(s.ticked, s.causes.length, 'every cause starts ticked');
-  assert.equal(s.count, `${s.causes.length} selected`);
+  assert.match(s.count, new RegExp(`^${s.causes.length} selected`));
+  // steps to run, none of them a change the panel writes: no Apply to wait on, Copy for agent leads
+  assert.match(s.count, /run them in your terminal, or copy them for your agent/);
   assert.equal(new Set(s.causes).size, s.causes.length, 'no cause is listed twice');
 
   // Untick one: the count follows, and Copy for agent hands over only what's ticked.
@@ -97,7 +99,7 @@ test('your setup: the note, a first-time callout that stays out of the way, tick
   await boxes.first().uncheck();
   s = await state(page);
   assert.equal(s.ticked, s.causes.length - 1);
-  assert.equal(s.count, `${s.causes.length - 1} selected`);
+  assert.match(s.count, new RegExp(`^${s.causes.length - 1} selected`));
   await page.locator('plumb-overlay').locator('.rd [data-act="copy-all"]').click();
   await page.locator('plumb-overlay').locator('.rd [data-act="copy-all"]', { hasText: 'Copied' }).waitFor();
   const copied = await page.evaluate(() => navigator.clipboard.readText());

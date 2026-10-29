@@ -387,6 +387,7 @@ export const FIX = {
     if (/framework/.test(mark.rule)) return 'Tailwind’s default, not yours';
     if (/by-value|matches/.test(mark.rule)) return 'Same value as a token, typed by hand';
     if (/tier/.test(mark.rule)) return 'A raw token where a named one fits';
+    if (/dead-class/.test(mark.rule)) return 'Class does nothing';
     if (/existence/.test(mark.rule)) return 'Uses a variable that doesn’t exist';
     if (mark.family === 'color' && (mark.props ?? []).includes('box-shadow')) return 'Shadow colour not in your theme';
     const name = (mark.family === 'type' && TYPE[mark.props?.[0]]) || FAMILY[mark.family] || 'Value';
@@ -484,6 +485,14 @@ export const SETUP = {
   fixed: 'Fixed',
   saved: (file) => `Saved to ${file}. Your dev server restarts, then this list updates.`,
   checkAgain: 'Check again',
+  selected: (n) => (n ? `${n} selected` : 'Nothing selected'),
+  written: (n) => `${count(n, 'change', 'changes')} written`,
+  runThem: (n) => (n === 1 ? '1 selected · run it in your terminal, or copy it for your agent' : `${n} selected · run them in your terminal, or copy them for your agent`),
+  copyForAgent: 'Copy for agent',
+  copied: 'Copied',
+  apply: (n) => `Apply ${n}`,
+  applying: 'Applying…',
+  applyTitle: 'Writes these changes to your config',
   step(q) {
     const tokens = /^read\.tokens\.(\w+)$/.exec(q.id)?.[1];
     if (tokens) return { title: `Add ${FAMILY_WORDS[tokens] ?? tokens} to your theme`, loses: `Without them, ${FAMILY_WORDS[tokens] ?? tokens} can’t be checked against your theme.` };

@@ -530,7 +530,7 @@ export class FixPanel {
         canTake = a.ok;
       } else {
         // nothing to swap to or add: say what is there, plainly (a craft rule's own line, else the value typed by hand)
-        const said = mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour : /framework/.test(mark.rule) && mark.value ? FIX.tailwinds(g.text, String(mark.value))
+        const said = /dead-class/.test(mark.rule) ? `${mark.text} makes no CSS, so it does nothing. ${String(mark.action ?? '').replace(/`/g, '')}`.trim() : mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour : /framework/.test(mark.rule) && mark.value ? FIX.tailwinds(g.text, String(mark.value))
           : /^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && (written(g.text) ?? mark.value) ? FIX.typed(written(g.text) ?? String(mark.value)) : mark.title;
         middle = `<div class="say">${esc(String(said ?? '').replace(/`/g, ''))}</div>`;
       }
