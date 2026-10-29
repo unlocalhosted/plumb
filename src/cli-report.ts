@@ -1,7 +1,7 @@
 import { basename, isAbsolute, relative } from 'node:path';
 import picomatch from 'picomatch';
 import { count } from './messages.js';
-import { formatText, formatVerboseDetails } from './report.js';
+import { formatText, formatVerboseDetails, setupGapFamilies } from './report.js';
 import { findingContext, findingLines, renderFindingLines } from './cli-findings.js';
 import { shorten, table, terminalWidth, visibleWidth, wrap } from './cli-table.js';
 import type { Finding, Report, Site } from './report.js';
@@ -111,10 +111,10 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
   const fix: string[][] = [];
   const findings = report.findings;
   const brokenCount = findings.filter(broken).length;
-  const gapCount = findings.filter(setup).length + Object.keys(report.configHints ?? {}).length;
+  const gapCount = setupGapFamilies(report).length;
   const overrides = findings.filter(override).length;
   if (brokenCount) fix.push([`✗ ${count(brokenCount, 'broken style')}`, 'browser drops them', 'plumber check --broken']);
-  if (gapCount) fix.push([`! ${count(gapCount, 'setup gap')}`, report.configHints?.type ? 'type roles not set' : 'tokens missing', 'plumber check --rule config']);
+  if (gapCount) fix.push([`! ${count(gapCount, 'setup gap')}`, 'tokens missing', 'plumber check --rule config']);
   if (overrides) fix.push([`· ${count(overrides, 'component override')}`, 'callers restyle them', 'plumber check --rule ownership']);
   const off = findings.filter(offToken);
   if (off.length) {

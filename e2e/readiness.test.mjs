@@ -92,7 +92,7 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       const before = await readFile(file, 'utf8');
       assert.match(run(root, ['fix', 'write.refresh']), /config diff/);
       assert.equal(await readFile(file, 'utf8'), before);
-      const doctor = run(root, ['doctor'], '', 1);
+      const doctor = run(root, ['doctor']);
       assert.ok(doctor.includes(fix.command));
       assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
       // Simulate completed install without invoking any package manager.
@@ -102,7 +102,7 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       assert.equal(fix.kind, 'diff', JSON.stringify(fix));
       assert.match(fix.diff, /import plumberReact from '@vitejs\/plugin-react'/);
       assert.match(fix.diff, /tailwindcss\(\), inspect\(\), plumberReact\(\)/);
-      assert.match(run(root, ['doctor'], '', 1), /plumber fix write.refresh/);
+      assert.match(run(root, ['doctor']), /plumber fix write.refresh/);
       const applied = await request('readiness/fix', { id: 'write.refresh', hash: fix.hash, confirm: true, allowDirty: true });
       assert.equal(applied.status, 200, await applied.clone().text());
       assert.equal(item(await report(), 'write.refresh').status, 'ok');
@@ -143,7 +143,7 @@ test('HMR and polling diffs survive Vite startup for every writable server shape
       assert.match(fix.diff, /interval: 100/);
       assert.match(fix.diff, /usePolling: true/);
       assert.match(fix.diff, /awaitWriteFinish/);
-      const doctor = run(root, ['doctor'], '', 1);
+      const doctor = run(root, ['doctor']);
       assert.match(doctor, /plumber fix write.watcher/);
       assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
       const applied = await request('readiness/fix', { id: 'write.watcher', hash: fix.hash, confirm: true, allowDirty: true });
@@ -160,7 +160,7 @@ test('HMR and polling diffs survive Vite startup for every writable server shape
     const { report, request } = await api(t, root);
     const fix = item(await report(), 'write.hmr').fix;
     assert.equal(fix.kind, 'diff');
-    assert.match(run(root, ['doctor'], '', 1), /plumber fix write.hmr/);
+    assert.match(run(root, ['doctor']), /plumber fix write.hmr/);
     const applied = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
     assert.equal(applied.status, 200, await applied.clone().text());
     const live = await startConfig(t, root);
@@ -357,7 +357,7 @@ test('framework-only tokens stay missing across every judged family', async t =>
   }, ['--yes', ...['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'].flatMap(family => ['--family', `${family}=skip`])]);
   const checked = JSON.parse(run(root, ['check', '--json']));
   const { report } = await api(t, root);
-  const ready = await report(), doctor = run(root, ['doctor'], '', 1);
+  const ready = await report(), doctor = run(root, ['doctor']);
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) {
     assert.ok(checked.coverage[family].total > 0, family);
     assert.equal(checked.coverage[family].fromDecisions, 0, family);
@@ -411,7 +411,7 @@ test('derived causes stay in route JSON; doctor counts causes and excludes unava
   assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   assert.equal(item(ready, 'system.preset').status, 'missing');
   let doctor = run(root, ['doctor'], '', 1);
-  assert.match(doctor, /^Readiness: 2 setup gaps · 1 check needs verification/);
+  assert.match(doctor, /^Readiness: 0 setup gaps · 2 other fixes · 1 check needs verification/);
   for (const id of [...derived, 'system.preset']) assert.ok(!doctor.includes(`[${id}]`), id);
   run(root, ['fix', 'locate.order', '--yes']);
   ready = await report();
@@ -479,7 +479,7 @@ test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includ
   assert.equal(item(ready, 'write.refresh').fix.kind, 'diff');
   run(root, ['fix', 'write.refresh', '--yes']);
   assert.match(await readFile(file, 'utf8'), /inspect\(\), react\(\)/);
-  const doctor = run(root, ['doctor'], '', 1);
+  const doctor = run(root, ['doctor']);
   assert.match(doctor, /wsl needs file polling/);
   assert.match(doctor, /plumber fix write.watcher/);
   // API environment explicitly simulates WSL; no filesystem/platform assumption.
@@ -511,11 +511,33 @@ test('no baseline, no tokens, executable config, unobserved host are named witho
   assert.equal(item(ready, 'fast.config').status, 'missing');
   assert.equal(item(ready, 'locate.host').status, 'unknown');
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
-  const output = run(root, ['doctor'], '', 1);
+  const output = run(root, ['doctor']);
   assert.match(output, /Every finding counts as new/);
   assert.match(output, /plumber baseline/);
   assert.match(output, /no spacing tokens/);
   assert.match(output, /cannot reuse the whole report/);
+});
+
+test('one missing token family degrades Read; the CLI cannot see runtime; plumber and doctor count the same gaps', async t => {
+  const root = await fixture(t, config, {
+    'src/styles.css': `@import "tailwindcss";
+@theme { --spacing-comfy: 16px; --color-brand: #123456; --radius-card: 11px; --text-copy: 19px; --duration-quick: 137ms; --shadow-card: 1px 1px 3px #123; }
+.box { padding: var(--spacing-comfy); color: var(--color-brand); border-radius: var(--radius-card); font-size: var(--text-copy); transition: opacity var(--duration-quick); box-shadow: var(--shadow-card); z-index: 7; }
+`,
+    'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="box" />; }',
+  }, ['--yes', '--family', 'z=skip']);
+  await rm(join(root, '.plumber/ledger.jsonl'), { force: true });
+  const doctor = run(root, ['doctor']);
+  assert.match(doctor, /^Readiness: 1 setup gap · 1 other fix · /);
+  assert.match(doctor, /^  degraded\s+Read$/m);
+  for (const label of ['Locate', 'Preview', 'Blueprint']) assert.match(doctor, new RegExp(`^  verify in dev\\s+${label}$`, 'm'), label);
+  assert.match(doctor, /fix Your theme has no z tokens/);
+  assert.match(run(root, []), /! 1 setup gap\b/);
+  // Same project through the live host: runtime is observed, so nothing is left to verify.
+  const { report } = await api(t, root, runtime);
+  const ready = await report();
+  assert.deepEqual(ready.capabilities.filter(item => ['locate', 'preview', 'blueprint'].includes(item.id)).map(item => item.status), ['full', 'full', 'full']);
+  assert.equal(ready.capabilities.find(item => item.id === 'read').status, 'degraded');
 });
 
 test('composed configs stay unknown; symlinked config can never become a writable diff', async t => {

@@ -159,6 +159,12 @@ export function formatFinding(finding: Finding, path: (file: string) => string, 
 }
 const share = (part: number, total: number) => total ? ' (' + Math.round(part / total * 100) + '%)' : '';
 
+/** The one definition of a setup gap: a family with values but no tokens to judge them against. `plumber` and doctor both count these.
+ *  (Type roles are advice, not a gap: type values are still judged, one by one.) */
+export function setupGapFamilies(report: Report): JudgedFamily[] {
+  return [...new Set(report.findings.filter(finding => finding.rule === 'config/no-tokens').map(finding => finding.family))] as JudgedFamily[];
+}
+
 export function formatText(report: Report, verbose = false): string {
   const path = (file: string) => relative(report.root, file) || '.';
   const tailwind = report.tailwind.entry === null

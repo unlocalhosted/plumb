@@ -1,4 +1,4 @@
-import { readiness, formatReadiness, actionableRequirements } from '../readiness/index.js';
+import { readiness, formatReadiness, blocking } from '../readiness/index.js';
 import type { Report } from '../report.js';
 import { cacheDirectory } from '../paths.js';
 import { existsSync } from 'node:fs';
@@ -32,8 +32,8 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   const rows: Cell[][] = [];
   let ok = true;
   let checked: Report | undefined;
-  const line = (name: string, good: boolean, fact: string, fix: string) => {
-    if (!good) ok = false;
+  const line = (name: string, good: boolean, fact: string, fix: string, blocks = true) => {
+    if (!good && blocks) ok = false;
     rows.push([{ text: good ? 'ok' : 'fix', ...(good ? {} : { ink: 'amber' as const }) }, `${name}:`, { text: oneLine(fact), path: name === 'Cache' || name === 'CSS entry' }, oneLine(fix)]);
   };
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
@@ -41,7 +41,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   let config: PlumbConfig = {}, valid = true;
   try {
     const loaded = await loadConfig(root, configPath); config = loaded.value;
-    line('Config', loaded.path !== null, loaded.path ? `${relative(root, loaded.path)} is valid` : 'no config', loaded.path ? 'No change needed.' : 'Run plumber init.');
+    line('Config', loaded.path !== null, loaded.path ? `${relative(root, loaded.path)} is valid` : 'no config', loaded.path ? 'No change needed.' : 'Run plumber init.', loaded.path !== null);
   } catch (error) {
     valid = false;
     line('Config', false, userMessage(error), 'Fix the config, then run plumber doctor.');
@@ -58,7 +58,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   }
   try {
     const ledger = await readLedger(root);
-    if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', 'Run plumber init.');
+    if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', 'Run plumber init.', false);
     else if (!valid) line('Ledger', false, `${count(ledger.entries.length, 'entry', 'entries')} parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
     else {
       const report = await check({ root, ...(configPath === undefined ? {} : { config: configPath }) });
@@ -80,7 +80,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
-  ok &&= !actionableRequirements(ready).some(item => item.status === 'missing');
+  ok &&= !blocking(ready);
   // One row per fact: value, then how it is known and the first evidence line (R8).
   const project = describeFacts(ready.project).map(([name, value, where]): Cell[] => [`${name}:`, { text: value, path: /^(?:Root|Boundary|Repo)$/.test(name) }, { text: oneLine(where), ink: 'dim' }]);
   // Everything detected, with what plumb does with it: supported, partial (what is and is not), unsupported (and the next step).

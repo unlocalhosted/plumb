@@ -419,8 +419,17 @@ Command tables use the same helper: workspace command / app type; decisions fami
 
 ## Readiness (layer 1)
 
-`plumber doctor` starts with `Readiness: {n} setup gaps · {n} checks need verification`
-(singular for one), then the eight capabilities as `full`, `degraded` or `off`.
+`plumber doctor` starts with `Readiness: {n} setup gaps[ · {n} other fixes] · {n} checks need verification`
+(singular for one), then the eight capabilities as `full`, `degraded`, `off` or `verify in dev`.
+A setup gap is one judged family with values but no tokens (`config/no-tokens`): the
+same definition the `plumber` summary counts (`setupGapFamilies`), so the numbers agree.
+Every other missing requirement counts as an other fix. One missing token family
+degrades Read; it never turns it off (only unreadable styles do). Without a live
+host, requirements only the dev server can show (`locate.react-dev`, `write.watcher`)
+stay `unknown`, and a capability whose only open checks are those reads `verify in dev`
+(JSON status `unknown`), not degraded. Exit status: doctor exits 1 only when a
+capability is off (plumb cannot do it at all), or when Node, the config, Tailwind or
+the ledger file are broken; a missing config, ledger, token family or baseline exits 0.
 The system panel is not implemented: its capability has `available: false` in
 JSON and says `unavailable` in doctor. Its requirements remain in JSON but do
 not count as setup gaps, appear as doctor requirements, or affect doctor's exit.

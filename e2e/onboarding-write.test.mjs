@@ -66,7 +66,7 @@ test('init --yes --family type=skip leaves type as a setup gap that doctor names
   assert.match(result.stdout, /Left for later: type\./);
   assert.doesNotMatch(await readFile(join(dir, 'src/theme.css'), 'utf8'), /--text-/);
   assert.equal((await ledger(dir)).filter(entry => /no-tokens/.test(entry.key)).length, 0);
-  const doctor = run(dir, environment, ['doctor'], 1).stdout;
+  const doctor = run(dir, environment, ['doctor']).stdout;
   assert.match(doctor, /fix type tokens .*\[read\.tokens\.type\]|\[read\.tokens\.type\]/);
   assert.doesNotMatch(doctor.split('[read.tokens.type]')[0].split('\n').at(-1), /^\s+ok /);
   assert.match(run(dir, environment, ['check']).stdout, /no tokens|setup gap/);

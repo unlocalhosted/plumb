@@ -5,6 +5,7 @@ import { readFile, realpath, stat } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { check } from '../index.js';
 import { projectDecision } from '../decisions/availability.js';
+import { setupGapFamilies } from '../report.js';
 import type { Report, JudgedFamily } from '../report.js';
 import { loadConfig } from '../config.js';
 import { allConfigNames, statePath } from '../paths.js';
@@ -38,7 +39,7 @@ export interface ReadinessReport {
   schemaVersion: 1;
   /** The project facts (experimental for one release): the same object `plumber state --json` prints as `facts`. */
   project: PublicFacts;
-  capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off'; requirements: string[]; available?: boolean }[];
+  capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off' | 'unknown'; requirements: string[]; available?: boolean }[];
   requirements: Requirement[];
 }
 /** Trusted host observations only. HTTP input cannot set these facts. */
@@ -130,9 +131,10 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   if (!requirements.some(item => item.id === 'read.styles')) add('read.styles', 'read', 'unknown', 'Styles could not be checked', configEvidence, 'Drift cannot be judged.', step(`Review the CSS entry and validation errors in ${configFile}, then run plumber doctor.`, 'plumber doctor'));
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'] as JudgedFamily[]) {
     const token = report ? projectDecision(report, family) : undefined;
-    const needed = report ? (report.coverage[family].total > 0 || !!report.configHints?.[family]) : false;
-    add(`read.tokens.${family}`, 'read', report ? token || !needed ? 'ok' : 'missing' : 'unknown',
-      !report ? `${family} tokens need verification` : token ? `${family} tokens are ready` : needed ? `Your theme has no ${family} tokens` : `${family}: no values to judge`,
+    // The same gaps `plumber` counts (setupGapFamilies): one definition, so the counts agree.
+    const gap = report ? setupGapFamilies(report).includes(family) : false;
+    add(`read.tokens.${family}`, 'read', report ? gap ? 'missing' : 'ok' : 'unknown',
+      !report ? `${family} tokens need verification` : gap ? `Your theme has no ${family} tokens` : token ? `${family} tokens are ready` : `${family}: no values to judge`,
       token ? [{ file: relative(root, token.source.file), line: token.source.line, text: token.name }] : configEvidence,
       `${family} values cannot be judged against your tokens.`, step(`Add ${family} tokens to your theme, or set decisions.${family}.from in ${configFile}.`, 'plumber doctor'));
   }
@@ -223,11 +225,14 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('system.state', 'system', started ? 'ok' : 'unknown', started?.sentence ?? 'The project state could not be read',
     [{ file: started?.numbers.tailwind.entry ?? 'package.json', line: 1, text: started ? `${started.rung} ${started.name}${started.flags.length ? ` · ${started.flags.join(', ')}` : ''}` : 'No state' }],
     'The system panel cannot say where this project starts.', step('Run plumber doctor to see what blocks reading the project.', 'plumber doctor'));
+  // Only a live host can show these; from the CLI they read `unknown` (verify in dev), never degraded.
+  const runtimeOnly = new Set(['locate.react-dev', 'write.watcher']);
   return { schemaVersion: 1, project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
-    const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.some(item => item.status === 'unknown');
-    // A system plumb skips (read.styling.*, read.library.*) degrades Read; it does not turn it off: the rest is judged.
-    const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') && !/^read\.(?:styling|library)\./.test(item.id) || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
-    return { id, label: labels[id], status: essentialMissing ? 'off' : missing || unknown ? 'degraded' : 'full', requirements: checks.map(item => item.id), ...(id === 'system' ? { available: false } : {}) };
+    const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.filter(item => item.status === 'unknown');
+    // A system plumb skips (read.styling.*, read.library.*) or a token family it lacks degrades Read; it does not turn it off: the rest is judged.
+    const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') && !/^read\.(?:styling|library|tokens)\./.test(item.id) || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));
+    const verify = !runtime && !missing && unknown.length > 0 && unknown.every(item => runtimeOnly.has(item.id) || item.derived && runtimeOnly.has(item.cause ?? ''));
+    return { id, label: labels[id], status: essentialMissing ? 'off' : verify ? 'unknown' : missing || unknown.length ? 'degraded' : 'full', requirements: checks.map(item => item.id), ...(id === 'system' ? { available: false } : {}) };
   }), requirements };
 }
 
@@ -258,17 +263,21 @@ export async function applyReadinessFix(options: ReadinessOptions, request: { id
   } finally { applying.delete(root); }
 }
 
-/** Causes for capabilities that exist today; shared by doctor counts and exit status. */
+/** Causes for capabilities that exist today; shared by doctor counts and exit status.
+ *  Exit status: doctor fails (1) only when a capability is off, i.e. something plumb cannot do at all (no readable styles, no source location);
+ *  a missing token family, a baseline or a slow-path config degrades, never fails. */
 export function actionableRequirements(report: ReadinessReport): Requirement[] {
   const unavailable = new Set(report.capabilities.filter(item => item.available === false).map(item => item.id));
   return report.requirements.filter(item => !item.derived && !unavailable.has(item.capability));
 }
 
+export const blocking = (report: ReadinessReport) => report.capabilities.some(item => item.status === 'off' && item.available !== false);
+
 export function formatReadiness(report: ReadinessReport): string {
   const requirements = actionableRequirements(report);
-  const missing = requirements.filter(item => item.status === 'missing'), unknown = requirements.filter(item => item.status === 'unknown');
-  let output = `Readiness: ${count(missing.length, 'setup gap')} · ${count(unknown.length, 'check needs verification', 'checks need verification')}\n`;
-  output += table(report.capabilities.map(item => [item.available === false ? 'unavailable' : item.status, item.label]), [{ width: 11 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
+  const missing = requirements.filter(item => item.status === 'missing' && item.id.startsWith('read.tokens.')), others = requirements.filter(item => item.status === 'missing' && !item.id.startsWith('read.tokens.')), unknown = requirements.filter(item => item.status === 'unknown');
+  let output = `Readiness: ${count(missing.length, 'setup gap')}${others.length ? ` · ${count(others.length, 'other fix', 'other fixes')}` : ''} · ${count(unknown.length, 'check needs verification', 'checks need verification')}\n`;
+  output += table(report.capabilities.map(item => [item.available === false ? 'unavailable' : item.status === 'unknown' ? 'verify in dev' : item.status, item.label]), [{ width: 13 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
   for (const item of requirements) {
     output += wrap(`\n  ${item.status === 'ok' ? 'ok' : item.status === 'missing' ? 'fix' : '?'} ${item.title} [${item.id}]`) + '\n';
     output += wrap(`     ${item.evidence.map(evidence => `${evidence.file}:${evidence.line} ${evidence.text}`).join(' · ')}`) + '\n';
