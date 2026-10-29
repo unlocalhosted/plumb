@@ -157,7 +157,8 @@ function suggestion(group: FindingLine, width: number): string {
   const habits = group.findings.every(finding => finding.rule.startsWith('habits/'));
   const actions = [...new Set(group.findings.map(finding => habits ? habitAction(finding) : finding.action ?? finding.fix).filter(Boolean))];
   const action = actions.join(' · ').replaceAll('`', '').replace(/\.$/, '');
-  return action ? paint(habits ? action : shorten(action, width), 'dim') : '';
+  // The caller wraps it; an action is a sentence, and a cut sentence says nothing.
+  return action ? paint(action, 'dim') : '';
 }
 
 export function renderFindingLines(groups: FindingLine[], path: (file: string) => string, showRules = false): string {
@@ -182,11 +183,10 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
   const rows = table(groups.map((group, i) => {
     const { marker, ink, reason, location } = details[i]!;
     return [{ text: marker, ink: marker === '✗' ? 'red' as const : 'amber' as const }, group.subject,
-      { text: group.findings[0]!.rule.startsWith('habits/') || visibleWidth(reason) <= reasonWidth ? reason : '', ink },
-      { text: visibleWidth(location) <= locationWidth ? location : '', ink: 'dim' as const }];
-  }), [{ width: 1 }, { width: subjectWidth }, { width: reasonWidth }, { width: locationWidth }]);
+      { text: reason, ink }, { text: visibleWidth(location) <= locationWidth ? location : '', ink: 'dim' as const }];
+  }), [{ width: 1 }, { width: subjectWidth }, { width: reasonWidth, wrap: true }, { width: locationWidth }]);
   return groups.map((group, i) => {
-    const { ink, reason, location, collision } = details[i]!;
+    const { location, collision } = details[i]!;
     const lines = [rows[i]!], fix = suggestion(group, width - 7);
     // Continuations are lossless, including CSS values or paths wider than a line.
     const continued = (text: string, ink?: Ink) => {
@@ -202,7 +202,6 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
       lines.push(paint(line.trimEnd(), ink));
     };
     if (collision) continued(group.subject);
-    if (visibleWidth(reason) > reasonWidth) continued(reason, ink);
     if (fix) lines.push(wrap(`     ${paint('→', 'dim')} ${fix}`, width));
     if (visibleWidth(location) > locationWidth) continued(location, 'dim');
     if (group.sites.length > 1) {

@@ -33,7 +33,8 @@ export type Ink = 'red' | 'amber' | 'dim';
 export function paint(text: string, ink?: Ink, stream: WriteStream = process.stdout): string {
   return ink && stream.isTTY && process.env.NO_COLOR === undefined ? `\x1b[${{ red: 31, amber: 33, dim: 2 }[ink]}m${text}\x1b[0m` : text;
 }
-export interface Column { width?: number; weight?: number; align?: 'right'; path?: boolean; ink?: Ink }
+/** A `wrap` column keeps its whole text: it folds onto more lines inside its own width instead of being cut. */
+export interface Column { width?: number; weight?: number; align?: 'right'; path?: boolean; ink?: Ink; wrap?: boolean }
 export type Cell = string | { text: string; ink?: Ink; path?: boolean };
 export interface TableOptions { width?: number; indent?: number; gap?: number; stream?: WriteStream }
 /** Column budgets depend on terminal geometry, never on the longest data cell. */
@@ -49,12 +50,41 @@ export function table(rows: Cell[][], columns: Column[], options: TableOptions =
   }
   const spare = budget - widths.reduce((sum, width) => sum + width, 0);
   if (spare > 0) widths[widths.length - 1]! += spare;
-  return rows.map(row => ' '.repeat(indent) + columns.map((column, i) => {
-    const cell = row[i] ?? '', value = typeof cell === 'string' ? { text: cell } : cell;
-    const text = shorten(value.text, widths[i]!, value.path ?? column.path), padding = ' '.repeat(Math.max(0, widths[i]! - visibleWidth(text)));
-    const content = paint(text, value.ink ?? column.ink, stream);
-    return column.align === 'right' ? padding + content : content + padding;
-  }).join(' '.repeat(gap)).trimEnd());
+  return rows.map(row => {
+    const parts = columns.map((column, i) => {
+      const cell = row[i] ?? '', value = typeof cell === 'string' ? { text: cell } : cell;
+      return { lines: column.wrap ? fold(value.text, widths[i]!) : [shorten(value.text, widths[i]!, value.path ?? column.path)], ink: value.ink ?? column.ink };
+    });
+    const height = Math.max(...parts.map(part => part.lines.length));
+    return Array.from({ length: height }, (_, line) => ' '.repeat(indent) + columns.map((column, i) => {
+      const text = parts[i]!.lines[line] ?? '', padding = ' '.repeat(Math.max(0, widths[i]! - visibleWidth(text)));
+      const content = text ? paint(text, parts[i]!.ink, stream) : '';
+      return column.align === 'right' ? padding + content : content + padding;
+    }).join(' '.repeat(gap)).trimEnd()).join('\n');
+  });
+}
+/** Words fill each line; a word wider than the line breaks after a `/` where it can (paths), else where it must. */
+export function fold(text: string, width: number): string[] {
+  text = oneLine(plain(text));
+  if (!text) return [''];
+  const lines: string[] = [];
+  let current = '';
+  const push = (piece: string, space: boolean) => {
+    const joined = current + (current && space ? ' ' : '') + piece;
+    if (visibleWidth(joined) <= width) { current = joined; return; }
+    if (current) lines.push(current);
+    current = '';
+    for (const char of cells(piece)) {
+      if (visibleWidth(current + char) > width && current) { lines.push(current); current = ''; }
+      current += char;
+    }
+  };
+  for (const word of text.split(' ')) {
+    if (visibleWidth(word) <= width) { push(word, true); continue; }
+    word.split(/(?<=\/)/).forEach((piece, i) => push(piece, i === 0));
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 /** Prose may use several physical lines; source expressions and cells never do. */
 export function wrap(text: string, width = terminalWidth()): string {

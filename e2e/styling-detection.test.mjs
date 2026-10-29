@@ -144,7 +144,7 @@ test('mixed app: Tailwind is judged and styled-components is named once, with ev
   const doctor = await run(project, ['doctor'], 1);
   const support = doctor.stdout.split('\nSupport\n')[1].split('\nDiagnostics\n')[0];
   assert.match(support, /^supported\s+Tailwind 4:\s+package\.json:\d+/m);
-  assert.match(support, /^unsupported\s+styled-components:\s+src\/Button\.jsx:2\s+not judged yet: styled`` and css`` templates\./m);
+  assert.match(support.replace(/\n {20,}/g, ' '), /^unsupported\s+styled-components:\s+src\/Button\.jsx:2\s+not judged yet: styled`` and css`` templates\./m);
   assert.match(doctor.stdout, /fix Not judged: styled-components \(src\/Button\.jsx:2\); not judged yet\.[\s\S]{0,120}\[read\.styling\.styled-components\]/);
   assert.match(doctor.stdout, /^  degraded\s+Read$/m, 'Read is degraded, not off: Tailwind is still judged');
   const ready = await viteReadiness(t, project.root);

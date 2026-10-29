@@ -432,7 +432,8 @@ export const describeState = (state: Pick<ProjectState, 'rung' | 'kind' | 'flags
 
 /** The human output of `plumber state`: the sentence, then the numbers that back it. */
 export function formatState(state: ProjectState, table: (rows: string[][]) => string[]): string {
-  const lines = [state.sentence, '', describeState(state)];
+  // One summary: the sentence. The short label is for one-line places (the check header, the overlay).
+  const lines = [state.sentence];
   const rows = Object.entries(state.numbers.families).map(([family, item]) => [colourName(family), `${item.onTokens.toLocaleString('en-US')} of ${item.total.toLocaleString('en-US')} on tokens`, `${item.percent}%`, item.tokened ? 'tokens' : 'no tokens']);
   if (rows.length) lines.push('', ...table(rows));
   const { arbitrary, inline, values, unusedTokens } = state.numbers;

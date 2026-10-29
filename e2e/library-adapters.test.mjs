@@ -30,7 +30,11 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
   ]);
   const doctor = await run(project, ['doctor'], 1);
   assert.match(doctor.stdout, /^Libraries:\s+Base UI\s+Base UI: 3 files · Slider 2, Popover 1, Switch 1/m);
-  assert.match(doctor.stdout.split('\nSupport\n')[1], /^supported\s+Base UI:\s+src\/Pop\.jsx:1\s+usage \(every primitive, part and site\), states, st/m);
+  // Support says how much of the library is used and where it starts, and never cuts a path or a sentence.
+  const support = doctor.stdout.split('\nSupport\n')[1].split('\n\n')[0];
+  assert.match(support, /^supported\s+Base UI:\s+3 files, first\s+usage \(every primitive, part and site\),/m);
+  assert.match(support.replace(/\s+/g, ' '), /src\/Pop\.jsx:1/);
+  assert.ok(!support.includes('…'), support);
   const check = await run(project, [], 0);
   assert.equal(check.stderr, '', 'a fully understood library prints no notice');
 });
@@ -137,7 +141,7 @@ test('Base UI states: variants, stylesheet selectors, className and style functi
   assert.equal(report.findings.find(finding => finding.rule === 'existence/dynamic-class' && finding.declaration.site.line === 10)?.declaration.site.text, undefined);
   // The one-line human finding names the state too; a negated state reads "not", and lines without a state are unchanged.
   const human = (await run(project, ['--all'], 0)).stdout;
-  assert.match(human, /^ *! +p-\[13px\] .*Check\.jsx:6\n +off your spacing scale \(checked\)$/m, human);
+  assert.match(human, /^ *! +p-\[13px\] +off your spacing scale +Check\.jsx:6\n +\(checked\)$/m, human);
   assert.match(human, /\(not checked\)/, human);
   const explain = await run(project, ['sites', 'src/Check.jsx'], 0).catch(() => null);
   if (explain) assert.match(explain.stdout, /state: checked/);

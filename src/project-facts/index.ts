@@ -270,6 +270,6 @@ export function describeFacts(facts: PublicFacts): [name: string, value: string,
     ['Tokens', styling?.tokens ? styling.tokens.kind : 'none', styling?.tokens ? `${styling.tokens.evidence.file}:${styling.tokens.evidence.line} ${styling.tokens.evidence.text}` : ''],
     // A library with a usage map shows how much of it the app renders; one without shows where it was first seen.
     ['Libraries', facts.libraries.value?.length ? facts.libraries.value.map(item => item.label).join(', ') : 'none', facts.libraries.value?.map(item => `${item.label}: ${item.usage ? describeUsage(item.usage) : `${item.evidence[0]?.file}:${item.evidence[0]?.line}`}`).join('; ') ?? ''],
-    ['Checkouts', facts.checkouts.value?.length ? `${facts.checkouts.value.length} nested, excluded` : 'none', facts.checkouts.value?.map(item => `${item.path} (${item.kind}, ${item.evidence.file}:${item.evidence.line})`).join(', ') ?? ''],
+    ['Checkouts', facts.checkouts.value?.length ? `${facts.checkouts.value.length} nested, excluded` : 'none', facts.checkouts.value ? [...facts.checkouts.value.slice(0, 2).map(item => `${item.path} (${item.kind})`), ...(facts.checkouts.value.length > 2 ? [`+${facts.checkouts.value.length - 2} more`] : [])].join(', ') : ''],
   ];
 }

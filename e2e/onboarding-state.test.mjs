@@ -56,6 +56,8 @@ for (const [name, expected] of Object.entries(cases)) {
     const text = run(['state', '--root', fixture(name)], cache);
     assert.equal(text.status, 0);
     assert.equal(text.stdout.split('\n')[0], state.sentence);
+    // Said once: no short label repeating the sentence under it.
+    assert.ok(!text.stdout.split('\n').slice(1).some(line => line.startsWith(state.sentence.split(/[:.,]/)[0])), text.stdout);
   });
 }
 
@@ -142,7 +144,8 @@ test('plumber state speaks plain words; the rung codes stay in --json', async t 
   const text = run(['state', '--root', fixture('onboard-chaos')], cache);
   assert.equal(text.status, 0, text.stderr);
   assert.doesNotMatch(text.stdout, /\bR[0-9]\b|Partial|Framework\b|\bnoisy\b|\bsplit\b|\bdtcg\b|dark-split/);
-  assert.match(text.stdout, /^A system, half in use · from a preset · .*many one-off values/m);
+  assert.match(text.stdout, /^A system, half in use: shadcn's tokens are installed;/);
+  assert.doesNotMatch(text.stdout, / · from a preset · /, 'the summary is said once');
   const json = JSON.parse(run(['state', '--root', fixture('onboard-chaos'), '--json'], cache).stdout);
   assert.equal(json.rung, 'R3');
   assert.deepEqual(json.flags, ['conflicting', 'dark-split', 'dead', 'noisy', 'split']);

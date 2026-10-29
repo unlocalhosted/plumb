@@ -55,13 +55,22 @@ test('finding presentation: real PTYs at 80/140, compact subjects, colour, colli
   const ownership = bounded(pty(root, ['--rule', 'ownership'], 140, cache, true), 140);
   assert.equal((ownership.match(/^  !  bg-\[#abcdef\]/gm) ?? []).length, 2, 'separate component contracts');
   assert.match(ownership, /changes Control/); assert.match(ownership, /changes OtherControl/);
+  // At 80 columns a reason too wide for its column folds inside it; it never leaves the column empty, and no line is cut.
+  const narrow = bounded(pty(root, ['--rule', 'ownership'], 80, cache, true), 80);
+  for (const block of narrow.split('\n\n').filter(block => /^  !  /.test(block))) {
+    assert.match(block.split('\n')[0], /^  !  \S+\s{2,}changes /, block);
+    assert.ok(!block.includes('…'), block);
+  }
   const tokenColours = pty(root, ['--file', 'src/pages/Page0.tsx'], 140, cache);
   assert.doesNotMatch(tokenColours, /var\x1b/, 'suggested variable names keep default colour');
   for (const columns of [80, 140]) {
     const type = bounded(pty(root, ['--family', 'type'], columns, cache), columns);
     assert.equal((type.match(/^  !  text-xs\s/gm) ?? []).length, 1);
     assert.match(type, /text-xs.*32 sites in 32 files/);
-    assert.match(type, /off your type scale \(size and line-height\)/);
+    // The reason folds inside its own column, so its words continue on the next line under it.
+    const row = type.split('\n\n').find(block => /^  !  text-xs /.test(block)).split('\n');
+    const column = row.slice(0, row.findIndex(line => line.includes('→'))).join(' ').replace('32 sites in 32 files', '').replace(/\s+/g, ' ');
+    assert.match(column, /text-xs off your type scale \(size and line-height\)/);
     assert.doesNotMatch(type.split('Intended?')[0], /provenance\/|existence\/|config gap|type\/framework/);
     const broken = pty(root, ['--broken'], columns, cache);
     bounded(broken, columns);
@@ -142,26 +151,26 @@ ${Array.from({ length: 1100 }, (_, i) => `.motion${i} { transition-duration: 321
      → var(--font-code) (monospace)
      Inline.tsx:2 · Inline.tsx:3 · styles.css:2
 
-  !  font: 8px var(--x)                                   2 sites in 1 file
-     raw type · off your type scale
+  !  font: 8px var(--x)             raw type · off your   2 sites in 1 file
+                                    type scale
      → var(--font-code) (monospace)
      Inline.tsx:4 · Inline.tsx:5
 
-  !  font: 7px var(--x)
-     raw type · off your type scale
+  !  font: 7px var(--x)             raw type · off your
+                                    type scale
      → var(--font-code) (monospace)
      EscapeAndOutsideClickPhase.tsx:1`,
     100: `  !  font-family: var(--x)                   raw type                    3 sites in 2 files
      → var(--font-code) (monospace)
      Inline.tsx:2 · Inline.tsx:3 · styles.css:2
 
-  !  font: 8px var(--x)                                                  2 sites in 1 file
-     raw type · off your type scale
+  !  font: 8px var(--x)                      raw type · off your type    2 sites in 1 file
+                                             scale
      → var(--font-code) (monospace)
      Inline.tsx:4 · Inline.tsx:5
 
-  !  font: 7px var(--x)
-     raw type · off your type scale
+  !  font: 7px var(--x)                      raw type · off your type
+                                             scale
      → var(--font-code) (monospace)
      EscapeAndOutsideClickPhase.tsx:1`,
   };
