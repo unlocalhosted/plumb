@@ -120,3 +120,52 @@ test('Add to theme: an off-scale value with no close token names the namespace, 
   const shadow = await api.call('token', { file: spec.tokens.file, hash: (await api.call('spec', {})).body.tokens.hash, name: '--shadow-lifted', value: '0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.4)', why: 'Lifted surfaces.' }, 'POST');
   assert.equal(shadow.status, 200, JSON.stringify(shadow.body));
 });
+
+test('apply-all runs the whole Apply on the server: theme, then swaps per file, then the ledger, each file once with its own undo', { timeout: 90000 }, async (t) => {
+  const api = await project(t);
+  await writeFile(join(api.root, 'src/Card.tsx'), `export const Card = () => <div id="card" className="p-[9px]" />;\n`);
+  const spec = (await api.call('spec', {})).body;
+  const before = await api.site('type');
+  const leading = at(before.findings, 'leading-relaxed')[0];
+  const cardColumn = 'export const Card = () => <div'.indexOf('<div') + 1;
+  const cardProps = await api.call('props', { file: 'src/Card.tsx', line: 1, column: cardColumn });
+  assert.equal(cardProps.status, 200, JSON.stringify(cardProps.body));
+  const cardHash = cardProps.body.hash;
+  const appHash = await api.hash();
+  const request = {
+    tokens: [{ file: spec.tokens.file, hash: spec.tokens.hash, name: '--spacing-gutter', value: 'clamp(1rem, 4vw, 2.5rem)', why: 'The page gutter.' }],
+    swaps: [
+      { file: 'src/App.tsx', hash: appHash, edits: [{ line: api.lineOf('gutter'), column: 3, from: 'px-[clamp(1rem,4vw,2.5rem)]', to: 'px-gutter' }, { line: api.lineOf('bleed'), column: 3, from: '-mx-[clamp(1rem,4vw,2.5rem)]', to: '-mx-gutter' }] },
+      { file: 'src/Card.tsx', hash: cardHash, edits: [{ line: 1, column: cardColumn, from: 'p-[9px]', to: 'p-small' }] },
+      { file: 'src/Card.tsx', hash: 'a'.repeat(12), edits: [{ line: 1, column: cardColumn, from: 'p-small', to: 'p-large' }] },
+    ],
+    accepts: [{ rule: leading.rule, sites: leading.sites.filter(s => s.text === 'leading-relaxed').map(({ file, line, column, text }) => ({ file, line, column, text })), why: 'Relaxed leading is this page’s voice.' }],
+  };
+  const result = await api.call('apply-all', request, 'POST');
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  const { results, undo, labels } = result.body;
+  assert.deepEqual(results.tokens, [{ name: '--spacing-gutter', ok: true }]);
+  assert.deepEqual(results.swaps.map(s => [s.file, s.ok, s.applied, s.refused, s.error]), [
+    ['src/App.tsx', true, [`swap:${api.lineOf('gutter')}:3`, `swap:${api.lineOf('bleed')}:3`], [], undefined],
+    ['src/Card.tsx', true, [`swap:1:${cardColumn}`], [], undefined],
+    ['src/Card.tsx', false, [], [], 'The file changed since the overlay read it. Read it again.'],
+  ]);
+  assert.deepEqual(results.accepts, [{ rule: leading.rule, ok: true, accepted: 1 }]);
+  assert.deepEqual(undo.map(u => u.file), ['src/styles.css', 'src/App.tsx', 'src/Card.tsx']);
+  assert.deepEqual(labels, undo.map(u => u.label));
+  assert.match(await readFile(join(api.root, 'src/styles.css'), 'utf8'), /--spacing-gutter: clamp\(1rem, 4vw, 2\.5rem\);/);
+  const app = await readFile(join(api.root, 'src/App.tsx'), 'utf8');
+  assert.ok(app.includes('className="px-gutter tracking-[0.1em]"') && app.includes('className="-mx-gutter"'), app);
+  assert.ok((await readFile(join(api.root, 'src/Card.tsx'), 'utf8')).includes('className="p-small"'));
+  assert.match(await readFile(join(api.root, '.plumber/ledger.jsonl'), 'utf8'), /"kind":"exception"[^\n]*"leading-relaxed"/);
+  const history = (await api.call('history')).body.writes;
+  assert.deepEqual(history.map(w => w.file), ['src/Card.tsx', 'src/App.tsx', 'src/styles.css']);
+  assert.ok(history.every(w => !w.stale));
+  // a second token into the same file within one batch moves on from the first write's hash
+  const again = await api.call('apply-all', { tokens: [
+    { file: spec.tokens.file, hash: (await api.call('spec', {})).body.tokens.hash, name: '--spacing-rail', value: '2rem', why: 'The rail.' },
+    { file: spec.tokens.file, hash: (await api.call('spec', {})).body.tokens.hash, name: '--spacing-well', value: '3rem', why: 'The well.' },
+  ] }, 'POST');
+  assert.equal(again.status, 200, JSON.stringify(again.body));
+  assert.deepEqual(again.body.results.tokens, [{ name: '--spacing-rail', ok: true }, { name: '--spacing-well', ok: true }]);
+});

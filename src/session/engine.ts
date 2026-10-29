@@ -60,6 +60,16 @@ export interface ApplyOptions { file: string; hash: string; edits: { id: string 
 export interface UndoHandle { id: string; file: string; label: string }
 export interface AcceptOptions { rule: string; sites: { file: string; line: number; column: number; text: string }[]; why: string }
 export interface AcceptResult { accepted: number }
+export interface ApplyAllOptions { tokens?: Omit<TokenOptions, 'then'>[]; swaps?: SwapsOptions[]; accepts?: AcceptOptions[] }
+export interface ApplyAllResult {
+  results: {
+    tokens: { name: string; ok: boolean; error?: string }[];
+    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; error?: string }[];
+    accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
+  };
+  undo: UndoHandle[];
+  labels: string[];
+}
 export interface RefusedSwap { line: number; column: number; from: string; to: string; reason: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle; /** swaps: the places that could not be written, each with its reason; the others were. */ refused?: RefusedSwap[] }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
@@ -624,6 +634,51 @@ export class Session extends EventEmitter {
       await this.reconcile([ledger]);
       return { accepted: keys.length };
     });
+  }
+  /**
+   * The whole Apply in one request, in order: theme tokens, then class swaps per file, then the ledger. Each item
+   * stands alone (one refusal stops nothing else) and each file's hash moves on within the batch: an item may send the
+   * hash the file had when the batch began or the hash after the previous write to it; only a hash that was already
+   * stale fails that item. Every written file gets its own history entry and undo handle, as the single endpoints do.
+   */
+  async applyAll(options: ApplyAllOptions): Promise<ApplyAllResult> {
+    const { tokens = [], swaps = [], accepts = [] } = options ?? {};
+    if (![tokens, swaps, accepts].every(Array.isArray) || tokens.length + swaps.length + accepts.length === 0) throw new UsageError('Apply needs at least one token, swap or accept.');
+    if (tokens.length + swaps.length + accepts.length > 200) throw new UsageError('Apply takes at most two hundred items.');
+    const result: ApplyAllResult = { results: { tokens: [], swaps: [], accepts: [] }, undo: [], labels: [] };
+    // the hash each file had when the batch began, and the hash it has now
+    const began = new Map<string, string>(), latest = new Map<string, string>();
+    const hashFor = async (file: string, sent: string): Promise<string> => {
+      const path = this.file(file);
+      if (!began.has(path)) { const text = await readFile(path, 'utf8').catch(() => ''); began.set(path, sourceHash(text)); latest.set(path, sourceHash(text)); }
+      if (sent === began.get(path) || sent === latest.get(path)) return latest.get(path)!;
+      throw new UsageError(staleFile);
+    };
+    const moved = (file: string, hash: string) => latest.set(this.file(file), hash);
+    const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
+    for (const token of tokens) {
+      try {
+        const written = await this.token({ ...token, hash: await hashFor(token.file, token.hash) });
+        moved(token.file, written.hash);
+        if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
+        result.results.tokens.push({ name: token.name, ok: true });
+      } catch (error) { result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) }); }
+    }
+    for (const swap of swaps) {
+      try {
+        const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
+        moved(swap.file, written.hash);
+        result.undo.push(written.undo); result.labels.push(written.undo.label);
+        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: written.refused ?? [] });
+      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], error: message(error) }); }
+    }
+    for (const accept of accepts) {
+      try {
+        const done = await this.accept(accept);
+        result.results.accepts.push({ rule: accept.rule, ok: true, accepted: done.accepted });
+      } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, error: message(error) }); }
+    }
+    return result;
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
   async set(options: SetOptions): Promise<ApplyResult> {
