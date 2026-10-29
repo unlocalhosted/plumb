@@ -60,7 +60,11 @@ export function reading(location, site, edits) {
       const props = declarations.length ? declarations.map(d => d.prop) : [finding.declaration?.prop].filter(Boolean);
       const value = declarations[0]?.resolved ?? declarations[0]?.value ?? finding.declaration?.resolved ?? finding.declaration?.value;
       const here = editsAt.get(key) ?? [];
-      const choices = (finding.choices ?? []).map(c => {
+      // A copy of a token's value names its token per place, not in a list of choices (surfaces/edits.ts siteChoices):
+      // the place's edit says which, or, read for marks only (no edits yet), the token whose value it copies.
+      const copies = d => here.length ? here.some(e => e.token === d.name) : String(d.resolved ?? d.value).trim() === String(value).trim() || number(value) !== undefined && number(d.resolved ?? d.value) === number(value);
+      const pool = finding.choices?.length || !finding.rule.endsWith('/by-value') ? finding.choices ?? [] : (finding.decisions ?? []).filter(copies);
+      const choices = pool.map(c => {
         const edit = here.find(e => e.token === c.name);
         return { name: c.name, label: short(c.name, finding.family), value: c.resolved ?? c.value, n: number(c.resolved ?? c.value), why: c.why, edit: edit && { id: edit.id, from: edit.from, to: edit.to } };
       });

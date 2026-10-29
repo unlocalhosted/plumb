@@ -68,7 +68,7 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #onFrame; #onDraw; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
+  #onFrame; #onDraw; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #chosen = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
@@ -97,7 +97,7 @@ export class Selection {
   get view() {
     const m = this.current;
     if (!this.#el || !m) return null;
-    const p = this.#plan, suggest = m.craft?.suggest ?? null;
+    const p = this.#plan?.for === m.key ? this.#plan : null, suggest = m.craft?.suggest ?? null;
     if (this.#taken.has(m.key)) return { mark: m, taken: true };
     if (!p) return { mark: m, ready: false, whyNot: m.whyNot ?? (suggest?.kind === 'advice' ? 'advice' : null), suggest };
     if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write })), at: p.at, now: p.now, suggest };
@@ -125,8 +125,11 @@ export class Selection {
     // chosen again (Enter on its focused mark): the fix shown is taken
     if (el === this.#el && chosen && this.current?.key === chosen.key && this.#plan) { this.accept(); return; }
     this.#unpreview();
-    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#taken = new Set(); this.#why = 0;
+    // what was taken on this element stays taken when another of its problems is chosen
+    if (el !== this.#el) this.#taken = new Set();
+    this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#why = 0;
     this.#group = chosen?.group ?? [];
+    this.#chosen = chosen?.key ?? null;
     if (chosen) {
       // the problem chosen by its key; a craft finding folded under another is found through the one it rides on
       let i = this.problems.findIndex((m) => m.key === chosen.key);
@@ -144,10 +147,13 @@ export class Selection {
     // while a fix is being tried, the re-read sees the page as previewed: its own problem is gone from it. The
     // problem in hand stays as it was read until the preview is taken or put back
     if (this.#previewing && this.#plan) return this.draw();
-    const was = this.current?.key;
+    const was = this.current?.key, held = this.#item;
     this.#item = item ?? null;
     // the same problem stays current through a re-read (the order can change); else the first one not yet taken
     const same = this.problems.findIndex((m) => m.key === was && !this.#taken.has(m.key));
+    // a problem held for the fix panel stays in hand when a re-read doesn't name it (the page is mid-preview): the
+    // panel moves on, never the reader
+    if (same < 0 && was && was === this.#chosen) { this.#item = held; return this.draw(); }
     const open = this.problems.findIndex((m) => !this.#taken.has(m.key));
     this.#at = same >= 0 ? same : open >= 0 ? open : Math.min(this.#at, Math.max(0, this.problems.length - 1));
     if (this.current?.key !== was) this.#plan = null;
@@ -165,7 +171,7 @@ export class Selection {
   clear() {
     if (!this.#el) return false;
     this.#unpreview();
-    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null; this.#group = [];
+    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null; this.#group = []; this.#chosen = null;
     this.#onChange?.(null);
     this.#layer.replaceChildren(); this.#layer.hidden = true;
     pointAt(this.#pill, [], 0, 0);
@@ -361,7 +367,9 @@ export class Selection {
     this.#layer.dataset.state = accepted ? 'accepted' : state;
     let fix = '';
     if (current && !this.#taken.has(current.key) && state === 'ready') {
-      this.#plan ??= planOf(current, el, this.#steps?.('spacing') ?? [], (n) => this.#tokenOf('spacing', n)) ?? swapPlanOf(current);
+      // a plan is one problem's: the problem in hand changed (taken, stepped, chosen), so its plan is made again
+      if (this.#plan && this.#plan.for !== current.key) this.#plan = null;
+      if (!this.#plan) { const made = planOf(current, el, this.#steps?.('spacing') ?? [], (n) => this.#tokenOf('spacing', n)) ?? swapPlanOf(current); this.#plan = made && { ...made, for: current.key }; }
       const plan = this.#plan;
       if (plan?.kind === 'swap') {
         // a theme choice's exact class edit comes from the element's full reading, read once

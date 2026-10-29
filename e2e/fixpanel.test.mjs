@@ -24,12 +24,13 @@ async function browser(t) {
     return null;
   }
 }
-async function fixture(t, app) {
+async function fixture(t, app, css = '') {
   const root = await mkdtemp(join(repo, 'fixtures/.fixpanel-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await writeFile(join(root, 'src/App.jsx'), app);
+  if (css) await writeFile(join(root, 'src/styles.css'), (await readFile(join(root, 'src/styles.css'), 'utf8')) + css);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close());
@@ -159,5 +160,53 @@ export function App() {
   // Esc puts it down and the page is as it was
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => ['small', 'large'].every((id) => !document.getElementById(id).style.lineHeight), null, { timeout: 5000 });
+  assert.deepEqual(errors, []);
+});
+
+// A copy of a token's value (duration-150 where :root has --dur-calm: 150ms, and the theme sets its own default
+// timing, as crafting-ui does) has its token per place, not a list of
+// choices: Blueprint reads marks without edits, so the page finds the token by value and offers it, drawn as a time.
+// Taking it moves to the next cause on the same element with that cause's own view, never the taken one's. The class
+// sits in a template literal with an expression: its fixed text is written, the expression is left as it is.
+test('A token copy offers its token, drawn as a time; Take moves on to the next cause on that element; A writes into a template literal', { timeout: 150000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, `
+const tone = 'bg-surface';
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <button id="go" className={\`px-s4 duration-150 rounded-[13px] \${tone}\`}>Go</button>
+    </main>
+  );
+}
+`, '\n:root { --dur-calm: 150ms; }\n@theme { --default-transition-duration: 140ms; }\n');
+  const { page, errors, overlay } = await open(t, launched, url);
+  const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.cause .cls').waitFor({ timeout: 10000 });
+  const seen = [];
+  for (let i = 0; i < 6; i++) {
+    const now = await panel(overlay).locator('.cause').innerText(); seen.push(now.replace(/\s+/g, ' '));
+    if (/duration-150/.test(now)) break;
+    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300);
+  }
+  await page.waitForTimeout(800);
+  seen.push((await panel(overlay).locator('.cause').innerText()).replace(/\s+/g, ' '));
+  assert.match(seen.at(-1), /duration-150/, seen.join(' | '));
+  // its token, as a time
+  const option = panel(overlay).locator('.sp[aria-pressed="true"]');
+  await option.waitFor({ timeout: 10000 });
+  assert.equal(await option.locator('.v').innerText(), '150ms');
+  assert.match(await option.locator('.tk').innerText(), /dur-calm/);
+  // Take: the next cause on the button is in hand, with its own view
+  for (let i = 0; i < 40 && !(await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  await panel(overlay).locator('.cause .cls').filter({ hasText: 'rounded-[13px]' }).waitFor({ timeout: 10000 });
+  await page.waitForTimeout(1500); // a re-read of the page comes in meanwhile
+  assert.match(await panel(overlay).locator('.cause .cls').innerText(), /rounded-\[13px\]/);
+  assert.equal(await panel(overlay).locator('.sp .tk').filter({ hasText: 'dur-calm' }).count(), 0, 'the taken cause\'s option is not shown on the next one');
+  // A: written into the template literal's fixed text; the expression stays
+  await panel(overlay).locator('.apply').click();
+  for (let i = 0; i < 100 && !(await source()).includes('duration-(--dur-calm)'); i++) await page.waitForTimeout(100);
+  assert.match(await source(), /className=\{`px-s4 duration-\(--dur-calm\) rounded-\[13px\] \$\{tone\}`\}/);
   assert.deepEqual(errors, []);
 });

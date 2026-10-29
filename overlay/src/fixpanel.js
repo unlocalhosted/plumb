@@ -111,6 +111,7 @@ function kindOf(mark) {
   if (/font-size|font-weight|letter-spacing|line-height/.test(p)) return 'type';
   if (/color|background/.test(p) || mark?.family === 'color') return 'colour';
   if (/radius/.test(p)) return 'radius';
+  if (/duration|delay/.test(p) || mark?.family === 'motion') return 'time';
   return 'value';
 }
 
@@ -133,6 +134,8 @@ function specimen(kind, mark, n, label, swatch) {
     const r = Math.min(18, (n || 0) * 0.8);
     return `<svg viewBox="0 0 52 40"><path d="M10 34 V${10 + r} Q10 10 ${10 + r} 10 H42" fill="none" class="space-line" stroke="currentColor" stroke-width="2" style="stroke: var(--word)"/></svg>`;
   }
+  // a time: a track, filled as far as the time runs (a second fills it)
+  if (kind === 'time' && Number.isFinite(n)) { const w = Math.max(2, Math.min(1, n / 1000) * 36); return `<svg viewBox="0 0 52 40"><rect x="8" y="18" width="36" height="4" rx="2" class="space-fill" opacity=".35"/><rect x="8" y="18" width="${w}" height="4" rx="2" class="space-line" fill="currentColor" style="fill: var(--word)"/><circle cx="${8 + w}" cy="20" r="3" style="fill: var(--word)"/></svg>`; }
   if (!Number.isFinite(n)) return `<svg viewBox="0 0 52 40"><text x="26" y="25" text-anchor="middle" class="word" style="font: 600 10px ui-monospace, monospace">${esc(String(label).slice(0, 8))}</text></svg>`;
   if (kind === 'gap' || kind === 'margin') {
     const g = Math.min(n, 26), top = 20 - g / 2 - 7;
@@ -354,7 +357,7 @@ export class FixPanel {
       if (v?.ready) {
         // the suggested option is tried the moment the cause is in hand
         if (this.#previewed !== g.key) { this.#previewed = g.key; queueMicrotask(() => this.#host.pick(v.at)); }
-        const unit = kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px';
+        const unit = kind === 'time' ? 'ms' : kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px';
         const items = v.options.map((o, i) => ({ n: Number.isFinite(o.n) ? o.n : i, html: `<button class="sp" data-kind="${kind}" data-i="${i}" aria-pressed="${v.at === i}">${specimen(kind, mark, o.n, o.label, o.swatch)}<span class="v">${Number.isFinite(o.n) ? `${o.n}${unit}` : esc(o.label)}</span><span class="tk">${Number.isFinite(o.n) ? esc(o.label) : ''}</span></button>` }));
         if (v.now && Number.isFinite(v.now.n) && !v.options.some((o) => o.n === v.now.n)) items.push({ n: v.now.n, html: `<div class="sp off" data-kind="${kind}" aria-disabled="true" title="what it is now: off the scale">${specimen(kind, mark, v.now.n, v.now.label, v.now.swatch)}<span class="v">${v.now.n}${unit}</span><span class="tk">now</span></div>` });
         if (v.options.every((o) => Number.isFinite(o.n))) items.sort((a, b) => a.n - b.n);

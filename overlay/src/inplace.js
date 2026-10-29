@@ -213,7 +213,8 @@ export function swapPlanOf(problem) {
   const prop = problem.props?.[0], length = /^(spacing|radius|type|size|layout)$/.test(problem.family) && !/weight/.test((problem.props ?? []).join());
   const styleOf = (c) => { const v = length && pxOf(c.value, null, prop) !== undefined ? (/[a-z]$/.test(String(c.value).trim()) ? String(c.value).trim() : `${pxOf(c.value, null, prop)}px`) : length && Number.isFinite(c.n) ? `${c.n}px` : c.value; return v ? Object.fromEntries((problem.props ?? []).map((p) => [p, v])) : {}; };
   // every number is px at the CSS's root (value.js), so the panel reads the steps and yours alike, in whole px
-  const nOf = (value, n) => (length ? pxOf(value, null, prop) ?? n ?? null : n ?? null);
+  const msOf = (value) => { const m = /^(-?[\d.]+)(ms|s)$/.exec(String(value ?? '').trim()); return m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : null; };
+  const nOf = (value, n) => (length ? pxOf(value, null, prop) ?? n ?? null : problem.family === 'motion' ? msOf(value) ?? n ?? null : n ?? null);
   return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: nOf(c.value, c.n), swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
     at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
 }
