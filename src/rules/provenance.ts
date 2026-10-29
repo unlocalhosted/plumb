@@ -1,3 +1,4 @@
+import { utilityValue } from '../messages.js';
 import { performance } from 'node:perf_hooks';
 import { profileDuration, profileProgress } from '../profile.js';
 import { createHash } from 'node:crypto';
@@ -14,7 +15,7 @@ import { numericExpression, numericStep, numericUse } from '../decisions/spacing
 import { callerPolicy } from '../decisions/callers.js';
 import { attribution, indexDefinitions } from './attribution.js';
 
-import { isJudged, judgedFamilies, oklab, colorDistance, colorNeutral, typeDeclarations } from './families.js';
+import { isJudged, judgedFamilies, oklab, colorDistance, colorNeutral, tokens, typeDeclarations } from './families.js';
 import type { JudgedFamily } from './families.js';
 export { isSpacing } from './families.js';
 export function isJudgedSpacing(declaration: Declaration): boolean { return isJudged(declaration, 'spacing'); }
@@ -28,14 +29,43 @@ function utilityPrefix(prop: string): string | undefined {
   }
   return ({ gap: 'gap', 'row-gap': 'gap-y', 'column-gap': 'gap-x', inset: 'inset', 'inset-inline': 'inset-x', 'inset-block': 'inset-y', 'inset-inline-start': 'start', 'inset-inline-end': 'end', top: 'top', right: 'right', bottom: 'bottom', left: 'left' } as Record<string, string>)[prop];
 }
-export function useFor(decision: Decision, prop: string, theme: ReadonlySet<string>): { class?: string; css: string } {
-  const spacingPrefix = utilityPrefix(prop);
-  const prefix = decision.family === 'spacing' ? spacingPrefix : decision.family === 'color' ?
+/** The utility that sets `prop` from a token of `family` (`px`, `tracking`, `rounded-tl`), or none. */
+export function tokenPrefix(family: Decision['family'], prop: string, name = ''): string | undefined {
+  return family === 'spacing' ? utilityPrefix(prop) : family === 'color' ?
     prop.startsWith('background') ? 'bg' : prop === 'color' || prop.startsWith('text-decoration') ? (prop === 'color' ? 'text' : 'decoration') : prop.startsWith('border') ? 'border' : prop === 'outline' || prop === 'outline-color' ? 'outline' : ({ fill: 'fill', stroke: 'stroke', 'caret-color': 'caret', 'accent-color': 'accent' } as Record<string, string>)[prop] :
-    decision.family === 'radius' ? ({ 'border-top-left-radius': 'rounded-tl', 'border-top-right-radius': 'rounded-tr', 'border-bottom-left-radius': 'rounded-bl', 'border-bottom-right-radius': 'rounded-br' } as Record<string, string>)[prop] ?? 'rounded' :
-    decision.family === 'type' ? ({ 'font-size': 'text', 'line-height': 'leading', 'font-family': 'font', 'font-weight': 'font', 'letter-spacing': 'tracking' } as Record<string, string>)[prop] :
-    decision.family === 'motion' ? /timing-function/.test(prop) || decision.name.startsWith('--ease-') ? 'ease' : /delay/.test(prop) ? 'delay' : 'duration' : decision.family === 'elevation' ? 'shadow' : decision.family === 'z' ? 'z' : undefined;
-  const namespace = decision.family === 'spacing' ? '--spacing-' : decision.family === 'color' ? '--color-' : decision.family === 'radius' ? '--radius-' : decision.family === 'type' ? prop === 'font-size' ? '--text-' : prop === 'line-height' ? '--leading-' : prop === 'letter-spacing' ? '--tracking-' : prop === 'font-weight' ? '--font-weight-' : '--font-' : decision.family === 'motion' ? /timing-function/.test(prop) || decision.name.startsWith('--ease-') ? '--ease-' : '--duration-' : decision.family === 'elevation' ? '--shadow-' : decision.name.startsWith('--z-index-') ? '--z-index-' : '--z-';
+    family === 'radius' ? ({ 'border-top-left-radius': 'rounded-tl', 'border-top-right-radius': 'rounded-tr', 'border-bottom-left-radius': 'rounded-bl', 'border-bottom-right-radius': 'rounded-br' } as Record<string, string>)[prop] ?? 'rounded' :
+    family === 'type' ? ({ 'font-size': 'text', 'line-height': 'leading', 'font-family': 'font', 'font-weight': 'font', 'letter-spacing': 'tracking' } as Record<string, string>)[prop] :
+    family === 'motion' ? /timing-function/.test(prop) || name.startsWith('--ease-') ? 'ease' : /delay/.test(prop) ? 'delay' : 'duration' : family === 'elevation' ? 'shadow' : family === 'z' ? 'z' : undefined;
+}
+/** The theme namespace a token of `family` for `prop` is named under (`--spacing-`, `--tracking-`). */
+export function tokenNamespace(family: Decision['family'], prop: string, name = ''): string {
+  return family === 'spacing' ? '--spacing-' : family === 'color' ? '--color-' : family === 'radius' ? '--radius-' : family === 'type' ? prop === 'font-size' ? '--text-' : prop === 'line-height' ? '--leading-' : prop === 'letter-spacing' ? '--tracking-' : prop === 'font-weight' ? '--font-weight-' : '--font-' : family === 'motion' ? /timing-function/.test(prop) || name.startsWith('--ease-') ? '--ease-' : '--duration-' : family === 'elevation' ? '--shadow-' : name.startsWith('--z-index-') ? '--z-index-' : '--z-';
+}
+// Tailwind v4 makes `<utility>-<name>` from `<namespace>-<name>` in these namespaces; a token elsewhere is a variable only.
+const classNamespaces = new Set(['--spacing-', '--color-', '--radius-', '--text-', '--leading-', '--tracking-', '--font-weight-', '--font-', '--shadow-', '--ease-']);
+/**
+ * The token that would give an off-scale value a class: its namespace, the utility as written at the site (`px`, `mx`;
+ * sign and variants are the caller's), and the authored value. None when no namespace makes a class, or the site's
+ * utility is not the one the namespace serves.
+ */
+export function newTokenFor(family: Decision['family'], declaration: Declaration, amount: string): Finding['newToken'] | undefined {
+  const namespace = tokenNamespace(family, declaration.prop), expected = tokenPrefix(family, declaration.prop);
+  if (!classNamespaces.has(namespace) || !expected) return undefined;
+  if (['class', 'arbitrary', 'apply'].includes(declaration.origin)) {
+    const at = utilityValue(declaration.site.text);
+    if (!at || at.utility !== expected) return undefined;
+    // the value as the compiler normalised it from the brackets, its sign (the utility's `-`) taken off; the brackets'
+    // own text where the compiler wrapped it in its grammar (a shadow's ring fallbacks and colour variable)
+    const bracket = /^\[(.*)\]$/.exec(at.value)?.[1]?.replaceAll('_', ' ');
+    const compiled = declaration.value.replace(/^calc\((.*) \* -1\)$/, '$1');
+    const value = bracket === undefined ? amount : /var\(--tw-/.test(compiled) ? bracket : compiled;
+    return /^[^;{}]+$/.test(value) ? { namespace: namespace.slice(0, -1), utility: expected, value } : undefined;
+  }
+  return /^[^;{}]+$/.test(amount) ? { namespace: namespace.slice(0, -1), utility: expected, value: amount } : undefined;
+}
+export function useFor(decision: Decision, prop: string, theme: ReadonlySet<string>): { class?: string; css: string } {
+  const prefix = tokenPrefix(decision.family, prop, decision.name);
+  const namespace = tokenNamespace(decision.family, prop, decision.name);
   const numeric = numericUse(decision);
   const utility = prefix && (theme.has(decision.name) || numeric) && decision.name.startsWith(namespace) ? `${prefix}-${decision.name.slice(namespace.length)}` : undefined;
   const ref = decision.refs.find(ref => ref.startsWith('var('));
@@ -208,6 +238,14 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     const resolved = declaration.opaque ? undefined : resolution.resolve(declaration.value, variables);
     if (resolved !== undefined) declaration.resolved = resolved;
     let rule = '', title = '', because = familyReasons[family]!, judgedValue = '', severity: Finding['severity'] = 'error', nearest: Decision[] = [];
+    // a Tailwind default the class uses: written into the theme as is, it becomes the project's own
+    let adopt: Finding['adopt'];
+    const adoptable = (name: string): Finding['adopt'] => {
+      const variable = record.frameworkVariables.get(name);
+      if (!variable) return undefined;
+      const paired = record.frameworkVariables.get(`${name}--line-height`);
+      return { name, value: variable.value, ...(paired ? { paired: { name: paired.name, value: paired.value } } : {}) };
+    };
     if (declaration.opaque) {
       rule = 'provenance/opaque-inline'; severity = 'info'; title = `This ${declaration.prop} is computed at runtime, so it can't be checked`; because = 'React Plumber reads source, not running values.';
     } else {
@@ -218,7 +256,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         if (refs.length && (family !== 'elevation' || /^var\(--[\w-]+\)$/.test(part))) {
           const wrongOrigin = refs.find(decision => !origins.includes(decision.origin));
           const wrongTier = refs.find(decision => decision.family === family && !callers.allows(decision));
-          if (wrongOrigin) { rule = `provenance/${family}/framework`; title = `\`${declaration.site.text}\` uses Tailwind's default ${frameworkThing(family, declaration.prop)} (\`${wrongOrigin.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = wrongOrigin.resolved === undefined ? [] : closest(wrongOrigin.resolved, declaration.prop); break; }
+          if (wrongOrigin) { rule = `provenance/${family}/framework`; adopt = adoptable(wrongOrigin.name); title = `\`${declaration.site.text}\` uses Tailwind's default ${frameworkThing(family, declaration.prop)} (\`${wrongOrigin.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = wrongOrigin.resolved === undefined ? [] : closest(wrongOrigin.resolved, declaration.prop); break; }
           if (wrongTier) {
             rule = `provenance/${family}/tier`; title = `\`${wrongTier.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't.";
             nearest = (source?.callers === undefined ? callers.semanticsFor(wrongTier) : decisions.filter(decision => references(decision.value).some(name => wrongTier.refs.includes(`var(${name})`)) || decision.resolved !== undefined && wrongTier.resolved !== undefined && equal(decision.resolved, wrongTier.resolved, declaration.prop)))
@@ -255,7 +293,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         }
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
-        if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
+        if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; adopt = adoptable(frameworkTime.name); title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
         if (match) {
           if (!callers.allows(match)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = source?.callers === undefined ? callers.semanticsFor(match).filter(suggestible) : project.filter(decision => callers.allows(decision) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
@@ -277,12 +315,18 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     // Group syntaxes by their static authored amount, while retaining all sites
     // and the original compiler value. Decision/variable changes still rerun judgement.
     const amount = judgedValue || resolved || declaration.value.replace(/\s+/g, ' ').trim();
-    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(declaration.dynamic?.kind === 'step' ? ['step', declaration.dynamic.by] : []), ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
+    // A colour that is one part of a longer value (a shadow's colour, a border shorthand's) gets no colour choices: a
+    // choice would be written in place of the whole class or value and take the shadow with it. The shadow family
+    // judges that value whole; the colour is changed by hand. Its sites group apart from plain colour sites.
+    const partOfValue = family === 'color' && !definition && tokens(declaration.value).length > 1;
+    const key = createHash('sha256').update(JSON.stringify([rule, family, amount, ...(partOfValue ? ['part-of-value'] : []), ...(declaration.dynamic?.kind === 'step' ? ['step', declaration.dynamic.by] : []), ...(rule === `provenance/${family}` && !['spacing', 'color'].includes(family) ? [declaration.prop] : []), ...(rule === 'provenance/opaque-inline' ? [declaration.site.file] : []), ...(definition ? [definition.prop, definition.site.file, definition.site.line, definition.site.column] : [])])).digest('hex');
     const fixProp = definition?.prop ?? declaration.prop;
-    const alternatives = distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.allows(d) && suggestible(d) &&
+    const alternatives = partOfValue ? [] : distinctAmounts(nearest.filter(d => origins.includes(d.origin) && callers.allows(d) && suggestible(d) &&
       (!fixProp.startsWith('--') || [d.name, ...references(useFor(d, fixProp, record.theme).css)].every(name => name !== fixProp && !definitions.themeSources.sources(name).has(fixProp)))), fixProp);
-    const message = (rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
-          ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) });
+    const newToken = !alternatives.length && !definition && (rule === 'provenance/arbitrary' || rule === `provenance/${family}`) ? newTokenFor(family, declaration, amount) : undefined;
+    const message = { ...(rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : partOfValue ? { action: `The colour is part of this ${declaration.prop}. Use a shadow token for the whole value, or change the colour by hand.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
+          ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) }),
+      ...(rule.endsWith('/framework') && adopt ? { adopt } : {}), ...(newToken ? { newToken } : {}) };
     entries.push({ declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message });
   }
   return { findings: findingsForFamily(family, entries, record), entries, usedNumericSpacing: [...usedNumericSpacing], coverage };
@@ -301,7 +345,7 @@ export interface ProvenanceEntry {
   title: string;
   because: string;
   severity: Finding['severity'];
-  message: { action: string } | { choices: Decision[] };
+  message: ({ action: string } | { choices: Decision[] }) & Pick<Finding, 'adopt' | 'newToken'>;
 }
 
 /** Same grouping and messages for cold checks and cached incremental judgements. */

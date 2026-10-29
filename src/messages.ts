@@ -78,7 +78,7 @@ export function tokenReasons(decisions: Decision[]): void {
 
 /** Exact source replacement only when its spelling and property are known. */
 /** `hover:-duration-[350ms]!` → before `hover:-`, utility `duration`, after `!`; null when the value can't be told apart. */
-function utilityValue(text: string): { before: string; utility: string; value: string; after: string } | null {
+export function utilityValue(text: string): { before: string; utility: string; value: string; after: string } | null {
   let depth = 0, colon = -1;
   for (let i = 0; i < text.length; i++) {
     if (text[i] === '[' || text[i] === '(') depth++;

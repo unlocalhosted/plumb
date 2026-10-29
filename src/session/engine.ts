@@ -10,6 +10,9 @@ import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
 import { errorMessage, UsageError } from '../errors.js';
+import { ledgerCommand } from '../ledger/commands.js';
+import { findingGroups } from '../ledger/keys.js';
+import { ledgerPath } from '../ledger/store.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
@@ -55,6 +58,8 @@ export interface ApplyTextAtOptions { file: string; hash: string; id: string; fr
 export interface ApplyOptions { file: string; hash: string; edits: { id: string }[] }
 /** Names one recorded write so it can be undone after the fact. */
 export interface UndoHandle { id: string; file: string; label: string }
+export interface AcceptOptions { rule: string; sites: { file: string; line: number; column: number; text: string }[]; why: string }
+export interface AcceptResult { accepted: number }
 export interface RefusedSwap { line: number; column: number; from: string; to: string; reason: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle; /** swaps: the places that could not be written, each with its reason; the others were. */ refused?: RefusedSwap[] }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
@@ -80,10 +85,18 @@ export interface TokenOptions { file: string; hash: string; name: string; value:
 export interface TokenResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; then?: ApplyResult }
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
-export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string }
+export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string; /** the file was changed outside React Plumber since this write, so it can't be undone */ stale?: true }
 interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
 const historyLimit = 20;
 const shorten = (text: string) => { const one = text.replace(/\s+/g, ' ').trim(); return one.length > 40 ? one.slice(0, 39) + '…' : one; };
+/** A label names only what changed: the words both sides share at the start and the end are left out. */
+function changed(from: string, to: string, quote = '“”'): string {
+  const a = from.split(/\s+/).filter(Boolean), b = to.split(/\s+/).filter(Boolean);
+  let head = 0; while (head < a.length && head < b.length && a[head] === b[head]) head++;
+  let tail = 0; while (tail < a.length - head && tail < b.length - head && a[a.length - 1 - tail] === b[b.length - 1 - tail]) tail++;
+  const wrap = (words: string[]) => quote ? `${quote[0]}${shorten(words.join(' '))}${quote[1]}` : shorten(words.join(' ')) || '—';
+  return `${wrap(a.slice(head, a.length - tail))} → ${wrap(b.slice(head, b.length - tail))}`;
+}
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
 const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
@@ -586,6 +599,32 @@ export class Session extends EventEmitter {
     if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw new UsageError(staleFile);
     return { text, location, site, decisions };
   }
+  /**
+   * Keep it: each site accepted as an exception in the ledger, exactly as `plumber accept --rule <rule> --site
+   * <file:line> --why "…"` does (a ledger that does not exist yet is created the same way, with the current decisions).
+   * The next read reports those sites as exceptions. The ledger lives under .plumber, which the write history never
+   * touches, so this has no undo: `plumber ledger` and a text editor do.
+   */
+  async accept(options: AcceptOptions): Promise<AcceptResult> {
+    const { rule, sites, why } = options ?? {} as AcceptOptions;
+    if (typeof rule !== 'string' || !rule.trim() || !Array.isArray(sites) || !sites.length || sites.length > 200) throw new UsageError('Accept requires a rule, one to two hundred sites and a why.');
+    if (typeof why !== 'string' || !why.trim() || /[\r\n]/.test(why) || why.length > 120) throw new UsageError('Accept requires a why: one line, at most 120 characters.');
+    const places = sites.map(site => {
+      if (!site || typeof site.file !== 'string' || !site.file.trim() || typeof site.text !== 'string') throw new UsageError('Each site is { file, line, column, text }.');
+      return { file: this.file(site.file), line: this.position(site.line), column: this.position(site.column), text: site.text };
+    });
+    // the report is read before the write lock is taken: reads queue behind it
+    const report = await this.report();
+    // the ledger keys of the named sites alone: two causes on one line are two keys, and only the asked-for one moves
+    const keys = [...findingGroups(report).values()].filter(group => group.finding.rule === rule && group.sites.some(s => places.some(p => p.file === s.file && p.line === s.line && p.column === s.column && p.text === s.text))).map(group => group.entry.key);
+    if (!keys.length) throw new UsageError('No current finding matches the supplied rule and sites.');
+    return this.serialize(async () => {
+      const ledger = ledgerPath(this.root);
+      for (const key of keys) await ledgerCommand('accept', report, { key, why: why.trim() });
+      await this.reconcile([ledger]);
+      return { accepted: keys.length };
+    });
+  }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
   async set(options: SetOptions): Promise<ApplyResult> {
     const { file, hash, line, column, key, token } = options ?? {} as SetOptions;
@@ -615,7 +654,7 @@ export class Session extends EventEmitter {
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return swapClasses(_file, source, facts.location.start, names(from), names(to));
-    }, `${from || '—'} → ${to}`);
+    }, changed(from, to, ''));
   }
   /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
   async structure(file: string, line: number, column: number): Promise<StructureResult | null> {
@@ -669,7 +708,7 @@ export class Session extends EventEmitter {
     // one declaration's worth of CSS: nothing that could end the declaration, open or close a block, start a comment
     // or leave a string open, so the stylesheet keeps the blocks it had (topBlocks below is the last guard)
     const clean0 = value.trim();
-    if (!/^[^;{}<>\r\n\\]{1,80}$/.test(clean0) || /\/\*|\*\//.test(clean0) || (clean0.split('"').length - 1) % 2 || (clean0.split("'").length - 1) % 2) throw new UsageError('A token value is one CSS value, under eighty characters.');
+    if (!/^[^;{}<>\r\n\\]{1,160}$/.test(clean0) || /\/\*|\*\//.test(clean0) || (clean0.split('"').length - 1) % 2 || (clean0.split("'").length - 1) % 2) throw new UsageError('A token value is one CSS value, under 160 characters.');
     if (why !== undefined && (typeof why !== 'string' || /[\r\n*]/.test(why) || why.length > 120)) throw new UsageError('A token why is one short line.');
     // the server says where tokens go and whether they may be made (plumber spec): the client only repeats it
     const spec = await this.request<ProjectSpec>('spec');
@@ -825,7 +864,7 @@ export class Session extends EventEmitter {
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, siteLine, label ?? `“${shorten(from)}” → “${shorten(to)}”`);
+      const undo = this.record(file, before, snapshot.hash, siteLine, label ?? changed(from, to));
       return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
   }
@@ -880,7 +919,7 @@ export class Session extends EventEmitter {
       });
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites });
       if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, sites[0]!.line, ordered.map(edit => `${shorten(edit.from)} → ${shorten(edit.to)}`).join(', '));
+      const undo = this.record(file, before, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
       return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining, undo };
     });
   }
@@ -893,8 +932,19 @@ export class Session extends EventEmitter {
     return { id, file, label };
   }
   /** Recent writes, newest first. */
-  history(): Promise<{ writes: HistoryEntry[] }> {
-    return Promise.resolve({ writes: this.written.toReversed().map(({ id, file, line, label, at }) => ({ id, file, line, label, at })) });
+  /** Newest first. A write is stale when the file no longer holds what it wrote and no newer write here explains the
+   * difference: something else changed the file, so undo would overwrite that change. Undo itself still refuses it. */
+  async history(): Promise<{ writes: HistoryEntry[] }> {
+    const stale = new Set<string>();
+    for (const path of new Set(this.written.map(entry => entry.path))) {
+      let expected = sourceHash(await readFile(path, 'utf8').catch(() => '')), broken = false;
+      for (const entry of this.written.filter(entry => entry.path === path).toReversed()) {
+        if (!broken && entry.hashAfter !== expected) broken = true;
+        if (broken) stale.add(entry.id);
+        expected = sourceHash(entry.before);
+      }
+    }
+    return { writes: this.written.toReversed().map(({ id, file, line, label, at }) => ({ id, file, line, label, at, ...(stale.has(id) ? { stale: true as const } : {}) })) };
   }
   /** Restore the file as it was before a write, when nothing has changed it since. Goes through the same guards as a write. */
   undo(id: string): Promise<UndoResult> {

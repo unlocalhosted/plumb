@@ -99,6 +99,10 @@ export interface Finding {
   fix: string;
   /** Nondecision custom property owning this value; distinct consumer sites. */
   variable?: { name: string; useCount: number };
+  /** A Tailwind default the class uses: the theme variable and its value. Written into the project theme as is, it becomes the project's own, with no source edit. `paired`: a text size's line-height variable, written beside it. */
+  adopt?: { name: string; value: string; paired?: { name: string; value: string } };
+  /** An off-scale value with no close token: the theme namespace under which `<namespace>-<name>: <value>` makes `<utility>-<name>` a class, the utility as written at the site, and the authored value. */
+  newToken?: { namespace: string; utility: string; value: string };
   /** Exact declarations behind grouped sites, for generic ledger consumers. */
   occurrences?: Declaration[];
   status?: 'new' | 'debt' | 'exception' | 'out-of-scope';
