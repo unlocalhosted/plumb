@@ -13,7 +13,10 @@ const valued = new Set(['state', 'side', 'align', 'orientation', 'swipe-directio
 const flags = new Set(['disabled', 'highlighted', 'placeholder', 'invalid', 'valid', 'selected', 'checked', 'readonly', 'required', 'active', 'inactive', 'hidden', 'visible', 'open', 'closed']);
 export const radix: LibraryAdapter = {
   family: 'radix',
-  capabilities: ['usage', 'states', 'structure'],
+  capabilities: ['usage', 'states', 'structure', 'owned'],
+  // Every `--radix-*` is set by a primitive at runtime (`--radix-popover-content-transform-origin`,
+  // `--radix-accordion-content-height`, `--radix-select-trigger-width`); the providers and Themes' `Theme` configure it.
+  owned: { variables: /^--radix-[\w-]+$/, providers: /^(?:Theme|DirectionProvider|TooltipProvider|ToastProvider|Tooltip\.Provider|Toast\.Provider|\w+\.Provider)$/ },
   // `Popover.Portal` renders under body; `asChild` (and `Slot`) merge the library's props onto the user's element.
   structure: { portal: /^Portal$/, render: ['asChild'], focus: /^(?:Dialog|AlertDialog)\.Content$/, role(component, part) {
     const last = part ?? component;

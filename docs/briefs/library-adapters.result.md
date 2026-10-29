@@ -277,7 +277,7 @@ dev server (that is layer 6).
 
 ## Layer 6: Radix structure (asChild, Slot, portals) in locate
 
-Commit: (next layer records it)
+Commit: 51e6395
 
 What changed
 - `radix.ts`: `structure = { portal: /^Portal$/, render: ['asChild'], focus: Dialog.Content, role }` with the
@@ -307,3 +307,22 @@ $ … e2e/library-adapters.test.mjs e2e/managed-focus-session.test.mjs e2e/craft
 ```
 Unverified: Next.js hosts for Radix portals; Radix `Slot` with `Slottable`; `asChild` on a component (not an
 intrinsic) child beyond owner-locate's MetalButton case.
+
+## Layer 7: Radix owned values, Theme and providers
+
+Commit: (next layer records it)
+
+What changed: `radix.ts` `owned = { variables: /^--radix-[\w-]+$/, providers: Theme | DirectionProvider |
+TooltipProvider | ToastProvider | *.Provider }`; capabilities all four, Radix is `supported` and prints no notice.
+Same mechanism as layer 4 (`src/index.ts`, `isJudged`): nothing Radix-specific outside the adapter.
+
+```
+$ node --test e2e/library-adapters.test.mjs   ("Radix owned values": `.content { transform-origin: var(--radix-popover-content-transform-origin); height: var(--radix-accordion-content-height) }`,
+   `w-[var(--radix-select-trigger-width)]`, `p-[calc(var(--radix-popover-content-available-height)-13px)]`, `<Theme>`, `<Tooltip.Provider>`)
+ℹ pass 9  ℹ fail 0
+   → dead-var: only `var(--my-pad)`; no provenance finding on a --radix-* value; the 13px beside one still judged; providers: Theme, Tooltip.Provider
+$ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-detection.test.mjs
+ℹ tests 35  ℹ pass 35  ℹ fail 0   (three state expectations regenerated, facts.libraries only)
+```
+Unverified: `@radix-ui/themes` as a styled system (its `--accent-*`/`--gray-*` tokens and the `Theme` props are not
+read as tokens; only `Theme` is recognised as a provider). A Radix Themes app would need its own token source.

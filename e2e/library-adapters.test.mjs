@@ -42,7 +42,7 @@ test('Radix: namespace, named-part and prefixed imports name the same component 
     'src/Modal.jsx': "import { Dialog, DialogContent, Trigger } from '@radix-ui/react-dialog';\nimport { Slot } from '@radix-ui/react-slot';\nexport const Modal = () => <Dialog><Trigger /><DialogContent><Slot /></DialogContent></Dialog>;\n",
   }, 'libraries');
   const item = find(list, 'radix');
-  assert.equal(item.support, 'partial');
+  assert.equal(item.support, 'supported');
   assert.deepEqual(item.usage.components, { Dialog: 1, Popover: 1, Slot: 1 });
   assert.deepEqual(sites(item), [
     'src/Modal.jsx:3 Dialog.Root', 'src/Modal.jsx:3 Dialog.Trigger', 'src/Modal.jsx:3 Dialog.Content', 'src/Modal.jsx:3 Slot',
@@ -192,7 +192,8 @@ test('Radix states: data-state values, data-side, data-disabled and data-highlig
     ].join('\n') + '\n',
   }, 'libraries');
   const item = find(list, 'radix');
-  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged' });
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged', owned: 'judged' });
+  assert.equal(item.support, 'supported');
   const report = json(await run(project, ['--json'], 0));
   assert.deepEqual(states(at(report, 6, 'data-[state=open]:bg-[#ff0000]')[0]), ['open']);
   assert.deepEqual(states(at(report, 6, 'data-disabled:p-[9px]')[0]), ['disabled']);
@@ -200,4 +201,32 @@ test('Radix states: data-state values, data-side, data-disabled and data-highlig
   assert.deepEqual(states(at(report, 7, 'data-[state=closed]:m-[3px]')[0]), ['closed']);
   const sheets = report.findings.flatMap(finding => finding.occurrences ?? [finding.declaration]).filter(declaration => declaration.origin === 'stylesheet');
   assert.deepEqual(sheets.map(declaration => [declaration.value, states(declaration)]).sort(), [['13px', ['checked']], ['7px', ['highlighted']]]);
+});
+
+// ---- Layer 7: Radix owned values. `--radix-*` variables are the primitives' own; Theme and the providers are shown.
+test('Radix owned values: --radix-* variables are neither dead nor drift; Theme and Tooltip.Provider are shown as providers', async t => {
+  const { list, project } = await detected(t, {
+    'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@radix-ui/react-popover': '^1.1.0', '@radix-ui/react-tooltip': '^1.1.0', '@radix-ui/themes': '^3.0.0' } },
+    'src/index.css': '@import "tailwindcss";\n@theme { --spacing-s4: 1rem; --color-ink: #111; }\n.content { transform-origin: var(--radix-popover-content-transform-origin); height: var(--radix-accordion-content-height); }\n.mine { padding: var(--my-pad); }\n',
+    'src/App.jsx': [
+      "import './index.css';",
+      "import * as Popover from '@radix-ui/react-popover';",
+      "import * as Tooltip from '@radix-ui/react-tooltip';",
+      "import { Theme } from '@radix-ui/themes';",
+      'export const App = () => (',
+      '  <Theme accentColor="indigo"><Tooltip.Provider delayDuration={300}>',
+      '    <Popover.Root><Popover.Content className="content w-[var(--radix-select-trigger-width)] p-[calc(var(--radix-popover-content-available-height)-13px)]" /></Popover.Root>',
+      '  </Tooltip.Provider></Theme>',
+      ');',
+    ].join('\n') + '\n',
+  }, 'libraries');
+  const item = find(list, 'radix');
+  assert.equal(item.support, 'supported');
+  assert.deepEqual(item.usage.sites.filter(site => site.structure === 'provider').map(site => `${site.component}${site.part ? `.${site.part}` : ''}`), ['Theme', 'Tooltip.Provider']);
+  const check = await run(project, ['--json'], 0);
+  assert.equal(check.stderr, '');
+  const report = json(check);
+  assert.deepEqual(report.findings.filter(finding => finding.rule === 'existence/dead-var').map(finding => finding.title), ['`var(--my-pad)` is never defined']);
+  assert.ok(!report.findings.some(finding => finding.rule.startsWith('provenance/') && /radix-(?:popover-content-transform-origin|accordion-content-height|select-trigger-width)/.test(finding.declaration.value)));
+  assert.ok(report.findings.some(finding => finding.rule.startsWith('provenance/') && /available-height\) - 13px/.test(finding.declaration.value)), 'the 13px beside the library variable is still judged');
 });
