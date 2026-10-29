@@ -7,7 +7,7 @@ import { atSite } from './surfaces/sites.js';
 import { logicalProperty } from './habits/index.js';
 import { tokens } from './rules/families.js';
 
-export interface FindingLine { subject: string; findings: Finding[]; sites: Site[] }
+export interface FindingLine { subject: string; findings: Finding[]; sites: Site[]; /** The library state the declaration applies in: `checked`, `not checked`, `open, checked`; empty when none. */ state?: string }
 const identity = (site: Site) => `${site.file}:${site.line}:${site.column}`;
 function subject(finding: Finding, site: Site): string {
   if (finding.rule === 'existence/dead-var') return finding.title.match(/^`([^`]+)`/)?.[1] ?? finding.declaration.value;
@@ -25,6 +25,10 @@ function subject(finding: Finding, site: Site): string {
   }
   return oneLine(site.text || finding.declaration.value);
 }
+/** The library states (`when` conditions of kind `state`) a site's declaration applies in, as the human line names them. */
+function stateOf(finding: Finding, site: Site): string {
+  return atSite(finding, site).when.filter(item => item.kind === 'state').map(item => item.text.startsWith('!') ? `not ${item.text.slice(1)}` : item.text).join(', ');
+}
 /** Human-only projection. Original findings, occurrence identities and machine reports stay intact. */
 export function findingLines(findings: Finding[]): FindingLine[] {
   const groups = new Map<string, FindingLine>();
@@ -32,9 +36,10 @@ export function findingLines(findings: Finding[]): FindingLine[] {
   for (const finding of findings) for (const site of finding.sites) {
     const text = subject(finding, site);
     const ruleFamily = finding.rule.startsWith('provenance/') ? 'provenance' : finding.rule;
-    const key = JSON.stringify([ruleFamily, finding.family, text]);
+    const state = stateOf(finding, site);
+    const key = JSON.stringify([ruleFamily, finding.family, text, state]);
     let group = groups.get(key);
-    if (!group) { group = { subject: text, findings: [], sites: [] }; groups.set(key, group); seen.set(key, new Set()); }
+    if (!group) { group = { subject: text, findings: [], sites: [], ...(state ? { state } : {}) }; groups.set(key, group); seen.set(key, new Set()); }
     if (!group.findings.includes(finding)) group.findings.push(finding);
     if (!seen.get(key)!.has(identity(site))) { group.sites.push(site); seen.get(key)!.add(identity(site)); }
   }
@@ -171,7 +176,7 @@ export function renderFindingLines(groups: FindingLine[], path: (file: string) =
     const first = group.findings[0]!, broken = first.rule.startsWith('existence/');
     const location = group.sites.length === 1 ? `${names.get(group.sites[0]!.file)}:${group.sites[0]!.line}` : `${count(group.sites.length, 'site')} in ${count(new Set(group.sites.map(site => site.file)).size, 'file')}`;
     return { marker: broken ? '✗' : first.severity === 'info' ? '·' : '!', ink: broken ? 'red' as const : first.severity === 'info' ? 'dim' as const : 'amber' as const,
-      reason: phrase(group) + (showRules ? ` [${[...new Set(group.findings.map(f => f.rule))].join(', ')}]` : ''), location,
+      reason: phrase(group) + (group.state ? ` (${group.state})` : '') + (showRules ? ` [${[...new Set(group.findings.map(f => f.rule))].join(', ')}]` : ''), location,
       collision: subjects.get(shorten(group.subject, subjectWidth))!.size > 1 };
   });
   const rows = table(groups.map((group, i) => {

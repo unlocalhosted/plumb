@@ -135,6 +135,10 @@ test('Base UI states: variants, stylesheet selectors, className and style functi
   // A plain element's className function is not a library state: the class is opaque, as before.
   assert.ok(!report.findings.some(finding => finding.declaration.site.line === 10 && finding.declaration.site.text === 'p-[13px]'));
   assert.equal(report.findings.find(finding => finding.rule === 'existence/dynamic-class' && finding.declaration.site.line === 10)?.declaration.site.text, undefined);
+  // The one-line human finding names the state too; a negated state reads "not", and lines without a state are unchanged.
+  const human = (await run(project, ['--all'], 0)).stdout;
+  assert.match(human, /^ *! +p-\[13px\] .*Check\.jsx:6\n +off your spacing scale \(checked\)$/m, human);
+  assert.match(human, /\(not checked\)/, human);
   const explain = await run(project, ['sites', 'src/Check.jsx'], 0).catch(() => null);
   if (explain) assert.match(explain.stdout, /state: checked/);
 });
