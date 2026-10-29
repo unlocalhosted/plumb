@@ -585,7 +585,7 @@ test('While blueprint is on the page is read, not used: clicks, hovers and keys 
   assert.deepEqual(errors, []);
 });
 
-test('Alt-select still picks an element while blueprint is on', { timeout: 90000 }, async (t) => {
+test('Alt-click while blueprint is on puts that element\'s cause in hand', { timeout: 90000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -596,7 +596,9 @@ test('Alt-select still picks an element while blueprint is on', { timeout: 90000
   await page.mouse.move(b.x + 4, b.y + b.height / 2);
   await page.mouse.click(b.x + 4, b.y + b.height / 2);
   await page.keyboard.up('Alt');
-  await page.waitForFunction(() => { const el = window.__plumb.overlay.pinnedElement; return !!el && document.querySelector('#sync-row').contains(el); }, null, { timeout: 10000 });
+  const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
+  await held.waitFor({ timeout: 20000 });
+  assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the row\'s own cause is in hand');
 });
 
 test('Drawn only where it can be seen: a drawer over part of an element cuts its heat back; over all of it, nothing is drawn or clickable', { timeout: 90000 }, async (t) => {

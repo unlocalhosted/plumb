@@ -43,7 +43,7 @@ const around = page => page.evaluate(() => {
   return { at: [Number(m[1]), Number(m[2])], here: r.querySelector('.tag .path .here')?.textContent ?? null, tag: r.querySelector('.tag').textContent.replace(/\s+/g, ' ').trim(), scrollY, el: el?.id || el?.localName };
 });
 
-test('two-finger scroll walks the tree under Alt: up to parents, down back, the path in the tag, a click pins the level', { timeout: 90000 }, async t => {
+test('two-finger scroll walks the tree under Alt: up to parents, down back, the path in the tag, a click opens blueprint on the level', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const url = await demo(t);
   const page = await launched.newPage({ viewport: { width: 1000, height: 700 } });
@@ -91,15 +91,15 @@ test('two-finger scroll walks the tree under Alt: up to parents, down back, the 
   await page.waitForTimeout(60);
   assert.equal((await around(page)).here, null);
 
-  // Walk up to the row again and click: the row is pinned, not the button under the pointer.
+  // Walk up to the row again and click: blueprint opens on the row, not the button under the pointer.
   await page.waitForTimeout(300);
   await page.mouse.wheel(0, 48);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'SyncRow');
   await page.mouse.down(); await page.mouse.up();
   await page.keyboard.up('Alt');
-  const card = page.locator('plumb-overlay').locator('.w .card[role="dialog"]');
-  await card.waitFor();
-  assert.match(await card.getAttribute('aria-label'), /SyncRow \(div\)/, 'the walked level is pinned');
+  const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
+  await held.waitFor({ timeout: 20000 });
+  assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the walked level\'s cause is in hand');
   assert.equal(await page.evaluate(() => scrollY), 0);
   assert.deepEqual(errors, []);
 });

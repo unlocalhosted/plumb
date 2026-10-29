@@ -42,7 +42,7 @@ const read = page => page.evaluate(() => {
     right: innerWidth - box.right, bottom: innerHeight - box.bottom, background: getComputedStyle(dock).backgroundColor };
 });
 
-test('the dock says React Plumber is ready, folds away, and Select picks an element without Alt', { timeout: 90000 }, async t => {
+test('the dock says React Plumber is ready, folds away, and Select picks an element without Alt, into blueprint', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const url = await demo(t);
   const page = await launched.newPage();
@@ -72,25 +72,27 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
   assert.equal((await read(page)).state, 'select', 'letting go of Alt does not end Select');
 
-  // Picking pins the reading and ends Select; the dock names the pinned file.
+  // Picking opens blueprint on the element with its cause in the fix panel (one interface), and ends Select.
   const row = await page.locator('#sync-row').boundingBox();
   await page.mouse.move(row.x + row.width / 2, row.y + 3);
   await page.mouse.click(row.x + row.width / 2, row.y + 3);
-  const reading = page.locator('plumb-overlay').getByRole('dialog');
-  await reading.waitFor();
+  const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
+  await held.waitFor({ timeout: 20000 });
+  assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the row\'s own cause is in hand');
   s = await read(page);
-  assert.deepEqual([s.state, s.pressed, s.cursor], ['ready', 'false', '']);
-  assert.match(s.say, /^App\.jsx:\d+$/);
+  assert.deepEqual([s.pressed, s.cursor], ['false', '']);
 
-  // Esc closes the reading; Select then Esc leaves without picking.
+  // Esc puts the cause down, Esc again leaves blueprint; Select then Esc leaves without picking.
+  const reading = page.locator('plumb-overlay').locator('.fx');
   await page.keyboard.press('Escape');
-  await reading.waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape');
+  await reading.waitFor({ state: 'hidden', timeout: 10000 });
   await dock.getByRole('button', { name: 'Select an element' }).click();
   assert.equal((await read(page)).state, 'select');
   await page.keyboard.press('Escape');
   s = await read(page);
   assert.deepEqual([s.state, s.pressed, s.cursor], ['ready', 'false', '']);
-  assert.equal(await reading.isVisible(), false, 'Esc out of Select pins nothing');
+  assert.equal(await reading.isVisible(), false, 'Esc out of Select opens nothing');
   assert.deepEqual(errors, []);
 });
 

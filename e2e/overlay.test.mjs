@@ -1,5 +1,5 @@
-// The overlay as a person uses it: hold Alt, point at an element, click to pin, pick a token, see the page change,
-// write it, and find the source changed and the reading current. Real Vite, real React 19, real Chromium.
+// The overlay as a person uses it: hold Alt, point at an element, Alt+click opens blueprint on it with its cause in
+// the fix panel (taking and writing a cause: fixpanel.test.mjs). Real Vite, real React 19, real Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -39,10 +39,10 @@ async function onRow(page) {
   return { x: b.x + b.width / 2, y: b.y + 3 };
 }
 
-test('Alt-hover reads an element, a click pins it, a pick previews it, Write puts it in source', { timeout: 90000 }, async t => {
+test('Alt-hover names an element; Alt+click opens blueprint with that element\'s cause in hand, and no card', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await demo(t);
-  const page = await launched.newPage();
+  const page = await launched.newPage({ reducedMotion: 'reduce' });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
@@ -58,44 +58,23 @@ test('Alt-hover reads an element, a click pins it, a pick previews it, Write put
   await page.mouse.move(point.x, point.y);
   await overlay.locator('.tag').filter({ hasText: 'SyncRow' }).filter({ hasText: 'off' }).waitFor();
 
-  // Pinned: the click is swallowed by the overlay and opens the reading for that element.
+  // Alt+click: one interface. Blueprint opens on the row and the fix panel holds one of the row's own causes, not a
+  // cause of the page around it (the page's wrappers are read first).
   await page.mouse.click(point.x, point.y);
   await page.keyboard.up('Alt');
-  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for SyncRow (div)' });
-  await reading.waitFor();
-  assert.match(await reading.locator('.top').innerText(), /App\.jsx:4/);
-  assert.match(await reading.locator('.top .file').getAttribute('title'), /^src\/App\.jsx:4:/);
-  assert.match(await reading.locator('.read .t').innerText(), /gap-\[10px\] hardcodes 10px/);
-  // Two tokens fit 10px equally; nothing is picked for the person, so nothing can be synced or written yet.
-  assert.match(await reading.locator('.read .edit').innerText(), /2 tokens fit/);
+  const held = overlay.locator('.fx .cause .cls');
+  await held.waitFor({ timeout: 20000 });
+  const own = await page.locator('#sync-row').getAttribute('class');
+  assert.ok(own.split(/\s+/).includes((await held.innerText()).trim()), `held ${await held.innerText()}, the row has ${own}`);
+  // the 10-10 reading card is not opened, and nothing is written
+  assert.equal(await overlay.getByRole('dialog', { name: /React Plumber reading/ }).count(), 0);
+  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'));
 
-  // Preview: picking a token row changes the page at once, and only inline styles carry it.
-  // the card lays the choices out as a list or as the scale's ladder; either way the token is named s2
-  await reading.locator('.opt[data-pick]').filter({ hasText: /s2/ }).first().click();
-  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
-  // the card names the chosen token (in its edit row, or in the ladder's line once the scale is loaded)
-  await reading.filter({ hasText: /gap-s2/ }).waitFor();
-  await reading.locator('.synced .state').filter({ hasText: 'Previewing 1 fix on the page' }).waitFor();
-
-  // Before shows the page as it is in source; After puts the preview back.
-  await reading.getByRole('button', { name: 'Before' }).click();
-  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '10px');
-  await reading.getByRole('button', { name: 'Before' }).click();
-  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
-
-  // Write: the edit lands in source, the dev server reloads, and the reading comes back current.
-  const before = await readFile(join(root, 'src/App.jsx'), 'utf8');
-  await reading.getByRole('button', { name: 'Write 1 edit' }).click();
-  await overlay.locator('.synced .state').filter({ hasText: 'Applied 1 change in src/App.jsx' }).waitFor({ timeout: 15000 });
-  const after = await readFile(join(root, 'src/App.jsx'), 'utf8');
-  assert.equal(after, before.replace('gap-[10px] py-[10px]', 'gap-s2 py-[10px]'), 'exactly the previewed edit, nothing else');
-  assert.equal(await page.locator('#sync-row').getAttribute('style'), null, 'the preview is lifted once the page carries the change');
-  assert.equal(await page.locator('#sync-row').evaluate(el => getComputedStyle(el).gap), '8px');
-  assert.doesNotMatch(await overlay.locator('.read .t').innerText(), /gap-\[10px\]/);
-
-  // Escape closes the reading and leaves the page exactly as source has it.
+  // Esc puts the cause down, Esc again leaves blueprint, and the page is as source has it.
   await page.keyboard.press('Escape');
-  await overlay.getByRole('dialog').waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape');
+  await overlay.locator('.fx').waitFor({ state: 'hidden', timeout: 10000 });
+  assert.equal(await page.locator('#sync-row').getAttribute('style'), null);
   assert.deepEqual(errors, []);
 });
 

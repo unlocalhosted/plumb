@@ -234,7 +234,6 @@ export class Fixer {
         : `<p class="empty">${esc(o.message ?? 'Reading…')}</p>`}</div>
       <div class="foot">
         ${o.file ? `<button class="file" title="${esc(o.file)}:${o.line}">${esc(o.file.split('/').pop())}:${o.line}</button>` : ''}
-        <button class="btn plain reading" title="Open the full reading: the drawing, the chain, the words">Reading</button>
         <span class="nav" aria-label="Drift in view"><button class="prev" aria-label="Previous drift ([)" ${at <= 0 ? 'disabled' : ''}>${ICON.prev}</button><span>${at + 1} of ${n}</span><button class="next" aria-label="Next drift (])" ${at >= n - 1 ? 'disabled' : ''}>${ICON.next}</button></span>
         <button class="btn primary write" ${writable ? '' : 'disabled'}>${writable ? `Write ${plural(writable, 'edit')}` : 'Write'}</button>
       </div>
@@ -276,7 +275,6 @@ export class Fixer {
     const el = this.#el, o = this.#open, m = o.full;
     const on = (sel, fn) => el.querySelector(sel)?.addEventListener('click', e => { e.stopPropagation(); fn(e); });
     on('.close', () => this.close());
-    on('.reading', () => { const target = o.el; this.close({ focus: false }); this.#host.pin(target); });
     on('.prev', () => this.step(-1));
     on('.next', () => this.step(1));
     on('.write', () => this.write());
@@ -720,7 +718,7 @@ export class Fixer {
     const rows = [...list.querySelectorAll('.row')];
     const at = id => order.find(o => o.id === id);
     rows.forEach((r, i) => {
-      r.addEventListener('click', e => { e.stopPropagation(); const o = at(r.dataset.id); if (o) { this.closeList({ focus: false }); this.open(o.el, o.mark, o.id); } });
+      r.addEventListener('click', e => { e.stopPropagation(); const o = at(r.dataset.id); if (o) { this.closeList({ focus: false }); this.#host.choose(o.el, o.mark, o.id); } }); // the fix panel takes it, as a click on the page does
       r.addEventListener('keydown', e => {
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length]?.focus(); }
         else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); const o = at(r.dataset.id); if (o) this.unpickAt(o.el, o.mark.key); }

@@ -82,7 +82,7 @@ export class Blueprint {
       spotlight: (els) => this.#marks.spotlight(els),
       applyAll: (tokens) => this.#applyAll(tokens),
     });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = !!p.total && p.read === p.total; }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -150,6 +150,7 @@ export class Blueprint {
 
   leave({ instant = false } = {}) {
     if (!this.active) return;
+    this.#want = null;
     clearTimeout(this.#timer);
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
     this.#selection.clear();
@@ -319,6 +320,22 @@ export class Blueprint {
   choose(el, mark, group) {
     if (this.#fix.holdMark(el, mark)) return;
     this.#selection.select(el, this.#itemOf(el), { key: mark?.key, rule: mark?.rule, group: (group ?? []).filter((g) => g.el !== el).map((g) => ({ el: g.el, item: this.#itemOf(g.el), key: g.mark?.key })) });
+  }
+  // Alt+click: blueprint opens on that element, and its own cause is put in hand as soon as one is read (not an
+  // ancestor's: the page's wrappers are often read first). An element is read before its marks are settled, so only
+  // a finished reading says it has nothing off; then it is selected as it is. The reader reports progress before it
+  // hands on the items of the same wave, so the items decide, with the progress they came with.
+  #want = null;
+  enterAt(el) {
+    this.#want = el;
+    this.active ? this.#holdWanted(this.#settled) : this.enter();
+  }
+  #settled = false;
+  #holdWanted(done = false) {
+    const want = this.#want;
+    if (!want?.isConnected) return void (this.#want = null);
+    if (this.#fix.holdEl(want)) return void (this.#want = null);
+    if (done) { this.#want = null; this.#selection.select(want, this.#itemOf(want)); }
   }
     // Esc lets go of the selection before it leaves blueprint; true when there was one
   deselect() { return this.#selection.clear(); }

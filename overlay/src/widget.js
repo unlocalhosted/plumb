@@ -826,9 +826,10 @@ class PlumbOverlay extends HTMLElement {
     const element = this.#walk?.at && under === this.#walk.chain[0] ? this.#walk.chain[this.#walk.at] : under ?? this.#hover?.element;
     this.#walk = null;
     if (element && element !== document.documentElement && element !== document.body) {
-      // Select picks one element: the pick ends it, as letting go of Alt would.
-      if (this.#sticky) this.#disarm();
-      this.pin(element).then(() => this.#dock());
+      // One interface: the pick opens blueprint on that element, its cause in the fix panel. Alt is let go with it.
+      this.#disarm();
+      this.#ready?.dismiss();
+      this.#blueprint.enterAt(element);
     }
   };
 
