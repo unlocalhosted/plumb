@@ -539,6 +539,13 @@ test('one missing token family degrades Read; the CLI cannot see runtime; plumbe
   const ready = await report();
   assert.deepEqual(ready.capabilities.filter(item => ['locate', 'preview', 'blueprint'].includes(item.id)).map(item => item.status), ['full', 'full', 'full']);
   assert.equal(ready.capabilities.find(item => item.id === 'read').status, 'degraded');
+  // the step's command does what the step says: run it, and the theme has z-index steps
+  const z = item(ready, 'read.tokens.z');
+  assert.deepEqual([z.status, z.fix.command], ['missing', 'plumber propose --family z --write']);
+  assert.match(z.fix.instruction, /^Build layer order \(z-index\) steps from the values your code already uses and write them into your theme/);
+  run(root, z.fix.command.split(' ').slice(1));
+  assert.match(await readFile(join(root, 'src/styles.css'), 'utf8'), /--z-\w+: \d+;/);
+  assert.equal(item(await report(), 'read.tokens.z').status, 'ok');
 });
 
 test('composed configs stay unknown; symlinked config can never become a writable diff', async t => {

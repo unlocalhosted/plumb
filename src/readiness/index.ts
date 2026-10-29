@@ -142,7 +142,9 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
       : report ? [{ file: themeFile ?? configFile, line: 1, text: `No ${words} in your theme` }] : configEvidence;
     add(`read.tokens.${family}`, 'read', report ? gap ? 'missing' : 'ok' : 'unknown',
       !report ? `${family} tokens couldn’t be checked` : gap ? `Add ${words} to your theme` : token ? `${family} tokens are ready` : `${family}: nothing to check`,
-      evidence, `Without them, ${words} can’t be checked against your theme.`, step(`Add ${words} to your theme, or point decisions.${family}.from in ${configFile} at where they live.`, 'plumber doctor'));
+      // the command does what the step says: it builds the family's steps from the values the code uses and writes
+      // them into the theme as a proposal (plumber doctor only diagnoses)
+      evidence, `Without them, ${words} can’t be checked against your theme.`, step(`Build ${words} from the values your code already uses and write them into your theme as a proposal, to keep, rename or delete. Or point decisions.${family}.from in ${configFile} at where they live.`, `plumber propose --family ${family} --write`));
   }
   let baseline: Status = 'unknown', ledgerText = 'The record of today’s problems couldn’t be read';
   try { const ledger = await readLedger(root); baseline = ledger.exists ? 'ok' : 'missing'; ledgerText = ledger.exists ? 'Today’s problems are recorded' : 'Start from today’s problems'; } catch (error) { ledgerText = userMessage(error); }
