@@ -6,6 +6,7 @@ import type { CandidateCss } from '../lower/css.js';
 import { declaredClasses } from '../lower/css.js';
 import type { Declaration, Finding, Site } from '../report.js';
 import { makeFinding } from '../messages.js';
+import type { Decision } from '../report.js';
 import { matchProjectFiles } from '../project.js';
 
 export async function unreachableClasses(root: string, reachable: Set<string>, dead: string[], known?: readonly string[]): Promise<Map<string, string>> {
@@ -110,8 +111,11 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
     if (!site.opaque && !rankings.has(site.token)) rankings.set(site.token, nearest.map(item => item.token));
     const alternatives = input.base.replace(/^--/, '').length < 4 ? [] : rankings.get(site.token) ?? [];
     const prefixText = site.token.split(/\$?\{/, 1)[0]!;
+    // each suggested class is a choice the overlay can take, with the shape a token choice has: the class is what is
+    // written in place of the dead one (classEdit keeps its variants and importance)
+    const choices: Decision[] = site.opaque ? [] : alternatives.map(name => ({ family: 'existence' as Decision['family'], name, value: name, refs: [], origin: 'project', tier: 'semantic', why: 'A class Tailwind generates.', source: { file: site.file, line: site.line }, use: { class: name, css: '' } }));
     return makeFinding({ key, rule: site.opaque ? 'existence/dynamic-class' : 'existence/dead-class', family: 'existence', severity: 'error',
-      sites: uniqueSites, declaration: classDeclaration(site), occurrences: [...uniqueClasses.values()].map(classDeclaration), decisions: [],
+      sites: uniqueSites, declaration: classDeclaration(site), occurrences: [...uniqueClasses.values()].map(classDeclaration), decisions: [], ...(choices.length ? { choices } : {}),
       title: site.opaque ? `\`${site.token}\` is assembled at runtime, so Tailwind never generates it` : `\`${site.token}\` does nothing: no CSS is generated for it`,
       because: site.opaque ? 'Tailwind only generates classes it can read as complete strings in your source.' : 'The style it was meant to apply is missing, and nothing warns you.',
       action: site.opaque ? `Map each value to a complete class, e.g. { a: '${prefixText}a', b: '${prefixText}b' }.` : alternatives.length ? `Did you mean ${alternatives.map(name => `\`${name}\``).join(' or ')}?` : `Remove it, or define \`.${site.token}\` in a stylesheet.`,

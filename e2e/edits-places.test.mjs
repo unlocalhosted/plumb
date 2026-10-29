@@ -103,3 +103,23 @@ test('swaps writes every place it can and refuses the rest one by one, with reas
   assert.match(none.body.error, /^None of these changes could be written: p-\[9px\] is not written on this element; read it again\. <Card> is a component/);
   assert.equal(await api.read(), text);
 });
+
+test('a dead class offers each suggested class as a choice with an exact edit; taking one writes it, variants kept', { timeout: 60000 }, async (t) => {
+  const api = await project(t);
+  await writeFile(join(api.root, 'src/App.tsx'), `import './styles.css';\nexport const App = () => <p id="dead" className="hover:p-smal! text-sm">x</p>;\n`);
+  const line = 2, column = 'export const App = () => '.length + 1;
+  const site = await api.call('site', { file: 'src/App.tsx', line, column });
+  assert.equal(site.status, 200, JSON.stringify(site.body));
+  const dead = site.body.findings.find(f => f.rule === 'existence/dead-class');
+  assert.ok(dead, JSON.stringify(site.body.findings.map(f => f.rule)));
+  const names = [...dead.action.matchAll(/`([^`]+)`/g)].map(m => m[1]);
+  assert.ok(names.length >= 2, dead.action);
+  assert.deepEqual(dead.choices.map(c => [c.name, c.use.class]), names.map(name => [name, name]));
+  const edits = await api.call('edits', { file: 'src/App.tsx', line, column });
+  assert.equal(edits.status, 200, JSON.stringify(edits.body));
+  const offered = edits.body.edits.filter(e => e.rule === 'existence/dead-class');
+  assert.deepEqual(offered.map(e => [e.from, e.to, e.token]), names.map(name => ['hover:p-smal!', `hover:${name}!`, name]));
+  const applied = await api.call('apply', { file: 'src/App.tsx', hash: edits.body.hash, edits: [{ id: offered[0].id }] }, 'POST');
+  assert.equal(applied.status, 200, JSON.stringify(applied.body));
+  assert.ok((await api.read()).includes(`className="hover:${names[0]}! text-sm"`), await api.read());
+});

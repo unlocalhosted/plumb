@@ -25,7 +25,8 @@ export interface StructuredEdit {
 /** Exact replacement spelling shared by the agent and source-edit transports. */
 export function replacement(finding: Finding, site: Site, decision: Decision, report: Report, decisionNames?: Set<string>): Pick<StructuredEdit, 'from' | 'to' | 'token'> | undefined {
   const d = atSite(finding, site);
-  const use = useFor(decision, d.prop, decisionNames ?? new Set(decision.use?.class ? [...report.decisions, ...report.decisionInventory ?? []].map(d => d.name) : []));
+  // a dead class's suggestion is a class, not a token: it is used as the finding offers it
+  const use = finding.rule.startsWith('existence/') && decision.use?.class ? decision.use : useFor(decision, d.prop, decisionNames ?? new Set(decision.use?.class ? [...report.decisions, ...report.decisionInventory ?? []].map(d => d.name) : []));
   const edit = classEdit({ ...d, site }, use);
   if (edit) return { from: site.text, to: edit.beside ? `${site.text} ${edit.to}` : edit.to, token: decision.name };
   if (['class', 'arbitrary', 'apply'].includes(d.origin)) return undefined;
