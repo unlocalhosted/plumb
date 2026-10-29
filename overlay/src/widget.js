@@ -40,9 +40,11 @@ const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).
 const RESUME = 'plumb:resume';
 
 // One status line for a ready reading, shared by the hover tag and the pinned header.
-function status(state) {
+function status(state, element) {
   const off = offCount(state);
-  if (!state.marks.length && !state.declared) return { text: state.via === 'owner' ? TAG.styledBy(state.component ?? 'a component') : TAG.computed, tone: 'quiet' };
+  // nothing declared: a component styles it, its classes are built in code, or it has no style of its own at all
+  const bare = element && !element.getAttribute?.('class') && !element.getAttribute?.('style');
+  if (!state.marks.length && !state.declared) return { text: state.via === 'owner' ? TAG.styledBy(state.component ?? 'a component') : bare ? TAG.unstyled : TAG.computed, tone: 'quiet' };
   return off ? { text: TAG.off(off), tone: '' } : { text: TAG.clean, tone: 'ok' };
 }
 
@@ -896,7 +898,7 @@ class PlumbOverlay extends HTMLElement {
     if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.short ?? state.message)}</span>`;
-    const st = status(state);
+    const st = status(state, element);
     return `${name}${who}<span class="n ${st.tone}">${esc(st.text)}</span>`;
   }
 

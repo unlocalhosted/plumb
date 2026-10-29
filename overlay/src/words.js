@@ -434,6 +434,7 @@ export const TAG = {
   clean: 'Matches your theme',
   styledBy: (name) => `Styled by ${name}`,
   computed: 'Classes built in code',
+  unstyled: 'No styles of its own',
   trying: 'Trying a fix',
   checking: 'Checking…',
   outside: 'Outside this project',
