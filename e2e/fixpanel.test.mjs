@@ -360,6 +360,32 @@ export function App() {
   assert.deepEqual(errors, []);
 });
 
+// A cause is counted from your code, so a place inside something closed counts too. Held, the panel says why nothing
+// on screen is pointed at, and that Apply still fixes it.
+test('A fix whose only place is inside something closed is counted, and held it says where it is', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, `
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <p id="seen" className="text-body tracking-[0.1em]">Seen</p>
+      <details><summary className="text-body">More</summary><p id="shut" className="text-body p-[13px]">Inside</p></details>
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const cls = () => panel(overlay).locator('.cause .cls').innerText();
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 6 && !/p-\[13px\]/.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+  assert.match(await cls(), /p-\[13px\]/, 'the closed place is counted');
+  await panel(overlay).locator('.say').filter({ hasText: 'You can’t see this place right now. It’s inside something closed' }).waitFor({ timeout: 5000 });
+  // a cause with a place on screen says nothing of the kind
+  for (let i = 0; i < 6 && !/tracking-\[0\.1em\]/.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+  assert.equal(await panel(overlay).getByText('You can’t see').count(), 0);
+  assert.deepEqual(errors, []);
+});
+
 // Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
 // that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
 test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {

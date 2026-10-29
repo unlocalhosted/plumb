@@ -180,6 +180,10 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(String(cls ?? '')); return m ? m[1].replace(/_/g, ' ') : null; };
 const noteOf = (g) => g.members.every((m) => m.mark.family === 'craft' && (!m.mark.craft?.suggest || m.mark.craft.suggest.kind === 'advice'));
 
+// on the page and drawn: not inside something closed (display: none, a closed <details>, content-visibility), and not
+// of no size
+const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
+
 export class FixPanel {
   #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #fixedCount = 0; #on = false;
   #steady = null; #doneText = null; #notice = null; #noticeTimer = 0;   // the last settled count { places, causes, notes }: said while the page is checked again
@@ -264,7 +268,9 @@ export class FixPanel {
     this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null; this.#keeping = false;
     const g = live[this.#at];
     this.#held = g;
-    const el = g.members.some((m) => m.el === lead) ? lead : g.members[0].el;
+    // the place in hand is one that can be seen: a cause is counted from the source, so some of its places may be
+    // inside something closed (a menu, a dialog)
+    const el = g.members.some((m) => m.el === lead) ? lead : (g.members.find((m) => shown(m.el)) ?? g.members[0]).el;
     this.#host.hold(g, el);
     this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
     this.render(true);
@@ -537,7 +543,8 @@ export class FixPanel {
         ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
           + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(g.members.length))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span>${apply}</div>`
         : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
-      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${middle}${acts}</div>`;
+      const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(FIX.unseen(g.members.length))}</div>`;
+      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${unseen}${middle}${acts}</div>`;
     }
     if (html === this.#html) return;
     this.#html = html;

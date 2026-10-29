@@ -95,7 +95,7 @@ for (const host of ['vite', 'next']) for (const checked of [false, true]) test(`
   const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.fx').textContent]; });
   // the fix bar has the count and says what couldn't be checked; neither it nor the dock claims a clean page
   assert.match(blueprint[1], /can’t be checked/, `the fix panel says what was not checked: "${blueprint[1]}"`);
-  for (const text of blueprint) assert.doesNotMatch(text, /all true|Everything matches|Nothing to fix on this screen/);
+  for (const text of blueprint) assert.doesNotMatch(text, /all true|Everything matches|Nothing to fix on this page/);
   const ready = await api(page, 'readiness');
   assert.equal(ready.status, 200, JSON.stringify(ready));
   const source = ready.body.requirements.find(item => item.id === 'locate.source');
