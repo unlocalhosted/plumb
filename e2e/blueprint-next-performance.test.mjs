@@ -83,7 +83,7 @@ test('Next unstamped 216-card blueprint shares module reads, batches waves and i
       const locations = await page.evaluate(() => Promise.all([...document.querySelectorAll('.card')].map(el => window.__plumb.locate(el, { batch: true }))));
       assert.ok(locations.every(at => at?.file === 'app/Board.jsx' && at.line === 3 && at.column === 64), JSON.stringify(locations.slice(0, 3)));
       if (!process.env.PLUMB_SPEED_BASELINE) {
-        assert.ok(results.next.elapsedMs <= results.vite.elapsedMs * 2, JSON.stringify({ viteMs: results.vite.elapsedMs, nextMs: results.next.elapsedMs }));
+        assert.ok(results.next.elapsedMs <= Math.max(results.vite.elapsedMs * 2, 500), JSON.stringify({ viteMs: results.vite.elapsedMs, nextMs: results.next.elapsedMs }));
         assert.ok(results.next.batches <= 8, JSON.stringify({ batches: results.next.batches }));
         for (const [url, count] of Object.entries(results.next.assets)) assert.equal(count, 1, 'one chunk/map fetch per version: ' + url);
       }

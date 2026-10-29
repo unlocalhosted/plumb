@@ -21,7 +21,9 @@
  *  progress   whole-page: { read, total, drift, on, checked, notChecked, outsideSource, notes, done }. `total` is the
  *             pool, `read` what has landed, `drift` the problems from source, `notes` what the craft rules measured
  *             on the page (computed style, contrast, census: never counted as problems), `done` once every element
- *             has its answer and nothing is in flight. Reported only when it changes
+ *             has its answer, nothing is in flight, and the page has stopped changing: no rescan pending and no
+ *             relevant mutation for QUIET ms (FIRST ms after the reader starts: an app mounting right after a reload
+ *             must not be counted as an empty page). Reported only when it changes
  *  order      the items handed on (onChange) are every element with something to show, in document order; where a
  *             mark is drawn is the layer's business, nearest the view first
  * ───────────────────────────────────────────────────────── */
@@ -30,6 +32,8 @@ const WAVE = 128; // per-element readings in flight at once (each is batched by 
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
 const THROTTLE = 150;
 const RETRY = 5000; // a server that answered starting is asked again at most this often, if it never says ready
+const QUIET = 300; // the page must have stopped changing for this long before it is done
+const FIRST = 1000; // and for this long after the reader starts (the app may still be mounting)
 
 export class Reader {
   #host; #onChange; #onProgress;
@@ -40,6 +44,7 @@ export class Reader {
   #running = false;
   #inflight = 0; // readings in flight: page requests and per-element readings alike
   #pending = false; // the server was still starting: the read goes again when it is ready
+  #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
   #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
 
   // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
@@ -56,17 +61,28 @@ export class Reader {
     this.#mo = new MutationObserver((records) => {
       const pinned = this.#host.pinnedElement;
       const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
-      if (relevant) this.#throttled(() => this.#scan(true));
+      if (relevant) { this.#changed(); this.#throttled(() => this.#scan(true)); }
     });
     this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', 'data-plumb-source'] });
+    this.#startedAt = performance.now();
+    this.#changed();
     this.#scan(false);
   }
+
+  // The page changed: done waits for the quiet window, then reports again.
+  #changed() {
+    this.#changedAt = performance.now();
+    clearTimeout(this.#quiet);
+    this.#quiet = setTimeout(() => { this.#quiet = 0; this.#report(); }, Math.max(1, this.#quietUntil() - performance.now() + 1));
+  }
+  #quietUntil() { return Math.max(this.#startedAt + FIRST, this.#changedAt + QUIET); }
 
   stop() {
     this.#running = false;
     this.#mo?.disconnect();
     clearTimeout(this.#throttle); this.#throttle = 0;
     clearTimeout(this.#retry); this.#retry = 0;
+    clearTimeout(this.#quiet); this.#quiet = 0;
     this.#items.clear();
     this.#ids = new WeakMap(); // the next start registers every element again
     this.#progress = '';
@@ -77,7 +93,8 @@ export class Reader {
   // Nothing left to read: nothing in flight, nothing queued, nothing parked behind a starting server
   // (the headless run asks; the readers on screen never need to)
   get settled() {
-    if (this.#inflight || !this.#running || this.#pending) return false;
+    if (this.#inflight || !this.#running || this.#pending || this.#throttle) return false;
+    if (performance.now() < this.#quietUntil()) return false;
     for (const item of this.#items.values()) if (item.state !== 'ready') return false;
     return true;
   }
