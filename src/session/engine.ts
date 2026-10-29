@@ -44,7 +44,7 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
   readQueueMs?: number
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
-export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> };
+export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> };
 export type ManyResult = { value: unknown } | { error: string; usage: boolean };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
 export interface ClassesResult {
@@ -63,6 +63,20 @@ export interface ApplyOptions { file: string; hash: string; edits: { id: string 
 export interface UndoHandle { id: string; file: string; label: string }
 export interface AcceptOptions { rule: string; sites: { file: string; line: number; column: number; text: string }[]; why: string }
 export interface AcceptResult { accepted: number }
+/** One stamped element of a page: its stamp (file:line:column#hash), its tag, and its rendered classes when it has any. */
+export interface PageItem { stamp: string; tag: string; classes?: string }
+export interface PageEntry {
+  stamp: string; tag: string; classes?: string;
+  status: 'ready' | 'unplaced';
+  file?: string; line?: number; column?: number; component?: string; usage?: true; outsideSource?: true;
+  /** the reading at that JSX, as GET site answers it */
+  site?: Pick<SiteResult, 'declarations' | 'findings'>;
+  /** the trace of the element's classes when the JSX declares none, as GET classes answers it */
+  traced?: ClassesResult;
+  /** served from the page cache: nothing was analysed for it */
+  cached?: true;
+}
+export interface PageResult { revision: number; items: PageEntry[] }
 /** A whole cause: every place in the project with this class under this rule, each rewritten for the chosen token (its name as the finding lists it) or class. */
 export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
@@ -128,6 +142,10 @@ export class Session extends EventEmitter {
   private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
   private id = 0;
   private hashes = new Map<string, string>();
+  // the whole-page answers (page): one entry per stamp, tag and classes, good while the file it names keeps its hash;
+  // a traced entry depends on other files too, so it lives for one generation of changes
+  private pageCache = new Map<string, { file: string; hash: string; generation: number; entry: PageEntry }>();
+  private pageGeneration = 0;
   private sourceTexts = new Map<string, string>();
   private dependencies = new Set<string>();
   private patterns: string[] = [];
@@ -384,7 +402,7 @@ export class Session extends EventEmitter {
       }
       if (!local) await this.retainLocations(new Set());
       this.failure = undefined; this.failurePaths = [];
-      this.revision++; this.emit('change', changed);
+      this.revision++; this.pageGeneration++; this.emit('change', changed);
     } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
     return changed;
   }
@@ -493,6 +511,62 @@ export class Session extends EventEmitter {
       return [file];
     }
     return undefined;
+  }
+  /**
+   * The whole page in one answer: for every stamped element, where its stamp resolves and the reading there (and the
+   * trace of its classes when the JSX declares none), computed the way the CLI and the Alt card compute them, in one
+   * cohort. Cached by the file's content hash, so a second page costs no analysis and a changed file is never stale.
+   * The count a page shows is then a function of its source, not of what was in view.
+   */
+  async page(items: PageItem[]): Promise<PageResult> {
+    if (!Array.isArray(items) || items.length > 8192) throw new UsageError('A page is a list of at most 8192 stamped elements.');
+    const parse = (item: PageItem) => {
+      if (!item || typeof item.stamp !== 'string' || typeof item.tag !== 'string' || item.classes !== undefined && typeof item.classes !== 'string') throw new UsageError('Each element is { stamp, tag, classes? }.');
+      const match = /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(item.stamp);
+      if (!match || item.classes && item.classes.length > 65536) throw new UsageError(`Not a stamp: ${item.stamp.slice(0, 80)}`);
+      return { source: match[1]!, line: Number(match[2]), column: Number(match[3]), hash: match[4]! };
+    };
+    const keyOf = (item: PageItem) => `${item.stamp}\0${item.tag}\0${item.classes ?? ''}`;
+    const unique = new Map<string, PageItem>();
+    for (const item of items) { parse(item); if (!unique.has(keyOf(item))) unique.set(keyOf(item), item); }
+    const answers = new Map<string, PageEntry>();
+    const fresh: PageItem[] = [];
+    for (const [key, item] of unique) {
+      const hit = this.pageCache.get(key);
+      if (hit && this.hashes.get(hit.file) === hit.hash && (!hit.entry.traced || hit.generation === this.pageGeneration)) answers.set(key, { ...hit.entry, cached: true });
+      else fresh.push(item);
+    }
+    if (fresh.length) {
+      // one cohort for where every stamp resolves, one for the readings: every item sees one revision
+      const resolved = await this.many(fresh.map(item => { const at = parse(item); return { method: 'resolveSource' as const, args: [at.source, at.line, at.column, { hash: at.hash, tag: item.tag, stamp: true }] }; }));
+      const reads: { key: string; item: PageItem; where: { file: string; line: number; column: number; component?: string; usage?: true } }[] = [];
+      fresh.forEach((item, i) => {
+        const answer = resolved[i]!;
+        const where = 'value' in answer ? answer.value as SourceResolution : undefined;
+        if (where && 'file' in where && where.line !== undefined && where.column !== undefined) { reads.push({ key: keyOf(item), item, where: { file: where.file, line: where.line, column: where.column, ...(where.component ? { component: where.component } : {}), ...(where.usage ? { usage: true as const } : {}) } }); return; }
+        const untracked = where && 'library' in where ? where.untracked : undefined;
+        answers.set(keyOf(item), { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'unplaced', ...(untracked ? { outsideSource: true as const, file: untracked } : {}) });
+      });
+      const sites = await this.many(reads.map(({ where }) => ({ method: 'site' as const, args: [where.file, where.line, where.column] })));
+      const traces = await this.many(reads.flatMap(({ item, where }, i) => {
+        const site = sites[i]!; const value = 'value' in site ? site.value as SiteResult : undefined;
+        return item.classes && value && !value.declarations.length ? [{ method: 'classes' as const, args: [where.file, where.line, where.column, item.classes] }] : [];
+      }));
+      let traceAt = 0;
+      reads.forEach(({ key, item, where }, i) => {
+        const site = sites[i]!;
+        if (!('value' in site)) { answers.set(key, { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'unplaced' }); return; }
+        const value = site.value as SiteResult;
+        const entry: PageEntry = { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'ready', ...where, site: { declarations: value.declarations, findings: value.findings } };
+        if (item.classes && !value.declarations.length) { const trace = traces[traceAt++]!; if ('value' in trace) entry.traced = trace.value as ClassesResult; }
+        answers.set(key, entry);
+        const path = this.file(where.file), hash = this.hashes.get(path);
+        // a trace still being read (pending) is not an answer to keep
+        if (hash && (entry.traced as { status?: string } | undefined)?.status !== 'pending') this.pageCache.set(key, { file: path, hash, generation: this.pageGeneration, entry });
+      });
+      if (this.pageCache.size > 16384) for (const key of [...this.pageCache.keys()].slice(0, 4096)) this.pageCache.delete(key);
+    }
+    return { revision: this.revision, items: items.map(item => answers.get(keyOf(item))!) };
   }
   /** Several reads in one cohort: the overlay sends a view's worth of resolve and site questions as one request, so
    * the lock, the reconciliation and the round trip are paid once, not once per element. Each answer stands alone:
