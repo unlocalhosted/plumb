@@ -1,31 +1,40 @@
 /* ─────────────────────────────────────────────────────────
  * BLUEPRINT READER · Plumb overlay
  *
- * What Plumb says about every element on the page, computed from source, once, the same way every time
- * (docs/briefs/deterministic-detection.md). The page only says where each problem shows: the count and the fix list
- * never depend on what was in view, on the window's size, or on the moment they were read.
+ * What Plumb says about the page's code, computed from source, once, the same way every time
+ * (docs/briefs/deterministic-detection.md, docs/briefs/count-from-code.md). The unit is a place in the source (a
+ * class site, file:line:column:text), not an element: a component rendered forty times is one place with forty
+ * elements, which is what one Apply fixes. The page only says where each place shows.
  *
+ *  code       the page's code is the static import closure of the modules the browser loaded (host.closure, from
+ *             Vite's module graph), and every finding at the places in those files counts, rendered or not
+ *             (host.readPlaces). Where there is no graph (Next, the docs replay: closure answers 404), the places are
+ *             those of the rendered elements alone
  *  pool       every element under <body>, from one querySelectorAll in document order: never anything inside an
  *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read), never the overlay.
  *             No IntersectionObserver, no visibility check, no cap: a hidden tab reads the same page as a shown one
- *  page       stamped elements (data-plumb-source) go to the server as one whole-page request (host.readPage, POST
- *             page): where each stamp resolves and the reading there, cached by file content, so a second opening
- *             costs no analysis. Elements that share a stamp and classes share one answer
+ *  page       stamped elements go to the server as one whole-page request (host.readPage, POST page): where each
+ *             stamp resolves and the reading there, cached by file content. Elements that share a stamp and classes
+ *             share one answer
  *  element    what the page answer cannot settle is read per element, the way the Alt card reads it (host.readMarks):
  *             elements with no stamp (shared source, located through the owner stack) and pass-through components
  *             whose classes are passed in by the code that uses them (the caller's reading). Every such element is
  *             read, in document order, WAVE at a time; never only those in view
  *  starting   a server still reading the project parks the whole read; it goes again when the server says ready
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
- *             previews are the card's own), re-read what changed; a write re-reads every element from that file
- *  progress   whole-page: { read, total, drift, on, checked, notChecked, outsideSource, notes, done }. `total` is the
- *             pool, `read` what has landed, `drift` the problems from source, `notes` what the craft rules measured
- *             on the page (computed style, contrast, census: never counted as problems), `done` once every element
- *             has its answer, nothing is in flight, and the page has stopped changing: no rescan pending and no
- *             relevant mutation for QUIET ms (FIRST ms after the reader starts: an app mounting right after a reload
- *             must not be counted as an empty page). Reported only when it changes
- *  order      the items handed on (onChange) are every element with something to show, in document order; where a
- *             mark is drawn is the layer's business, nearest the view first
+ *             previews are the card's own), re-read what changed; a write re-reads every element from that file and
+ *             the places of the page's code again; a newly loaded module (a lazy route) re-asks the closure
+ *  progress   whole-page: { read, total, drift, on, checked, notChecked, outsideSource, notes, places, unrendered,
+ *             done }. `total` is the pool, `read` what has landed, `places` the places with something to show,
+ *             `drift` the places with a problem (one per place, however many elements render it), `unrendered` the
+ *             places no element renders right now, `notes` what the craft rules measured on the page (computed style,
+ *             contrast, census: per element, never counted as problems), `done` once the code and every element have
+ *             their answer, nothing is in flight, and the page has stopped changing: no rescan pending and no relevant
+ *             mutation for QUIET ms (FIRST ms after the reader starts: an app mounting right after a reload must not
+ *             be counted as an empty page). Reported only when it changes
+ *  order      the items handed on (onChange) are every element with something to show, in document order; a place no
+ *             element renders is handed on as { el: null, site, marks } only when the reader was made with
+ *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
  * ───────────────────────────────────────────────────────── */
 
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
@@ -36,7 +45,7 @@ const QUIET = 300; // the page must have stopped changing for this long before i
 const FIRST = 1000; // and for this long after the reader starts (the app may still be mounting)
 
 export class Reader {
-  #host; #onChange; #onProgress;
+  #host; #onChange; #onProgress; #unrendered;
   #items = new Map(); // id → { id, el, stamp, tag, classes, sig, state, marks, dims, file, checked, outsideSource }
   #ids = new WeakMap(); // element → id
   #next = 1;
@@ -44,16 +53,19 @@ export class Reader {
   #running = false;
   #inflight = 0; // readings in flight: page requests and per-element readings alike
   #pending = false; // the server was still starting: the read goes again when it is ready
-  #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
   #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
+  #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
+  // the page's code: the modules the browser has loaded (their key), the files they import, and each file's marks
+  #codeKey = ''; #codeInflight = 0; #noCode = false; #code = new Map(); // file → { hash, marks }
 
   // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
   #enrich;
-  constructor(host, { onChange, onProgress, enrich }) {
+  constructor(host, { onChange, onProgress, enrich, unrendered = false }) {
     this.#host = host;
     this.#onChange = onChange;
     this.#onProgress = onProgress;
     this.#enrich = enrich ?? null;
+    this.#unrendered = unrendered;
   }
 
   start() {
@@ -88,12 +100,13 @@ export class Reader {
     this.#progress = '';
     this.#inflight = 0;
     this.#pending = false;
+    this.#codeKey = ''; this.#codeInflight = 0; this.#code.clear();
   }
 
-  // Nothing left to read: nothing in flight, nothing queued, nothing parked behind a starting server
-  // (the headless run asks; the readers on screen never need to)
+  // Nothing left to read: the code and every element answered, nothing in flight, nothing parked behind a starting
+  // server, and the page quiet (the headless run asks; the readers on screen never need to)
   get settled() {
-    if (this.#inflight || !this.#running || this.#pending || this.#throttle) return false;
+    if (this.#inflight || this.#codeInflight || !this.#running || this.#pending || this.#throttle) return false;
     if (performance.now() < this.#quietUntil()) return false;
     for (const item of this.#items.values()) if (item.state !== 'ready') return false;
     return true;
@@ -105,9 +118,10 @@ export class Reader {
     this.#report();
   }
 
-  // A write changed a file: everything read from it is read again, fresh.
+  // A write changed a file: everything read from it is read again, fresh, and the code's places with it.
   invalidate({ file }) {
     for (const item of this.#items.values()) if (item.file === file) (item.state = 'queued'), (item.fresh = true);
+    this.#codeKey = '';
     this.#read();
   }
 
@@ -116,6 +130,7 @@ export class Reader {
     if (status !== 'ready' || !this.#pending) return;
     this.#pending = false;
     clearTimeout(this.#retry); this.#retry = 0;
+    this.#codeKey = '';
     this.#read();
   }
 
@@ -155,9 +170,10 @@ export class Reader {
     this.#read();
   }
 
-  // One read of everything queued: the stamped elements as whole-page requests, the rest per element.
+  // One read of everything queued: the page's code, the stamped elements as whole-page requests, the rest per element.
   #read() {
     if (!this.#running || this.#pending) return;
+    this.#readCode();
     const queued = [...this.#items.values()].filter((item) => item.state === 'queued');
     if (!queued.length) { this.#report(); return; }
     const t0 = performance.now();
@@ -166,6 +182,40 @@ export class Reader {
     for (let at = 0; at < paged.length; at += PAGE) this.#page(paged.slice(at, at + PAGE));
     this.#elements(queued.filter((item) => !paged.includes(item)));
     performance.measure('plumb:reader-read', { start: t0 });
+  }
+
+  // The modules the browser has loaded from this origin: the roots of the page's code.
+  #loaded() {
+    const origin = location.origin;
+    const urls = new Set();
+    for (const entry of performance.getEntriesByType('resource')) {
+      let url;
+      try { url = new URL(entry.name); } catch { continue; }
+      if (url.origin !== origin || url.pathname.startsWith('/__plumb/') || url.pathname.startsWith('/@vite/') || url.pathname.startsWith('/node_modules/')) continue;
+      if (!['script', 'other', 'link', 'fetch'].includes(entry.initiatorType)) continue;
+      urls.add(url.pathname + url.search);
+    }
+    for (const script of document.querySelectorAll('script[type="module"][src]')) {
+      try { const url = new URL(script.src); if (url.origin === origin && !url.pathname.startsWith('/__plumb/')) urls.add(url.pathname + url.search); } catch {}
+    }
+    return [...urls].sort();
+  }
+
+  // The page's code, asked once per set of loaded modules: its files, and every finding at the places in them.
+  #readCode() {
+    if (this.#noCode) return;
+    const modules = this.#loaded(), key = modules.join('\n');
+    if (key === this.#codeKey) return;
+    this.#codeKey = key;
+    this.#codeInflight++;
+    this.#host.readCode(modules)
+      .then((answer) => {
+        if (!this.#running || key !== this.#codeKey) return;
+        if (answer === null) { this.#noCode = true; return; }
+        this.#code = new Map(answer.map((file) => [file.file, file]));
+      })
+      .catch((error) => { if (this.#running && key === this.#codeKey) { this.#codeKey = ''; this.#parked([], error); } })
+      .finally(() => { this.#codeInflight--; this.#settle(); });
   }
 
   // A whole-page request: one answer per (stamp, tag, classes), handed to every element that carries them.
@@ -238,8 +288,22 @@ export class Reader {
 
   // Everything in flight has landed: report once for the whole page (not once per wave).
   #settle() {
-    if (this.#inflight) return;
+    if (this.#inflight || this.#codeInflight) return;
     this.#report();
+  }
+
+  // The places: one per class site, from the page's code and from the rendered elements, each with the elements that
+  // render it. A place from the code and the same place rendered are one place.
+  #places(enriched) {
+    const places = new Map();
+    const add = (mark, file) => {
+      let place = places.get(mark.key);
+      if (!place) places.set(mark.key, (place = { key: mark.key, file: mark.file ?? file, site: { file: mark.file ?? file, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
+      return place;
+    };
+    for (const file of this.#code.values()) for (const mark of file.marks) add(mark, file.file);
+    for (const item of enriched) for (const mark of item.marks) if (mark.family !== 'craft') add(mark, item.file).elements.push(item.el);
+    return places;
   }
 
   #report() {
@@ -250,26 +314,35 @@ export class Reader {
     const all = [...this.#items.values()];
     const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
     const enriched = this.#enrich ? this.#enrich(ready) : ready;
-    const marksOf = new Map(enriched.map((i) => [i.id, i.marks]));
     const read = ready.length;
     const checked = all.filter((i) => i.state === 'ready' && i.checked).length;
     const notChecked = read - checked;
     const outsideSource = all.filter((i) => i.state === 'ready' && i.outsideSource).length;
-    // problems come from source; what the craft rules measured on the page are notes, never problems
-    let drift = 0, notes = 0;
-    for (const i of all) for (const m of marksOf.get(i.id) ?? i.marks) {
-      if (m.family === 'craft') notes++;
-      else if (m.ledger === 'new') drift++;
+    // problems are places in the code, one each however many elements render it; what the craft rules measured on
+    // the page are notes, per element, never problems
+    const places = this.#places(enriched);
+    let drift = 0, unrendered = 0, notes = 0;
+    for (const place of places.values()) {
+      if (place.mark.ledger === 'new') drift++;
+      if (!place.elements.length) unrendered++;
     }
+    for (const i of enriched) for (const m of i.marks) if (m.family === 'craft') notes++;
     const on = all.reduce((n, i) => n + i.dims.length, 0);
+    // the places themselves, for whoever asks the host (the headless run, a test): one row per place
+    this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })));
     const done = this.settled;
-    const key = `${read}/${all.length}/${drift}/${on}/${notChecked}/${outsideSource}/${notes}/${done}`;
+    const key = `${read}/${all.length}/${drift}/${on}/${notChecked}/${outsideSource}/${notes}/${places.size}/${unrendered}/${done}`;
     if (key !== this.#progress) {
       this.#progress = key;
-      this.#onProgress?.({ read, total: all.length, drift, on, checked, notChecked, outsideSource, notes, done });
+      this.#onProgress?.({ read, total: all.length, drift, on, checked, notChecked, outsideSource, notes, places: places.size, unrendered, done });
     }
-    // what to hand on: every element with something to show, in document order
+    // what to hand on: every element with something to show, in document order; then, when the panel can hold them,
+    // the places no element renders, in source order
     const shown = enriched.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    if (this.#unrendered) {
+      const absent = [...places.values()].filter((p) => !p.elements.length).sort((a, b) => a.file.localeCompare(b.file) || a.mark.line - b.mark.line || a.mark.column - b.mark.column);
+      for (const p of absent) shown.push({ id: `place:${p.key}`, el: null, site: p.site, file: p.file, marks: [p.mark], dims: [], checked: true });
+    }
     this.#onChange?.(shown);
     performance.measure('plumb:reader-report', { start: t0 });
   }

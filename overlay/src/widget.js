@@ -451,6 +451,26 @@ class PlumbOverlay extends HTMLElement {
     promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     return promise;
   }
+  // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): the files the loaded modules import
+  // (POST closure, the Vite plugin's module graph) and every finding at the places in them (POST places), each
+  // file's marks built the way an element's are. null where there is no graph (Next, the docs replay): the reader
+  // counts from the rendered page alone there.
+  async readCode(modules) {
+    let closure;
+    try { closure = await post('closure', { modules }); }
+    catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
+    const files = closure?.files ?? [];
+    if (!files.length) return [];
+    let answer;
+    try { answer = await post('places', { files }); }
+    catch (error) { throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
+    return (answer?.files ?? []).map((entry) => {
+      const file = files.find((f) => entry.file === f || entry.file.endsWith('/' + f)) ?? entry.file;
+      const location = { file, line: 1, column: 1, tag: null, via: 'code', chain: [], index: 0 };
+      const r = reading(location, { findings: entry.findings ?? [], declarations: entry.declarations ?? [] }, undefined);
+      return { file, hash: entry.hash, marks: r.marks.filter((m) => m.ledger !== 'exception') };
+    });
+  }
   // The whole page at once (blueprint-reader.js): every stamped element's reading from one POST page, the same reading
   // readMarks builds element by element. Elements that share a stamp and classes share one answer. An element whose
   // classes are passed in by the code that uses its component comes back `caller`: the reader reads it per element.
@@ -498,6 +518,10 @@ class PlumbOverlay extends HTMLElement {
   get health() { return this.#health; }
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
+  // the places Blueprint counted last (blueprint-reader.js): one row per class site in the page's code, with how many elements render it
+  #places = [];
+  placesRead(places) { this.#places = places; }
+  get places() { return this.#places; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];

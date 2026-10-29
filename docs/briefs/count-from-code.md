@@ -64,6 +64,21 @@ progress include them regardless.
 - Before and after on crafting-ui `/motion`: elements 947/931 → 636/624 problems (by element); the place count is
   recorded in the result section below once measured.
 
-## Result
+## Result (crafting-ui `/motion`, dev server restarted on `8539589`+reader)
 
-(filled in when measured)
+| Opening | problems (places) | places | unrendered | notes | elements | first count | done |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| loaded at the top, cold | 2579 | 2579 | 2506 | 38 | 947/947 | 918 ms | 1419 ms |
+| loaded at the top, reopened | 2579 | 2579 | 2506 | 38 | 947/947 | 780 ms | 1024 ms |
+| after scrolling through | 2579 | 2579 | 2506 | 38 | 947/947 | 725 ms | 1029 ms |
+| loaded at the bottom | 2579 | 2579 | 2506 | 38 | 947/947 | 565 ms | 1079 ms |
+| hidden tab (320×120, document.hidden) | 2579 | 2579 | 2506 | 43 | 947/947 | 692 ms | 1823 ms |
+
+The fix list (every place with a new problem, by key) is identical across the five openings. Before, by element:
+636 (947 elements) or 624 (931 elements) depending on what the page had rendered.
+
+What the number means now: crafting-ui's entry imports every route statically (no `React.lazy`), so the page's code
+is the whole app's code: 2579 places, of which 73 are rendered on `/motion` and 2506 are not. "N problems" is "N
+places in your code", not "N on this screen". Notes stay per element (38 shown, 43 with the page hidden: the craft
+rules measure the page, and a hidden 320×120 page measures differently). A route split with `React.lazy` would narrow
+the closure to the loaded routes.
