@@ -348,10 +348,15 @@ test('resolve validates tracked source identity and site queries select only exa
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
   await ready(new URL(url).origin);
   const html = await (await fetch(new URL('../', url))).text();
-  const hotModule = /<script[^>]*src="([^"]*html-proxy[^"]*)"/.exec(html);
-  assert.ok(hotModule, 'Vite transforms overlay HMR hook as a module');
-  const hotCode = await (await fetch(new URL(hotModule[1].replaceAll('&amp;', '&'), url))).text();
-  assert.match(hotCode, /createHotContext/); assert.match(hotCode, /vite:afterUpdate/);
+  // the overlay's HMR hook is an inline module Vite leaves alone (vite-ignore, stripped on the way out): it takes its
+  // hot context from Vite's client and imports the source-map invalidation from the plugin's own route
+  const hook = /<script type="module"\s*>([^<]*invalidateSourceMaps[^<]*)<\/script>/.exec(html);
+  assert.ok(hook, html);
+  assert.match(hook[1], /import \{ createHotContext \} from '\/@vite\/client'/);
+  assert.match(hook[1], /import \{ invalidateSourceMaps \} from '\/__plumb\/src\/sourcemap\.js'/);
+  assert.match(hook[1], /createHotContext\([^)]*\)\.on\('vite:afterUpdate', invalidateSourceMaps\)/);
+  assert.doesNotMatch(html, /html-proxy|vite-ignore/);
+  assert.equal((await fetch(new URL('../__plumb/src/sourcemap.js', url))).status, 200);
   const resolve = (source, params = {}, init) => fetch(url + 'resolve?' + new URLSearchParams({ source, ...params }), init);
   for (const source of [join(root, 'src/App.jsx'), pathToFileURL(join(root, 'src/App.jsx')).href, '/@fs/' + join(root, 'src/App.jsx'), 'webpack://_N_E/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/./src/App.jsx', 'webpack-internal:///(app-pages-browser)/src/App.jsx', 'webpack-internal:///(custom-layer)/src/App.jsx', 'webpack-internal:///(custom-layer)/./src/App.jsx', '/src/App.jsx', 'src/App.jsx']) {
     const response = await resolve(source); assert.equal(response.status, 200, source); assert.deepEqual(await response.json(), { file: 'src/App.jsx' });
