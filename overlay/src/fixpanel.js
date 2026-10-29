@@ -243,7 +243,7 @@ export class FixPanel {
     this.render();
   }
   // the reader's progress: settled once every element is read (what a script waiting on the page can watch)
-  progress(p) { this.#progress = p; this.#el.toggleAttribute('data-settled', !!p && p.read === p.total); this.render(); }
+  progress(p) { this.#progress = p; this.#el.toggleAttribute('data-settled', !!p && (p.done ?? p.read === p.total)); this.render(); }
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
   #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
@@ -275,15 +275,21 @@ export class FixPanel {
     this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), g.text, FIX.what(g.members[0].mark), g.members.length));
     // the place in hand is seen above the panel, never under it (once the panel has its height)
     // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
-    requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el)));
-    setTimeout(() => { if (this.#held === g) this.#reveal(el); }, TIMING.open + 40);
+    // pointed at (a click, Alt+click): it is where the person looks, so it only moves out from under the panel;
+    // reached by keys: it is brought into view wherever it is
+    const covered = !!lead;
+    requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
+    setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
   }
-  #reveal(el) {
+  #reveal(el, coveredOnly = false) {
     if (!el?.isConnected || !this.#holding) return;
     const panel = this.#el.getBoundingClientRect();
     if (!panel.height) return; // not drawn yet: the later call measures it
     const r = el.getBoundingClientRect(), top = 16, bottom = Math.min(innerHeight, panel.top) - 16;
     if (r.height > bottom - top) return; // taller than the room above the panel: it stays where it is
+    // pointed at: moved only when the panel hides all of it (any part above the panel is enough to see it), never when
+    // it is off screen
+    if (coveredOnly && (r.top < panel.top - 16 || r.top >= innerHeight || r.bottom <= 0)) return;
     const by = r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0;
     if (!by) return;
     let box = el.parentElement;
@@ -474,7 +480,7 @@ export class FixPanel {
     if (!this.#on) return;
     const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = this.#viewOf(g);
     // nothing is said to match until every element on the page has been read
-    const settled = !!this.#progress?.total && this.#progress.read === this.#progress.total;
+    const settled = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const apply = `<button class="apply" ${taken ? '' : 'disabled'}>${FIX.apply} <span class="badge">${taken}</span></button>`;
     let html;
     if (this.#writing) html = `<div class="writing"><i></i>${esc(FIX.applying(taken))}</div>`;

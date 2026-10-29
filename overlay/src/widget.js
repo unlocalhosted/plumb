@@ -302,7 +302,7 @@ const ICON = {
 };
 
 class PlumbOverlay extends HTMLElement {
-  #blueprint; #fixer; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap();
+  #blueprint; #fixer; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap(); #traces = new Map();
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
 
   connectedCallback() {
@@ -478,7 +478,7 @@ class PlumbOverlay extends HTMLElement {
   changed() { this.#dock(); this.#blueprint?.refresh(); }
   wrote(result, text) { this.#history?.wrote(result, text); }
   ordered() { this.#fixer?.ordered(); }
-  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); }
+  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
   remember(text) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text })); } catch {} }
@@ -623,12 +623,23 @@ class PlumbOverlay extends HTMLElement {
       // Blueprint's first pass does not wait for a trace: it says so, and the reader comes back for it.
       if (!computed) return { status: 'ready', ...reading(location, site, edits), computed: true, text };
       // The server answers 'pending' while it is still reading the modules a class helper lives in; ask again.
-      let traced = null;
-      for (let attempt = 0; attempt < 12; attempt++) {
-        traced = await request('classes', { ...params, classes: rendered }).catch(() => null);
-        if (traced?.status !== 'pending') break;
-        await new Promise(r => setTimeout(r, 250));
+      // One trace per JSX line and class list: a list's rows (every Link from one line) share it, in flight too
+      const key = `${params.file}:${params.line}:${params.column}:${rendered}`;
+      let trace = this.#traces.get(key);
+      if (!trace) {
+        trace = (async () => {
+          let out = null;
+          for (let attempt = 0; attempt < 12; attempt++) {
+            out = await request('classes', { ...params, classes: rendered }).catch(() => null);
+            if (out?.status !== 'pending') break;
+            await new Promise(r => setTimeout(r, 250));
+          }
+          return out;
+        })();
+        this.#traces.set(key, trace);
+        trace.then((out) => { if (!out?.classes) this.#traces.delete(key); });
       }
+      const traced = await trace;
       if (traced?.classes) {
         const r = this.#computedReading(location, traced);
         // Nothing is written at this level: every class is passed in by the code that uses the component (a Link, a

@@ -266,10 +266,12 @@ export class Reader {
     // an advisory mark (soft) is shown, but the count is of problems
     const drift = order.reduce((n, i) => n + (marksOf.get(i.id) ?? i.marks).filter((m) => m.ledger === 'new' && !(m.soft && m.family === 'craft')).length, 0);
     const on = order.reduce((n, i) => n + i.dims.length, 0);
-    const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}`;
+    // read/total are the view; done is the whole page: nothing in flight, nothing left that a wave would still take
+    const done = this.settled;
+    const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}/${done}`;
     if (key !== this.#progress) {
       this.#progress = key;
-      this.#onProgress?.({ read, total: order.length, drift, on, checked, notChecked, outsideSource });
+      this.#onProgress?.({ read, total: order.length, drift, on, checked, notChecked, outsideSource, done });
     }
     // what to hand on: everything read on the page (the marks draw what is in view; the panel counts it all), in
     // document order
