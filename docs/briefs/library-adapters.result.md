@@ -208,7 +208,7 @@ elements); `render` as a function that returns a fragment or a component (not an
 
 ## Layer 4: Base UI owned values and providers
 
-Commit: (next layer records it)
+Commit: 1441184
 
 What changed
 - Contract: `LibraryAdapter.owned = { variables, providers }`: the CSS variables the library sets at runtime and the
@@ -255,3 +255,22 @@ $ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-det
 Unverified: Base UI prop defaults (`sideOffset` and the like) are props, not CSS; plumb judges CSS, so nothing is
 flagged there and nothing was added. The variable list is from Base UI's docs as remembered, not generated from the
 installed package; an undocumented `--*` the library sets would still read as the author's.
+
+## Layer 5: Radix states
+
+Commit: (next layer records it)
+
+What changed: `radix.ts` implements `state()`: `data-state="<value>"` names the value (`open`, `closed`, `checked`,
+`on`, `active`, `delayed-open`, …), `data-side`/`data-align`/`data-orientation`/`data-swipe-direction` are valued
+(`side=top`), `data-disabled`/`data-highlighted`/`data-placeholder`/… are flags. Radix has no className function, so
+only the selector path applies; it runs through the same `selectorStates` as Base UI, nothing Radix-specific outside
+the adapter. Capabilities: `['usage', 'states']`.
+
+```
+$ node --test e2e/library-adapters.test.mjs      ("Radix states": variants data-[state=open], data-disabled, data-[side=top], data-[state=closed]; stylesheet [data-state="checked"], [data-highlighted])
+ℹ pass 8  ℹ fail 0
+$ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-detection.test.mjs e2e/habits.test.mjs
+(see the run above this entry in the terminal; counts recorded in the next layer's section if they changed)
+```
+Unverified: a real Radix app of the owner's (crafting-ui has no Radix); the Radix fixtures here are source only, no
+dev server (that is layer 6).

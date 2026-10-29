@@ -7,9 +7,19 @@ import { componentName, partOf } from './adapter.js';
 const primitive = /^@radix-ui\/react-([\w-]+)$/, unified = /^radix-ui$/, themes = /^@radix-ui\/themes$/;
 // Packages that export one element, not a Root with parts: `Slot` is the element itself.
 const single = new Set(['slot', 'portal', 'visually-hidden', 'presence', 'primitive', 'direction', 'label', 'separator', 'aspect-ratio', 'toggle']);
+// Radix states: `data-state` carries the value (open, checked, on, active, delayed-open…); placement and orientation
+// are valued attributes; the rest are flags.
+const valued = new Set(['state', 'side', 'align', 'orientation', 'swipe-direction', 'swipe', 'motion']);
+const flags = new Set(['disabled', 'highlighted', 'placeholder', 'invalid', 'valid', 'selected', 'checked', 'readonly', 'required', 'active', 'inactive', 'hidden', 'visible', 'open', 'closed']);
 export const radix: LibraryAdapter = {
   family: 'radix',
-  capabilities: ['usage'],
+  capabilities: ['usage', 'states'],
+  state(attribute, value) {
+    const name = attribute.replace(/^data-/, '');
+    if (name === 'state') return value;
+    if (valued.has(name)) return value === null ? name : `${name}=${value}`;
+    return flags.has(name) ? name : null;
+  },
   owns: specifier => primitive.test(specifier) || unified.test(specifier) || themes.test(specifier),
   meaning(specifier, imported) {
     const match = primitive.exec(specifier);

@@ -172,3 +172,32 @@ test('Base UI owned values: its runtime variables are neither dead nor drift; a 
   const owned = report.findings.flatMap(finding => finding.occurrences ?? [finding.declaration]).find(declaration => declaration.owned);
   assert.equal(owned, undefined, 'owned declarations are in no finding');
 });
+
+// ---- Layer 5: Radix states. `data-state` carries the value; placement attributes are valued; the rest are flags.
+test('Radix states: data-state values, data-side, data-disabled and data-highlighted name the state, in variants and stylesheets', async t => {
+  const { list, project } = await detected(t, {
+    'package.json': { name: 'site', type: 'module', dependencies: { react: '*', vite: '*', tailwindcss: '^4', '@radix-ui/react-popover': '^1.1.0', '@radix-ui/react-checkbox': '^1.1.0' } },
+    'src/index.css': '@import "tailwindcss";\n@theme { --spacing-s4: 1rem; --color-ink: #111; }\n.box[data-state="checked"] { padding: 13px; }\n.item[data-highlighted] { margin: 7px; }\n',
+    'src/Pop.jsx': [
+      "import './index.css';",
+      "import * as Popover from '@radix-ui/react-popover';",
+      "import * as Checkbox from '@radix-ui/react-checkbox';",
+      'export const Pop = () => (',
+      '  <Popover.Root>',
+      '    <Popover.Trigger className="data-[state=open]:bg-[#ff0000] data-disabled:p-[9px]">Open</Popover.Trigger>',
+      '    <Popover.Portal><Popover.Content className="data-[side=top]:p-[13px] data-[state=closed]:m-[3px]" /></Popover.Portal>',
+      '    <Checkbox.Root className="box"><Checkbox.Indicator className="item" /></Checkbox.Root>',
+      '  </Popover.Root>',
+      ');',
+    ].join('\n') + '\n',
+  }, 'libraries');
+  const item = find(list, 'radix');
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged' });
+  const report = json(await run(project, ['--json'], 0));
+  assert.deepEqual(states(at(report, 6, 'data-[state=open]:bg-[#ff0000]')[0]), ['open']);
+  assert.deepEqual(states(at(report, 6, 'data-disabled:p-[9px]')[0]), ['disabled']);
+  assert.deepEqual(states(at(report, 7, 'data-[side=top]:p-[13px]')[0]), ['side=top']);
+  assert.deepEqual(states(at(report, 7, 'data-[state=closed]:m-[3px]')[0]), ['closed']);
+  const sheets = report.findings.flatMap(finding => finding.occurrences ?? [finding.declaration]).filter(declaration => declaration.origin === 'stylesheet');
+  assert.deepEqual(sheets.map(declaration => [declaration.value, states(declaration)]).sort(), [['13px', ['checked']], ['7px', ['highlighted']]]);
+});
