@@ -229,6 +229,8 @@ const pending = new Map(), flights = new Map(), fallback = new SourceMapStore();
 export const sourceMapVersion = () => version;
 export function invalidateSourceMaps() {
   version++; fallback.invalidate();
+  // a file changed: every answer derived from the source (resolves, readings, traces) is asked again
+  globalThis.dispatchEvent?.(new Event('plumb:updated'));
   for (const entry of [...pending.values()]) finish(entry, failure('map', { step: 'invalidated' }));
   try { worker?.postMessage({ invalidate: true }); }
   catch (error) { useFallback({ step: 'worker-error', error: error.message }); }

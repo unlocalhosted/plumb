@@ -22,7 +22,7 @@ const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 
 
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
-import { request, post } from './api.js';
+import { request, post, forgetResolved } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
@@ -306,6 +306,7 @@ class PlumbOverlay extends HTMLElement {
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
 
   connectedCallback() {
+    addEventListener('plumb:updated', this.#updated);
     this.#root = this.attachShadow({ mode: 'open' });
     this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
@@ -380,6 +381,7 @@ class PlumbOverlay extends HTMLElement {
   }
 
   disconnectedCallback() {
+    removeEventListener('plumb:updated', this.#updated);
     this.#blueprint?.destroy();
     this.#ready?.destroy();
     this.#text?.destroy();
@@ -478,7 +480,8 @@ class PlumbOverlay extends HTMLElement {
   changed() { this.#dock(); this.#blueprint?.refresh(); }
   wrote(result, text) { this.#history?.wrote(result, text); }
   ordered() { this.#fixer?.ordered(); }
-  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); }
+  #updated = () => this.forget();
+  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
   remember(text) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text })); } catch {} }
@@ -646,7 +649,7 @@ class PlumbOverlay extends HTMLElement {
         // Button wrapper). That code is where they are written and where a fix lands, so its level is the reading,
         // as Alt+↑ would read it.
         if (!r.traced.attributed && r.traced.unattributed && element) {
-          const full = location.chain?.length > 1 ? location : await locate(element, { chain: true }).catch(() => null);
+          const full = location.chain?.length > 1 ? location : await locate(element, { chain: true, batch }).catch(() => null);
           // the chain couldn't be read yet (a cold source map): not "nothing here", so the reader asks again later
           if (!full?.chain) return { status: 'pending', tag: location.tag, message: 'Still finding where this is written.' };
           const at = full.chain.findIndex(link => link.file === location.file && link.line === location.line && link.column === location.column);

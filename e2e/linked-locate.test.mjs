@@ -136,7 +136,7 @@ for (const workspace of [false, true]) {
         assert.equal(unchecked.location, null); assert.equal(unchecked.detail.file, '../library/src/Button.jsx');
       }
       await page.locator('#unchecked-only').click({ modifiers: ['Alt'] });
-      await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.textContent.includes('not checked: ../library/src/Button.jsx'));
+      await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.textContent.includes('written in ../library/src/Button.jsx, outside this project’s source'));
       assert.deepEqual(errors, []);
       return;
     }

@@ -45,8 +45,23 @@ const starting = (body) => body.status === 'failed' ? Object.assign(new Error(bo
 const refusal = (q, status, response) => q.options.explain ? Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method: q.method, source: q.params.source, status, response } }) : null;
 const options404 = (q, error) => q.options.explain ? Object.assign(new Error(error.message), { reason: 'resolve-refusal', detail: { method: q.method, source: q.params.source, error: error.message } }) : error;
 
+// A resolve asked while the same one is in flight shares its answer (a list's rows and every Link ask the same one at
+// once); once answered it is asked afresh, so a changed file or snapshot is always seen.
+const resolved = new Map();
+export function forgetResolved() { resolved.clear(); }
 export async function request(method, params, options = {}) {
-  if (batched && options.batch && (method === 'resolve' || method === 'site')) return enqueue(method, params, options);
+  if (method === 'resolve') {
+    const key = JSON.stringify([params, !!options.explain]);
+    let answer = resolved.get(key);
+    if (!answer) {
+      answer = batched && options.batch ? enqueue(method, params, options) : direct(method, params, options);
+      resolved.set(key, answer);
+      const done = () => { if (resolved.get(key) === answer) resolved.delete(key); };
+      answer.then(done, done);
+    }
+    return answer;
+  }
+  if (batched && options.batch && method === 'site') return enqueue(method, params, options);
   return direct(method, params, options);
 }
 
