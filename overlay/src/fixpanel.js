@@ -92,7 +92,8 @@ export const FIX_CSS = `
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); font: 500 12.5px/1 ui-monospace, monospace; color: #8b8a85; transition: box-shadow 140ms; }
   .fx .field:focus-within { box-shadow: inset 0 0 0 1.5px #1c1b19; }
   .fx .field[data-invalid] { box-shadow: inset 0 0 0 1.5px #c2304f; }
-  .fx .field input { all: unset; flex: 1; min-width: 4ch; color: #1c1b19; font: inherit; }
+  .fx .field input { all: unset; min-width: 4ch; color: #1c1b19; font: inherit; }
+  .fx .field.why input { flex: 1; }
   .fx .field input::placeholder { color: #b4b3ad; }
   .fx .field.why { gap: 6px; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; } .fx .field.why input { font: inherit; }
   .fx .hint { margin: 4px 18px 0; color: #8b8a85; font-size: 12px; min-height: 16px; }
@@ -216,7 +217,7 @@ export class FixPanel {
     });
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
     this.#el.addEventListener('input', (e) => {
-      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); this.#sayNew(); }
+      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); e.target.size = Math.max(4, e.target.value.length + 1); this.#sayNew(); }
       if (e.target.name === 'why') { this.#why = e.target.value; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', this.#why.trim().length < 3); }
     });
     this.#el.addEventListener('keydown', (e) => {
@@ -271,6 +272,7 @@ export class FixPanel {
     this.#host.hold(g, el);
     this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
     this.render(true);
+    this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), g.text, FIX.what(g.members[0].mark), g.members.length));
     // the place in hand is seen above the panel, never under it (once the panel has its height)
     // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
     requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el)));
@@ -324,8 +326,10 @@ export class FixPanel {
     this.#holding = false;
     this.hold(this.#at + by);
   }
+  // the selection's view, only when it is about this cause: never another problem's options, shown or taken
+  #viewOf(g) { const v = g ? this.#host.view() : null; return v && g.members.some((m) => m.mark.key === v.mark?.key && m.mark.rule === v.mark?.rule) ? v : null; }
   take() {
-    const g = this.#cause(), v = this.#host.view();
+    const g = this.#cause(), v = this.#viewOf(g);
     if (!g || !v) return;
     if (v.ready) {
       if (!v.options[v.at]?.ok) return; // its exact edit is still being read
@@ -372,14 +376,14 @@ export class FixPanel {
     if (mark.adopt?.name) return { kind: 'adopt', name: mark.adopt.name, value: String(mark.adopt.value), file: policy.file, hash: policy.hash ?? null };
     const nt = mark.newToken;
     if (!nt?.namespace || !nt.utility) return null;
-    const name = this.#names.get(g.key) ?? '', ok = /^[a-z][a-z0-9-]{0,30}$/.test(name);
+    const name = this.#names.get(g.key) ?? FIX.nameFor(nt.namespace, String(nt.value)), ok = /^[a-z][a-z0-9-]{0,30}$/.test(name);
     // the class as written at the place keeps its variants and sign: hover:-mx-[…] becomes hover:-mx-<name>
     const lead = /^((?:[^:\[\]]+:)*)(!?-?)/.exec(g.text) ?? ['', '', ''];
     return { kind: 'new', name, ok, value: String(nt.value), token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
   }
   // the class the new token becomes, said as it is typed (the field is not drawn again while it has the caret)
   #sayNew() {
-    const g = this.#cause(), a = g && this.#action(g, this.#host.view());
+    const g = this.#cause(), a = g && this.#action(g, this.#viewOf(g));
     const hint = this.#el.querySelector('.hint'), take = this.#el.querySelector('.take');
     if (!a || a.kind !== 'new' || !hint) return;
     this.#el.querySelector('.field')?.toggleAttribute('data-invalid', !!a.name && !a.ok);
@@ -437,7 +441,7 @@ export class FixPanel {
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
     }
-    const v = this.#host.view();
+    const v = this.#viewOf(this.#cause());
     if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#host.pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
     if (k === 'Enter') { this.take(); return true; }
     if (k === 'k' || k === 'K') { this.keep(); return true; }
@@ -468,7 +472,7 @@ export class FixPanel {
 
   render(slide = false) {
     if (!this.#on) return;
-    const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = g ? this.#host.view() : null;
+    const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = this.#viewOf(g);
     // nothing is said to match until every element on the page has been read
     const settled = !!this.#progress?.total && this.#progress.read === this.#progress.total;
     const apply = `<button class="apply" ${taken ? '' : 'disabled'}>${FIX.apply} <span class="badge">${taken}</span></button>`;
@@ -515,7 +519,7 @@ export class FixPanel {
         canTake = true;
       } else if (a?.kind === 'new') {
         middle = `<div class="note">${esc(FIX.newStep(FIX.what(mark).replace(/ not in your theme$/, ''), a.value))}</div>`
-          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : ''}>${esc(a.namespace)}-<input name="token" value="${esc(a.name)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}">: ${esc(a.value)}</label>`
+          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : ''}>${esc(a.namespace)}-<input name="token" value="${esc(a.name)}" size="${Math.max(4, a.name.length + 1)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}">: ${esc(a.value)}</label>`
           + `<div class="hint${a.name && !a.ok ? ' err' : ''}">${this.#newHint(g, a)}</div>`;
         canTake = a.ok;
       } else {
@@ -553,6 +557,7 @@ export class FixPanel {
   resumed(text) { this.#doneText = text; this.#confirm(); }
   #confirm() {
     this.#done = true; this.#html = ''; this.render();
+    this.#host.announce?.(this.#doneText ?? FIX.applied(this.#fixedCount));
     clearTimeout(this.#foldTimer);
     this.#foldTimer = setTimeout(() => { this.#done = false; this.#doneText = null; this.#html = ''; this.render(); }, TIMING.fold);
   }

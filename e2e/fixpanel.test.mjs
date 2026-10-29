@@ -279,7 +279,9 @@ export function App() {
   // Add to theme: named in the field; the class it becomes is said as it is typed
   await hold(/tracking-\[0\.1em\]/);
   assert.match(await panel(overlay).locator('.note').innerText(), /no letter spacing of 0\.1em/);
-  assert.ok(await panel(overlay).locator('.take').isDisabled(), 'no name, nothing to take');
+  // a first name is there, so one Enter is enough; it is edited freely
+  assert.equal(await panel(overlay).locator('input[name="token"]').inputValue(), 'wide');
+  assert.ok(await panel(overlay).locator('.take').isEnabled(), 'a named step can be taken at once');
   await panel(overlay).locator('input[name="token"]').fill('');
   await panel(overlay).locator('input[name="token"]').pressSequentially('track-ak');
   await panel(overlay).locator('.hint').filter({ hasText: 'tracking-track-ak' }).waitFor({ timeout: 5000 });

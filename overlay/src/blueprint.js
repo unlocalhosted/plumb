@@ -75,12 +75,13 @@ export class Blueprint {
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
-      hold: (g, lead) => { const first = g.members.find((m) => m.el === lead) ?? g.members[0], rest = g.members.filter((m) => m !== first); this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
+      hold: (g, lead) => { const first = g.members.find((m) => m.el === lead) ?? g.members[0], rest = g.members.filter((m) => m !== first); this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => this.#selection.clear(),
       view: () => this.#selection.view,
       pick: (i) => this.#selection.pick(i),
       take: () => this.#selection.accept(),
       spotlight: (els) => this.#marks.spotlight(els),
+      announce: (text) => this.#host.announce?.(text),
       applyAll: (tokens, keeps, total) => this.#applyAll(tokens, keeps, total),
       tokens: () => spec.value?.tokens ?? null,
     });

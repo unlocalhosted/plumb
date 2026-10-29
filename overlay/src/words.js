@@ -365,6 +365,8 @@ export const FIX = {
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),
   places: (n) => count(n, 'place', 'places'),
+  // what a screen reader hears when a fix is put in hand
+  inHand: (position, cls, what, n) => `${position}: ${cls}. ${what}, ${count(n, 'place', 'places')}.`,
   // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
   position: (g, list, isNote) => { const same = list.filter((x) => !!isNote(x) === !!isNote(g)); return `${isNote(g) ? 'Note ' : ''}${same.indexOf(g) + 1} of ${same.length}`; },
   checking: 'Checking this screen…',
@@ -398,6 +400,14 @@ export const FIX = {
   becomes: (n) => (n === 1 ? 'This place becomes' : n === 2 ? 'Both places become' : `All ${n} places become`),
   newStepBad: 'Use lowercase letters, numbers and dashes',
   newStepExample: 'wide',
+  // a first name for a new step, by what it is (edited freely; Enter takes it as it is)
+  nameFor(namespace, value) {
+    const n = parseFloat(value);
+    if (namespace === '--tracking') return n < 0 ? 'tight' : 'wide';
+    if (namespace === '--leading') return n < 1.3 ? 'tight' : 'loose';
+    if (/clamp\(|vw|vh/.test(value)) return 'fluid';
+    return { '--spacing': 'gutter', '--radius': 'round', '--shadow': 'soft', '--text': 'display', '--font-weight': 'strong' }[namespace] ?? 'custom';
+  },
   craftToken: 'Your theme has no step for this. This adds it, then uses it here.',
   typed: (value) => `${value} is typed by hand, and your theme has nothing close.`,
   outside: (file) => `Can’t check this. It’s written in ${file}, outside this project’s source. Add it to source in plumber.config.ts to check it.`,

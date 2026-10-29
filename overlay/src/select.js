@@ -68,7 +68,7 @@ export const SELECT_CSS = `
 
 export class Selection {
   #layer; #pill; #el = null; #item = null; #bands = []; #at = 0;
-  #onFrame; #onDraw; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #chosen = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
+  #onFrame; #onDraw; #tokenOf; #health; #onChange; #changes; #steps; #read; #plan = null; #chosen = null; #held = null; #previewing = false; #memo = {}; #taken = new Set(); #why = 0; #group = []; #site; // why: 0 hidden, 1 the line, 2.. the folded ones; group: the cause's other places
 
   // tokenOf(family, px) → a step's short name or null; health() → the dev server's state; onChange(el | null) when the
   // selection moves (the mark layer steps aside for it); changes: the Changes sidebar a fix is accepted into;
@@ -113,7 +113,12 @@ export class Selection {
     return true;
   }
   // the problems on the selected element, one per facet, in the verdict's order
-  get problems() { return (this.#item?.marks ?? []).filter((m) => m.family === 'craft' || m.ledger === 'new'); }
+  get problems() {
+    const marks = (this.#item?.marks ?? []).filter((m) => m.family === 'craft' || m.ledger === 'new');
+    // the problem a panel or a pick chose stays a problem of this element even when a re-read (mid-preview) lacks it:
+    // the selection never stands another problem in for it
+    return this.#held && !marks.some((m) => m.key === this.#held.key) ? [this.#held, ...marks] : marks;
+  }
   get current() { return this.problems[this.#at] ?? null; }
 
   // Select an element (and its reading, when the reader has one); selecting the selected element steps to its next
@@ -130,6 +135,7 @@ export class Selection {
     this.#el = el; this.#item = item ?? null; this.#at = 0; this.#plan = null; this.#why = 0;
     this.#group = chosen?.group ?? [];
     this.#chosen = chosen?.key ?? null;
+    this.#held = chosen?.mark ?? null;
     if (chosen) {
       // the problem chosen by its key; a craft finding folded under another is found through the one it rides on
       let i = this.problems.findIndex((m) => m.key === chosen.key);
@@ -171,7 +177,7 @@ export class Selection {
   clear() {
     if (!this.#el) return false;
     this.#unpreview();
-    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null; this.#group = []; this.#chosen = null;
+    this.#el = null; this.#item = null; this.#bands = []; this.#plan = null; this.#group = []; this.#chosen = null; this.#held = null;
     this.#onChange?.(null);
     this.#layer.replaceChildren(); this.#layer.hidden = true;
     pointAt(this.#pill, [], 0, 0);
