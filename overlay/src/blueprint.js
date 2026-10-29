@@ -75,7 +75,7 @@ export class Blueprint {
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
-      hold: (g, lead) => { const first = g.members.find((m) => m.el === lead) ?? g.members[0], rest = g.members.filter((m) => m !== first); this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
+      hold: (g, lead) => { const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => this.#selection.clear(),
       view: () => this.#selection.view,
       pick: (i) => this.#selection.pick(i),
@@ -85,7 +85,9 @@ export class Blueprint {
       applyAll: (tokens, keeps, total) => this.#applyAll(tokens, keeps, total),
       tokens: () => spec.value?.tokens ?? null,
     });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
+    // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
+    // selected is what the page shows
+    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.

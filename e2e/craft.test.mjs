@@ -144,7 +144,7 @@ test('Inner ≤ outer spacing (#7): groups 8px apart with 16px inside are marked
   const words = await openMark(page, overlay, marks[0].id);
   assert.match(words.hinted, /gap-s4 → gap-s2/);
   assert.match(words.line, /^Items here are 16px apart, but the groups are only 8px apart\./);
-  assert.deepEqual([words.cls, words.what], ['gap-s4', 'Group falls apart · 2 places']);
+  assert.deepEqual([words.cls, words.what], ['gap-s4', 'Group falls apart · 1 place in your code · 2 on the page']);
   const glow = words.glow;
   assert.ok(glow.some((g) => same(g, badA)) && glow.some((g) => same(g, badB)), `both groups light: ${JSON.stringify(glow)} against ${JSON.stringify([badA, badB])}`);
   assert.ok(!glow.some((g) => same(g, goodA)), 'the well-spaced group does not');

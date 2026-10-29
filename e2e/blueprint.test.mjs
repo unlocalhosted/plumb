@@ -97,7 +97,10 @@ test('Alt+B registers the page against the system: no dim, no boxes; heat only w
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
   const count = Number(await overlay.locator('.dock').getAttribute('data-in-view'));
-  assert.equal(count, await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length), 'the dock counts the drift marks drawn');
+  // the dock counts problems in the page's code (a place drawn many times is one), not the marks drawn
+  await page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 20000 });
+  assert.equal(Number(await overlay.locator('.dock').getAttribute('data-in-view')), await page.evaluate(() => window.__plumb.overlay.progress.drift), 'the dock counts the problems in the page’s code');
+  assert.ok(count > 0 && (await hits(overlay).count()) > 0, 'problems are counted and marks are drawn');
   // no boxes and no class names on the page at rest: one zone of heat per mark, nothing else
   const rest = await page.evaluate(() => { const sr = document.querySelector('plumb-overlay').shadowRoot; return { labels: sr.querySelectorAll('.bp .lbl').length, outlines: sr.querySelectorAll('.bp .outlines rect').length, zones: sr.querySelectorAll('.bp .heat .zone').length, hits: sr.querySelectorAll('.bp .hit').length, stages: [...new Set([...sr.querySelectorAll('.bp .heat .zone')].map((z) => z.dataset.stage))] }; });
   assert.equal(rest.labels, 0, 'no labels at rest');
@@ -190,8 +193,8 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
 
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  // the count and the drawn marks agree once the last reading lands
-  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock').dataset.inView); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
+  // once the last reading lands, the dock says the problems in the page's code
+  await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.done && Number(document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.inView) === p.drift; }, null, { timeout: 20000 });
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
@@ -201,7 +204,8 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
   const [, places, causes] = (await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems? · (\d+) fix(?:es)?/).map(Number);
-  assert.ok(places >= drift, `the line counts the whole page, at least what is in view: ${places} >= ${drift}`);
+  assert.ok(drift > 0, 'marks are drawn');
+  assert.equal(places, await page.evaluate(() => window.__plumb.overlay.progress.drift), 'the line and the dock say the same number');
   assert.ok(causes >= 3 && causes <= places, `several causes: ${causes}`);
   assert.equal(await panel(overlay).locator('.cause').count(), 0, 'nothing is in hand at rest');
   // Enter: the cause with the most places is in hand, its class named, its places counted, and lit on the page
@@ -648,9 +652,9 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one cause; one
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  // a click on one cell\u2019s glow: the cause is the class, all 36 places
+  // a click on one cell\u2019s glow: the cause is the class, one place in the code drawn 36 times
   await hold(page, overlay, 'rounded-[3px]', 'rounded-[3px]');
-  assert.match(await panel(overlay).locator('.cause .what').innerText(), /36 places$/);
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /1 place in your code · 36 on the page$/);
   await take(page, overlay);
   let writes = 0;
   await page.route('**/swaps', (route) => { writes++; route.continue(); });
@@ -677,9 +681,9 @@ test('A cause counts every place on the page, not just the view', { timeout: 120
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 30000 });
   const inView = await page.evaluate(() => [...document.querySelectorAll('[id^="row-"]')].filter((r) => { const b = r.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).length);
   assert.ok(inView < 40, `most rows are off-screen: ${inView} in view`);
-  // the biggest cause is held first: its places are all forty rows
+  // the biggest cause is held first: one line of code, all forty rows on the page
   await page.keyboard.press('Enter');
   await inHand(overlay).filter({ hasText: 'p-[10px]' }).waitFor({ timeout: 10000 });
-  assert.match(await panel(overlay).locator('.cause .what').innerText(), /40 places$/);
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /1 place in your code · 40 on the page$/);
   assert.deepEqual(errors, []);
 });

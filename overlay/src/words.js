@@ -364,7 +364,8 @@ export const FIX = {
   problems: (n) => count(n, 'problem', 'problems'),
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),
-  places: (n) => count(n, 'place', 'places'),
+  // places are spots in your code; one drawn many times on the page says both
+  places: (n, shown = n) => (shown > n ? `${count(n, 'place', 'places')} in your code · ${shown} on the page` : count(n, 'place', 'places')),
   // what a screen reader hears when a fix is put in hand
   inHand: (position, cls, what, n) => `${position}: ${cls}. ${what}, ${count(n, 'place', 'places')}.`,
   // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
@@ -382,6 +383,8 @@ export const FIX = {
   applied: (n) => `${count(n, 'change', 'changes')} applied`,
   couldNot: 'Couldn’t apply. Check again.',
   changedSince: 'This file changed after we checked it. Check again.',
+  // a cause whose places no element renders right now: in your code, in a part this page shows only sometimes
+  offPage: (n) => n === 1 ? 'Nothing on the page shows this place right now. It’s in a part this page shows only sometimes. Apply still fixes it in your code.' : `Nothing on the page shows these ${n} places right now. They’re in parts this page shows only sometimes. Apply still fixes them in your code.`,
   // a cause whose every place is inside something closed: counted from your code, but nothing on screen to point at
   unseen: (n) => n === 1 ? 'You can’t see this place right now. It’s inside something closed, like a menu or a dialog. Apply still fixes it in your code.' : `You can’t see these ${n} places right now. They’re inside something closed, like a menu or a dialog. Apply still fixes them in your code.`,
   appliedSome: (done, total, why) => `${done} of ${count(total, 'change', 'changes')} applied. ${why ?? 'Couldn’t apply the rest. Check again.'}`,

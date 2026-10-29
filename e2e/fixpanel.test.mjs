@@ -386,6 +386,39 @@ export function App() {
   assert.deepEqual(errors, []);
 });
 
+// A place is a spot in your code: one rendered many times is one place, and one the page doesn't render right now
+// (a branch not taken) is counted too. Held, it says why nothing is lit, and Keep still records it.
+test('A place the page does not render is counted once, held it says so, and Keep records it', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, `
+function Row({ label }) { return <li className="text-body tracking-[0.1em]">{label}</li>; }
+export function App({ open = false }) {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <ul>{['a', 'b', 'c', 'd'].map((x) => <Row key={x} label={x} />)}</ul>
+      {open ? <p id="never" className="text-body p-[13px]">Only sometimes</p> : null}
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const cls = () => panel(overlay).locator('.cause .cls').innerText();
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 6 && !/tracking-\[0\.1em\]/.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /1 place/, 'four rows from one line of code are one place');
+  for (let i = 0; i < 6 && !/p-\[13px\]/.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+  assert.match(await cls(), /p-\[13px\]/, 'the branch not taken is counted');
+  await panel(overlay).locator('.say').filter({ hasText: 'Nothing on the page shows this place right now' }).waitFor({ timeout: 5000 });
+  await page.keyboard.press('k');
+  await panel(overlay).locator('input[name="why"]').pressSequentially('only in the open state');
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.apply').click();
+  await panel(overlay).locator('.done').waitFor({ timeout: 20000 });
+  assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /only in the open state/);
+  assert.deepEqual(errors, []);
+});
+
 // Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
 // that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
 test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {

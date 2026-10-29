@@ -40,6 +40,8 @@
  *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
  * ───────────────────────────────────────────────────────── */
 
+import { inCode, isNote } from './blueprint-panel.js';
+
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
 const THROTTLE = 150;
@@ -325,12 +327,12 @@ export class Reader {
     const places = this.#places(enriched);
     // drift: distinct (place, cause) pairs, place = file:line:column and cause = rule + class text (what the fix panel
     // groups by), over new marks that are not in-code notes, so the dock and the panel's "N problems" agree
-    const inCode = (m) => /opaque-inline|^config\//.test(m.rule);
+    // (inCode and isNote are the fix panel's own, so its line and the dock say one number)
     const problems = new Set();
     let unrendered = 0, notes = 0;
-    const count = (m, file) => { if (m.ledger === 'new' && m.family !== 'craft' && !inCode(m)) problems.add(`${m.file ?? file}:${m.line}:${m.column}|${m.rule}|${m.text}`); };
+    const count = (m, file) => { if (m.ledger === 'new' && !inCode(m) && !isNote(m)) problems.add(`${m.file ?? file}:${m.line}:${m.column}|${m.rule}|${m.text}`); };
     for (const file of this.#code.values()) for (const m of file.marks) count(m, file.file);
-    for (const i of enriched) for (const m of i.marks) { if (m.family === 'craft') notes++; else count(m, i.file); }
+    for (const i of enriched) for (const m of i.marks) { if (isNote(m)) notes++; else count(m, i.file); }
     for (const place of places.values()) if (!place.elements.length) unrendered++;
     const drift = problems.size;
     const on = all.reduce((n, i) => n + i.dims.length, 0);

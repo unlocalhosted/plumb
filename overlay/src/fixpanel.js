@@ -31,7 +31,7 @@
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX } from './words.js'; // every sentence the panel says
-import { groupsOf } from './blueprint-panel.js';
+import { groupsOf, isNote } from './blueprint-panel.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -178,14 +178,21 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
 // what an arbitrary class writes, as written: text-[length:calc(var(--z)*12px)] → calc(var(--z)*12px)
 const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(String(cls ?? '')); return m ? m[1].replace(/_/g, ' ') : null; };
-const noteOf = (g) => g.members.every((m) => m.mark.family === 'craft' && (!m.mark.craft?.suggest || m.mark.craft.suggest.kind === 'advice'));
+const noteOf = (g) => g.members.every((m) => isNote(m.mark));
 
 // on the page and drawn: not inside something closed (display: none, a closed <details>, content-visibility), and not
 // of no size
+// a place is a spot in your code (file, line, column); the elements that render it are drawn, but counted once
+const fileOf = (m) => m.mark.file ?? m.item?.site?.file ?? m.item?.file;
+const BRIEF = 600; // a check again this short keeps the last settled line as it was
+const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+const drawn = (g) => g.members.some((m) => m.el);
+const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
 const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
 
 export class FixPanel {
   #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #fixedCount = 0; #on = false;
+  #unsettledAt = 0; #unsettledTimer = 0;
   #steady = null; #doneText = null; #notice = null; #noticeTimer = 0;   // the last settled count { places, causes, notes }: said while the page is checked again
   #foldTimer = 0;
   #keeps = new Map(); // cause key → { rule, sites, why }: kept as intended, written on Apply
@@ -241,7 +248,16 @@ export class FixPanel {
     this.render();
   }
   // the reader's progress: settled once every element is read (what a script waiting on the page can watch)
-  progress(p) { this.#progress = p; this.#el.toggleAttribute('data-settled', !!p && (p.done ?? p.read === p.total)); this.render(); }
+  progress(p) {
+    this.#progress = p;
+    const done = !!p && (p.done ?? p.read === p.total);
+    this.#el.toggleAttribute('data-settled', done);
+    // the page changing for a moment (a tooltip, a ticking clock) is checked again without the line saying so; only a
+    // check that takes longer says it is checking
+    if (done) { this.#unsettledAt = 0; clearTimeout(this.#unsettledTimer); }
+    else if (!this.#unsettledAt) { this.#unsettledAt = performance.now(); this.#unsettledTimer = setTimeout(() => this.render(), BRIEF + 20); }
+    this.render();
+  }
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
   #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
@@ -270,16 +286,17 @@ export class FixPanel {
     this.#held = g;
     // the place in hand is one that can be seen: a cause is counted from the source, so some of its places may be
     // inside something closed (a menu, a dialog)
-    const el = g.members.some((m) => m.el === lead) ? lead : (g.members.find((m) => shown(m.el)) ?? g.members[0]).el;
-    this.#host.hold(g, el);
-    this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
+    const el = g.members.some((m) => m.el && m.el === lead) ? lead : (g.members.find((m) => shown(m.el)) ?? g.members.find((m) => m.el))?.el ?? null;
+    // a cause with no place on the page right now: nothing to hold or light; its fix comes from the code alone
+    if (el) this.#host.hold(g, el); else this.#host.release();
+    this.#host.spotlight(elsOf(g));
     this.render(true);
-    this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), g.text, FIX.what(g.members[0].mark), g.members.length));
+    this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), g.text, FIX.what(g.members[0].mark), placesOf(g)));
     // the place in hand is seen above the panel, never under it (once the panel has its height)
     // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
     // pointed at (a click, Alt+click): it is where the person looks, so it only moves out from under the panel;
     // reached by keys: it is brought into view wherever it is
-    if (reveal !== 'none') {
+    if (el && reveal !== 'none') {
       const covered = reveal === 'uncover';
       requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
       setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
@@ -340,19 +357,20 @@ export class FixPanel {
   #viewOf(g) { const v = g ? this.#host.view() : null; return v && g.members.some((m) => m.mark.key === v.mark?.key && m.mark.rule === v.mark?.rule) ? v : null; }
   take() {
     const g = this.#cause(), v = this.#viewOf(g);
-    if (!g || !v) return;
-    if (v.ready) {
+    // a place on the page is read first (its exact options); a cause with none takes its fix from the code alone
+    if (!g || (!v && drawn(g))) return;
+    if (v?.ready) {
       if (!v.options[v.at]?.ok) return; // its exact edit is still being read
       this.#host.take();
     } else if (v.suggest?.kind === 'token') {
-      this.#tokens.set(g.key, { suggest: v.suggest, els: [...new Set(g.members.map((m) => m.el))] });
+      this.#tokens.set(g.key, { suggest: v.suggest, els: elsOf(g) });
     } else {
       const a = this.#action(g, v);
       if (a?.kind === 'adopt') this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.name, value: a.value }, els: [] });
       else if (a?.kind === 'new') {
         // no name yet: the field is where the answer goes
         if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'); f?.focus(); f?.closest('.field')?.toggleAttribute('data-invalid', !!a.name); return; }
-        this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.token, value: a.value, then: { from: g.text, to: a.cls } }, els: [...new Set(g.members.map((m) => m.el))], marks: g.members.map((m) => m.mark) });
+        this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.token, value: a.value, then: { from: g.text, to: a.cls } }, els: elsOf(g), marks: g.members.map((m) => m.mark) });
       } else return;
     }
     this.#taken.set(g.key, g);
@@ -371,7 +389,7 @@ export class FixPanel {
   #keepIt() {
     const g = this.#cause(), why = this.#why.trim();
     if (!g || why.length < 3) return;
-    this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: [...new Set(g.members.map((m) => m.el))], sites: g.members.map((m) => ({ file: m.mark.file, line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
+    this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: elsOf(g), sites: g.members.map((m) => ({ file: fileOf(m), line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
     this.#keeping = false;
     this.#taken.set(g.key, g);
     this.#host.release();
@@ -402,12 +420,12 @@ export class FixPanel {
     take?.toggleAttribute('disabled', !a.ok);
   }
   #newHint(g, a) {
-    const n = g.members.length;
+    const n = placesOf(g);
     return a.name && !a.ok ? esc(FIX.newStepBad) : a.ok ? `${esc(FIX.becomes(n))} <code>${esc(a.cls)}</code>` : esc(FIX.newStepHint(n));
   }
   async apply() {
     if (!this.#taken.size || this.#writing) return;
-    this.#fixed = [...this.#taken.values()].flatMap((g) => g.members.map((m) => m.el));
+    this.#fixed = [...this.#taken.values()].flatMap(elsOf);
     this.#fixedCount = this.#taken.size;
     this.#writing = true; this.#letGo(true); this.#host.release(); this.#host.spotlight([]);
     this.render();
@@ -468,7 +486,7 @@ export class FixPanel {
   #previewToken(g, suggest) {
     if (this.#tokenPreview.size) return;
     const own = new Map(g.members.map((m) => { const s = m.mark?.craft?.suggest; return [m.el, s?.to === suggest.to && s?.sets ? s.sets : null]; }));
-    for (const el of new Set(g.members.map((m) => m.el))) {
+    for (const el of elsOf(g)) {
       const had = [];
       for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); had.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, typeof v === 'number' ? `${v}px` : String(v), 'important'); }
       this.#tokenPreview.set(el, had);
@@ -484,7 +502,8 @@ export class FixPanel {
     if (!this.#on) return;
     const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = this.#viewOf(g);
     // nothing is said to match until every element on the page has been read
-    const settled = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
+    const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
+    const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     const apply = `<button class="apply" ${taken ? '' : 'disabled'}>${FIX.apply} <span class="badge">${taken}</span></button>`;
     let html;
     if (this.#writing) html = `<div class="writing"><i></i>${esc(FIX.applying(taken))}</div>`;
@@ -493,9 +512,9 @@ export class FixPanel {
     else if (!g) {
       // a note (advice, no exact edit) is shown with the fixes but never counted as a problem
       const causesNow = live.filter((x) => !noteOf(x));
-      let causes = causesNow.length, notes = live.length - causes, places = causesNow.reduce((n, x) => n + x.members.length, 0);
+      let causes = causesNow.length, notes = live.length - causes, places = causesNow.reduce((n, x) => n + placesOf(x), 0);
       // checking again (after an apply, a page change): the last settled count stands until the new one settles
-      if (settled) this.#steady = { places, causes, notes, path: location.pathname };
+      if (settledNow) this.#steady = { places, causes, notes, path: location.pathname };
       else if (this.#steady?.path === location.pathname) ({ places, causes, notes } = this.#steady);
       const unchecked = this.#progress?.notChecked ? ` · <span title="${esc(FIX.uncheckedTitle)}">${esc(FIX.unchecked(this.#progress.notChecked))}</span>` : '';
       const tail = `${notes ? ` · ${FIX.notes(notes)}` : ''}${unchecked}${settled ? '' : ` · ${FIX.stillChecking}`}`;
@@ -504,7 +523,7 @@ export class FixPanel {
         : `<div class="line"><span class="count"><span>${esc(this.#error ?? (taken ? FIX.ready(taken) : !settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${esc(FIX.what(mark))} · ${esc(FIX.places(g.members.length))}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${esc(FIX.what(mark))} · ${esc(FIX.places(placesOf(g), elsOf(g).length))}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
@@ -541,9 +560,9 @@ export class FixPanel {
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;
       const acts = this.#keeping
         ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
-          + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(g.members.length))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span>${apply}</div>`
+          + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(placesOf(g)))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span>${apply}</div>`
         : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
-      const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(FIX.unseen(g.members.length))}</div>`;
+      const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(drawn(g) ? FIX.unseen(placesOf(g)) : FIX.offPage(placesOf(g)))}</div>`;
       html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${unseen}${middle}${acts}</div>`;
     }
     if (html === this.#html) return;
