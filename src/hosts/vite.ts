@@ -151,7 +151,9 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
       return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js', 'vite-ignore': true }, injectTo: 'head' },
         { tag: 'script', attrs: { type: 'module', 'vite-ignore': true }, children: `import { createHotContext } from '/@vite/client';
 import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
-createHotContext('/__plumb/client.js').on('vite:afterUpdate', invalidateSourceMaps);`, injectTo: 'head' }];
+const hot = createHotContext('/__plumb/client.js');
+hot.on('vite:afterUpdate', invalidateSourceMaps);
+hot.on('plumb:applied', (data) => dispatchEvent(new CustomEvent('plumb:applied', { detail: data })));`, injectTo: 'head' }];
     } },
     async closeBundle() { if (!restarts) { await release?.(); release = undefined; } },
   };

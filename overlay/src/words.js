@@ -381,6 +381,8 @@ export const FIX = {
   applying: (n) => `Applying ${count(n, 'change', 'changes')}…`,
   applied: (n) => `${count(n, 'change', 'changes')} applied`,
   couldNot: 'Couldn’t apply. Check again.',
+  changedSince: 'This file changed after we checked it. Check again.',
+  appliedSome: (done, total, why) => `${done} of ${count(total, 'change', 'changes')} applied. ${why ?? 'Couldn’t apply the rest. Check again.'}`,
   // a fix in hand: what is wrong, in a few words
   what(mark) {
     if (mark.family === 'craft') return mark.what ?? 'Doesn’t follow the craft rules';

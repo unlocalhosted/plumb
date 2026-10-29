@@ -323,6 +323,43 @@ export function App() {
   assert.deepEqual(errors, []);
 });
 
+// One Apply that writes the theme reloads the page, which can cut the server's answer short. The dev server says the
+// whole result first, so what did not land is said after the reload, not a count that was only hoped for.
+test('After an Apply that reloads the page, the panel says what did not land and why', { timeout: 180000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const app = `
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <p id="t1" className="text-body tracking-[0.1em]">Eyebrow</p>
+      <p id="l" className="text-body leading-relaxed">Relaxed</p>
+    </main>
+  );
+}
+`;
+  // the theme already has --tracking-loose at another value: a new step by that name is refused on write
+  const { root, url } = await fixture(t, app, '\n@theme { --tracking-loose: 0.3em; }\n');
+  const { page, errors, overlay } = await open(t, launched, url);
+  const cls = () => panel(overlay).locator('.cause .cls').innerText();
+  const hold = async (re) => {
+    if (!(await panel(overlay).locator('.cause').count())) await page.keyboard.press('Enter');
+    for (let i = 0; i < 8 && !re.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+    assert.match(await cls(), re);
+  };
+  await hold(/tracking-\[0\.1em\]/);
+  await panel(overlay).locator('input[name="token"]').fill('loose');
+  await page.keyboard.press('Enter');
+  await hold(/leading-relaxed/);
+  await panel(overlay).locator('.take').filter({ hasText: 'Add to theme' }).waitFor({ timeout: 5000 });
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.apply .badge').filter({ hasText: '2' }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.apply').click();
+  await overlay.getByText(/1 of 2 changes applied\. --tracking-loose is already 0\.3em/).first().waitFor({ timeout: 20000 });
+  assert.match(await readFile(join(root, 'src/styles.css'), 'utf8'), /--leading-relaxed:\s*1\.625/);
+  assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /tracking-\[0\.1em\]/, 'the refused step left the source as it was');
+  assert.deepEqual(errors, []);
+});
+
 // Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
 // that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
 test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {

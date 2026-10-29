@@ -281,35 +281,52 @@ export class Blueprint {
     if (this.#changes.count) await this.#changes.accept();
     // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
     // the theme, the ledger. A reload the theme write causes can't cut it short.
-    const swaps = new Map(), owner = new Map();
+    // a new step's class goes in only once the theme has it (the server's `then`), so a step the theme refuses never
+    // leaves a class that means something else: at every place of its cause in the source, or, for a step a craft
+    // check suggested (no source rule), at the places the panel holds
+    const then = new Map();
     for (const t of tokens) {
-      const s = t.suggest;
-      if (!s.then?.to || !t.els.length) continue;
+      const s = t.suggest, rule = t.marks?.[0]?.rule;
+      if (!s.then?.to) continue;
+      if (s.then.from && rule) { then.set(t, { cause: { rule, text: s.then.from, choice: s.name } }); continue; }
+      const files = new Map();
       for (const el of t.els) {
         const site = await this.#siteOf(el).catch(() => null);
         if (!site) continue;
-        const f = swaps.get(site.file) ?? swaps.set(site.file, { file: site.file, hash: site.hash, edits: [] }).get(site.file);
+        const f = files.get(site.file) ?? files.set(site.file, { file: site.file, hash: site.hash, edits: [] }).get(site.file);
         if (!f.edits.some((e) => e.line === site.line && e.column === site.column)) f.edits.push({ line: site.line, column: site.column, from: s.then.from ?? '', to: s.then.to });
-        owner.set(site.file, [...(owner.get(site.file) ?? []), t]);
       }
+      if (files.size) then.set(t, { swaps: [...files.values()] });
     }
     const refused = [];
     let said = null;
     if (tokens.length || keeps.length) {
       // said now: if the theme write reloads the page, the bar says it when the page comes back
       this.#host.remember?.(FIX.applied(total));
+      // what landed, from the server's results: the response, or the dev server's word before the reload it causes
+      const outcome = (results) => {
+        const refused = [];
+        let said = null;
+        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= /changed since/i.test(error ?? '') ? FIX.changedSince : error ?? FIX.couldNot; };
+        results.tokens.forEach((r, i) => { if (!r.ok) miss(tokens[i], r.error); });
+        for (const r of results.swaps) if (!r.ok || r.refused?.length) miss(tokens.find((t) => t.suggest.name === r.token), r.error ?? r.refused?.[0]?.reason);
+        results.accepts.forEach((r, i) => { if (!r.ok) miss(keeps[i], r.error); });
+        return { refused, said };
+      };
+      // Vite tells the page the whole result before the reload that would cut the response short: the bar says
+      // after it what did not land, not a count that was only hoped for
+      const heard = (e) => { const o = e.detail?.results && outcome(e.detail.results); if (o?.refused.length) this.#host.remember?.(FIX.appliedSome(total - o.refused.length, total, o.said)); };
+      addEventListener('plumb:applied', heard, { once: true });
       try {
         const { results } = await post('apply-all', {
-          tokens: tokens.map((t) => ({ file: t.suggest.file, hash: t.suggest.hash, name: t.suggest.name, value: t.suggest.value, ...(t.suggest.why ? { why: t.suggest.why } : {}) })),
-          swaps: [...swaps.values()],
+          tokens: tokens.map((t) => ({ file: t.suggest.file, hash: t.suggest.hash, name: t.suggest.name, value: t.suggest.value, ...(t.suggest.why ? { why: t.suggest.why } : {}), ...(then.has(t) ? { then: then.get(t) } : {}) })),
           accepts: keeps.map((k) => ({ rule: k.rule, sites: k.sites, why: k.why })),
         });
-        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= /changed since/i.test(error ?? '') ? 'This file changed after we checked it. Check again.' : error ?? FIX.couldNot; };
-        results.tokens.forEach((r, i) => { if (!r.ok) miss(tokens[i], r.error); });
-        for (const r of results.swaps) if (!r.ok || r.refused?.length) for (const t of owner.get(r.file) ?? []) miss(t, r.error ?? r.refused?.[0]?.reason);
-        results.accepts.forEach((r, i) => { if (!r.ok) miss(keeps[i], r.error); });
-        for (const f of new Set([...tokens.map((t) => t.suggest.file), ...swaps.keys(), ...keeps.flatMap((k) => k.sites.map((x) => x.file))])) this.invalidate({ file: f });
+        const o = outcome(results);
+        refused.push(...o.refused); said = o.said;
+        for (const f of new Set([...tokens.map((t) => t.suggest.file), ...results.swaps.map((r) => r.file).filter(Boolean), ...keeps.flatMap((k) => k.sites.map((x) => x.file))])) this.invalidate({ file: f });
       } catch (error) { refused.push(...tokens, ...keeps); said = error?.message ?? FIX.couldNot; this.#host.forgetResume?.(); }
+      finally { removeEventListener('plumb:applied', heard); }
     }
     // what did not land (a token, a swap or a keep refused, or a class change still in Changes): say so
     return { count: this.#changes.count + refused.length, why: this.#changes.why ?? said, refused };
@@ -338,7 +355,7 @@ export class Blueprint {
         if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
       } catch (error) {
         this.#host.forgetResume?.();
-        const why = /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t apply.';
+        const why = /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
         for (const el of f.els) out.push({ el, ok: false, why });
       }
     }
