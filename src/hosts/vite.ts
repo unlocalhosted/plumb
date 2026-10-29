@@ -1,4 +1,4 @@
-import type { Plugin } from 'vite';
+import type { ModuleNode, Plugin, ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -8,6 +8,9 @@ import { createHandler } from '../session/server.js';
 import { sourceStamping } from './source-stamping.js';
 
 interface Entry { session: Promise<Session>; owners: Set<symbol>; restarting: number }
+/** Hot updates held while one apply-all transaction writes its files: what Vite saw, and whether any of it would reload the page. */
+interface Held { files: Set<string>; modules: Map<string, ModuleNode>; full: boolean; timer: NodeJS.Timeout; /** the writes are done: the files still to be seen by the watcher before the one release */ ending?: { expected: Set<string>; timer: NodeJS.Timeout } }
+type Transaction = { phase: 'start' } | ({ phase: 'end' } & Record<string, unknown>);
 const key = Symbol.for('@unlocalhosted/plumb/vite/sessions');
 const globals = globalThis as typeof globalThis & { [key]?: Map<string, Entry> };
 const registry = globals[key] ??= new Map<string, Entry>();
@@ -37,6 +40,42 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
   const entry = '\0plumb:demo';
   const client = fileURLToPath(new URL('../../overlay/client.js', import.meta.url));
   const stamping = sourceStamping(options, Boolean(demo));
+  // One apply-all is one transaction against Vite's hot updates: every file it writes is held (handleHotUpdate /
+  // hotUpdate return nothing for it), the page is told the whole result first (`plumb:applied` over the HMR socket,
+  // so a reload cannot lose the confirmation), then one release follows: a full reload when any held file would have
+  // caused one, else one update per held module. Ordinary saves from an editor are never held. If the transaction
+  // dies, whatever is held goes out after five seconds. Next.js has no such hook (webpack, Fast Refresh): there
+  // apply-all writes back to back, and the page reloads as it would for any save.
+  let held: Held | undefined, hotServer: ViteDevServer | undefined;
+  const releaseHeld = () => {
+    const current = held; held = undefined;
+    if (!current) return;
+    clearTimeout(current.timer); clearTimeout(current.ending?.timer);
+    if (!hotServer || !current.files.size) return;
+    if (current.full || !current.modules.size) hotServer.ws.send({ type: 'full-reload', path: '*' });
+    else for (const module of current.modules.values()) void hotServer.reloadModule(module);
+  };
+  const onTransaction = (event: Transaction) => {
+    if (event.phase === 'start') { releaseHeld(); held = { files: new Set(), modules: new Map(), full: false, timer: setTimeout(() => releaseHeld(), 5000) }; return; }
+    const { phase: _phase, ...data } = event;
+    // the page hears the whole result before anything reloads it
+    hotServer?.ws.send({ type: 'custom', event: 'plumb:applied', data });
+    if (!held) return;
+    // the watcher reports the written files a moment after the writes: wait for each of them (two seconds at most),
+    // so they are held into the one release instead of reloading the page one by one afterwards
+    const expected = new Set(((data.undo as { file: string }[] | undefined) ?? []).map(entry => resolve(root, entry.file)));
+    held.ending = { expected, timer: setTimeout(releaseHeld, 2000) };
+    if ([...expected].every(file => held!.files.has(file))) releaseHeld();
+  };
+  const hold = async (file: string, modules: readonly ModuleNode[], read: () => string | Promise<string>): Promise<[] | undefined> => {
+    if (!held || !hotServer || !file.startsWith(root + '/') || file.includes('/node_modules/')) return undefined;
+    held.files.add(file);
+    for (const module of modules) held.modules.set(module.id ?? module.url, module);
+    // a stylesheet that sets the theme, or a file no module reads, would reload the whole page
+    if (!modules.length || file.endsWith('.css') && /@theme\b|@import\s+["']tailwindcss/.test(await Promise.resolve(read()).catch(() => ''))) held.full = true;
+    if (held.ending && [...held.ending.expected].every(seen => held!.files.has(seen))) releaseHeld();
+    return [];
+  };
   return {
     ...(stamp ? stamping : { name: 'plumb', ...(demo ? {} : { apply: 'serve' as const }) }),
     configResolved(config) {
@@ -58,7 +97,10 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
       if (stamp && typeof stamping.transform === 'function') return stamping.transform.call(this, code, id);
       return null;
     },
+    handleHotUpdate(context) { return hold(context.file, context.modules, context.read); },
+    hotUpdate(context) { return this.environment.name === 'client' ? hold(context.file, context.modules as unknown as ModuleNode[], context.read) : undefined; },
     configureServer(server) {
+      hotServer = server;
       const root = options.root === undefined ? server.config.root : resolve(server.config.root, options.root);
       const effective = { ...options, root };
       if (options.config !== undefined) effective.config = resolve(root, options.config);
@@ -72,7 +114,8 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
         void starting.session.catch(() => { if (registry.get(id) === starting) registry.delete(id); });
       }
       const owned = entry, owner = Symbol(); owned.owners.add(owner);
-      const relinquish = async () => { owned.owners.delete(owner); await dispose(id, owned); };
+      void owned.session.then(session => session.on('transaction', onTransaction)).catch(() => {});
+      const relinquish = async () => { owned.owners.delete(owner); releaseHeld(); await owned.session.then(session => session.off('transaction', onTransaction)).catch(() => {}); await dispose(id, owned); };
       void release?.();
       release = relinquish;
       // Vite 6/7 close before configuring the replacement; Vite 8 configures it first.

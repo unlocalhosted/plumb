@@ -646,6 +646,12 @@ export class Session extends EventEmitter {
     if (![tokens, swaps, accepts].every(Array.isArray) || tokens.length + swaps.length + accepts.length === 0) throw new UsageError('Apply needs at least one token, swap or accept.');
     if (tokens.length + swaps.length + accepts.length > 200) throw new UsageError('Apply takes at most two hundred items.');
     const result: ApplyAllResult = { results: { tokens: [], swaps: [], accepts: [] }, undo: [], labels: [] };
+    // the host holds hot updates while the transaction is open (hosts/vite.ts), and tells the page once it is done
+    this.emit('transaction', { phase: 'start' });
+    try { return await this.applyEach({ tokens, swaps, accepts }, result); }
+    finally { this.emit('transaction', { phase: 'end', ...result }); }
+  }
+  private async applyEach({ tokens, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {
     // the hash each file had when the batch began, and the hash it has now
     const began = new Map<string, string>(), latest = new Map<string, string>();
     const hashFor = async (file: string, sent: string): Promise<string> => {

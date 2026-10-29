@@ -12,6 +12,7 @@ try {
   const session = await Session.create(workerData);
   const snapshot = async () => ({ health: await session.health(), stats: session.stats });
   session.on('change', value => { void snapshot().then(state => port.postMessage({ event: 'change', value, ...state })); });
+  session.on('transaction', value => port.postMessage({ event: 'transaction', value }));
   session.on('diagnostic', error => { void snapshot().then(state => port.postMessage({ event: 'diagnostic', value: error, ...state })); });
   async function execute(call: Call) {
     if (Date.now() >= call.deadline) { port.postMessage({ id: call.id, busy: true }); return; }
