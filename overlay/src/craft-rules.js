@@ -490,11 +490,16 @@ function apca(text, ground) {
   if (yb > yt) { const c = (Math.pow(yb, 0.56) - Math.pow(yt, 0.57)) * 1.14; return c < 0.1 ? 0 : (c - 0.027) * 100; }
   const c = (Math.pow(yb, 0.65) - Math.pow(yt, 0.62)) * 1.14; return c > -0.1 ? 0 : (c + 0.027) * 100;
 }
-// the line boxes of an element's own words
-function lineCount(el, facts) {
-  const s = facts.style(el), lh = px(s.lineHeight) || px(s.fontSize) * 1.2;
-  const r = facts.rect(el), b = facts.box(el);
-  return Math.round((r.height - b.pt - b.pb - b.bt - b.bb) / lh);
+// the line boxes of an element's own words: the rows its text is laid out on, measured, not its height over its line
+// height (a 36px control holding one line of 13px words is one line, not three)
+function lineCount(el) {
+  const tops = [], range = document.createRange();
+  for (const n of el.childNodes) {
+    if (n.nodeType !== 3 || !n.nodeValue.trim()) continue;
+    range.selectNodeContents(n);
+    for (const q of range.getClientRects()) if (q.width > 0 && !tops.some((t) => Math.abs(t - q.top) < q.height / 2)) tops.push(q.top);
+  }
+  return tops.length;
 }
 
 // #9. Equal padding isn't equal: a text button wants about twice as much padding across as down.
@@ -565,7 +570,7 @@ export const measure = {
     const fs = px(s.fontSize), width = r.width - b.pl - b.pr;
     // the average glyph of running text is about half an em wide
     const perLine = width / (fs * 0.5);
-    if (perLine <= T.max || lineCount(el, facts) < 3) return [];
+    if (perLine <= T.max || lineCount(el) < 3) return [];
     const cls = utility(el, 'max-w');
     return [{
       ...say(this.id, { chars: Math.round(perLine) }),
@@ -584,7 +589,7 @@ export const leading = {
     if (!facts.text(el)) return [];
     const s = facts.style(el), fs = px(s.fontSize), lh = px(s.lineHeight);
     if (!lh || !fs) return [];
-    const ratio = lh / fs, lines = lineCount(el, facts);
+    const ratio = lh / fs, lines = lineCount(el);
     const big = fs >= T.large && ratio > T.loose && lines >= 1;
     const cramped = fs <= T.small && ratio < T.tight && lines >= 3;
     if (!big && !cramped) return [];
@@ -1238,8 +1243,8 @@ export const contentSize = {
     const inner = r.width - b.pl - b.pr - b.bl - b.br;
     const range = document.createRange(); range.selectNodeContents(el);
     const need = Math.max(...[...range.getClientRects()].map((q) => q.right), 0) - Math.min(...[...range.getClientRects()].map((q) => q.left), Infinity);
-    const overflow = el.scrollWidth > el.clientWidth + 1 || lineCount(el, facts) > 1 && s.whiteSpace !== 'normal';
-    if (!(overflow || (need > 0 && (inner - need) / inner < T.slack && lineCount(el, facts) > 1))) return [];
+    const overflow = el.scrollWidth > el.clientWidth + 1 || lineCount(el) > 1 && s.whiteSpace !== 'normal';
+    if (!(overflow || (need > 0 && (inner - need) / inner < T.slack && lineCount(el) > 1))) return [];
     return [{
       ...say(this.id, { w: r.width, need: Math.ceil(need + b.pl + b.pr) }),
       key: this.id, text: cls, props: ['width'], value: `${r.width}px`, n: r.width,
@@ -1252,7 +1257,7 @@ export const contentSize = {
 // ── hard rules, layer 1: font metrics (facts.metrics) ─────────
 
 // one line of words, owned by this element (its own text, a single line box)
-const oneLine = (el, facts) => facts.text(el) && lineCount(el, facts) <= 1;
+const oneLine = (el, facts) => facts.text(el) && lineCount(el) <= 1;
 
 // #6. Baseline alignment: text of different sizes side by side lines up on its baseline, not its centre.
 export const baselineAlign = {

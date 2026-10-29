@@ -261,21 +261,20 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   assert.deepEqual(errors, []);
 });
 
-test('The Alt card shows craft findings too: pinning the non-concentric child names the rule and its suggestion', { timeout: 120000 }, async (t) => {
+test('Alt+click on the non-concentric child opens blueprint with its craft cause in hand, named with its suggestion', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
+  const fx = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText ?? '');
   await page.locator('#cc-bad-child').click({ modifiers: ['Alt'] });
-  const card = overlay.locator('.w:not([hidden]) .card');
-  await card.waitFor({ timeout: 10000 });
-  await page.waitForFunction(() => /sits 4px inside a 12px corner/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.w:not([hidden]) .card')?.textContent ?? ''), null, { timeout: 10000 });
-  assert.match(await card.innerText(), /rounded-card/);
+  await page.waitForFunction(() => /Corner doesn’t match its parent/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.textContent ?? ''), null, { timeout: 20000 });
+  assert.match(await fx(), /rounded-card/);
   // the concentric one beside it carries no craft finding
   await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
   await page.locator('#cc-good-child').click({ modifiers: ['Alt'] });
-  await card.waitFor({ timeout: 10000 });
-  await page.waitForTimeout(800);
-  assert.doesNotMatch(await card.innerText(), /sits 4px inside a 12px corner/);
+  await page.waitForTimeout(3000);
+  assert.doesNotMatch(await fx(), /Corner doesn’t match its parent/);
   assert.deepEqual(errors, []);
 });

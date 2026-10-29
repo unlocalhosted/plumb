@@ -124,3 +124,40 @@ test('A glow clicked puts its cause in hand; → skips to the next cause, ← ba
   await page.waitForFunction(() => ['a', 'b'].every((id) => getComputedStyle(document.getElementById(id)).paddingTop === '18px'), null, { timeout: 5000 });
   assert.deepEqual(errors, []);
 });
+
+// A cause whose fix is relative to the text (a line height of 1.5 × the size) is previewed per place: each place at
+// its own size, written as px, never one place's number dropped unitless onto all of them (19.5 read as 19.5 × 13px).
+// A one-line control's height is not three lines of text, so it is not in the cause.
+test('Trying a line-height fix previews each place at its own size, in px', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, `
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <p id="small" className="max-w-sm text-[13px] leading-none">Thirteen pixel words that run long enough to wrap onto a second line and a third line of their own here. More words follow so the paragraph runs to four or five lines at this measure, as body text does on a real page.</p>
+      <button id="btn" className="inline-flex h-9 items-center rounded-control px-s3 text-[13px] leading-none">One line</button>
+      <p id="large" className="max-w-sm text-[14px] leading-none">Fourteen pixel words that run long enough to wrap onto a second line and a third line of their own here. More words follow so the paragraph runs to four or five lines at this measure, as body text does on a real page.</p>
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const lh = (id) => page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).lineHeight);
+  assert.deepEqual([await lh('small'), await lh('large')], ['13px', '14px']);
+  // hold the line-height cause: Enter takes the first, → walks to it
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 8 && !/line-height|leading/.test(await panel(overlay).locator('.cause .cls').innerText()); i++) await page.keyboard.press('ArrowRight');
+  assert.match(await panel(overlay).locator('.cause .cls').innerText(), /line-height|leading/);
+  await page.waitForFunction(() => ['small', 'large'].every((id) => document.getElementById(id).style.lineHeight), null, { timeout: 5000 });
+  const small = parseFloat(await lh('small')), large = parseFloat(await lh('large'));
+  assert.ok(small > 13 && small < 13 * 2, `13px text previewed at ${small}px`);
+  assert.ok(large > 14 && large < 14 * 2, `14px text previewed at ${large}px`);
+  assert.ok(Math.abs(small / 13 - large / 14) < 0.01, 'the same ratio at each size');
+  assert.match(await page.locator('#small').getAttribute('style'), /line-height: [\d.]+px/);
+  // a one-line control is not body text with lines too close: its height is not its line count
+  assert.equal(await page.locator('#btn').evaluate((el) => el.style.lineHeight), '');
+  // Esc puts it down and the page is as it was
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => ['small', 'large'].every((id) => !document.getElementById(id).style.lineHeight), null, { timeout: 5000 });
+  assert.deepEqual(errors, []);
+});

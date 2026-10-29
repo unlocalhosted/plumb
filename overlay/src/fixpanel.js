@@ -316,13 +316,16 @@ export class FixPanel {
     return false;
   }
 
-  // a token's preview: the value it would set, on every place, as inline styles the panel owns
+  // a token's preview: the value it would set, on every place, as inline styles the panel owns. A suggestion's `sets`
+  // are px for the element its finding is on (a line height is 1.5 × that element's size), so each place is previewed
+  // with its own finding's values when it offers the same fix, and a number is written as px (inplace.js does the same)
   #tokenPreview = new Map(); // el → [[prop, value, priority]]
   #previewToken(g, suggest) {
     if (this.#tokenPreview.size) return;
+    const own = new Map(g.members.map((m) => { const s = m.mark?.craft?.suggest; return [m.el, s?.to === suggest.to && s?.sets ? s.sets : null]; }));
     for (const el of new Set(g.members.map((m) => m.el))) {
       const had = [];
-      for (const [k, v] of Object.entries(suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); had.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, String(v), 'important'); }
+      for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); had.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, typeof v === 'number' ? `${v}px` : String(v), 'important'); }
       this.#tokenPreview.set(el, had);
     }
   }
