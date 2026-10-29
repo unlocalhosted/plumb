@@ -365,7 +365,7 @@ export class Blueprint {
   #holdWanted(done = false) {
     const want = this.#want;
     if (!want?.isConnected) return void (this.#want = null);
-    if (this.#fix.holdEl(want)) return void (this.#want = null);
+    if (this.#fix.holdEl(want, 'uncover')) return void (this.#want = null);
     if (done) {
       this.#want = null;
       this.#selection.select(want, this.#itemOf(want));

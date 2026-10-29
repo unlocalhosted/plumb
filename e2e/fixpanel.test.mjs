@@ -31,7 +31,9 @@ async function fixture(t, app, css = '') {
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await writeFile(join(root, 'src/App.jsx'), app);
   if (css) await writeFile(join(root, 'src/styles.css'), (await readFile(join(root, 'src/styles.css'), 'utf8')) + css);
+  // React is pre-bundled up front: Vite's optimizer would otherwise find it on first load and reload the page mid-test
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
+    optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close());
   await server.listen();
@@ -338,5 +340,24 @@ export function App() {
   }
   assert.equal(new Set(counts).size, 1, `the same count every time: ${counts.join(' | ')}`);
   assert.match(counts[0], /^1 problem · 1 fix/, counts[0]);
+  assert.deepEqual(errors, []);
+});
+
+// Tailwind 4 writes colours as oklch(): the panel reads the page's ground the way the browser paints it, so a
+// near-white oklch page gets a light panel and a near-black one a dark panel (reading the numbers as rgb took
+// oklch(0.987 0 0) for black).
+test('The panel follows an oklch page ground: light on a light page, dark on a dark one', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const scheme = async (ground) => {
+    await page.keyboard.press('Alt+B');
+    await page.evaluate((g) => { document.body.style.background = g; document.documentElement.style.background = 'transparent'; }, ground);
+    await page.keyboard.press('Alt+B');
+    await panel(overlay).locator('.line').waitFor({ timeout: 10000 });
+    return panel(overlay).getAttribute('data-scheme');
+  };
+  assert.equal(await scheme('oklch(0.987 0 0)'), 'light');
+  assert.equal(await scheme('oklch(0.18 0.01 260)'), 'dark');
   assert.deepEqual(errors, []);
 });

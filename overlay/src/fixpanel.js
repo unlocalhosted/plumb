@@ -29,6 +29,7 @@
  * Every action is taken first and written with the rest on Apply: one write, one undo.
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
+import { groundIsDark } from './geometry.js';
 import { FIX } from './words.js'; // every sentence the panel says
 import { groupsOf } from './blueprint-panel.js';
 
@@ -171,15 +172,8 @@ function specimen(kind, mark, n, label, swatch) {
 }
 
 // the page's ground is dark: the body's paint, else the root's, by its lightness
-function darkGround() {
-  for (const el of [document.body, document.documentElement]) {
-    const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
-    if (!m || (m[3] !== undefined && +m[3] < 0.5)) continue;
-    const [r, g, b] = m.map(Number);
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 110;
-  }
-  return false;
-}
+// the page's ground: the one decision geometry.js makes for the whole overlay (oklch and every other format read right)
+const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
 // what an arbitrary class writes, as written: text-[length:calc(var(--z)*12px)] → calc(var(--z)*12px)
@@ -260,7 +254,9 @@ export class FixPanel {
   // Put a cause in hand: the selection holds its first place with every other place as its group; the panel shows
   // its options and tries the suggested one at once
   // `lead`: the place that was pointed at (a glow, Alt+click) leads the cause; else its first place
-  hold(i, lead) {
+  // reveal: 'show' (reached by keys: brought into view), 'uncover' (picked from outside: moved out from under the panel
+  // that just opened), 'none' (clicked with the page in view: the page never moves under the pointer)
+  hold(i, lead, reveal = lead ? 'none' : 'show') {
     const live = this.#live();
     if (!live.length) return;
     this.#notice = null;
@@ -277,9 +273,11 @@ export class FixPanel {
     // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
     // pointed at (a click, Alt+click): it is where the person looks, so it only moves out from under the panel;
     // reached by keys: it is brought into view wherever it is
-    const covered = !!lead;
-    requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
-    setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
+    if (reveal !== 'none') {
+      const covered = reveal === 'uncover';
+      requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
+      setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
+    }
   }
   #reveal(el, coveredOnly = false) {
     if (!el?.isConnected || !this.#holding) return;
@@ -306,11 +304,11 @@ export class FixPanel {
     this.hold(i, el);
     return true;
   }
-  holdEl(el) {
+  holdEl(el, reveal = 'none') {
     if (this.#holding && this.#held?.members.some((m) => m.el === el)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el));
     if (i < 0) return false;
-    this.hold(i, el);
+    this.hold(i, el, reveal);
     return true;
   }
   release() {

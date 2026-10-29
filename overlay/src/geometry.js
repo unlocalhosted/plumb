@@ -111,14 +111,32 @@ export function childrenOf(element) {
   })];
 }
 
+// Any CSS colour as [r, g, b, a] (0-255, alpha 0-1): the browser paints it, so oklch() (Tailwind 4's), lab(), hsl()
+// and named colours all read right. Reading the numbers out of the string took oklch(0.987 0 0), near white, for black.
+const painted = new Map();
+let paint = null;
+export function rgbaOf(css) {
+  let v = painted.get(css);
+  if (v) return v;
+  paint ??= Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  paint.clearRect(0, 0, 1, 1); paint.fillStyle = '#000'; paint.fillStyle = css; paint.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = paint.getImageData(0, 0, 1, 1).data;
+  painted.set(css, (v = [r, g, b, a / 255]));
+  return v;
+}
+// relative luminance of a CSS colour, or null when it is mostly see-through
+export function luminanceOf(css) {
+  const [r, g, b, a] = rgbaOf(css);
+  if (a <= 0.5) return null;
+  const [lr, lg, lb] = [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
 // The overlay follows the page underneath it: a light reading over a light page, a dark one over a dark page.
 export function hostIsDark(node) {
   for (let n = node; n && n.nodeType === Node.ELEMENT_NODE; n = n.parentElement) {
-    const c = getComputedStyle(n).backgroundColor.match(/[\d.]+/g)?.map(Number);
-    if (c && (c[3] ?? 1) > 0.5) {
-      const [r, g, bl] = c.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
-      return 0.2126 * r + 0.7152 * g + 0.0722 * bl < 0.2;
-    }
+    const l = luminanceOf(getComputedStyle(n).backgroundColor);
+    if (l !== null) return l < 0.2;
   }
   return matchMedia('(prefers-color-scheme: dark)').matches;
 }
@@ -129,12 +147,7 @@ export function hostIsDark(node) {
 // hero is still a light page. The page's ground is the first opaque background on <body> or <html>; failing that,
 // the scheme the page declares (color-scheme), then the system's.
 export function groundIsDark() {
-  const luminance = el => {
-    const c = getComputedStyle(el).backgroundColor.match(/[\d.]+/g)?.map(Number);
-    if (!c || (c[3] ?? 1) <= 0.5) return null;
-    const [r, g, bl] = c.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-  };
+  const luminance = el => luminanceOf(getComputedStyle(el).backgroundColor);
   for (const el of [document.body, document.documentElement]) {
     const l = el && luminance(el);
     if (l !== null && l !== undefined) return l < 0.2;
