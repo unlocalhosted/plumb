@@ -10,6 +10,8 @@
  *  GLYPHS                                 the reason drawn small: a ratio of two lengths, for spacing rules
  * ───────────────────────────────────────────────────────── */
 
+import { pxOf } from './value.js';
+
 // The style keys a fix sets, as CSS properties, and the Tailwind prefix that writes each one.
 const PROPS = {
   paddingLeft: ['padding-left', 'pl'], paddingRight: ['padding-right', 'pr'], paddingTop: ['padding-top', 'pt'], paddingBottom: ['padding-bottom', 'pb'],
@@ -206,9 +208,14 @@ export function swapPlanOf(problem) {
   if (!choices.length) return null;
   // the page previews a choice as the value it stands for, on the properties the mark is about (a token class may not
   // exist in the page's CSS until it is written)
-  const styleOf = (c) => { const v = Number.isFinite(c.n) && /^(spacing|radius|type|size|layout)$/.test(problem.family) && !/weight/.test((problem.props ?? []).join()) ? `${c.n}px` : c.value; return v ? Object.fromEntries((problem.props ?? []).map((p) => [p, v])) : {}; };
-  return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: c.n ?? null, swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
-    at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: problem.n ?? null, swatch: problem.family === 'color' ? problem.value : null } };
+  // (a length as written: `1.125rem` previews as 1.125rem, so the page shows the step itself in this browser; a bare
+  // number is px)
+  const prop = problem.props?.[0], length = /^(spacing|radius|type|size|layout)$/.test(problem.family) && !/weight/.test((problem.props ?? []).join());
+  const styleOf = (c) => { const v = length && pxOf(c.value, null, prop) !== undefined ? (/[a-z]$/.test(String(c.value).trim()) ? String(c.value).trim() : `${pxOf(c.value, null, prop)}px`) : length && Number.isFinite(c.n) ? `${c.n}px` : c.value; return v ? Object.fromEntries((problem.props ?? []).map((p) => [p, v])) : {}; };
+  // every number is px at the CSS's root (value.js), so the panel reads the steps and yours alike, in whole px
+  const nOf = (value, n) => (length ? pxOf(value, null, prop) ?? n ?? null : n ?? null);
+  return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: nOf(c.value, c.n), swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
+    at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
 }
 
 // An option previewed on the element (its classes swapped, and the values it stands for as inline styles the overlay

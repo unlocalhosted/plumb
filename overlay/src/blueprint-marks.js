@@ -23,6 +23,8 @@
  *  measure    one batch per frame, only when invalidated: every rect and style first, then every write
  * ───────────────────────────────────────────────────────── */
 
+import { pxOf } from './value.js';
+
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 
 export const MARKS_CSS = `
@@ -174,8 +176,8 @@ function shouldOf(mark, prop) {
     const n = parseFloat(sets[k]);
     if (Number.isFinite(n)) return n;
   }
-  const c = (mark.choices ?? []).find((x) => Number.isFinite(x.n));
-  if (c) return c.n;
+  const c = (mark.choices ?? []).find((x) => Number.isFinite(pxOf(x.value, null, prop) ?? x.n));
+  if (c) return pxOf(c.value, null, prop) ?? c.n;
   // a class suggestion names its token: gap-s2 is --spacing-s2 on the page, p-[18px] is 18, gap-4 is 4 × --spacing
   const to = String(mark.craft?.suggest?.to ?? '').split(/\s+/).find((k) => /^-?(p|m|gap|space)[xytrblse]?(-[xy])?-/.test(k));
   const t = to && /-(\[[^\]]+\]|[\w.]+)$/.exec(to)?.[1];

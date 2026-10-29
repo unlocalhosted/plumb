@@ -17,18 +17,10 @@ export const VALUED = ['spacing', 'radius', 'type', 'color', 'shadow', 'z', 'mot
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const code = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
 
-// A CSS length in px, so values written in different units sit on one ruler: rem from the root, em from the element.
-// Properties whose bare number is not a length: a weight of 600 is 600, never 600px.
-export const UNITLESS = new Set(['font-weight', 'line-height', 'z-index', 'opacity', 'flex', 'flex-grow', 'flex-shrink', 'order', 'zoom', 'tab-size', 'column-count', 'animation-iteration-count']);
-export const toPx = (value, el, prop) => {
-  const m = String(value ?? '').trim().match(/^(-?[\d.]+)(px|rem|em)?$/);
-  if (!m || (!m[2] && UNITLESS.has(prop))) return undefined;
-  const n = parseFloat(m[1]);
-  if (m[2] === 'rem') return n * parseFloat(getComputedStyle(document.documentElement).fontSize);
-  if (m[2] === 'em') return n * parseFloat(getComputedStyle(el ?? document.documentElement).fontSize);
-  return n;
-};
-export const fmtPx = n => `${Math.round(n * 100) / 100}px`;
+// A CSS length in px, so values written in different units sit on one ruler (value.js: px at the CSS's root, whole when
+// whole). Properties whose bare number is not a length: a weight of 600 is 600, never 600px.
+import { UNITLESS, pxOf as toPx, fmtPx } from './value.js';
+export { UNITLESS, toPx, fmtPx };
 
 // One line under the form: the reason of the step being pointed at, else the picked one, else nothing (the CSS asks).
 export function whyLine(m, j = m.pick) {
