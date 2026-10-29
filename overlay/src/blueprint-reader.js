@@ -6,10 +6,12 @@
  * class site, file:line:column:text), not an element: a component rendered forty times is one place with forty
  * elements, which is what one Apply fixes. The page only says where each place shows.
  *
- *  code       the page's code is the static import closure of the modules the browser loaded (host.closure, from
- *             Vite's module graph), and every finding at the places in those files counts, rendered or not
- *             (host.readPlaces). Where there is no graph (Next, the docs replay: closure answers 404), the places are
- *             those of the rendered elements alone
+ *  code       the page's code is the files the page renders: every file a stamp on the page names, and the files
+ *             pass-through components' classes are written in (their callers' readings). Every finding at the places
+ *             in those files counts, rendered or not (host.readCode). No import walk: a file that appears later (a
+ *             section in its own file mounting on scroll, a lazy chunk) joins the count when it appears, and a file
+ *             that leaves (a route change) drops out. Where there is no server for it (the docs replay), the places
+ *             are those of the rendered elements alone
  *  pool       every element under <body>, from one querySelectorAll in document order: never anything inside an
  *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read), never the overlay.
  *             No IntersectionObserver, no visibility check, no cap: a hidden tab reads the same page as a shown one
@@ -23,10 +25,11 @@
  *  starting   a server still reading the project parks the whole read; it goes again when the server says ready
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
  *             previews are the card's own), re-read what changed; a write re-reads every element from that file and
- *             the places of the page's code again; a newly loaded module (a lazy route) re-asks the closure
+ *             the places of the page's code again; a file that appears on the page joins the code's places
  *  progress   whole-page: { read, total, drift, on, checked, notChecked, outsideSource, notes, places, unrendered,
  *             done }. `total` is the pool, `read` what has landed, `places` the places with something to show,
- *             `drift` the places with a problem (one per place, however many elements render it), `unrendered` the
+ *             `drift` the distinct (place, cause) pairs with a new problem (one per place and cause, however many
+ *             elements render it; in-code notes and craft notes excluded), `unrendered` the
  *             places no element renders right now, `notes` what the craft rules measured on the page (computed style,
  *             contrast, census: per element, never counted as problems), `done` once the code and every element have
  *             their answer, nothing is in flight, and the page has stopped changing: no rescan pending and no relevant
@@ -55,7 +58,7 @@ export class Reader {
   #pending = false; // the server was still starting: the read goes again when it is ready
   #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
   #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
-  // the page's code: the modules the browser has loaded (their key), the files they import, and each file's marks
+  // the page's code: the files it renders (their key), and each file's marks
   #codeKey = ''; #codeInflight = 0; #noCode = false; #code = new Map(); // file → { hash, marks }
 
   // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
@@ -174,6 +177,9 @@ export class Reader {
   #read() {
     if (!this.#running || this.#pending) return;
     this.#readCode();
+    this.#readElements();
+  }
+  #readElements() {
     const queued = [...this.#items.values()].filter((item) => item.state === 'queued');
     if (!queued.length) { this.#report(); return; }
     const t0 = performance.now();
@@ -184,31 +190,26 @@ export class Reader {
     performance.measure('plumb:reader-read', { start: t0 });
   }
 
-  // The modules the browser has loaded from this origin: the roots of the page's code.
-  #loaded() {
-    const origin = location.origin;
-    const urls = new Set();
-    for (const entry of performance.getEntriesByType('resource')) {
-      let url;
-      try { url = new URL(entry.name); } catch { continue; }
-      if (url.origin !== origin || url.pathname.startsWith('/__plumb/') || url.pathname.startsWith('/@vite/') || url.pathname.startsWith('/node_modules/')) continue;
-      if (!['script', 'other', 'link', 'fetch'].includes(entry.initiatorType)) continue;
-      urls.add(url.pathname + url.search);
+  // The files the page renders: every file a stamp names, and every file an element's reading landed in (a
+  // pass-through component's caller). Relative to the project, as stamps and readings spell them.
+  #files() {
+    const files = new Set();
+    for (const item of this.#items.values()) {
+      const named = item.stamp && /^(.+):\d+:\d+#[a-f0-9]{12}$/.exec(item.stamp)?.[1];
+      if (named) files.add(named);
+      if (item.state === 'ready' && item.checked && item.file) files.add(item.file);
     }
-    for (const script of document.querySelectorAll('script[type="module"][src]')) {
-      try { const url = new URL(script.src); if (url.origin === origin && !url.pathname.startsWith('/__plumb/')) urls.add(url.pathname + url.search); } catch {}
-    }
-    return [...urls].sort();
+    return [...files].sort();
   }
 
-  // The page's code, asked once per set of loaded modules: its files, and every finding at the places in them.
+  // The page's code, asked once per set of rendered files: every finding at the places in them.
   #readCode() {
     if (this.#noCode) return;
-    const modules = this.#loaded(), key = modules.join('\n');
+    const files = this.#files(), key = files.join('\n');
     if (key === this.#codeKey) return;
     this.#codeKey = key;
     this.#codeInflight++;
-    this.#host.readCode(modules)
+    this.#host.readCode(files)
       .then((answer) => {
         if (!this.#running || key !== this.#codeKey) return;
         if (answer === null) { this.#noCode = true; return; }
@@ -263,6 +264,7 @@ export class Reader {
       item.state = 'ready';
       item.checked = true; item.outsideSource = false;
       item.file = state.file;
+      if (item.file && !this.#code.has(item.file) && !this.#noCode) this.#readCode();
       item.marks = state.marks.filter((m) => m.ledger !== 'exception');
       item.dims = state.dims ?? [];
     } else if (state?.status === 'unplaced') {
@@ -321,12 +323,16 @@ export class Reader {
     // problems are places in the code, one each however many elements render it; what the craft rules measured on
     // the page are notes, per element, never problems
     const places = this.#places(enriched);
-    let drift = 0, unrendered = 0, notes = 0;
-    for (const place of places.values()) {
-      if (place.mark.ledger === 'new') drift++;
-      if (!place.elements.length) unrendered++;
-    }
-    for (const i of enriched) for (const m of i.marks) if (m.family === 'craft') notes++;
+    // drift: distinct (place, cause) pairs, place = file:line:column and cause = rule + class text (what the fix panel
+    // groups by), over new marks that are not in-code notes, so the dock and the panel's "N problems" agree
+    const inCode = (m) => /opaque-inline|^config\//.test(m.rule);
+    const problems = new Set();
+    let unrendered = 0, notes = 0;
+    const count = (m, file) => { if (m.ledger === 'new' && m.family !== 'craft' && !inCode(m)) problems.add(`${m.file ?? file}:${m.line}:${m.column}|${m.rule}|${m.text}`); };
+    for (const file of this.#code.values()) for (const m of file.marks) count(m, file.file);
+    for (const i of enriched) for (const m of i.marks) { if (m.family === 'craft') notes++; else count(m, i.file); }
+    for (const place of places.values()) if (!place.elements.length) unrendered++;
+    const drift = problems.size;
     const on = all.reduce((n, i) => n + i.dims.length, 0);
     // the places themselves, for whoever asks the host (the headless run, a test): one row per place
     this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })));

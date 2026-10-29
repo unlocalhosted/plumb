@@ -1,7 +1,4 @@
 const base = new URL('../', import.meta.url).href;
-// every module the page loads stays in the timing buffer: the reader asks the server for the code those modules import
-try { performance.setResourceTimingBufferSize(20000); } catch {}
-export const origin = base;
 const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js');
 const token = script?.dataset.plumbToken;
 

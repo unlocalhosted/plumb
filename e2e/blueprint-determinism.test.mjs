@@ -43,7 +43,7 @@ export function Below() { return <ul>{[0, 1, 2].map((n) => <li key={n} id={'belo
 `;
 const badge = `export function Badge({ className, children }) { return <span className={className}>{children}</span>; }\n`;
 
-async function site(t) {
+async function site(t, { ownFile = false } = {}) {
   let browser;
   try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return null; }
@@ -52,8 +52,18 @@ async function site(t) {
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
-  await writeFile(join(root, 'src/Tall.jsx'), tall);
+  // the gap: content in its own file, mounted from the rendered file only once scrolled into view; until then no
+  // element on the page names that file, so its places are not in the count
+  const own = `export function LazyOwn() {
+  const [shown, setShown] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => { const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) setShown(true); }); io.observe(ref.current); return () => io.disconnect(); }, []);
+  return <section ref={ref} id="elsewhere" style={{ minHeight: 40 }}>{shown ? <Elsewhere /> : null}</section>;
+}
+`;
+  await writeFile(join(root, 'src/Tall.jsx'), ownFile ? tall.replace("import { Badge } from './Badge';", "import { Badge } from './Badge';\nimport { Elsewhere } from './Elsewhere.jsx';").replace('    <Lazy />\n', '    <Lazy />\n    <LazyOwn />\n') + own : tall);
   await writeFile(join(root, 'src/Badge.jsx'), badge);
+  await writeFile(join(root, 'src/Elsewhere.jsx'), `export function Elsewhere() { return <p id="elsewhere-p" className="mr-[23px]">own file</p>; }\n`);
   // the demo's entry mounts its App; this page mounts the tall one instead
   const entry = await readFile(join(root, 'src/entry.jsx'), 'utf8');
   await writeFile(join(root, 'src/entry.jsx'), entry.replace(/import \{ App \} from '\.\/App(?:\.jsx)?';?/, "import { Tall as App } from './Tall.jsx';"));
@@ -140,4 +150,20 @@ test('the same page gives the same problems, fixes and notes under every viewpor
   assert.equal(runs.first.list.filter((f) => f.includes('px-[9px]')).length, 40);
   assert.deepEqual(errors, []);
   t.diagnostic(JSON.stringify(Object.fromEntries(Object.entries(runs).map(([k, v]) => [k, { problems: v.problems, notes: v.notes, total: v.total }]))));
+});
+
+test('the known gap: a section in its own file is not counted until it mounts, and counted once it has', { timeout: 120000 }, async (t) => {
+  const s = await site(t, { ownFile: true }); if (!s) return;
+  const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
+  const before = await opening(page);
+  assert.ok(!before.list.some((f) => f.includes('mr-[23px]')), 'not rendered, not in a rendered file: not counted yet');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForSelector('#elsewhere-p');
+  const after = await opening(page);
+  assert.ok(after.list.some((f) => f.includes('mr-[23px]')), JSON.stringify(after.list.slice(-5)));
+  assert.equal(after.places, before.places + 1);
+  assert.equal(after.problems, before.problems + 1);
+  // the same-file section (Lazy/Below) was counted both times
+  assert.deepEqual(before.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)), after.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)));
+  assert.deepEqual(errors, []);
 });

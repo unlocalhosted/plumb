@@ -451,19 +451,14 @@ class PlumbOverlay extends HTMLElement {
     promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     return promise;
   }
-  // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): the files the loaded modules import
-  // (POST closure, the Vite plugin's module graph) and every finding at the places in them (POST places), each
-  // file's marks built the way an element's are. null where there is no graph (Next, the docs replay): the reader
-  // counts from the rendered page alone there.
-  async readCode(modules) {
-    let closure;
-    try { closure = await post('closure', { modules }); }
-    catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
-    const files = closure?.files ?? [];
+  // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): every finding at the places in the files
+  // the page renders (POST places), each file's marks built the way an element's are. null where there is no
+  // server for it (the docs replay): the reader counts from the rendered elements alone there.
+  async readCode(files) {
     if (!files.length) return [];
     let answer;
     try { answer = await post('places', { files }); }
-    catch (error) { throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
+    catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
     return (answer?.files ?? []).map((entry) => {
       const file = files.find((f) => entry.file === f || entry.file.endsWith('/' + f)) ?? entry.file;
       const location = { file, line: 1, column: 1, tag: null, via: 'code', chain: [], index: 0 };
