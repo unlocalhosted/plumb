@@ -210,3 +210,41 @@ export function App() {
   assert.match(await source(), /className=\{`px-s4 duration-\(--dur-calm\) rounded-\[13px\] \$\{tone\}`\}/);
   assert.deepEqual(errors, []);
 });
+
+// A component that only passes className through (a router Link, a Button wrapper) writes none of its classes: the
+// code that uses it does. Alt+click reads it there, so its cause is in hand, named by what it is about (letter spacing,
+// not "text size or weight"). Reading the page again never says everything matches before every element is read.
+test('Alt+click on a pass-through component holds the cause where its classes are written; the panel never says all clear mid-read', { timeout: 150000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, `
+function Link({ className, children }) { return <a href="#" className={className}>{children}</a>; }
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <Link className="text-body tracking-[0.1em]">Open the first entry</Link>
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  // reopened: what the panel says from the first frame until it has read the page again
+  await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    const fx = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx');
+    window.__said = [];
+    new MutationObserver(() => window.__said.push(fx.innerText)).observe(fx, { subtree: true, childList: true, characterData: true });
+  });
+  await page.keyboard.press('Alt+B');
+  await panel(overlay).locator('.line').filter({ hasText: /problem/ }).waitFor({ timeout: 20000 });
+  await page.waitForTimeout(1500);
+  assert.ok(!(await page.evaluate(() => window.__said)).some((s) => /Everything matches/.test(s)), 'no all clear while reading');
+  // Alt+click the link: its cause, from the JSX that wrote it
+  const b = await page.getByText('Open the first entry').boundingBox();
+  await page.keyboard.down('Alt');
+  await page.mouse.move(b.x + 4, b.y + b.height / 2);
+  await page.mouse.click(b.x + 4, b.y + b.height / 2);
+  await page.keyboard.up('Alt');
+  await panel(overlay).locator('.cause .cls').filter({ hasText: 'tracking-[0.1em]' }).waitFor({ timeout: 20000 });
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /letter spacing/);
+  assert.deepEqual(errors, []);
+});

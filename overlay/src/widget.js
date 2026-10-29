@@ -621,7 +621,22 @@ class PlumbOverlay extends HTMLElement {
         if (traced?.status !== 'pending') break;
         await new Promise(r => setTimeout(r, 250));
       }
-      if (traced?.classes) return { status: 'ready', ...this.#computedReading(location, traced), text };
+      if (traced?.classes) {
+        const r = this.#computedReading(location, traced);
+        // Nothing is written at this level: every class is passed in by the code that uses the component (a Link, a
+        // Button wrapper). That code is where they are written and where a fix lands, so its level is the reading,
+        // as Alt+↑ would read it.
+        if (!r.traced.attributed && r.traced.unattributed && element) {
+          const full = location.chain?.length > 1 ? location : await locate(element, { chain: true }).catch(() => null);
+          const at = full?.chain?.findIndex(link => link.file === location.file && link.line === location.line && link.column === location.column) ?? -1;
+          const up = at >= 0 ? full.chain[at + 1] : null;
+          if (up) {
+            const caller = await this.#readAt({ ...up, tag: location.tag, via: location.via, chain: full.chain, index: at + 1 }, element, { want, computed, batch });
+            if (caller?.status === 'ready' && (caller.marks.length || caller.declared)) return caller;
+          }
+        }
+        return { status: 'ready', ...r, text };
+      }
     }
     return { status: 'ready', ...reading(location, site, edits), text };
   }

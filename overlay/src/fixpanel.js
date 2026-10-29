@@ -136,7 +136,8 @@ function specimen(kind, mark, n, label, swatch) {
   }
   // a time: a track, filled as far as the time runs (a second fills it)
   if (kind === 'time' && Number.isFinite(n)) { const w = Math.max(2, Math.min(1, n / 1000) * 36); return `<svg viewBox="0 0 52 40"><rect x="8" y="18" width="36" height="4" rx="2" class="space-fill" opacity=".35"/><rect x="8" y="18" width="${w}" height="4" rx="2" class="space-line" fill="currentColor" style="fill: var(--word)"/><circle cx="${8 + w}" cy="20" r="3" style="fill: var(--word)"/></svg>`; }
-  if (!Number.isFinite(n)) return `<svg viewBox="0 0 52 40"><text x="26" y="25" text-anchor="middle" class="word" style="font: 600 10px ui-monospace, monospace">${esc(String(label).slice(0, 8))}</text></svg>`;
+  // no amount to draw (a class swap): the element as words; its name is said once, under it
+  if (!Number.isFinite(n)) return `<svg viewBox="0 0 52 40">${words(10, 13, 32, 14)}</svg>`;
   if (kind === 'gap' || kind === 'margin') {
     const g = Math.min(n, 26), top = 20 - g / 2 - 7;
     return `<svg viewBox="0 0 52 40"><defs>${pattern}</defs>${words(9, top, 34, 7)}<rect x="9" y="${top + 7}" width="34" height="${g}" rx="1.5" fill="url(#${id})"/>${words(9, top + 7 + g, 34, 7)}</svg>`;
@@ -162,7 +163,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 export class FixPanel {
   #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #on = false;
 
-  // host: { hold(group), release(), view(), pick(i), take(), applyAll(tokens) → Promise, spotlight(els) }
+  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens) → Promise, spotlight(els) }
   constructor(root, host) {
     this.#host = host;
     this.#el = Object.assign(document.createElement('div'), { className: 'fx', hidden: true });
@@ -183,7 +184,8 @@ export class FixPanel {
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   get holding() { return this.#holding; }
 
-  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
+  // each opening starts unread: the last one's count and its settled mark never stand in for this reading
+  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -211,16 +213,31 @@ export class FixPanel {
 
   // Put a cause in hand: the selection holds its first place with every other place as its group; the panel shows
   // its options and tries the suggested one at once
-  hold(i) {
+  // `lead`: the place that was pointed at (a glow, Alt+click) leads the cause; else its first place
+  hold(i, lead) {
     const live = this.#live();
     if (!live.length) return;
     this.#at = (i + live.length) % live.length;
     this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null;
     const g = live[this.#at];
     this.#held = g;
-    this.#host.hold(g);
+    const el = g.members.some((m) => m.el === lead) ? lead : g.members[0].el;
+    this.#host.hold(g, el);
     this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
     this.render(true);
+    // the place in hand is seen above the panel, never under it (once the panel has its height)
+    requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el)));
+  }
+  #reveal(el) {
+    if (!el?.isConnected || !this.#holding) return;
+    const r = el.getBoundingClientRect(), top = 16, bottom = Math.min(innerHeight, this.#el.getBoundingClientRect().top || innerHeight) - 16;
+    if (r.height > bottom - top) return; // taller than the room above the panel: it stays where it is
+    const by = r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0;
+    if (!by) return;
+    let box = el.parentElement;
+    while (box && box !== document.body && box !== document.documentElement && !(/(auto|scroll|overlay)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+    (box && box !== document.body && box !== document.documentElement ? box : document.scrollingElement ?? document.documentElement)
+      .scrollBy({ top: by, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }
   // a glow clicked on the page: its cause
   holdMark(el, mark) {
@@ -228,14 +245,14 @@ export class FixPanel {
     if (this.#holding && this.#held?.members.some((m) => m.el === el && m.mark.key === mark?.key)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el && m.mark.key === mark?.key));
     if (i < 0) return false;
-    this.hold(i);
+    this.hold(i, el);
     return true;
   }
   holdEl(el) {
     if (this.#holding && this.#held?.members.some((m) => m.el === el)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el));
     if (i < 0) return false;
-    this.hold(i);
+    this.hold(i, el);
     return true;
   }
   release() {
@@ -341,6 +358,8 @@ export class FixPanel {
   render(slide = false) {
     if (!this.#on) return;
     const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = g ? this.#host.view() : null;
+    // nothing is said to match until every element on the page has been read
+    const settled = !!this.#progress?.total && this.#progress.read === this.#progress.total;
     const apply = `<button class="apply" ${taken ? '' : 'disabled'}>Apply <span class="badge">${taken}</span></button>`;
     let html;
     if (this.#writing) html = `<div class="writing"><i></i>Writing ${plural(taken, 'change')} to your code</div>`;
@@ -348,8 +367,8 @@ export class FixPanel {
     else if (!g) {
       const places = live.reduce((n, x) => n + x.members.length, 0);
       html = places
-        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : `${plural(places, 'problem')} <span>· ${plural(live.length, 'cause')}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${this.#error ? esc(this.#error) : taken ? `${plural(taken, 'change')} ready` : this.#progress?.notChecked ? `Nothing off in what was checked · ${this.#progress.notChecked} not checked` : 'Everything matches your system'}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
+        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : `${plural(places, 'problem')} <span>· ${plural(live.length, 'cause')}${settled ? '' : ' · reading…'}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
+        : `<div class="line"><span class="count"><span>${this.#error ? esc(this.#error) : taken ? `${plural(taken, 'change')} ready` : !settled ? 'Reading the page…' : this.#progress?.notChecked ? `Nothing off in what was checked · ${this.#progress.notChecked} not checked` : 'Everything matches your system'}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous cause">‹</button>${this.#at + 1} of ${live.length}<button class="next" aria-label="Next cause">›</button></span><span class="what">${esc(g.what)} · ${plural(g.members.length, 'place')}</span></div>`;
