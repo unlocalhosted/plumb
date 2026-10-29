@@ -210,7 +210,9 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
     const directory = resolver.resolveFileSync(join(root, 'src/App.tsx'), alias).path ?? resolve(root, alias);
     const components = { from: [`directory:${directory}`, `import:${alias}`] };
     const graph = discoverComponents(root, componentFiles(directory), { components }, new Map(), true, new Map(), true);
-    const contracts = Object.fromEntries(graph.components.map(component => [component.name, { own: ['paint', 'type', 'radius', 'elevation', 'padding'] }]));
+    // The generated components are the design system: besides the default families, each owns every property its
+    // cva variants set, so a call-site class that overrides a variant's value is drift ('variants', judge.ts).
+    const contracts = Object.fromEntries(graph.components.map(component => [component.name, { own: ['paint', 'type', 'radius', 'elevation', 'padding', 'variants'] }]));
     await add({ name: 'shadcn', components: { ...components, contracts } }, root, 'components.json');
   }
   const manifest = await json(join(root, 'package.json'));

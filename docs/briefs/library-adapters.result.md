@@ -310,7 +310,7 @@ intrinsic) child beyond owner-locate's MetalButton case.
 
 ## Layer 7: Radix owned values, Theme and providers
 
-Commit: (next layer records it)
+Commit: 0bf1957
 
 What changed: `radix.ts` `owned = { variables: /^--radix-[\w-]+$/, providers: Theme | DirectionProvider |
 TooltipProvider | ToastProvider | *.Provider }`; capabilities all four, Radix is `supported` and prints no notice.
@@ -326,3 +326,65 @@ $ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-det
 ```
 Unverified: `@radix-ui/themes` as a styled system (its `--accent-*`/`--gray-*` tokens and the `Theme` props are not
 read as tokens; only `Theme` is recognised as a provider). A Radix Themes app would need its own token source.
+
+## Layer 8: shadcn as the system
+
+Commit: (recorded in the final report)
+
+What was found first: the ownership rules already treated `components/ui` as owned components (the shadcn preset
+in `src/presets/index.ts` gives each a contract owning paint, type, radius, elevation, padding), so `px-7`,
+`p-[29px]` and `text-[11px]` at call sites were findings before this layer. The owner's example was not: `h-[38px]`
+on a Button whose `size = default` sets `h-9` (height is not an owned family), nor `w-96` on a PopoverContent whose
+base sets `w-72`.
+
+What changed
+- `src/project-facts/libraries/shadcn.ts`: every capability. `system` reads components.json (style, tailwind.css,
+  cssVariables, baseColor, iconLibrary, the `ui`/`components`/`utils` aliases) into `Detected.detail`; unparsable or
+  absent → `unknown` with evidence. `states`: `data-size`/`data-variant`/`data-state`/… ; `structure`: `asChild`,
+  `Portal`, `DialogContent` manages focus, the roles that lived in `src/structure/library.ts` (its shadcn table is
+  deleted); `owned`: `*Provider`, no variables of its own (Radix's are Radix's).
+- `src/presets/index.ts`: the shadcn contracts own `'variants'` too: a component owns every property its selected
+  recipe (cva base + variants + defaultVariants, or its plain `cn("…", className)` base) sets.
+- `src/ownership/judge.ts`: `judgeOwnership(…, propsOf)` receives each class's lowered declarations. For a caller
+  declaration on a component that owns `variants`: the call site's literal props select the recipe (`size="sm"` →
+  that recipe; otherwise the defaults); a recipe class that lowers to the same property under the same variants
+  (hover:, md:, data-[state=open]:) is overridden, and the finding says so: "`h-[38px]` overrides Button's `h-9`
+  (size = default)"; because: "cn() merges classes with tailwind-merge, so this call site's class wins and the
+  variant no longer decides"; action: the variants to use. Logical/physical sides are normalised; padding shorthands
+  expand as before.
+- `src/ownership/components.ts`: usages keep the call site's literal props (`graph.selection(declaration)`); a
+  `*Portal` root with no styling is looked through, so `PopoverContent`'s and `DialogContent`'s classes are their
+  root classes. Cache key bumped (`components-v8-portal-roots`); `src/ownership/cache.ts` and
+  `src/session/state.ts` carry `selection`.
+- `fixtures/shadcn-system/`: committed shadcn v4 (new-york) output written from the generator's shape: components.json,
+  `src/lib/utils.ts` (`cn = twMerge(clsx(...))`), `components/ui/{button,dialog,popover,select,tooltip}.tsx` with
+  `data-slot`, cva and Radix namespaces, the v4 `index.css` (`:root`/`.dark` + `@theme inline`), and `App.tsx` call
+  sites: `h-[38px]`, `size="sm" px-7`, `variant="ghost" mt-2`, `p-[29px]`, `w-96`, `text-[11px]`, `w-[180px]`.
+
+Commands and raw output
+```
+$ plumber --json on fixtures/shadcn-system (ownership findings, line · title)
+11 `h-[38px]` overrides Button's `h-9` (size = default)
+12 `px-7` changes Button's padding-inline-end · 12 `px-7` changes Button's padding-inline-start
+16 `p-[29px]` changes DialogContent's padding-bottom/left/right/top
+20 `w-96` overrides PopoverContent's `w-72` (base)
+24 `text-[11px]` changes TooltipContent's font-size
+27 `w-[180px]` overrides SelectTrigger's `w-fit` (base)
+(line 13, `variant="ghost" className="mt-2"`: no finding; margin is the caller's)
+because: Button's size = default sets height with `h-9`; cn() merges classes with tailwind-merge, so this call site's class wins and the variant no longer decides.
+action: Use a variant: variant = default | destructive | outline | secondary | ghost | link; size = default | sm | lg | icon. Defined in src/components/ui/button.tsx:40.
+$ plumber state --json → facts.libraries shadcn
+supported {usage, states, structure, owned, system: judged} detail { style: new-york, css: src/index.css, cssVariables: true, baseColor: neutral, iconLibrary: lucide, ui: @/components/ui, utils: @/lib/utils }
+facts.styling.tokens.kind = shadcn (src/index.css @theme inline with components.json)
+$ plumber   (stderr)
+(no notice)
+$ node --test --test-concurrency=1 e2e/library-adapters.test.mjs e2e/ownership.test.mjs e2e/check-cache.test.mjs e2e/styling-detection.test.mjs e2e/onboarding-state.test.mjs e2e/shadcn-theme.test.mjs e2e/presets.test.mjs e2e/craft-structure.test.mjs e2e/imitation.test.mjs
+ℹ tests 98  ℹ pass 98  ℹ fail 0
+```
+Unverified: the shadcn fixture is not rendered in a browser (its Radix parts are covered by layer 6's dev-server
+test); `tw-animate-css` is not installed here, so the fixture's `animate-in`/`fade-in-0` classes read as dead (a
+real shadcn v4 app imports it in index.css; the fixture omits the import so Tailwind can compile); the fixture files
+were written from the shadcn v4 generator's output as remembered, not produced by `npx shadcn add` (no network).
+tailwind-merge's exact conflict table is approximated by "lowers to the same property under the same variants",
+which also says `px-7` conflicts with `p-4` only through the padding family rule; `shadow-*` vs `shadow-color`
+style partial conflicts are not modelled.

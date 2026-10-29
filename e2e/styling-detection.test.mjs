@@ -112,8 +112,9 @@ test('ark: @ark-ui/react is found; partial', async t => {
 test('shadcn: components.json is the evidence, with no package; its generated files are the app\'s own source', async t => {
   const { list } = await detected(t, { 'components.json': '{ "style": "new-york", "tailwind": { "css": "src/index.css" }, "aliases": { "ui": "@/components/ui" } }\n', 'src/components/ui/button.jsx': 'export const Button = () => <button className="p-s4" />;\n' }, 'libraries');
   const item = find(list, 'shadcn');
-  assert.equal(item.support, 'partial', 'usage is read; the system itself is a later layer'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
-  assert.equal(item.detail, undefined, 'known by its config, not a dependency');
+  assert.equal(item.support, 'supported', 'every capability of its adapter ran'); assert.deepEqual([item.evidence[0].file, item.evidence[0].line], ['components.json', 1]);
+  assert.equal(item.detail.package, undefined, 'known by its config, not a dependency');
+  assert.equal(item.detail.style, 'new-york');
 });
 
 test('tailwind-merge: found; supported through the class helper', async t => {

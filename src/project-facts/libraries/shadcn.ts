@@ -3,6 +3,7 @@
 import type { Context } from '../detector.js';
 import type { LibraryAdapter } from './adapter.js';
 import { componentName, partOf } from './adapter.js';
+import type { Role } from '../../structure/library.js';
 
 export interface ShadcnConfig {
   style: string | null; cssVariables: boolean | null; baseColor: string | null; iconLibrary: string | null; css: string | null;
@@ -36,9 +37,24 @@ const generated = (specifier: string, ctx?: Context) => {
   const relative = /(?:^|\/)components\/ui\/([\w-]+)(?:\.[jt]sx?)?$/.exec(specifier);
   return relative?.[1] ?? null;
 };
+// shadcn's own attributes: `data-slot` names the part (identity, not a state); `data-size`/`data-variant` carry the
+// chosen variant; the Radix states underneath are the Radix adapter's. Its components wrap Radix, so `asChild`
+// replaces the element and `DialogContent` manages focus; `*Provider` configures it; it sets no variables of its own.
+const roles: Record<string, (part: string | null, component: string) => Role | null> = {
+  Tooltip: part => /Provider$/.test(part ?? '') ? 'tooltip-provider' : 'tooltip',
+  DropdownMenu: part => /Sub/.test(part ?? '') ? 'submenu' : 'menu', ContextMenu: part => /Sub/.test(part ?? '') ? 'submenu' : 'menu', Menubar: part => /Sub/.test(part ?? '') ? 'submenu' : 'menu',
+  Dialog: () => 'dialog', AlertDialog: () => 'dialog', Sheet: () => 'dialog', Popover: () => 'popover', HoverCard: () => 'popover', Drawer: () => 'drawer', Command: () => 'palette', Skeleton: () => 'skeleton',
+};
 export const shadcn: LibraryAdapter = {
   family: 'shadcn',
-  capabilities: ['usage'],
+  capabilities: ['usage', 'states', 'structure', 'owned', 'system'],
+  state(attribute, value) {
+    const name = attribute.replace(/^data-/, '');
+    if (['size', 'variant', 'orientation', 'state', 'side'].includes(name)) return value === null ? name : name === 'state' ? value : `${name}=${value}`;
+    return ['active', 'disabled', 'selected', 'checked', 'placeholder'].includes(name) ? name : null;
+  },
+  structure: { portal: /^Portal$/, render: ['asChild'], focus: /^(?:Dialog|AlertDialog|Sheet)\.Content$/, role: (component, part) => roles[component]?.(part, component) ?? null },
+  owned: { variables: /^$/, providers: /Provider$/ },
   owns: (specifier, ctx) => generated(specifier, ctx) !== null,
   meaning(specifier, imported, ctx) {
     const file = generated(specifier, ctx);

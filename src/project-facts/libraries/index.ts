@@ -7,11 +7,12 @@ import type { Capability, LibraryAdapter } from './adapter.js';
 import { collectUsage } from './adapter.js';
 import { baseUi } from './base-ui.js';
 import { radix } from './radix.js';
-import { shadcn } from './shadcn.js';
+import { shadcn, shadcnConfig } from './shadcn.js';
 
 export type { Capability, LibraryAdapter, Usage, UsageSite } from './adapter.js';
 export { capabilityWords, describeUsage } from './adapter.js';
-export { shadcnConfig, uiAliases } from './shadcn.js';
+import { uiAliases } from './shadcn.js';
+export { shadcnConfig, uiAliases };
 export type { ShadcnConfig } from './shadcn.js';
 
 /**
@@ -64,15 +65,21 @@ export const librariesRegistry: readonly Detector[] = [{
       // Each capability the adapter implements runs here; one that cannot (a file that will not parse) is unknown, with why.
       const adapter = adapterFor(item.id), ran: Partial<Record<Capability, 'judged' | 'unknown'>> = {};
       let usage: Detected['usage'];
+      const detail: NonNullable<Detected['detail']> = name ? { package: name } : {};
       for (const capability of adapter?.capabilities ?? []) {
         if (capability === 'usage') {
           const result = collectUsage(adapter!, ctx);
           usage = result.usage; ran.usage = result.unknown.length ? 'unknown' : 'judged';
           evidence.push(...result.unknown);
+        } else if (capability === 'system') {
+          // The system is components.json: its style, theme shape, aliases and icon library are facts; unreadable is unknown.
+          const system = shadcnConfig(ctx);
+          if (system) { ran.system = 'judged'; Object.assign(detail, { style: system.style, css: system.css, cssVariables: system.cssVariables, baseColor: system.baseColor, iconLibrary: system.iconLibrary, ui: uiAliases(ctx)[0] ?? null, utils: system.aliases.utils ?? null }); }
+          else { ran.system = 'unknown'; evidence.push(ctx.evidence('components.json', 1, ctx.exists('components.json') ? 'could not parse components.json' : 'no components.json; the ui folder is taken as @/components/ui')); }
         } else ran[capability] = 'judged'; // read at analysis or locate time through the adapter; nothing on disk can fail it here
       }
       const note = derivedSupport(item, adapter, ran);
-      found.push({ id: item.id, label: item.label, ...note, source: 'declared', evidence, ...(name ? { detail: { package: name } } : {}), ...(usage ? { usage } : {}), ...(adapter ? { capabilities: ran } : {}) });
+      found.push({ id: item.id, label: item.label, ...note, source: 'declared', evidence, ...(Object.keys(detail).length ? { detail } : {}), ...(usage ? { usage } : {}), ...(adapter ? { capabilities: ran } : {}) });
     }
     return found.length ? { libraries: found.map(item => claim<Detected>(item, 'declared', item.evidence, this.id)) } : {};
   },

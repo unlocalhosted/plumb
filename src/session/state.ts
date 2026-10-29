@@ -311,7 +311,7 @@ export class WarmState implements AnalysisRuntime {
     const graph: ComponentGraph = { diagnostics: graphs.flatMap(g => g.diagnostics), root: this.root, components, used: identities('used').map(identity),
       usages: new Map(graphs.flatMap(g => [...g.usages])), mounts: graphs.flatMap(g => g.mounts.map(m => ({ ...m, component: identity(m.component) }))), elements: graphs.flatMap(g => g.elements),
       rootRanges: new Map(graphs.flatMap(g => [...g.rootRanges])), fingerprintClasses: new Map(graphs.flatMap(g => [...g.fingerprintClasses])), sourceTokens: new Map(),
-      caller: d => shards.get(d.site.file)?.caller(d), element: s => shards.get(s.file)?.element(s) };
+      caller: d => shards.get(d.site.file)?.caller(d), selection: d => shards.get(d.site.file)?.selection(d), element: s => shards.get(s.file)?.element(s) };
     return graph;
   }
   sync<T>(name: string, inputs: unknown[], compute: () => T): T {

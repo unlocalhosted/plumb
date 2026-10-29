@@ -8,6 +8,40 @@ import type { Declaration, Finding } from '../report.js';
 import { familiesFor, isSpacing } from '../rules/families.js';
 import { components as cssParts } from '../decisions/resolve.js';
 import type { ComponentGraph, ComponentIdentity, ComponentMount } from './components.js';
+import type { ClassRecipe } from '../collect/class-recipes.js';
+import type { Condition } from '../report.js';
+
+/** The lowered declarations of one class, as the Tailwind compiler produced them; the judge compares properties, not class names. */
+export type LoweredProps = (token: string) => { prop: string; when: Condition[] }[];
+const physical = (prop: string) => prop.replace(/-inline-start$/, '-left').replace(/-inline-end$/, '-right').replace(/-block-start$/, '-top').replace(/-block-end$/, '-bottom');
+const attribute = /(?<!\\)\[\s*(data-[\w-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\]\s]+))?)\s*\]/g;
+/** The conditions two classes must share to conflict: variants (hover:, md:, data-[state=open]:), never the class's own selector. */
+function whenKey(when: Condition[]): string {
+  const parts = when.flatMap(condition => condition.kind === 'selector' ? [...condition.text.matchAll(attribute)].map(match => `[${match[1]!.replace(/\s+/g, '')}]`) : ['media', 'pseudo', 'supports', 'container'].includes(condition.kind) ? [`${condition.kind}:${condition.text}`] : []);
+  return [...new Set(parts)].sort().join('\0');
+}
+/** The recipe the call site selects: each axis as the caller's literal prop, else the component's default for it. */
+function selectedRecipe(component: ComponentIdentity, selection: Record<string, string>, base: string[] | undefined): ClassRecipe | undefined {
+  const recipes = component.recipes ?? [];
+  // No variants: the component's own root classes are its one recipe (`cn("… w-72 …", className)`).
+  if (!recipes.length) return base?.length ? { classes: base, variants: {}, signature: {}, default: true } : undefined;
+  const defaults = recipes.find(recipe => recipe.default)?.variants ?? {};
+  const wanted = { ...defaults, ...Object.fromEntries(Object.keys(defaults).flatMap(axis => axis in selection ? [[axis, selection[axis]!]] : [])) };
+  return recipes.find(recipe => Object.entries(wanted).every(([axis, choice]) => recipe.variants[axis] === choice)) ?? recipes.find(recipe => recipe.default);
+}
+/** The recipe class whose lowered property the caller's declaration overrides, under the same variants, or undefined. */
+function variantConflict(declaration: Declaration, recipe: ClassRecipe, propsOf: LoweredProps): { token: string; axis: string | null } | undefined {
+  const key = whenKey(declaration.when), prop = physical(declaration.prop);
+  for (const token of recipe.classes) {
+    for (const lowered of propsOf(token)) {
+      const expanded = properties({ ...declaration, prop: lowered.prop, value: '0', when: lowered.when }).map(item => physical(item.prop));
+      if (!expanded.includes(prop) || whenKey(lowered.when) !== key) continue;
+      const axis = Object.entries(recipe.signature).find(([, classes]) => classes.includes(token))?.[0] ?? null;
+      return { token, axis };
+    }
+  }
+  return undefined;
+}
 
 export interface OwnershipCoverage {
   callerDeclarations: number;
@@ -41,6 +75,14 @@ function owned(prop: string, family: string, component: ComponentIdentity, confi
       if (contract.allow?.some(matches)) result = false;
       if (contract.deny?.some(matches)) result = true;
     }
+  }
+  return result;
+}
+function ownsVariants(component: ComponentIdentity, config: PlumbConfig): boolean {
+  let result = false;
+  for (const layer of componentConfigs(config, component)) {
+    if (layer.components?.own) result = layer.components.own.includes('variants');
+    for (const contract of [layer.components?.contracts?.[component.name.split('.')[0]!], layer.components?.contracts?.[component.name]]) if (contract?.own) result = contract.own.includes('variants');
   }
   return result;
 }
@@ -93,7 +135,7 @@ function selectorMatcher(selector: string): SelectorMatcher {
   } };
 }
 
-export function judgeOwnership(declarations: Declaration[], graph: ComponentGraph, config: PlumbConfig): { findings: Finding[]; coverage: OwnershipCoverage } {
+export function judgeOwnership(declarations: Declaration[], graph: ComponentGraph, config: PlumbConfig, propsOf: LoweredProps = () => []): { findings: Finding[]; coverage: OwnershipCoverage } {
   const groups = new Map<string, Finding>();
   const selectorOwners = new Map<string, { identity: ComponentIdentity; heuristic: boolean }[]>();
   const tags = new Map<string, ComponentMount[]>(), classes = new Map<string, ComponentMount[]>();
@@ -107,7 +149,7 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
   const locations = new Map<string, Set<string>>();
   const siteKey = (s: Declaration['site']) => JSON.stringify([s.file, s.line, s.column, s.text]);
   const coverage: OwnershipCoverage = { callerDeclarations: 0, findings: 0, heuristicFindings: 0, byFamily: {} };
-  function finding(declaration: Declaration, component: ComponentIdentity, family: string, heuristic: boolean): void {
+  function finding(declaration: Declaration, component: ComponentIdentity, family: string, heuristic: boolean, conflict?: { token: string; axis: string | null; selection: Record<string, string>; recipe: ClassRecipe }): void {
     const key = `ownership:${component.name}:${createHash('sha256').update(JSON.stringify([relative(graph.root, component.source.file), declaration.prop, declaration.value, heuristic])).digest('hex').slice(0, 16)}`;
     const previous = groups.get(key);
     if (previous) {
@@ -121,6 +163,15 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
     const source = `${relative(graph.root, component.source.file)}:${component.source.line}`;
     const stylesheet = ['stylesheet', 'apply'].includes(declaration.origin);
     const subject = stylesheet ? declaration.owner.name : ['class', 'arbitrary'].includes(declaration.origin) ? declaration.site.text : declaration.prop;
+    if (conflict) {
+      // The variant's value is the decision; cn() (tailwind-merge) lets the call site's class win over it.
+      const chosen = conflict.axis ? `${conflict.axis} = ${conflict.recipe.variants[conflict.axis] ?? 'default'}` : 'base';
+      groups.set(key, makeFinding({ key, rule: `ownership/${component.name}`, family, severity: 'error', sites: [declaration.site], declaration, decisions: [], component,
+        title: `\`${subject}\` overrides ${component.name}'s \`${conflict.token}\` (${chosen})`,
+        because: `${component.name}'s ${chosen} sets ${declaration.prop} with \`${conflict.token}\`; cn() merges classes with tailwind-merge, so this call site's class wins and the variant no longer decides.`,
+        action: `${variants ? `Use a variant: ${variants}.` : `${component.name} has no variant for this. Ask for one, or wrap it in an element you style.`} Defined in ${source}.` }));
+      return;
+    }
     groups.set(key, makeFinding({ key, rule: `ownership/${component.name}`, family, severity: heuristic ? 'warn' : 'error', sites: [declaration.site],
       declaration, decisions: [], component,
       title: `\`${subject}\` ${stylesheet ? 'sets' : 'changes'} ${component.name}'s ${declaration.prop}${heuristic ? ' (may apply)' : ''}`,
@@ -131,12 +182,18 @@ export function judgeOwnership(declarations: Declaration[], graph: ComponentGrap
     if (index % 256 === 0) profileProgress('rule:ownership', { current: index, total: declarations.length });
     if (original.origin === 'keyframes' || original.sourceOrigin === 'framework') continue;
     const component = graph.caller(original);
-    if (component) for (const declaration of properties(original)) {
-      const family = ownershipFamily(declaration.prop), fails = owned(declaration.prop, family, component, config);
-      const counts = coverage.byFamily[family] ??= { total: 0, allowed: 0, findings: 0 };
-      coverage.callerDeclarations++; counts.total++;
-      if (fails) { coverage.findings++; counts.findings++; finding(declaration, component, family, false); }
-      else counts.allowed++;
+    if (component) {
+      // A component that owns 'variants' owns every property its selected recipe sets: a conflicting call-site class is drift.
+      const byVariants = ownsVariants(component, config) ? selectedRecipe(component, graph.selection(original) ?? {}, graph.fingerprintClasses.get(component)) : undefined;
+      for (const declaration of properties(original)) {
+        const family = ownershipFamily(declaration.prop), fails = owned(declaration.prop, family, component, config);
+        const counts = coverage.byFamily[family] ??= { total: 0, allowed: 0, findings: 0 };
+        coverage.callerDeclarations++; counts.total++;
+        if (fails) { coverage.findings++; counts.findings++; finding(declaration, component, family, false); continue; }
+        const conflict = byVariants && !declaration.opaque ? variantConflict(declaration, byVariants, propsOf) : undefined;
+        if (conflict) { coverage.findings++; counts.findings++; finding(declaration, component, family, false, { ...conflict, selection: graph.selection(original) ?? {}, recipe: byVariants! }); }
+        else counts.allowed++;
+      }
     }
     if (!component && ['stylesheet', 'apply'].includes(original.origin)) {
       const selectors = original.when.filter(condition => condition.kind === 'selector').map(condition => condition.text);

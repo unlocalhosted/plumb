@@ -42,7 +42,7 @@ export interface ComponentMemory {
   fingerprintClasses?: Map<ComponentIdentity, string[]>;
 }
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
-interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[] }
+interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[]; props: Record<string, string> }
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
 export interface RootRange { file: string; start: number; end: number }
 export interface ComponentGraph {
@@ -50,6 +50,8 @@ export interface ComponentGraph {
   root: string;
   components: ComponentIdentity[];
   caller(declaration: Declaration): ComponentIdentity | undefined;
+  /** The literal props the caller passes at the declaration's call site (`variant="ghost"`), for its variant selection. */
+  selection(declaration: Declaration): Record<string, string> | undefined;
   used: ComponentIdentity[];
   usages: Map<string, Usage[]>;
   mounts: ComponentMount[];
@@ -324,7 +326,13 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     const rootOpenings: Node[] = [];
     function rootJsx(item: Node): void {
       item = unwrap(item);
-      if (item.type === 'JSXElement') { rootOpenings.push(item.openingElement); return; }
+      if (item.type === 'JSXElement') {
+        // A portal (a library's `Popover.Portal`, or a wrapper of one such as shadcn's `DialogPortal`) renders no box of
+        // its own: the component's root is what it contains.
+        const tag = nodeName(item.openingElement.name);
+        if (/(?:^|\.)\w*Portal$/.test(tag) && !item.openingElement.attributes.some(attr => attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name)))) { for (const child of item.children) rootJsx(child); return; }
+        rootOpenings.push(item.openingElement); return;
+      }
       if (item.type === 'JSXFragment') { for (const child of item.children) rootJsx(child); return; }
       if (item.type === 'ConditionalExpression') { rootJsx(item.consequent); rootJsx(item.alternate); return; }
       if (item.type === 'LogicalExpression') { rootJsx(item.right); return; }
@@ -502,7 +510,12 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         if (component) {
           used.set(`${component.source.file}:${component.name}`, component);
           mounts.push({ component, classes, ancestors });
-          for (const attr of opening.attributes) if (attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name))) ranges.push({ start: attr.start, end: attr.end, component, site: sourceSite(value, opening.start, `<${tag}>`), classes });
+          const props: Record<string, string> = {};
+          for (const attr of opening.attributes) if (attr.type === 'JSXAttribute' && attr.value) {
+            const literal = attr.value.type === 'JSXExpressionContainer' ? attr.value.expression : attr.value;
+            if (literal.type === 'Literal' && (typeof literal.value === 'string' || typeof literal.value === 'boolean')) props[nodeName(attr.name)] = String(literal.value);
+          }
+          for (const attr of opening.attributes) if (attr.type === 'JSXAttribute' && ['className', 'class', 'style'].includes(nodeName(attr.name))) ranges.push({ start: attr.start, end: attr.end, component, site: sourceSite(value, opening.start, `<${tag}>`), classes, props });
         }
         for (const attr of opening.attributes) if (attr.type === 'JSXAttribute' && attr.value) scan(attr.value, nodeName(attr.name) === 'render' ? component : undefined, shadows, ancestors);
         for (const child of node.children) scan(child, undefined, shadows, [...ancestors, { element: tag, classes }]);
@@ -559,6 +572,11 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       // Nested JSX in render/style expressions belongs to the smallest opening.
       const found = elementsByFile.get(site.file)?.filter(item => item.styling.some(range => offset >= range.start && offset < range.end)).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
       locations.set(offset, found); return found;
+    },
+    selection(declaration) {
+      const file = declaration.site.file, lines = sourceLines.get(file); if (!lines) return;
+      const offset = lines[declaration.site.line - 1]! + declaration.site.column - 1;
+      return usages.get(file)?.find(item => offset >= item.start && offset < item.end)?.props;
     },
     caller(declaration) {
       const file = declaration.site.file, lines = sourceLines.get(file); if (!lines) return;

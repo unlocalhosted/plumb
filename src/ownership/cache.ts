@@ -51,6 +51,10 @@ function hydrate(data: GraphData): ComponentGraph {
         .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0]);
       return elementSites.get(key);
     },
+    selection(declaration) {
+      const site = declaration.site, at = offset(site);
+      return usages.get(site.file)?.find(item => at >= item.start && at < item.end)?.props;
+    },
     caller(declaration) {
       const site = declaration.site, at = offset(site), key = `${site.file}\0${at}`;
       if (!callerSites.has(key)) {
@@ -64,7 +68,7 @@ function hydrate(data: GraphData): ComponentGraph {
 interface Receipt { graph: GraphData; files: [string, string | null][]; directories: [string, string[]][]; resolutions: [string, string | undefined][]; contexts: [string, string | undefined][] }
 export function componentCache(root: string, files: string[], config: PlumbConfig, includeUnused: boolean) {
   const directory = resolve(cacheDirectory(root), 'components');
-  const path = join(directory, hash(JSON.stringify(['components-v6-directory-recipes', root, files, config.components, config.classHelpers, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
+  const path = join(directory, hash(JSON.stringify(['components-v8-portal-roots', root, files, config.components, config.classHelpers, Object.keys(config.imitation ?? {}), includeUnused])) + '.v8');
   return {
     read(resolveImport: (file: string, specifier: string) => string | undefined, resolveContext: (file: string, specifier: string) => string | undefined): ComponentGraph | undefined {
       let receipt: Receipt;

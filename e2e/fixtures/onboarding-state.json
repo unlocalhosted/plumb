@@ -308,10 +308,8 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "partial",
-            "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
-            "next": "nothing to do; plumb skips it",
+            "support": "supported",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "source": "declared",
             "evidence": [
               {
@@ -320,6 +318,15 @@
                 "text": "components.json"
               }
             ],
+            "detail": {
+              "style": "new-york",
+              "css": "src/index.css",
+              "cssVariables": true,
+              "baseColor": "neutral",
+              "iconLibrary": "lucide",
+              "ui": "@/components/ui",
+              "utils": "@/lib/utils"
+            },
             "usage": {
               "files": 1,
               "components": {
@@ -366,7 +373,11 @@
               ]
             },
             "capabilities": {
-              "usage": "judged"
+              "usage": "judged",
+              "states": "judged",
+              "structure": "judged",
+              "owned": "judged",
+              "system": "judged"
             }
           }
         ],
@@ -717,10 +728,8 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "partial",
-            "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
-            "next": "nothing to do; plumb skips it",
+            "support": "supported",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "source": "declared",
             "evidence": [
               {
@@ -729,6 +738,15 @@
                 "text": "components.json"
               }
             ],
+            "detail": {
+              "style": "new-york",
+              "css": "src/index.css",
+              "cssVariables": true,
+              "baseColor": "neutral",
+              "iconLibrary": "lucide",
+              "ui": "@/components/ui",
+              "utils": "@/lib/utils"
+            },
             "usage": {
               "files": 1,
               "components": {
@@ -760,7 +778,11 @@
               ]
             },
             "capabilities": {
-              "usage": "judged"
+              "usage": "judged",
+              "states": "judged",
+              "structure": "judged",
+              "owned": "judged",
+              "system": "judged"
             }
           }
         ],
@@ -1694,10 +1716,8 @@
           {
             "id": "shadcn",
             "label": "shadcn/ui",
-            "support": "partial",
-            "judged": "usage (every primitive, part and site)",
-            "skipped": "not judged yet: states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
-            "next": "nothing to do; plumb skips it",
+            "support": "supported",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props), owned values (its own variables and providers), the design system (components.json, components/ui)",
             "source": "declared",
             "evidence": [
               {
@@ -1706,6 +1726,15 @@
                 "text": "components.json"
               }
             ],
+            "detail": {
+              "style": "new-york",
+              "css": "src/index.css",
+              "cssVariables": true,
+              "baseColor": "neutral",
+              "iconLibrary": "lucide",
+              "ui": "@/components/ui",
+              "utils": "@/lib/utils"
+            },
             "usage": {
               "files": 1,
               "components": {
@@ -1737,7 +1766,11 @@
               ]
             },
             "capabilities": {
-              "usage": "judged"
+              "usage": "judged",
+              "states": "judged",
+              "structure": "judged",
+              "owned": "judged",
+              "system": "judged"
             }
           }
         ],

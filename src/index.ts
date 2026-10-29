@@ -205,7 +205,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
   const ownershipJudgeStart = performance.now();
   profileProgress('rule:ownership');
-  const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value));
+  const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value, token => lowered.candidates.get(token)?.declarations ?? []));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;

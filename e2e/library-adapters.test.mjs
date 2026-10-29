@@ -58,10 +58,11 @@ test('shadcn: components.json aliases say where the generated components live; e
     'src/App.jsx': "import { Button } from '~/ui/button';\nimport { Dialog, DialogContent } from '~/ui/dialog';\nexport const App = () => <Dialog><DialogContent><Button className=\"h-[38px]\" /></DialogContent></Dialog>;\n",
   }, 'libraries');
   const item = find(list, 'shadcn');
-  assert.equal(item.support, 'partial');
+  assert.equal(item.support, 'supported');
   assert.deepEqual(item.usage.components, { Button: 1, Dialog: 1 });
   assert.deepEqual(sites(item), ['src/App.jsx:3 Dialog', 'src/App.jsx:3 Dialog.Content', 'src/App.jsx:3 Button']);
-  assert.match(item.skipped, /not judged yet: states, structure \(portals, slots, render props\), owned values \(its own variables and providers\), the design system \(components\.json, components\/ui\)/);
+  assert.equal(item.skipped, undefined);
+  assert.deepEqual(item.detail, { style: 'new-york', css: 'src/index.css', cssVariables: true, baseColor: 'neutral', iconLibrary: 'lucide', ui: '~/ui', utils: '~/lib/utils' });
 });
 
 test('a file that will not parse makes usage unknown, with the file named; the rest is still counted and nothing crashes', async t => {
@@ -229,4 +230,40 @@ test('Radix owned values: --radix-* variables are neither dead nor drift; Theme 
   assert.deepEqual(report.findings.filter(finding => finding.rule === 'existence/dead-var').map(finding => finding.title), ['`var(--my-pad)` is never defined']);
   assert.ok(!report.findings.some(finding => finding.rule.startsWith('provenance/') && /radix-(?:popover-content-transform-origin|accordion-content-height|select-trigger-width)/.test(finding.declaration.value)));
   assert.ok(report.findings.some(finding => finding.rule.startsWith('provenance/') && /available-height\) - 13px/.test(finding.declaration.value)), 'the 13px beside the library variable is still judged');
+});
+
+// ---- Layer 8: shadcn as the system. components.json is read; components/ui are the design system; a call-site class
+// that overrides a variant's (or the base's) value is drift, with cn()'s tailwind-merge semantics named.
+test('shadcn system: components.json facts; a call-site class that overrides a variant or base class is drift, a margin beside it is not', async t => {
+  const { cp, readdir } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const { fixture, installTailwind } = await import('./helpers/layouts.mjs');
+  const project = await fixture(t, {});
+  await cp(fileURLToPath(new URL('../fixtures/shadcn-system/', import.meta.url)), project.root, { recursive: true });
+  await installTailwind(project.root);
+  assert.ok((await readdir(join(project.root, 'src/components/ui'))).includes('button.tsx'));
+  const state = json(await run(project, ['state', '--json']));
+  const item = find(state.facts.libraries.value, 'shadcn');
+  assert.equal(item.support, 'supported');
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged', owned: 'judged', system: 'judged' });
+  assert.deepEqual(item.detail, { style: 'new-york', css: 'src/index.css', cssVariables: true, baseColor: 'neutral', iconLibrary: 'lucide', ui: '@/components/ui', utils: '@/lib/utils' });
+  assert.deepEqual(item.usage.components, { Button: 1, Dialog: 1, Popover: 1, Select: 1, Tooltip: 1 });
+  assert.ok(item.usage.sites.some(site => site.component === 'Dialog' && site.part === 'Trigger' && site.structure === 'render'), 'DialogTrigger asChild is a render site');
+  assert.equal(state.facts.styling.value.tokens.kind, 'shadcn', '@theme inline with components.json is the token source');
+  const report = json(await run(project, ['--json'], 0));
+  const ownership = report.findings.filter(finding => finding.rule.startsWith('ownership/')).map(finding => `${finding.sites[0].line} ${finding.title}`).sort();
+  assert.deepEqual(ownership, [
+    '11 `h-[38px]` overrides Button\'s `h-9` (size = default)',
+    '12 `px-7` changes Button\'s padding-inline-end', '12 `px-7` changes Button\'s padding-inline-start',
+    '16 `p-[29px]` changes DialogContent\'s padding-bottom', '16 `p-[29px]` changes DialogContent\'s padding-left', '16 `p-[29px]` changes DialogContent\'s padding-right', '16 `p-[29px]` changes DialogContent\'s padding-top',
+    '20 `w-96` overrides PopoverContent\'s `w-72` (base)',
+    '24 `text-[11px]` changes TooltipContent\'s font-size',
+    '27 `w-[180px]` overrides SelectTrigger\'s `w-fit` (base)',
+  ]);
+  const override = report.findings.find(finding => finding.title.includes('h-[38px]'));
+  assert.match(override.because, /cn\(\) merges classes with tailwind-merge, so this call site's class wins/);
+  assert.match(override.action, /Use a variant: variant = default \| destructive \| outline \| secondary \| ghost \| link; size = default \| sm \| lg \| icon/);
+  assert.ok(!report.findings.some(finding => finding.rule.startsWith('ownership/') && finding.sites.some(site => site.line === 13)), 'mt-2 on a ghost Button is the caller\'s margin, not an override');
+  assert.equal(await run(project, [], 0).then(result => result.stderr), '', 'no notice: the system is understood');
 });
