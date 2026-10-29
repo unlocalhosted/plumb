@@ -68,7 +68,7 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   // Select arms the reticle and stays on when Alt is let go; the page is not clickable while it is on.
   await dock.getByRole('button', { name: 'Select an element' }).click();
   s = await read(page);
-  assert.deepEqual([s.state, s.pressed, s.cursor, s.folded, s.say], ['select', 'true', 'crosshair', false, 'Pick an element · Esc']);
+  assert.deepEqual([s.state, s.pressed, s.cursor, s.folded, s.say], ['select', 'true', 'crosshair', false, 'Click an element to inspect it · Esc']);
   await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
   assert.equal((await read(page)).state, 'select', 'letting go of Alt does not end Select');
 
@@ -144,13 +144,12 @@ test('the dock never sits on the page\'s own controls: a button in its corner se
   assert.equal(await side(), 'start', 'the dock moved to the other corner');
   await page.locator('#corner').click();
   assert.equal(await page.locator('#corner').getAttribute('data-pressed'), 'yes', 'the page\'s button is reachable');
-  // the punch list rises from the dock's corner too
+  // one panel: with Blueprint on there is no second list to open, by button or by L
   await page.keyboard.press('Alt+B');
-  await page.locator('plumb-overlay').locator('.dock .list').click();
-  const list = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.pl').getBoundingClientRect().left);
-  assert.ok(list < 40, `the list rises on the dock's side: ${list}`);
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('plumb-overlay').locator('.dock .list').isVisible(), false);
+  await page.keyboard.press('l');
+  assert.equal(await page.evaluate(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.pl')?.getClientRects().length), false);
+  await page.keyboard.press('Alt+B');
   // the button goes: the dock returns to its corner
   await page.evaluate(() => { document.getElementById('corner').remove(); dispatchEvent(new Event('resize')); });
   await page.waitForFunction(() => !document.querySelector('plumb-overlay').hasAttribute('data-side'), null, { timeout: 5000 });
@@ -183,25 +182,25 @@ test('every gesture is one ? away, and each mode says what to do the first time 
   const overlay = page.locator('plumb-overlay');
   // ? opens the sheet, Esc closes it; the dock's button does the same
   await page.keyboard.press('?');
-  const sheet = overlay.getByRole('dialog', { name: 'React Plumber gestures' });
+  const sheet = overlay.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await sheet.waitFor();
   const text = await sheet.innerText();
-  for (const gesture of [/Alt \+ double-click/, /J\s+K/, /Space/, /Alt \+ B/, /1–9/]) assert.match(text, gesture);
+  for (const gesture of [/Alt \+ double-click/, /←\s+→/, /Space/, /Alt \+ B/, /Keep as is/]) assert.match(text, gesture);
   await page.keyboard.press('Escape');
   await sheet.waitFor({ state: 'hidden' });
-  await overlay.getByRole('button', { name: 'Gestures' }).click();
+  await overlay.getByRole('button', { name: 'Keyboard shortcuts' }).click();
   await sheet.waitFor();
-  await overlay.getByRole('button', { name: 'Gestures' }).click();
+  await overlay.getByRole('button', { name: 'Keyboard shortcuts' }).click();
   await sheet.waitFor({ state: 'hidden' });
   // the first Alt says how inspecting goes on; the second says nothing
   const hint = overlay.locator('.tip:not([hidden])');
   await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
-  await hint.filter({ hasText: /double-click words to edit/ }).waitFor();
+  await hint.filter({ hasText: /double-click text to edit it/ }).waitFor();
   await page.mouse.click(600, 300); // any click takes it away
   await hint.waitFor({ state: 'hidden' });
-  // blueprint's first time says J K and Space
+  // blueprint's first time says how to move between causes and Space
   await page.keyboard.press('Alt+B');
-  await hint.filter({ hasText: /J K next problem/ }).waitFor({ timeout: 20000 });
+  await hint.filter({ hasText: /← → next fix/ }).waitFor({ timeout: 20000 });
   await page.keyboard.press('j'); // the next key takes the tip away, and still does its own work
   await hint.waitFor({ state: 'hidden' });
   await page.keyboard.press('Escape');

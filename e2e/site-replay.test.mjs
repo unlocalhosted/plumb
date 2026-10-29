@@ -74,7 +74,7 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
       const alternatives = ['rounded-md', 'p-5', 'gap-4', 'text-base', 'px-4', 'rounded-sm'];
       const desired = (run.alternate ? alternatives : preferred)[index];
       await dialog.getByRole('button', { name: new RegExp(`^${desired}(?:,|$)`) }).click();
-      await dialog.getByRole('button', { name: 'Write 1 edit', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Apply 1 change', exact: true }).click();
       await overlay.locator('.synced .state').filter({ hasText: /^Applied 1 change in/ }).waitFor();
       await page.waitForFunction(({ part, bad }) => !document.querySelector(`[data-drift="${part}"]`).classList.contains(bad), drift);
       assert.equal(await page.locator(`[data-drift="${drift.part}"]`).evaluate((node, token) => node.classList.contains(token), desired), true);
@@ -100,7 +100,7 @@ test('homepage guards dev writes and replays static overlay fixes in any order',
       const control = page.getByRole('button', { name: new RegExp(`^${index + 1}:`) });
       await control.evaluate(node => node.scrollIntoView({ block: 'center' }));
       await control.click({ position: { x: 12, y: 12 } });
-      await overlay.getByRole('dialog').getByText(/^(on system|on the scale)$/).waitFor();
+      await overlay.getByRole('dialog').getByText(/^Matches your theme$/).waitFor();
       await overlay.getByRole('button', { name: 'Close the reading' }).click();
     }
     assert.equal(await page.evaluate(() => window.demoWrites.length), 6);

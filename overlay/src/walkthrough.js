@@ -14,6 +14,7 @@
  * (no pointer events) and is shown once per project (localStorage, wrapped: a private window just shows it again).
  * Words follow docs/copy/voice.md.
  * ───────────────────────────────────────────────────────── */
+import { WALK } from './words.js';
 
 export const WALK_CSS = `
   .walk { position: fixed; inset: 0; pointer-events: none; }
@@ -65,7 +66,7 @@ export class Walkthrough {
     if (!this.#step) return;
     if (!this.#el?.isConnected) { if (this.#step < 4) this.end(); return; }
     const r = this.#el.getBoundingClientRect();
-    const words = { 1: `${this.#line} Click it.`, 2: '↑ ↓ to try a step. Enter to take it.', 3: 'Apply, in Changes, writes it to your code.', 4: 'Done. Nothing left to fix on it.' }[this.#step];
+    const words = this.#step === 1 ? WALK[1](this.#line) : WALK[this.#step];
     const below = r.bottom + 120 < innerHeight;
     const top = this.#step === 1 ? r.bottom + 10 : below ? r.bottom + 64 : Math.max(8, r.top - 48);
     this.#layer.innerHTML = `${this.#step === 1 ? `<div class="pulse" style="left:${r.left - 4}px;top:${r.top - 4}px;width:${r.width + 8}px;height:${r.height + 8}px"></div>` : ''}<div class="line" data-step="${this.#step}" style="left:${Math.max(8, Math.min(r.left, innerWidth - 308))}px;top:${top}px"><span class="n">${this.#step}/4</span>${words.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c])}</div>`;

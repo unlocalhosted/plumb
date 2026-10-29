@@ -86,7 +86,7 @@ test('Alt+B registers the page against the system: no dim, no boxes; heat only w
   assert.deepEqual(await look(), before, 'the page keeps its own paint');
   assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.shade').hidden), true, 'no dim');
   // reading, then the count
-  await say(overlay).filter({ hasText: /\d+ problems? in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   const expected = ['gap-[10px]', 'py-[10px]', 'px-[14px]', 'rounded-[14px]', 'text-[13.5px]', 'gap-[3px]', 'rounded-[5px]'];
   await page.waitForFunction((drifts) => {
     const labels = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((r) => r.getAttribute('aria-label'));
@@ -94,7 +94,7 @@ test('Alt+B registers the page against the system: no dim, no boxes; heat only w
   }, expected, { timeout: 5000 }).catch(() => {});
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   for (const drift of expected) assert.ok(labels.some((l) => l.includes(drift)), `a mark for ${drift}`);
-  const count = Number((await say(overlay).innerText()).match(/(\d+) problems?/)[1]);
+  const count = Number(await overlay.locator('.dock').getAttribute('data-in-view'));
   assert.equal(count, await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length), 'the dock counts the drift marks drawn');
   // no boxes and no class names on the page at rest: one zone of heat per mark, nothing else
   const rest = await page.evaluate(() => { const sr = document.querySelector('plumb-overlay').shadowRoot; return { labels: sr.querySelectorAll('.bp .lbl').length, outlines: sr.querySelectorAll('.bp .outlines rect').length, zones: sr.querySelectorAll('.bp .heat .zone').length, hits: sr.querySelectorAll('.bp .hit').length, stages: [...new Set([...sr.querySelectorAll('.bp .heat .zone')].map((z) => z.dataset.stage))] }; });
@@ -143,7 +143,7 @@ test('Alt+B registers the page against the system: no dim, no boxes; heat only w
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'gap-[10px]' }).waitFor({ timeout: 5000 });
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line').waitFor({ timeout: 5000 });
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.deepEqual(errors, []);
 });
 
@@ -155,14 +155,14 @@ test('Leaving puts the page back exactly, and nothing keeps listening', { timeou
   const before = await footprint(page);
 
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await page.keyboard.press('Alt+B');
   await off(page);
 
   assert.equal(await footprint(page), before, 'no attribute, inline style or stylesheet is left behind');
   assert.equal(await hits(overlay).count(), 0);
   assert.match(await say(overlay).innerText(), /Hold Alt to inspect/);
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'false');
+  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'false');
   await page.mouse.wheel(0, 300);
   await page.waitForTimeout(300);
   assert.equal(await hits(overlay).count(), 0, 'scrolling draws nothing once the mode is off');
@@ -187,18 +187,18 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   const before = await footprint(page);
 
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /\d+ problems? in view.* · Alt\+B/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   // the count and the drawn marks agree once the last reading lands
-  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock .say').innerText.match(/(\d+) problems?/)?.[1]); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
+  await page.waitForFunction(() => { const root = document.querySelector('plumb-overlay').shadowRoot; const n = Number(root.querySelector('.dock').dataset.inView); return n === [...root.querySelectorAll('.bp .hit')].filter((h) => h.dataset.ledger === 'new').length; }, null, { timeout: 5000 });
   const labels = await hits(overlay).evaluateAll((rects) => rects.map((r) => r.getAttribute('aria-label')));
   assert.ok(!labels.some((l) => /gap-s\d/.test(l)), 'a gap on the system has no mark');
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
   for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await shown(page, sel), false, `${sel} is not shown`);
   // at rest the fix panel is one line: the problems on the page (more than the view holds, once it is read), in causes
-  await panel(overlay).locator('.line').filter({ hasText: /^\d+ problems? · \d+ causes?/ }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.line').filter({ hasText: /^\d+ problems? · \d+ fix(es)?/ }).waitFor({ timeout: 10000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
-  const [, places, causes] = (await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems? · (\d+) causes?/).map(Number);
+  const [, places, causes] = (await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems? · (\d+) fix(?:es)?/).map(Number);
   assert.ok(places >= drift, `the line counts the whole page, at least what is in view: ${places} >= ${drift}`);
   assert.ok(causes >= 3 && causes <= places, `several causes: ${causes}`);
   assert.equal(await panel(overlay).locator('.cause').count(), 0, 'nothing is in hand at rest');
@@ -215,7 +215,7 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   // Esc puts it down and the panel is one line again; blueprint stays
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line .count').waitFor({ timeout: 5000 });
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
   // D is an ordinary key now: nothing on the page changes
   await page.keyboard.down('d');
   await page.waitForTimeout(150);
@@ -272,7 +272,7 @@ test('A glow puts its cause in hand; an option previews on the page; Enter takes
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   assert.equal(await shown(page, '.ch:not([hidden]) .card[role="dialog"]'), false, 'no card');
   assert.equal(await overlay.locator('.w:not([hidden])').count(), 0, 'the reading card stays closed');
@@ -295,7 +295,7 @@ test('Several causes are applied together, one write per file', { timeout: 12000
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await hold(page, overlay, 'rounded-[14px]', 'rounded-[14px]');
   await take(page, overlay);
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
@@ -323,7 +323,7 @@ test('Leaving blueprint with causes taken or tried leaves nothing previewed and 
   const { page, overlay } = await open(t, launched, url);
   const before = await footprint(page);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   await pickStep(overlay, 's2');
   await page.waitForFunction(() => getComputedStyle(document.getElementById('sync-row')).gap === '8px', null, { timeout: 5000 });
@@ -350,7 +350,7 @@ test('A write the server refuses as stale writes nothing: the file is as it was 
   const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   await pickStep(overlay, 's2');
@@ -390,7 +390,7 @@ test('Keyboard only: Tab reaches a glow, Enter puts a cause in hand, → walks t
   const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   assert.ok(await tabTo(page, 'gap-[3px]'), 'Tab reaches the chip\u2019s gap glow');
   await page.keyboard.press('Enter');
@@ -415,7 +415,7 @@ test('Enter on the Apply button that has focus writes the taken causes', { timeo
   const { root, url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
   await take(page, overlay);
@@ -438,7 +438,7 @@ test('Enter on a glow that has focus puts that glow\u2019s cause in hand', { tim
   const { url } = await demo(t);
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   const label = await tabTo(page, 'gap-[3px]');
   assert.ok(label, 'Tab reaches the chip\u2019s gap glow');
@@ -470,7 +470,7 @@ test('Registration keeps the page as it is: a coloured spot is its own pixel und
   const [r0, g0, b0] = await pixel(page, 1190, 400);
   assert.ok(b0 > 180 && r0 < 80, `the page is blue there (rgb ${r0},${g0},${b0})`);
   await page.keyboard.press('Alt+B');
-  await say(page.locator('plumb-overlay')).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
+  await page.locator('plumb-overlay').locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   assert.deepEqual(await paint(), original, 'html and body keep their own paint');
   assert.deepEqual(await pixel(page, 1190, 400), [r0, g0, b0], 'nothing is dimmed or tinted where nothing is off');
   await page.keyboard.press('Alt+B');
@@ -500,7 +500,7 @@ test('With motion: the zones pulse in, then rest; turning around mid-arrival and
   await page.waitForTimeout(2800);
   const still = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone')].every((z) => z.getAnimations().length === 0));
   assert.ok(still, 'no zone moves at rest');
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint mode' }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
 
   await page.evaluate(() => document.querySelector('plumb-overlay').remove());
   assert.equal(await footprint(page), before, 'removing the overlay mid-mode leaves nothing behind');
@@ -515,7 +515,7 @@ test('A weight is never said as pixels: the cause in hand names it and says it i
   const { url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   assert.doesNotMatch(await markFor(overlay, 'font-semibold').first().getAttribute('aria-label'), /\d\s*px/);
   await hold(page, overlay, 'font-semibold', 'font-semibold');
   const words = await panel(overlay).innerText();
@@ -568,6 +568,13 @@ test('While blueprint is on the page is read, not used: clicks, hovers and keys 
   await page.keyboard.down('Space');
   await page.mouse.click(...poke);
   assert.equal(await pokes(), 1, 'with Space held the click pressed the button');
+  // an element with a glow on it too: the glow lets the click through while Space is held
+  await page.locator('#sync-row').evaluate((el) => el.addEventListener('click', () => { el.dataset.n = +(el.dataset.n || 0) + 1; }));
+  await page.evaluate(() => document.getElementById('sync-row').scrollIntoView({ block: 'center' }));
+  await page.waitForFunction(() => { const r = document.getElementById('sync-row').getBoundingClientRect(), hit = document.querySelector('plumb-overlay').shadowRoot.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return hit?.classList?.contains('hit') || hit?.closest?.('.bp') || true; }, null, { timeout: 15000 });
+  await page.waitForTimeout(800);
+  await page.mouse.click(...(await centre('#sync-row')));
+  assert.equal(await page.locator('#sync-row').evaluate((el) => +(el.dataset.n || 0)), 1, 'with Space held a click on a glowing element reaches it');
   await page.keyboard.up('Space');
   await page.mouse.click(...poke);
   assert.equal(await pokes(), 1, 'letting go of Space makes the page inert again');
@@ -611,7 +618,7 @@ test('Drawn only where it can be seen: a drawer over part of an element cuts its
   const drawer = (width) => page.evaluate((width) => { let d = document.getElementById('drawer'); if (!d) { d = document.createElement('div'); d.id = 'drawer'; d.style.cssText = 'position:fixed;left:0;top:0;bottom:0;background:#fff;z-index:10'; document.body.append(d); } d.style.width = `${width}px`; }, width);
   await drawer(row.x + row.width / 2);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   // the row's own radius mark glows along its edge: only the half the drawer leaves
   const radius = () => page.evaluate(() => { const h = [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].find((x) => x.getAttribute('aria-label').includes('rounded-[14px]')); if (!h) return null; const r = h.getBoundingClientRect(); return { x: r.left, w: r.width }; });
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((x) => x.getAttribute('aria-label').includes('rounded-[14px]')), null, { timeout: 5000 });
@@ -637,7 +644,7 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one cause; one
   assert.equal(was.match(/rounded-\[3px\]/g).length, 1, 'the cells are written once, on one line');
   await page.locator('#dense').scrollIntoViewIfNeeded();
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   // a click on one cell\u2019s glow: the cause is the class, all 36 places
   await hold(page, overlay, 'rounded-[3px]', 'rounded-[3px]');
@@ -663,7 +670,7 @@ test('A cause counts every place on the page, not just the view', { timeout: 120
   await writeFile(join(root, 'src/entry.jsx'), (await readFile(join(root, 'src/entry.jsx'), 'utf8')) + `import { Rows } from './Rows.jsx';\ncreateRoot(document.getElementById('more')).render(<Rows />);\n`);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   // the fix panel's count grows past the view as the rest of the page is read, and settles once every element is read
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 30000 });
   const inView = await page.evaluate(() => [...document.querySelectorAll('[id^="row-"]')].filter((r) => { const b = r.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).length);

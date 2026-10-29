@@ -24,12 +24,13 @@ import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Glass, GLASS_CSS } from './blueprint-glass.js';
 import { Panel, PANEL_CSS } from './blueprint-panel.js';
-import { Craft } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
+import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
 import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
+import { FIX } from './words.js';
 import { post, request } from './api.js';
 import { locate } from './locate.js';
 
@@ -80,9 +81,10 @@ export class Blueprint {
       pick: (i) => this.#selection.pick(i),
       take: () => this.#selection.accept(),
       spotlight: (els) => this.#marks.spotlight(els),
-      applyAll: (tokens) => this.#applyAll(tokens),
+      applyAll: (tokens, keeps, total) => this.#applyAll(tokens, keeps, total),
+      tokens: () => spec.value?.tokens ?? null,
     });
-    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = !!p.total && p.read === p.total; }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { onChange: (items) => { this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(items); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = !!p.total && p.read === p.total; if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -270,19 +272,44 @@ export class Blueprint {
   }
   // Apply from the fix panel: each new token is written to the theme with its class swap (POST token), then every
   // class change Changes holds goes out in one guarded write per file
-  async #applyAll(tokens) {
+  // Apply: every token first (the theme), then each token's class at every place of its cause, one guarded write per
+  // file; then the causes kept as intended into the ledger; then the panel's swaps (Changes). What did not land is said.
+  async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length) {
+    // the panel's swaps first (Changes: source files, which hot-update without a reload)
+    if (this.#changes.count) await this.#changes.accept();
+    // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
+    // the theme, the ledger. A reload the theme write causes can't cut it short.
+    const swaps = new Map(), owner = new Map();
+    for (const t of tokens) {
+      const s = t.suggest;
+      if (!s.then?.to || !t.els.length) continue;
+      for (const el of t.els) {
+        const site = await this.#siteOf(el).catch(() => null);
+        if (!site) continue;
+        const f = swaps.get(site.file) ?? swaps.set(site.file, { file: site.file, hash: site.hash, edits: [] }).get(site.file);
+        if (!f.edits.some((e) => e.line === site.line && e.column === site.column)) f.edits.push({ line: site.line, column: site.column, from: s.then.from ?? '', to: s.then.to });
+        owner.set(site.file, [...(owner.get(site.file) ?? []), t]);
+      }
+    }
     const refused = [];
     let said = null;
-    for (const t of tokens) {
-      const s = t.suggest, el = t.els[0], site = el ? await this.#siteOf(el).catch(() => null) : null;
-      // a token not written (its place unread, or the server refused it) is said, not folded away as done
-      if (!site) { refused.push(t); said ??= 'Couldn’t find where this is written.'; continue; }
-      await post('token', { file: s.file, hash: s.hash, name: s.name, value: s.value, why: s.why, then: { file: site.file, hash: site.hash, line: site.line, column: site.column, from: s.then?.from ?? '', to: s.then?.to } })
-        .catch((error) => { refused.push(t); said ??= /changed since/i.test(error?.message ?? '') ? 'This file changed after we checked it. Check again.' : error?.message ?? 'Couldn’t add the token.'; });
+    if (tokens.length || keeps.length) {
+      // said now: if the theme write reloads the page, the bar says it when the page comes back
+      this.#host.remember?.(FIX.applied(total));
+      try {
+        const { results } = await post('apply-all', {
+          tokens: tokens.map((t) => ({ file: t.suggest.file, hash: t.suggest.hash, name: t.suggest.name, value: t.suggest.value, ...(t.suggest.why ? { why: t.suggest.why } : {}) })),
+          swaps: [...swaps.values()],
+          accepts: keeps.map((k) => ({ rule: k.rule, sites: k.sites, why: k.why })),
+        });
+        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= /changed since/i.test(error ?? '') ? 'This file changed after we checked it. Check again.' : error ?? FIX.couldNot; };
+        results.tokens.forEach((r, i) => { if (!r.ok) miss(tokens[i], r.error); });
+        for (const r of results.swaps) if (!r.ok || r.refused?.length) for (const t of owner.get(r.file) ?? []) miss(t, r.error ?? r.refused?.[0]?.reason);
+        results.accepts.forEach((r, i) => { if (!r.ok) miss(keeps[i], r.error); });
+        for (const f of new Set([...tokens.map((t) => t.suggest.file), ...swaps.keys(), ...keeps.flatMap((k) => k.sites.map((x) => x.file))])) this.invalidate({ file: f });
+      } catch (error) { refused.push(...tokens, ...keeps); said = error?.message ?? FIX.couldNot; this.#host.forgetResume?.(); }
     }
-    if (this.#changes.count) await this.#changes.accept();
-    else if (tokens.length > refused.length) this.#host.remember?.();
-    // what did not land (a token refused, or a class change still in Changes: stale, or failed): say so
+    // what did not land (a token, a swap or a keep refused, or a class change still in Changes): say so
     return { count: this.#changes.count + refused.length, why: this.#changes.why ?? said, refused };
   }
   async #apply(batch) {
@@ -326,6 +353,8 @@ export class Blueprint {
   // a finished reading says it has nothing off; then it is selected as it is. The reader reports progress before it
   // hands on the items of the same wave, so the items decide, with the progress they came with.
   #want = null;
+  // the page came back after a write reloaded it: the fix bar says what was applied
+  resumed(text) { this.#fix.resumed(text); }
   enterAt(el) {
     this.#want = el;
     this.active ? this.#holdWanted(this.#settled) : this.enter();
@@ -335,7 +364,15 @@ export class Blueprint {
     const want = this.#want;
     if (!want?.isConnected) return void (this.#want = null);
     if (this.#fix.holdEl(want)) return void (this.#want = null);
-    if (done) { this.#want = null; this.#selection.select(want, this.#itemOf(want)); }
+    if (done) {
+      this.#want = null;
+      this.#selection.select(want, this.#itemOf(want));
+      // nothing to put in hand: the bar says why, so a pick never ends in silence (the element's own reading says
+      // whether it could be checked at all)
+      Promise.resolve(this.#host.readMarks?.(want)).catch(() => null).then((state) => {
+        this.#fix.notice(state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : FIX.elementClear);
+      });
+    }
   }
     // Esc lets go of the selection before it leaves blueprint; true when there was one
   deselect() { return this.#selection.clear(); }

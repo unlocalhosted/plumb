@@ -73,7 +73,7 @@ test('At rest one line counts problems and causes; Enter puts a cause in hand an
   const { page, errors, overlay } = await open(t, launched, url);
   const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
   // rest: one line, nothing else of the old flow drawn
-  await panel(overlay).locator('.line').filter({ hasText: /2 problems · 1 cause/ }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.line').filter({ hasText: /2 problems · 1 fix/ }).waitFor({ timeout: 10000 });
   for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await visible(page, sel), false, `${sel} is not shown`);
   // Enter: the cause in hand, its options as specimens, the suggestion tried at both places
   await page.keyboard.press('Enter');
@@ -108,7 +108,7 @@ test('A glow clicked puts its cause in hand; → skips to the next cause, ← ba
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE.replace('<section id="b"', '<p id="w" className="text-body font-[650]">Weight</p>\n      <section id="b"'));
   const { page, errors, overlay } = await open(t, launched, url);
-  await panel(overlay).locator('.line').filter({ hasText: /problems? · 2 causes/ }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.line').filter({ hasText: /problems? · 2 fixes/ }).waitFor({ timeout: 10000 });
   // a click on the second card's glow (its zone's own point) holds the padding cause
   const at = await overlay.locator('.bp .hit[aria-label*="18px"]').first().getAttribute('data-at');
   const [x, y] = at.split(',').map(Number);
@@ -237,7 +237,7 @@ export function App() {
   await page.keyboard.press('Alt+B');
   await panel(overlay).locator('.line').filter({ hasText: /problem/ }).waitFor({ timeout: 20000 });
   await page.waitForTimeout(1500);
-  assert.ok(!(await page.evaluate(() => window.__said)).some((s) => /Everything matches/.test(s)), 'no all clear while reading');
+  assert.ok(!(await page.evaluate(() => window.__said)).some((s) => /Nothing to fix/.test(s)), 'no all clear while reading');
   // Alt+click the link: its cause, from the JSX that wrote it
   const b = await page.getByText('Open the first entry').boundingBox();
   await page.keyboard.down('Alt');
@@ -245,6 +245,69 @@ export function App() {
   await page.mouse.click(b.x + 4, b.y + b.height / 2);
   await page.keyboard.up('Alt');
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'tracking-[0.1em]' }).waitFor({ timeout: 20000 });
-  assert.match(await panel(overlay).locator('.cause .what').innerText(), /letter spacing/);
+  assert.match(await panel(overlay).locator('.cause .what').innerText(), /Letter spacing not in your theme/);
+  assert.deepEqual(errors, []);
+});
+
+// Every cause ends in one action. Nothing on the theme is close (tracking-[0.1em]): Add to theme, named in a field
+// whose keys are its own (typing "a" or "k" neither applies nor keeps), every place takes the new class. A Tailwind
+// default (leading-relaxed): Make it yours, the variable goes into the theme and no source line changes. Intended
+// (p-[13px]): Keep it, with why, recorded in the ledger. One Apply writes all three.
+test('Add to theme, Make it yours and Keep it: each a cause\'s one action, all written by one Apply', { timeout: 180000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, `
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <p id="t1" className="text-body tracking-[0.1em]">Eyebrow</p>
+      <p id="t2" className="text-body tracking-[0.1em]">Eyebrow two</p>
+      <p id="l" className="text-body leading-relaxed">Relaxed</p>
+      <section id="k" className="rounded-card bg-surface p-[13px] text-body">Kept</section>
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
+  const theme = () => readFile(join(root, 'src/styles.css'), 'utf8');
+  const cls = () => panel(overlay).locator('.cause .cls').innerText();
+  const hold = async (re) => {
+    if (!(await panel(overlay).locator('.cause').count())) await page.keyboard.press('Enter');
+    for (let i = 0; i < 8 && !re.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+    assert.match(await cls(), re);
+  };
+  // Add to theme: named in the field; the class it becomes is said as it is typed
+  await hold(/tracking-\[0\.1em\]/);
+  assert.match(await panel(overlay).locator('.note').innerText(), /no letter spacing of 0\.1em/);
+  assert.ok(await panel(overlay).locator('.take').isDisabled(), 'no name, nothing to take');
+  await panel(overlay).locator('input[name="token"]').fill('');
+  await panel(overlay).locator('input[name="token"]').pressSequentially('track-ak');
+  await panel(overlay).locator('.hint').filter({ hasText: 'tracking-track-ak' }).waitFor({ timeout: 5000 });
+  assert.equal(await panel(overlay).locator('.apply .badge').innerText(), '0', 'typing a or k neither applies nor keeps');
+  await page.keyboard.press('Enter');
+  // Make it yours
+  await hold(/leading-relaxed/);
+  await panel(overlay).locator('.take').filter({ hasText: 'Add to theme' }).waitFor({ timeout: 5000 });
+  assert.match(await panel(overlay).locator('.note').innerText(), /Nothing in your code changes/);
+  assert.match(await panel(overlay).locator('.hint').innerText(), /--leading-relaxed: 1\.625/);
+  await page.keyboard.press('Enter');
+  // Keep it
+  await hold(/p-\[13px\]/);
+  await page.keyboard.press('k');
+  await panel(overlay).locator('input[name="why"]').pressSequentially('a brand inset, kept');
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.apply .badge').filter({ hasText: '3' }).waitFor({ timeout: 5000 });
+  // one Apply: the theme, the source, the ledger
+  await panel(overlay).locator('.apply').click();
+  // what the person waits for: the panel says all three landed
+  await panel(overlay).locator('.done').filter({ hasText: '3 changes applied' }).waitFor({ timeout: 20000 });
+  assert.match(await theme(), /--tracking-track-ak:\s*0\.1em/);
+  assert.match(await theme(), /--leading-relaxed:\s*1\.625/);
+  const after = await source();
+  assert.equal((after.match(/tracking-track-ak/g) ?? []).length, 2, after);
+  assert.doesNotMatch(after, /tracking-\[0\.1em\]/);
+  assert.match(after, /className="text-body leading-relaxed"/, 'make it yours changes no source line');
+  assert.match(after, /p-\[13px\]/, 'kept stays as written');
+  assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /a brand inset, kept/);
   assert.deepEqual(errors, []);
 });

@@ -56,7 +56,7 @@ test('Alt-hover names an element; Alt+click opens blueprint with that element\'s
   const point = await onRow(page);
   await page.keyboard.down('Alt');
   await page.mouse.move(point.x, point.y);
-  await overlay.locator('.tag').filter({ hasText: 'SyncRow' }).filter({ hasText: 'off' }).waitFor();
+  await overlay.locator('.tag').filter({ hasText: 'SyncRow' }).filter({ hasText: /\d+ problems?/ }).waitFor();
 
   // Alt+click: one interface. Blueprint opens on the row and the fix panel holds one of the row's own causes, not a
   // cause of the page around it (the page's wrappers are read first).

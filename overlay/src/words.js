@@ -348,3 +348,140 @@ export function say(rule, n = {}) {
   const w = CRAFT[rule.replace(/^craft\//, '')]?.(n);
   return w ? { what: w.label, title: w.line, because: w.reason } : {};
 }
+
+// ── the fix panel ─────────────────────────────────────────
+// docs/copy/voice.md and the better-writing skill (jakub.kr/skills#better-writing): plain words, one idea per
+// sentence, verb-first buttons, parallel status ("Applying 3 changes…" → "3 changes applied"), an example in a
+// placeholder, never an internal name. The panel passes numbers and names; every sentence it shows is made here.
+const plural = new Intl.PluralRules('en');
+const count = (n, one, other) => `${new Intl.NumberFormat('en').format(n)} ${plural.select(n) === 'one' ? one : other}`;
+// what a property is called, for a type finding (tracking is letter spacing, not a size)
+const TYPE = { 'letter-spacing': 'Letter spacing', 'line-height': 'Line height', 'font-size': 'Text size', 'font-weight': 'Weight', 'font-family': 'Font' };
+const FAMILY = { spacing: 'Spacing', radius: 'Corner', color: 'Colour', elevation: 'Shadow', shadow: 'Shadow', z: 'Layer order', motion: 'Timing' };
+
+export const FIX = {
+  // rest
+  problems: (n) => count(n, 'problem', 'problems'),
+  fixes: (n) => count(n, 'fix', 'fixes'),
+  notes: (n) => count(n, 'note', 'notes'),
+  places: (n) => count(n, 'place', 'places'),
+  // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
+  position: (g, list, isNote) => { const same = list.filter((x) => !!isNote(x) === !!isNote(g)); return `${isNote(g) ? 'Note ' : ''}${same.indexOf(g) + 1} of ${same.length}`; },
+  checking: 'Checking this screen…',
+  stillChecking: 'checking…',
+  unchecked: (n) => `${count(n, 'element', 'elements')} can’t be checked`,
+  uncheckedTitle: 'Not in your code: drawn by a library, or added to the page at runtime.',
+  clear: 'Nothing to fix on this screen.',
+  clearChecked: (n) => `Nothing to fix in what was checked. ${count(n, 'element', 'elements')} can’t be checked.`,
+  ready: (n) => `${count(n, 'change', 'changes')} ready to apply`,
+  start: 'Fix',
+  apply: 'Apply changes',
+  applying: (n) => `Applying ${count(n, 'change', 'changes')}…`,
+  applied: (n) => `${count(n, 'change', 'changes')} applied`,
+  couldNot: 'Couldn’t apply. Check again.',
+  // a fix in hand: what is wrong, in a few words
+  what(mark) {
+    if (mark.family === 'craft') return mark.what ?? 'Doesn’t follow the craft rules';
+    if (/framework/.test(mark.rule)) return 'Tailwind’s default, not yours';
+    if (/by-value|matches/.test(mark.rule)) return 'Same value as a token, typed by hand';
+    if (/tier/.test(mark.rule)) return 'A raw token where a named one fits';
+    if (/existence/.test(mark.rule)) return 'Uses a variable that doesn’t exist';
+    if (mark.family === 'color' && (mark.props ?? []).includes('box-shadow')) return 'Shadow colour not in your theme';
+    const name = (mark.family === 'type' && TYPE[mark.props?.[0]]) || FAMILY[mark.family] || 'Value';
+    return `${name} not in your theme`;
+  },
+  // what to do, in a sentence
+  adopt: 'Add it to your theme and it’s yours. Nothing in your code changes.',
+  adds: (name, value, file) => ({ code: `${name}: ${value}`, file }),
+  newStep: (what, value) => `Your theme has no ${what.toLowerCase()} of ${value}. Name it to add it.`,
+  newStepHint: (n) => (n === 1 ? 'Then this place uses it' : n === 2 ? 'Then both places use it' : `Then all ${n} places use it`),
+  becomes: (n) => (n === 1 ? 'This place becomes' : n === 2 ? 'Both places become' : `All ${n} places become`),
+  newStepBad: 'Use lowercase letters, numbers and dashes',
+  newStepExample: 'wide',
+  craftToken: 'Your theme has no step for this. This adds it, then uses it here.',
+  typed: (value) => `${value} is typed by hand, and your theme has nothing close.`,
+  outside: (file) => `Can’t check this. It’s written in ${file}, outside this project’s source. Add it to source in plumber.config.ts to check it.`,
+  unreachable: 'Can’t reach this in your code, so it can’t be checked.',
+  elementClear: 'Nothing to fix on this element.',
+  shadowColour: 'The colour is part of this shadow. Use a shadow token for the whole value, or change the colour by hand.',
+  tailwinds: (cls, value) => `${cls} is ${value}, from Tailwind’s defaults. Your theme doesn’t set it.`,
+  // buttons
+  use: (label) => `Use ${label}`,
+  addToTheme: 'Add to theme',
+  keep: 'Keep as is',
+  keepWhy: 'Why keep it?',
+  keepExample: 'Set by the brand guide',
+  keepPlaces: (n) => `Keep ${count(n, 'place', 'places')}`,
+  cancel: 'Cancel',
+  skip: 'Skip',
+};
+
+// ── the dock ──────────────────────────────────────────────
+// what the hover tag says about an element: its problems, or why there are none to say
+export const TAG = {
+  off: (n) => count(n, 'problem', 'problems'),
+  clean: 'Matches your theme',
+  styledBy: (name) => `Styled by ${name}`,
+  computed: 'Classes built in code',
+  trying: 'Trying a fix',
+  known: 'Known, recorded as intended',
+};
+
+// the first time: one fix, walked through
+export const WALK = {
+  1: (line) => `${line} Click it.`,
+  2: '↑ ↓ to try another option. Enter to use it.',
+  3: 'Press A, or Apply changes, to put it in your code.',
+  4: 'Applied. Nothing left to fix here.',
+};
+
+export const DOCK = {
+  starting: 'Checking your project…',
+  failed: 'Couldn’t start. Check your dev server’s terminal.',
+  select: 'Click an element to inspect it · Esc',
+  idle: 'Hold Alt to inspect',
+  // while Blueprint is on, the fix bar has the count: the dock only says how to leave
+  blueprint: 'Alt+B to close',
+  checking: 'Checking this screen…',
+  undo: 'Undo',
+  undoTitle: 'Undo every change you haven’t applied',
+  apply: (n) => `Apply ${n}`,
+  applyChanges: (n) => `Apply ${count(n, 'change', 'changes')}`,
+  applying: 'Applying…',
+  checkAgain: 'Check again',
+  list: 'All problems on this screen',
+  listTitle: 'All problems on this screen, as a list (L)',
+  history: 'History',
+  historyTitle: 'Changes you applied. Undo any of them.',
+  help: 'Keyboard shortcuts',
+  helpTitle: 'Keyboard shortcuts (?)',
+  blueprintTitle: 'Show every problem on this screen (Alt+B)',
+  pick: 'Select an element',
+  pickTitle: 'Select an element (or hold Alt)',
+  setup: (n) => count(n, 'setup step left', 'setup steps left'),
+  setupTitle: (first) => `${first} Open setup to finish it.`,
+};
+
+// ── setup ─────────────────────────────────────────────────
+// A setup step in the person's terms, by its readiness id; a step not listed keeps the server's words.
+const FAMILY_WORDS = { spacing: 'spacing', color: 'colours', radius: 'corner radii', type: 'text styles', motion: 'timings', elevation: 'shadows', z: 'layer order (z-index) steps' };
+export const SETUP = {
+  title: 'Your setup',
+  lead: (n) => `${count(n, 'setup step', 'setup steps')} left. Tick the ones to fix.`,
+  required: 'Required',
+  recommended: 'Recommended',
+  unconfirmed: 'Not confirmed yet',
+  fixed: 'Fixed',
+  saved: (file) => `Saved to ${file}. Your dev server restarts, then this list updates.`,
+  checkAgain: 'Check again',
+  step(q) {
+    const tokens = /^read\.tokens\.(\w+)$/.exec(q.id)?.[1];
+    if (tokens) return { title: `Add ${FAMILY_WORDS[tokens] ?? tokens} to your theme`, loses: `Without them, ${FAMILY_WORDS[tokens] ?? tokens} can’t be checked against your theme.` };
+    return {
+      'fast.config': { title: 'Make checks faster', loses: 'Without a config file, every check starts from scratch.' },
+      'remember.baseline': { title: 'Start from today’s problems', loses: 'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.' },
+      'write.watcher': { title: 'Check that saving updates the page', loses: 'Save any file once. If the page doesn’t update, applied changes won’t show until you reload.' },
+      'locate.react-dev': { title: 'Use the development build', loses: 'In a production build, clicking an element may not find its component.' },
+    }[q.id] ?? { title: q.title, loses: q.loses };
+  },
+};

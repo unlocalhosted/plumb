@@ -5,7 +5,7 @@
  * Alt + double-click or J/K (docs/briefs/editor-roadmap.md, DX).
  *
  *  sheet   the dock's ? button, or ? anywhere the page isn't being typed in: a card above the dock listing the gestures
- *          by what you're doing (inspect, edit words, blueprint, fixing). Esc or ? again closes it; it rises from the
+ *          by what you're doing (inspect, edit text, blueprint). Esc or ? again closes it; it rises from the
  *          dock's corner
  *  hint    the first time blueprint is turned on, the first time Alt is held, and the first time words are edited, one
  *          line above the dock says what to do next. Each is said once per browser (localStorage; when storage is
@@ -18,36 +18,31 @@ export const HELP_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx
 
 const KEYS = [
   ['Inspect', [
-    ['Alt', 'hold to inspect what’s under the pointer'],
-    ['Alt + click', 'pin an element and read it'],
-    ['Alt + two-finger scroll', 'up to the parent, down to the child'],
+    ['Alt', 'Hold to inspect what’s under the pointer'],
+    ['Alt + click', 'Show its problems in Blueprint'],
+    ['Alt + two-finger scroll', 'Up to the parent, down to the child'],
   ]],
-  ['Edit words', [
-    ['double-click', 'edit words in place'],
-    ['Alt + double-click', 'words in a button, card or link'],
-    ['↵ / click away', 'save to source'],
-    ['Esc', 'put the words back'],
+  ['Edit text', [
+    ['Double-click', 'Edit text in place'],
+    ['Alt + double-click', 'Edit text in a button, card or link'],
+    ['↵ or click away', 'Apply the edit'],
+    ['Esc', 'Undo the edit'],
   ]],
   ['Blueprint', [
-    ['Alt + B', 'turn on or off'],
-    ['J  K', 'move between causes'],
-    ['N', 'next place of the cause'],
-    ['↵', 'fix the cause everywhere'],
-    ['Space', 'hold to use the page'],
-    ['L', 'every drift as a list'],
-  ]],
-  ['Fixing', [
-    ['1–9', 'pick a step'],
-    ['⌫', 'unpick'],
-    ['[  ]', 'previous or next drift'],
-    ['B', 'hold the page as source has it'],
+    ['Alt + B', 'Turn on or off'],
+    ['↵', 'Start, then use the fix'],
+    ['←  →', 'Previous or next fix'],
+    ['↑  ↓', 'Try another option'],
+    ['K', 'Keep as is'],
+    ['A', 'Apply changes'],
+    ['Space', 'Hold to use the page'],
   ]],
 ];
 
 const HINTS = {
-  blueprint: 'Click anything to fix it · J K next problem · hold Space to use the page',
-  inspect: 'Click to pin and read it · two-finger scroll walks the tree · double-click words to edit them',
-  words: '↵ or clicking away saves to source · Esc puts the words back',
+  blueprint: 'Click anything to fix it · ← → next fix · hold Space to use the page',
+  inspect: 'Click to show its problems · two-finger scroll walks up and down · double-click text to edit it',
+  words: '↵ or click away to apply · Esc to undo',
 };
 const HOLD = 6000;
 
@@ -87,9 +82,9 @@ export class Help {
     this.#button = button;
     this.#sheet = Object.assign(document.createElement('section'), { className: 'hp', hidden: true });
     this.#sheet.setAttribute('role', 'dialog');
-    this.#sheet.setAttribute('aria-label', 'React Plumber gestures');
+    this.#sheet.setAttribute('aria-label', 'Keyboard shortcuts');
     this.#sheet.tabIndex = -1;
-    this.#sheet.innerHTML = `<div class="title">Gestures</div>${KEYS.map(([head, rows]) => `<h3>${esc(head)}</h3><dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`).join('')}`;
+    this.#sheet.innerHTML = `<div class="title">Keyboard shortcuts</div>${KEYS.map(([head, rows]) => `<h3>${esc(head)}</h3><dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`).join('')}`;
     this.#hint = Object.assign(document.createElement('div'), { className: 'tip', hidden: true });
     this.#hint.setAttribute('role', 'status');
     root.append(this.#sheet, this.#hint);

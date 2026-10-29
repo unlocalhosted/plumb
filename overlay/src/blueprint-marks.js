@@ -83,6 +83,8 @@ export const MARKS_CSS = `
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
   .bp .hit[data-under], .bp svg[data-through] .hit { pointer-events: none; }
+  /* Space held: the page is used, so a glow lets the click through to its element like the glass does */
+  :host([data-bp-pass]) .bp .hit { pointer-events: none; cursor: inherit; }
   .bp g.break { transition: opacity var(--pl-dur-feedback) ease-out; opacity: 0; }
   .bp g.break[data-show] { opacity: 1; }
   .bp g.break.gone { opacity: 0; transition-duration: 240ms; }

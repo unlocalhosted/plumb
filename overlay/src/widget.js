@@ -20,6 +20,7 @@
 const WALK = { step: 48, pause: 260 }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
+import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
 import { request, post } from './api.js';
 import { reading, offCount } from './model.js';
@@ -41,8 +42,8 @@ const RESUME = 'plumb:resume';
 // One status line for a ready reading, shared by the hover tag and the pinned header.
 function status(state) {
   const off = offCount(state);
-  if (!state.marks.length && !state.declared) return { text: state.via === 'owner' ? `styled by ${state.component ?? 'a component'}` : 'computed here', tone: 'quiet' };
-  return off ? { text: `${off} off`, tone: '' } : { text: 'on system', tone: 'ok' };
+  if (!state.marks.length && !state.declared) return { text: state.via === 'owner' ? TAG.styledBy(state.component ?? 'a component') : TAG.computed, tone: 'quiet' };
+  return off ? { text: TAG.off(off), tone: '' } : { text: TAG.clean, tone: 'ok' };
 }
 
 // Why an element has no source line, in the person's terms. Plumb never guesses one.
@@ -313,19 +314,20 @@ class PlumbOverlay extends HTMLElement {
       <section class="w" hidden></section>
       <div class="dock" role="toolbar" aria-label="React Plumber" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
-        <button class="act undo" type="button" hidden title="Lift every pick (nothing is written)">Undo</button>
+        <button class="act undo" type="button" hidden title="${DOCK.undoTitle}">${DOCK.undo}</button>
         <button class="act write" type="button" hidden></button>
-        <button class="list" type="button" hidden aria-pressed="false" aria-label="Every drift in view" title="Every drift in view, as a list (L)">${LIST_ICON}</button>
-        <button class="history" type="button" aria-pressed="false" aria-label="Recent writes" title="Recent writes, each undoable">${HISTORY_ICON}</button>
-        <button class="help" type="button" aria-pressed="false" aria-label="Gestures" title="Every gesture (?)">${HELP_ICON}</button>
-        <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint mode" title="Blueprint: every drift on this view (Alt+B)">${ICON.blueprint}</button>
-        <button class="pick" type="button" aria-pressed="false" aria-label="Select an element" title="Select an element (or hold Alt)">${ICON.pick}</button>
+        <button class="list" type="button" hidden aria-pressed="false" aria-label="${DOCK.list}" title="${DOCK.listTitle}">${LIST_ICON}</button>
+        <button class="history" type="button" aria-pressed="false" aria-label="${DOCK.history}" title="${DOCK.historyTitle}">${HISTORY_ICON}</button>
+        <button class="help" type="button" aria-pressed="false" aria-label="${DOCK.help}" title="${DOCK.helpTitle}">${HELP_ICON}</button>
+        <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint" title="${DOCK.blueprintTitle}">${ICON.blueprint}</button>
+        <button class="pick" type="button" aria-pressed="false" aria-label="${DOCK.pick}" title="${DOCK.pickTitle}">${ICON.pick}</button>
       </div>
       <span class="announce" aria-live="polite" style="position:fixed;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></span>`;
     this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
-      onProgress: progress => { this.#bp.progress = progress; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
+      // a page read through proves the server is ready: the dock says so now, not at the next health poll
+      onProgress: progress => { this.#bp.progress = progress; if (progress.total && progress.read === progress.total && this.#health === 'starting') this.#health = 'ready'; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
       // craft: the engine measures the theme's tokens from the same decisions the choosers use (asked for on first use)
       theme: { decisions: () => { if (!this.#decisions) this.#scaleOf('spacing'); return this.#decisions; } },
     });
@@ -368,7 +370,7 @@ class PlumbOverlay extends HTMLElement {
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
     if (saved.blueprint) this.#blueprint?.enter({ instant: true });
-    if (saved.fix) { this.#fixer?.resumed(saved.fix); return; }
+    if (saved.fix) { this.#blueprint?.resumed?.(saved.fix); return; }
     const element = document.querySelector(saved.path);
     if (!element) return;
     const location = await locate(element);
@@ -522,8 +524,9 @@ class PlumbOverlay extends HTMLElement {
   #blueprintSays() {
     const p = this.#bp.progress, f = this.#fixer, status = f?.status;
     if (status) return esc(status.text);
-    if (!p || !p.total) return 'checking…';
-    if (p.read < p.total) return `checking ${p.read} of ${p.total}…`;
+    // the fix bar has the count while Blueprint is on: one number, one place
+    if (!f?.count) return DOCK.blueprint;
+    if (!p || !p.total) return DOCK.checking;
     const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
     const problems = (n) => `${n} problem${n === 1 ? '' : 's'}`;
     const count = [p.drift ? `${problems(p.drift)} in view` : !p.notChecked ? 'nothing to fix in view' : '', unchecked].filter(Boolean).join(' · ');
@@ -532,16 +535,20 @@ class PlumbOverlay extends HTMLElement {
   }
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
+    // how many problems the view holds once it is read: not said (the fix bar has the count), but kept on the dock for
+    // scripts and tests that watch the reader read the view first
+    const p = this.#blueprint?.active ? this.#bp.progress : null;
+    if (p?.total && p.read === p.total) dock.dataset.inView = String(p.drift ?? 0); else delete dock.dataset.inView;
     const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
     const selecting = this.#armed && this.#health !== 'failed';
     const state = selecting ? 'select' : this.#health;
     const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
     const text = {
-      select: 'Pick an element · Esc',
-      starting: `Reading your project…${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
-      failed: 'React Plumber couldn’t start',
+      select: DOCK.select,
+      starting: `${DOCK.starting}${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
+      failed: DOCK.failed,
       lost: 'Reconnecting…',
-      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : 'Hold Alt to inspect',
+      ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : DOCK.idle,
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
     const f = this.#fixer, fs = f?.status;
@@ -551,7 +558,8 @@ class PlumbOverlay extends HTMLElement {
     const undo = dock.querySelector('.undo'), write = dock.querySelector('.write');
     const bp = state === 'ready' && this.#blueprint?.active && !this.#pinned;
     const list = dock.querySelector('.list');
-    list.hidden = !bp;
+    // one panel: the fix bar steps through every fix, so the old list is not offered (docs: one-surface overlay)
+    list.hidden = true;
     list.setAttribute('aria-pressed', String(!!f?.listOpen));
     const writable = f?.edits() ?? 0, writing = fs?.kind === 'writing';
     undo.hidden = !(bp && f.count);
@@ -559,7 +567,7 @@ class PlumbOverlay extends HTMLElement {
     write.hidden = !(bp && (writable || writing || f.stale));
     write.disabled = writing;
     write.setAttribute('aria-busy', String(writing));
-    write.textContent = writing ? 'Writing…' : f?.stale ? 'Read again' : `Write ${writable}`;
+    write.textContent = writing ? DOCK.applying : f?.stale ? DOCK.checkAgain : DOCK.apply(writable);
     pick.disabled = state === 'failed' || state === 'lost';
     pick.setAttribute('aria-pressed', String(selecting));
     // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
@@ -687,6 +695,8 @@ class PlumbOverlay extends HTMLElement {
   #text = null; #help = null; #history = null;
   #onKeyDown = event => {
     if (this.#text?.editing) return; // the words being edited take the keys: Enter saves, Esc cancels
+    // a field of the overlay's own (a new token's name, why a cause is kept) takes its keys: Enter and Esc are its
+    if (event.composedPath()[0]?.localName === 'input' && this.#root.contains(event.composedPath()[0])) return;
     // ?: every gesture; Esc closes the sheet or a hint before anything else
     if (event.key === '?' && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#help.toggle(); return; }
     if (event.key === 'Escape' && (this.#help?.escape() || this.#history?.escape())) { event.preventDefault(); event.stopPropagation(); return; }
@@ -707,7 +717,7 @@ class PlumbOverlay extends HTMLElement {
     else if (this.#blueprint?.active && !this.#pinned && !this.#fixer?.isOpen && !this.#fixer?.listOpen && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)
       && !((event.key === 'Enter' || event.key === ' ') && event.composedPath()[0]?.closest?.('.cg button, .cg [role="listitem"]')) && this.#blueprint.key(event.key)) { event.preventDefault(); event.stopPropagation(); }
     // L: the punch list, when nothing on the page is being typed into
-    else if ((event.key === 'l' || event.key === 'L') && !event.altKey && !event.metaKey && !event.ctrlKey && this.#blueprint?.active && !this.#pinned && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#ready?.close(); this.#fixer.toggleList(); }
+    // L (the old list) is retired: the fix bar is the one panel
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
     else if (event.key === 'Escape' && this.#blueprint?.active && this.#blueprint.deselect()) { event.preventDefault(); event.stopPropagation(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
@@ -1348,11 +1358,11 @@ class PlumbOverlay extends HTMLElement {
 
     // The count in the header: one verdict for the element, in words.
     const n = this.#root.querySelector('.top .n');
-    const [text, tone] = kind === 'written' && !off && !previewed.length ? ['on system', 'ok won']
-      : previewed.length && !p.before ? ['previewing', 'live']
-      : !s.marks.length ? (s.declared ? ['on system', 'ok'] : ['computed', 'quiet'])
-      : off ? [`${off} off`, '']
-      : ['known debt', 'quiet'];
+    const [text, tone] = kind === 'written' && !off && !previewed.length ? [TAG.clean, 'ok won']
+      : previewed.length && !p.before ? [TAG.trying, 'live']
+      : !s.marks.length ? (s.declared ? [TAG.clean, 'ok'] : [TAG.computed, 'quiet'])
+      : off ? [TAG.off(off), '']
+      : [TAG.known, 'quiet'];
     if (n) { n.textContent = text; n.className = `n ${tone}`; }
 
     // The status line: what happened, and what's left.
@@ -1377,7 +1387,7 @@ class PlumbOverlay extends HTMLElement {
     write.setAttribute('aria-busy', String(kind === 'writing'));
     if (kind === 'writing') { write.textContent = 'Writing…'; write.disabled = true; }
     else if (kind === 'error' && p.status.stale) { write.textContent = 'Read again'; write.dataset.do = 'reread'; }
-    else if (writable.length) { write.textContent = `Write ${writable.length} edit${writable.length === 1 ? '' : 's'}`; write.dataset.do = 'write'; }
+    else if (writable.length) { write.textContent = DOCK.applyChanges(writable.length); write.dataset.do = 'write'; }
     else if (ready.length) { write.textContent = `Preview ${ready.length} fix${ready.length === 1 ? '' : 'es'}`; write.dataset.do = 'sync'; }
     else if (kind === 'written') { write.textContent = 'Written'; write.classList.add('done'); write.disabled = true; }
     else if (waiting.length) { write.textContent = 'Pick a token'; write.disabled = true; }

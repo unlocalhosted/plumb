@@ -111,6 +111,12 @@ The short label is what a panel row says. The line is what `i` shows. The reason
 2. **Problems**, not issues.
 3. **Blueprint** stays as the mode's name (Alt+B); no sentence starts with it.
 4. When an element can't be tied to the code: **"Can't reach this in your code"**. (Owner.)
+5. Every string is checked against the better-writing skill (jakub.kr/skills#better-writing; source:
+   github.com/jakubkrehel/skills, `skills/better-writing/`) before it ships, as a first-time reader. (Owner, 2026-10-29.)
+6. The fix panel's words live in `overlay/src/words.js` (`FIX`), never inline and never server prose shown raw. Its
+   vocabulary: a **fix** covers N **places**; buttons are verb-first: **Use md**, **Add to theme**, **Keep as is**,
+   **Skip**, **Apply changes**; status is parallel: **Applying 3 changes…** → **3 changes applied**; checking is
+   **Checking this screen…**; all clear is **Nothing to fix on this screen.**; a placeholder shows an example.
 
 ## How it's built
 

@@ -11,7 +11,7 @@
  *            the capability it hits ("Off · Write in place", on a tinted ground), what it costs, what else it
  *            limits, where it's set (file:line) and its fix. Checks that can't tell yet sit last, without a box.
  *            Opens only from the note or the callout, never by itself: it would cover the page being worked on
- *  callout   the first time anything is missing in a project: one line beside the dock ("2 setup gaps · Writes
+ *  callout   the first time anything is missing in a project: one line beside the dock ("2 setup steps left · Writes
  *            reload the page…", the whole sentence on hover) with Review and ✕. It never takes focus and covers no more
  *            than the dock's corner; a click or Alt anywhere else, blueprint or a pin puts it away. Once per project
  *  row fix   diff: Show change → the diff · step: the instruction and the command, with Copy → Copied
@@ -20,6 +20,7 @@
  *            enough for an agent) · Apply k (only the ticked causes Plumber can write; disabled when none)
  * ───────────────────────────────────────────────────────── */
 
+import { DOCK, SETUP } from './words.js';
 import { request, post } from './api.js';
 
 // Which loss the dock names first: the one a visual-editor user feels most.
@@ -179,7 +180,7 @@ export class Readiness {
     this.#callout.className = 'rd-callout';
     this.#callout.setAttribute('role', 'status');
     const n = missing.length;
-    this.#callout.innerHTML = `<span class="text" title="${plural(n, 'thing')} in this project limit${n === 1 ? 's' : ''} React Plumber: ${esc(missing[0].loses)}"><b>${plural(n, 'setup gap')}</b> · ${esc(missing[0].loses)}</span>
+    this.#callout.innerHTML = `<span class="text" title="${esc(DOCK.setupTitle(SETUP.step(missing[0]).loses.replace(/\.?$/, '.')))}"><b>${esc(DOCK.setup(n))}</b> · ${esc(SETUP.step(missing[0]).loses)}</span>
       <button class="btn small primary" type="button" data-act="review">Review</button>
       <button class="x" type="button" aria-label="Not now">${CLOSE}</button>`;
     this.#callout.addEventListener('click', (e) => {
@@ -255,8 +256,9 @@ export class Readiness {
     const first = open[0];
     this.#note.dataset.level = open.some((q) => q.off) ? 'off' : 'soft';
     this.#note.setAttribute('aria-expanded', String(this.#open));
-    this.#note.title = `${first.loses}${open.length > 1 ? ` (and ${open.length - 1} more)` : ''}. Open to see why and fix it.`;
-    this.#note.innerHTML = `${DOT}<span class="text">${esc(first.loses)}</span>`;
+    // the chip says how much setup is left; what each step costs is in the panel it opens
+    this.#note.title = DOCK.setupTitle(SETUP.step(first).loses.replace(/\.?$/, '.'));
+    this.#note.innerHTML = `${DOT}<span class="text">${esc(DOCK.setup(open.length))}</span>`;
   }
 
   #renderPanel(causes, missing) {
@@ -271,9 +273,9 @@ export class Readiness {
       this.#root.append(this.#panel);
     }
     const n = missing.length, scroll = this.#panel.querySelector('.body')?.scrollTop ?? 0, focus = this.#focusKey();
-    this.#panel.innerHTML = `<div class="card" role="dialog" aria-label="Your setup">
-      <div class="top"><span class="title">Your setup</span><button class="close" type="button" aria-label="Close">${CLOSE}</button></div>
-      <p class="lead">${plural(n, 'thing')} to set up before everything works. Tick what to fix.</p>
+    this.#panel.innerHTML = `<div class="card" role="dialog" aria-label="${SETUP.title}">
+      <div class="top"><span class="title">${SETUP.title}</span><button class="close" type="button" aria-label="Close">${CLOSE}</button></div>
+      <p class="lead">${esc(SETUP.lead(n))}</p>
       <div class="body">${causes.map((q) => this.#reqHtml(q)).join('')}</div>
       ${this.#footHtml(missing)}
     </div>`;
@@ -282,21 +284,21 @@ export class Readiness {
   }
 
   #chip(q) {
-    if (q.status === 'unknown') return `<span class="chip" data-tone="unknown">Can't tell yet</span>`;
-    const lead = q.hit[0]?.label ?? q.capability;
-    return `<span class="chip" data-tone="${q.off ? 'off' : 'soft'}">${q.off ? 'Off' : 'Limited'} · ${esc(lead)}</span>`;
+    if (q.status === 'unknown') return `<span class="chip" data-tone="unknown">${SETUP.unconfirmed}</span>`;
+    return `<span class="chip" data-tone="${q.off ? 'off' : 'soft'}">${q.off ? SETUP.required : SETUP.recommended}</span>`;
   }
 
   #reqHtml(q) {
     const s = this.#row.get(q.id) ?? {};
     const where = q.evidence?.length ? `<div class="where">${q.evidence.map((e) => `<code>${esc(short(e.file))}:${e.line}</code> ${esc(e.text)}`).join(' · ')}</div>` : '';
     const also = q.hit.length > 1 ? `<div class="also">Also limits ${q.hit.slice(1).map((c) => esc(c.label)).join(' · ')}</div>` : '';
-    if (q.status === 'unknown') return `<div class="req" data-status="unknown">${this.#chip(q)}<div class="what">${esc(q.title)}</div><div class="loses">${esc(q.loses)}</div>${where}</div>`;
-    const tick = s.done ? '<span class="box" aria-hidden="true"></span>' : `<input class="box" type="checkbox" data-id="${esc(q.id)}" aria-label="Fix: ${esc(q.title)}" ${this.#ticked.has(q.id) ? 'checked' : ''}>`;
+    const w = SETUP.step(q);
+    if (q.status === 'unknown') return `<div class="req" data-status="unknown">${this.#chip(q)}<div class="what">${esc(w.title)}</div><div class="loses">${esc(w.loses)}</div>${where}</div>`;
+    const tick = s.done ? '<span class="box" aria-hidden="true"></span>' : `<input class="box" type="checkbox" data-id="${esc(q.id)}" aria-label="Fix: ${esc(w.title)}" ${this.#ticked.has(q.id) ? 'checked' : ''}>`;
     return `<div class="req" data-status="missing" data-id="${esc(q.id)}"${s.done ? ' data-done' : ''}>
-      ${tick}<div class="what">${esc(q.title)}</div>
-      ${s.done ? '<span class="chip" data-tone="on">Fixed</span>' : this.#chip(q)}
-      <div class="loses">${esc(q.loses)}</div>${also}${where}
+      ${tick}<div class="what">${esc(w.title)}</div>
+      ${s.done ? `<span class="chip" data-tone="on">${SETUP.fixed}</span>` : this.#chip(q)}
+      <div class="loses">${esc(w.loses)}</div>${also}${where}
       ${this.#fixHtml(q, s)}
     </div>`;
   }
@@ -304,13 +306,13 @@ export class Readiness {
   #fixHtml(q, s) {
     const f = q.fix;
     if (!f) return '';
-    if (s.done) return `<div class="fix"><div class="msg" data-tone="on">Written to ${esc(short(s.done))}. Your dev server restarts with it, and this list reads again.</div></div>`;
+    if (s.done) return `<div class="fix"><div class="msg" data-tone="on">${esc(SETUP.saved(short(s.done)))}</div></div>`;
     if (f.kind === 'step') return `<div class="fix"><div class="msg">${esc(f.instruction)}</div>
       <div class="cmd"><code>${esc(f.command)}</code><button class="btn small" type="button" data-act="copy" data-id="${esc(q.id)}">${s.copied ? 'Copied' : 'Copy'}</button></div></div>`;
     const diff = s.shown ? `<pre aria-label="Change to ${esc(short(f.file))}">${f.diff.split('\n').map((l) => `<span class="${l.startsWith('+') && !l.startsWith('+++') ? 'add' : l.startsWith('-') && !l.startsWith('---') ? 'del' : ''}">${esc(l)}</span>`).join('\n')}</pre>` : '';
     const dirty = f.dirty && !s.error ? `<div class="msg" data-tone="off">${esc(short(f.file))} has changes you haven't committed. Apply writes over the file as it is now.</div>` : '';
     const state = s.busy ? `<div class="msg">Writing ${esc(short(f.file))}…</div>`
-      : s.error ? `<div class="msg" data-tone="off">${esc(s.error)}</div><div class="row"><button class="link" type="button" data-act="reread" data-id="${esc(q.id)}">Read again</button></div>`
+      : s.error ? `<div class="msg" data-tone="off">${esc(s.error)}</div><div class="row"><button class="link" type="button" data-act="reread" data-id="${esc(q.id)}">${SETUP.checkAgain}</button></div>`
       : `<div class="row"><button class="link" type="button" data-act="${s.shown ? 'hide' : 'show'}" data-id="${esc(q.id)}" aria-expanded="${!!s.shown}">${s.shown ? 'Hide change' : `Show change to ${esc(short(f.file))}`}</button></div>`;
     return `<div class="fix">${diff}${dirty}${state}</div>`;
   }

@@ -78,22 +78,24 @@ for (const host of ['vite', 'next']) for (const checked of [false, true]) test(`
   assert.equal(found.detail.file, '../src/screens/Board.jsx');
   assert.equal(await page.$eval('#card', element => window.__plumb.site(element)), null);
   await page.locator('#card').click({ modifiers: ['Alt'] });
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.textContent.includes('not checked: ../src/screens/Board.jsx'));
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.textContent.includes('written in ../src/screens/Board.jsx, outside this project’s source'));
   const text = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.textContent);
   assert.match(text, /outside this project.s source/);
   const explained = spawnSync(process.execPath, [join(repo, 'dist/cli.js'), 'explain', '../src/screens/Board.jsx', '--root', root], { encoding: 'utf8' });
   assert.equal(explained.status, 0, explained.stderr);
   assert.match(explained.stdout, /not checked: Written in ..\/src\/screens\/Board.jsx, outside/);
+  // Alt+click already turned Blueprint on: Esc puts the pick down and Blueprint stays
   await page.keyboard.press('Escape');
-  await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.total && p.read === p.total; });
   const progress = await page.evaluate(() => window.__plumb.overlay.progress);
   assert.ok(progress.outsideSource >= 2, JSON.stringify(progress));
   assert.equal(progress.checked + progress.notChecked, progress.total);
   assert.equal(progress.drift, 0); assert.equal(progress.on, 0);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .say').textContent.includes('not checked'));
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx').textContent.includes('can’t be checked'));
   const blueprint = await page.evaluate(() => { const root = document.querySelector('plumb-overlay').shadowRoot; return [root.querySelector('.dock .say').textContent, root.querySelector('.fx').textContent]; });
-  for (const [text, where] of [[blueprint[0], 'the dock'], [blueprint[1], 'the fix panel']]) { assert.match(text, where === 'the dock' ? /not checked · outside source/ : /not checked/, `${where} must not claim a clean page when the elements were not checked: "${text}"`); assert.doesNotMatch(text, /all true|Everything matches/); }
+  // the fix bar has the count and says what couldn't be checked; neither it nor the dock claims a clean page
+  assert.match(blueprint[1], /can’t be checked/, `the fix panel says what was not checked: "${blueprint[1]}"`);
+  for (const text of blueprint) assert.doesNotMatch(text, /all true|Everything matches|Nothing to fix on this screen/);
   const ready = await api(page, 'readiness');
   assert.equal(ready.status, 200, JSON.stringify(ready));
   const source = ready.body.requirements.find(item => item.id === 'locate.source');

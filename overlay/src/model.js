@@ -69,7 +69,10 @@ export function reading(location, site, edits) {
         return { name: c.name, label: short(c.name, finding.family), value: c.resolved ?? c.value, n: number(c.resolved ?? c.value), why: c.why, edit: edit && { id: edit.id, from: edit.from, to: edit.to } };
       });
       const mark = {
-        key, text: s.text, line: s.line, column: s.column, props, value, n: number(value),
+        key, file: location.file, text: s.text, line: s.line, column: s.column, props, value, n: number(value),
+        // what the theme can take instead of a swap: the framework variable that makes a default yours, or the namespace a
+        // new token goes under (server: finding.adopt, finding.newToken)
+        ...(finding.adopt ? { adopt: finding.adopt } : {}), ...(finding.newToken ? { newToken: finding.newToken } : {}),
         glyph: glyphFor(finding), family: finding.family, rule: finding.rule, soft: soft(finding),
         // A grouped finding's title names its first site; each mark names its own.
         title: s === first ? finding.title : finding.title.replace('`' + first.text + '`', '`' + s.text + '`'),

@@ -14,14 +14,22 @@
  *             shrinks with it: on the scale, the heat is gone
  *  token      nothing on the theme fits: the option is a new token (craft-recommend.js), and the panel says what
  *             taking it adds to which file
- *  no fix     the sentence, and Skip
+ *  new        nothing on the theme is close (tracking-[0.1em]): Add to theme, named in a field, the class it becomes
+ *             said as it is typed; every place takes that class
+ *  adopt      a Tailwind default (leading-relaxed): Make it yours, the same variable written into the theme, no source
+ *             line changes
+ *  keep       any cause: Keep it (K) asks why in one line; the places are recorded as intended and leave the count
+ *  note       advice with no exact edit: shown after the causes, never counted as a problem
+ *  no fix     the sentence, Keep it and Skip
  *  writing    "Writing n changes to your code"
  *  done       the page celebrates (every fixed place clicks into place, the page breathes), a ✓ draws and bursts
  *             into confetti made of the overlay's own pieces, then the panel folds back
  *
- * Keys (while blueprint is on): Enter starts or takes · ↑ ↓ try · → Tab skip · ← back · A apply · Esc put it down
+ * Keys (while blueprint is on): Enter starts or takes · ↑ ↓ try · K keep it · → Tab skip · ← back · A apply · Esc put it down
+ * Every action is taken first and written with the rest on Apply: one write, one undo.
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
+import { FIX } from './words.js'; // every sentence the panel says
 import { groupsOf } from './blueprint-panel.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
@@ -79,6 +87,17 @@ export const FIX_CSS = `
   .fx .sp.off { opacity: .45; cursor: not-allowed; --space: #b4b3ad; --space-line: #c9c8c2; --word: #b4b3ad; }
   .fx .sp.off .v { text-decoration: line-through; text-decoration-thickness: 1px; }
   .fx .sp .swatch { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); margin: 7px 0; }
+  .fx button:focus-visible, .fx input:focus-visible { outline: 2px solid #3b6cff; outline-offset: 2px; }
+  .fx .field { display: flex; align-items: center; gap: 0; margin: 8px 18px 2px; height: 34px; padding: 0 10px; border-radius: 10px; background: #fff;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); font: 500 12.5px/1 ui-monospace, monospace; color: #8b8a85; transition: box-shadow 140ms; }
+  .fx .field:focus-within { box-shadow: inset 0 0 0 1.5px #1c1b19; }
+  .fx .field[data-invalid] { box-shadow: inset 0 0 0 1.5px #c2304f; }
+  .fx .field input { all: unset; flex: 1; min-width: 4ch; color: #1c1b19; font: inherit; }
+  .fx .field input::placeholder { color: #b4b3ad; }
+  .fx .field.why { gap: 6px; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; } .fx .field.why input { font: inherit; }
+  .fx .hint { margin: 4px 18px 0; color: #8b8a85; font-size: 12px; min-height: 16px; }
+  .fx .hint code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
+  .fx .hint.err { color: #c2304f; }
   .fx .acts { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; margin-top: 4px; border-top: .5px solid rgb(0 0 0 / .08); }
   .fx .body { animation: fx-slide ${TIMING.next}ms ${EASE} both; }
   @keyframes fx-slide { from { opacity: 0; translate: 10px 0; } }
@@ -99,6 +118,8 @@ export const FIX_CSS = `
     .fx[data-scheme="dark"] .apply { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .apply .badge { background: #f1f0ec; color: #1c1b19; }
     .fx[data-scheme="dark"] .ghost { color: #c9c8c2; } .fx[data-scheme="dark"] .note { background: rgb(255 255 255 / .06); color: #c9c8c2; } .fx[data-scheme="dark"] .note code, .fx[data-scheme="dark"] .cause .cls { color: #f1f0ec; }
     .fx[data-scheme="dark"] .sp[aria-pressed="true"] { background: #2a2a2e; --word: #f1f0ec; box-shadow: 0 0 0 1.5px #f1f0ec; } .fx[data-scheme="dark"] .sp[aria-pressed="true"] .v { color: #f1f0ec; }
+    .fx[data-scheme="dark"] .say, .fx[data-scheme="dark"] .hint, .fx[data-scheme="dark"] .cause .what, .fx[data-scheme="dark"] .field { color: #a3a29c; }
+    .fx[data-scheme="dark"] .field { background: #2a2a2e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .field input, .fx[data-scheme="dark"] .hint code { color: #f1f0ec; }
     .fx[data-scheme="dark"] .check path { stroke: #f1f0ec; } .fx[data-scheme="dark"] .writing i { border-color: #f1f0ec; border-top-color: transparent; }
 `;
 
@@ -159,11 +180,21 @@ function darkGround() {
   return false;
 }
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+// advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
+// what an arbitrary class writes, as written: text-[length:calc(var(--z)*12px)] → calc(var(--z)*12px)
+const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(String(cls ?? '')); return m ? m[1].replace(/_/g, ' ') : null; };
+const noteOf = (g) => g.members.every((m) => m.mark.family === 'craft' && (!m.mark.craft?.suggest || m.mark.craft.suggest.kind === 'advice'));
 
 export class FixPanel {
-  #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #on = false;
+  #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #fixedCount = 0; #on = false;
+  #steady = null; #doneText = null; #notice = null; #noticeTimer = 0;   // the last settled count { places, causes, notes }: said while the page is checked again
+  #foldTimer = 0;
+  #keeps = new Map(); // cause key → { rule, sites, why }: kept as intended, written on Apply
+  #keeping = false;   // the why field is open for the cause in hand
+  #why = '';          // its words as typed
+  #names = new Map(); // cause key → the new token's name as typed
 
-  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens) → Promise, spotlight(els) }
+  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps) → Promise, spotlight(els), tokens() → policy }
   constructor(root, host) {
     this.#host = host;
     this.#el = Object.assign(document.createElement('div'), { className: 'fx', hidden: true });
@@ -179,13 +210,27 @@ export class FixPanel {
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
       else if (b.classList.contains('prev')) this.skip(-1);
       else if (b.classList.contains('apply')) this.apply();
+      else if (b.classList.contains('keep')) this.keep();
+      else if (b.classList.contains('keep-yes')) this.#keepIt();
+      else if (b.classList.contains('keep-no')) this.#closeKeep();
+    });
+    // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
+    this.#el.addEventListener('input', (e) => {
+      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); this.#sayNew(); }
+      if (e.target.name === 'why') { this.#why = e.target.value; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', this.#why.trim().length < 3); }
+    });
+    this.#el.addEventListener('keydown', (e) => {
+      if (!e.target.matches?.('input')) return;
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); e.target.name === 'why' ? this.#keepIt() : this.take(); }
+      if (e.key === 'Escape') { e.preventDefault(); e.target.name === 'why' ? this.#closeKeep() : e.target.blur(); }
     });
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   get holding() { return this.#holding; }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
+  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -201,7 +246,7 @@ export class FixPanel {
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
   #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
-  #live() { return this.#groups.filter((g) => !this.#taken.has(g.key)); }
+  #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
   // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
   // previewed), so the cause is kept as it was read; its place in the list follows it
   #cause() {
@@ -217,8 +262,9 @@ export class FixPanel {
   hold(i, lead) {
     const live = this.#live();
     if (!live.length) return;
+    this.#notice = null;
     this.#at = (i + live.length) % live.length;
-    this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null;
+    this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null; this.#keeping = false;
     const g = live[this.#at];
     this.#held = g;
     const el = g.members.some((m) => m.el === lead) ? lead : g.members[0].el;
@@ -226,11 +272,15 @@ export class FixPanel {
     this.#host.spotlight([...new Set(g.members.map((m) => m.el))]);
     this.render(true);
     // the place in hand is seen above the panel, never under it (once the panel has its height)
+    // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
     requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el)));
+    setTimeout(() => { if (this.#held === g) this.#reveal(el); }, TIMING.open + 40);
   }
   #reveal(el) {
     if (!el?.isConnected || !this.#holding) return;
-    const r = el.getBoundingClientRect(), top = 16, bottom = Math.min(innerHeight, this.#el.getBoundingClientRect().top || innerHeight) - 16;
+    const panel = this.#el.getBoundingClientRect();
+    if (!panel.height) return; // not drawn yet: the later call measures it
+    const r = el.getBoundingClientRect(), top = 16, bottom = Math.min(innerHeight, panel.top) - 16;
     if (r.height > bottom - top) return; // taller than the room above the panel: it stays where it is
     const by = r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0;
     if (!by) return;
@@ -257,6 +307,7 @@ export class FixPanel {
   }
   release() {
     if (!this.#holding) return false;
+    this.#keeping = false;
     const g = this.#cause();
     if (g) this.#unpreviewToken(g);
     this.#letGo(false);
@@ -281,31 +332,90 @@ export class FixPanel {
       this.#host.take();
     } else if (v.suggest?.kind === 'token') {
       this.#tokens.set(g.key, { suggest: v.suggest, els: [...new Set(g.members.map((m) => m.el))] });
-    } else return;
+    } else {
+      const a = this.#action(g, v);
+      if (a?.kind === 'adopt') this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.name, value: a.value }, els: [] });
+      else if (a?.kind === 'new') {
+        // no name yet: the field is where the answer goes
+        if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'); f?.focus(); f?.closest('.field')?.toggleAttribute('data-invalid', !!a.name); return; }
+        this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.token, value: a.value, then: { from: g.text, to: a.cls } }, els: [...new Set(g.members.map((m) => m.el))], marks: g.members.map((m) => m.mark) });
+      } else return;
+    }
     this.#taken.set(g.key, g);
     this.#host.release();
     this.#host.spotlight([]);
     if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#letGo(true); this.render(); }
   }
+  // Keep it: the cause is intended. Its why is asked in one line; every place is recorded as kept on Apply
+  keep() {
+    const g = this.#cause();
+    if (!g || this.#keeping) return;
+    this.#keeping = true; this.#why = ''; this.#html = ''; this.render();
+    this.#el.querySelector('input[name="why"]')?.focus();
+  }
+  #closeKeep() { this.#keeping = false; this.#html = ''; this.render(); }
+  #keepIt() {
+    const g = this.#cause(), why = this.#why.trim();
+    if (!g || why.length < 3) return;
+    this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: [...new Set(g.members.map((m) => m.el))], sites: g.members.map((m) => ({ file: m.mark.file, line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
+    this.#keeping = false;
+    this.#taken.set(g.key, g);
+    this.#host.release();
+    this.#host.spotlight([]);
+    if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#letGo(true); this.render(); }
+  }
+  // What the theme can do for a cause with nothing to swap to: make a Tailwind default yours, or add the step it lacks
+  #action(g, v) {
+    if (v?.ready || v?.suggest?.kind === 'token') return null;
+    const mark = g.members[0].mark, policy = this.#host.tokens?.() ?? {};
+    if (policy.create === false || !policy.file) return null;
+    if (mark.adopt?.name) return { kind: 'adopt', name: mark.adopt.name, value: String(mark.adopt.value), file: policy.file, hash: policy.hash ?? null };
+    const nt = mark.newToken;
+    if (!nt?.namespace || !nt.utility) return null;
+    const name = this.#names.get(g.key) ?? '', ok = /^[a-z][a-z0-9-]{0,30}$/.test(name);
+    // the class as written at the place keeps its variants and sign: hover:-mx-[…] becomes hover:-mx-<name>
+    const lead = /^((?:[^:\[\]]+:)*)(!?-?)/.exec(g.text) ?? ['', '', ''];
+    return { kind: 'new', name, ok, value: String(nt.value), token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
+  }
+  // the class the new token becomes, said as it is typed (the field is not drawn again while it has the caret)
+  #sayNew() {
+    const g = this.#cause(), a = g && this.#action(g, this.#host.view());
+    const hint = this.#el.querySelector('.hint'), take = this.#el.querySelector('.take');
+    if (!a || a.kind !== 'new' || !hint) return;
+    this.#el.querySelector('.field')?.toggleAttribute('data-invalid', !!a.name && !a.ok);
+    hint.classList.toggle('err', !!a.name && !a.ok);
+    hint.innerHTML = this.#newHint(g, a);
+    take?.toggleAttribute('disabled', !a.ok);
+  }
+  #newHint(g, a) {
+    const n = g.members.length;
+    return a.name && !a.ok ? esc(FIX.newStepBad) : a.ok ? `${esc(FIX.becomes(n))} <code>${esc(a.cls)}</code>` : esc(FIX.newStepHint(n));
+  }
   async apply() {
     if (!this.#taken.size || this.#writing) return;
     this.#fixed = [...this.#taken.values()].flatMap((g) => g.members.map((m) => m.el));
+    this.#fixedCount = this.#taken.size;
     this.#writing = true; this.#letGo(true); this.#host.release(); this.#host.spotlight([]);
     this.render();
     let left = { count: 0 };
-    try { left = (await this.#host.applyAll([...this.#tokens.values()])) ?? left; }
+    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], this.#taken.size)) ?? left; }
     catch (error) { left = { count: this.#taken.size, why: error?.message }; }
     finally {
       this.#writing = false;
       // what didn't land stays taken, with why; A tries again (the file is read again first)
-      if (!left.count) { this.#error = null; this.#taken.clear(); this.#tokens.clear(); }
+      if (!left.count) {
+        if (this.#steady) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - this.#fixed.length), causes: Math.max(0, this.#steady.causes - this.#taken.size) };
+        this.#error = null; this.#taken.clear(); this.#tokens.clear(); this.#keeps.clear();
+        this.#confirm();
+      }
       else {
-        this.#error = left.why ?? 'Couldn’t write it.';
+        this.#error = left.why ?? FIX.couldNot;
         // only tokens were refused: the causes written are done; the refused ones stay taken
         if (left.count === left.refused?.length) {
           const keep = new Set([...this.#tokens].filter(([, t]) => left.refused.includes(t)).map(([k]) => k));
           for (const k of [...this.#taken.keys()]) if (!keep.has(k)) this.#taken.delete(k);
           for (const k of [...this.#tokens.keys()]) if (!keep.has(k)) this.#tokens.delete(k);
+          this.#keeps.clear();
         }
       }
       this.#html = ''; this.render();
@@ -330,6 +440,7 @@ export class FixPanel {
     const v = this.#host.view();
     if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#host.pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
     if (k === 'Enter') { this.take(); return true; }
+    if (k === 'k' || k === 'K') { this.keep(); return true; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
     if (k === 'Escape') { this.release(); return true; }
@@ -360,44 +471,73 @@ export class FixPanel {
     const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = g ? this.#host.view() : null;
     // nothing is said to match until every element on the page has been read
     const settled = !!this.#progress?.total && this.#progress.read === this.#progress.total;
-    const apply = `<button class="apply" ${taken ? '' : 'disabled'}>Apply <span class="badge">${taken}</span></button>`;
+    const apply = `<button class="apply" ${taken ? '' : 'disabled'}>${FIX.apply} <span class="badge">${taken}</span></button>`;
     let html;
-    if (this.#writing) html = `<div class="writing"><i></i>Writing ${plural(taken, 'change')} to your code</div>`;
-    else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">Done</span></div>`;
+    if (this.#writing) html = `<div class="writing"><i></i>${esc(FIX.applying(taken))}</div>`;
+    else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
+    else if (!g && this.#notice) html = `<div class="line"><span class="count"><span>${esc(this.#notice)}</span></span></div>`;
     else if (!g) {
-      const places = live.reduce((n, x) => n + x.members.length, 0);
-      html = places
-        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : `${plural(places, 'problem')} <span>· ${plural(live.length, 'cause')}${settled ? '' : ' · reading…'}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">Fix <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${this.#error ? esc(this.#error) : taken ? `${plural(taken, 'change')} ready` : !settled ? 'Reading the page…' : this.#progress?.notChecked ? `Nothing off in what was checked · ${this.#progress.notChecked} not checked` : 'Everything matches your system'}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
+      // a note (advice, no exact edit) is shown with the fixes but never counted as a problem
+      const causesNow = live.filter((x) => !noteOf(x));
+      let causes = causesNow.length, notes = live.length - causes, places = causesNow.reduce((n, x) => n + x.members.length, 0);
+      // checking again (after an apply, a page change): the last settled count stands until the new one settles
+      if (settled) this.#steady = { places, causes, notes, path: location.pathname };
+      else if (this.#steady?.path === location.pathname) ({ places, causes, notes } = this.#steady);
+      const unchecked = this.#progress?.notChecked ? ` · <span title="${esc(FIX.uncheckedTitle)}">${esc(FIX.unchecked(this.#progress.notChecked))}</span>` : '';
+      const tail = `${notes ? ` · ${FIX.notes(notes)}` : ''}${unchecked}${settled ? '' : ` · ${FIX.stillChecking}`}`;
+      html = places || notes
+        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : places ? `${FIX.problems(places)} <span>· ${FIX.fixes(causes)}${tail}</span>` : `<span>${FIX.notes(notes)}${settled ? '' : ` · ${FIX.stillChecking}`}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">${FIX.start} <kbd>↵</kbd></button></div>`
+        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (taken ? FIX.ready(taken) : !settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous cause">‹</button>${this.#at + 1} of ${live.length}<button class="next" aria-label="Next cause">›</button></span><span class="what">${esc(g.what)} · ${plural(g.members.length, 'place')}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${esc(FIX.what(mark))} · ${esc(FIX.places(g.members.length))}</span></div>`;
+      const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
+      const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
+      const a = !v?.ready && v?.suggest?.kind !== 'token' ? this.#action(g, v) : null;
       if (v?.ready) {
-        // the suggested option is tried the moment the cause is in hand
+        // the suggested option is tried the moment the fix is in hand
         if (this.#previewed !== g.key) { this.#previewed = g.key; queueMicrotask(() => this.#host.pick(v.at)); }
         const unit = kind === 'time' ? 'ms' : kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px';
         const items = v.options.map((o, i) => ({ n: Number.isFinite(o.n) ? o.n : i, html: `<button class="sp" data-kind="${kind}" data-i="${i}" aria-pressed="${v.at === i}">${specimen(kind, mark, o.n, o.label, o.swatch)}<span class="v">${Number.isFinite(o.n) ? `${o.n}${unit}` : esc(o.label)}</span><span class="tk">${Number.isFinite(o.n) ? esc(o.label) : ''}</span></button>` }));
-        if (v.now && Number.isFinite(v.now.n) && !v.options.some((o) => o.n === v.now.n)) items.push({ n: v.now.n, html: `<div class="sp off" data-kind="${kind}" aria-disabled="true" title="what it is now: off the scale">${specimen(kind, mark, v.now.n, v.now.label, v.now.swatch)}<span class="v">${v.now.n}${unit}</span><span class="tk">now</span></div>` });
+        if (v.now && Number.isFinite(v.now.n) && !v.options.some((o) => o.n === v.now.n)) items.push({ n: v.now.n, html: `<div class="sp off" data-kind="${kind}" aria-disabled="true" title="What it is now">${specimen(kind, mark, v.now.n, v.now.label, v.now.swatch)}<span class="v">${v.now.n}${unit}</span><span class="tk">now</span></div>` });
         if (v.options.every((o) => Number.isFinite(o.n))) items.sort((a, b) => a.n - b.n);
         middle = `<div class="specimens">${items.map((x) => x.html).join('')}</div>`;
         canTake = !!v.options[v.at]?.ok;
       } else if (v?.suggest?.kind === 'token') {
         const s = v.suggest, value = String(s.value);
         this.#previewToken(g, s);
-        middle = `<div class="note">Your theme has no step for this. Taking it adds <code>${esc(s.name)}: ${esc(value)}</code> to <code>${esc(String(s.file ?? '').split('/').slice(-2).join('/'))}</code> and uses <code>${esc(s.then?.to ?? '')}</code> here.</div>`
-          + `<div class="specimens"><button class="sp" data-kind="${kind}" aria-pressed="true">${specimen(kind, mark, parseFloat(value), value)}<span class="v">${esc(value)}</span><span class="tk">new token</span></button></div>`;
+        middle = `<div class="note">${esc(FIX.craftToken)}</div>${adds(s.name, value, s.file)}`
+          + `<div class="specimens"><button class="sp" data-kind="${kind}" aria-pressed="true">${specimen(kind, mark, parseFloat(value), value)}<span class="v">${esc(value)}</span><span class="tk">new</span></button></div>`;
         canTake = true;
+      } else if (a?.kind === 'adopt') {
+        middle = `<div class="note">${esc(FIX.adopt)}</div>${adds(a.name, a.value, a.file)}`;
+        canTake = true;
+      } else if (a?.kind === 'new') {
+        middle = `<div class="note">${esc(FIX.newStep(FIX.what(mark).replace(/ not in your theme$/, ''), a.value))}</div>`
+          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : ''}>${esc(a.namespace)}-<input name="token" value="${esc(a.name)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}">: ${esc(a.value)}</label>`
+          + `<div class="hint${a.name && !a.ok ? ' err' : ''}">${this.#newHint(g, a)}</div>`;
+        canTake = a.ok;
       } else {
-        middle = `<div class="say">${esc(String(v?.suggest?.text ?? mark.title ?? '').replace(/`/g, ''))}</div>`;
+        // nothing to swap to or add: say what is there, plainly (a craft rule's own line, else the value typed by hand)
+        const said = mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour : /framework/.test(mark.rule) && mark.value ? FIX.tailwinds(g.text, String(mark.value))
+          : /^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && (written(g.text) ?? mark.value) ? FIX.typed(written(g.text) ?? String(mark.value)) : mark.title;
+        middle = `<div class="say">${esc(String(said ?? '').replace(/`/g, ''))}</div>`;
       }
-      const acts = `<div class="acts">${v?.ready || v?.suggest?.kind === 'token' ? `<button class="primary take" ${canTake ? '' : 'disabled'}>Take <kbd>↵</kbd></button>` : ''}<button class="ghost skip">Skip <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
+      const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;
+      const acts = this.#keeping
+        ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
+          + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(g.members.length))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span>${apply}</div>`
+        : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
       html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${middle}${acts}</div>`;
     }
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
+    // a field being typed in keeps its words, caret and focus through a redraw
+    const typing = this.#el.getRootNode().activeElement, field = typing?.matches?.('input') && this.#el.contains(typing) ? { name: typing.name, value: typing.value, at: [typing.selectionStart, typing.selectionEnd] } : null;
     this.#el.innerHTML = html;
+    if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
     if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; setTimeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
   }
@@ -406,7 +546,18 @@ export class FixPanel {
   // The page celebrates: every fixed place clicks into place, one after another; the page breathes once; the ✓ draws
   // and bursts. Then the panel folds. (Places that a reload replaced are found again by nothing: the breath and the
   // burst still play.)
+  // every Apply that lands says so: the ✓ and "n changes applied", the fixed places click, then the panel folds back
+  // a line said for a moment at rest: why the element pointed at has nothing in hand
+  notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
+  // after a reload: what the write before it applied, said as if it had just landed
+  resumed(text) { this.#doneText = text; this.#confirm(); }
+  #confirm() {
+    this.#done = true; this.#html = ''; this.render();
+    clearTimeout(this.#foldTimer);
+    this.#foldTimer = setTimeout(() => { this.#done = false; this.#doneText = null; this.#html = ''; this.render(); }, TIMING.fold);
+  }
   celebrate() {
+    clearTimeout(this.#foldTimer);
     this.#done = true; this.#html = ''; this.render();
     const fold = () => setTimeout(() => { this.#done = false; this.#html = ''; this.render(); }, TIMING.fold);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return fold();

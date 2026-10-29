@@ -11,7 +11,7 @@
  *  edit       a leaf (the words are the element's only child) becomes contenteditable="plaintext-only" for the edit:
  *             the browser's own caret, selection and wrapping, in the page's font. Words mixed with other elements
  *             get a textarea laid over their line boxes, its own glyphs transparent, so the page re-flows as you type
- *  look       a 1.5px accent ring around the words and a tag under them: where they are written, ↵ save · Esc
+ *  look       a 1.5px accent ring around the words and a tag under them: where they are written, ↵ apply · Esc
  *  save       Enter, or clicking away, writes the words to source at once; Esc puts them back. Newlines are not text a
  *             JSX run keeps, so Shift+Enter does nothing
  *  after      the write history's toast (history.js) says what was written, with Undo; a dev server without fast
@@ -24,6 +24,16 @@ import { esc } from './choices.js';
 
 const RESUME = 'plumb:text-resume';
 
+// What an edit changed, in words: only the words that differ, with none of the sentence around them
+// ("and" → "then" in a long caption reads as Changed “and” to “then”)
+function changed(from, to) {
+  const a = from.split(/(\s+)/), b = to.split(/(\s+)/);
+  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  let j = 0; while (j < a.length - i && j < b.length - i && a[a.length - 1 - j] === b[b.length - 1 - j]) j++;
+  const was = a.slice(i, a.length - j).join('').trim(), now = b.slice(i, b.length - j).join('').trim();
+  const cut = (w) => (w.length > 40 ? `${w.slice(0, 39)}…` : w);
+  return !was ? `Added “${cut(now)}”` : !now ? `Removed “${cut(was)}”` : `Changed “${cut(was)}” to “${cut(now)}”`;
+}
 export const TEXT_EDIT_CSS = `
   .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-accent), 0 0 0 3.5px var(--pl-halo); }
   .tx-tag { position: fixed; pointer-events: none; display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding: 0 var(--pl-space-4);
@@ -99,7 +109,7 @@ export class TextEditor {
   // The string in source that renders these words.
   async #resolve(el, words) {
     const found = await locate(el);
-    if (!found?.file) return { editable: false, reason: 'React Plumber can’t tie these words to a line in your source.' };
+    if (!found?.file) return { editable: false, reason: 'Can’t find this text in your code.' };
     const at = { file: found.file, line: found.line, column: found.column };
     const owners = (found.chain ?? []).filter((c) => c?.file).map((c) => `${c.file}:${c.line}:${c.column}`).join(',');
     try {
@@ -110,9 +120,9 @@ export class TextEditor {
     }
     // an older server: the element's own JSX text
     const t = await request('text', at);
-    if (!t?.editable) return { editable: false, reason: t?.reason ?? 'This element has no static text to edit.', where: at };
+    if (!t?.editable) return { editable: false, reason: t?.reason ?? 'This text is built by code, so it can’t be edited here.', where: at };
     const run = t.runs.find((r) => norm(r.text) === words);
-    if (!run) return { editable: false, reason: 'These words are not written in this element’s own JSX.', where: at };
+    if (!run) return { editable: false, reason: 'This text is written in another component, not here.', where: at };
     return { editable: true, via: 'text', file: at.file, line: at.line, hash: t.hash, id: run.id, from: run.text };
   }
 
@@ -144,7 +154,7 @@ export class TextEditor {
       area.className = 'tx-area';
       area.value = node.data.trim();
       area.spellcheck = false;
-      area.setAttribute('aria-label', `Edit the words “${norm(node.data)}”`);
+      area.setAttribute('aria-label', `Edit “${norm(node.data)}”`);
       for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing', 'lineHeight', 'textAlign']) area.style[k] = cs[k];
       this.#root.append(area);
       ed.area = area;
@@ -187,8 +197,8 @@ export class TextEditor {
     const ed = this.#edit, t = this.#tag;
     t.dataset.kind = kind;
     const where = ed ? `<code>${esc(short(ed.target.file))}:${ed.target.line}</code>` : '';
-    t.innerHTML = kind === 'edit' ? `${where}<span><kbd>↵</kbd> save · <kbd>Esc</kbd> cancel</span>`
-      : kind === 'saving' ? `${where}<span>Saving…</span>` : esc(text ?? '');
+    t.innerHTML = kind === 'edit' ? `${where}<span><kbd>↵</kbd> apply · <kbd>Esc</kbd> cancel</span>`
+      : kind === 'saving' ? `${where}<span>Applying…</span>` : esc(text ?? '');
     t.hidden = false;
   }
 
@@ -229,13 +239,13 @@ export class TextEditor {
     try {
       const result = await this.#write(ed.target, ed.target.from, typed);
       this.#end();
-      this.#host.wrote?.(result, `Wrote “${typed}” to ${short(ed.target.file)}`);
-      this.#host.announce?.(`Wrote the words to ${short(ed.target.file)}`);
+      this.#host.wrote?.(result, `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`);
+      this.#host.announce?.(`Applied in ${short(ed.target.file)}`);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
       const stale = /changed since/i.test(error?.message ?? '');
-      this.#say('error', stale ? 'The file changed since React Plumber read it. Double-click to try again.' : (error?.message ?? 'React Plumber refused the write.'));
+      this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
       setTimeout(() => this.#end(), 2400);
     }
   }
@@ -261,7 +271,7 @@ export class TextEditor {
     const r = range.getBoundingClientRect();
     const where = target.where?.file ? ` <code>${esc(short(target.where.file))}:${target.where.line}</code>` : '';
     this.#tag.dataset.kind = 'refused';
-    this.#tag.innerHTML = `<span>${esc(target.reason ?? 'These words can’t be edited here.')}${where}</span>`;
+    this.#tag.innerHTML = `<span>${esc(target.reason ?? 'This text can’t be edited here.')}${where}</span>`;
     this.#tag.hidden = false;
     Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - 428, r.left))}px`, top: `${r.bottom + 8 + 60 > innerHeight ? r.top - 60 : r.bottom + 8}px` });
     clearTimeout(this.#hideTimer);

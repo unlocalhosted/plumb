@@ -76,7 +76,7 @@ test('a double-click edits the words in place; Enter writes them to source; Undo
   assert.equal(await page.locator('#tiny').getAttribute('contenteditable'), null, 'the element is put back');
   // the toast says what was written, even when the dev server reloads the page after the write
   const toast = overlay.locator('.wt');
-  await toast.filter({ hasText: /Wrote “small print” to App\.jsx/ }).waitFor();
+  await toast.filter({ hasText: /Changed “tiny” to “small” in App\.jsx/ }).waitFor();
   // Undo writes the old words back
   await toast.getByRole('button', { name: 'Undo' }).click();
   assert.ok(await fileHas(source, '>tiny print</span>'), 'Undo wrote the old words back');
@@ -145,7 +145,7 @@ test('words beside other elements are edited over their own line; a prop is edit
   await dblclickWords(page, '#dense span:first-child');
   const tag = overlay.locator('.tx-tag[data-kind="refused"]');
   await tag.waitFor({ timeout: 10000 });
-  assert.match(await tag.innerText(), /expression/i);
+  assert.match(await tag.innerText(), /built when the page runs/i);
   assert.equal(await page.locator('#dense span').first().getAttribute('contenteditable'), null);
   assert.deepEqual(errors, []);
 });
@@ -156,7 +156,7 @@ test('in blueprint, a double-click edits words through the glass, and the keys r
   const { url, source } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.dock .say').filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 30000 });
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 30000 });
 
   await dblclickWords(page, '#tiny');
   await editable(page, '#tiny');
@@ -218,11 +218,11 @@ test('every write is in the dock\'s history, newest first, and each can be undon
   await write('second words');
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  await overlay.getByRole('button', { name: 'Recent writes' }).click();
-  const list = overlay.getByRole('dialog', { name: 'Recent writes' });
+  await overlay.getByRole('button', { name: 'History' }).click();
+  const list = overlay.getByRole('dialog', { name: 'History' });
   await list.locator('.row').nth(1).waitFor();
   const labels = await list.locator('.row .label').allInnerTexts();
-  assert.match(labels[0], /second words/, `newest first: ${labels}`);
+  assert.match(labels[0], /“first” → “second”/, `newest first: ${labels}`);
   assert.match(labels[1], /first words/);
   // the newest is undone from the list, then the older one: the file is as it was
   await list.locator('.row').first().getByRole('button', { name: 'Undo' }).click();
@@ -230,7 +230,7 @@ test('every write is in the dock\'s history, newest first, and each can be undon
   await page.waitForTimeout(1500);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  await overlay.getByRole('button', { name: 'Recent writes' }).click();
+  await overlay.getByRole('button', { name: 'History' }).click();
   await list.locator('.row').filter({ hasText: 'first words' }).getByRole('button', { name: 'Undo' }).click();
   for (let i = 0; i < 100 && (await readFile(source, 'utf8')) !== was; i++) await page.waitForTimeout(100);
   assert.equal(await readFile(source, 'utf8'), was, 'both undone: the file is exactly as it was');

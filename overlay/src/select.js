@@ -100,7 +100,7 @@ export class Selection {
     const p = this.#plan?.for === m.key ? this.#plan : null, suggest = m.craft?.suggest ?? null;
     if (this.#taken.has(m.key)) return { mark: m, taken: true };
     if (!p) return { mark: m, ready: false, whyNot: m.whyNot ?? (suggest?.kind === 'advice' ? 'advice' : null), suggest };
-    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write })), at: p.at, now: p.now, suggest };
+    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write, cls: o.write?.to ?? null })), at: p.at, now: p.now, suggest };
     return { mark: m, ready: true, kind: 'space', prop: p.main.prop, options: p.steps.map((x) => ({ label: x.token, n: x.n, ok: true })), at: p.at, now: { label: `${p.main.from.n}px`, n: p.main.from.n }, suggest };
   }
   // Pick an option of the current plan by its index: the page glides to it

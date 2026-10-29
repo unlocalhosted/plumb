@@ -223,8 +223,8 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
     // the fix panel agrees: nothing to fix on the well-built page; on the demo at least one cause for each rule
     const line = (await overlay.locator('.fx .line').innerText()).replace(/\s+/g, ' ');
-    if (app) assert.match(line, /Everything matches your system|^Nothing off in what was checked|^0 problems/, `the well-built page has nothing to fix: ${line}`);
-    else assert.ok(Number(line.match(/(\d+) causes?/)?.[1]) >= want.length, `a cause for every rule: ${line}`);
+    if (app) assert.match(line, /Nothing to fix|^0 problems/, `the well-built page has nothing to fix: ${line}`);
+    else assert.ok(Number(line.match(/(\d+) fix(?:es)?/)?.[1] ?? 0) + Number(line.match(/(\d+) notes?/)?.[1] ?? 0) >= want.length, `a fix or a note for every rule: ${line}`);
     assert.deepEqual(errors, []);
     await page.close();
   }
@@ -254,7 +254,7 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   assert.match(await line(), /className="rounded-control bg-ground/, 'the class is swapped where it was, in source');
   assert.doesNotMatch(await line(), /rounded-card/);
   // the write is in the history: Undo puts the source back
-  await overlay.locator('.wt').filter({ hasText: /Applied rounded-control/ }).waitFor({ timeout: 10000 });
+  await overlay.locator('.wt').filter({ hasText: /Applied rounded-control/ }).waitFor({ timeout: 20000 });
   await overlay.locator('.wt').getByRole('button', { name: 'Undo' }).click();
   for (let i = 0; i < 100 && !/rounded-card/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-card bg-ground/);

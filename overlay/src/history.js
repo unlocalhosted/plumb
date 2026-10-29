@@ -60,7 +60,7 @@ export class History {
     this.#toast.setAttribute('role', 'status');
     this.#list = Object.assign(document.createElement('section'), { className: 'hl', hidden: true });
     this.#list.setAttribute('role', 'dialog');
-    this.#list.setAttribute('aria-label', 'Recent writes');
+    this.#list.setAttribute('aria-label', 'History');
     this.#list.tabIndex = -1;
     root.append(this.#toast, this.#list);
     button.addEventListener('click', () => this.toggle());
@@ -77,7 +77,7 @@ export class History {
     const handle = result?.undo;
     if (!handle) return this.#say(text ?? `Wrote ${short(result?.file)}`);
     this.#last = handle;
-    const said = text ?? `Wrote ${handle.label} in ${short(handle.file)}`;
+    const said = text ?? `Applied ${handle.label} in ${short(handle.file)}`;
     // a dev server may reload the page after the write: the toast comes back after it
     try { sessionStorage.setItem(RESUME, JSON.stringify({ handle, text: said, at: Date.now() })); } catch {}
     this.#say(said, true);
@@ -89,10 +89,10 @@ export class History {
     try {
       await post('undo', { id: handle.id });
       if (this.#last?.id === handle.id) this.#last = null;
-      this.#say(`Undid ${handle.label ?? 'the write'} in ${short(handle.file)}`);
-      this.#host.announce?.(`Undid the write in ${short(handle.file)}`);
+      this.#say(`Undone in ${short(handle.file)}`);
+      this.#host.announce?.(`Undone in ${short(handle.file)}`);
     } catch (error) {
-      this.#say(/changed since/i.test(error?.message ?? '') ? `${short(handle.file)} changed since that write: undo the newer ones first.` : `Couldn’t undo: ${error?.message ?? 'refused'}`, false, 'error');
+      this.#say(/changed since/i.test(error?.message ?? '') ? `${short(handle.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : `Couldn’t undo. ${error?.message ?? 'Check again.'}`, false, 'error');
     }
     if (this.open) this.#render();
     this.#host.changed?.();
@@ -111,8 +111,8 @@ export class History {
   async #render() {
     const said = await request('history', {}).catch(() => null);
     const writes = said?.writes ?? [];
-    this.#list.innerHTML = `<div class="title">Recent writes</div>${writes.length ? writes.map((w) => `<div class="row"><span class="label">${esc(w.label)}</span><span class="where"><code>${esc(short(w.file))}:${w.line}</code> · ${esc(ago(w.at))}</span><button type="button" data-id="${esc(w.id)}" data-file="${esc(w.file)}" data-label="${esc(w.label)}">Undo</button></div>`).join('')
-      : '<div class="empty">Nothing written yet in this session.</div>'}`;
+    this.#list.innerHTML = `<div class="title">History</div>${writes.length ? writes.map((w) => `<div class="row"><span class="label">${esc(w.label)}</span><span class="where"><code>${esc(short(w.file))}:${w.line}</code> · ${esc(ago(w.at))}</span><button type="button" data-id="${esc(w.id)}" data-file="${esc(w.file)}" data-label="${esc(w.label)}">Undo</button></div>`).join('')
+      : '<div class="empty">No changes yet. Changes you apply show up here, ready to undo.</div>'}`;
   }
 
   #say(text, undo = false, kind = '') {
@@ -120,6 +120,8 @@ export class History {
     this.#toast.dataset.kind = kind;
     this.#toast.innerHTML = `<span class="what">${esc(text)}</span>${undo ? '<button type="button" class="undo">Undo</button>' : ''}`;
     this.#toast.hidden = false;
+    // History open in the same corner: the toast sits on top of it, never under it
+    this.#toast.style.insetBlockEnd = this.open ? `${innerHeight - this.#list.getBoundingClientRect().top + 8}px` : '';
     requestAnimationFrame(() => this.#toast.setAttribute('data-on', ''));
     this.#timer = setTimeout(() => {
       this.#toast.removeAttribute('data-on');

@@ -65,7 +65,7 @@ test('your setup: the note, a first-time callout that stays out of the way, tick
   assert.ok(s.note, 'the dock names the biggest loss');
   const callout = await page.evaluate(() => { const r = document.querySelector('plumb-overlay').shadowRoot, c = r.querySelector('.rd-callout'), b = c.getBoundingClientRect();
     return { text: c.textContent.replace(/\s+/g, ' ').trim(), focus: c.contains(r.activeElement), height: b.height }; });
-  assert.match(callout.text, /^\d+ setup gaps? · /);
+  assert.match(callout.text, /^\d+ setup steps? left · /);
   assert.equal(callout.focus, false, 'the callout does not take focus');
   assert.ok(callout.height < 64, `the callout stays small (${callout.height}px)`);
 
@@ -86,7 +86,7 @@ test('your setup: the note, a first-time callout that stays out of the way, tick
   s = await state(page);
   assert.equal(s.focusInPanel, true);
   assert.ok(s.causes.some(c => /Fast Refresh/.test(c)), JSON.stringify(s.causes));
-  assert.ok(s.chips.some(c => /Write in place/i.test(c)), JSON.stringify(s.chips));
+  assert.ok(s.chips.every(c => /^(Required|Recommended|Not confirmed yet)$/.test(c)), JSON.stringify(s.chips));
   assert.equal(s.ticked, s.causes.length, 'every cause starts ticked');
   assert.equal(s.count, `${s.causes.length} selected`);
   assert.equal(new Set(s.causes).size, s.causes.length, 'no cause is listed twice');
