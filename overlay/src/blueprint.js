@@ -71,7 +71,8 @@ export class Blueprint {
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => { host.ordered?.(); this.#focus(); } });
-    this.#panel = new Panel(root, { host, marks: this.#marks });
+    // the fix panel alone says what is lit: the old panel is drawn hidden, and its re-render on every read put the light out
+    this.#panel = new Panel(root, { host, marks: { spotlight() {} } });
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {

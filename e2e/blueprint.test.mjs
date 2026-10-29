@@ -217,7 +217,12 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   for (const l of labels) byLine[l] = (byLine[l] ?? 0) + 1;
   assert.ok(inCause >= Math.max(...Object.values(byLine)), `the first cause is the biggest: ${what} against ${JSON.stringify(byLine)}`);
   assert.match(await panel(overlay).locator('.cause .nav').innerText(), new RegExp(`1 of ${causes}`));
+  const lit = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
+  // the page changes and is read again: the cause in hand stays lit
+  await page.evaluate(() => document.body.append(Object.assign(document.createElement('p'), { textContent: 'late' })));
+  await page.waitForTimeout(1200);
+  assert.ok((await lit()) > 0, 'its places stay lit after the page is read again');
   // Esc puts it down and the panel is one line again; blueprint stays
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line .count').waitFor({ timeout: 5000 });
