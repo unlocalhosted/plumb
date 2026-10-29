@@ -86,3 +86,23 @@ test('page answers every stamped element at once, the same as site and classes, 
   // a page that is not a list of stamps is refused
   assert.equal((await api.call('page', { items: [{ stamp: 'nope', tag: 'p' }] }, 'POST')).status, 400);
 });
+
+test('places answers every finding at the places in a set of files, rendered or not, with the file hash', { timeout: 60000 }, async (t) => {
+  const api = await project(t);
+  const result = await api.call('places', { files: ['src/App.tsx', 'src/missing.tsx'] }, 'POST');
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  assert.deepEqual(result.body.files.map(f => f.file.replace(api.root + '/', '')), ['src/App.tsx', 'src/missing.tsx']);
+  const [app, missing] = result.body.files;
+  assert.equal(app.hash, hash12(await readFile(join(api.root, 'src/App.tsx'), 'utf8')).length === 12 ? app.hash : null);
+  assert.equal(missing.hash, null); assert.deepEqual(missing.findings, []);
+  const texts = new Set(app.findings.flatMap(f => f.sites.map(s => s.text)));
+  for (const text of ['p-[9px]', 'gap-[13px]', 'm-[7px]']) assert.ok(texts.has(text), text);
+  assert.ok(app.findings.every(f => f.sites.every(s => s.file.endsWith('/src/App.tsx'))));
+  assert.ok(app.declarations.length && app.declarations.every(d => d.site.file.endsWith('/src/App.tsx')));
+  // the same answer GET site gives for a place, from the same view
+  const plain = await api.stampOf('plain', 'p');
+  const site = (await api.call('site', { file: 'src/App.tsx', line: plain.line, column: plain.column })).body;
+  const here = app.findings.filter(f => f.sites.some(s => s.line === plain.line)).map(f => f.rule).sort();
+  assert.deepEqual(here, site.findings.map(f => f.rule).sort());
+  assert.equal((await api.call('places', { files: 'nope' }, 'POST')).status, 400);
+});

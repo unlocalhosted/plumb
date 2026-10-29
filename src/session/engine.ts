@@ -77,6 +77,7 @@ export interface PageEntry {
   cached?: true;
 }
 export interface PageResult { revision: number; items: PageEntry[] }
+export interface PlacesResult { revision: number; files: { file: string; hash: string | null; findings: Report['findings']; declarations: Report['declarations'] }[] }
 /** A whole cause: every place in the project with this class under this rule, each rewritten for the chosen token (its name as the finding lists it) or class. */
 export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
@@ -504,6 +505,11 @@ export class Session extends EventEmitter {
       const expected = args[3] as { servedRoot?: string; stamp?: boolean } | undefined;
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
+    }
+    if (method === 'places') {
+      const files = (args[0] as string[]).map(file => this.file(file));
+      for (const file of files) await this.readableSource(file).catch(() => {});
+      return files.filter(file => this.sourceFiles.has(file));
     }
     if (['site', 'edits', 'text', 'textAt', 'why', 'classes'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
@@ -1194,6 +1200,12 @@ export class Session extends EventEmitter {
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
   /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
   spec(): Promise<ProjectSpec> { return this.read('spec'); }
+  /** The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. */
+  places(files: string[]): Promise<PlacesResult> {
+    if (!Array.isArray(files) || files.length > 4096 || files.some(file => typeof file !== 'string' || !file.trim())) throw new UsageError('places takes a list of at most 4096 files.');
+    const paths = [...new Set(files.map(file => this.file(file)))];
+    return this.read('places', { files: paths, revision: this.revision });
+  }
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
   private healthSnapshot: { caches: object; work?: object } = { caches: {} };

@@ -117,6 +117,11 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   }
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')! });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
+  if (method === 'places') {
+    const files = (params as { files?: unknown }).files;
+    if (!Array.isArray(files)) throw new UsageError('places is { files: [path…] }.');
+    return session.places(files.map(file => String(file)));
+  }
   if (method === 'page') {
     const items = (params as { items?: unknown }).items;
     if (!Array.isArray(items)) throw new UsageError('A page is { items: [{ stamp, tag, classes? }] }.');
@@ -205,8 +210,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -267,7 +272,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'try', 'health', 'refresh'].includes(method);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'try', 'health', 'refresh'].includes(method);
       let result: unknown;
       if (current) result = await dispatchRequest(current, method, params, options, json);
       else {
@@ -374,7 +379,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});

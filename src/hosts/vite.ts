@@ -1,5 +1,5 @@
 import type { ModuleNode, Plugin, ViteDevServer } from 'vite';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { Session } from '../session/index.js';
@@ -132,6 +132,43 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
         }
       };
       server.httpServer?.once('close', () => { if (!owned.restarting) void relinquish(); });
+      // The page's code (docs/briefs/count-from-code.md): the static import closure of the modules the browser loaded,
+      // from Vite's module graph. Only a Vite host has one; elsewhere the overlay counts from the page it rendered.
+      server.middlewares.use('/__plumb/closure', (request, response) => {
+        if (request.method !== 'POST') { response.writeHead(405, { Allow: 'POST' }); response.end(); return; }
+        const chunks: Buffer[] = [];
+        request.on('data', (chunk: Buffer) => { if (chunks.reduce((n, c) => n + c.length, 0) < 1 << 20) chunks.push(Buffer.from(chunk)); });
+        request.on('end', () => {
+          void (async () => {
+            let modules: unknown;
+            try { modules = (JSON.parse(Buffer.concat(chunks).toString('utf8')) as { modules?: unknown }).modules; } catch { modules = undefined; }
+            if (!Array.isArray(modules)) { response.writeHead(400, { 'Content-Type': 'application/json' }); response.end(JSON.stringify({ error: 'closure is { modules: [url…] }.' })); return; }
+            const graph = server.moduleGraph, files = new Set<string>(), seen = new Set<string>(), unresolved: string[] = [];
+            const source = /\.[cm]?[jt]sx?$/;
+            const visit = async (url: string): Promise<void> => {
+              const plain = url.replace(/[?#].*$/, '');
+              if (seen.has(plain)) return; seen.add(plain);
+              const mod = await graph.getModuleByUrl(plain).catch(() => undefined) ?? graph.urlToModuleMap.get(url);
+              if (!mod) return;
+              if (mod.file && mod.file.startsWith(root + '/') && !mod.file.includes('/node_modules/') && source.test(mod.file)) files.add(relative(root, mod.file));
+              // statically imported modules only: a dynamic import() is a boundary, unless the browser loaded its chunk (then it is a root here)
+              const statics = (mod as unknown as { staticImportedUrls?: Set<string> }).staticImportedUrls;
+              if (statics) { for (const next of statics) await visit(next); }
+              else for (const next of mod.importedModules) if (next.url) await visit(next.url);
+            };
+            for (const url of modules.slice(0, 4096)) {
+              if (typeof url !== 'string') continue;
+              let pathname: string;
+              try { pathname = new URL(url, 'http://localhost/').pathname; } catch { continue; }
+              const before = files.size + seen.size;
+              await visit(pathname);
+              if (files.size + seen.size === before) unresolved.push(url);
+            }
+            response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            response.end(JSON.stringify({ files: [...files].sort(), unresolved }));
+          })().catch(error => { response.writeHead(500, { 'Content-Type': 'application/json' }); response.end(JSON.stringify({ error: String(error?.message ?? error) })); });
+        });
+      });
       server.middlewares.use(createHandler(owned.session, {
         client: true, servedRoot: server.config.root,
         readinessProject: { root, rootOverride: options.root !== undefined, ...(options.config === undefined ? {} : { config: options.config }) },
