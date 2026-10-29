@@ -169,3 +169,30 @@ test('apply-all runs the whole Apply on the server: theme, then swaps per file, 
   assert.equal(again.status, 200, JSON.stringify(again.body));
   assert.deepEqual(again.body.results.tokens, [{ name: '--spacing-rail', ok: true }, { name: '--spacing-well', ok: true }]);
 });
+
+test('a whole cause: apply-all rewrites every place in the source with that class, read by the page or not', { timeout: 90000 }, async (t) => {
+  const api = await project(t);
+  const rows = Array.from({ length: 40 }, (_, i) => `  <li id="row-${i}" className="p-[9px]">${i}</li>`).join('\n');
+  await writeFile(join(api.root, 'src/Rows.tsx'), `const pad = 'p-[9px]';\nexport const Rows = () => <ul className={\`list-none \${pad}\`}>\n${rows}\n</ul>;\n`);
+  // nothing has read these rows: the cause alone names them
+  const result = await api.call('apply-all', { swaps: [{ cause: { rule: 'provenance/arbitrary', text: 'p-[9px]', choice: '--spacing-small' } }] }, 'POST');
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  const swaps = result.body.results.swaps;
+  assert.deepEqual(swaps.map(s => [s.file, s.ok, s.applied.length, s.refused, s.places, s.cause]), [
+    ['src/Rows.tsx', true, 41, [], 41, { rule: 'provenance/arbitrary', text: 'p-[9px]', choice: '--spacing-small' }],
+  ]);
+  const text = await readFile(join(api.root, 'src/Rows.tsx'), 'utf8');
+  assert.equal((text.match(/className="p-small"/g) ?? []).length, 40);
+  assert.ok(text.includes("const pad = 'p-small';"), 'the variable’s literal is rewritten, not its use');
+  assert.ok(!text.includes('p-[9px]'));
+  assert.deepEqual(result.body.undo.map(u => [u.file, u.label]), [['src/Rows.tsx', 'p-[9px] → p-small (41 places)']]);
+  // a new token, then its class at every place of its cause
+  const spec = (await api.call('spec', {})).body;
+  const token = await api.call('apply-all', { tokens: [{ file: spec.tokens.file, hash: spec.tokens.hash, name: '--spacing-gutter', value: 'clamp(1rem, 4vw, 2.5rem)', why: 'The page gutter.', then: { cause: { rule: 'provenance/arbitrary', text: 'px-[clamp(1rem,4vw,2.5rem)]', choice: '--spacing-gutter' } } }] }, 'POST');
+  assert.equal(token.status, 200, JSON.stringify(token.body));
+  assert.deepEqual(token.body.results.tokens, [{ name: '--spacing-gutter', ok: true }]);
+  assert.deepEqual(token.body.results.swaps.map(s => [s.file, s.ok, s.applied, s.places]), [['src/App.tsx', true, [`swap:${api.lineOf('gutter')}:${source.split('\n')[api.lineOf('gutter') - 1].indexOf('px-[') + 1}`], 1]]);
+  assert.ok((await readFile(join(api.root, 'src/App.tsx'), 'utf8')).includes('className="px-gutter tracking-[0.1em]"'));
+  const none = await api.call('apply-all', { swaps: [{ cause: { rule: 'provenance/arbitrary', text: 'p-[9px]', choice: '--spacing-small' } }] }, 'POST');
+  assert.deepEqual(none.body.results.swaps.map(s => [s.ok, s.places, s.error]), [[false, 0, 'No place in your code has that class under that rule. Check again.']]);
+});

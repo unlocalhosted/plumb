@@ -28,6 +28,9 @@ import type { Props } from './props.js';
 import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addToken, topBlocks } from '../onboarding/write.js';
+import { classEdit } from '../messages.js';
+import { useFor } from '../rules/provenance.js';
+import { atSite } from '../surfaces/sites.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
@@ -60,11 +63,15 @@ export interface ApplyOptions { file: string; hash: string; edits: { id: string 
 export interface UndoHandle { id: string; file: string; label: string }
 export interface AcceptOptions { rule: string; sites: { file: string; line: number; column: number; text: string }[]; why: string }
 export interface AcceptResult { accepted: number }
-export interface ApplyAllOptions { tokens?: Omit<TokenOptions, 'then'>[]; swaps?: SwapsOptions[]; accepts?: AcceptOptions[] }
+/** A whole cause: every place in the project with this class under this rule, each rewritten for the chosen token (its name as the finding lists it) or class. */
+export interface Cause { rule: string; text: string; choice: string }
+export type CauseSwap = { cause: Cause; file?: string };
+export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: CauseSwap })[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
     tokens: { name: string; ok: boolean; error?: string }[];
-    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; error?: string }[];
+    /** one entry per file; a whole cause carries the places it found in all, and the cause it answers */
+    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; error?: string }[];
     accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
   };
   undo: UndoHandle[];
@@ -664,13 +671,17 @@ export class Session extends EventEmitter {
     const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
     for (const token of tokens) {
       try {
-        const written = await this.token({ ...token, hash: await hashFor(token.file, token.hash) });
+        const { then, ...write } = token;
+        const written = await this.token({ ...write, hash: await hashFor(token.file, token.hash) });
         moved(token.file, written.hash);
         if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
         result.results.tokens.push({ name: token.name, ok: true });
+        // the token's own class at every place of its cause, now that the theme has it
+        if (then) await this.swapCause(then, result, moved);
       } catch (error) { result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) }); }
     }
     for (const swap of swaps) {
+      if ('cause' in swap) { await this.swapCause(swap, result, moved); continue; }
       try {
         const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
         moved(swap.file, written.hash);
@@ -685,6 +696,62 @@ export class Session extends EventEmitter {
       } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, error: message(error) }); }
     }
     return result;
+  }
+  /**
+   * A whole cause: every site in the project's report with the rule and class text (not only what a page has read),
+   * each rewritten with the same spelling the single edits use (classEdit), at its literal when the class is read
+   * through a variable. One guarded write per file, with history and undo; a place that cannot be rewritten is refused
+   * with its reason; `places` is the total found.
+   */
+  private async swapCause({ cause, file: only }: CauseSwap, result: ApplyAllResult, moved: (file: string, hash: string) => void): Promise<void> {
+    const entry = (file: string, fields: Partial<ApplyAllResult['results']['swaps'][number]>) => result.results.swaps.push({ file, ok: false, applied: [], refused: [], cause, ...fields });
+    if (!cause || typeof cause.rule !== 'string' || typeof cause.text !== 'string' || !cause.text.trim() || typeof cause.choice !== 'string' || !cause.choice.trim()) { entry(only ?? '', { error: 'A cause needs a rule, the class text and the chosen token or class.' }); return; }
+    const report = await this.report();
+    const findings = report.findings.filter(f => f.rule === cause.rule);
+    // the places: every site of the rule's findings with this class; failing a finding (the token was just added and
+    // the value now matches it), every declaration with this class
+    const seen = new Set<string>();
+    const places = (findings.length ? findings.flatMap(f => f.sites.map(site => ({ site, declaration: atSite(f, site) }))) : report.declarations.filter(d => d.site.text === cause.text).map(d => ({ site: d.site, declaration: d })))
+      .filter(({ site }) => { const at = site.defined ?? site, key = `${at.file}:${at.line}:${at.column}`; return site.text === cause.text && (!only || this.file(only) === site.file) && !seen.has(key) && seen.add(key); });
+    if (!places.length) { entry(only ?? '', { places: 0, error: 'No place in your code has that class under that rule. Check again.' }); return; }
+    const decision = [...report.decisions, ...report.decisionInventory ?? []].find(d => d.name === cause.choice);
+    const theme = new Set([...report.decisions, ...report.decisionInventory ?? []].map(d => d.name));
+    // the file each place is written in: the literal, when the class is read through a variable
+    const byFile = new Map<string, typeof places>();
+    for (const place of places) { const at = place.site.defined?.file ?? place.site.file; byFile.set(at, [...byFile.get(at) ?? [], place]); }
+    for (const [path, group] of byFile) {
+      const file = relative(this.root, path).replaceAll('\\', '/');
+      const refused: RefusedSwap[] = [];
+      let source: string;
+      try { source = await readFile(path, 'utf8'); } catch (error) { entry(file, { places: places.length, error: errorMessage(error) }); continue; }
+      const starts = lineStarts(source);
+      const edits: { line: number; column: number; start: number; end: number; to: string }[] = [];
+      for (const { site, declaration } of group) {
+        const at = site.defined ?? site;
+        const use = decision ? useFor(decision, declaration.prop, theme) : { class: cause.choice, css: '' };
+        const change = classEdit({ ...declaration, site }, use);
+        const start = (starts[at.line - 1] ?? -1) + at.column - 1;
+        const reason = !change ? 'This spelling cannot be rewritten automatically; change it by hand.'
+          : starts[at.line - 1] === undefined || source.slice(start, start + site.text.length) !== site.text ? 'This class is no longer written here. Check again.'
+          : edits.some(e => e.start < start + site.text.length && start < e.end) ? 'Another of these changes touches the same classes; apply them one at a time.' : undefined;
+        if (reason || !change) { refused.push({ line: at.line, column: at.column, from: site.text, to: change?.to ?? '', reason: reason! }); continue; }
+        edits.push({ line: at.line, column: at.column, start, end: start + site.text.length, to: change.beside ? `${site.text} ${change.to}` : change.to });
+      }
+      if (!edits.length) { entry(file, { places: places.length, refused, error: 'None of these places could be rewritten.' }); continue; }
+      edits.sort((a, b) => a.start - b.start);
+      try {
+        const hash = sourceHash(source);
+        const written = await this.writeText(path, hash, `cause:${cause.rule}:${cause.text}`, cause.text, edits[0]!.to, (_file, text) => {
+          if (sourceHash(text) !== hash) throw new UsageError(staleFile);
+          let next = text;
+          for (const e of edits.toReversed()) next = next.slice(0, e.start) + e.to + next.slice(e.end);
+          return { start: 0, end: text.length, replacement: next, at: edits[0]!.start };
+        }, `${cause.text} → ${edits[0]!.to}${edits.length > 1 ? ` (${edits.length} places)` : ''}`);
+        moved(file, written.hash);
+        result.undo.push(written.undo); result.labels.push(written.undo.label);
+        entry(file, { ok: true, applied: edits.map(e => `swap:${e.line}:${e.column}`), refused, places: places.length });
+      } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
+    }
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
   async set(options: SetOptions): Promise<ApplyResult> {

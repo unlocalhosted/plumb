@@ -118,12 +118,13 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')! });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
   if (method === 'apply-all') {
+    const cause = (item: Record<string, unknown>) => { const c = item.cause as Record<string, unknown>; return { cause: { rule: text(c, 'rule')!, text: text(c, 'text')!, choice: text(c, 'choice')! }, ...(item.file === undefined ? {} : { file: text(item, 'file')! }) }; };
     const body = params as { tokens?: unknown; swaps?: unknown; accepts?: unknown };
     const list = (value: unknown) => Array.isArray(value) ? value as Record<string, unknown>[] : [];
     if (![body.tokens, body.swaps, body.accepts].some(Array.isArray)) throw new UsageError('Apply needs tokens, swaps or accepts.');
     return session.applyAll({
-      tokens: list(body.tokens).map(t => ({ file: text(t, 'file')!, hash: text(t, 'hash')!, name: text(t, 'name')!, value: text(t, 'value')!, ...(t.why === undefined ? {} : { why: text(t, 'why')! }) })),
-      swaps: list(body.swaps).map(s => ({ file: text(s, 'file')!, hash: text(s, 'hash')!, edits: list(s.edits).map(e => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '' })) })),
+      tokens: list(body.tokens).map(t => ({ file: text(t, 'file')!, hash: text(t, 'hash')!, name: text(t, 'name')!, value: text(t, 'value')!, ...(t.why === undefined ? {} : { why: text(t, 'why')! }), ...(object(t.then) && object(t.then.cause) ? { then: cause(t.then) } : {}) })),
+      swaps: list(body.swaps).map(s => object(s.cause) ? cause(s) : ({ file: text(s, 'file')!, hash: text(s, 'hash')!, edits: list(s.edits).map(e => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '' })) })),
       accepts: list(body.accepts).map(a => ({ rule: text(a, 'rule')!, why: text(a, 'why')!, sites: list(a.sites).map(st => ({ file: typeof st?.file === 'string' ? st.file : '', line: Number(st?.line), column: Number(st?.column), text: typeof st?.text === 'string' ? st.text : '' })) })),
     });
   }
