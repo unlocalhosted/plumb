@@ -67,6 +67,7 @@ export const FIX_CSS = `
   .fx .cause { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 16px 12px 4px 18px; }
   .fx .cause .cls { font: 600 14px/1.2 ui-monospace, monospace; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fx .cause .what { grid-column: 2; color: #8b8a85; }
+  .fx .cause .what > span { white-space: nowrap; } /* it wraps between its parts, never inside one */
   .fx .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: #8b8a85; font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .fx .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #55544f; }
   .fx .cause .nav button:hover { background: rgb(0 0 0 / .05); }
@@ -521,7 +522,7 @@ export class FixPanel {
         : `<div class="line"><span class="count"><span>${esc(this.#error ?? (taken ? FIX.ready(taken) : !settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${esc(FIX.what(mark))} · ${esc(FIX.places(placesOf(g), elsOf(g).length))}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
