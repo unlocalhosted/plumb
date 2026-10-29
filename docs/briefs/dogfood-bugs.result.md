@@ -56,7 +56,7 @@ The /__plumb/readiness live check was not re-run against crafting-ui's dev serve
 
 ## Bugs 2 to 5 (one batch, one build, one test run, per the owner's correction)
 
-Commit: e31f38c (subject: fix(check): hooks are not broken; suggestions by value; negative steps; plain words in state)
+Commit: 8e001cb (subject: fix(check): hooks are not broken; suggestions by value; negative steps; plain words in state)
 
 ### 2. Hook classes reported as broken
 System: "does this class have CSS" was the only question asked of a class; whether the project's own code *selects* it
