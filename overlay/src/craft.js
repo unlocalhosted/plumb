@@ -456,22 +456,25 @@ export class Craft {
   // The craft findings of one element, run fresh or from the cache by signature.
   #marksFor(el, facts) {
     if (!el.isConnected || el.closest('plumb-overlay')) return [];
-    // what a finding depends on: the element's and its parent's classes, its own inline style, its words
+    // what an element's own findings depend on: its and its parent's classes, its inline style, its words. A rule that
+    // reads the page's census (the app's usual stroke, its usual gaps) also depends on how much of the page is read:
+    // it is judged again on every pass, never cached, so a judgement made against half the page doesn't stick.
     const sig = `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
-    const hit = this.#cache.get(el);
-    if (hit && hit.sig === sig) return hit.marks;
-    const marks = [];
-    // a special case that covers this element is its authority, firing or not: the general rules it refines don't run
-    const quiet = new Set();
     const rules = this.rules;
+    const quiet = new Set();
     for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
-    for (const rule of rules) {
-      if (quiet.has(rule.id)) continue;
+    const judge = (rule) => {
+      if (quiet.has(rule.id)) return [];
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
-      for (const f of found) if ((f.confidence ?? 0) >= FLOOR) marks.push(markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
+      return found.filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
+    };
+    const pageWide = (rule) => (rule.reads ?? []).includes('census');
+    let hit = this.#cache.get(el);
+    if (!hit || hit.sig !== sig) {
+      hit = { sig, marks: rules.filter((r) => !pageWide(r)).flatMap(judge) };
+      this.#cache.set(el, hit);
     }
-    this.#cache.set(el, { sig, marks });
-    return marks;
+    return [...hit.marks, ...rules.filter(pageWide).flatMap(judge)];
   }
 }
