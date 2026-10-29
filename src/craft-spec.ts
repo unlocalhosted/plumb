@@ -78,7 +78,7 @@ function rows(values: Record<string, unknown>, from: Record<string, string>, pat
 }
 
 /** `plumber spec`: the resolved spec, by principle, each value with where it came from. */
-export function formatSpec(spec: ProjectSpec, configPath: string | null, only?: string): string {
+export function formatSpec(spec: ProjectSpec, configPath: string | null, only?: string, habits: ReadonlySet<string> = new Set()): string {
   const lines: string[] = [];
   const where = (s: string) => (s === 'config' ? (configPath ?? 'config') : s);
   const changed = spec.principles.flatMap(p => p.rules).filter(r => Object.keys(r.from).length);
@@ -88,9 +88,11 @@ export function formatSpec(spec: ProjectSpec, configPath: string | null, only?: 
     if (!rules.length) continue;
     lines.push('', p.id, wrap(`  ${p.why}`));
     for (const r of rules) {
-      const state = r.habit ? `${r.enabled ? 'on' : 'off'} · ${r.severity}` : `${r.enabled ? 'on' : 'off'} · tier ${r.tierName}`;
-      const by = [r.from.enabled && `on/off: ${where(r.from.enabled)}`, r.from.tier && `tier: ${where(r.from.tier)}`, r.from.severity && `severity: ${where(r.from.severity)}`].filter(Boolean).join(' · ');
-      lines.push(...table([[r.id, state, by || '']], [{ width: 30 }, { width: 22 }, { weight: 1, ink: 'dim' }], { indent: 2, width: 100 }));
+      // A habit runs only when the config's habits list names it; the spec can grade it or turn it off, not on.
+      const unlisted = r.habit && r.enabled && !habits.has(r.short);
+      const state = r.habit ? `${r.enabled && !unlisted ? 'on' : 'off'} · ${r.severity}` : `${r.enabled ? 'on' : 'off'} · tier ${r.tierName}`;
+      const by = [unlisted && `not in habits (${configPath ?? 'plumber.config.ts'})`, r.from.enabled && `on/off: ${where(r.from.enabled)}`, r.from.tier && `tier: ${where(r.from.tier)}`, r.from.severity && `severity: ${where(r.from.severity)}`].filter(Boolean).join(' · ');
+      lines.push(...table([[r.id, state, by || '']], [{ width: 30 }, { width: 22 }, { weight: 1, ink: 'dim', wrap: true }], { indent: 2, width: 100 }));
       const valueRows = rows(r.values, r.from).map(([k, v, f]) => [k!, v!, where(f!)]);
       if (valueRows.length) lines.push(...table(valueRows, [{ width: 20 }, { width: 8, align: 'right' }, { weight: 1, ink: 'dim' }], { indent: 6, width: 100 }));
     }

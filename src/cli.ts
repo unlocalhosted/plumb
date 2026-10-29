@@ -203,7 +203,7 @@ async function main(): Promise<void> {
     const only = args.values.rule;
     if (only !== undefined && !spec.principles.some(p => p.rules.some(r => r.id === only || r.short === only))) throw new UsageError(`Unknown craft rule ${only}.\n  → plumber spec`);
     process.stdout.write(args.values.json ? `${JSON.stringify(only ? { ...spec, principles: spec.principles.map(p => ({ ...p, rules: p.rules.filter(r => r.id === only || r.short === only) })).filter(p => p.rules.length) } : spec, null, 2)}\n`
-      : formatSpec(spec, loaded.path ? relative(root, loaded.path) : null, only));
+      : formatSpec(spec, loaded.path ? relative(root, loaded.path) : null, only, new Set((loaded.value.habits ?? []).map(habit => typeof habit === 'string' ? habit : habit.id))));
     return;
   }
   if (command === 'state') {
@@ -445,10 +445,12 @@ async function main(): Promise<void> {
   if (suggesting) {
     const proposals = report.imitationSuggestions ?? [];
     process.stdout.write(args.values.json ? `${JSON.stringify(proposals, null, 2)}\n` :
-      'Candidate fingerprints (report only; none enabled):\n' + proposals.map(proposal =>
-        `${proposal.component.name}  ${proposal.rawElements} raw elements\n  fingerprint: ${JSON.stringify(proposal.fingerprint)}\n  source: ${relative(report.root, proposal.component.source.file)}:${proposal.component.source.line}\n` +
+      // A component nothing copies has nothing to imitate; it is counted, not listed.
+      'Candidate fingerprints (report only; none enabled):\n' + [...proposals].filter(proposal => proposal.rawElements > 0).sort((a, b) => b.rawElements - a.rawElements).map(proposal =>
+        `${proposal.component.name}  ${count(proposal.rawElements, 'raw element')}\n  fingerprint: ${JSON.stringify(proposal.fingerprint)}\n  source: ${relative(report.root, proposal.component.source.file)}:${proposal.component.source.line}\n` +
         (proposal.recipes ?? []).map(recipe => `  recipe ${Object.entries(recipe.variants).map(([axis, choice]) => `${axis}=${JSON.stringify(choice)}`).join(' ')}: ${JSON.stringify(recipe.fingerprint)}\n`).join('') +
-        (proposal.notes ?? []).map(note => `  note: ${note}\n`).join('')).join(''));
+        (proposal.notes ?? []).map(note => `  note: ${note}\n`).join('')).join('') +
+      (proposals.some(proposal => !proposal.rawElements) ? `${count(proposals.filter(proposal => !proposal.rawElements).length, 'other component')}: no raw copies found.\n` : ''));
     return;
   }
   if (inspecting) {

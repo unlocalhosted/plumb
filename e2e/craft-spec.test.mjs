@@ -56,6 +56,8 @@ test('plumber spec: without a config it is the standard; every value says so', {
   assert.match(text.stdout, /^React Plumber craft spec: preset balanced, the standard\n/);
   assert.match(text.stdout, /^access$/m);
   assert.match(text.stdout, /craft\/hit-target\s+on · tier access/);
+  // No habits list in the config: habits are not checked, so the spec does not call them on.
+  assert.match(text.stdout, /habits\/hover-gate\s+off · error\s+not in habits \(plumber\.config\.ts\)/);
   assert.match(text.stdout, /\n\s+min\s+24\s+standard\n/);
   assert.match(text.stdout, /tokens · create yes \(standard\) · name \{family\}-\{job\} \(standard\)\n  file src\/styles\.css · @theme/);
   const json = await plumber(['spec', '--json'], root);
@@ -82,7 +84,7 @@ test('plumber spec: a project config tunes values, presets sit under them, rules
   assert.match(text.stdout, /craft\/hairline\s+off · tier craft\s+on\/off: plumber\.config\.mjs/);
   assert.match(text.stdout, /craft\/continuous-corners\s+on · tier advisory\s+tier: plumber\.config\.mjs/);
   assert.match(text.stdout, /craft\/overshoot\s+on · tier craft\s+tier: preset strict/);
-  assert.match(text.stdout, /habits\/real-quotes\s+on · info\s+severity: plumber\.config\.mjs/);
+  assert.match(text.stdout, /habits\/real-quotes\s+off · info\s+not in habits \(plumber\.config\.mjs\) ·\s+severity: plumber\.config\.mjs/);
   assert.match(text.stdout, /tokens · create no \(plumber\.config\.mjs\)/);
   // one rule
   const one = await plumber(['spec', '--rule', 'craft/measure'], root);

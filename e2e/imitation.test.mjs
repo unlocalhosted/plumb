@@ -77,6 +77,9 @@ test('suggestions are exclusive root fingerprints, count raw elements once, and 
   const panel = proposals.find(p=>p.component.name==='Panel');
   assert.deepEqual(panel.fingerprint,['kit-panel']); assert.equal(panel.rawElements,0);
   assert.ok(proposals.every(p=>!p.fingerprint.includes('shared') && !p.fingerprint.includes('kit-child')));
+  // The human list shows what is copied; a component with no raw copies is counted, not listed.
+  const human = spawnSync(process.execPath,[join(root,'dist/cli.js'),'imitation','--suggest','--root',dir],{encoding:'utf8'}).stdout;
+  assert.match(human,/^Textarea  4 raw elements$/m); assert.doesNotMatch(human,/^Panel /m); assert.match(human,/other components?: no raw copies found\./);
   assert.equal(imitation(run(dir)).length,0);
   assert.equal(await readFile(join(dir,'plumber.config.ts'),'utf8'),before);
 });

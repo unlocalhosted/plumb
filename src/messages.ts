@@ -77,6 +77,19 @@ export function tokenReasons(decisions: Decision[]): void {
 }
 
 /** Exact source replacement only when its spelling and property are known. */
+/** `hover:-duration-[350ms]!` → before `hover:-`, utility `duration`, after `!`; null when the value can't be told apart. */
+function utilityValue(text: string): { before: string; utility: string; after: string } | null {
+  let depth = 0, colon = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '[' || text[i] === '(') depth++;
+    else if (text[i] === ']' || text[i] === ')') depth--;
+    else if (text[i] === ':' && depth === 0) colon = i;
+  }
+  const lead = /^!?-?/.exec(text.slice(colon + 1))![0], after = text.endsWith('!') && !lead.includes('!') ? '!' : '';
+  const base = text.slice(colon + 1 + lead.length, text.length - after.length);
+  const match = /^([a-z][a-z-]*?)-(?:\[[^\]]+\]|\([^)]+\)|[\d.]+(?:px|rem|ms|s)?|[a-z0-9.]+)$/.exec(base);
+  return match ? { before: text.slice(0, colon + 1) + lead, utility: match[1]!, after } : null;
+}
 export function sourceEdit(d: Declaration, use: NonNullable<Decision['use']>): string {
   const text = d.site.text;
   if (['class', 'arbitrary'].includes(d.origin) && use.class && !/[\s/]/.test(text)) {
@@ -89,6 +102,16 @@ export function sourceEdit(d: Declaration, use: NonNullable<Decision['use']>): s
     const base = text.slice(colon + 1);
     const replacement = `${text.slice(0, colon + 1)}${base.startsWith('!') ? '!' : ''}${base.replace(/^!/, '').startsWith('-') ? '-' : ''}${use.class}${base.endsWith('!') ? '!' : ''}`;
     return `Replace \`${text}\` with \`${replacement}\`.`;
+  }
+  // A token with no utility of its own still has a class form: the same utility with `(--token)` as its value.
+  const variable = /^var\((--[\w-]+)\)$/.exec(use.css.slice(d.prop.length + 2))?.[1];
+  if (['class', 'arbitrary'].includes(d.origin) && variable && use.css.startsWith(`${d.prop}: `) && !/[\s/]/.test(text)) {
+    const at = utilityValue(text);
+    if (at) {
+      const hint = ['text', 'border', 'ring', 'outline', 'stroke', 'decoration', 'font', 'bg', 'shadow', 'fill'].includes(at.utility)
+        ? /color|^fill$|^stroke$/.test(d.prop) ? 'color:' : /width|size|offset|thickness/.test(d.prop) ? 'length:' : d.prop === 'font-family' ? 'family-name:' : d.prop === 'font-weight' ? 'number:' : null : '';
+      if (hint !== null) return `Replace \`${text}\` with \`${at.before}${at.utility}-(${hint}${variable})${at.after}\`.`;
+    }
   }
   const colon = text.indexOf(':');
   const property = text.slice(0, colon).trim().replace(/["']/g, '');

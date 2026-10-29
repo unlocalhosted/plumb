@@ -290,3 +290,14 @@ test('suggestion policies retain exact names and glob semantics across cold, war
     for (const finding of findings) assert.deepEqual((finding.choices ?? []).map(d => d.name), expected);
   }
 });
+
+test('a motion token with no utility of its own is offered in class form, variants kept', async t => {
+  const dir = await fixture(t);
+  // Like crafting-ui: motion tokens in :root, outside any Tailwind namespace.
+  await writeFile(join(dir, 'src/styles.css'), (await readFile(join(dir, 'src/styles.css'), 'utf8')) + '\n:root { --dur-calm: 150ms; }\n');
+  await writeFile(join(dir, 'src/Dur.tsx'), `export const Dur = () => <><b className="duration-150" /><i className="hover:duration-150" /></>;`);
+  const shown = text(dir, ['--file', 'src/Dur.tsx']);
+  assert.match(shown, /→ duration-\(--dur-calm\) \(150ms\)/);
+  assert.match(shown, /→ hover:duration-\(--dur-calm\) \(150ms\)/);
+  assert.doesNotMatch(shown, /var\(--dur-calm\)/);
+});

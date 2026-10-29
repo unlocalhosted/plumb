@@ -84,6 +84,9 @@ function fixTable(rows: string[][]): string[] {
 
 /** `state` is the one-sentence state of the project (src/onboarding/state.ts), printed under the header. */
 export function formatCheck(report: Report, filters: DetailFilters = {}, verbose = false, state?: string): string {
+  // --changed and --base analyse the whole project but show only the sites in the changed files.
+  if (report.findings.some(finding => finding.sites.some(site => site.inScope === false)))
+    report = { ...report, findings: report.findings.flatMap(finding => { const sites = finding.sites.filter(site => site.inScope !== false); return sites.length ? [{ ...finding, sites }] : []; }) };
   if (filters.all && Object.entries(filters).every(([key, value]) => key === 'all' || value === undefined || value === false)) return formatAll(report, verbose);
   if (Object.values(filters).some(value => value !== undefined && value !== false)) {
     const hints = filters.rule === 'config' && !filters.broken && !filters.file && !filters.new && !filters.debt

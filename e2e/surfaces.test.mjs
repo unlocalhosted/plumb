@@ -240,3 +240,15 @@ test('Action runs real CLI against fixture PR, creates then updates sticky comme
   assert.equal(result.status, 0, result.stderr); assert.ok(requests.some(r => r.method === 'PATCH' && r.url.endsWith('/issues/comments/10')));
   assert.equal(requests.filter(r => r.method === 'POST').length, 1); assert.match(comments.find(c => c.id === 10).body, /Ledger growth approved/);
 });
+
+test('check --changed shows only the changed files, with or without a ledger', async t => {
+  const directory = await fixture(t);
+  await writeFile(join(directory, 'src/App.tsx'), 'export function App() { return <div className="gap-10" />; }\n');
+  await history(directory);
+  await writeFile(join(directory, 'src/Changed.tsx'), 'export function Changed() { return <div className="gap-10" />; }\n');
+  const whole = run(directory, ['--rule', 'provenance'], 1).stdout;
+  assert.match(whole, /App\.tsx/); assert.match(whole, /Changed\.tsx/);
+  const changed = run(directory, ['--changed', '--rule', 'provenance'], 1).stdout;
+  assert.match(changed, /Changed\.tsx/); assert.doesNotMatch(changed, /App\.tsx/);
+  assert.doesNotMatch(run(directory, ['--changed'], 1).stdout, /App\.tsx/);
+});
