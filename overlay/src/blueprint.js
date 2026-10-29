@@ -95,7 +95,8 @@ export class Blueprint {
     if (this.#selection.key(key)) return true;
     // with an element selected, . and , step through its problems
     if (this.#selection.el && (key === '.' || key === ',')) return this.#selection.step(key === '.' ? 1 : -1) || true;
-    return this.#panel.key(key);
+    // the old side panel is retired (the fix bar is the one panel): it takes no keys, so nothing hidden moves the page
+    return false;
   }
   // The queue changed: the panel says what each cause becomes.
   refresh() {
