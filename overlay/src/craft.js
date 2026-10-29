@@ -387,10 +387,13 @@ function markOf(f) {
 }
 
 export class Craft {
+  #again = null; #waiting = false;
   #rules; #theme; #cache = new WeakMap(); // el → { sig, marks }
   // told when a late fact (an icon's ink) lands: judge the page again
   onFacts = null;
-  constructor({ rules = RULES, theme } = {}) {
+  // again: asked when elements left unjudged because they were moving have come to rest (the reader reports again)
+  constructor({ rules = RULES, theme, again } = {}) {
+    this.#again = again ?? null;
     INK.crafts.add(this);
     LOAD.crafts.add(this);
     this.#rules = rules;
@@ -425,7 +428,17 @@ export class Craft {
       facts.items = items.filter((i) => i.checked !== false).map((i) => i.el);
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
       // craft judges what it can reach: an element outside the project's source has no line to fix, so it is left be
-      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.rules });
+      // an element mid-animation (an entrance, a stroke drawing in) is judged at rest, not mid-flight: its craft waits
+      // for this pass, and the page is judged again once what moves has stopped
+      const anims = document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.target);
+      const moving = (el) => anims.some((a) => el === a.effect.target || el.contains(a.effect.target));
+      // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it
+      const ending = anims.filter((a) => a.effect.getComputedTiming?.().iterations !== Infinity);
+      if (ending.length && this.#again && !this.#waiting) {
+        this.#waiting = true;
+        Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
+      }
+      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false || moving(item.el) ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {

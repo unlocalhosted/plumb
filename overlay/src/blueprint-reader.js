@@ -210,6 +210,7 @@ export class Reader {
       // classes built in code (a cn() helper) are traced in a second pass, so the first count never waits on them
       const computed = item.computed === true;
       let reading = item.stamp && !fresh && !computed ? this.#byStamp.get(item.stamp) : null;
+      const shared = !!reading;
       if (!reading) {
         reading = this.#host.readMarks(item.el, fresh, { computed });
         if (item.stamp && !computed) this.#byStamp.set(item.stamp, reading);
@@ -217,6 +218,12 @@ export class Reader {
       reading
         .then((state) => {
           if (!this.#running || !this.#items.has(item.id)) return;
+          // a reading of one element only (its caller's, for a pass-through component) is never another's: an element
+          // that borrowed it by stamp reads again for itself, and the stamp stops lending it
+          if (state?.perElement) {
+            if (item.stamp && this.#byStamp.get(item.stamp) === reading) this.#byStamp.delete(item.stamp);
+            if (shared) { item.state = 'queued'; item.fresh = true; return; }
+          }
           if (state?.status === 'ready' && state.computed && !computed) {
             item.state = 'queued'; item.computed = true; // read again, with its classes traced
           } else if (state?.status === 'ready') {

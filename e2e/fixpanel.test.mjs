@@ -313,3 +313,30 @@ export function App() {
   assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /a brand inset, kept/);
   assert.deepEqual(errors, []);
 });
+
+// Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
+// that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
+test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, `
+function Link({ className, children }) { return <a href="#" className={className}>{children}</a>; }
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <Link className="text-body tracking-[0.1em]">Spaced</Link>
+      <Link className="text-body">Plain one</Link>
+      <Link className="text-body">Plain two</Link>
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const counts = [];
+  for (let i = 0; i < 3; i++) {
+    if (i) { await page.keyboard.press('Alt+B'); await page.keyboard.press('Alt+B'); await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); await page.waitForTimeout(500); }
+    counts.push((await panel(overlay).locator('.line .count').innerText()).replace(/\s+/g, ' '));
+  }
+  assert.equal(new Set(counts).size, 1, `the same count every time: ${counts.join(' | ')}`);
+  assert.match(counts[0], /^1 problem · 1 fix/, counts[0]);
+  assert.deepEqual(errors, []);
+});

@@ -59,7 +59,7 @@ export class Blueprint {
     this.#host = host;
     this.#onState = onState;
     this.#onProgress = onProgress;
-    this.#craft = new Craft({ theme });
+    this.#craft = new Craft({ theme, again: () => this.#reader?.refresh() });
     this.#craft.onFacts = () => { if (this.active) this.#reader.refresh(); }; // an icon's ink landed
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);

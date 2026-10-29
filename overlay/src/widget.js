@@ -647,14 +647,18 @@ class PlumbOverlay extends HTMLElement {
         // as Alt+↑ would read it.
         if (!r.traced.attributed && r.traced.unattributed && element) {
           const full = location.chain?.length > 1 ? location : await locate(element, { chain: true }).catch(() => null);
-          const at = full?.chain?.findIndex(link => link.file === location.file && link.line === location.line && link.column === location.column) ?? -1;
+          // the chain couldn't be read yet (a cold source map): not "nothing here", so the reader asks again later
+          if (!full?.chain) return { status: 'pending', tag: location.tag, message: 'Still finding where this is written.' };
+          const at = full.chain.findIndex(link => link.file === location.file && link.line === location.line && link.column === location.column);
           const up = at >= 0 ? full.chain[at + 1] : null;
           if (up) {
             const caller = await this.#readAt({ ...up, tag: location.tag, via: location.via, chain: full.chain, index: at + 1 }, element, { want, computed, batch });
-            if (caller?.status === 'ready' && (caller.marks.length || caller.declared)) return caller;
+            // the caller's reading is this element's alone: two Links share their component's stamp, not their callers
+            if (caller?.status === 'ready' && (caller.marks.length || caller.declared)) return { ...caller, perElement: true };
           }
         }
-        return { status: 'ready', ...r, text };
+        // traced from this element's own rendered classes: two elements with one stamp can carry different ones
+        return { status: 'ready', ...r, text, perElement: true };
       }
     }
     return { status: 'ready', ...reading(location, site, edits), text };
