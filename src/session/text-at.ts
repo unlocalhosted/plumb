@@ -115,7 +115,7 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
   };
   const settle = (hits: Hit[]): TextAtResult => {
     const first = hits[0]!, at = lineOf(first.parsed, first.target.start);
-    if (hits.length > 1) return { editable: false, reason: `${hits.length} strings in source say these words. Edit the one you mean by hand.`, where: { file: input.relative(first.file), line: at.line } };
+    if (hits.length > 1) return { editable: false, reason: `${hits.length} places in your code say these words. Change the one you mean by hand.`, where: { file: input.relative(first.file), line: at.line } };
     return { editable: true, hash: first.parsed.hash, file: input.relative(first.file), ...at, kind: first.target.kind, id: first.target.id, from: first.target.text };
   };
 
@@ -164,5 +164,5 @@ export async function resolveTextAt(input: TextAtInput, path: string): Promise<T
     }
     if (hits.length) return settle(hits);
   }
-  return { editable: false, reason: element && element.reason !== textReasons.empty ? element.reason : 'React Plumber can’t find a string in your source that renders these words.', ...(where ? { where } : {}) };
+  return { editable: false, reason: element && element.reason !== textReasons.empty ? element.reason : 'These words aren’t written in your code as one string. Change them by hand.', ...(where ? { where } : {}) };
 }

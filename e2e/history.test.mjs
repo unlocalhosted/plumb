@@ -44,7 +44,7 @@ test('every write returns a handle; history lists them newest first; undo restor
   assert.equal(second.status, 200, JSON.stringify(second));
   const history = (await api.call('history')).body.writes;
   assert.deepEqual(history.map(w => [w.id, w.file, w.line, w.label]), [
-    [second.body.undo.id, 'src/App.tsx', 4, '“Read the notes” → “Skim the notes”'],
+    [second.body.undo.id, 'src/App.tsx', 4, '“Read” → “Skim”'],
     [first.body.undo.id, 'src/App.tsx', 3, '“Welcome back” → “Hello again”'],
   ]);
   assert.ok(history.every(w => !Number.isNaN(Date.parse(w.at))));
@@ -99,4 +99,24 @@ test('history keeps the last 20 writes', async t => {
   assert.equal(writes.length, 20);
   assert.equal(writes[0].id, ids[21]);
   assert.equal((await api.call('undo', { id: ids[0] }, 'POST')).status, 400);
+});
+
+test('a file changed outside React Plumber marks its writes stale in history; undo still refuses them', async t => {
+  const api = await project(t);
+  const first = await api.text(3, 'Welcome back', 'Hello again');
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  const before = (await api.call('history')).body.writes;
+  assert.deepEqual(before.map(w => [w.id, w.stale]), [[first.body.undo.id, undefined]]);
+  // an editor saves the file: the write is still listed, but can no longer be undone
+  await writeFile(join(api.root, 'src/App.tsx'), (await api.read()).replace('Hello again', 'Hello again, friend'));
+  const after = (await api.call('history')).body.writes;
+  assert.deepEqual(after.map(w => [w.id, w.stale]), [[first.body.undo.id, true]]);
+  const refused = await api.call('undo', { id: first.body.undo.id }, 'POST');
+  assert.equal(refused.status, 400);
+  assert.match(refused.body.error, /changed since/);
+  // a long caption: the label names only the words that changed
+  const long = await api.text(4, 'Read the notes', 'Read the notes again');
+  assert.equal(long.status, 200, JSON.stringify(long.body));
+  assert.equal(long.body.undo.label, '“” → “again”');
+  assert.equal((await api.call('history')).body.writes.find(w => w.id === long.body.undo.id).stale, undefined);
 });

@@ -102,9 +102,13 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
     },
     transformIndexHtml: { order: 'pre', handler() {
       if (demo && (production || demo.guard)) return [{ tag: 'script', attrs: { type: 'module' }, children: `import 'virtual:plumb-demo';`, injectTo: 'head' }];
-      return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js' }, injectTo: 'head' },
-        { tag: 'script', attrs: { type: 'module' }, children: `import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
-if (import.meta.hot) import.meta.hot.on('vite:afterUpdate', invalidateSourceMaps);`, injectTo: 'head' }];
+      // Both tags carry vite-ignore: the plugin's middleware serves /__plumb/*, so Vite must not try to load them as
+      // modules of its own (its pre-transform would log "Failed to load url" on every page load). An ignored inline
+      // script has no import.meta.hot, so the listener takes its hot context from Vite's client directly.
+      return [{ tag: 'script', attrs: { type: 'module', src: '/__plumb/client.js', 'vite-ignore': true }, injectTo: 'head' },
+        { tag: 'script', attrs: { type: 'module', 'vite-ignore': true }, children: `import { createHotContext } from '/@vite/client';
+import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
+createHotContext('/__plumb/client.js').on('vite:afterUpdate', invalidateSourceMaps);`, injectTo: 'head' }];
     } },
     async closeBundle() { if (!restarts) { await release?.(); release = undefined; } },
   };

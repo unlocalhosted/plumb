@@ -72,17 +72,17 @@ test('HTTP text reads authored runs, JSX whitespace, literals and refusal reason
     for (const run of result.body.runs) { assert.ok(run.start < run.end); assert.ok(code.slice(run.start, run.end).length); }
   }
   for (const [anchor, reason] of [
-    ['<p id="expression"', 'The text comes from an expression. Edit its source instead.'],
-    ['<p id="template"', 'The text comes from an expression. Edit its source instead.'],
-    ['<p id="translation"', 'The text comes from a translation. Edit the translation source instead.'],
-    ['<Trans>', 'The text comes from a translation. Edit the translation source instead.'],
-    ['<span id="translated-child"', 'The text comes from a translation. Edit the translation source instead.'],
-    ["<Button label={t", 'The text comes from a translation. Edit the translation source instead.'],
-    ['<p id="children"', 'This component receives its children from elsewhere. Edit them at their source.'],
-    ['<p id="prop"', 'The text comes from a prop. Edit the prop source instead.'],
-    ['<Button', 'The text comes from a prop. Edit the prop source instead.'],
-    ['<Imported', 'This component receives its children from elsewhere. Edit them at their source.'],
-    ['<hr', 'This element has no static text to edit.'],
+    ['<p id="expression"', 'This text is built when the page runs. Change it in the code that builds it.'],
+    ['<p id="template"', 'This text is built when the page runs. Change it in the code that builds it.'],
+    ['<p id="translation"', 'This text comes from a translation file. Change it there.'],
+    ['<Trans>', 'This text comes from a translation file. Change it there.'],
+    ['<span id="translated-child"', 'This text comes from a translation file. Change it there.'],
+    ["<Button label={t", 'This text comes from a translation file. Change it there.'],
+    ['<p id="children"', 'This text is passed in from the parent. Change it where the component is used.'],
+    ['<p id="prop"', 'This text is passed in as a prop. Change it where the component is used.'],
+    ['<Button', 'This text is passed in as a prop. Change it where the component is used.'],
+    ['<Imported', 'This text is passed in from the parent. Change it where the component is used.'],
+    ['<hr', 'This element has no text of its own to change.'],
   ]) assert.deepEqual(await api.text(anchor), { status: 200, body: { editable: false, hash: hash(code), reason } });
   assert.equal((await api.call('text', at(code, '<h1'), 'POST')).status, 405);
   assert.equal((await api.call('text', { ...at(code, '<h1'), column: 1 })).status, 400);

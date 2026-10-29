@@ -11,6 +11,7 @@ import { Session } from '../dist/session/index.js';
 import { createWebHandler } from '../dist/session/server.js';
 
 const repo = resolve('.');
+const familyWords = { spacing: 'spacing', color: 'colours', radius: 'corner radii', type: 'text styles', motion: 'timings', elevation: 'shadows', z: 'layer order (z-index) steps' };
 const config = `import { defineConfig } from 'vite';
 import { plumb as inspect } from '@unlocalhosted/react-plumber/vite';
 import react from '@vitejs/plugin-react';
@@ -88,9 +89,9 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       assert.equal(item(ready, 'write.refresh').status, 'missing');
       assert.equal(fix.kind, 'step');
       assert.equal(fix.command, `${manager} ${manager === 'npm' ? 'install' : 'add'} -D @vitejs/plugin-react`);
-      assert.match(fix.instruction, /rerun plumber doctor.*config diff/);
+      assert.match(fix.instruction, /run plumber doctor again to see the config change/);
       const before = await readFile(file, 'utf8');
-      assert.match(run(root, ['fix', 'write.refresh']), /config diff/);
+      assert.match(run(root, ['fix', 'write.refresh']), /config change/);
       assert.equal(await readFile(file, 'utf8'), before);
       const doctor = run(root, ['doctor']);
       assert.ok(doctor.includes(fix.command));
@@ -205,7 +206,7 @@ test('JSX order allows Tailwind first; React first offers a minimal diff that st
       const order = item(ready, 'locate.order');
       assert.equal(order.status, expected);
       const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
-      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
+      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok React Plumber runs before' : 'fix Move React Plumber before'} .*\\[locate.order\\]`));
       assert.doesNotMatch(doctor, /must be first/);
       if (expected === 'missing') {
         assert.equal(order.fix.kind, 'diff');
@@ -289,7 +290,7 @@ test('Babel JSX plugins block order; MDX pre plugins do not', async t => {
       const { report } = await api(t, root);
       assert.equal(item(await report(), 'locate.order').status, expected);
       const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
-      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok' : 'fix'} React Plumber .*\\[locate.order\\]`));
+      assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok React Plumber runs before' : 'fix Move React Plumber before'} .*\\[locate.order\\]`));
     });
   }
 });
@@ -323,7 +324,7 @@ test('doctor and read-only route cover every capability and token family with ev
   const output = run(root, ['doctor']);
   assert.match(output, /^Readiness: \d+ setup gaps? ·/);
   assert.ok(output.indexOf('Readiness:') < output.indexOf('Diagnostics'));
-  assert.match(output, /React development build needs verification/);
+  assert.match(output, /Use the development build/);
   assert.match(output, /unavailable\s+System panel/);
   for (const requirement of ready.requirements) assert.equal(output.includes(`[${requirement.id}]`), !requirement.derived && requirement.capability !== 'system', requirement.id);
 });
@@ -363,7 +364,7 @@ test('framework-only tokens stay missing across every judged family', async t =>
     assert.equal(checked.coverage[family].fromDecisions, 0, family);
     assert.ok(checked.findings.some(finding => finding.rule === 'config/no-tokens' && finding.family === family), family);
     assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
-    assert.match(doctor, new RegExp(`fix Your theme has no ${family} tokens \\[read\\.tokens\\.${family}\\]`));
+    assert.match(doctor, new RegExp(`fix Add ${familyWords[family].replace(/[()]/g, '\\$&')} to your theme \\[read\\.tokens\\.${family}\\]`));
   }
 });
 
@@ -512,10 +513,10 @@ test('no baseline, no tokens, executable config, unobserved host are named witho
   assert.equal(item(ready, 'locate.host').status, 'unknown');
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
   const output = run(root, ['doctor']);
-  assert.match(output, /Every finding counts as new/);
+  assert.match(output, /Every problem counts as new/);
   assert.match(output, /plumber baseline/);
-  assert.match(output, /no spacing tokens/);
-  assert.match(output, /cannot reuse the whole report/);
+  assert.match(output, /Add spacing to your theme/);
+  assert.match(output, /Make checks faster/);
 });
 
 test('one missing token family degrades Read; the CLI cannot see runtime; plumber and doctor count the same gaps', async t => {
@@ -531,7 +532,7 @@ test('one missing token family degrades Read; the CLI cannot see runtime; plumbe
   assert.match(doctor, /^Readiness: 1 setup gap · 1 other fix · /);
   assert.match(doctor, /^  degraded\s+Read$/m);
   for (const label of ['Locate', 'Preview', 'Blueprint']) assert.match(doctor, new RegExp(`^  verify in dev\\s+${label}$`, 'm'), label);
-  assert.match(doctor, /fix Your theme has no z tokens/);
+  assert.match(doctor, /fix Add layer order \(z-index\) steps to your theme/);
   assert.match(run(root, []), /! 1 setup gap\b/);
   // Same project through the live host: runtime is observed, so nothing is left to verify.
   const { report } = await api(t, root, runtime);
@@ -620,7 +621,7 @@ test('uninstalled React, unsupported host and unsupported Tailwind are independe
   assert.equal(item(ready, 'locate.host').status, 'missing');
   assert.equal(item(ready, 'blueprint.host').status, 'missing');
   const output = run(root, ['doctor'], '', 1);
-  assert.match(output, /React does not resolve/);
+  assert.match(output, /React is not installed/);
   assert.match(output, /npm install react react-dom/);
   await writeFile(join(root, 'vite.config.mjs'), 'export default (() => ({ plugins: [] }))();');
   ready = await report();

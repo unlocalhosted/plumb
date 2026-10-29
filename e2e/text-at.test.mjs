@@ -91,7 +91,7 @@ test('text-at refuses two identical strings, pointing at one', async t => {
   const api = await project(t);
   const found = (await api.ask('<li key', 'src/App.tsx', 'Twin words')).body;
   assert.equal(found.editable, false);
-  assert.match(found.reason, /2 strings in source say these words/);
+  assert.match(found.reason, /2 places in your code say these words/);
   assert.deepEqual(found.where, { file: 'src/data.js', line: 3 });
 });
 
@@ -99,7 +99,7 @@ test('text-at refuses an expression it cannot trace and a translation', async t 
   const api = await project(t);
   const expression = (await api.ask('<p id="expression"', 'src/App.tsx', 'Ada')).body;
   assert.equal(expression.editable, false);
-  assert.match(expression.reason, /expression/);
+  assert.match(expression.reason, /built when the page runs/);
   assert.deepEqual(expression.where, { file: 'src/App.tsx', line: 8 });
   const translation = (await api.ask('<p id="translation"', 'src/App.tsx', 'Welcome')).body;
   assert.equal(translation.editable, false);

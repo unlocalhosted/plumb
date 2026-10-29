@@ -356,3 +356,28 @@ test('why labels what it lists and says each declaration once', async t => {
   const lines = shown.slice(shown.indexOf('Declared on this line:')).split('\n').filter(Boolean);
   assert.equal(new Set(lines).size, lines.length, shown);
 });
+
+test('a colour inside an arbitrary shadow is never offered a colour token in place of the shadow', async t => {
+  const dir = await fixture(t);
+  // #123466 sits next to --color-brand (#123456): close enough to be offered, not an exact copy of it
+  await writeFile(join(dir, 'src/Shadow.tsx'), `export const S = () => <><div className="shadow-[0_10px_30px_-18px_#123466]" /><i className="ring-[#123466]" /><b className="drop-shadow-[0_1px_2px_#123466]" /></>;`);
+  const report = cli(dir, ['--file', 'src/Shadow.tsx']);
+  const colours = checks(report).filter(f => f.family === 'color');
+  const shadow = colours.filter(f => f.sites.some(s => s.text.startsWith('shadow-[')));
+  assert.ok(shadow.length, 'the raw colour in the shadow is still reported');
+  for (const f of shadow) {
+    assert.deepEqual(f.choices ?? [], [], f.title);
+    assert.deepEqual((f.edits ?? []).filter(e => e.site.text.startsWith('shadow-[')), []);
+    assert.match(f.action, /^The colour is part of this box-shadow\. Use a shadow token for the whole value, or change the colour by hand\.$/);
+  }
+  // a ring's arbitrary colour is the colour itself: the colour token replaces it
+  const ring = colours.find(f => f.sites.some(s => s.text === 'ring-[#123466]'));
+  assert.ok(ring, JSON.stringify(colours.map(f => f.title)));
+  assert.deepEqual(ring.choices.map(d => d.name), ['--color-brand']);
+  assert.ok(ring.edits.some(e => e.site.text === 'ring-[#123466]' && /^Replace `ring-\[#123466\]` with `ring-(?:brand|\(color:--color-brand\))`\.$/.test(e.text)), JSON.stringify(ring.edits));
+  // a drop shadow's colour is not a colour site either
+  assert.ok(!colours.some(f => (f.choices ?? []).length && f.sites.some(s => s.text.startsWith('drop-shadow-['))));
+  const agent = text(dir, ['--agent', '--file', 'src/Shadow.tsx']);
+  assert.doesNotMatch(agent, /replace `shadow-\[[^`]*` with `(?:bg|text|shadow)-(?:brand|faint|line)`/);
+  assert.doesNotMatch(agent, /replace `drop-shadow-\[[^`]*` with `(?:bg|text|shadow)-(?:brand|faint|line)`/);
+});

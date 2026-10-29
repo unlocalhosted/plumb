@@ -8,11 +8,11 @@ import { jsxEntities } from './text-entities.js';
 export interface TextRun { id: string; text: string; start: number; end: number }
 export type TextResult = { editable: true; hash: string; runs: TextRun[] } | { editable: false; hash: string; reason: string };
 export const textReasons = {
-  translation: 'The text comes from a translation. Edit the translation source instead.',
-  expression: 'The text comes from an expression. Edit its source instead.',
-  prop: 'The text comes from a prop. Edit the prop source instead.',
-  children: 'This component receives its children from elsewhere. Edit them at their source.',
-  empty: 'This element has no static text to edit.',
+  translation: 'This text comes from a translation file. Change it there.',
+  expression: 'This text is built when the page runs. Change it in the code that builds it.',
+  prop: 'This text is passed in as a prop. Change it where the component is used.',
+  children: 'This text is passed in from the parent. Change it where the component is used.',
+  empty: 'This element has no text of its own to change.',
 } as const;
 
 interface SourceRun extends TextRun { literal?: { start: number; end: number; quote: string } }
