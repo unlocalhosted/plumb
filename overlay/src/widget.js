@@ -451,6 +451,33 @@ class PlumbOverlay extends HTMLElement {
     promise.then(state => { if (state.status !== 'ready' && this.#marksCache.get(element) === promise) this.#marksCache.delete(element); });
     return promise;
   }
+  // The whole page at once (blueprint-reader.js): every stamped element's reading from one POST page, the same reading
+  // readMarks builds element by element. Elements that share a stamp and classes share one answer. An element whose
+  // classes are passed in by the code that uses its component comes back `caller`: the reader reads it per element.
+  async readPage(entries) {
+    const keyOf = (e) => `${e.stamp}\0${e.tag}\0${e.classes ?? ''}`;
+    const unique = new Map();
+    for (const e of entries) if (!unique.has(keyOf(e))) unique.set(keyOf(e), { stamp: e.stamp, tag: e.tag, ...(e.classes ? { classes: e.classes } : {}) });
+    let answer;
+    try { answer = await post('page', { items: [...unique.values()] }); }
+    catch (error) { throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
+    const keys = [...unique.keys()];
+    const byKey = new Map(keys.map((key, i) => [key, answer?.items?.[i]]));
+    return entries.map((e) => this.#pageState(e.el, byKey.get(keyOf(e))));
+  }
+  #pageState(element, entry) {
+    if (!entry || entry.status !== 'ready') return { status: 'unplaced', outsideSource: entry?.outsideSource === true, file: entry?.file };
+    const at = { file: entry.file, line: entry.line, column: entry.column, component: entry.component ?? null, ...(entry.usage ? { usage: true } : {}) };
+    const location = { ...at, tag: element.localName, via: entry.usage ? 'stamp-usage' : 'stamp', chain: [at], index: 0, partial: !entry.usage };
+    this.#learnSource(element, location);
+    if (entry.traced?.classes) {
+      const r = this.#computedReading(location, entry.traced);
+      if (!r.traced.attributed && r.traced.unattributed) return { status: 'caller' };
+      return { status: 'ready', ...r, perElement: true };
+    }
+    if (entry.traced?.status === 'pending') return { status: 'pending' };
+    return { status: 'ready', ...reading(location, entry.site, undefined) };
+  }
   // craft: what the source says about an element (its component, library, handlers), for the rules that judge by it
   // (touch handling, a tooltip provider's delays). Asked only for the elements those rules can judge; when answers
   // land, the page is judged again once.

@@ -1,45 +1,46 @@
 /* ─────────────────────────────────────────────────────────
  * BLUEPRINT READER · Plumb overlay
  *
- * Which elements are on screen, and what Plumb says about each. Every reading is the engine's (host.readMarks: the
- * same findings as the Alt card, without the edits and text the card fetches when it opens).
+ * What Plumb says about every element on the page, computed from source, once, the same way every time
+ * (docs/briefs/deterministic-detection.md). The page only says where each problem shows: the count and the fix list
+ * never depend on what was in view, on the window's size, or on the moment they were read.
  *
- *  pool       every element, including unstamped shared source beside stamped app source, never anything inside an
- *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read); watched by one
- *             IntersectionObserver, so only what is in (or near) view is read, nearest the middle first, CAP at most
- *  dedupe     elements that share a stamp (a list's rows) share one reading
- *  waves      readings are started in waves of WAVE, a new wave only once the last has landed, so each wave is one
- *             batched request for its resolves and one for its sites, not a trickle of single questions
- *  retry      a reading that comes back starting or failed is tried again when the server is ready, and after a
- *             backoff (2s, 4s, 8s)
+ *  pool       every element under <body>, from one querySelectorAll in document order: never anything inside an
+ *             <svg> (an icon's paths are drawing, not design decisions; the <svg> itself is read), never the overlay.
+ *             No IntersectionObserver, no visibility check, no cap: a hidden tab reads the same page as a shown one
+ *  page       stamped elements (data-plumb-source) go to the server as one whole-page request (host.readPage, POST
+ *             page): where each stamp resolves and the reading there, cached by file content, so a second opening
+ *             costs no analysis. Elements that share a stamp and classes share one answer
+ *  element    what the page answer cannot settle is read per element, the way the Alt card reads it (host.readMarks):
+ *             elements with no stamp (shared source, located through the owner stack) and pass-through components
+ *             whose classes are passed in by the code that uses them (the caller's reading). Every such element is
+ *             read, in document order, WAVE at a time; never only those in view
+ *  starting   a server still reading the project parks the whole read; it goes again when the server says ready
  *  changes    a class change or new elements, outside the overlay and not on the pinned element (whose inline
  *             previews are the card's own), re-read what changed; a write re-reads every element from that file
- *  page       once what is in view has landed and nothing is in flight, the rest of the page is read in the same
- *             waves, off-screen: every element that is rendered (not display:none, not visibility:hidden), PAGE at
- *             most, so a cause counts every place it has on the page, not only those in view. Marks are still drawn
- *             only where they can be seen; scrolling brings the view's elements back to the front of the queue
- *  progress   { read, total, drift, on } for what is in view, reported only when it changes; `on` counts the gaps on
- *             the system, `drift` the new findings. The items handed on (onChange) are everything read, page-wide
+ *  progress   whole-page: { read, total, drift, on, checked, notChecked, outsideSource, notes, done }. `total` is the
+ *             pool, `read` what has landed, `drift` the problems from source, `notes` what the craft rules measured
+ *             on the page (computed style, contrast, census: never counted as problems), `done` once every element
+ *             has its answer and nothing is in flight. Reported only when it changes
+ *  order      the items handed on (onChange) are every element with something to show, in document order; where a
+ *             mark is drawn is the layer's business, nearest the view first
  * ───────────────────────────────────────────────────────── */
 
-const WAVE = 128; // readings go to the server in waves: one batched request for the resolves, one for the sites
-const CAP = 260;
-const PAGE = 2000; // elements read off-screen at most, after the view
-const BACKOFF = [2000, 4000, 8000];
+const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
+const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
 const THROTTLE = 150;
+const RETRY = 5000; // a server that answered starting is asked again at most this often, if it never says ready
 
 export class Reader {
   #host; #onChange; #onProgress;
-  #items = new Map(); // id → { id, el, stamp, sig, state, marks, dims, file, tries }
+  #items = new Map(); // id → { id, el, stamp, tag, classes, sig, state, marks, dims, file, checked, outsideSource }
   #ids = new WeakMap(); // element → id
-  #byStamp = new Map(); // stamp → Promise<reading>
-  #visible = new Set();
-  #queue = [];
-  #inflight = 0;
   #next = 1;
-  #io = null; #mo = null; #throttle = 0; #retry = 0; #progress = '';
+  #mo = null; #throttle = 0; #retry = 0; #progress = '';
   #running = false;
-  #offscreen = 0; // elements read off-screen so far
+  #inflight = 0; // readings in flight: page requests and per-element readings alike
+  #pending = false; // the server was still starting: the read goes again when it is ready
+  #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
 
   // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
   #enrich;
@@ -52,73 +53,53 @@ export class Reader {
 
   start() {
     this.#running = true;
-    this.#io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        const id = this.#ids.get(e.target);
-        if (!id) continue;
-        if (e.isIntersecting) this.#visible.add(id);
-        else this.#visible.delete(id);
-      }
-      this.#schedule();
-    }, { rootMargin: '80px' });
     this.#mo = new MutationObserver((records) => {
       const pinned = this.#host.pinnedElement;
-      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (r.type === 'childList' || r.attributeName === 'class'));
+      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
       if (relevant) this.#throttled(() => this.#scan(true));
     });
-    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden'] });
+    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', 'data-plumb-source'] });
     this.#scan(false);
   }
 
   stop() {
     this.#running = false;
-    this.#io?.disconnect();
     this.#mo?.disconnect();
-    clearTimeout(this.#throttle);
-    clearTimeout(this.#retry);
-    clearTimeout(this.#settle); this.#settle = 0;
+    clearTimeout(this.#throttle); this.#throttle = 0;
+    clearTimeout(this.#retry); this.#retry = 0;
     this.#items.clear();
     this.#ids = new WeakMap(); // the next start registers every element again
-    this.#byStamp.clear();
-    this.#visible.clear();
-    this.#queue = [];
     this.#progress = '';
-    this.#offscreen = 0;
+    this.#inflight = 0;
+    this.#pending = false;
   }
 
-  // Nothing left to read: no wave in flight, none about to start, and nothing queued that a wave would still take
+  // Nothing left to read: nothing in flight, nothing queued, nothing parked behind a starting server
   // (the headless run asks; the readers on screen never need to)
   get settled() {
-    if (this.#settle || this.#inflight || !this.#running) return false;
-    let off = this.#offscreen;
-    for (const item of this.#items.values()) {
-      if (item.state === 'queued') {
-        if (this.#visible.has(item.id)) return false;
-        const shown = item.el.isConnected && (item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true }) : true);
-        if (shown && off < PAGE) return false;
-      } else if (item.state === 'pending' && item.tries < BACKOFF.length) return false;
-    }
+    if (this.#inflight || !this.#running || this.#pending) return false;
+    for (const item of this.#items.values()) if (item.state !== 'ready') return false;
     return true;
   }
 
   // Draw again from what's already read (the mode turned back on mid-sweep).
   refresh() {
     this.#progress = '';
-    this.#schedule();
+    this.#report();
   }
 
   // A write changed a file: everything read from it is read again, fresh.
   invalidate({ file }) {
-    for (const [stamp, p] of this.#byStamp) p.then((r) => r?.file === file && this.#byStamp.delete(stamp));
     for (const item of this.#items.values()) if (item.file === file) (item.state = 'queued'), (item.fresh = true);
-    this.#schedule();
+    this.#read();
   }
 
-  // The server became ready: try again everything that came back starting or failed.
+  // The server became ready: the read that was parked goes again.
   healthChanged(status) {
-    if (status !== 'ready') return;
-    for (const item of this.#items.values()) if (item.state === 'pending') (item.state = 'queued'), (item.tries = 0);
-    this.#schedule();
+    if (status !== 'ready' || !this.#pending) return;
+    this.#pending = false;
+    clearTimeout(this.#retry); this.#retry = 0;
+    this.#read();
   }
 
   #throttled(fn) {
@@ -130,7 +111,7 @@ export class Reader {
     }, THROTTLE);
   }
 
-  // Register the pool's elements with the IntersectionObserver; forget the ones that left the document.
+  // The pool: every element on the page, in document order; the ones that left the document are forgotten.
   #scan(changed) {
     if (!this.#running) return;
     const t0 = performance.now();
@@ -140,149 +121,139 @@ export class Reader {
     const pool = document.body.querySelectorAll('*');
     for (const el of pool) {
       if (el.ownerSVGElement || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
-      const stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
-      const sig = `${stamp}|${el.getAttribute('class') ?? ''}`;
+      const stamp = el.getAttribute('data-plumb-source') ?? null;
+      const classes = el.getAttribute('class')?.trim() ?? '';
+      const sig = `${stamp}|${classes}`;
       let id = this.#ids.get(el);
       if (!id) {
         id = this.#next++;
         this.#ids.set(el, id);
-        this.#items.set(id, { id, el, stamp, sig, state: 'queued', marks: [], dims: [], file: null, tries: 0 });
-        this.#io.observe(el);
+        this.#items.set(id, { id, el, stamp, tag: el.localName, classes, sig, state: 'queued', marks: [], dims: [], file: null, checked: false, outsideSource: false, fresh: false });
       } else if (changed) {
         const item = this.#items.get(id);
-        if (item && item.sig !== sig) (item.sig = sig), (item.state = 'queued'), (item.fresh = true), stamp && this.#byStamp.delete(stamp);
+        if (item && item.sig !== sig) Object.assign(item, { stamp, classes, sig, state: 'queued', fresh: true });
       }
     }
-    for (const [id, item] of this.#items) if (!item.el.isConnected) this.#io.unobserve(item.el), this.#items.delete(id), this.#visible.delete(id);
-    this.#schedule();
+    for (const [id, item] of this.#items) if (!item.el.isConnected) this.#items.delete(id);
+    this.#read();
   }
 
-  // Visibility arrives in chunks; a wave starts once they have settled, so one wave holds the whole view.
-  #settle = 0;
-  #schedule() {
+  // One read of everything queued: the stamped elements as whole-page requests, the rest per element.
+  #read() {
+    if (!this.#running || this.#pending) return;
+    const queued = [...this.#items.values()].filter((item) => item.state === 'queued');
+    if (!queued.length) { this.#report(); return; }
+    const t0 = performance.now();
+    const paged = this.#noPage ? [] : queued.filter((item) => item.stamp && !item.caller);
+    for (const item of queued) item.state = 'reading';
+    for (let at = 0; at < paged.length; at += PAGE) this.#page(paged.slice(at, at + PAGE));
+    this.#elements(queued.filter((item) => !paged.includes(item)));
+    performance.measure('plumb:reader-read', { start: t0 });
+  }
+
+  // A whole-page request: one answer per (stamp, tag, classes), handed to every element that carries them.
+  #page(items) {
+    this.#inflight++;
+    this.#host.readPage(items.map((item) => ({ el: item.el, stamp: item.stamp, tag: item.tag, classes: item.classes })))
+      .then((states) => {
+        if (!this.#running) return;
+        items.forEach((item, i) => this.#landed(item, states[i]));
+      })
+      .catch((error) => {
+        if (!this.#running) return;
+        // no whole-page answer here: each of these elements is read on its own, now and from here on
+        if (error?.status === 404) { this.#noPage = true; for (const item of items) if (item.state === 'reading') item.state = 'queued'; this.#elements(items.filter((item) => item.state === 'queued')); return; }
+        this.#parked(items, error);
+      })
+      .finally(() => { this.#inflight--; this.#settle(); });
+  }
+
+  // Per-element readings, WAVE in flight at once, in document order; a wave that lands starts the next.
+  #elements(items) {
+    const queue = [...items];
+    const pump = () => {
+      while (this.#running && queue.length && this.#inflight < WAVE) {
+        const item = queue.shift();
+        const fresh = item.fresh; item.fresh = false;
+        item.state = 'reading';
+        this.#inflight++;
+        this.#host.readMarks(item.el, fresh || item.caller === true, { computed: true })
+          .then((state) => { if (this.#running) this.#landed(item, state); })
+          .catch((error) => { if (this.#running) this.#parked([item], error); })
+          .finally(() => { this.#inflight--; pump(); this.#settle(); });
+      }
+    };
+    pump();
+  }
+
+  #landed(item, state) {
+    if (!this.#items.has(item.id) || item.state !== 'reading') return;
+    if (state?.status === 'caller') {
+      // a pass-through component: its classes are passed in by the code that uses it; that code is read per element
+      item.caller = true; item.state = 'queued';
+      this.#elements([item]);
+    } else if (state?.status === 'ready') {
+      item.state = 'ready';
+      item.checked = true; item.outsideSource = false;
+      item.file = state.file;
+      item.marks = state.marks.filter((m) => m.ledger !== 'exception');
+      item.dims = state.dims ?? [];
+    } else if (state?.status === 'unplaced') {
+      item.state = 'ready'; // nothing to draw, and nothing to retry: Plumb can't place this element
+      item.checked = false; item.outsideSource = state.outsideSource === true; item.file = state.file ?? null;
+      item.marks = []; item.dims = [];
+    } else if (state?.status === 'pending') {
+      // a trace still being read by the server: asked again with the next read
+      item.state = 'queued';
+      clearTimeout(this.#retry);
+      this.#retry = setTimeout(() => { this.#retry = 0; this.#read(); }, 250);
+    } else this.#parked([item], state);
+  }
+
+  // The server is not answering yet (starting) or failed: the read waits for it to say ready, and asks again on its
+  // own at most every RETRY ms. Nothing is counted meanwhile.
+  #parked(items, why) {
+    for (const item of items) if (item.state === 'reading') item.state = 'queued';
+    this.#pending = true;
+    if (!this.#retry) this.#retry = setTimeout(() => { this.#retry = 0; this.#pending = false; this.#read(); }, RETRY);
+    void why;
+  }
+
+  // Everything in flight has landed: report once for the whole page (not once per wave).
+  #settle() {
+    if (this.#inflight) return;
+    this.#report();
+  }
+
+  #report() {
     if (!this.#running) return;
-    if (this.#settle) return;
-    this.#settle = setTimeout(() => { this.#settle = 0; if (!this.#running) return; const t0 = performance.now(); try { this.#schedule_(); } finally { performance.measure('plumb:reader-schedule', { start: t0 }); } }, 40);
-  }
-  #schedule_() {
-    // what's in view, nearest the middle first, CAP at most
-    const mid = innerHeight / 2;
-    const order = [...this.#visible]
-      .map((id) => this.#items.get(id))
-      .filter(Boolean)
-      .map((item) => ({ item, d: Math.abs(item.el.getBoundingClientRect().top - mid) }))
-      .sort((a, b) => a.d - b.d)
-      .slice(0, CAP)
-      .map((x) => x.item);
-    this.#queue = order.filter((item) => item.state === 'queued');
-    // the view is read: the rest of the page, off-screen, in the same waves
-    if (!this.#queue.length && !this.#inflight) this.#queue = this.#rest();
-    this.#pump();
-    this.#report(order);
-  }
-
-  // The next wave of the page beyond the view: rendered elements not yet read, in document order.
-  #rest() {
-    const out = [];
-    for (const item of this.#items.values()) {
-      if (out.length >= WAVE || this.#offscreen >= PAGE) break;
-      if (item.state !== 'queued' || this.#visible.has(item.id)) continue;
-      const shown = item.el.isConnected && (item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true }) : true);
-      if (!shown) continue;
-      out.push(item);
-      this.#offscreen++;
-    }
-    return out;
-  }
-
-  #waveAt = 0;
-  #pump() {
-    // the wave in flight lands first; a wave that never lands (a reading that hangs) does not hold the page hostage
-    if (this.#inflight && performance.now() - this.#waveAt < 1500) return;
-    if (this.#queue.length) this.#waveAt = performance.now();
-    while (this.#running && this.#inflight < WAVE && this.#queue.length) {
-      const item = this.#queue.shift();
-      if (item.state !== 'queued') continue;
-      item.state = 'reading';
-      this.#inflight++;
-      const fresh = item.fresh;
-      item.fresh = false;
-      // classes built in code (a cn() helper) are traced in a second pass, so the first count never waits on them
-      const computed = item.computed === true;
-      let reading = item.stamp && !fresh && !computed ? this.#byStamp.get(item.stamp) : null;
-      const shared = !!reading;
-      if (!reading) {
-        reading = this.#host.readMarks(item.el, fresh, { computed });
-        if (item.stamp && !computed) this.#byStamp.set(item.stamp, reading);
-      }
-      reading
-        .then((state) => {
-          if (!this.#running || !this.#items.has(item.id)) return;
-          // a reading of one element only (its caller's, for a pass-through component) is never another's: an element
-          // that borrowed it by stamp reads again for itself, and the stamp stops lending it
-          if (state?.perElement) {
-            if (item.stamp && this.#byStamp.get(item.stamp) === reading) this.#byStamp.delete(item.stamp);
-            if (shared) { item.state = 'queued'; item.fresh = true; return; }
-          }
-          if (state?.status === 'ready' && state.computed && !computed) {
-            item.state = 'queued'; item.computed = true; // read again, with its classes traced
-          } else if (state?.status === 'ready') {
-            item.state = 'ready';
-            item.checked = true; item.outsideSource = false;
-            item.file = state.file;
-            item.marks = state.marks.filter((m) => m.ledger !== 'exception');
-            item.dims = state.dims ?? [];
-          } else if (state?.status === 'unplaced') {
-            item.state = 'ready'; // nothing to draw, and nothing to retry: Plumb can't place this element
-            item.checked = false; item.outsideSource = state.outsideSource === true; item.file = state.file;
-            item.marks = [];
-            item.dims = [];
-          } else {
-            item.state = 'pending';
-            item.marks = [];
-            item.dims = [];
-            if (item.stamp) this.#byStamp.delete(item.stamp);
-            if (item.tries < BACKOFF.length) {
-              const wait = BACKOFF[item.tries++];
-              clearTimeout(this.#retry);
-              this.#retry = setTimeout(() => {
-                for (const it of this.#items.values()) if (it.state === 'pending') it.state = 'queued';
-                this.#schedule();
-              }, wait);
-            }
-          }
-        })
-        .catch(() => (item.state = 'pending'))
-        .finally(() => {
-          this.#inflight--;
-          this.#schedule();
-        });
-    }
-  }
-
-  #report(order) {
+    const t0 = performance.now();
     // craft: every read element goes through the craft engine first, so the counts below and the items handed on
-    // agree on what is drawn (its marks are appended to the element's own)
-    const ready = [...this.#items.values()].filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
+    // agree on what is drawn (its marks are appended to the element's own), once over the whole page
+    const all = [...this.#items.values()];
+    const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
     const enriched = this.#enrich ? this.#enrich(ready) : ready;
     const marksOf = new Map(enriched.map((i) => [i.id, i.marks]));
-    const read = order.filter((i) => i.state === 'ready').length;
-    const checked = order.filter((i) => i.state === 'ready' && i.checked).length;
+    const read = ready.length;
+    const checked = all.filter((i) => i.state === 'ready' && i.checked).length;
     const notChecked = read - checked;
-    const outsideSource = order.filter((i) => i.state === 'ready' && i.outsideSource).length;
-    // an advisory mark (soft) is shown, but the count is of problems
-    const drift = order.reduce((n, i) => n + (marksOf.get(i.id) ?? i.marks).filter((m) => m.ledger === 'new' && !(m.soft && m.family === 'craft')).length, 0);
-    const on = order.reduce((n, i) => n + i.dims.length, 0);
-    // read/total are the view; done is the whole page: nothing in flight, nothing left that a wave would still take
+    const outsideSource = all.filter((i) => i.state === 'ready' && i.outsideSource).length;
+    // problems come from source; what the craft rules measured on the page are notes, never problems
+    let drift = 0, notes = 0;
+    for (const i of all) for (const m of marksOf.get(i.id) ?? i.marks) {
+      if (m.family === 'craft') notes++;
+      else if (m.ledger === 'new') drift++;
+    }
+    const on = all.reduce((n, i) => n + i.dims.length, 0);
     const done = this.settled;
-    const key = `${read}/${order.length}/${drift}/${on}/${notChecked}/${outsideSource}/${done}`;
+    const key = `${read}/${all.length}/${drift}/${on}/${notChecked}/${outsideSource}/${notes}/${done}`;
     if (key !== this.#progress) {
       this.#progress = key;
-      this.#onProgress?.({ read, total: order.length, drift, on, checked, notChecked, outsideSource, done });
+      this.#onProgress?.({ read, total: all.length, drift, on, checked, notChecked, outsideSource, notes, done });
     }
-    // what to hand on: everything read on the page (the marks draw what is in view; the panel counts it all), in
-    // document order
+    // what to hand on: every element with something to show, in document order
     const shown = enriched.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     this.#onChange?.(shown);
+    performance.measure('plumb:reader-report', { start: t0 });
   }
 }
