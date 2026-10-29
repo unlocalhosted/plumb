@@ -178,6 +178,14 @@ const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
 const noteOf = (g) => g.members.every((m) => isNote(m.mark));
+// what a cause is called: its class, as written in your code; a craft rule with no class to point at names a tag
+// (a tap target) or a CSS property (gap): those name the element instead, so neither passes for a class. (Decided by
+// the name, not the element's classes: a fix being tried has swapped them.)
+const nameOf = (g) => {
+  const el = g.members.find((m) => m.el)?.el;
+  if (g.members[0].mark.family !== 'craft' || !el) return g.text;
+  return g.text === el.localName || CSS.supports(g.text, 'inherit') ? `<${el.localName}>` : g.text;
+};
 
 // on the page and drawn: not inside something closed (display: none, a closed <details>, content-visibility), and not
 // of no size
@@ -290,7 +298,7 @@ export class FixPanel {
     if (el) this.#host.hold(g, el); else this.#host.release();
     this.#host.spotlight(elsOf(g));
     this.render(true);
-    this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), g.text, FIX.what(g.members[0].mark), placesOf(g)));
+    this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), nameOf(g), FIX.what(g.members[0].mark), placesOf(g)));
     // the place in hand is seen above the panel, never under it (once the panel has its height)
     // (and again once it has opened: held as Blueprint comes on, the panel has no height yet)
     // pointed at (a click, Alt+click): it is where the person looks, so it only moves out from under the panel;
@@ -522,7 +530,7 @@ export class FixPanel {
         : `<div class="line"><span class="count"><span>${esc(this.#error ?? (taken ? FIX.ready(taken) : !settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(g.text)}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
@@ -553,7 +561,7 @@ export class FixPanel {
       } else {
         // nothing to swap to or add: say what is there, plainly (a craft rule's own line, else the value typed by hand)
         const said = /dead-class/.test(mark.rule) ? `${FIX.line(mark)} ${String(mark.action ?? '').replace(/`/g, '')}`.trim() : mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour
-          : /^provenance\//.test(mark.rule) && !/by-value|matches|tier|framework/.test(mark.rule) && (written(g.text) ?? mark.value) ? FIX.typed(written(g.text) ?? String(mark.value)) : FIX.line(mark, g.text);
+          : /^provenance\//.test(mark.rule) && !/by-value|matches|tier|framework/.test(mark.rule) && mark.value != null || written(g.text) ? (({ value, worked }) => FIX.typed(String(value), true, worked))(FIX.valueOf(mark, g.text)) : FIX.line(mark, g.text);
         middle = `<div class="say">${esc(String(said ?? '').replace(/`/g, ''))}</div>`;
       }
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;

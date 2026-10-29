@@ -419,15 +419,18 @@ export const FIX = {
     return { '--spacing': 'gutter', '--radius': 'round', '--shadow': 'soft', '--text': 'display', '--font-weight': 'strong' }[namespace] ?? 'custom';
   },
   craftToken: 'Your theme has no step for this. This adds it, then uses it here.',
-  typed: (value, alone = true) => (alone ? `${value} is typed by hand, and your theme has nothing close.` : `${value} is typed by hand.`),
+  // a value as the code has it: typed by hand (p-[18px]), or worked out from names that aren't tokens (H_TICKS + GAP)
+  typed: (value, alone = true, worked = false) => `${worked ? `This works out to ${value}` : `${value} is typed by hand`}${alone ? ', and your theme has nothing close.' : '.'}`,
+  // the value a class or a style expression writes, and whether it is worked out rather than typed
+  valueOf: (mark, cls) => { const w = written(cls); return w != null ? { value: w, worked: false } : { value: mark.value, worked: !!cls && mark.value != null && !String(cls).includes(String(mark.value)) }; },
   // one place, in a sentence: what its outline says to a screen reader, and what the panel says when it has nothing to offer
   line(mark, cls = mark.text) {
     if (mark.family === 'craft') return mark.title;
     if (/dead-class/.test(mark.rule)) return `${cls} makes no CSS, so it does nothing.`;
     if (mark.family === 'color' && (mark.props ?? []).includes('box-shadow')) return 'This shadow’s colour isn’t in your theme.';
     if (/framework/.test(mark.rule) && mark.value) return FIX.tailwinds(cls, String(mark.value));
-    const value = written(cls) ?? mark.value;
-    if (/^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && value != null) return FIX.typed(value, false);
+    const { value, worked } = FIX.valueOf(mark, cls);
+    if (/^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && value != null) return FIX.typed(value, false, worked);
     return mark.title;
   },
   outside: (file) => `Can’t check this. It’s written in ${file}, outside this project’s source. Add it to source in plumber.config.ts to check it.`,
