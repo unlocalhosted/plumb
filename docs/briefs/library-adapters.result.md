@@ -258,7 +258,7 @@ installed package; an undocumented `--*` the library sets would still read as th
 
 ## Layer 5: Radix states
 
-Commit: (next layer records it)
+Commit: 5f9cdfd
 
 What changed: `radix.ts` implements `state()`: `data-state="<value>"` names the value (`open`, `closed`, `checked`,
 `on`, `active`, `delayed-open`, …), `data-side`/`data-align`/`data-orientation`/`data-swipe-direction` are valued
@@ -270,7 +270,40 @@ the adapter. Capabilities: `['usage', 'states']`.
 $ node --test e2e/library-adapters.test.mjs      ("Radix states": variants data-[state=open], data-disabled, data-[side=top], data-[state=closed]; stylesheet [data-state="checked"], [data-highlighted])
 ℹ pass 8  ℹ fail 0
 $ node --test --test-concurrency=1 e2e/onboarding-state.test.mjs e2e/styling-detection.test.mjs e2e/habits.test.mjs
-(see the run above this entry in the terminal; counts recorded in the next layer's section if they changed)
+ℹ tests 50  ℹ pass 50  ℹ fail 0
 ```
 Unverified: a real Radix app of the owner's (crafting-ui has no Radix); the Radix fixtures here are source only, no
 dev server (that is layer 6).
+
+## Layer 6: Radix structure (asChild, Slot, portals) in locate
+
+Commit: (next layer records it)
+
+What changed
+- `radix.ts`: `structure = { portal: /^Portal$/, render: ['asChild'], focus: Dialog.Content, role }` with the
+  tooltip / menu / submenu / dialog / popover roles that lived in `src/structure/library.ts`; those four Radix rows
+  are deleted from the table. `base-ui.ts` gains `focus: Dialog.Popup`.
+- `src/collect/classes.ts`: the `@radix-ui/react-dialog` special case (a Dialog.Content manages its own focus) is
+  gone; `focusElementsOf` in `src/collect/states.ts` asks the adapters' `structure.focus`, so Base UI's Dialog.Popup
+  is covered the same way. cmdk stays as it was (no adapter).
+- `@radix-ui/react-popover` installed as a devDependency for the dev-server test (`package.json`, `package-lock.json`).
+- `e2e/library-structure.test.mjs`: Radix, stamped and owner stack: `Popover.Content` through `Popover.Portal`
+  (rendered under body), `Popover.Trigger asChild` with a `<button>` child, a `Slot` with an `<a>` child, a plain
+  trigger; each locates to the user's `src/App.jsx` line:column. The reading contract is the existing one from
+  `e2e/owner-locate.test.mjs`: an element reads its own JSX's classes; the wrapper whose props merge onto it
+  (`<Slot className>`, `<Popover.Trigger asChild>`, Base UI `<Popover.Trigger className render={…}>`) is the next
+  link of the chain and reads its own classes there. A first attempt merged the wrapper's classes into the child's
+  reading; owner-locate pins isolation ("only attributes authored at this JSX") so that was reverted in favour of
+  pinning the chain link.
+
+```
+$ PLUMBER_CHROMIUM=… node --test --test-concurrency=1 e2e/library-structure.test.mjs
+✔ Base UI stamped … ✔ Base UI owner stack … ✔ Radix stamped: content through a portal, an asChild trigger and a Slot child locate to the JSX the user wrote ✔ Radix owner stack: …
+ℹ pass 4  ℹ fail 0
+$ … e2e/library-structure.test.mjs e2e/owner-locate.test.mjs e2e/library-adapters.test.mjs      (after the revert)
+ℹ tests 16  ℹ pass 16  ℹ fail 0
+$ … e2e/library-adapters.test.mjs e2e/managed-focus-session.test.mjs e2e/craft-structure.test.mjs e2e/onboarding-state.test.mjs e2e/styling-detection.test.mjs e2e/habits.test.mjs
+ℹ tests 62  ℹ pass 62  ℹ fail 0
+```
+Unverified: Next.js hosts for Radix portals; Radix `Slot` with `Slottable`; `asChild` on a component (not an
+intrinsic) child beyond owner-locate's MetalButton case.

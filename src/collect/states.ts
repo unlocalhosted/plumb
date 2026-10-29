@@ -98,3 +98,20 @@ export function returns(fn: Node, source: string): { node: Node; when: string[] 
   visit(body.body, []);
   return out;
 }
+
+const structured = libraryAdapters.filter(adapter => adapter.capabilities.includes('structure') && adapter.structure?.focus);
+/** The local element names, from one import, that are a library part managing its own focus: `Dialog.Content`, `DialogContent`. */
+export function focusElementsOf(specifier: string, specifiers: { local: string; imported: string }[]): string[] {
+  const adapter = structured.find(adapter => adapter.owns(specifier));
+  if (!adapter) return [];
+  const focus = adapter.structure!.focus!, out: string[] = [];
+  for (const { local, imported } of specifiers) {
+    const meaning = adapter.meaning(specifier, imported);
+    if (imported === '*' || (imported !== 'default' && !meaning.part && meaning.component)) {
+      // A namespace or root binding: the focused parts hang off it as members (`Dialog.Content`).
+      const component = meaning.component ?? '';
+      for (const part of ['Content', 'Popup']) if (focus.test(`${component || imported}.${part}`)) out.push(`${local}.${part}`);
+    } else if (meaning.component && meaning.part && focus.test(`${meaning.component}.${meaning.part}`)) out.push(local);
+  }
+  return out;
+}

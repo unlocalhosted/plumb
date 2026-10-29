@@ -19,7 +19,7 @@ import { collectionCache, sourceHash } from './cache.js';
 import { ComputedClasses, classSiteKey } from './computed.js';
 import { argumentMode, classHelperRegistry, configKeyMode } from './class-helpers.js';
 import type { ClassHelper, ClassHelperInput } from './class-helpers.js';
-import { branchState, returns, stateAdapterFor, stateParam } from './states.js';
+import { branchState, focusElementsOf, returns, stateAdapterFor, stateParam } from './states.js';
 import type { StateParam } from './states.js';
 
 export interface ClassSite extends Site {
@@ -405,15 +405,13 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
     for (const statement of ast.body) {
       if (statement.type !== 'ImportDeclaration') continue;
       for (const specifier of statement.specifiers) importSources.set(specifier.local.name, String(statement.source.value));
+      // A library part that manages focus itself (Radix Dialog.Content, Base UI Dialog.Popup), through its adapter.
+      for (const element of focusElementsOf(String(statement.source.value), statement.specifiers.map(specifier => ({ local: specifier.local.name, imported: specifier.type === 'ImportSpecifier' ? name(specifier.imported) : specifier.type === 'ImportNamespaceSpecifier' ? '*' : 'default' })))) dialogContents.add(element);
       // Resolve only imports read as class values. Component/helper imports
       // cannot contribute literal maps and need no AST deserialization.
       for (const specifier of statement.specifiers) {
         const key = specifier.type === 'ImportSpecifier' ? name(specifier.imported) : 'default';
         const namespace = specifier.type === 'ImportNamespaceSpecifier';
-        if (statement.source.value === '@radix-ui/react-dialog') {
-          if (namespace) dialogContents.add(`${specifier.local.name}.Content`);
-          else if (key === 'Content' || key === 'DialogContent') dialogContents.add(specifier.local.name);
-        }
         if (statement.source.value === 'cmdk') {
           if (key === 'Command') commandInputs.add(`${specifier.local.name}.Input`);
           else if (key === 'CommandInput') commandInputs.add(specifier.local.name);

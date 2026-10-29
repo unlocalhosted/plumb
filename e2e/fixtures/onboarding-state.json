@@ -259,8 +259,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "usage (every primitive, part and site), states",
-            "skipped": "not judged yet: structure (portals, slots, render props), owned values (its own variables and providers)",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props)",
+            "skipped": "not judged yet: owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -280,7 +280,8 @@
             },
             "capabilities": {
               "usage": "judged",
-              "states": "judged"
+              "states": "judged",
+              "structure": "judged"
             }
           },
           {
@@ -668,8 +669,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "usage (every primitive, part and site), states",
-            "skipped": "not judged yet: structure (portals, slots, render props), owned values (its own variables and providers)",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props)",
+            "skipped": "not judged yet: owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -689,7 +690,8 @@
             },
             "capabilities": {
               "usage": "judged",
-              "states": "judged"
+              "states": "judged",
+              "structure": "judged"
             }
           },
           {
@@ -1645,8 +1647,8 @@
             "id": "radix",
             "label": "Radix",
             "support": "partial",
-            "judged": "usage (every primitive, part and site), states",
-            "skipped": "not judged yet: structure (portals, slots, render props), owned values (its own variables and providers)",
+            "judged": "usage (every primitive, part and site), states, structure (portals, slots, render props)",
+            "skipped": "not judged yet: owned values (its own variables and providers)",
             "next": "nothing to do; plumb skips it",
             "source": "declared",
             "evidence": [
@@ -1666,7 +1668,8 @@
             },
             "capabilities": {
               "usage": "judged",
-              "states": "judged"
+              "states": "judged",
+              "structure": "judged"
             }
           },
           {

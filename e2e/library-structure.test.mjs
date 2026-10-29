@@ -49,7 +49,7 @@ async function open(launched, url) {
   return page;
 }
 const position = (source, fragment) => { const offset = source.indexOf(fragment); assert.ok(offset >= 0, fragment); const before = source.slice(0, offset); return { line: before.split('\n').length, column: offset - before.lastIndexOf('\n') }; };
-const locate = (page, selector) => page.$eval(selector, element => window.__plumb.locate(element, { explain: true }));
+const locate = (page, selector, chain = false) => page.$eval(selector, (element, chain) => window.__plumb.locate(element, { explain: true, chain }), chain);
 const site = (page, selector) => page.$eval(selector, element => window.__plumb.site(element));
 
 const baseUi = `import { Popover } from '@base-ui/react/popover';
@@ -64,7 +64,7 @@ export default function App() {
       </Popover.Portal>
     </Popover.Root>
     <Popover.Root>
-      <Popover.Trigger render={<a id="render-element" className="gap-[19px]" href="#" />}>Element</Popover.Trigger>
+      <Popover.Trigger className="gap-[31px]" render={<a id="render-element" className="gap-[19px]" href="#" />}>Element</Popover.Trigger>
     </Popover.Root>
     <Popover.Root>
       <Popover.Trigger render={(props, state) => <b {...props} id="render-function" className="gap-[23px]" data-state={state.open ? "open" : "closed"} />}>Function</Popover.Trigger>
@@ -84,9 +84,61 @@ for (const stamped of [true, false]) test(`Base UI ${stamped ? 'stamped' : 'owne
     assert.deepEqual([found.file, found.line, found.column], ['src/App.jsx', position(baseUi, fragment).line, position(baseUi, fragment).column], `${id}: ${JSON.stringify(found)}`);
     if (component) assert.equal(found.component ?? found.chain?.[0]?.component, component, `${id}: ${JSON.stringify(found)}`);
   }
-  // The reading lands on the user's classes, not the library's internals.
-  for (const [id, token] of [['popup', 'gap-[17px]'], ['trigger', 'gap-[13px]'], ['render-element', 'gap-[19px]'], ['render-function', 'gap-[23px]']]) {
+  // The reading is the located JSX's own classes; the trigger whose props merge onto a render element is the next
+  // link of the chain (Alt+↑), read there, so nothing is read twice.
+  for (const [id, token, wrapper] of [['popup', 'gap-[17px]'], ['trigger', 'gap-[13px]'], ['render-element', 'gap-[19px]', '<Popover.Trigger className="gap-[31px]"'], ['render-function', 'gap-[23px]']]) {
     const read = await site(page, '#' + id);
-    assert.ok(read?.declarations.some(declaration => declaration.site.text === token), `${id}: ${JSON.stringify(read?.declarations.map(d => d.site.text))}`);
+    assert.deepEqual(read?.declarations.map(declaration => declaration.site.text), [token], id);
+    if (wrapper) {
+      const found = await locate(page, '#' + id, true);
+      const link = found.chain.find(link => link.line === position(baseUi, wrapper).line && link.column === position(baseUi, wrapper).column);
+      assert.ok(link, `${id}: the trigger is in the chain: ${JSON.stringify(found.chain)}`);
+      const outer = await page.evaluate(async ({ file, line, column }) => { const { request } = await import('/__plumb/src/api.js'); return request('site', { file, line, column }); }, { file: 'src/App.jsx', ...position(baseUi, wrapper) });
+      assert.deepEqual(outer.declarations.map(declaration => declaration.site.text), ['gap-[31px]'], `${id}: the trigger's own reading`);
+    }
   }
+});
+
+const radix = `import * as Popover from '@radix-ui/react-popover';
+import { Slot } from '@radix-ui/react-slot';
+export default function App() {
+  return <main>
+    <Popover.Root defaultOpen>
+      <Popover.Trigger asChild><button id="trigger" className="gap-[13px]">Open</button></Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content id="content" className="gap-[17px]" sideOffset={8}>Content</Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+    <Slot className="gap-[19px]"><a id="slotted" href="#" className="gap-[23px]">Slotted</a></Slot>
+    <Popover.Root>
+      <Popover.Trigger id="plain" className="gap-[29px]">Plain</Popover.Trigger>
+    </Popover.Root>
+  </main>;
+}
+`;
+for (const stamped of [true, false]) test(`Radix ${stamped ? 'stamped' : 'owner stack'}: content through a portal, an asChild trigger and a Slot child locate to the JSX the user wrote`, { timeout: 90000 }, async t => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await app(t, radix, stamped);
+  const page = await open(launched, url);
+  await page.waitForSelector('#content');
+  assert.ok(await page.$eval('#content', element => element.closest('#root') === null), 'the content is rendered under body, outside the app root');
+  for (const [id, fragment, component] of [['content', '<Popover.Content', 'Popover.Content'], ['trigger', '<button id="trigger"', null], ['slotted', '<a id="slotted"', null], ['plain', '<Popover.Trigger id="plain"', 'Popover.Trigger']]) {
+    const found = await locate(page, '#' + id);
+    assert.ok(found?.file, `${id}: ${JSON.stringify(found)}`);
+    assert.deepEqual([found.file, found.line, found.column], ['src/App.jsx', position(radix, fragment).line, position(radix, fragment).column], `${id}: ${JSON.stringify(found)}`);
+    if (component) assert.equal(found.component ?? found.chain?.[0]?.component, component, `${id}: ${JSON.stringify(found)}`);
+  }
+  // asChild and Slot merge the library's props onto the user's element: the element's reading is its own JSX, and the
+  // wrapper whose classes merge onto it is the next link of the chain, read there.
+  for (const [id, token, wrapper] of [['content', 'gap-[17px]'], ['trigger', 'gap-[13px]', '<Popover.Trigger asChild>'], ['slotted', 'gap-[23px]', '<Slot className="gap-[19px]"'], ['plain', 'gap-[29px]']]) {
+    const read = await site(page, '#' + id);
+    assert.deepEqual(read?.declarations.map(declaration => declaration.site.text), [token], id);
+    if (wrapper) {
+      const found = await locate(page, '#' + id, true);
+      const link = found.chain.find(link => link.line === position(radix, wrapper).line && link.column === position(radix, wrapper).column);
+      assert.ok(link, `${id}: the wrapper is in the chain: ${JSON.stringify(found.chain)}`);
+    }
+  }
+  const slot = await page.evaluate(async ({ file, line, column }) => { const { request } = await import('/__plumb/src/api.js'); return request('site', { file, line, column }); }, { file: 'src/App.jsx', ...position(radix, '<Slot className="gap-[19px]"') });
+  assert.deepEqual(slot.declarations.map(declaration => declaration.site.text), ['gap-[19px]'], 'the Slot reads its own classes');
 });

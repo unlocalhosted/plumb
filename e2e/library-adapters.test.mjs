@@ -192,7 +192,7 @@ test('Radix states: data-state values, data-side, data-disabled and data-highlig
     ].join('\n') + '\n',
   }, 'libraries');
   const item = find(list, 'radix');
-  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged' });
+  assert.deepEqual(item.capabilities, { usage: 'judged', states: 'judged', structure: 'judged' });
   const report = json(await run(project, ['--json'], 0));
   assert.deepEqual(states(at(report, 6, 'data-[state=open]:bg-[#ff0000]')[0]), ['open']);
   assert.deepEqual(states(at(report, 6, 'data-disabled:p-[9px]')[0]), ['disabled']);

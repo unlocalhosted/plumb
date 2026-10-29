@@ -17,7 +17,7 @@ export const baseUi: LibraryAdapter = {
     providers: /(?:^|\.)(?:[A-Z]\w*Provider|Provider)$/,
   },
   // `Popover.Portal` renders its subtree under body; `render` replaces the library's element with the user's.
-  structure: { portal: /^Portal$/, render: ['render'], role(component, part) {
+  structure: { portal: /^Portal$/, render: ['render'], focus: /^(?:Dialog|AlertDialog)\.Popup$/, role(component, part) {
     const name = component.replace(/^./, char => char.toLowerCase()), last = part ?? component;
     if (/^tooltip/.test(name)) return /Provider$/.test(last) ? 'tooltip-provider' : 'tooltip';
     if (/^menu/.test(name)) return /Submenu/.test(last) ? 'submenu' : 'menu';

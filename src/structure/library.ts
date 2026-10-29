@@ -15,10 +15,6 @@ const only = (role: Role): Roles => () => role;
 
 // by import source
 const sources: { match: RegExp; library: string; roles: (m: RegExpExecArray) => Roles | null }[] = [
-  { match: /^@radix-ui\/react-tooltip$/, library: 'radix', roles: () => tooltip },
-  { match: /^@radix-ui\/react-(?:dropdown-menu|context-menu|menubar)$/, library: 'radix', roles: () => menu },
-  { match: /^@radix-ui\/react-(?:dialog|alert-dialog)$/, library: 'radix', roles: () => only('dialog') },
-  { match: /^@radix-ui\/react-(?:popover|hover-card)$/, library: 'radix', roles: () => only('popover') },
   { match: /^@headlessui\/react$/, library: 'headlessui', roles: () => name => (/^Menu/.test(name) ? 'menu' : /^Dialog/.test(name) ? 'dialog' : /^Popover/.test(name) ? 'popover' : null) },
   { match: /^vaul$/, library: 'vaul', roles: () => only('drawer') },
   { match: /^cmdk$/, library: 'cmdk', roles: () => only('palette') },

@@ -53,9 +53,10 @@ export interface LibraryAdapter {
   /**
    * `structure`: how the library places and replaces elements. `portal`: the parts rendered elsewhere in the DOM
    * (under body). `render`: the props whose element or function replaces the library's element (`render`,
-   * `asChild`), so the user's JSX is the one to locate. `role`: what a component is, for the craft rules.
+   * `asChild`), so the user's JSX is the one to locate. `role`: what a component is, for the craft rules. `focus`: the
+   * parts that manage focus themselves (`Dialog.Content`), so an outline removed on them is not a broken focus ring.
    */
-  structure?: { portal: RegExp; render: readonly string[]; role(component: string, part: string | null): Role | null };
+  structure?: { portal: RegExp; render: readonly string[]; role(component: string, part: string | null): Role | null; focus?: RegExp };
   /**
    * `owned`: what is the library's, never drift. `variables`: the CSS variables it sets at runtime (`--anchor-width`),
    * so reading one is not a dead variable. `providers`: the components and parts that configure it (`Tooltip.Provider`,

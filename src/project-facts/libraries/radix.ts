@@ -13,7 +13,16 @@ const valued = new Set(['state', 'side', 'align', 'orientation', 'swipe-directio
 const flags = new Set(['disabled', 'highlighted', 'placeholder', 'invalid', 'valid', 'selected', 'checked', 'readonly', 'required', 'active', 'inactive', 'hidden', 'visible', 'open', 'closed']);
 export const radix: LibraryAdapter = {
   family: 'radix',
-  capabilities: ['usage', 'states'],
+  capabilities: ['usage', 'states', 'structure'],
+  // `Popover.Portal` renders under body; `asChild` (and `Slot`) merge the library's props onto the user's element.
+  structure: { portal: /^Portal$/, render: ['asChild'], focus: /^(?:Dialog|AlertDialog)\.Content$/, role(component, part) {
+    const last = part ?? component;
+    if (component === 'Tooltip') return /Provider$/.test(last) ? 'tooltip-provider' : 'tooltip';
+    if (/^(?:DropdownMenu|ContextMenu|Menubar)$/.test(component)) return /Sub/.test(last) ? 'submenu' : 'menu';
+    if (/^(?:Dialog|AlertDialog)$/.test(component)) return 'dialog';
+    if (/^(?:Popover|HoverCard)$/.test(component)) return 'popover';
+    return null;
+  } },
   state(attribute, value) {
     const name = attribute.replace(/^data-/, '');
     if (name === 'state') return value;
