@@ -30,7 +30,7 @@
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
-import { FIX } from './words.js'; // every sentence the panel says
+import { FIX, written } from './words.js'; // every sentence the panel says
 import { groupsOf, isNote } from './blueprint-panel.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
@@ -176,8 +176,6 @@ function specimen(kind, mark, n, label, swatch) {
 const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
-// what an arbitrary class writes, as written: text-[length:calc(var(--z)*12px)] → calc(var(--z)*12px)
-const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(String(cls ?? '')); return m ? m[1].replace(/_/g, ' ') : null; };
 const noteOf = (g) => g.members.every((m) => isNote(m.mark));
 
 // on the page and drawn: not inside something closed (display: none, a closed <details>, content-visibility), and not
@@ -553,8 +551,8 @@ export class FixPanel {
         canTake = a.ok;
       } else {
         // nothing to swap to or add: say what is there, plainly (a craft rule's own line, else the value typed by hand)
-        const said = /dead-class/.test(mark.rule) ? `${mark.text} makes no CSS, so it does nothing. ${String(mark.action ?? '').replace(/`/g, '')}`.trim() : mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour : /framework/.test(mark.rule) && mark.value ? FIX.tailwinds(g.text, String(mark.value))
-          : /^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && (written(g.text) ?? mark.value) ? FIX.typed(written(g.text) ?? String(mark.value)) : mark.title;
+        const said = /dead-class/.test(mark.rule) ? `${FIX.line(mark)} ${String(mark.action ?? '').replace(/`/g, '')}`.trim() : mark.family === 'craft' ? v?.suggest?.text ?? mark.title : mark.family === 'color' && (mark.props ?? []).includes('box-shadow') ? FIX.shadowColour
+          : /^provenance\//.test(mark.rule) && !/by-value|matches|tier|framework/.test(mark.rule) && (written(g.text) ?? mark.value) ? FIX.typed(written(g.text) ?? String(mark.value)) : FIX.line(mark, g.text);
         middle = `<div class="say">${esc(String(said ?? '').replace(/`/g, ''))}</div>`;
       }
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;

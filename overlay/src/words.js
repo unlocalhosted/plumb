@@ -249,7 +249,7 @@ export const CRAFT = {
   }),
   'stroke-weight': ({ w, usual, big }) => ({
     label: big ? 'Icon stroke too heavy' : 'Icon stroke doesn’t match',
-    line: big ? `This big icon’s stroke grew to ${px(w)}.` : `This icon’s stroke is ${px(w)}. Beside words this weight you use ${px(usual)}.`,
+    line: big ? `This big icon’s stroke grew to ${px(w)}.` : `This icon’s stroke is ${px(w)}. Next to text this weight, you use ${px(usual)}.`,
     reason: 'An icon’s line should weigh what the words beside it weigh.',
   }),
   'scroll-cue': ({ x }) => ({
@@ -357,6 +357,8 @@ const plural = new Intl.PluralRules('en');
 const count = (n, one, other) => `${new Intl.NumberFormat('en').format(n)} ${plural.select(n) === 'one' ? one : other}`;
 // what a property is called, for a type finding (tracking is letter spacing, not a size)
 const TYPE = { 'letter-spacing': 'Letter spacing', 'line-height': 'Line height', 'font-size': 'Text size', 'font-weight': 'Weight', 'font-family': 'Font' };
+// what an arbitrary class writes, as written: text-[length:calc(var(--z)*12px)] → calc(var(--z)*12px)
+export const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(String(cls ?? '')); return m ? m[1].replace(/_/g, ' ') : null; };
 const FAMILY = { spacing: 'Spacing', radius: 'Corner', color: 'Colour', elevation: 'Shadow', shadow: 'Shadow', z: 'Layer order', motion: 'Timing' };
 
 export const FIX = {
@@ -417,7 +419,17 @@ export const FIX = {
     return { '--spacing': 'gutter', '--radius': 'round', '--shadow': 'soft', '--text': 'display', '--font-weight': 'strong' }[namespace] ?? 'custom';
   },
   craftToken: 'Your theme has no step for this. This adds it, then uses it here.',
-  typed: (value) => `${value} is typed by hand, and your theme has nothing close.`,
+  typed: (value, alone = true) => (alone ? `${value} is typed by hand, and your theme has nothing close.` : `${value} is typed by hand.`),
+  // one place, in a sentence: what its outline says to a screen reader, and what the panel says when it has nothing to offer
+  line(mark, cls = mark.text) {
+    if (mark.family === 'craft') return mark.title;
+    if (/dead-class/.test(mark.rule)) return `${cls} makes no CSS, so it does nothing.`;
+    if (mark.family === 'color' && (mark.props ?? []).includes('box-shadow')) return 'This shadow’s colour isn’t in your theme.';
+    if (/framework/.test(mark.rule) && mark.value) return FIX.tailwinds(cls, String(mark.value));
+    const value = written(cls) ?? mark.value;
+    if (/^provenance\//.test(mark.rule) && !/by-value|matches|tier/.test(mark.rule) && value != null) return FIX.typed(value, false);
+    return mark.title;
+  },
   outside: (file) => `Can’t check this. It’s written in ${file}, outside this project’s source. Add it to source in plumber.config.ts to check it.`,
   unreachable: 'Can’t reach this in your code, so it can’t be checked.',
   elementClear: 'Nothing to fix on this element.',

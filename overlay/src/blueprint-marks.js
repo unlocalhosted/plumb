@@ -24,6 +24,7 @@
  * ───────────────────────────────────────────────────────── */
 
 import { pxOf } from './value.js';
+import { FIX } from './words.js';
 
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 
@@ -329,7 +330,7 @@ export class MarkLayer {
     under.appendChild(this.#heat);
     this.#svg = document.createElementNS(NS, 'svg');
     this.#svg.setAttribute('role', 'group');
-    this.#svg.setAttribute('aria-label', 'Drift on this view');
+    this.#svg.setAttribute('aria-label', 'Problems on this page');
     // the breaks' anchor: they are inserted after it, in document order
     this.#anchor = document.createElementNS(NS, 'g');
     this.#svg.appendChild(this.#anchor);
@@ -629,8 +630,8 @@ export class MarkLayer {
           node.g.animate([{ opacity: 0 }, { opacity: Math.min(1, o + 0.4) }, { opacity: o }], { duration: HEAT.pulse, delay: rank.get(id) * HEAT.stagger, iterations: HEAT.arrival, easing: 'ease-in-out', fill: 'backwards' });
         }
       }
-      // what a screen reader hears: the line itself, then what is picked; no internal words (docs/copy/voice.md)
-      const said = mark.title.replace(/`/g, '').replace(/\.?$/, '.');
+      // what a screen reader hears: the class, as the panel names its fix, then the panel's line and what is picked
+      const said = `${mark.text && mark.family !== 'craft' ? `${mark.text}. ` : ''}${FIX.line(mark)}`.replace(/`/g, '').replace(/\.?$/, '.');
       node.hit.setAttribute('aria-label', `${mark.ledger === 'new' ? '' : 'Known, recorded. '}${said}${fix?.to ? ` Picked ${fix.to}.` : ''}`);
       node.hit.dataset.ledger = mark.soft && mark.family === 'craft' ? 'soft' : mark.ledger; // an advisory is shown, not counted
       node.hit.dataset.also = (mark.also ?? []).map((x) => x.rule).join(' ');

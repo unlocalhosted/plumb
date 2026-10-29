@@ -562,13 +562,15 @@ test('While blueprint is on the page is read, not used: clicks, hovers and keys 
   assert.equal(await page.locator('#field').inputValue(), '', 'no key reached the field');
 
   // the wheel scrolls what is under it: the inner box first, then the page
+  // (measured from where the page is now: the keys typed above go to Blueprint, which may have brought a fix into view)
   await page.mouse.move(...(await centre('#box')));
+  const top = await page.evaluate(() => scrollY);
   await page.mouse.wheel(0, 120);
   await page.waitForFunction(() => document.querySelector('#box').scrollTop > 0, null, { timeout: 3000 });
-  assert.equal(await page.evaluate(() => scrollY), 0, 'the inner box took the wheel, not the page');
+  assert.equal(await page.evaluate(() => scrollY), top, 'the inner box took the wheel, not the page');
   await page.mouse.move(600, 300);
   await page.mouse.wheel(0, 400);
-  await page.waitForFunction(() => scrollY > 0, null, { timeout: 3000 });
+  await page.waitForFunction((top) => scrollY > top, top, { timeout: 3000 });
 
   // holding Space lets the page through, for as long as it's held
   await page.keyboard.down('Space');

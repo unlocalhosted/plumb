@@ -112,6 +112,11 @@ test('A glow clicked puts its cause in hand; → skips to the next cause, ← ba
   const { page, errors, overlay } = await open(t, launched, url);
   await panel(overlay).locator('.line').filter({ hasText: /problems? · 2 fixes/ }).waitFor({ timeout: 10000 });
   // a click on the second card's glow (its zone's own point) holds the padding cause
+  // a glow says its place in the panel's words, to a screen reader too: never the rule's own wording
+  const labels = await overlay.locator('.bp .hit').evaluateAll((hits) => [...new Set(hits.map((h) => h.getAttribute('aria-label')))]);
+  assert.ok(labels.includes('p-[18px]. 18px is typed by hand.'), labels.join(' | '));
+  assert.ok(labels.every((l) => !/hardcodes/.test(l)), labels.join(' | '));
+  assert.equal(await overlay.locator('svg[role="group"]').first().getAttribute('aria-label'), 'Problems on this page');
   const at = await overlay.locator('.bp .hit[aria-label*="18px"]').first().getAttribute('data-at');
   const [x, y] = at.split(',').map(Number);
   await page.mouse.click(x, y);

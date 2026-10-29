@@ -580,9 +580,7 @@ class PlumbOverlay extends HTMLElement {
     if (!p || !p.total) return DOCK.checking;
     const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
     const problems = (n) => `${n} problem${n === 1 ? '' : 's'}`;
-    const count = [p.drift ? `${problems(p.drift)} in view` : !p.notChecked ? 'nothing to fix in view' : '', unchecked].filter(Boolean).join(' · ');
-    if (f?.count) return `${p.drift ? problems(p.drift) : p.notChecked ? unchecked : 'nothing to fix'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
-    return `${count} · Alt+B`;
+    return `${p.drift ? problems(p.drift) : p.notChecked ? unchecked : 'nothing to fix'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
   }
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
