@@ -265,6 +265,7 @@ export function App() {
       <p id="t2" className="text-body tracking-[0.1em]">Eyebrow two</p>
       <p id="l" className="text-body leading-relaxed">Relaxed</p>
       <section id="k" className="rounded-card bg-surface p-[13px] text-body">Kept</section>
+      <div id="g" className="flex gap-[7px] text-body"><span>a</span><span>b</span></div>
     </main>
   );
 }
@@ -313,6 +314,12 @@ export function App() {
   assert.match(after, /className="text-body leading-relaxed"/, 'make it yours changes no source line');
   assert.match(after, /p-\[13px\]/, 'kept stays as written');
   assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /a brand inset, kept/);
+  // the page comes back read in full: the three are gone and only the cause nobody touched is left
+  await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await panel(overlay).locator('.line').filter({ hasText: /1 fix/ }).waitFor({ timeout: 20000 });
+  await page.keyboard.press('Enter');
+  assert.match(await cls(), /gap-\[7px\]/);
   assert.deepEqual(errors, []);
 });
 
