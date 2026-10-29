@@ -413,8 +413,10 @@ export class Readiness {
   #instructions(items) {
     const lines = [`React Plumber found ${plural(items.length, 'setup problem')} in this project (seen on ${location.host}). Fix each one, then check.`, ''];
     items.forEach((q, i) => {
-      lines.push(`${i + 1}. ${q.title} (${q.off ? 'off' : 'limited'}: ${q.hit.map((c) => c.label).join(', ')})`);
-      lines.push(`   Why: ${q.loses}`);
+      // the same words the panel shows, so the person and their agent read one list
+      const w = SETUP.step(q);
+      lines.push(`${i + 1}. ${w.title} (${(q.off ? SETUP.required : SETUP.recommended).toLowerCase()})`);
+      lines.push(`   Why: ${w.loses}`);
       if (q.evidence?.length) lines.push(`   Where: ${q.evidence.map((e) => `${e.file}:${e.line} (${e.text})`).join('; ')}`);
       if (q.fix?.kind === 'diff') {
         lines.push(`   Change ${q.fix.file}:`, '   ```diff', ...q.fix.diff.split('\n').map((l) => `   ${l}`), '   ```');

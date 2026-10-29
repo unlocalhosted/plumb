@@ -52,13 +52,13 @@ function unplaced(found) {
   if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(response)) {
     let file = String(detail.file ?? detail.source ?? '');
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
-    return { short: `not checked: ${file}`, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
+    return { short: TAG.outside, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
-  if (found?.reason === 'no-fiber') return { short: 'not from React', message: 'Not drawn by React, so it isn’t in your code.' };
+  if (found?.reason === 'no-fiber') return { short: TAG.notReact, message: 'Not drawn by React, so it isn’t in your code.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
-    return { short: 'library only', message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
-  if (found?.reason === 'map') return { short: 'no source map', message: 'Your dev server’s source map doesn’t point back to your code for this.' };
-  return { short: 'not placed', message: 'Can’t reach this in your code.' };
+    return { short: TAG.library, message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
+  if (found?.reason === 'map') return { short: TAG.noMap, message: 'Your dev server’s source map doesn’t point back to your code for this.' };
+  return { short: TAG.notPlaced, message: 'Can’t reach this in your code.' };
 }
 // A structural path survives a reload of the same app state; ids and classes may not (the write changes classes).
 const pathTo = element => {
@@ -892,7 +892,7 @@ class PlumbOverlay extends HTMLElement {
     const name = crumbs || (root ? `<span class="el">${esc(root)}</span><span class="who">${esc(tag)}</span>` : `<span class="el">${esc(tag)}</span>`);
     const owner = state?.component && state.component !== root ? state.component : null;
     const who = owner ? `<span class="who" title="${state.via === 'owner' ? 'Rendered by a library inside this component' : `Written in ${esc(owner)}`}">in ${esc(owner)}</span>` : '';
-    if (!state) return `${name}${who}<span class="n quiet">reading…</span>`;
+    if (!state) return `${name}${who}<span class="n quiet">${TAG.checking}</span>`;
     if (state.status === 'unplaced') return `${name}<span class="n quiet">${esc(state.short)}</span>`;
     if (state.status === 'starting') return `${name}<span class="n quiet">${esc(state.message)}</span>`;
     if (state.status === 'error') return `${name}${who}<span class="n">${esc(state.short ?? state.message)}</span>`;

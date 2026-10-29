@@ -435,6 +435,12 @@ export const TAG = {
   styledBy: (name) => `Styled by ${name}`,
   computed: 'Classes built in code',
   trying: 'Trying a fix',
+  checking: 'Checking…',
+  outside: 'Outside this project',
+  notReact: 'Not drawn by React',
+  library: 'Drawn by a library',
+  noMap: 'No source map',
+  notPlaced: 'Not in your code',
   known: 'Known, recorded as intended',
 };
 
