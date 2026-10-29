@@ -42,6 +42,7 @@ export const HISTORY_CSS = `
   .hl .title { font: var(--pl-card-title); padding: 0 var(--pl-space-3) var(--pl-space-3); }
   .hl .row { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: var(--pl-space-4); padding: var(--pl-space-3); border-radius: var(--pl-radius-row); }
   .hl .row + .row { border-top: 1px solid var(--pl-rule); }
+  .hl .row.stale .label, .hl .row.stale .where { color: var(--pl-ink-2); } .hl .row.stale { grid-template-columns: 1fr; }
   .hl .row .label { font: var(--pl-card-body); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hl .row .where { grid-column: 1; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .hl .row button { grid-row: 1 / span 2; grid-column: 2; }
@@ -111,7 +112,9 @@ export class History {
   async #render() {
     const said = await request('history', {}).catch(() => null);
     const writes = said?.writes ?? [];
-    this.#list.innerHTML = `<div class="title">History</div>${writes.length ? writes.map((w) => `<div class="row"><span class="label">${esc(w.label)}</span><span class="where"><code>${esc(short(w.file))}:${w.line}</code> · ${esc(ago(w.at))}</span><button type="button" data-id="${esc(w.id)}" data-file="${esc(w.file)}" data-label="${esc(w.label)}">Undo</button></div>`).join('')
+    // a write whose file changed outside React Plumber since can't be undone here: it says so, with no Undo to fail
+    const row = (w) => `<div class="row${w.stale ? ' stale' : ''}"><span class="label">${esc(w.label)}</span><span class="where"><code>${esc(short(w.file))}:${w.line}</code> · ${esc(ago(w.at))}${w.stale ? ' · changed since, undo it in your editor' : ''}</span>${w.stale ? '' : `<button type="button" data-id="${esc(w.id)}" data-file="${esc(w.file)}" data-label="${esc(w.label)}">Undo</button>`}</div>`;
+    this.#list.innerHTML = `<div class="title">History</div>${writes.length ? writes.map(row).join('')
       : '<div class="empty">No changes yet. Changes you apply show up here, ready to undo.</div>'}`;
   }
 
