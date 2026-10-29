@@ -80,12 +80,14 @@ export interface PageResult { revision: number; items: PageEntry[] }
 /** A whole cause: every place in the project with this class under this rule, each rewritten for the chosen token (its name as the finding lists it) or class. */
 export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
-export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: CauseSwap })[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
+/** What follows a new token once it is in the theme: its class at every place of a cause, or per-element swaps (a craft suggestion has no source rule). Neither is written when the token is refused. */
+export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
+export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
     tokens: { name: string; ok: boolean; error?: string }[];
     /** one entry per file; a whole cause carries the places it found in all, and the cause it answers */
-    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; error?: string }[];
+    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string }[];
     accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
   };
   undo: UndoHandle[];
@@ -743,6 +745,18 @@ export class Session extends EventEmitter {
     };
     const moved = (file: string, hash: string) => latest.set(this.file(file), hash);
     const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
+    const swapFile = async (swap: SwapsOptions, token?: string) => {
+      const tag = token === undefined ? {} : { token };
+      try {
+        const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
+        moved(swap.file, written.hash);
+        result.undo.push(written.undo); result.labels.push(written.undo.label);
+        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: written.refused ?? [], ...tag });
+      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, error: message(error) }); }
+    };
+    // a token's own class goes to the places its cause had before the theme changed: once the token is in the theme
+    // the value matches it, and the finding that named those places is gone
+    const before = tokens.some(token => token.then) ? await this.report() : undefined;
     for (const token of tokens) {
       try {
         const { then, ...write } = token;
@@ -750,18 +764,14 @@ export class Session extends EventEmitter {
         moved(token.file, written.hash);
         if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
         result.results.tokens.push({ name: token.name, ok: true });
-        // the token's own class at every place of its cause, now that the theme has it
-        if (then) await this.swapCause(then, result, moved);
+        // the token's own class, now that the theme has it: at every place of its cause, or the swaps sent with it
+        if (then && 'cause' in then) await this.swapCause(then, result, moved, before, token.name);
+        else if (then) for (const swap of then.swaps ?? []) await swapFile(swap, token.name);
       } catch (error) { result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) }); }
     }
     for (const swap of swaps) {
       if ('cause' in swap) { await this.swapCause(swap, result, moved); continue; }
-      try {
-        const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
-        moved(swap.file, written.hash);
-        result.undo.push(written.undo); result.labels.push(written.undo.label);
-        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: written.refused ?? [] });
-      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], error: message(error) }); }
+      await swapFile(swap);
     }
     for (const accept of accepts) {
       try {
@@ -777,15 +787,15 @@ export class Session extends EventEmitter {
    * through a variable. One guarded write per file, with history and undo; a place that cannot be rewritten is refused
    * with its reason; `places` is the total found.
    */
-  private async swapCause({ cause, file: only }: CauseSwap, result: ApplyAllResult, moved: (file: string, hash: string) => void): Promise<void> {
-    const entry = (file: string, fields: Partial<ApplyAllResult['results']['swaps'][number]>) => result.results.swaps.push({ file, ok: false, applied: [], refused: [], cause, ...fields });
+  private async swapCause({ cause, file: only }: CauseSwap, result: ApplyAllResult, moved: (file: string, hash: string) => void, placesFrom?: Report, token?: string): Promise<void> {
+    const entry = (file: string, fields: Partial<ApplyAllResult['results']['swaps'][number]>) => result.results.swaps.push({ file, ok: false, applied: [], refused: [], cause, ...(token === undefined ? {} : { token }), ...fields });
     if (!cause || typeof cause.rule !== 'string' || typeof cause.text !== 'string' || !cause.text.trim() || typeof cause.choice !== 'string' || !cause.choice.trim()) { entry(only ?? '', { error: 'A cause needs a rule, the class text and the chosen token or class.' }); return; }
-    const report = await this.report();
-    const findings = report.findings.filter(f => f.rule === cause.rule);
-    // the places: every site of the rule's findings with this class; failing a finding (the token was just added and
-    // the value now matches it), every declaration with this class
+    const report = await this.report(), source = placesFrom ?? report;
+    // the places: every site of the rule's findings with this class; when no finding of the rule names this class
+    // (the token was just added and the value now matches it), every declaration with this class
+    const named = source.findings.filter(f => f.rule === cause.rule && f.sites.some(site => site.text === cause.text));
     const seen = new Set<string>();
-    const places = (findings.length ? findings.flatMap(f => f.sites.map(site => ({ site, declaration: atSite(f, site) }))) : report.declarations.filter(d => d.site.text === cause.text).map(d => ({ site: d.site, declaration: d })))
+    const places = (named.length ? named.flatMap(f => f.sites.map(site => ({ site, declaration: atSite(f, site) }))) : source.declarations.filter(d => d.site.text === cause.text).map(d => ({ site: d.site, declaration: d })))
       .filter(({ site }) => { const at = site.defined ?? site, key = `${at.file}:${at.line}:${at.column}`; return site.text === cause.text && (!only || this.file(only) === site.file) && !seen.has(key) && seen.add(key); });
     if (!places.length) { entry(only ?? '', { places: 0, error: 'No place in your code has that class under that rule. Check again.' }); return; }
     const decision = [...report.decisions, ...report.decisionInventory ?? []].find(d => d.name === cause.choice);

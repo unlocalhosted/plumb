@@ -196,3 +196,29 @@ test('a whole cause: apply-all rewrites every place in the source with that clas
   const none = await api.call('apply-all', { swaps: [{ cause: { rule: 'provenance/arbitrary', text: 'p-[9px]', choice: '--spacing-small' } }] }, 'POST');
   assert.deepEqual(none.body.results.swaps.map(s => [s.ok, s.places, s.error]), [[false, 0, 'No place in your code has that class under that rule. Check again.']]);
 });
+
+test('a new token’s class follows only once the token is written: a cause whose rule still has other findings, and per-element swaps a refused token leaves alone', { timeout: 90000 }, async (t) => {
+  const api = await project(t);
+  const spec = (await api.call('spec', {})).body;
+  const gutterLine = api.lineOf('gutter'), gutterColumn = source.split('\n')[gutterLine - 1].indexOf('tracking-[') + 1;
+  // the rule keeps other findings (px-[clamp…], -mx-[clamp…]) after --tracking-caps is in the theme; the places are
+  // those tracking-[0.1em] had before the write
+  const written = await api.call('apply-all', { tokens: [{ file: spec.tokens.file, hash: spec.tokens.hash, name: '--tracking-caps', value: '0.1em', why: 'Caps.', then: { cause: { rule: 'provenance/arbitrary', text: 'tracking-[0.1em]', choice: '--tracking-caps' } } }] }, 'POST');
+  assert.equal(written.status, 200, JSON.stringify(written.body));
+  assert.deepEqual(written.body.results.tokens, [{ name: '--tracking-caps', ok: true }]);
+  assert.deepEqual(written.body.results.swaps.map(s => [s.file, s.ok, s.applied, s.places, s.token]), [['src/App.tsx', true, [`swap:${gutterLine}:${gutterColumn}`], 1, '--tracking-caps']]);
+  assert.ok((await readFile(join(api.root, 'src/App.tsx'), 'utf8')).includes('className="px-[clamp(1rem,4vw,2.5rem)] tracking-caps"'));
+  // a craft suggestion has no rule: its swaps ride with the token, and a refused token (the name is taken) writes none
+  const hash = (await api.call('spec', {})).body.tokens.hash, before = await readFile(join(api.root, 'src/App.tsx'), 'utf8');
+  const refused = await api.call('apply-all', { tokens: [{ file: spec.tokens.file, hash, name: '--tracking-caps', value: '0.2em', why: 'Caps again.', then: { swaps: [{ file: 'src/App.tsx', hash: await api.hash(), edits: [{ line: gutterLine, column: 3, from: 'tracking-caps', to: 'tracking-wide' }] }] } }] }, 'POST');
+  assert.equal(refused.status, 200, JSON.stringify(refused.body));
+  assert.deepEqual(refused.body.results.tokens.map(t => [t.name, t.ok]), [['--tracking-caps', false]]);
+  assert.match(refused.body.results.tokens[0].error, /already 0\.1em/);
+  assert.deepEqual(refused.body.results.swaps, []);
+  assert.equal(await readFile(join(api.root, 'src/App.tsx'), 'utf8'), before);
+  // the same swaps behind a token that is written: written, and tied to the token
+  const ok = await api.call('apply-all', { tokens: [{ file: spec.tokens.file, hash, name: '--tracking-wide', value: '0.2em', why: 'Wide.', then: { swaps: [{ file: 'src/App.tsx', hash: await api.hash(), edits: [{ line: gutterLine, column: 3, from: 'tracking-caps', to: 'tracking-wide' }] }] } }] }, 'POST');
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.deepEqual(ok.body.results.swaps.map(s => [s.file, s.ok, s.applied, s.token]), [['src/App.tsx', true, [`swap:${gutterLine}:3`], '--tracking-wide']]);
+  assert.ok((await readFile(join(api.root, 'src/App.tsx'), 'utf8')).includes('tracking-wide"'));
+});
