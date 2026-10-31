@@ -179,11 +179,12 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
 const noteOf = (g) => g.members.every((m) => isNote(m.mark));
 // what a cause is called: its class, as written in your code; a craft rule with no class to point at names a tag
-// (a tap target) or a CSS property (gap): those name the element instead, so neither passes for a class. (Decided by
-// the name, not the element's classes: a fix being tried has swapped them.)
+// (a tap target, an icon inside it) or a CSS property (gap): those name the element instead, so neither passes for a
+// class. (Decided by the name, not the element's classes: a fix being tried has swapped them.)
 const nameOf = (g) => {
   const el = g.members.find((m) => m.el)?.el;
   if (g.members[0].mark.family !== 'craft' || !el) return g.text;
+  if (/^[a-z][a-z0-9]*$/.test(g.text) && g.text !== el.localName && el.querySelector(g.text)) return `<${g.text}>`;
   return g.text === el.localName || CSS.supports(g.text, 'inherit') ? `<${el.localName}>` : g.text;
 };
 

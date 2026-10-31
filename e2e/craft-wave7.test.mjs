@@ -78,3 +78,18 @@ test('Wave seven: each ink and motion rule marks the element that breaks it and 
   assert.deepEqual(failed, []);
   assert.deepEqual(errors, []);
 });
+
+// An icon's stroke is judged on the element that holds the icon; the fix panel names the icon itself (<svg>), never
+// the bare word "svg" as though it were a class
+test('The stroke note is named by its icon, <svg>', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await marksOf(page, 'stroke-weight');
+  const fx = overlay.locator('.fx');
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 40 && !/Icon stroke/.test(await fx.locator('.cause .what').innerText()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(120); }
+  assert.match(await fx.locator('.cause .what').innerText(), /Icon stroke/);
+  assert.equal(await fx.locator('.cause .cls').innerText(), '<svg>');
+  assert.deepEqual(errors, []);
+});
