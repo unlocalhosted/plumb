@@ -14,7 +14,8 @@
  *  arrival    turning blueprint on, every zone pulses in twice, worst first, then rests still
  *  point      pointing at a zone (or focusing it, or coming within MAGNET px of a thin one) pulses it, lights every
  *             zone of the same cause, quiets the rest, and shows one pill by the pointer: class → token (×n places)
- *  spotlight  the panel's causes point back at the page: their zones light the same way
+ *  spotlight  the fix in hand points back at the page: its own zones light (not the other problems on the same
+ *             elements), the place it is on is the strongest and pulses as it arrives, every other zone goes quiet
  *  act        every zone's hit area is its own pieces (each gap, not the box around them), a button: Tab walks
  *             them hottest first, Enter or a click selects the element
  *  seen       a zone is cut to where its element can be seen (a drawer over half a row leaves heat on the other
@@ -158,7 +159,7 @@ function visibleBox(el, r, view, memo) {
 // how far off: |is − should| against the step, from HEAT.min (a 1px error is still seen) to 1.
 export const HEAT = {
   min: 0.3, gain: 2.2,            // heat = min + gain × |is − should| / should
-  rest: 0.62, lit: 0.28, quiet: 0.28, // opacity at heat 1; added when its cause is pointed; kept for other causes
+  rest: 0.62, lit: 0.28, quiet: 0.1, // opacity at heat 1; added when its cause is pointed; kept for other causes (all but gone)
   blur: [2.4, 4.2],               // blur at heat 0 → 1: hotter spreads further
   thin: 1.5,                      // a band thinner than this is drawn this thick, around its centre
   pulse: 700, arrival: 2, stagger: 60, // the arrival: two pulses each, worst first
@@ -297,7 +298,7 @@ function heatMarkup(zone, level) {
 
 export class MarkLayer {
   #heat; #hand = null; #cause = null; #arrive = 0; #pulsed = new Set();
-  #dim; #dimPath = ''; #svg; #anchor; #outlines; #outlineMarkup = ''; #labels; #labelMarkup = ''; #hint; #hinted = null; #light; #lit = []; #lightMarkup = ''; #nodes = new Map(); #items = []; #pointed = null; #focused = null; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
+  #dim; #dimPath = ''; #svg; #anchor; #outlines; #outlineMarkup = ''; #labels; #labelMarkup = ''; #hint; #hinted = null; #light; #lit = []; #lead = null; #lightMarkup = ''; #nodes = new Map(); #items = []; #pointed = null; #focused = null; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
   // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
   // state(element, mark) → null | { kind: 'current' | 'picked' | 'written', to } says how the mark is drawn;
@@ -444,9 +445,10 @@ export class MarkLayer {
     this.invalidate();
   }
 
-  // Elements a cause touches, outlined while the cause is pointed at.
-  spotlight(elements) {
-    this.#lit = elements ?? [];
+  // The fix in hand: its zones (by id) light, `lead` (the zone of the place it is on) the strongest; [] lets go.
+  spotlight(ids, lead = null) {
+    this.#lit = ids ?? [];
+    this.#lead = this.#lit.length ? lead : null;
     this.invalidate();
   }
 
@@ -531,7 +533,7 @@ export class MarkLayer {
     this.#labelMarkup = '';
     this.#dim.style.removeProperty('clip-path');
     this.#dimPath = '';
-    this.#lit = [];
+    this.#lit = []; this.#lead = null;
     this.#pointed = this.#focused = null;
     this.#light.innerHTML = '';
     this.#lightMarkup = '';
@@ -583,7 +585,7 @@ export class MarkLayer {
     // the cause pointed at (a zone's pill, or a cause in the panel): its zones light, the others go quiet
     const lit = new Set(this.#lit);
     const lighting = this.#cause || lit.size;
-    const isLit = (item, mark) => (this.#cause ? causeOf(mark) === this.#cause : lit.has(item.el));
+    const isLit = (id, mark) => (this.#cause ? causeOf(mark) === this.#cause : lit.has(id));
     // Tab walks the hottest first: hit boxes go in by heat, the drawn order (the panel's) stays the page's
     const byHeat = [...plan].filter((p) => p.zone).sort((a, b) => b.heat - a.heat);
     const rank = new Map(byHeat.map((p, i) => [p.id, i]));
@@ -616,8 +618,9 @@ export class MarkLayer {
       node.g.dataset.cause = causeOf(mark);
       node.g.dataset.box = `${Math.round(er.left)},${Math.round(er.top)},${Math.round(er.width)},${Math.round(er.height)}`; // the element it belongs to
       // how warm it rests, brighter when its cause is pointed, quiet when another cause is
-      const stage = this.#hinted === id ? 'pointed' : lighting ? (isLit(item, mark) ? 'lit' : 'quiet') : 'resting';
-      const rest = heat * HEAT.rest, o = stage === 'quiet' ? rest * HEAT.quiet : stage === 'resting' ? rest : Math.min(1, rest + HEAT.lit);
+      // the place the fix in hand is on: the strongest of all
+      const stage = this.#hinted === id ? 'pointed' : lighting ? (id === this.#lead && !this.#cause ? 'lead' : isLit(id, mark) ? 'lit' : 'quiet') : 'resting';
+      const rest = heat * HEAT.rest, o = stage === 'lead' ? 1 : stage === 'quiet' ? rest * HEAT.quiet : stage === 'resting' ? rest : Math.min(1, rest + HEAT.lit);
       if (node.g.dataset.stage !== stage || node.g.style.opacity !== String(o)) { node.g.dataset.stage = stage; node.g.style.opacity = String(o); }
       if (node.g.parentNode !== this.#heat) this.#heat.appendChild(node.g);
       // the pointed zone breathes; on arrival every zone pulses twice, worst first
@@ -625,6 +628,9 @@ export class MarkLayer {
       if (!still) {
         if (stage === 'pointed' && !node.breath) node.breath = node.g.animate([{ opacity: o }, { opacity: 1 }, { opacity: o }], { duration: HEAT.pulse * 1.6, iterations: Infinity, easing: 'ease-in-out' });
         if (stage !== 'pointed' && node.breath) node.breath.cancel(), (node.breath = null);
+        // reached: the place in hand pulses twice, so the eye finds it among its cause's other places
+        if (stage === 'lead' && node.led !== this.#lead) { node.led = this.#lead; node.g.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: HEAT.pulse, iterations: 2, easing: 'ease-in-out' }); }
+        if (stage !== 'lead') node.led = null;
         if (arriving && !this.#pulsed.has(id)) {
           this.#pulsed.add(id);
           node.g.animate([{ opacity: 0 }, { opacity: Math.min(1, o + 0.4) }, { opacity: o }], { duration: HEAT.pulse, delay: rank.get(id) * HEAT.stagger, iterations: HEAT.arrival, easing: 'ease-in-out', fill: 'backwards' });

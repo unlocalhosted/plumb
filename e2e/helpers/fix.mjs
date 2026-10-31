@@ -1,5 +1,5 @@
 // Driving the fix panel (overlay/src/fixpanel.js) from a test, the way a person does: a click on a glow puts its cause
-// in hand, the options are specimens, Enter takes, A applies. Shared by the craft, verdict and hierarchy specs.
+// in hand, the options are specimens, Enter writes the fix at once. Shared by the craft, verdict and hierarchy specs.
 
 // What the cause in hand shows: its class, its words, its options (the pick, the value it has now), a note or a sentence.
 export const cause = (overlay) => overlay.locator('.fx').evaluate((e) => {
@@ -15,10 +15,10 @@ export const cause = (overlay) => overlay.locator('.fx').evaluate((e) => {
 });
 
 // the elements the cause in hand lights, as boxes
-export const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
+export const lit = (page) => page.evaluate(() => [...new Set([...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone:is([data-stage="lit"], [data-stage="lead"], [data-stage="pointed"])')].map((z) => z.dataset.box))].map((b) => { const [x, y, w, h] = b.split(',').map(Number); return { x, y, w, h }; }));
 // waits until something is lit, then says which elements
 export async function litNow(page) {
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 4000 });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone:is([data-stage="lit"], [data-stage="lead"], [data-stage="pointed"])').length > 0, null, { timeout: 4000 });
   return lit(page);
 }
 export const same = (a, b) => Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
@@ -46,15 +46,17 @@ export async function openMark(page, overlay, id, { options = false } = {}) {
 }
 
 // Takes the cause in hand (Enter, as soon as its exact edit is read: a class swap's plan lives only until the reader
-// looks at the page again) and applies it (A): one guarded write per file.
+// looks at the page again): it is written at once, one guarded write, and the panel says what changed.
 export async function applyFix(page, overlay) {
-  const badge = overlay.locator('.fx .apply .badge');
-  for (let i = 0; i < 80 && !(await badge.filter({ hasText: /^[1-9]/ }).count()); i++) {
-    if (await overlay.locator('.fx .take:not([disabled])').count()) await page.keyboard.press('Enter');
+  const said = overlay.locator('.fx .said .t');
+  const before = await said.innerText({ timeout: 200 }).catch(() => '');
+  const changed = async () => (await said.innerText({ timeout: 200 }).catch(() => '')) !== before;
+  for (let i = 0; i < 80 && !(await changed()); i++) {
+    if (await overlay.locator('.fx .take:not([disabled])').count() && !(await overlay.locator('.fx .writing').count())) await page.keyboard.press('Enter');
+    for (let k = 0; k < 10 && await overlay.locator('.fx .writing').count(); k++) await page.waitForTimeout(100); // being written
     await page.waitForTimeout(40);
   }
-  if (!(await badge.filter({ hasText: /^[1-9]/ }).count())) throw new Error(`the cause in hand could not be taken: ${JSON.stringify(await cause(overlay))}`);
-  await page.keyboard.press('a');
+  if (!(await changed())) throw new Error(`the cause in hand could not be taken: ${JSON.stringify(await cause(overlay))}`);
 }
 
 // The mark on an element, by its rule, as the engine holds it (the folded findings are under it).

@@ -30,11 +30,10 @@ const KEYS = [
   ]],
   ['Blueprint', [
     ['Alt + B', 'Turn on or off'],
-    ['↵', 'Start, then use the fix'],
+    ['↵', 'Start, then fix it in your code'],
     ['←  →', 'Previous or next fix'],
     ['↑  ↓', 'Try another option'],
     ['K', 'Keep as is'],
-    ['A', 'Apply changes'],
     ['Space', 'Hold to use the page'],
   ]],
 ];

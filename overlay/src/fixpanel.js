@@ -25,7 +25,7 @@
  *  done       the page celebrates (every fixed place clicks into place, the page breathes), a ✓ draws and bursts
  *             into confetti made of the overlay's own pieces, then the panel folds back
  *
- * Keys (while blueprint is on): Enter starts or takes · ↑ ↓ try · K keep it · → Tab skip · ← back · A apply · Esc put it down
+ * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * Every action is taken first and written with the rest on Apply: one write, one undo.
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
@@ -61,9 +61,12 @@ export const FIX_CSS = `
   .fx .primary:active { transform: scale(.97); } .fx .primary kbd { color: rgb(255 255 255 / .55); } .fx .primary[disabled] { opacity: .28; cursor: default; }
   .fx .ghost { height: 32px; padding: 0 10px; border-radius: 10px; color: #55544f; display: inline-flex; align-items: center; gap: 5px; }
   .fx .ghost:hover { background: rgb(0 0 0 / .045); }
-  .fx .apply { height: 32px; padding: 0 6px 0 12px; border-radius: 11px; display: inline-flex; align-items: center; gap: 8px; font-weight: 550; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
-  .fx .apply .badge { min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 7px; background: #1c1b19; color: #fff; font: 600 11px/20px ui-monospace, monospace; text-align: center; }
-  .fx .apply[disabled] { opacity: .35; cursor: default; } .fx .apply[disabled] .badge { background: rgb(0 0 0 / .12); color: #55544f; }
+  /* the last fix written: what it changed and where, with Undo, above whatever the panel holds next */
+  .fx .said { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: .5px solid rgb(0 0 0 / .08); color: #1c1b19; animation: fx-rise 220ms ${EASE} both; }
+  .fx .said .tick { width: 14px; height: 14px; flex: none; }
+  .fx .said .tick path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .fx .said .t { flex: 1; min-width: 0; font-weight: 550; overflow-wrap: anywhere; }
+  .fx .said .undo { height: 28px; }
   .fx .cause { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 16px 12px 4px 18px; }
   .fx .cause .cls { font: 600 14px/1.2 ui-monospace, monospace; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fx .cause .what { grid-column: 2; color: #8b8a85; }
@@ -74,6 +77,7 @@ export const FIX_CSS = `
   .fx .note { margin: 2px 18px 0; padding: 8px 10px; border-radius: 10px; background: rgb(0 0 0 / .035); color: #55544f; font-size: 12px; line-height: 1.45; }
   .fx .note code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
   .fx .say { padding: 8px 18px 14px; color: #55544f; max-width: 52ch; }
+  .fx .say.err { color: #c2304f; }
   .fx .specimens { display: flex; gap: 6px; padding: 10px 14px 6px; }
   .fx .sp { flex: 1 1 0; min-width: 0; max-width: 104px; margin: 0 auto; display: grid; justify-items: center; gap: 6px; padding: 10px 4px 9px; border-radius: 12px; position: relative;
     --hue: 120 120 120; --space: rgb(var(--hue) / .42); --space-line: rgb(var(--hue) / .35); --word: #8b8a85; color: #b4b3ad; transition: box-shadow 180ms, background 180ms; }
@@ -118,7 +122,7 @@ export const FIX_CSS = `
   /* dark: the page's own ground decides (as the overlay does), not the operating system */
     .fx[data-scheme="dark"] { background: rgb(30 30 33 / .82); color: #f1f0ec; box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 20px -8px rgb(0 0 0 / .5), 0 28px 56px -24px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); }
     .fx[data-scheme="dark"] .primary { background: #f1f0ec; color: #1c1b19; } .fx[data-scheme="dark"] .primary kbd { color: rgb(0 0 0 / .45); }
-    .fx[data-scheme="dark"] .apply { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .apply .badge { background: #f1f0ec; color: #1c1b19; }
+    .fx[data-scheme="dark"] .said { color: #f1f0ec; border-bottom-color: rgb(255 255 255 / .1); }
     .fx[data-scheme="dark"] .ghost { color: #c9c8c2; } .fx[data-scheme="dark"] .note { background: rgb(255 255 255 / .06); color: #c9c8c2; } .fx[data-scheme="dark"] .note code, .fx[data-scheme="dark"] .cause .cls { color: #f1f0ec; }
     .fx[data-scheme="dark"] .sp[aria-pressed="true"] { background: #2a2a2e; --word: #f1f0ec; box-shadow: 0 0 0 1.5px #f1f0ec; } .fx[data-scheme="dark"] .sp[aria-pressed="true"] .v { color: #f1f0ec; }
     .fx[data-scheme="dark"] .say, .fx[data-scheme="dark"] .hint, .fx[data-scheme="dark"] .cause .what, .fx[data-scheme="dark"] .field { color: #a3a29c; }
@@ -193,6 +197,12 @@ const nameOf = (g) => {
 // a place is a spot in your code (file, line, column); the elements that render it are drawn, but counted once
 const fileOf = (m) => m.mark.file ?? m.item?.site?.file ?? m.item?.file;
 const BRIEF = 600; // a check again this short keeps the last settled line as it was
+// the fixes written in this tab a moment ago, by cause key: kept out of the list across a reload, while the readings
+// after a theme write may still have them (sessionStorage, a few minutes; a convenience, so every access may fail)
+const WRITTEN = 'plumb:written', WRITTEN_FOR = 120000;
+const written_ = () => { try { const now = Date.now(); return (JSON.parse(sessionStorage.getItem(WRITTEN) ?? '[]') ?? []).filter((w) => now - w.at < WRITTEN_FOR); } catch { return []; } };
+const saveWritten = (list) => { try { sessionStorage.setItem(WRITTEN, JSON.stringify(list)); } catch {} };
+const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
 const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
 const drawn = (g) => g.members.some((m) => m.el);
 const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
@@ -208,9 +218,12 @@ export class FixPanel {
   #why = '';          // its words as typed
   #names = new Map(); // cause key → the new token's name as typed
   #fromCode = new Map(); // cause key → { reading } | { plan, writes, at } | { none }: a cause no element renders, its options read from the code
-  #swaps = new Map();    // cause key → { writes }: taken from the code alone, written on Apply
+  #swaps = new Map();    // cause key → { writes }: taken from the code alone
+  #last = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
+  #undoing = false;
+  #resumeAt = null;      // after a write reloaded the page: { at, key, since }, the place to hold once a reading no longer has the fix written
 
-  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps, total, swaps) → Promise, spotlight(els), tokens() → policy,
+  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps, total, swaps) → Promise, spotlight(zoneIds, leadId), tokens() → policy,
   //   fromCode(mark, places) → Promise<{ plan, writes } | null> }
   constructor(root, host) {
     this.#host = host;
@@ -226,7 +239,7 @@ export class FixPanel {
       else if (b.classList.contains('take')) this.take();
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
       else if (b.classList.contains('prev')) this.skip(-1);
-      else if (b.classList.contains('apply')) this.apply();
+      else if (b.classList.contains('undo')) this.#undo();
       else if (b.classList.contains('keep')) this.keep();
       else if (b.classList.contains('keep-yes')) this.#keepIt();
       else if (b.classList.contains('keep-no')) this.#closeKeep();
@@ -247,7 +260,7 @@ export class FixPanel {
   get holding() { return this.#holding; }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; } this.render(); }
+  show(on) { if (on) { this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -267,6 +280,10 @@ export class FixPanel {
     // check that takes longer says it is checking
     if (done) { this.#unsettledAt = 0; clearTimeout(this.#unsettledTimer); }
     else if (!this.#unsettledAt) { this.#unsettledAt = performance.now(); this.#unsettledTimer = setTimeout(() => this.render(), BRIEF + 20); }
+    // the page a write reloaded is read again: the panel moves on as it would have, to the fix after the one written
+    // (a first reading may still have the fix just written: the theme is read again a moment later; never longer than a few seconds)
+    const r = this.#resumeAt;
+    if (done && r && !this.#holding && this.#live().length && (!r.key || !this.#groups.some((g) => g.key === r.key) || performance.now() - r.since > RESUME_WAIT)) { this.#resumeAt = null; this.hold(Math.min(r.at, this.#live().length - 1)); return; }
     this.render();
   }
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
@@ -293,6 +310,7 @@ export class FixPanel {
     this.#notice = null;
     this.#at = (i + live.length) % live.length;
     this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null; this.#keeping = false;
+    this.#resumeAt = null; // a fix put in hand (by the person, or the move after a reload) ends the wait to move on
     const g = live[this.#at];
     this.#held = g;
     // the place in hand is one that can be seen: a cause is counted from the source, so some of its places may be
@@ -301,7 +319,8 @@ export class FixPanel {
     // a cause with no place on the page right now: nothing to hold or light; its fix comes from the code alone
     if (el) this.#host.hold(g, el); else this.#host.release();
     if (!drawn(g)) this.#readFromCode(g);
-    this.#host.spotlight(elsOf(g));
+    // its own zones light (by id: not the other problems on the same elements), the place in hand strongest
+    this.#host.spotlight(g.members.map((m) => m.id), g.members.find((m) => m.el && m.el === el)?.id ?? null);
     this.render(true);
     this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), nameOf(g), FIX.what(g.members[0].mark), placesOf(g)));
     // the place in hand is seen above the panel, never under it (once the panel has its height)
@@ -332,6 +351,7 @@ export class FixPanel {
   }
   // a glow clicked on the page: its cause
   holdMark(el, mark) {
+    this.#resumeAt = null; // the person chose: the panel doesn't move on over it
     // the cause already in hand: nothing to do (holding it again would read its own preview as how it is now)
     if (this.#holding && this.#held?.members.some((m) => m.el === el && m.mark.key === mark?.key)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el && m.mark.key === mark?.key));
@@ -340,6 +360,7 @@ export class FixPanel {
     return true;
   }
   holdEl(el, reveal = 'none') {
+    this.#resumeAt = null;
     if (this.#holding && this.#held?.members.some((m) => m.el === el)) return true;
     const i = this.#live().findIndex((g) => g.members.some((m) => m.el === el));
     if (i < 0) return false;
@@ -347,6 +368,7 @@ export class FixPanel {
     return true;
   }
   release() {
+    this.#resumeAt = null;
     if (!this.#holding) return false;
     this.#keeping = false;
     const g = this.#cause();
@@ -414,9 +436,16 @@ export class FixPanel {
       } else return;
     }
     this.#taken.set(g.key, g);
-    this.#host.release();
-    this.#host.spotlight([]);
-    if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#letGo(true); this.render(); }
+    this.#write(this.#saying(g, v), g.key);
+  }
+  // what a fix changed, in words, worked out before it is written (the panel moves on as it lands)
+  #saying(g, v) {
+    const n = placesOf(g);
+    if (this.#keeps.has(g.key)) return FIX.kept(n);
+    if (v?.ready) return FIX.changed(g.text, v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '', n);
+    const t = this.#tokens.get(g.key)?.suggest;
+    if (!t) return FIX.applied(1);
+    return t.then?.to ? FIX.addedUsed(t.name, t.file, t.then.to, n) : FIX.added(t.name, t.file);
   }
   // Keep it: the cause is intended. Its why is asked in one line; every place is recorded as kept on Apply
   keep() {
@@ -432,9 +461,7 @@ export class FixPanel {
     this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: elsOf(g), sites: g.members.map((m) => ({ file: fileOf(m), line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
     this.#keeping = false;
     this.#taken.set(g.key, g);
-    this.#host.release();
-    this.#host.spotlight([]);
-    if (this.#live().length) this.hold(Math.min(this.#at, this.#live().length - 1)); else { this.#letGo(true); this.render(); }
+    this.#write(this.#saying(g), g.key);
   }
   // What the theme can do for a cause with nothing to swap to: make a Tailwind default yours, or add the step it lacks
   #action(g, v) {
@@ -463,39 +490,52 @@ export class FixPanel {
     const n = placesOf(g);
     return a.name && !a.ok ? esc(FIX.newStepBad) : a.ok ? `${esc(FIX.becomes(n))} <code>${esc(a.cls)}</code>` : esc(FIX.newStepHint(n));
   }
-  async apply() {
+  // A fix is written the moment it is taken (one guarded write; there is no queue): the panel says what it changed and
+  // where, with Undo, and moves on to the next fix. What didn't land comes back in hand, with why.
+  async #write(said, key) {
     if (!this.#taken.size || this.#writing) return;
-    this.#fixed = [...this.#taken.values()].flatMap(elsOf);
-    this.#fixedCount = this.#taken.size;
-    this.#writing = true; this.#letGo(true); this.#host.release(); this.#host.spotlight([]);
-    this.render();
+    const at = this.#at, g = this.#taken.get(key);
+    this.#fixed = g ? elsOf(g) : [];
+    this.#fixedCount = 1;
+    this.#writing = true; this.#holding = false; this.#host.release(); this.#host.spotlight([]);
+    this.#html = ''; this.render();
     let left = { count: 0 };
-    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], this.#taken.size, [...this.#swaps.values()])) ?? left; }
-    catch (error) { left = { count: this.#taken.size, why: error?.message }; }
-    finally {
-      this.#writing = false;
-      // what didn't land stays taken, with why; A tries again (the file is read again first)
-      if (!left.count) {
-        if (this.#steady) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - this.#fixed.length), causes: Math.max(0, this.#steady.causes - this.#taken.size) };
-        this.#error = null; this.#taken.clear(); this.#tokens.clear(); this.#keeps.clear(); this.#swaps.clear(); this.#fromCode.clear();
-        this.#confirm();
-      }
-      else {
-        this.#error = left.why ?? FIX.couldNot;
-        // only tokens were refused: the causes written are done; the refused ones stay taken
-        if (left.count === left.refused?.length) {
-          const keep = new Set([...this.#tokens, ...this.#swaps].filter(([, t]) => left.refused.includes(t)).map(([k]) => k));
-          for (const k of [...this.#taken.keys()]) if (!keep.has(k)) this.#taken.delete(k);
-          for (const k of [...this.#tokens.keys()]) if (!keep.has(k)) this.#tokens.delete(k);
-          for (const k of [...this.#swaps.keys()]) if (!keep.has(k)) this.#swaps.delete(k);
-          this.#keeps.clear(); this.#fromCode.clear();
-        }
-      }
-      this.#html = ''; this.render();
+    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key })) ?? left; }
+    catch (error) { left = { count: 1, why: error?.message }; }
+    this.#writing = false;
+    const ok = !left.count;
+    if (ok && this.#steady && g) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - placesOf(g)), causes: Math.max(0, this.#steady.causes - 1) };
+    // one fix at a time: written or not, nothing is left waiting
+    if (!ok) this.#taken.delete(key);
+    else { this.#last = { text: said, undo: left.undo ?? [], key }; saveWritten([...written_().filter((w) => w.key !== key), { key, at: Date.now() }]); }
+    this.#tokens.clear(); this.#keeps.clear(); this.#swaps.clear(); this.#fromCode.clear();
+    this.#host.announce?.(ok ? said : left.why ?? FIX.couldNot);
+    // the page as read while the fix was written: the list the panel moves on in
+    const p = this.#pending; this.#pending = null;
+    if (p) ({ groups: this.#groups, code: this.#code } = groupsOf(p));
+    const live = this.#live();
+    if (live.length) this.hold(Math.min(at, live.length - 1)); else { this.#letGo(true); this.#html = ''; this.render(); }
+    if (!ok) { this.#error = left.why ?? FIX.couldNot; this.#html = ''; this.render(); }
+  }
+  // Undo: the last fix's writes taken back, newest first; the page is read again and the fix comes back
+  async #undo() {
+    const last = this.#last;
+    if (!last?.undo?.length || this.#undoing || this.#writing) return;
+    this.#undoing = true; this.#html = ''; this.render();
+    let why = null;
+    for (const handle of [...last.undo].reverse()) {
+      try { await this.#host.undo(handle); } catch (error) { why = error?.message ?? ''; break; }
     }
+    this.#undoing = false;
+    this.#last = { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
+    this.#host.announce?.(this.#last.text);
+    // the fix undone is offered again (the others written stay written)
+    if (why === null && last.key) { this.#taken.delete(last.key); saveWritten(written_().filter((w) => w.key !== last.key)); }
+    this.#html = ''; this.render();
   }
 
   key(k) {
+    this.#resumeAt = null;
     if (!this.#on || this.#writing) return false;
     // Enter on something with focus is that thing's: a button here is pressed (a specimen is already picked, so Enter
     // takes it, as anywhere); a glow on the page, with nothing in hand, holds its own cause (with a cause in hand, the
@@ -505,7 +545,6 @@ export class FixPanel {
       if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
       if (!this.#holding && a?.classList?.contains('hit')) return false;
     }
-    if ((k === 'a' || k === 'A') && this.#taken.size) { this.apply(); return true; }
     if (!this.#holding) {
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
@@ -545,9 +584,8 @@ export class FixPanel {
     // nothing is said to match until every element on the page has been read
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
-    const apply = `<button class="apply" ${taken ? '' : 'disabled'}>${FIX.apply} <span class="badge">${taken}</span></button>`;
     let html;
-    if (this.#writing) html = `<div class="writing"><i></i>${esc(FIX.applying(taken))}</div>`;
+    if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
     else if (!g && this.#notice) html = `<div class="line"><span class="count"><span>${esc(this.#notice)}</span></span></div>`;
     else if (!g) {
@@ -560,8 +598,8 @@ export class FixPanel {
       const unchecked = this.#progress?.notChecked ? ` · <span title="${esc(FIX.uncheckedTitle)}">${esc(FIX.unchecked(this.#progress.notChecked))}</span>` : '';
       const tail = `${notes ? ` · ${FIX.notes(notes)}` : ''}${unchecked}${settled ? '' : ` · ${FIX.stillChecking}`}`;
       html = places || notes
-        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : places ? `${FIX.problems(places)} <span>· ${FIX.fixes(causes)}${tail}</span>` : `<span>${FIX.notes(notes)}${settled ? '' : ` · ${FIX.stillChecking}`}</span>`}</span><span class="grow"></span>${taken ? apply : ''}<button class="primary start">${FIX.start} <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (taken ? FIX.ready(taken) : !settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${taken ? apply : ''}</div>`;
+        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : places ? `${FIX.problems(places)} <span>· ${FIX.fixes(causes)}${tail}</span>` : `<span>${FIX.notes(notes)}${settled ? '' : ` · ${FIX.stillChecking}`}</span>`}</span><span class="grow"></span><button class="primary start">${FIX.start} <kbd>↵</kbd></button></div>`
+        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span></div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
@@ -603,11 +641,15 @@ export class FixPanel {
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;
       const acts = this.#keeping
         ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
-          + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(placesOf(g)))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span>${apply}</div>`
-        : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span>${apply}</div>`;
+          + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(placesOf(g)))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span></div>`
+        : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span></div>`;
       const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(drawn(g) ? FIX.unseen(placesOf(g)) : FIX.offPage(placesOf(g)))}</div>`;
-      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${unseen}${middle}${acts}</div>`;
+      // a write that didn't land: why, on the fix it was for (back in hand, to try again)
+      const failed = this.#error ? `<div class="say err" role="alert">${esc(this.#error)}</div>` : '';
+      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${middle}${acts}</div>`;
     }
+    // the last fix written stays said above, with its Undo, until the next one is written
+    if (this.#last && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
@@ -627,13 +669,7 @@ export class FixPanel {
   // a line said for a moment at rest: why the element pointed at has nothing in hand
   notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
   // after a reload: what the write before it applied, said as if it had just landed
-  resumed(text) { this.#doneText = text; this.#confirm(); }
-  #confirm() {
-    this.#done = true; this.#html = ''; this.render();
-    this.#host.announce?.(this.#doneText ?? FIX.applied(this.#fixedCount));
-    clearTimeout(this.#foldTimer);
-    this.#foldTimer = setTimeout(() => { this.#done = false; this.#doneText = null; this.#html = ''; this.render(); }, TIMING.fold);
-  }
+  resumed(text, undo = [], place = null) { this.#last = { text, undo, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) setTimeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
   celebrate() {
     clearTimeout(this.#foldTimer);
     this.#done = true; this.#html = ''; this.render();

@@ -137,7 +137,9 @@ test('An element with two problems is in two causes: a click holds one of them, 
   const [x, y] = await center(page, 'status', 0.3, 0.5);
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
-  const first = await inHand(overlay).innerText();
+  // a cause as the panel shows it: its name (a class, or the element when a craft check has no class) and what is off
+  const cause = async () => `${await inHand(overlay).innerText()} — ${await panel(overlay).locator('.cause .what span').first().innerText()}`;
+  const first = await cause();
   // walk every cause with →: each is reached once, and the label's size and its capitals are both among them
   const place = async () => (await panel(overlay).locator('.cause .nav').innerText()).match(/(\d+) of (\d+)/).slice(1).map(Number);
   const [from, total] = await place();
@@ -145,13 +147,13 @@ test('An element with two problems is in two causes: a click holds one of them, 
   for (let i = 1; i < total; i++) {
     await page.keyboard.press('ArrowRight');
     await page.waitForFunction((k) => /(\d+) of \d+/.exec(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .cause .nav')?.textContent ?? '')?.[1] === String(k), ((from - 1 + i) % total) + 1, { timeout: 5000 });
-    seen.push(await inHand(overlay).innerText());
+    seen.push(await cause());
   }
   assert.equal(new Set(seen).size, total, `every cause is reached once: ${seen}`);
-  assert.ok(seen.some((c) => /text-\[11px\]/.test(c)) && seen.some((c) => /letter-spacing/.test(c)), `the label\u2019s size and its capitals are both causes: ${seen}`);
+  assert.ok(seen.some((c) => /text-\[11px\]/.test(c)) && seen.some((c) => /^<span> — Capitals too tight/.test(c)), `the label\u2019s size and its capitals are both causes: ${seen}`);
   // ←: back to the cause before
   await page.keyboard.press('ArrowLeft');
-  await inHand(overlay).filter({ hasText: seen.at(-2) }).waitFor({ timeout: 5000 });
+  await inHand(overlay).filter({ hasText: seen.at(-2).split(' — ')[0] }).waitFor({ timeout: 5000 });
   assert.deepEqual(errors, []);
 });
 
@@ -241,14 +243,14 @@ test('No step the theme has: the cause is a new token; the panel says what takin
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
   for (let i = 0; i < 12 && !(await panel(overlay).locator('.note').count()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
-  const note = await panel(overlay).locator('.note').innerText();
-  assert.match(note, /--tracking-caps: 0\.06em/);
-  assert.match(note, /tracking-caps/);
+  // in plain words, then the step it adds and where
+  assert.match(await panel(overlay).locator('.note').innerText(), /Your theme has no step for this\. This adds it, then uses it here\./);
+  assert.match(await panel(overlay).locator('.hint').innerText(), /--tracking-caps: 0\.06em/);
   assert.equal(await panel(overlay).locator('.sp').count(), 1);
-  assert.match(await panel(overlay).locator('.sp .tk').innerText(), /new token/);
-  // Enter takes it: the panel counts one change ready to apply; nothing is written until A
+  assert.match(await panel(overlay).locator('.sp .tk').innerText(), /^new$/);
+  // Enter adds it to the theme at once: the panel says what it added, with Undo
   await page.keyboard.press('Enter');
-  for (let i = 0; i < 30 && !(await panel(overlay).locator('.apply .badge').filter({ hasText: /^[1-9]/ }).count()); i++) { await page.waitForTimeout(150); if (await panel(overlay).locator('.take').count()) await page.keyboard.press('Enter'); }
-  await panel(overlay).locator('.apply .badge').filter({ hasText: /^[1-9]/ }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.said .t').filter({ hasText: /^Added --tracking-caps to / }).waitFor({ timeout: 20000 });
+  assert.equal(await panel(overlay).locator('.said .undo').count(), 1);
   assert.deepEqual(errors, []);
 });

@@ -375,19 +375,27 @@ export const FIX = {
   stillChecking: 'checking…',
   unchecked: (n) => `${count(n, 'element', 'elements')} can’t be checked`,
   uncheckedTitle: 'Not in your code: drawn by a library, or added to the page at runtime.',
+  checking: 'Checking this page…',
   clear: 'Nothing to fix on this page.',
   clearChecked: (n) => `Nothing to fix in what was checked. ${count(n, 'element', 'elements')} can’t be checked.`,
-  ready: (n) => `${count(n, 'change', 'changes')} ready to apply`,
   start: 'Fix',
-  apply: 'Apply changes',
-  applying: (n) => `Applying ${count(n, 'change', 'changes')}…`,
   applied: (n) => `${count(n, 'change', 'changes')} applied`,
+  // a fix writes the moment it is taken: while it is written, then what it changed and where, with Undo
+  writing: 'Writing it to your code…',
+  added: (name, file) => `Added ${name} to ${String(file ?? '').split('/').pop()}`,
+  addedUsed: (name, file, cls, n) => `Added ${name} to ${String(file ?? '').split('/').pop()} and used ${cls} at ${count(n, 'place', 'places')}`,
+  changed: (from, to, n) => `Changed ${from} to ${to} at ${count(n, 'place', 'places')}`,
+  kept: (n) => `Kept as is at ${count(n, 'place', 'places')}. It won’t be flagged again.`,
+  undo: 'Undo',
+  undoing: 'Undoing…',
+  undone: 'Undone. Your code is back as it was.',
+  couldNotUndo: (why) => /changed since/i.test(why ?? '') ? 'This file changed after the fix, so it can’t be undone here. Undo it in your editor.' : `Couldn’t undo. ${why ?? 'Check again.'}`,
   couldNot: 'Couldn’t apply. Check again.',
   changedSince: 'This file changed after we checked it. Check again.',
   // a cause whose places no element renders right now: in your code, in a part this page shows only sometimes
-  offPage: (n) => n === 1 ? 'Nothing on the page shows this place right now. It’s in a part this page shows only sometimes. Apply still fixes it in your code.' : `Nothing on the page shows these ${n} places right now. They’re in parts this page shows only sometimes. Apply still fixes them in your code.`,
+  offPage: (n) => n === 1 ? 'Nothing on the page shows this place right now. It’s in a part this page shows only sometimes. Fixing it still changes your code.' : `Nothing on the page shows these ${n} places right now. They’re in parts this page shows only sometimes. Fixing them still changes your code.`,
   // a cause whose every place is inside something closed: counted from your code, but nothing on screen to point at
-  unseen: (n) => n === 1 ? 'You can’t see this place right now. It’s inside something closed, like a menu or a dialog. Apply still fixes it in your code.' : `You can’t see these ${n} places right now. They’re inside something closed, like a menu or a dialog. Apply still fixes them in your code.`,
+  unseen: (n) => n === 1 ? 'You can’t see this place right now. It’s inside something closed, like a menu or a dialog. Fixing it still changes your code.' : `You can’t see these ${n} places right now. They’re inside something closed, like a menu or a dialog. Fixing them still changes your code.`,
   appliedSome: (done, total, why) => `${done} of ${count(total, 'change', 'changes')} applied. ${why ?? 'Couldn’t apply the rest. Check again.'}`,
   // a fix in hand: what is wrong, in a few words
   what(mark) {
@@ -469,9 +477,9 @@ export const TAG = {
 // the first time: one fix, walked through
 export const WALK = {
   1: (line) => `${line} Click it.`,
-  2: '↑ ↓ to try another option. Enter to use it.',
-  3: 'Press A, or Apply changes, to put it in your code.',
-  4: 'Applied. Nothing left to fix here.',
+  2: '↑ ↓ to try another option. Enter puts it in your code.',
+  3: 'In your code now. Undo is right above it.',
+  4: 'Fixed. Nothing left to fix here.',
 };
 
 export const DOCK = {

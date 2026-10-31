@@ -78,9 +78,11 @@ export class Blueprint {
       view: () => this.#selection.view,
       pick: (i) => this.#selection.pick(i),
       take: () => this.#selection.accept(),
-      spotlight: (els) => this.#marks.spotlight(els),
+      spotlight: (ids, lead) => this.#marks.spotlight(ids, lead),
       announce: (text) => this.#host.announce?.(text),
-      applyAll: (tokens, keeps, total, swaps) => this.#applyAll(tokens, keeps, total, swaps),
+      applyAll: (tokens, keeps, total, swaps, said, at) => this.#applyAll(tokens, keeps, total, swaps, said, at),
+      // an undo may reload the page as its write did: Blueprint comes back after it, saying it was undone
+      undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
     });
@@ -256,6 +258,7 @@ export class Blueprint {
   // The all-clear: problems were left before a write, and once the page is read again none are. The count before the
   // write is kept in the session, so a write that reloads the page still ends in its all-clear.
   #fix;
+  #undos = []; #saying = null; #at = null; // the write in progress: its undo handles, and what it changed in words
   #lastDrift = 0;
   #clearAfterWrite(p) {
     if (p.read === p.total) {
@@ -282,28 +285,33 @@ export class Blueprint {
   // class change Changes holds goes out in one guarded write per file
   // Apply: every token first (the theme), then each token's class at every place of its cause, one guarded write per
   // file; then the causes kept as intended into the ledger; then the panel's swaps (Changes). What did not land is said.
-  async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length, swaps = []) {
+  // `said`: what the fix changed, in words, kept for a reload the write causes; every write's undo handle comes back
+  // `at`: the fix's place in the panel's list, so a reload the write causes comes back on the fix after it
+  async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length, swaps = [], said = FIX.applied(total), at = null) {
+    const undo = (this.#undos = []);
+    this.#saying = said; this.#at = at;
+    this.#host.remember?.(said, [], at);
     // the panel's swaps first (Changes: source files, which hot-update without a reload)
     if (this.#changes.count) await this.#changes.accept();
     // then the causes taken from the code alone: their edits by id, per file (POST apply: the server derives each edit
     // again from the source as it is, and a file changed since it was read writes nothing)
     const refused = [];
-    let said = null;
+    let why = null;
     const byFile = new Map(); // file → { hash, edits: [{ id }], of: [swap] }
     for (const s of swaps) for (const w of s.writes) {
       const f = byFile.get(w.file) ?? byFile.set(w.file, { hash: w.hash, edits: [], of: [] }).get(w.file);
       if (!f.edits.some((e) => e.id === w.id)) f.edits.push({ id: w.id });
       if (!f.of.includes(s)) f.of.push(s);
     }
-    if (byFile.size) this.#host.remember?.(FIX.applied(total));
     for (const [file, f] of byFile) {
       try {
-        await post('apply', { file, hash: f.hash, edits: f.edits });
+        const result = await post('apply', { file, hash: f.hash, edits: f.edits });
+        if (result?.undo) undo.push(result.undo);
         this.invalidate({ file });
       } catch (error) {
         this.#host.forgetResume?.();
         for (const s of f.of) if (!refused.includes(s)) refused.push(s);
-        said ??= /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot;
+        why ??= /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot;
       }
     }
     // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
@@ -326,8 +334,6 @@ export class Blueprint {
       if (files.size) then.set(t, { swaps: [...files.values()] });
     }
     if (tokens.length || keeps.length) {
-      // said now: if the theme write reloads the page, the bar says it when the page comes back
-      this.#host.remember?.(FIX.applied(total));
       // what landed, from the server's results: the response, or the dev server's word before the reload it causes
       const outcome = (results) => {
         const refused = [];
@@ -340,21 +346,28 @@ export class Blueprint {
       };
       // Vite tells the page the whole result before the reload that would cut the response short: the bar says
       // after it what did not land, not a count that was only hoped for
-      const heard = (e) => { const o = e.detail?.results && outcome(e.detail.results); if (o?.refused.length) this.#host.remember?.(FIX.appliedSome(total - o.refused.length, total, o.said)); };
+      // (with every undo handle, so Undo still works after it)
+      const heard = (e) => { const o = e.detail?.results && outcome(e.detail.results); this.#host.remember?.(o?.refused.length ? FIX.appliedSome(total - o.refused.length, total, o.said) : said, [...undo, ...(e.detail?.undo ?? [])], at); };
       addEventListener('plumb:applied', heard, { once: true });
       try {
-        const { results } = await post('apply-all', {
+        const { results, undo: handles } = await post('apply-all', {
           tokens: tokens.map((t) => ({ file: t.suggest.file, hash: t.suggest.hash, name: t.suggest.name, value: t.suggest.value, ...(t.suggest.why ? { why: t.suggest.why } : {}), ...(then.has(t) ? { then: then.get(t) } : {}) })),
           accepts: keeps.map((k) => ({ rule: k.rule, sites: k.sites, why: k.why })),
         });
         const o = outcome(results);
-        refused.push(...o.refused); said = o.said ?? said;
+        undo.push(...(handles ?? []));
+        refused.push(...o.refused); why = o.said ?? why;
         for (const f of new Set([...tokens.map((t) => t.suggest.file), ...results.swaps.map((r) => r.file).filter(Boolean), ...keeps.flatMap((k) => k.sites.map((x) => x.file))])) this.invalidate({ file: f });
-      } catch (error) { refused.push(...tokens, ...keeps); said = error?.message ?? FIX.couldNot; this.#host.forgetResume?.(); }
+      } catch (error) { refused.push(...tokens, ...keeps); why = error?.message ?? FIX.couldNot; this.#host.forgetResume?.(); }
       finally { removeEventListener('plumb:applied', heard); }
     }
-    // what did not land (a token, a swap or a keep refused, or a class change still in Changes): say so
-    return { count: this.#changes.count + refused.length, why: this.#changes.why ?? said, refused };
+    // what did not land (a token, a swap or a keep refused, or a class change Changes couldn't write): say so. One fix
+    // is written at a time, so a class change that didn't land is put back on the page, never left waiting
+    const left = this.#changes.count, leftWhy = this.#changes.why;
+    if (left) this.#changes.discardAll();
+    this.#saying = null;
+    if (!left && !refused.length && undo.length) this.#host.remember?.(said, undo, at);
+    return { count: left + refused.length, why: leftWhy ?? why, refused, undo };
   }
   async #apply(batch) {
     try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}
@@ -372,9 +385,10 @@ export class Blueprint {
     for (const [file, f] of files) {
       try {
         // the write reloads the page when the dev server can't hot-swap it: blueprint comes back on after it
-        this.#host.remember?.(`Applied ${f.edits.length === 1 ? f.edits[0].to : `${f.edits.length} changes`} in ${file.split('/').pop()}`);
+        this.#host.remember?.(this.#saying ?? `Applied ${f.edits.length === 1 ? f.edits[0].to : `${f.edits.length} changes`} in ${file.split('/').pop()}`, [], this.#at);
         const result = await post('swaps', { file, hash: f.hash, edits: f.edits });
-        this.#host.wrote?.(result, `Applied ${f.els.length === 1 ? f.edits[0].to : `${f.els.length} changes`} in ${file.split('/').pop()}`);
+        // the fix panel says what was written, with Undo (not a second toast)
+        if (result?.undo) this.#undos.push(result.undo);
         this.invalidate({ file });
         for (const el of f.els) out.push({ el, ok: true });
         if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
@@ -398,7 +412,7 @@ export class Blueprint {
   // hands on the items of the same wave, so the items decide, with the progress they came with.
   #want = null;
   // the page came back after a write reloaded it: the fix bar says what was applied
-  resumed(text) { this.#fix.resumed(text); }
+  resumed(text, undo, at) { this.#fix.resumed(text, undo, at); }
   enterAt(el) {
     this.#want = el;
     this.active ? this.#holdWanted(this.#settled) : this.enter();

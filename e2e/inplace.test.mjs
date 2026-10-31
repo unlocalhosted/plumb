@@ -95,16 +95,17 @@ const glow = async (page, overlay, text) => {
   await click(page, x, y);
 };
 const padding = (page, id, side) => page.locator(`#${id}`).evaluate((el, side) => getComputedStyle(el)[`padding${side}`], side);
-const badge = (overlay) => panel(overlay).locator('.apply .badge');
-const taken = async (overlay) => Number(await badge(overlay).innerText().catch(() => '0'));
-// walk the causes with → until `cls` is in hand and its exact edit is read, then Enter takes it
+// what the last fix written changed, said above the panel with its Undo
+const said = (overlay) => panel(overlay).locator('.said .t');
+// walk the causes with → until `cls` is in hand and its exact edit is read, then Enter writes it at once
 async function take(page, overlay, cls) {
-  const before = await taken(overlay);
+  const before = await said(overlay).innerText({ timeout: 200 }).catch(() => '');
   for (let i = 0; i < 12; i++) {
     if (await inHand(overlay).first().innerText().catch(() => null) === cls) {
       await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
       await page.keyboard.press('Enter');
-      await badge(overlay).filter({ hasText: String(before + 1) }).waitFor({ timeout: 5000 }).catch(async () => { throw new Error(`taking ${cls} did not count it: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}`); });
+      for (let k = 0; k < 150 && (await said(overlay).innerText({ timeout: 200 }).catch(() => '')) === before; k++) await page.waitForTimeout(100);
+      if ((await said(overlay).innerText({ timeout: 200 }).catch(() => '')) === before) throw new Error(`taking ${cls} wrote nothing: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}`);
       return;
     }
     await page.keyboard.press('ArrowRight');
@@ -148,7 +149,7 @@ test('The fix is tried on the page from the panel: the cause in hand shows the t
   assert.deepEqual(errors, []);
 });
 
-test('Enter takes the fix; A writes it as one class edit; after the reload the button is quiet in every family', { timeout: 120000 }, async (t) => {
+test('Enter writes the fix at once as one class edit; after the reload the button is quiet in every family', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
@@ -157,7 +158,6 @@ test('Enter takes the fix; A writes it as one class edit; after the reload the b
   await glow(page, overlay, '12px on every side');
   await inHand(overlay).filter({ hasText: /^px-s3$/ }).waitFor({ timeout: 10000 });
   await take(page, overlay, 'px-s3');
-  await page.keyboard.press('a');
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
   for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
@@ -167,7 +167,7 @@ test('Enter takes the fix; A writes it as one class edit; after the reload the b
   assert.deepEqual(errors, []);
 });
 
-test('Two problems in two families on one label: each taken with Enter, one A writes both, and the label is quiet', { timeout: 150000 }, async (t) => {
+test('Two problems in two families on one label: each written with Enter, and the label is quiet', { timeout: 150000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await fixture(t, PAGE);
   // a theme with a letter-spacing step, so both fixes are on the theme
@@ -179,10 +179,8 @@ test('Two problems in two families on one label: each taken with Enter, one A wr
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
   // the label's two causes: its capitals take the theme's tracking-wide, its size takes a type step
-  await take(page, overlay, 'letter-spacing');
+  await take(page, overlay, '<span>'); // the capitals: a craft check with no class, named by its element
   await take(page, overlay, 'text-[11px]');
-  assert.equal(await taken(overlay), 2);
-  await page.keyboard.press('a');
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="status"'));
   for (let i = 0; i < 100 && /text-\[11px\]/.test(await line()); i++) await page.waitForTimeout(100);

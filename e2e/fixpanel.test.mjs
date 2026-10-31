@@ -66,6 +66,8 @@ export function App() {
 }
 `;
 const panel = (overlay) => overlay.locator('.fx');
+// what the last fix written changed, said above the panel with its Undo
+const said = (overlay) => panel(overlay).locator('.said .t');
 const padding = (page, id) => page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop);
 const visible = (page, sel) => page.evaluate((sel) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll(sel)].some((e) => e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none'), sel);
 
@@ -93,12 +95,9 @@ test('At rest one line counts problems and causes; Enter puts a cause in hand an
   await page.waitForFunction((n) => ['a', 'b'].every((id) => getComputedStyle(document.getElementById(id)).paddingTop === `${n}px`), next, { timeout: 5000 });
   await page.keyboard.press('ArrowDown');
   await page.waitForFunction((n) => getComputedStyle(document.getElementById('a')).paddingTop === `${n}px`, picked, { timeout: 5000 });
-  // Take: kept; nothing else is left, so the panel rests with Apply 1
-  for (let i = 0; i < 40 && !(await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
-  await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
-  assert.equal(await padding(page, 'b'), `${picked}px`, 'the other place keeps the taken value');
-  // A: one write; both places carry the step in source
-  await page.keyboard.press('a');
+  // Enter: written at once, at both places; the panel says so
+  for (let i = 0; i < 40 && !(await said(overlay).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  await said(overlay).filter({ hasText: /^Changed p-\[18px\] to p-s\d at 2 places$/ }).waitFor({ timeout: 10000 });
   for (let i = 0; i < 100 && (await source()).includes('p-[18px]'); i++) await page.waitForTimeout(100);
   const after = await source();
   assert.doesNotMatch(after, /p-\[18px\]/, 'both places written');
@@ -175,7 +174,7 @@ export function App() {
 // choices: Blueprint reads marks without edits, so the page finds the token by value and offers it, drawn as a time.
 // Taking it moves to the next cause on the same element with that cause's own view, never the taken one's. The class
 // sits in a template literal with an expression: its fixed text is written, the expression is left as it is.
-test('A token copy offers its token, drawn as a time; Take moves on to the next cause on that element; A writes into a template literal', { timeout: 150000 }, async (t) => {
+test('A token copy offers its token, drawn as a time; taking it writes into a template literal and moves on to the next cause on that element', { timeout: 150000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await fixture(t, `
 const tone = 'bg-surface';
@@ -205,14 +204,13 @@ export function App() {
   await option.waitFor({ timeout: 10000 });
   assert.equal(await option.locator('.v').innerText(), '150ms');
   assert.match(await option.locator('.tk').innerText(), /dur-calm/);
-  // Take: the next cause on the button is in hand, with its own view
-  for (let i = 0; i < 40 && !(await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  // Enter: written at once; the next cause on the button is in hand, with its own view
+  for (let i = 0; i < 40 && !(await said(overlay).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'rounded-[13px]' }).waitFor({ timeout: 10000 });
   await page.waitForTimeout(1500); // a re-read of the page comes in meanwhile
   assert.match(await panel(overlay).locator('.cause .cls').innerText(), /rounded-\[13px\]/);
   assert.equal(await panel(overlay).locator('.sp .tk').filter({ hasText: 'dur-calm' }).count(), 0, 'the taken cause\'s option is not shown on the next one');
-  // A: written into the template literal's fixed text; the expression stays
-  await panel(overlay).locator('.apply').click();
+  // written into the template literal's fixed text; the expression stays
   for (let i = 0; i < 100 && !(await source()).includes('duration-(--dur-calm)'); i++) await page.waitForTimeout(100);
   assert.match(await source(), /className=\{`px-s4 duration-\(--dur-calm\) rounded-\[13px\] \$\{tone\}`\}/);
   assert.deepEqual(errors, []);
@@ -293,24 +291,24 @@ export function App() {
   await panel(overlay).locator('input[name="token"]').fill('');
   await panel(overlay).locator('input[name="token"]').pressSequentially('track-ak');
   await panel(overlay).locator('.hint').filter({ hasText: 'tracking-track-ak' }).waitFor({ timeout: 5000 });
-  assert.equal(await panel(overlay).locator('.apply .badge').innerText(), '0', 'typing a or k neither applies nor keeps');
+  assert.equal(await said(overlay).count(), 0, 'typing a or k neither writes nor keeps');
   await page.keyboard.press('Enter');
+  await said(overlay).filter({ hasText: 'Added --tracking-track-ak to styles.css and used tracking-track-ak at 2 places' }).waitFor({ timeout: 20000 });
   // Make it yours
   await hold(/leading-relaxed/);
   await panel(overlay).locator('.take').filter({ hasText: 'Add to theme' }).waitFor({ timeout: 5000 });
   assert.match(await panel(overlay).locator('.note').innerText(), /Nothing in your code changes/);
   assert.match(await panel(overlay).locator('.hint').innerText(), /--leading-relaxed: 1\.625/);
   await page.keyboard.press('Enter');
+  await said(overlay).filter({ hasText: 'Added --leading-relaxed to styles.css' }).waitFor({ timeout: 20000 });
   // Keep it
   await hold(/p-\[13px\]/);
   await page.keyboard.press('k');
   await panel(overlay).locator('input[name="why"]').pressSequentially('a brand inset, kept');
   await page.keyboard.press('Enter');
-  await panel(overlay).locator('.apply .badge').filter({ hasText: '3' }).waitFor({ timeout: 5000 });
-  // one Apply: the theme, the source, the ledger
-  await panel(overlay).locator('.apply').click();
-  // what the person waits for: the panel says all three landed
-  await panel(overlay).locator('.done').filter({ hasText: '3 changes applied' }).waitFor({ timeout: 20000 });
+  // what the person waits for: each one said as it landed; a keep has nothing to undo
+  await said(overlay).filter({ hasText: /^Kept as is at 1 place/ }).waitFor({ timeout: 20000 });
+  assert.equal(await panel(overlay).locator('.said .undo').count(), 0);
   assert.match(await theme(), /--tracking-track-ak:\s*0\.1em/);
   assert.match(await theme(), /--leading-relaxed:\s*1\.625/);
   const after = await source();
@@ -322,9 +320,9 @@ export function App() {
   // the page comes back read in full: the three are gone and only the cause nobody touched is left
   await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  await panel(overlay).locator('.line').filter({ hasText: /1 fix/ }).waitFor({ timeout: 20000 });
-  await page.keyboard.press('Enter');
-  assert.match(await cls(), /gap-\[7px\]/);
+  // the panel has moved on to the one fix left
+  await panel(overlay).locator('.cause .cls').filter({ hasText: 'gap-[7px]' }).waitFor({ timeout: 20000 }).catch(async (e) => { throw new Error(`${e.message}\npanel: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}\ntheme: ${(await theme()).match(/--(tracking|leading)[^;]*;/g)}`); });
+  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /1 of 1/);
   assert.deepEqual(errors, []);
 });
 
@@ -354,19 +352,21 @@ export function App() {
   await hold(/tracking-\[0\.1em\]/);
   await panel(overlay).locator('input[name="token"]').fill('loose');
   await page.keyboard.press('Enter');
+  // refused: the same fix is back in hand, saying why; nothing is said to have changed
+  await panel(overlay).locator('.say.err').filter({ hasText: /--tracking-loose is already 0\.3em/ }).waitFor({ timeout: 20000 });
+  assert.match(await cls(), /tracking-\[0\.1em\]/);
+  assert.equal(await said(overlay).count(), 0);
   await hold(/leading-relaxed/);
   await panel(overlay).locator('.take').filter({ hasText: 'Add to theme' }).waitFor({ timeout: 5000 });
   await page.keyboard.press('Enter');
-  await panel(overlay).locator('.apply .badge').filter({ hasText: '2' }).waitFor({ timeout: 5000 });
-  await panel(overlay).locator('.apply').click();
-  await overlay.getByText(/1 of 2 changes applied\. --tracking-loose is already 0\.3em/).first().waitFor({ timeout: 20000 });
+  await said(overlay).filter({ hasText: 'Added --leading-relaxed to styles.css' }).waitFor({ timeout: 20000 });
   assert.match(await readFile(join(root, 'src/styles.css'), 'utf8'), /--leading-relaxed:\s*1\.625/);
   assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /tracking-\[0\.1em\]/, 'the refused step left the source as it was');
   assert.deepEqual(errors, []);
 });
 
 // A cause is counted from your code, so a place inside something closed counts too. Held, the panel says why nothing
-// on screen is pointed at, and that Apply still fixes it.
+// on screen is pointed at, and that fixing it still changes your code.
 test('A fix whose only place is inside something closed is counted, and held it says where it is', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, `
@@ -417,16 +417,14 @@ export function App({ open = false }) {
   await page.keyboard.press('k');
   await panel(overlay).locator('input[name="why"]').pressSequentially('only in the open state');
   await page.keyboard.press('Enter');
-  await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
-  await panel(overlay).locator('.apply').click();
-  await panel(overlay).locator('.done').waitFor({ timeout: 20000 });
+  await said(overlay).filter({ hasText: /^Kept as is/ }).waitFor({ timeout: 20000 });
   assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /only in the open state/);
   assert.deepEqual(errors, []);
 });
 
 // A place the page does not render still has its theme's options, read from the code: the panel draws them, one is
-// picked with the keys, taken, and Apply writes it in the source, though no element was ever on the page.
-test('A place the page does not render offers its theme options, and Apply writes the one picked', { timeout: 120000 }, async (t) => {
+// picked with the keys, and taking it writes it in the source, though no element was ever on the page.
+test('A place the page does not render offers its theme options, and the one picked is written', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await fixture(t, `
 export function App({ open = false }) {
@@ -455,9 +453,7 @@ export function App({ open = false }) {
   await take.filter({ hasText: /p-s4/.test(first) ? 'p-s3' : 'p-s4' }).waitFor({ timeout: 5000 });
   const chosen = /p-s4/.test(first) ? 'p-s3' : 'p-s4';
   await page.keyboard.press('Enter');
-  await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
-  await panel(overlay).locator('.apply').click();
-  await panel(overlay).locator('.done').waitFor({ timeout: 20000 });
+  await said(overlay).filter({ hasText: `Changed p-[13px] to ${chosen} at 1 place` }).waitFor({ timeout: 20000 });
   const source = await readFile(join(root, 'src/App.jsx'), 'utf8');
   assert.match(source, new RegExp(`className="text-body ${chosen}"`), 'the class picked is written where it was typed');
   assert.doesNotMatch(source, /p-\[13px\]/);

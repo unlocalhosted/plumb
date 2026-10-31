@@ -365,7 +365,7 @@ class PlumbOverlay extends HTMLElement {
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
     if (saved.blueprint) this.#blueprint?.enter({ instant: true });
-    if (saved.fix) this.#blueprint?.resumed?.(saved.fix);
+    if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 
@@ -519,7 +519,7 @@ class PlumbOverlay extends HTMLElement {
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
-  remember(text) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text })); } catch {} }
+  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {

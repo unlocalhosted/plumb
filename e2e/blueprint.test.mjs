@@ -217,8 +217,14 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   for (const l of labels) byLine[l] = (byLine[l] ?? 0) + 1;
   assert.ok(inCause >= Math.max(...Object.values(byLine)), `the first cause is the biggest: ${what} against ${JSON.stringify(byLine)}`);
   assert.match(await panel(overlay).locator('.cause .nav').innerText(), new RegExp(`1 of ${causes}`));
-  const lit = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone[data-stage="lit"], .bp .heat .zone[data-stage="pointed"]').length > 0, null, { timeout: 3000 });
+  const lit = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone:is([data-stage="lit"], [data-stage="lead"], [data-stage="pointed"])').length);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone:is([data-stage="lit"], [data-stage="lead"])').length > 0, null, { timeout: 3000 });
+  // only the fix in hand is lit (never another problem on the same elements), and one place of it is the strongest
+  const stages = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone')].map((z) => ({ stage: z.dataset.stage, cause: z.dataset.cause, o: Number(z.style.opacity) })));
+  const on = stages.filter((z) => z.stage === 'lit' || z.stage === 'lead');
+  assert.equal(new Set(on.map((z) => z.cause)).size, 1, `one cause lit: ${JSON.stringify(on)}`);
+  assert.equal(stages.filter((z) => z.stage === 'lead').length, 1, 'one place is the one in hand');
+  assert.ok(Math.max(...stages.filter((z) => z.stage === 'quiet').map((z) => z.o), 0) < 0.1, 'every other problem is quiet');
   // the page changes and is read again: the cause in hand stays lit
   await page.evaluate(() => document.body.append(Object.assign(document.createElement('p'), { textContent: 'late' })));
   await page.waitForTimeout(1200);
@@ -240,7 +246,8 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   assert.deepEqual(errors, []);
 });
 
-const badge = (overlay) => panel(overlay).locator('.apply .badge');
+// what the last fix written changed, said above the panel with its Undo
+const said = (overlay) => panel(overlay).locator('.said .t');
 const markFor = (overlay, text) => hits(overlay).and(overlay.locator(`[aria-label*="${text}"]`));
 // a real click on the mark's zone, the way a person makes it: the pointer arrives first, then presses (Playwright's
 // click would scroll the page to reach a fixed SVG rect, moving every mark)
@@ -254,19 +261,24 @@ async function clickMark(page, overlay, text) {
 }
 // the cause named `cls` is put in hand by a click on its glow, with its options read
 async function hold(page, overlay, text, cls) {
+  // a write may have reloaded the page: Blueprint is back and the page read before a glow is clicked
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   // another cause may be in hand (a take hands on the next one): put it down first
   if (await panel(overlay).locator('.cause').count()) { await page.keyboard.press('Escape'); await panel(overlay).locator('.line').waitFor({ timeout: 5000 }); }
   await clickMark(page, overlay, text);
-  await inHand(overlay).filter({ hasText: cls }).waitFor({ timeout: 10000 });
+  await inHand(overlay).filter({ hasText: cls }).waitFor({ timeout: 10000 }).catch(async (e) => { throw new Error(`${e.message}\npanel: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}\nmarks: ${(await hits(overlay).evaluateAll((h) => h.map((x) => x.getAttribute('aria-label')))).slice(0, 12).join(' | ')}`); });
 }
 // pick an option of the cause in hand by the token it names; the page previews it on every place
 const pickStep = (overlay, token) => panel(overlay).locator('button.sp', { has: overlay.page().locator('.tk', { hasText: new RegExp(`^${token}$`) }) }).click();
-// Enter takes the cause in hand once its exact edit is read: the count on Apply goes up
+// Enter takes the cause in hand once its exact edit is read, and it is written at once: the panel says what changed
 async function take(page, overlay) {
-  const before = Number(await badge(overlay).innerText().catch(() => '0'));
+  const before = await said(overlay).innerText({ timeout: 200 }).catch(() => '');
   await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
   await page.keyboard.press('Enter');
-  await badge(overlay).filter({ hasText: new RegExp(`^${before + 1}$`) }).waitFor({ timeout: 5000 });
+  for (let i = 0; i < 150 && (await said(overlay).innerText({ timeout: 200 }).catch(() => '')) === before; i++) await page.waitForTimeout(100);
+  const now = await said(overlay).innerText();
+  assert.notEqual(now, before, 'the panel says what the fix changed');
+  return now;
 }
 const dock = (overlay) => overlay.locator('.dock');
 // no mark names the text (an applied change reloads the page when the dev server can't hot-swap it: read through it)
@@ -277,7 +289,7 @@ async function noMark(page, text) {
   }
 }
 
-test('A glow puts its cause in hand; an option previews on the page; Enter takes it, A puts it in source and the mark goes', { timeout: 120000 }, async (t) => {
+test('A glow puts its cause in hand; an option previews on the page; Enter writes it at once, says so, and the mark goes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -290,9 +302,10 @@ test('A glow puts its cause in hand; an option previews on the page; Enter takes
   // the theme's steps are offered; picking one previews it on the page
   await pickStep(overlay, 's2');
   await page.waitForFunction(() => getComputedStyle(document.getElementById('sync-row')).gap === '8px', null, { timeout: 5000 });
-  // Enter takes it: Apply counts one; A writes it
-  await take(page, overlay);
-  await page.keyboard.press('a');
+  // Enter writes it: the panel says what changed, and offers Undo
+  assert.match(await take(page, overlay), /^Changed gap-\[10px\] to gap-s2 at 1 place$/);
+  assert.equal(await panel(overlay).locator('.said .undo').count(), 1);
+  assert.equal(await panel(overlay).locator('.apply').count(), 0, 'there is no second button to write with');
   for (let i = 0; i < 100 && !/gap-s2 py-\[10px\]/.test(await readFile(join(root, 'src/App.jsx'), 'utf8')); i++) await page.waitForTimeout(100);
   assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /gap-s2 py-\[10px\]/);
   await noMark(page, 'gap-[10px]');
@@ -300,34 +313,32 @@ test('A glow puts its cause in hand; an option previews on the page; Enter takes
   assert.deepEqual(errors, []);
 });
 
-test('Several causes are applied together, one write per file', { timeout: 120000 }, async (t) => {
+test('Each cause is written the moment it is taken: two causes, two guarded writes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
+  let writes = 0;
+  await page.route('**/swaps', (route) => { writes++; route.continue(); });
   await hold(page, overlay, 'rounded-[14px]', 'rounded-[14px]');
   await take(page, overlay);
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
   await pickStep(overlay, 's1');
   await take(page, overlay);
-  assert.equal(await badge(overlay).innerText(), '2');
-  let writes = 0;
-  await page.route('**/swaps', (route) => { writes++; route.continue(); });
-  await page.keyboard.press('a');
   const file = join(root, 'src/App.jsx');
   for (let i = 0; i < 100 && /gap-\[3px\]/.test(await readFile(file, 'utf8')); i++) await page.waitForTimeout(100);
   const source = await readFile(file, 'utf8');
   assert.doesNotMatch(source, /rounded-\[14px\]/);
   assert.match(source, /gap-s1 rounded-\[5px\]/);
-  assert.equal(writes, 1, 'one write for the file');
+  assert.equal(writes, 2, 'one write per fix');
   await noMark(page, 'rounded-[14px]');
   await noMark(page, 'gap-[3px]');
   assert.deepEqual(errors, []);
 });
 
-test('Leaving blueprint with causes taken or tried leaves nothing previewed and nothing written', { timeout: 120000 }, async (t) => {
+test('Leaving blueprint with causes tried but not taken leaves nothing previewed and nothing written', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -338,24 +349,22 @@ test('Leaving blueprint with causes taken or tried leaves nothing previewed and 
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   await pickStep(overlay, 's2');
   await page.waitForFunction(() => getComputedStyle(document.getElementById('sync-row')).gap === '8px', null, { timeout: 5000 });
-  await take(page, overlay);
   // a second cause in hand, tried, and left untaken
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
   await pickStep(overlay, 's1');
   await page.waitForFunction(() => getComputedStyle(document.getElementById('beta-chip')).gap === '4px', null, { timeout: 5000 });
-  // Esc puts the cause in hand down: the untaken one is as it was, the taken one keeps its step until written
+  // Esc puts the cause in hand down: what was tried is lifted, and the first cause tried is as it was too
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line').waitFor({ timeout: 5000 });
   await page.waitForFunction(() => getComputedStyle(document.getElementById('beta-chip')).gap === '3px', null, { timeout: 5000 });
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the taken change stays on the page');
-  // leaving lifts what was taken too
+  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '10px', 'a step only tried is not kept');
   for (let i = 0; i < 4 && await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden === false); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   await off(page);
   assert.equal(await footprint(page), before, 'nothing is left on the page');
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written');
 });
 
-test('A write the server refuses as stale writes nothing: the file is as it was and the page keeps what was tried', { timeout: 120000 }, async (t) => {
+test('A write the server refuses as stale writes nothing: the fix comes back in hand and says why', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -365,23 +374,23 @@ test('A write the server refuses as stale writes nothing: the file is as it was 
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   await pickStep(overlay, 's2');
-  await take(page, overlay);
-  // The first write is answered as the server answers a file that changed since it was read (changing the file on
-  // disk here would make the dev server reload the page).
+  // The write is answered as the server answers a file that changed since it was read (changing the file on disk
+  // here would make the dev server reload the page).
   let refused = 0;
   await page.route('**/swaps', (route) => {
     refused++;
     route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'The file changed since the overlay read it. Read it again.' }) });
   });
   const file = join(root, 'src/App.jsx');
-  await page.keyboard.press('a');
+  await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
+  await page.keyboard.press('Enter');
   for (let i = 0; i < 50 && !refused; i++) await page.waitForTimeout(100);
   assert.equal(refused, 1, 'the write was sent, once');
-  await panel(overlay).locator('.line').waitFor({ timeout: 15000 }); // the panel folds back to one line
+  // the same fix is back in hand, saying why, ready to try again
+  await panel(overlay).locator('.say.err').filter({ hasText: 'This file changed after we checked it' }).waitFor({ timeout: 15000 });
+  await inHand(overlay).filter({ hasText: 'gap-[10px]' }).waitFor({ timeout: 5000 });
+  assert.equal(await panel(overlay).locator('.said').count(), 0, 'nothing is said to have changed');
   assert.equal(await readFile(file, 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing was written');
-  assert.equal(await page.locator('#sync-row').evaluate((el) => getComputedStyle(el).gap), '8px', 'the page keeps what was tried');
-  // GAP: the refusal is only in the hidden Changes sidebar (.cg): nothing in the fix panel or the dock says "This file
-  // changed after we checked it", and the panel has forgotten the cause it took, so A cannot write it again.
 });
 
 // Tab to the glow whose line names `text`; returns the label
@@ -395,7 +404,7 @@ async function tabTo(page, text) {
   return null;
 }
 
-test('Keyboard only: Tab reaches a glow, Enter puts a cause in hand, → walks to the one wanted, arrows pick, Enter takes, Tab reaches Apply, Enter writes', { timeout: 120000 }, async (t) => {
+test('Keyboard only: Tab reaches a glow, Enter puts a cause in hand, → walks to the one wanted, arrows pick, Enter writes', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -412,15 +421,13 @@ test('Keyboard only: Tab reaches a glow, Enter puts a cause in hand, → walks t
   await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
   await page.keyboard.press('ArrowUp');
   await take(page, overlay);
-  // A applies, from wherever the keys are
-  await page.keyboard.press('a');
   const file = join(root, 'src/App.jsx');
   const was = await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8');
   for (let i = 0; i < 100 && (await readFile(file, 'utf8')) === was; i++) await page.waitForTimeout(100);
   assert.notEqual(await readFile(file, 'utf8'), was);
 });
 
-test('Enter on the Apply button that has focus writes the taken causes', { timeout: 120000 }, async (t) => {
+test('Undo takes the fix just written back: the file is as it was and the fix is offered again', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await demo(t);
@@ -430,17 +437,19 @@ test('Enter on the Apply button that has focus writes the taken causes', { timeo
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
   await take(page, overlay);
-  // put the cause handed on down, then Tab on to Apply
-  await page.keyboard.press('Escape');
-  await panel(overlay).locator('.line').waitFor({ timeout: 5000 });
-  let onApply = false;
-  for (let i = 0; i < 80 && !onApply; i++) { await page.keyboard.press('Tab'); onApply = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.classList.contains('apply') ?? false); }
-  assert.ok(onApply, 'Tab reaches Apply');
-  await page.keyboard.press('Enter');
   const file = join(root, 'src/App.jsx');
   const was = await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8');
   for (let i = 0; i < 60 && (await readFile(file, 'utf8')) === was; i++) await page.waitForTimeout(100);
-  assert.notEqual(await readFile(file, 'utf8'), was, 'Enter on the focused Apply button wrote nothing (the key went to the panel\u2019s own Enter instead)');
+  assert.notEqual(await readFile(file, 'utf8'), was, 'written at once');
+  await panel(overlay).locator('.said .undo').click();
+  await said(overlay).filter({ hasText: 'Undone' }).waitFor({ timeout: 15000 });
+  for (let i = 0; i < 60 && (await readFile(file, 'utf8')) !== was; i++) await page.waitForTimeout(100);
+  assert.equal(await readFile(file, 'utf8'), was, 'the file is back as it was');
+  // the fix is offered again
+  await overlay.locator('.bp .hit[aria-label*="gap-[3px]"]').waitFor({ state: 'attached', timeout: 15000 }).catch(async (e) => {
+    const dump = await page.evaluate(() => ({ chip: document.getElementById('beta-chip')?.className, hits: [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => h.getAttribute('aria-label')).slice(0, 30), panel: document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText }));
+    throw new Error(`${e.message}\n${JSON.stringify(dump, null, 1)}`);
+  });
 });
 
 test('Enter on a glow that has focus puts that glow\u2019s cause in hand', { timeout: 120000 }, async (t) => {
@@ -662,10 +671,9 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one cause; one
   // a click on one cell\u2019s glow: the cause is the class, one place in the code drawn 36 times
   await hold(page, overlay, 'rounded-[3px]', 'rounded-[3px]');
   assert.match(await panel(overlay).locator('.cause .what').innerText(), /1 place in your code · 36 on the page$/);
-  await take(page, overlay);
   let writes = 0;
   await page.route('**/swaps', (route) => { writes++; route.continue(); });
-  await page.keyboard.press('a');
+  await take(page, overlay);
   for (let i = 0; i < 100 && /rounded-\[3px\]/.test(await readFile(source, 'utf8')); i++) await page.waitForTimeout(100);
   const now = await readFile(source, 'utf8');
   assert.equal((now.match(/rounded-\[3px\]/g) ?? []).length, 0, 'the line no longer carries the drift');

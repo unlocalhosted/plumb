@@ -230,7 +230,7 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
   }
 });
 
-test('A suggestion is written in one pick: the concentric corner previews rounded-control, Write swaps the class in source, Undo puts it back', { timeout: 120000 }, async (t) => {
+test('A suggestion is written in one pick: the concentric corner previews rounded-control, taking it swaps the class in source, Undo puts it back', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { root, url } = await fixture(t, PAGE);
@@ -253,9 +253,9 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   for (let i = 0; i < 100 && !/rounded-control/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-control bg-ground/, 'the class is swapped where it was, in source');
   assert.doesNotMatch(await line(), /rounded-card/);
-  // the write is in the history: Undo puts the source back
-  await overlay.locator('.wt').filter({ hasText: /Applied rounded-control/ }).waitFor({ timeout: 20000 });
-  await overlay.locator('.wt').getByRole('button', { name: 'Undo' }).click();
+  // the panel says what was written, with Undo: it puts the source back
+  await overlay.locator('.fx .said .t').filter({ hasText: /^Changed rounded-card to rounded-control at 1 place$/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.fx .said .undo').click();
   for (let i = 0; i < 100 && !/rounded-card/.test(await line()); i++) await page.waitForTimeout(100);
   assert.match(await line(), /className="rounded-card bg-ground/);
   assert.deepEqual(errors, []);
