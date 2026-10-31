@@ -185,7 +185,7 @@ test('Rows from one JSX line: the cause is picked once from the panel and writte
   assert.ok(onRow, `a button-padding glow on a row: ${JSON.stringify(rows)}`);
   const words = await openMark(page, overlay, onRow.id, { options: true });
   assert.equal(words.cls, 'px-s2');
-  assert.match(words.what, /3 places$/);
+  assert.match(words.what, /1 place in your code · 3 on the page$/, 'rows from one JSX line are one place, drawn three times');
   let writes = 0;
   await page.route('**/swaps', (route) => { writes++; route.continue(); });
   await applyFix(page, overlay);

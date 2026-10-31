@@ -206,8 +206,11 @@ export class FixPanel {
   #keeping = false;   // the why field is open for the cause in hand
   #why = '';          // its words as typed
   #names = new Map(); // cause key → the new token's name as typed
+  #fromCode = new Map(); // cause key → { reading } | { plan, writes, at } | { none }: a cause no element renders, its options read from the code
+  #swaps = new Map();    // cause key → { writes }: taken from the code alone, written on Apply
 
-  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps) → Promise, spotlight(els), tokens() → policy }
+  // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps, total, swaps) → Promise, spotlight(els), tokens() → policy,
+  //   fromCode(mark, places) → Promise<{ plan, writes } | null> }
   constructor(root, host) {
     this.#host = host;
     this.#el = Object.assign(document.createElement('div'), { className: 'fx', hidden: true });
@@ -218,7 +221,7 @@ export class FixPanel {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
-      else if (b.classList.contains('sp')) this.#host.pick(+b.dataset.i);
+      else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
       else if (b.classList.contains('prev')) this.skip(-1);
@@ -296,6 +299,7 @@ export class FixPanel {
     const el = g.members.some((m) => m.el && m.el === lead) ? lead : (g.members.find((m) => shown(m.el)) ?? g.members.find((m) => m.el))?.el ?? null;
     // a cause with no place on the page right now: nothing to hold or light; its fix comes from the code alone
     if (el) this.#host.hold(g, el); else this.#host.release();
+    if (!drawn(g)) this.#readFromCode(g);
     this.#host.spotlight(elsOf(g));
     this.render(true);
     this.#host.announce?.(FIX.inHand(FIX.position(g, live, noteOf), nameOf(g), FIX.what(g.members[0].mark), placesOf(g)));
@@ -361,15 +365,43 @@ export class FixPanel {
     this.hold(this.#at + by);
   }
   // the selection's view, only when it is about this cause: never another problem's options, shown or taken
-  #viewOf(g) { const v = g ? this.#host.view() : null; return v && g.members.some((m) => m.mark.key === v.mark?.key && m.mark.rule === v.mark?.rule) ? v : null; }
+  #viewOf(g) {
+    const v = g ? this.#host.view() : null;
+    if (v && g.members.some((m) => m.mark.key === v.mark?.key && m.mark.rule === v.mark?.rule)) return v;
+    // nothing on the page renders it: its options as read from the code, each an exact edit at every place
+    const c = g && !drawn(g) ? this.#fromCode.get(g.key) : null, mark = g?.members[0].mark;
+    if (c?.reading) return { mark, reading: true };
+    if (!c?.plan) return null;
+    return { mark, ready: true, kind: 'swap', code: true, options: c.plan.options.map((o, i) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!c.writes[i]?.length, cls: o.write?.to ?? null })), at: c.at, now: c.plan.now };
+  }
+  // a cause no element renders: its theme choices and their exact edits, read once from the code at its places
+  #readFromCode(g) {
+    const mark = g.members[0].mark;
+    if (this.#fromCode.has(g.key) || mark.family === 'craft' || !mark.choices?.length || !this.#host.fromCode) return;
+    const places = [...new Map(g.members.map((m) => [`${fileOf(m)}:${m.mark.line}:${m.mark.column}`, { file: fileOf(m), line: m.mark.line, column: m.mark.column }])).values()];
+    this.#fromCode.set(g.key, { reading: true });
+    this.#host.fromCode(mark, places)
+      .then((r) => this.#fromCode.set(g.key, r ? { ...r, at: r.plan.at } : { none: true }), () => this.#fromCode.set(g.key, { none: true }))
+      .finally(() => { if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
+  }
+  // an option picked: on the page it is tried there; from the code alone it is only chosen
+  #pick(i) {
+    const g = this.#cause(), v = this.#viewOf(g);
+    if (!v?.code) { this.#host.pick(i); return; }
+    this.#fromCode.get(g.key).at = Math.max(0, Math.min(v.options.length - 1, i));
+    this.#html = ''; this.render();
+  }
   take() {
     const g = this.#cause(), v = this.#viewOf(g);
     // a place on the page is read first (its exact options); a cause with none takes its fix from the code alone
     if (!g || (!v && drawn(g))) return;
     if (v?.ready) {
       if (!v.options[v.at]?.ok) return; // its exact edit is still being read
-      this.#host.take();
-    } else if (v.suggest?.kind === 'token') {
+      if (v.code) this.#swaps.set(g.key, { writes: this.#fromCode.get(g.key).writes[v.at] });
+      else this.#host.take();
+    } else if (v?.reading) {
+      return;
+    } else if (v?.suggest?.kind === 'token') {
       this.#tokens.set(g.key, { suggest: v.suggest, els: elsOf(g) });
     } else {
       const a = this.#action(g, v);
@@ -437,24 +469,25 @@ export class FixPanel {
     this.#writing = true; this.#letGo(true); this.#host.release(); this.#host.spotlight([]);
     this.render();
     let left = { count: 0 };
-    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], this.#taken.size)) ?? left; }
+    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], this.#taken.size, [...this.#swaps.values()])) ?? left; }
     catch (error) { left = { count: this.#taken.size, why: error?.message }; }
     finally {
       this.#writing = false;
       // what didn't land stays taken, with why; A tries again (the file is read again first)
       if (!left.count) {
         if (this.#steady) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - this.#fixed.length), causes: Math.max(0, this.#steady.causes - this.#taken.size) };
-        this.#error = null; this.#taken.clear(); this.#tokens.clear(); this.#keeps.clear();
+        this.#error = null; this.#taken.clear(); this.#tokens.clear(); this.#keeps.clear(); this.#swaps.clear(); this.#fromCode.clear();
         this.#confirm();
       }
       else {
         this.#error = left.why ?? FIX.couldNot;
         // only tokens were refused: the causes written are done; the refused ones stay taken
         if (left.count === left.refused?.length) {
-          const keep = new Set([...this.#tokens].filter(([, t]) => left.refused.includes(t)).map(([k]) => k));
+          const keep = new Set([...this.#tokens, ...this.#swaps].filter(([, t]) => left.refused.includes(t)).map(([k]) => k));
           for (const k of [...this.#taken.keys()]) if (!keep.has(k)) this.#taken.delete(k);
           for (const k of [...this.#tokens.keys()]) if (!keep.has(k)) this.#tokens.delete(k);
-          this.#keeps.clear();
+          for (const k of [...this.#swaps.keys()]) if (!keep.has(k)) this.#swaps.delete(k);
+          this.#keeps.clear(); this.#fromCode.clear();
         }
       }
       this.#html = ''; this.render();
@@ -477,7 +510,7 @@ export class FixPanel {
       return false;
     }
     const v = this.#viewOf(this.#cause());
-    if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#host.pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
+    if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
     if (k === 'Enter') { this.take(); return true; }
     if (k === 'k' || k === 'K') { this.keep(); return true; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
@@ -534,16 +567,18 @@ export class FixPanel {
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
-      const a = !v?.ready && v?.suggest?.kind !== 'token' ? this.#action(g, v) : null;
+      const a = !v?.ready && !v?.reading && v?.suggest?.kind !== 'token' ? this.#action(g, v) : null;
       if (v?.ready) {
         // the suggested option is tried the moment the fix is in hand
-        if (this.#previewed !== g.key) { this.#previewed = g.key; queueMicrotask(() => this.#host.pick(v.at)); }
+        if (this.#previewed !== g.key && !v.code) { this.#previewed = g.key; queueMicrotask(() => this.#host.pick(v.at)); }
         const unit = kind === 'time' ? 'ms' : kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px';
         const items = v.options.map((o, i) => ({ n: Number.isFinite(o.n) ? o.n : i, html: `<button class="sp" data-kind="${kind}" data-i="${i}" aria-pressed="${v.at === i}">${specimen(kind, mark, o.n, o.label, o.swatch)}<span class="v">${Number.isFinite(o.n) ? `${o.n}${unit}` : esc(o.label)}</span><span class="tk">${Number.isFinite(o.n) ? esc(o.label) : ''}</span></button>` }));
         if (v.now && Number.isFinite(v.now.n) && !v.options.some((o) => o.n === v.now.n)) items.push({ n: v.now.n, html: `<div class="sp off" data-kind="${kind}" aria-disabled="true" title="What it is now">${specimen(kind, mark, v.now.n, v.now.label, v.now.swatch)}<span class="v">${v.now.n}${unit}</span><span class="tk">now</span></div>` });
         if (v.options.every((o) => Number.isFinite(o.n))) items.sort((a, b) => a.n - b.n);
         middle = `<div class="specimens">${items.map((x) => x.html).join('')}</div>`;
         canTake = !!v.options[v.at]?.ok;
+      } else if (v?.reading) {
+        middle = '';
       } else if (v?.suggest?.kind === 'token') {
         const s = v.suggest, value = String(s.value);
         this.#previewToken(g, s);

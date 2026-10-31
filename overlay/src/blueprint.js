@@ -83,8 +83,9 @@ export class Blueprint {
       take: () => this.#selection.accept(),
       spotlight: (els) => this.#marks.spotlight(els),
       announce: (text) => this.#host.announce?.(text),
-      applyAll: (tokens, keeps, total) => this.#applyAll(tokens, keeps, total),
+      applyAll: (tokens, keeps, total, swaps) => this.#applyAll(tokens, keeps, total, swaps),
       tokens: () => spec.value?.tokens ?? null,
+      fromCode: (mark, places) => this.#fromCode(mark, places),
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
@@ -275,13 +276,44 @@ export class Blueprint {
     }
     if (p.read === p.total) this.#lastDrift = p.drift;
   }
+  // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
+  // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
+  async #fromCode(mark, places) {
+    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
+    const here = (p, name) => p.edits.find((e) => e.token === name && e.line === p.line && e.column === p.column);
+    const plan = swapPlanOf({ ...mark, choices: mark.choices.map((c) => ({ ...c, edit: here(read[0], c.name) ?? null })) });
+    if (!plan) return null;
+    const writes = mark.choices.map((c) => read.flatMap((p) => { const e = here(p, c.name); return e ? [{ file: p.file, hash: p.hash, id: e.id }] : []; }));
+    return { plan, writes };
+  }
   // Apply from the fix panel: each new token is written to the theme with its class swap (POST token), then every
   // class change Changes holds goes out in one guarded write per file
   // Apply: every token first (the theme), then each token's class at every place of its cause, one guarded write per
   // file; then the causes kept as intended into the ledger; then the panel's swaps (Changes). What did not land is said.
-  async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length) {
+  async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length, swaps = []) {
     // the panel's swaps first (Changes: source files, which hot-update without a reload)
     if (this.#changes.count) await this.#changes.accept();
+    // then the causes taken from the code alone: their edits by id, per file (POST apply: the server derives each edit
+    // again from the source as it is, and a file changed since it was read writes nothing)
+    const refused = [];
+    let said = null;
+    const byFile = new Map(); // file → { hash, edits: [{ id }], of: [swap] }
+    for (const s of swaps) for (const w of s.writes) {
+      const f = byFile.get(w.file) ?? byFile.set(w.file, { hash: w.hash, edits: [], of: [] }).get(w.file);
+      if (!f.edits.some((e) => e.id === w.id)) f.edits.push({ id: w.id });
+      if (!f.of.includes(s)) f.of.push(s);
+    }
+    if (byFile.size) this.#host.remember?.(FIX.applied(total));
+    for (const [file, f] of byFile) {
+      try {
+        await post('apply', { file, hash: f.hash, edits: f.edits });
+        this.invalidate({ file });
+      } catch (error) {
+        this.#host.forgetResume?.();
+        for (const s of f.of) if (!refused.includes(s)) refused.push(s);
+        said ??= /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot;
+      }
+    }
     // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
     // the theme, the ledger. A reload the theme write causes can't cut it short.
     // a new step's class goes in only once the theme has it (the server's `then`), so a step the theme refuses never
@@ -301,8 +333,6 @@ export class Blueprint {
       }
       if (files.size) then.set(t, { swaps: [...files.values()] });
     }
-    const refused = [];
-    let said = null;
     if (tokens.length || keeps.length) {
       // said now: if the theme write reloads the page, the bar says it when the page comes back
       this.#host.remember?.(FIX.applied(total));
@@ -326,7 +356,7 @@ export class Blueprint {
           accepts: keeps.map((k) => ({ rule: k.rule, sites: k.sites, why: k.why })),
         });
         const o = outcome(results);
-        refused.push(...o.refused); said = o.said;
+        refused.push(...o.refused); said = o.said ?? said;
         for (const f of new Set([...tokens.map((t) => t.suggest.file), ...results.swaps.map((r) => r.file).filter(Boolean), ...keeps.flatMap((k) => k.sites.map((x) => x.file))])) this.invalidate({ file: f });
       } catch (error) { refused.push(...tokens, ...keeps); said = error?.message ?? FIX.couldNot; this.#host.forgetResume?.(); }
       finally { removeEventListener('plumb:applied', heard); }

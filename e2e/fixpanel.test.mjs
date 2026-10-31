@@ -424,6 +424,46 @@ export function App({ open = false }) {
   assert.deepEqual(errors, []);
 });
 
+// A place the page does not render still has its theme's options, read from the code: the panel draws them, one is
+// picked with the keys, taken, and Apply writes it in the source, though no element was ever on the page.
+test('A place the page does not render offers its theme options, and Apply writes the one picked', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, `
+export function App({ open = false }) {
+  return (
+    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
+      <p className="text-body">Always here</p>
+      {open ? <p id="never" className="text-body p-[13px]">Only sometimes</p> : null}
+    </main>
+  );
+}
+`);
+  const { page, errors, overlay } = await open(t, launched, url);
+  const cls = () => panel(overlay).locator('.cause .cls').innerText();
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 6 && !/p-\[13px\]/.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
+  assert.match(await cls(), /p-\[13px\]/);
+  await panel(overlay).locator('.say').filter({ hasText: 'Nothing on the page shows this place right now' }).waitFor({ timeout: 5000 });
+  const take = panel(overlay).locator('.take');
+  await take.filter({ hasText: /^Use p-s/ }).waitFor({ timeout: 10000 });
+  const values = await panel(overlay).locator('.specimens .sp .v').allInnerTexts();
+  assert.ok(values.includes('12px') && values.includes('16px') && values.includes('13px'), `the steps either side and the value now: ${values}`);
+  assert.equal(await panel(overlay).getByText('your theme has nothing close').count(), 0, 'it never says the theme has nothing close');
+  // the other step is picked with the keys; nothing on the page moves, the panel says which
+  const first = await take.innerText();
+  await page.keyboard.press(/p-s3/.test(first) ? 'ArrowUp' : 'ArrowDown');
+  await take.filter({ hasText: /p-s4/.test(first) ? 'p-s3' : 'p-s4' }).waitFor({ timeout: 5000 });
+  const chosen = /p-s4/.test(first) ? 'p-s3' : 'p-s4';
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.apply .badge').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
+  await panel(overlay).locator('.apply').click();
+  await panel(overlay).locator('.done').waitFor({ timeout: 20000 });
+  const source = await readFile(join(root, 'src/App.jsx'), 'utf8');
+  assert.match(source, new RegExp(`className="text-body ${chosen}"`), 'the class picked is written where it was typed');
+  assert.doesNotMatch(source, /p-\[13px\]/);
+  assert.deepEqual(errors, []);
+});
+
 // Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
 // that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
 test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {
