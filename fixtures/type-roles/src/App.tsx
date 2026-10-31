@@ -1,0 +1,26 @@
+import { Labels } from './Labels';
+import { Specimen } from './specimen/Specimen';
+// Four roles reached for by hand: a caps label at 12px, a 24px heading, 16px prose (1.6) and 16px list bodies (1.4),
+// and 11px caps labels one step down. Nothing is named yet.
+export function App() {
+  return <main className="p-8">
+    <header>
+      <span id="eyebrow" className="text-[12px] tracking-[0.08em] uppercase">Chapter one</span>
+      <h1 id="title" className="text-[1.5rem] font-medium tracking-[-0.02em]">A page about type</h1>
+      <p id="lead" className="text-[1rem] leading-[1.6]">The lead paragraph says what the page is for, in two sentences.</p>
+    </header>
+    <section>
+      <h2 id="h2" className="text-[1.5rem] font-medium tracking-[-0.02em]">Rows</h2>
+      <p id="prose-a" className="text-[1rem] leading-[1.6]">Prose paragraphs read at a relaxed leading, because they run long.</p>
+      <p id="prose-b" className="text-[1rem] leading-[1.6]">A second paragraph, the same.</p>
+      <ul>
+        {[0, 1, 2, 3].map(n => <li key={n} id={`row-${n}`}>
+          <span id={`row-label-${n}`} className="text-[12px] tracking-[0.1em] uppercase">Row {n}</span>
+          <span id={`row-body-${n}`} className="text-[1rem] leading-[1.4]">A short description of row {n}.</span>
+        </li>)}
+      </ul>
+      <Labels />
+    </section>
+    <Specimen />
+  </main>;
+}

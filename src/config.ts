@@ -53,6 +53,8 @@ export interface PlumbConfig {
   imitation?: Record<string, { elements?: string[]; fingerprint: string[] }>;
   /** The craft spec: preset, values by principle, rules on/off and tier, token policy (docs/briefs/craft-spec.md). */
   craft?: CraftConfig;
+  /** System proposals (type roles): paths outside the system, never proposed (specimens, demos, brand imitations). */
+  system?: { exclude?: string[] };
   /** Dependency presets' craft keys, in order, set by loadPresets; never written by hand. */
   craftLayers?: { from: string; craft: CraftConfig }[];
 }
@@ -67,7 +69,7 @@ export function defineConfig(config: PlumbConfig): PlumbConfig {
   return config;
 }
 
-const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets', 'craft'];
+const allowedKeys = ['css', 'source', 'decisions', 'components', 'habits', 'imitation', 'markers', 'classHelpers', 'exported', 'presets', 'craft', 'system'];
 const families = ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'size', 'z', 'opacity'];
 const filenames = allConfigNames;
 
@@ -116,6 +118,7 @@ export function validateConfig(value: unknown): PlumbConfig {
   if ('css' in config) string(config.css, 'css');
   if ('source' in config) strings(config.source, 'source');
   if ('markers' in config) strings(config.markers, 'markers');
+  if ('system' in config) { const system = object(config.system, 'system'); keys(system, ['exclude'], 'system'); if ('exclude' in system) strings(system.exclude, 'system.exclude'); }
   if ('classHelpers' in config) {
     if (!Array.isArray(config.classHelpers)) invalid('classHelpers', 'an array of helper names or argument-shape objects');
     for (const [index, item] of config.classHelpers.entries()) {

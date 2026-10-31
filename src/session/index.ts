@@ -4,9 +4,9 @@ import { resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
-export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many';
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many';
 export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'propEdit' | 'token' | 'try' | 'refresh'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
@@ -69,7 +69,7 @@ export class Session extends EventEmitter {
     if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
-    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'propEdit', 'token', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
+    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'system', 'propEdit', 'token', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
@@ -111,6 +111,7 @@ export class Session extends EventEmitter {
   applyAll(...args: Parameters<Engine['applyAll']>) { return this.call('applyAll', args); }
   page(...args: Parameters<Engine['page']>) { return this.call('page', args); }
   places(...args: Parameters<Engine['places']>) { return this.call('places', args); }
+  system(...args: Parameters<Engine['system']>) { return this.call('system', args); }
   propEdit(...args: Parameters<Engine['propEdit']>) { return this.call('propEdit', args); }
   spec(...args: Parameters<Engine['spec']>) { return this.call('spec', args); }
   token(...args: Parameters<Engine['token']>) { return this.call('token', args); }

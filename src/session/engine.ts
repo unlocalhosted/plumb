@@ -28,6 +28,9 @@ import type { Props } from './props.js';
 import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addToken, topBlocks } from '../onboarding/write.js';
+import { loadConfig } from '../config.js';
+import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
+import type { TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
 import { useFor } from '../rules/provenance.js';
 import { atSite } from '../surfaces/sites.js';
@@ -77,16 +80,23 @@ export interface PageEntry {
   cached?: true;
 }
 export interface PageResult { revision: number; items: PageEntry[] }
+/** One measured text element of a page: its stamp and tag, whether it sits in a list, and its computed type values. */
+export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
+export interface SystemOptions { files?: string[]; census?: CensusEntry[]; exclude?: string[] }
+export type SystemWrite = { tokens: (TypeProposal['write']['tokens'][number] & { file: string; hash: string })[]; css: { file: string; hash: string; css: string }[]; swaps: (TypeProposal['write']['swaps'][number] & { hash: string })[] };
+export interface SystemResult { revision: number; proposal: Omit<TypeProposal, 'write'> & { write: SystemWrite } }
+export interface CssOptions { file: string; hash: string; css: string }
 export interface PlacesResult { revision: number; files: { file: string; hash: string | null; findings: Report['findings']; declarations: Report['declarations'] }[] }
 /** A whole cause: every place in the project with this class under this rule, each rewritten for the chosen token (its name as the finding lists it) or class. */
 export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
 /** What follows a new token once it is in the theme: its class at every place of a cause, or per-element swaps (a craft suggestion has no source rule). Neither is written when the token is refused. */
 export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
-export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
+export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; /** stylesheet blocks appended to the theme after the tokens (a type role's @utility) */ css?: CssOptions[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
     tokens: { name: string; ok: boolean; error?: string }[];
+    css: { file: string; ok: boolean; written: boolean; error?: string }[];
     /** one entry per file; a whole cause carries the places it found in all, and the cause it answers */
     swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string }[];
     accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
@@ -731,16 +741,16 @@ export class Session extends EventEmitter {
    * stale fails that item. Every written file gets its own history entry and undo handle, as the single endpoints do.
    */
   async applyAll(options: ApplyAllOptions): Promise<ApplyAllResult> {
-    const { tokens = [], swaps = [], accepts = [] } = options ?? {};
-    if (![tokens, swaps, accepts].every(Array.isArray) || tokens.length + swaps.length + accepts.length === 0) throw new UsageError('Apply needs at least one token, swap or accept.');
-    if (tokens.length + swaps.length + accepts.length > 200) throw new UsageError('Apply takes at most two hundred items.');
-    const result: ApplyAllResult = { results: { tokens: [], swaps: [], accepts: [] }, undo: [], labels: [] };
+    const { tokens = [], css = [], swaps = [], accepts = [] } = options ?? {};
+    if (![tokens, css, swaps, accepts].every(Array.isArray) || tokens.length + css.length + swaps.length + accepts.length === 0) throw new UsageError('Apply needs at least one token, swap or accept.');
+    if (tokens.length + css.length + swaps.length + accepts.length > 400) throw new UsageError('Apply takes at most four hundred items.');
+    const result: ApplyAllResult = { results: { tokens: [], css: [], swaps: [], accepts: [] }, undo: [], labels: [] };
     // the host holds hot updates while the transaction is open (hosts/vite.ts), and tells the page once it is done
     this.emit('transaction', { phase: 'start' });
-    try { return await this.applyEach({ tokens, swaps, accepts }, result); }
+    try { return await this.applyEach({ tokens, css, swaps, accepts }, result); }
     finally { this.emit('transaction', { phase: 'end', ...result }); }
   }
-  private async applyEach({ tokens, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {
+  private async applyEach({ tokens, css, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {
     // the hash each file had when the batch began, and the hash it has now
     const began = new Map<string, string>(), latest = new Map<string, string>();
     const hashFor = async (file: string, sent: string): Promise<string> => {
@@ -774,6 +784,15 @@ export class Session extends EventEmitter {
         if (then && 'cause' in then) await this.swapCause(then, result, moved, before, token.name);
         else if (then) for (const swap of then.swaps ?? []) await swapFile(swap, token.name);
       } catch (error) { result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) }); }
+    }
+    // the stylesheet blocks (a type role's utilities), after the tokens they read
+    for (const block of css) {
+      try {
+        const written = await this.appendCss({ ...block, hash: await hashFor(block.file, block.hash) });
+        moved(block.file, written.hash);
+        if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
+        result.results.css.push({ file: block.file, ok: true, written: written.written });
+      } catch (error) { result.results.css.push({ file: String(block?.file), ok: false, written: false, error: message(error) }); }
     }
     for (const swap of swaps) {
       if ('cause' in swap) { await this.swapCause(swap, result, moved); continue; }
@@ -842,6 +861,121 @@ export class Session extends EventEmitter {
         entry(file, { ok: true, applied: edits.map(e => `swap:${e.line}:${e.column}`), refused, places: places.length });
       } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
     }
+  }
+  /** A stylesheet block (a type role's @utility) appended to the theme file, with the token write's guards: the
+   * same file identity and hash, the same blocks as before plus the new ones, one undo handle. Already there → nothing. */
+  async appendCss(options: CssOptions): Promise<Omit<TokenResult, 'then'>> {
+    const { file, hash, css } = options ?? {} as CssOptions;
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof css !== 'string' || !css.trim()) throw new UsageError('A stylesheet write requires file, hash and css.');
+    if (css.length > 20000 || /<\/?script|@import|url\(/i.test(css)) throw new UsageError('A stylesheet block is at most twenty thousand characters of plain CSS.');
+    const spec = await this.request<ProjectSpec>('spec');
+    if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Styles go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
+    const path = this.file(file), block = css.trim();
+    return this.serialize(async () => {
+      const identity = await this.editableFile(path);
+      if (!/\.css$/.test(path)) throw new UsageError('Styles are written to a stylesheet.');
+      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
+      let next: string, before: string;
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+        await this.sameFile(path, identity);
+        before = await readFile(path, 'utf8');
+        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
+        if (before.includes(block)) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
+        next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
+        const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
+        if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+        await this.sameFile(path, identity);
+        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
+        await this.sameFile(path, identity);
+      } finally { await handle.close(); }
+      await this.reconcile([path]);
+      const hashAfter = sourceHash(next);
+      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
+      const undo = this.record(path, before, hashAfter, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
+      return { revision: this.revision, file: path, hash: hashAfter, applied: ['css'], written: true, undo };
+    });
+  }
+  /**
+   * The type system this code is reaching for (docs/research/type-roles.md): its roles, members, cost and the write
+   * that makes it the system, from the report's places and, when a page was measured, the census that confirms them.
+   */
+  async system(options: SystemOptions = {}): Promise<SystemResult> {
+    const { files, census, exclude } = options ?? {};
+    if (census !== undefined && (!Array.isArray(census) || census.length > 20000)) throw new UsageError('A census is a list of at most twenty thousand elements.');
+    const config = await loadConfig(this.root, this.options.config).catch(() => undefined);
+    const excluded = [...(config?.value.system?.exclude ?? []), ...(Array.isArray(exclude) ? exclude.filter((p): p is string => typeof p === 'string') : [])];
+    const members = new Map<string, TypeMember>();
+    const member = (where: { file: string; line: number; column: number }, tag: string, declarations: Report['declarations'], entry?: CensusEntry): TypeMember | undefined => {
+      const type = declarations.filter(d => isTypeProp(d.prop));
+      const classes = new Map<string, TypeClass>();
+      let fixed: string | undefined;
+      for (const d of type) {
+        if (d.origin === 'inline') { fixed = 'an inline style sets its type; change it by hand'; continue; }
+        if (!['class', 'arbitrary', 'apply'].includes(d.origin)) continue;
+        if (d.site.defined || d.site.file !== this.file(where.file) || d.site.line !== where.line) { fixed = 'its classes are written elsewhere (a variable or a helper); change them there'; continue; }
+        const c = classes.get(d.site.text) ?? { text: d.site.text, props: [], value: d.resolved ?? d.value, origin: d.origin };
+        if (!c.props.includes(d.prop)) c.props.push(d.prop);
+        classes.set(d.site.text, c);
+      }
+      const value = (prop: string) => { const d = type.filter(d => d.prop === prop).at(-1); return d ? { raw: d.value, resolved: d.resolved ?? d.value } : undefined; };
+      const fontSize = value('font-size'), lineHeight = value('line-height'), letterSpacing = value('letter-spacing'), weight = value('font-weight'), transform = value('text-transform');
+      const computed = entry?.computed;
+      const size = computed?.size ?? px(fontSize?.resolved);
+      if (size === null || size === undefined) return undefined;
+      const fluid = fontSize && /clamp\(|\bmin\(|\bmax\(/.test(fontSize.raw) ? fontSize.raw : undefined;
+      const lhLowered = lineHeight ? (/^[\d.]+$/.test(lineHeight.resolved.trim()) ? parseFloat(lineHeight.resolved) : (px(lineHeight.resolved, size) ?? 0) / size) : null;
+      const current: TypeBundle = {
+        size: fluid ? null : size, ...(fluid ? { sizeText: fluid } : {}),
+        lineHeight: computed?.lineHeight !== undefined && computed.lineHeight !== null ? Math.round(computed.lineHeight / size * 1000) / 1000 : lhLowered === null ? null : Math.round(lhLowered * 1000) / 1000,
+        letterSpacing: Math.round(((computed?.letterSpacing !== undefined && computed.letterSpacing !== null ? computed.letterSpacing : (px(letterSpacing?.resolved, size) ?? 0)) / size) * 1000) / 1000,
+        weight: computed?.weight ?? (parseInt(weight?.resolved ?? '400', 10) || 400),
+        transform: (computed?.transform ?? transform?.resolved) === 'uppercase' ? 'uppercase' : 'none',
+      };
+      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, elements: 1, ...(fixed ? { fixed } : {}) };
+    };
+    if (census?.length) {
+      // the measured page: one member per stamp, with the elements that rendered it
+      const unique = new Map<string, CensusEntry & { elements: number }>();
+      for (const c of census) { if (!c || typeof c.stamp !== 'string' || typeof c.tag !== 'string') throw new UsageError('Each census element is { stamp, tag, list?, computed? }.'); const n = Number.isFinite(c.elements) ? Math.max(1, Math.floor(c.elements!)) : 1; const u = unique.get(c.stamp); if (u) u.elements += n; else unique.set(c.stamp, { ...c, elements: n }); }
+      const entries = [...unique.values()];
+      const answers = await this.page(entries.map(c => ({ stamp: c.stamp, tag: c.tag })));
+      entries.forEach((c, i) => {
+        const a = answers.items[i]!;
+        if (a.status !== 'ready' || !a.site || a.file === undefined || a.line === undefined || a.column === undefined) return;
+        const m = member({ file: a.file, line: a.line, column: a.column }, c.tag, a.site.declarations, c);
+        if (m) { m.elements = c.elements; members.set(`${m.site.file}:${m.site.line}:${m.site.column}`, m); }
+      });
+    } else {
+      // no measured page: every host element in the files that sets its own text size
+      const paths = (files?.length ? files.map(f => this.file(f)) : [...this.sourceFiles]).filter(p => /\.[cm]?[jt]sx$/.test(p) && this.sourceFiles.has(p)).sort();
+      const targets: { file: string; line: number; column: number; tag: string }[] = [];
+      for (const path of paths) {
+        const text = await readFile(path, 'utf8').catch(() => '');
+        if (!text) continue;
+        const rel = relative(this.root, path).replaceAll('\\', '/');
+        for (const entry of indexSource(path, text)) if (/^[a-z]/.test(entry.component)) targets.push({ file: rel, line: entry.line, column: entry.column, tag: entry.component });
+      }
+      const answers = await this.many(targets.map(t => ({ method: 'site' as const, args: [t.file, t.line, t.column] })));
+      targets.forEach((t, i) => {
+        const a = answers[i]!;
+        if (!('value' in a)) return;
+        const site = a.value as SiteResult;
+        if (!site.declarations.some(d => d.prop === 'font-size')) return;
+        const m = member(t, t.tag, site.declarations);
+        if (m) members.set(`${m.site.file}:${m.site.line}:${m.site.column}`, m);
+      });
+    }
+    const proposal = proposeTypeRoles([...members.values()], { exclude: excluded });
+    // the write, with the hashes it must find: the theme for tokens and utilities, each source file for its swaps
+    const spec = await this.request<ProjectSpec>('spec');
+    const theme = spec.tokens.file ?? '', themeHash = spec.tokens.hash ?? '';
+    const swaps: SystemWrite['swaps'] = [];
+    for (const swap of proposal.write.swaps) { const text = await readFile(this.file(swap.file), 'utf8').catch(() => null); if (text !== null) swaps.push({ ...swap, hash: sourceHash(text) }); }
+    const write: SystemWrite = { tokens: proposal.write.tokens.map(t => ({ ...t, file: theme, hash: themeHash })), css: proposal.write.css ? [{ file: theme, hash: themeHash, css: proposal.write.css }] : [], swaps };
+    return { revision: this.revision, proposal: { ...proposal, write } };
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
   async set(options: SetOptions): Promise<ApplyResult> {

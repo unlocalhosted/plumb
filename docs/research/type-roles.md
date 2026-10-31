@@ -278,3 +278,32 @@ tracking-[0.1em] places: 41; uppercase: 41; with measure: 40; sizes 11×18 12×1
 15px places: 54; in a list item: 26; line-heights 1.375×20 1.625×15 1.5×14 1.55×4 1.25×1
 size moves > 2 px (18): the clamp titles at 1280 (46.08/43.52/39.68 → 44) and the one-off headings 28/30/31.2/32/33 → 24
 ```
+
+## Layer 2 (built): the proposal and its write
+
+- **Endpoint**: `POST /__plumb/system` with `{ census?: [{ stamp, tag, list?, elements?, computed?: { size, lineHeight, letterSpacing, weight, transform } }], files?: [relative…], exclude?: [path…] }`.
+  With a census (the overlay's: one entry per stamped text element, or one per stamp with `elements`), members are
+  the census's stamps read through `page`; without one, every host element in `files` (or every source file) that
+  sets its own `font-size`. `exclude` adds to `config.system.exclude` (new config key; prefix or glob per entry).
+- **Response**: `{ revision, proposal: { rule: 'system/type-roles', kind: 'system', family: 'type', roles: [{ name, bundle: { size, sizeText?, lineHeight, letterSpacing, weight, transform }, variants?: { compact: { lineHeight } }, members: [{ site, stamp?, tag, classes, current, delta: { size, lineHeight, letterSpacing, weight }, variant?, confidence, elements, fixed? }], places, elements, files, contexts }], outside: [{ site, why }], low: [{ site, role, why }], exceptions: [{ site, role, why }], cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter }, write: { tokens: [{ file, hash, name, value, why }], css: [{ file, hash, css }], swaps: [{ file, hash, edits: [{ line, column, from, to }] }] } } }`.
+  The write is an `apply-all` body: `POST /__plumb/apply-all { tokens, css, swaps }` writes the theme pairs
+  (`--text-<role>`, `--text-<role>--line-height`, `--letter-spacing`, `--font-weight`, `-compact--line-height`), then
+  one `@utility type-<role>` block (and `type-<role>-compact`) appended to the theme file (new `css` items, the token
+  write's guards), then every member's type classes swapped for the role class, one write per file; `undo` has one
+  handle per written file. `apply-all` moves each file's hash on within the batch, so the proposal's hashes are the
+  ones to send; a stale hash fails only that item.
+- **Fixture**: `fixtures/type-roles/` (Vite + React + Tailwind v4): four roles (headline-small ×2, body-large ×4 with a
+  compact list variant, label-medium ×3, label-small ×3), one excluded specimen (`system.exclude: ['src/specimen']`).
+  `e2e/type-roles.test.mjs` proves the proposal, the write, the rendered result, undo, the exclusion and the stale hash.
+- **crafting-ui dry run** (`POST system` with the 686-stamp census from `bench/type-roles/measurements.json`, the
+  five excluded paths, no write; result saved in `bench/type-roles/crafting-ui.proposal.json`):
+  `status 200, 886 ms`; 403 places in the system, 283 outside (155 `var(--z)`-scaled drawing text, 102 excluded
+  paths, 25 SVG, 1 poster); roles: display-large 30 (`clamp(2rem, 3.4vw, 2.75rem)`), headline-small 21 (24/1.5),
+  title-large 50 (17/1.5/0/400), title-medium 29 (17/1.5/-0.01/600), body-large 104 (15/1.5, compact 1.375),
+  body-small 46 (14/1.5), label-medium 100 (12/1.5/0.08em), label-small 23 (11/1.5/0.1em); cost: size moves 0 → 228,
+  ≤1 → 78, ≤2 → 40, more → 27; line-height > 2 px → 72; 568 classes removed; 34 → 7 distinct sizes; 72 low, 13
+  exceptions (inline styles, classes written elsewhere); write: 33 tokens, 1 css block, 237 edits in 30 files.
+  Against the doc: the roles are the same eight; the counts are smaller because the engine's `var(--z)` rule (from
+  the lowered classes, not a px guess) puts 155 blueprint/drawing places outside, where the doc's regex found 9; and
+  with 15 px ×54 and 16 px ×67 now split by what `var(--z)` removed, the body-large mode landed on 15 (the owner's
+  decision is 16: the bundle rule should prefer the theme's existing step when the modes tie within 1 px, Q1 again).

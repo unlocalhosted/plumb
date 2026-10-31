@@ -117,6 +117,14 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   }
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')! });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
+  if (method === 'system') {
+    const body = params as { files?: unknown; census?: unknown; exclude?: unknown };
+    const system: NonNullable<Parameters<Session['system']>[0]> = {};
+    if (Array.isArray(body.files)) system.files = body.files.map(String);
+    if (Array.isArray(body.census)) system.census = body.census as NonNullable<typeof system.census>;
+    if (Array.isArray(body.exclude)) system.exclude = body.exclude.map(String);
+    return session.system(system);
+  }
   if (method === 'places') {
     const files = (params as { files?: unknown }).files;
     if (!Array.isArray(files)) throw new UsageError('places is { files: [path…] }.');
@@ -129,11 +137,12 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   }
   if (method === 'apply-all') {
     const cause = (item: Record<string, unknown>) => { const c = item.cause as Record<string, unknown>; return { cause: { rule: text(c, 'rule')!, text: text(c, 'text')!, choice: text(c, 'choice')! }, ...(item.file === undefined ? {} : { file: text(item, 'file')! }) }; };
-    const body = params as { tokens?: unknown; swaps?: unknown; accepts?: unknown };
+    const body = params as { tokens?: unknown; css?: unknown; swaps?: unknown; accepts?: unknown };
     const list = (value: unknown) => Array.isArray(value) ? value as Record<string, unknown>[] : [];
-    if (![body.tokens, body.swaps, body.accepts].some(Array.isArray)) throw new UsageError('Apply needs tokens, swaps or accepts.');
+    if (![body.tokens, body.css, body.swaps, body.accepts].some(Array.isArray)) throw new UsageError('Apply needs tokens, css, swaps or accepts.');
     return session.applyAll({
       tokens: list(body.tokens).map(t => ({ file: text(t, 'file')!, hash: text(t, 'hash')!, name: text(t, 'name')!, value: text(t, 'value')!, ...(t.why === undefined ? {} : { why: text(t, 'why')! }), ...(object(t.then) && object(t.then.cause) ? { then: cause(t.then) } : object(t.then) && Array.isArray(t.then.swaps) ? { then: { swaps: list(t.then.swaps).map(s => ({ file: text(s, 'file')!, hash: text(s, 'hash')!, edits: list(s.edits).map(e => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '' })) })) } } : {}) })),
+      css: list(body.css).map(c => ({ file: text(c, 'file')!, hash: text(c, 'hash')!, css: text(c, 'css')! })),
       swaps: list(body.swaps).map(s => object(s.cause) ? cause(s) : ({ file: text(s, 'file')!, hash: text(s, 'hash')!, edits: list(s.edits).map(e => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '' })) })),
       accepts: list(body.accepts).map(a => ({ rule: text(a, 'rule')!, why: text(a, 'why')!, sites: list(a.sites).map(st => ({ file: typeof st?.file === 'string' ? st.file : '', line: Number(st?.line), column: Number(st?.column), text: typeof st?.text === 'string' ? st.text : '' })) })),
     });
@@ -210,8 +219,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -272,7 +281,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'try', 'health', 'refresh'].includes(method);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'try', 'health', 'refresh'].includes(method);
       let result: unknown;
       if (current) result = await dispatchRequest(current, method, params, options, json);
       else {
@@ -379,7 +388,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});
