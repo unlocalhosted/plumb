@@ -406,10 +406,13 @@ export class MarkLayer {
   // at the zone. Its cause lights with it.
   #showHint(id) {
     const node = id ? this.#nodes.get(id) : null;
+    if ((node ? id : null) !== this.#hinted) this.invalidate();
     this.#hinted = node ? id : null;
-    const cause = node ? causeOf(node.mark) : null;
+    // a fix in hand owns the light: pointing elsewhere marks only the zone pointed at (it can still be clicked to
+    // switch), never relights its cause or says its pill over the fix being worked on
+    const held = this.#lit.length > 0, cause = node && !held ? causeOf(node.mark) : null;
     if (cause !== this.#cause) { this.#cause = cause; this.invalidate(); }
-    if (!node) { this.#hint.removeAttribute('data-on'); return; }
+    if (!node || (held && !this.#lit.includes(id))) { this.#hint.removeAttribute('data-on'); return; }
     const n = [...this.#nodes.values()].filter((x) => causeOf(x.mark) === cause).length;
     this.#hint.innerHTML = pillOf(node.mark, n);
     this.#placeHint();
@@ -449,6 +452,7 @@ export class MarkLayer {
   spotlight(ids, lead = null) {
     this.#lit = ids ?? [];
     this.#lead = this.#lit.length ? lead : null;
+    this.#showHint(this.#lit.length && this.#lit.includes(this.#hinted) ? this.#hinted : null); // a pill about another cause goes
     this.invalidate();
   }
 
@@ -584,8 +588,9 @@ export class MarkLayer {
     const tWrite = performance.now();
     // the cause pointed at (a zone's pill, or a cause in the panel): its zones light, the others go quiet
     const lit = new Set(this.#lit);
-    const lighting = this.#cause || lit.size;
-    const isLit = (id, mark) => (this.#cause ? causeOf(mark) === this.#cause : lit.has(id));
+    // the fix in hand first: its light never gives way to a cause the pointer passes over
+    const lighting = lit.size || this.#cause;
+    const isLit = (id, mark) => (lit.size ? lit.has(id) : causeOf(mark) === this.#cause);
     // Tab walks the hottest first: hit boxes go in by heat, the drawn order (the panel's) stays the page's
     const byHeat = [...plan].filter((p) => p.zone).sort((a, b) => b.heat - a.heat);
     const rank = new Map(byHeat.map((p, i) => [p.id, i]));
@@ -619,7 +624,7 @@ export class MarkLayer {
       node.g.dataset.box = `${Math.round(er.left)},${Math.round(er.top)},${Math.round(er.width)},${Math.round(er.height)}`; // the element it belongs to
       // how warm it rests, brighter when its cause is pointed, quiet when another cause is
       // the place the fix in hand is on: the strongest of all
-      const stage = this.#hinted === id ? 'pointed' : lighting ? (id === this.#lead && !this.#cause ? 'lead' : isLit(id, mark) ? 'lit' : 'quiet') : 'resting';
+      const stage = id === this.#lead && lit.size ? 'lead' : this.#hinted === id ? 'pointed' : lighting ? (isLit(id, mark) ? 'lit' : 'quiet') : 'resting';
       const rest = heat * HEAT.rest, o = stage === 'lead' ? 1 : stage === 'quiet' ? rest * HEAT.quiet : stage === 'resting' ? rest : Math.min(1, rest + HEAT.lit);
       if (node.g.dataset.stage !== stage || node.g.style.opacity !== String(o)) { node.g.dataset.stage = stage; node.g.style.opacity = String(o); }
       if (node.g.parentNode !== this.#heat) this.#heat.appendChild(node.g);

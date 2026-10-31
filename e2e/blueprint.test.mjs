@@ -225,6 +225,20 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   assert.equal(new Set(on.map((z) => z.cause)).size, 1, `one cause lit: ${JSON.stringify(on)}`);
   assert.equal(stages.filter((z) => z.stage === 'lead').length, 1, 'one place is the one in hand');
   assert.ok(Math.max(...stages.filter((z) => z.stage === 'quiet').map((z) => z.o), 0) < 0.1, 'every other problem is quiet');
+  // the pointer resting on another problem's glow never takes the light from the fix in hand, nor says its pill
+  const heldCause = on[0].cause;
+  const heldName = (await inHand(overlay).innerText()).trim();
+  const other = await hits(overlay).evaluateAll((hs, name) => hs.find((h) => !h.getAttribute('aria-label').startsWith(`${name}.`) && !h.hasAttribute('data-under'))?.dataset.at ?? null, heldName);
+  assert.ok(other, 'another problem has a glow to point at');
+  {
+    const [ox, oy] = other.split(',').map(Number);
+    await page.mouse.move(ox, oy);
+    await page.waitForTimeout(400);
+    const after = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone')].filter((z) => z.dataset.stage === 'lit' || z.dataset.stage === 'lead').map((z) => z.dataset.cause));
+    assert.deepEqual([...new Set(after)], [heldCause], 'pointing elsewhere leaves the fix in hand lit');
+    assert.equal(await overlay.locator('.bp-hint[data-on]').count(), 0, 'no pill about another cause');
+    await page.mouse.move(2, 2);
+  }
   // the page changes and is read again: the cause in hand stays lit
   await page.evaluate(() => document.body.append(Object.assign(document.createElement('p'), { textContent: 'late' })));
   await page.waitForTimeout(1200);
