@@ -373,13 +373,8 @@ class PlumbOverlay extends HTMLElement {
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
     if (saved.blueprint) this.#blueprint?.enter({ instant: true });
-    if (saved.fix) { this.#blueprint?.resumed?.(saved.fix); return; }
-    const element = document.querySelector(saved.path);
-    if (!element) return;
-    const location = await locate(element);
-    if (location?.file !== saved.file || location.tag !== saved.tag) return;
-    await this.pin(element);
-    if (this.#pinned?.element === element && this.#pinned.state.status === 'ready') { this.#pinned.status = { kind: 'written', text: saved.text }; this.#updateSync(); }
+    if (saved.fix) this.#blueprint?.resumed?.(saved.fix);
+    // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 
   disconnectedCallback() {
@@ -523,7 +518,7 @@ class PlumbOverlay extends HTMLElement {
   }
   // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
   // a pin, a label or a panel row: with blueprint on, the element is selected and the fix is taken on it (select.js)
-  choose(element, mark, id, options) { if (this.#blueprint?.active) return this.#blueprint.choose(element, mark, options?.group); return this.#fixer.open(element, mark, id, options); }
+  choose(element, mark, id, options) { if (this.#blueprint?.active) return this.#blueprint.choose(element, mark, options?.group); this.#blueprint?.enterAt(element); }
   fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
   changed() { this.#dock(); this.#blueprint?.refresh(); }
   wrote(result, text) { this.#history?.wrote(result, text); }
@@ -992,7 +987,14 @@ class PlumbOverlay extends HTMLElement {
   }
 
   // ── pinned ───────────────────────────────────────────────
-  async pin(element) {
+  // An element asked for from outside (a script, a test): Blueprint opens on it with its own cause in hand, as Alt+click
+  // does. The old reading card is retired and never opens.
+  pin(element) {
+    this.#ready?.dismiss();
+    this.#blueprint?.enterAt(element);
+  }
+  // the retired reading card (kept for a later removal; nothing opens it)
+  async #pinCard(element) {
     if (this.#pinned?.element === element) return;
     this.#ready?.dismiss();
     this.close();

@@ -78,35 +78,37 @@ test('Alt-hover names an element; Alt+click opens blueprint with that element\'s
   assert.deepEqual(errors, []);
 });
 
-test('Undo lifts every preview; closing never leaves a preview behind; unplaced elements say so', { timeout: 90000 }, async t => {
+test('pin() opens blueprint with the element\'s cause in hand, never the old card; Esc lifts the preview; unplaced elements say so', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await demo(t);
-  const page = await launched.newPage();
+  const page = await launched.newPage({ reducedMotion: 'reduce' });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
+  const chip = page.locator('#beta-chip');
+  const before = { cls: await chip.getAttribute('class'), style: await chip.getAttribute('style') };
   await page.evaluate(() => window.__plumb.overlay.pin(document.getElementById('beta-chip')));
-  const reading = overlay.getByRole('dialog', { name: 'React Plumber reading for Chip (span)' });
-  await reading.waitFor();
 
-  // Preview applies every mark that has exactly one fitting token; the rest wait for a pick.
-  const sync = reading.getByRole('button', { name: /^Preview \d+ fix(es)?$/ });
-  await sync.click();
-  assert.notEqual(await page.locator('#beta-chip').getAttribute('style'), null);
-  await reading.getByRole('button', { name: 'Undo' }).click();
-  assert.equal(await page.locator('#beta-chip').getAttribute('style'), null);
+  // the fix panel holds one of the chip's own causes; the retired reading card never opens
+  const held = overlay.locator('.fx .cause .cls');
+  await held.waitFor({ timeout: 20000 });
+  assert.ok(before.cls.split(/\s+/).includes((await held.innerText()).trim()), `held ${await held.innerText()}, the chip has ${before.cls}`);
+  assert.equal(await overlay.getByRole('dialog', { name: /React Plumber reading/ }).count(), 0);
 
-  await sync.click();
+  // Esc puts the cause down and leaves blueprint: the tried fix is lifted and nothing is written
   await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await overlay.locator('.fx').waitFor({ state: 'hidden', timeout: 10000 });
+  assert.deepEqual({ cls: await chip.getAttribute('class'), style: await chip.getAttribute('style') }, before, 'closing lifts an unwritten preview');
+  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written without Apply');
 
-  await overlay.getByRole('dialog').waitFor({ state: 'hidden' });
-  assert.equal(await page.locator('#beta-chip').getAttribute('style'), null, 'closing lifts an unwritten preview');
-  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing written without Write');
-
-  // Runtime DOM outside React's rendered tree has no authored ancestor to read.
+  // Runtime DOM outside React's rendered tree has no authored ancestor to read: the fix panel says so, and no card
   await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.body.append(d); return window.__plumb.overlay.pin(d); });
   assert.equal(await page.$eval('#runtime', element => window.__plumb.locate(element)), null);
   assert.deepEqual(await page.$eval('#runtime', element => window.__plumb.locate(element, { explain: true })), { location: null, reason: 'no-fiber', detail: {} });
-  await overlay.getByRole('dialog').filter({ hasText: 'Not drawn by React' }).waitFor();
+  await overlay.locator('.fx').filter({ hasText: 'Can’t reach this in your code' }).waitFor({ timeout: 20000 });
+  assert.equal(await overlay.getByRole('dialog').count(), 0);
+  assert.deepEqual(errors, []);
 });
