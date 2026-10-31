@@ -200,8 +200,8 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   assert.equal(await overlay.locator('.bp :is(.structure, .rails, svg.wash, svg.greek, .badge, .scan, .sheet)').count(), 0, 'the retired layers are gone');
   for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await shown(page, sel), false, `${sel} is not shown`);
   // at rest the fix panel is one line: the problems on the page (more than the view holds, once it is read), in causes
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   await panel(overlay).locator('.line').filter({ hasText: /^\d+ problems? · \d+ fix(es)?/ }).waitFor({ timeout: 10000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
   const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
   const [, places, causes] = (await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems? · (\d+) fix(?:es)?/).map(Number);
   assert.ok(drift > 0, 'marks are drawn');
@@ -276,7 +276,7 @@ async function clickMark(page, overlay, text) {
 // the cause named `cls` is put in hand by a click on its glow, with its options read
 async function hold(page, overlay, text, cls) {
   // a write may have reloaded the page: Blueprint is back and the page read before a glow is clicked
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   // another cause may be in hand (a take hands on the next one): put it down first
   if (await panel(overlay).locator('.cause').count()) { await page.keyboard.press('Escape'); await panel(overlay).locator('.line').waitFor({ timeout: 5000 }); }
   await clickMark(page, overlay, text);
@@ -385,7 +385,7 @@ test('A write the server refuses as stale writes nothing: the fix comes back in 
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
   await pickStep(overlay, 's2');
   // The write is answered as the server answers a file that changed since it was read (changing the file on disk
@@ -425,7 +425,7 @@ test('Keyboard only: Tab reaches a glow, Enter puts a cause in hand, → walks t
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   assert.ok(await tabTo(page, 'gap-[3px]'), 'Tab reaches the chip\u2019s gap glow');
   await page.keyboard.press('Enter');
   await inHand(overlay).waitFor({ timeout: 10000 });
@@ -448,7 +448,7 @@ test('Undo takes the fix just written back: the file is as it was and the fix is
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   await hold(page, overlay, 'gap-[3px]', 'gap-[3px]');
   await take(page, overlay);
   const file = join(root, 'src/App.jsx');
@@ -473,7 +473,7 @@ test('Enter on a glow that has focus puts that glow\u2019s cause in hand', { tim
   const { page, overlay } = await open(t, launched, url);
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   const label = await tabTo(page, 'gap-[3px]');
   assert.ok(label, 'Tab reaches the chip\u2019s gap glow');
   await page.keyboard.press('Enter');
@@ -681,7 +681,7 @@ test('One cause, fixed everywhere: 36 cells from one JSX line are one cause; one
   await page.locator('#dense').scrollIntoViewIfNeeded();
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   // a click on one cell\u2019s glow: the cause is the class, one place in the code drawn 36 times
   await hold(page, overlay, 'rounded-[3px]', 'rounded-[3px]');
   assert.match(await panel(overlay).locator('.cause .what').innerText(), /1 place in your code · 36 on the page$/);
@@ -707,7 +707,7 @@ test('A cause counts every place on the page, not just the view', { timeout: 120
   await page.keyboard.press('Alt+B');
   await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
   // the fix panel's count grows past the view as the rest of the page is read, and settles once every element is read
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 30000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 30000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   const inView = await page.evaluate(() => [...document.querySelectorAll('[id^="row-"]')].filter((r) => { const b = r.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).length);
   assert.ok(inView < 40, `most rows are off-screen: ${inView} in view`);
   // the biggest cause is held first: one line of code, all forty rows on the page

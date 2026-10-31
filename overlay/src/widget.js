@@ -360,6 +360,9 @@ class PlumbOverlay extends HTMLElement {
   // A write can make the dev server reload the whole page (no fast refresh). The reading picks up where it was: the
   // same element, found by its place in the document and confirmed by its source file, with the write reported.
   async #resume() {
+    // an undo the page went away in the middle of (a write the dev server reloads for, sometimes twice): Blueprint comes
+    // back, and the fix panel goes on with what's left (fixpanel.js)
+    try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if (u?.undo?.length && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;

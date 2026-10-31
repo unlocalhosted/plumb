@@ -56,7 +56,7 @@ async function open(t, launched, url) {
 // Blueprint on, and the view read to the end (the panel's header stops counting readings).
 async function blueprint(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */ // the fix panel: every element read
 }
 
 const PAGE = `

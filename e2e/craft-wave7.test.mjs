@@ -47,7 +47,7 @@ async function open(t, launched, url, dpr = 1) {
   }
   const overlay = page.locator('plumb-overlay');
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); // the fix panel: every element read
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */ // the fix panel: every element read
   return { page, errors, overlay };
 }
 // the craft marks of one rule, as boxes on the page

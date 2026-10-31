@@ -6,7 +6,7 @@
  *
  * The unit is a cause: one class under one rule, every place it is used. One decision, every place moves.
  *
- *  rest       one line: "8 problems · 7 causes   Fix ↵" (and "Apply n" once something is taken)
+ *  rest       one line: "8 problems · 7 fixes   Fix ↵"
  *  in hand    the cause's class, what is off in words, its places; its options as specimens (the space drawn as
  *             itself: padding green hatch, margin orange dots, gap purple stripes, type as "Ag", colour as a swatch),
  *             the value it has now among them greyed out and struck through, the pick in an ink ring; Take / Skip
@@ -21,17 +21,19 @@
  *  keep       any cause: Keep it (K) asks why in one line; the places are recorded as intended and leave the count
  *  note       advice with no exact edit: shown after the causes, never counted as a problem
  *  no fix     the sentence, Keep it and Skip
- *  writing    "Writing n changes to your code"
- *  done       the page celebrates (every fixed place clicks into place, the page breathes), a ✓ draws and bursts
- *             into confetti made of the overlay's own pieces, then the panel folds back
+ *  writing    "Writing it to your code…": a fix is written the moment it is taken
+ *  said       above the next fix: what the last one changed and where, with Undo (every write of that fix, newest first)
+ *  done       the page is clear: every fixed place clicks into place, the page breathes, a ✓ draws and bursts into
+ *             confetti made of the overlay's own pieces, then the panel folds back
  *
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
- * Every action is taken first and written with the rest on Apply: one write, one undo.
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, written } from './words.js'; // every sentence the panel says
 import { groupsOf, isNote } from './blueprint-panel.js';
+import { TYPE_CSS, LIGHT_CSS, worth, lineOf, ladderHtml, rolesInOrder, elementsOf, StyleLight, StylePreview } from './typesystem.js';
+import { glide } from './inplace.js'; // the text styles the code is reaching for
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -128,6 +130,7 @@ export const FIX_CSS = `
     .fx[data-scheme="dark"] .say, .fx[data-scheme="dark"] .hint, .fx[data-scheme="dark"] .cause .what, .fx[data-scheme="dark"] .field { color: #a3a29c; }
     .fx[data-scheme="dark"] .field { background: #2a2a2e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .field input, .fx[data-scheme="dark"] .hint code { color: #f1f0ec; }
     .fx[data-scheme="dark"] .check path { stroke: #f1f0ec; } .fx[data-scheme="dark"] .writing i { border-color: #f1f0ec; border-top-color: transparent; }
+${TYPE_CSS}${LIGHT_CSS}
 `;
 
 // What kind of thing a mark's value is, for its specimen
@@ -202,6 +205,9 @@ const BRIEF = 600; // a check again this short keeps the last settled line as it
 const WRITTEN = 'plumb:written', WRITTEN_FOR = 120000;
 const written_ = () => { try { const now = Date.now(); return (JSON.parse(sessionStorage.getItem(WRITTEN) ?? '[]') ?? []).filter((w) => now - w.at < WRITTEN_FOR); } catch { return []; } };
 const saveWritten = (list) => { try { sessionStorage.setItem(WRITTEN, JSON.stringify(list)); } catch {} };
+const UNDOING = 'plumb:undoing';
+const saveUndoing = (rest) => { try { if (rest?.undo?.length) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
+const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOING) ?? 'null'); return u && Date.now() - u.at < 30000 ? u : null; } catch { return null; } };
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
 const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
 const drawn = (g) => g.members.some((m) => m.el);
@@ -221,6 +227,9 @@ export class FixPanel {
   #swaps = new Map();    // cause key → { writes }: taken from the code alone
   #last = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
   #undoing = false;
+  #writingText = null;   // what is being written, when it isn't a single fix
+  #system = null;        // the text styles proposal for this page: { path, state: 'loading'|'ready'|'none', proposal, open, at, dismissed }
+  #light = null; #preview = new StylePreview(); // the style pointed at, ringed on the page; the page as it would be
   #resumeAt = null;      // after a write reloaded the page: { at, key, since }, the place to hold once a reading no longer has the fix written
 
   // host: { hold(group, lead), release(), view(), pick(i), take(), applyAll(tokens, keeps, total, swaps) → Promise, spotlight(zoneIds, leadId), tokens() → policy,
@@ -231,6 +240,7 @@ export class FixPanel {
     this.#el.setAttribute('role', 'region');
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
+    this.#light = new StyleLight(root);
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -240,6 +250,10 @@ export class FixPanel {
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
       else if (b.classList.contains('prev')) this.skip(-1);
       else if (b.classList.contains('undo')) this.#undo();
+      else if (b.classList.contains('review')) this.#openStyles();
+      else if (b.classList.contains('notnow')) this.#closeStyles();
+      else if (b.classList.contains('use')) this.#useStyles();
+      else if (b.classList.contains('preview')) this.#togglePreview();
       else if (b.classList.contains('keep')) this.keep();
       else if (b.classList.contains('keep-yes')) this.#keepIt();
       else if (b.classList.contains('keep-no')) this.#closeKeep();
@@ -260,7 +274,7 @@ export class FixPanel {
   get holding() { return this.#holding; }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; } this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -275,11 +289,11 @@ export class FixPanel {
   progress(p) {
     this.#progress = p;
     const done = !!p && (p.done ?? p.read === p.total);
-    this.#el.toggleAttribute('data-settled', done);
     // the page changing for a moment (a tooltip, a ticking clock) is checked again without the line saying so; only a
     // check that takes longer says it is checking
-    if (done) { this.#unsettledAt = 0; clearTimeout(this.#unsettledTimer); }
+    if (done) { this.#unsettledAt = 0; clearTimeout(this.#unsettledTimer); this.#loadStyles(); }
     else if (!this.#unsettledAt) { this.#unsettledAt = performance.now(); this.#unsettledTimer = setTimeout(() => this.render(), BRIEF + 20); }
+    this.#settled(done);
     // the page a write reloaded is read again: the panel moves on as it would have, to the fix after the one written
     // (a first reading may still have the fix just written: the theme is read again a moment later; never longer than a few seconds)
     const r = this.#resumeAt;
@@ -407,6 +421,54 @@ export class FixPanel {
       .then((r) => this.#fromCode.set(g.key, r ? { ...r, at: r.plan.at } : { none: true }), () => this.#fromCode.set(g.key, { none: true }))
       .finally(() => { if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
   }
+  // The text styles the page's code is reaching for: asked once the page is read, once per page (and again after a
+  // write); offered before the fixes until opened and put down
+  #loadStyles() {
+    const path = location.pathname;
+    if (!this.#host.system || (this.#system?.path === path && this.#system.state !== 'stale')) return;
+    const mine = (this.#system = { path, state: 'loading', proposal: null, open: false, at: 0, dismissed: this.#system?.path === path && this.#system.dismissed });
+    this.#host.system().then((p) => { if (this.#system !== mine) return; mine.proposal = p; mine.state = worth(p) ? 'ready' : 'none'; }, () => { if (this.#system === mine) mine.state = 'none'; })
+      .finally(() => { if (this.#system === mine) { this.#settled(); this.#html = ''; this.render(); } });
+  }
+  // settled: every element read, and the styles answered (the resting line never changes under the person after it)
+  #settled(done = !!this.#progress && (this.#progress.done ?? this.#progress.read === this.#progress.total)) {
+    const asking = !!this.#host.system && this.#system?.path === location.pathname && this.#system.state === 'loading';
+    this.#el.toggleAttribute('data-settled', done && !asking);
+  }
+  #offersStyles() { const s = this.#system; return !!s && s.state === 'ready' && !s.dismissed && s.path === location.pathname; }
+  #openStyles() { if (!this.#offersStyles()) return; this.#system.open = true; this.#system.at = 0; this.#lightStyle(true); this.#host.announce?.(lineOf(this.#system.proposal)); }
+  // the style pointed at: its places ringed on the page, every problem's heat quiet (the styles are what is looked at)
+  #lightStyle(slide = false) {
+    const role = rolesInOrder(this.#system.proposal)[this.#system.at];
+    this.#host.spotlight(['styles']);
+    this.#light.show(elementsOf(role));
+    this.#html = ''; this.render(slide);
+  }
+  #togglePreview() {
+    if (!this.#system?.open) return;
+    if (this.#preview.on) { this.#preview.clear(glide); this.#lightStyle(); return; }
+    this.#light.clear(); this.#preview.show(this.#system.proposal, glide);
+    this.#html = ''; this.render();
+  }
+  // put down: what was previewed goes back, not offered again on this page this session; the fixes come next
+  #closeStyles() { if (!this.#system) return; this.#preview.clear(glide); this.#light.clear(); this.#system.open = false; this.#system.dismissed = true; this.#host.spotlight([]); this.#html = ''; this.render(); }
+  // Use these styles: one guarded write (the theme's tokens, one class per style, every place swapped), said with Undo
+  async #useStyles() {
+    const s = this.#system, p = s?.proposal;
+    if (!s?.open || !p?.write || this.#writing) return;
+    const places = p.cost?.places ?? p.roles.reduce((n, r) => n + r.places, 0);
+    const said = FIX.styles.wrote(p.roles.length, p.write.tokens?.[0]?.file ?? p.write.css?.[0]?.file, places);
+    this.#preview.clear((el, f) => f()); this.#light.clear();
+    this.#writing = true; this.#writingText = FIX.styles.writing(p.roles.length, places); this.#html = ''; this.render();
+    let r = { ok: false };
+    try { r = (await this.#host.applyStyles(p.write, said)) ?? r; } catch (error) { r = { ok: false, why: error?.message }; }
+    this.#writing = false; this.#writingText = null; s.open = false;
+    if (r.ok) { this.#last = { text: said, undo: r.undo ?? [], key: null }; s.state = 'stale'; s.dismissed = true; this.#error = null; }
+    else this.#error = r.why ?? FIX.couldNot;
+    this.#host.spotlight([]);
+    this.#host.announce?.(r.ok ? said : this.#error);
+    this.#html = ''; this.render();
+  }
   // an option picked: on the page it is tried there; from the code alone it is only chosen
   #pick(i) {
     const g = this.#cause(), v = this.#viewOf(g);
@@ -518,14 +580,25 @@ export class FixPanel {
     if (!ok) { this.#error = left.why ?? FIX.couldNot; this.#html = ''; this.render(); }
   }
   // Undo: the last fix's writes taken back, newest first; the page is read again and the fix comes back
-  async #undo() {
-    const last = this.#last;
+  async #undo(rest = null) {
+    const last = rest ?? this.#last;
     if (!last?.undo?.length || this.#undoing || this.#writing) return;
     this.#undoing = true; this.#html = ''; this.render();
     let why = null;
-    for (const handle of [...last.undo].reverse()) {
-      try { await this.#host.undo(handle); } catch (error) { why = error?.message ?? ''; break; }
+    // newest first; what is left is kept in the tab before each one, so an undo that reloads the page (a source file
+    // the dev server can't hot-swap) goes on with the rest when the page is back
+    const handles = rest ? last.undo : [...last.undo].reverse();
+    let leaving = false;
+    const leave = () => { leaving = true; };
+    addEventListener('pagehide', leave, { once: true });
+    for (let i = 0; i < handles.length && !leaving; i++) {
+      saveUndoing({ undo: handles.slice(i + 1), key: last.key ?? null });
+      // carried on after a reload, a handle the page before already took back is passed over, not a failure
+      try { await this.#host.undo(handles[i]); } catch (error) { if (!rest) { why = error?.message ?? ''; break; } }
     }
+    removeEventListener('pagehide', leave);
+    if (leaving) return; // the page is going: the reloaded one goes on with what's left
+    saveUndoing(null);
     this.#undoing = false;
     this.#last = { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
     this.#host.announce?.(this.#last.text);
@@ -545,7 +618,16 @@ export class FixPanel {
       if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
       if (!this.#holding && a?.classList?.contains('hit')) return false;
     }
+    if (!this.#holding && this.#system?.open) {
+      if (k === 'Escape') { this.#closeStyles(); return true; }
+      if (k === 'ArrowUp' || k === 'ArrowDown') { const n = this.#system.proposal.roles.length; this.#system.at = Math.max(0, Math.min(n - 1, this.#system.at + (k === 'ArrowDown' ? 1 : -1))); this.#lightStyle(); return true; }
+      if (k === 'Enter') { this.#useStyles(); return true; }
+      if (k === 'p' || k === 'P') { this.#togglePreview(); return true; }
+      return false;
+    }
     if (!this.#holding) {
+      if (k === 'Enter' && this.#offersStyles()) { this.#openStyles(); return true; }
+      if (k === 'Escape' && this.#offersStyles()) { this.#closeStyles(); return true; } // not now: the fixes come next
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
     }
@@ -585,9 +667,18 @@ export class FixPanel {
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
-    if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : FIX.writing)}</div>`;
+    if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
+    // a word about what was just pointed at (why nothing is in hand) comes before any offer
     else if (!g && this.#notice) html = `<div class="line"><span class="count"><span>${esc(this.#notice)}</span></span></div>`;
+    // previewing: the card steps aside to one line, so the page it changes can be seen
+    else if (!g && this.#system?.open && this.#system.proposal && this.#preview.on) html = `<div class="line"><i class="dot"></i><span class="count">${esc(FIX.styles.previewing(this.#system.proposal.roles.length))}</span><span class="grow"></span><button class="ghost preview" aria-pressed="true">${FIX.styles.stopPreview} <kbd>P</kbd></button><button class="primary use">${FIX.styles.use} <kbd>↵</kbd></button></div>`;
+    else if (!g && this.#system?.open && this.#system.proposal) {
+      const c = this.#light.counts;
+      html = `${ladderHtml(this.#system.proposal, this.#system.at)}<div class="where">${esc(FIX.styles.where(c.inView, c.beyond))}</div>`
+        + `<div class="acts"><button class="primary use">${FIX.styles.use} <kbd>↵</kbd></button><button class="ghost preview" aria-pressed="${this.#preview.on}">${FIX.styles.preview} <kbd>P</kbd></button><button class="ghost notnow">${FIX.styles.notNow} <kbd>esc</kbd></button><span class="grow"></span></div>`;
+    }
+    else if (!g && this.#offersStyles()) html = `<div class="line"><i class="dot"></i><span class="count">${esc(lineOf(this.#system.proposal))}</span><span class="grow"></span><button class="primary review">${FIX.styles.review} <kbd>↵</kbd></button></div>`;
     else if (!g) {
       // a note (advice, no exact edit) is shown with the fixes but never counted as a problem
       const causesNow = live.filter((x) => !noteOf(x));

@@ -50,7 +50,7 @@ async function open(t, launched, url) {
   }
   const overlay = page.locator('plumb-overlay');
   await page.keyboard.press('Alt+B');
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   return { page, errors, overlay };
 }
 
@@ -319,7 +319,7 @@ export function App() {
   assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /a brand inset, kept/);
   // the page comes back read in full: the three are gone and only the cause nobody touched is left
   await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */
   // the panel has moved on to the one fix left
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'gap-[7px]' }).waitFor({ timeout: 20000 }).catch(async (e) => { throw new Error(`${e.message}\npanel: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}\ntheme: ${(await theme()).match(/--(tracking|leading)[^;]*;/g)}`); });
   assert.match(await panel(overlay).locator('.cause .nav').innerText(), /1 of 1/);
@@ -479,7 +479,7 @@ export function App() {
   const { page, errors, overlay } = await open(t, launched, url);
   const counts = [];
   for (let i = 0; i < 3; i++) {
-    if (i) { await page.keyboard.press('Alt+B'); await page.keyboard.press('Alt+B'); await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); await page.waitForTimeout(500); }
+    if (i) { await page.keyboard.press('Alt+B'); await page.keyboard.press('Alt+B'); await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */ await page.waitForTimeout(500); }
     counts.push((await panel(overlay).locator('.line .count').innerText()).replace(/\s+/g, ' '));
   }
   assert.equal(new Set(counts).size, 1, `the same count every time: ${counts.join(' | ')}`);

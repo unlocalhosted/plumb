@@ -85,6 +85,8 @@ export class Blueprint {
       undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
+      system: () => this.#system(),
+      applyStyles: (write, said) => this.#applyStyles(write, said),
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
@@ -270,6 +272,33 @@ export class Blueprint {
       }
     }
     if (p.read === p.total) this.#lastDrift = p.drift;
+  }
+  // The text styles the page's code is reaching for (POST system): the census is every stamped element with its own
+  // text, its type as drawn, and whether it sits in a list (a list's body text takes the compact leading)
+  async #system() {
+    const census = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
+      const cs = getComputedStyle(el);
+      return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    });
+    if (!census.length) return null;
+    return (await post('system', { census }))?.proposal ?? null;
+  }
+  // The text styles written (POST apply-all with the proposal's own write: the theme's tokens, one class per style,
+  // every place swapped, each file guarded by its hash). A theme write may reload the page: it comes back saying so.
+  async #applyStyles(write, said) {
+    this.#host.remember?.(said);
+    const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? []);
+    addEventListener('plumb:applied', heard, { once: true });
+    try {
+      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: write.swaps ?? [] });
+      const results = answer?.results ?? {}, undo = answer?.undo ?? [];
+      const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
+      for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
+      if (failed.length) { this.#host.forgetResume?.(); return { ok: false, undo, why: /changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot }; }
+      this.#host.remember?.(said, undo);
+      return { ok: true, undo };
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
+    finally { removeEventListener('plumb:applied', heard); }
   }
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
