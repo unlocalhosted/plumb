@@ -27,7 +27,6 @@ import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
-import { Fixer, FIX_CSS, LIST_ICON } from './blueprint-fix.js';
 import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
 import { Help, HELP_CSS, HELP_ICON } from './help.js';
@@ -304,22 +303,19 @@ const ICON = {
 };
 
 class PlumbOverlay extends HTMLElement {
-  #blueprint; #fixer; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap(); #traces = new Map();
+  #blueprint; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap(); #traces = new Map();
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
 
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${FIX_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
       <section class="w" hidden></section>
       <div class="dock" role="toolbar" aria-label="React Plumber" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
-        <button class="act undo" type="button" hidden title="${DOCK.undoTitle}">${DOCK.undo}</button>
-        <button class="act write" type="button" hidden></button>
-        <button class="list" type="button" hidden aria-pressed="false" aria-label="${DOCK.list}" title="${DOCK.listTitle}">${LIST_ICON}</button>
         <button class="history" type="button" aria-pressed="false" aria-label="${DOCK.history}" title="${DOCK.historyTitle}">${HISTORY_ICON}</button>
         <button class="help" type="button" aria-pressed="false" aria-label="${DOCK.help}" title="${DOCK.helpTitle}">${HELP_ICON}</button>
         <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint" title="${DOCK.blueprintTitle}">${ICON.blueprint}</button>
@@ -335,10 +331,6 @@ class PlumbOverlay extends HTMLElement {
       theme: { decisions: () => { if (!this.#decisions) this.#scaleOf('spacing'); return this.#decisions; } },
     });
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
-    this.#fixer = new Fixer(this, this.#root, { marks: this.#blueprint.marks, invalidate: change => this.#blueprint.invalidate(change), scale: family => this.#scaleOf(family) });
-    this.#$('.dock .undo').addEventListener('click', () => this.#fixer.undo());
-    this.#$('.dock .write').addEventListener('click', () => this.#fixer.write());
-    this.#$('.dock .list').addEventListener('click', () => { this.#ready?.close(); this.#fixer.toggleList(); });
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
     this.#help = new Help(this.#root, { button: this.#$('.dock .help') });
@@ -347,7 +339,7 @@ class PlumbOverlay extends HTMLElement {
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
     this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
-    this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => { if (this.#fixer?.listOpen) this.#fixer.closeList(); this.changed?.(); } });
+    this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => this.changed?.() });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
     this.#poll();
     // which bottom corner the dock takes: checked when the view or the route changes, and every few seconds, since a
@@ -514,15 +506,15 @@ class PlumbOverlay extends HTMLElement {
   get places() { return this.#places; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
-    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#fixer?.occluders() ?? []), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
+    return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
   }
-  // What the fixer needs: a mark opens its chooser; how a mark is drawn; the dock redrawn; caches dropped after a write.
+  // What the blueprint needs: a mark puts its cause in hand; the dock redrawn; caches dropped after a write.
   // a pin, a label or a panel row: with blueprint on, the element is selected and the fix is taken on it (select.js)
   choose(element, mark, id, options) { if (this.#blueprint?.active) return this.#blueprint.choose(element, mark, options?.group); this.#blueprint?.enterAt(element); }
-  fixState(element, mark) { return this.#fixer?.state(element, mark) ?? null; }
+  fixState() { return null; }
   changed() { this.#dock(); this.#blueprint?.refresh(); }
   wrote(result, text) { this.#history?.wrote(result, text); }
-  ordered() { this.#fixer?.ordered(); }
+  ordered() {}
   #updated = () => this.forget();
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
@@ -541,7 +533,6 @@ class PlumbOverlay extends HTMLElement {
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
     this.#$('.say').setAttribute('aria-live', on ? 'off' : 'polite');
     if (state === 'entering') this.#announce('Blueprint on. Reading this view.');
-    if (state === 'leaving' || state === 'off') this.#fixer?.leave();
     if (state === 'off') this.#announce('Blueprint off.'), this.#tidyHtml(), requestAnimationFrame(() => this.#tidyHtml());
     this.#dock();
   }
@@ -567,16 +558,8 @@ class PlumbOverlay extends HTMLElement {
     this.#healthTimer = setTimeout(() => this.#poll(), next === 'ready' || next === 'failed' ? TIMING.healthReady : TIMING.healthStarting);
   }
   #reason = '';
-  #blueprintSays() {
-    const p = this.#bp.progress, f = this.#fixer, status = f?.status;
-    if (status) return esc(status.text);
-    // the fix bar has the count while Blueprint is on: one number, one place
-    if (!f?.count) return DOCK.blueprint;
-    if (!p || !p.total) return DOCK.checking;
-    const unchecked = p.notChecked ? `${p.notChecked} not checked${p.outsideSource ? ' · outside source' : ''}` : '';
-    const problems = (n) => `${n} problem${n === 1 ? '' : 's'}`;
-    return `${p.drift ? problems(p.drift) : p.notChecked ? unchecked : 'nothing to fix'} · ${f.count} picked${f.before ? ' · before' : ''}${p.drift && p.notChecked ? ` · ${unchecked}` : ''}`;
-  }
+  // the fix bar has the count while Blueprint is on: one number, one place
+  #blueprintSays() { return DOCK.blueprint; }
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
     // how many problems the view holds once it is read: not said (the fix bar has the count), but kept on the dock for
@@ -595,23 +578,7 @@ class PlumbOverlay extends HTMLElement {
       ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : DOCK.idle,
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
-    const f = this.#fixer, fs = f?.status;
-    dock.title = state === 'failed' ? this.#reason : fs?.title ?? '';
-    dock.toggleAttribute('data-refused', !!fs && (fs.kind === 'refused' || fs.kind === 'error'));
-    // Undo and Write ride on the dock while the blueprint has picks: the queue spans the view, the dock is always there.
-    const undo = dock.querySelector('.undo'), write = dock.querySelector('.write');
-    const bp = state === 'ready' && this.#blueprint?.active && !this.#pinned;
-    const list = dock.querySelector('.list');
-    // one panel: the fix bar steps through every fix, so the old list is not offered (docs: one-surface overlay)
-    list.hidden = true;
-    list.setAttribute('aria-pressed', String(!!f?.listOpen));
-    const writable = f?.edits() ?? 0, writing = fs?.kind === 'writing';
-    undo.hidden = !(bp && f.count);
-    undo.disabled = writing;
-    write.hidden = !(bp && (writable || writing || f.stale));
-    write.disabled = writing;
-    write.setAttribute('aria-busy', String(writing));
-    write.textContent = writing ? DOCK.applying : f?.stale ? DOCK.checkAgain : DOCK.apply(writable);
+    dock.title = state === 'failed' ? this.#reason : '';
     pick.disabled = state === 'failed' || state === 'lost';
     pick.setAttribute('aria-pressed', String(selecting));
     // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
@@ -769,11 +736,9 @@ class PlumbOverlay extends HTMLElement {
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
-    else if (event.key === 'Escape' && this.#fixer?.listOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.closeList(); }
-    else if (event.key === 'Escape' && this.#fixer?.isOpen) { event.preventDefault(); event.stopPropagation(); this.#fixer.close(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
     // (Enter or Space on a focused control of the overlay, Apply in Changes, presses that control)
-    else if (this.#blueprint?.active && !this.#pinned && !this.#fixer?.isOpen && !this.#fixer?.listOpen && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)
+    else if (this.#blueprint?.active && !this.#pinned && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)
       && !((event.key === 'Enter' || event.key === ' ') && event.composedPath()[0]?.closest?.('.cg button, .cg [role="listitem"]')) && this.#blueprint.key(event.key)) { event.preventDefault(); event.stopPropagation(); }
     // L: the punch list, when nothing on the page is being typed into
     // L (the old list) is retired: the fix bar is the one panel
@@ -998,7 +963,6 @@ class PlumbOverlay extends HTMLElement {
     if (this.#pinned?.element === element) return;
     this.#ready?.dismiss();
     this.close();
-    this.#fixer?.close({ focus: false });
     this.#focusBack = document.activeElement;
     this.#$('.tag').hidden = true;
     // 1:1 by default; a tiny element opens magnified so its marks have room to sit apart.
@@ -1301,7 +1265,6 @@ class PlumbOverlay extends HTMLElement {
         if (!Array.isArray(d)) throw new Error('no decisions yet');
         this.#decisions = d; this.#scales.clear();
         if (this.#pinned?.state?.status === 'ready') this.#refresh();
-        this.#fixer?.refresh();
         this.#blueprint?.themeChanged(); // craft: suggestions can now name the theme's tokens
       }).catch(() => { this.#decisionsLoading = null; });
       return [];

@@ -10,10 +10,9 @@
  *
  *  entering  the dim fades in (--pl-dur-dim); the page goes inert under the glass (blueprint-glass.js) and the
  *            Reader starts reading what's in view; elements light up as their readings arrive
- *  on        the MarkLayer cuts each drifted element out of the dim, outlines it in its ink and labels it; its breaks
- *            open the chooser (blueprint-fix.js), which picks, previews and writes. The panel on the right
- *            (blueprint-panel.js) holds the same drift grouped by cause: J/K move between causes, Enter fixes one
- *            everywhere it appears
+ *  on        the MarkLayer cuts each drifted element out of the dim, outlines it in its ink and labels it; a mark
+ *            puts its cause in hand in the fix panel (fixpanel.js), the one place you act: it holds a cause at every
+ *            place, tries its options, takes one, and applies them all
  *  leaving   the page is usable again at once; the dim fades out (--pl-dur-undim)
  *  reduced motion: no fade
  *
@@ -23,7 +22,7 @@
 import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Glass, GLASS_CSS } from './blueprint-glass.js';
-import { Panel, PANEL_CSS } from './blueprint-panel.js';
+import { PANEL_CSS } from './blueprint-panel.js';
 import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
@@ -51,7 +50,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #panel; #craft; #items = []; #selection; #changes; #walk;
+  #craft; #items = []; #selection; #changes; #walk;
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -65,14 +64,12 @@ export class Blueprint {
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
     this.#walk = new Walkthrough(root);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: (shown) => { if (shown) this.#panel.open(false); queueMicrotask(() => this.#focus()); }, onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
     this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
       onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
     this.#marks = new MarkLayer(this.#layer, { onPick: (el, mark, id) => host.choose(el, mark, id), occluders: () => host.occluders?.() ?? [], state: (el, mark) => host.fixState?.(el, mark) ?? null, onOrder: () => { host.ordered?.(); this.#focus(); } });
-    // the fix panel alone says what is lit: the old panel is drawn hidden, and its re-render on every read put the light out
-    this.#panel = new Panel(root, { host, marks: { spotlight() {} } });
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
@@ -89,7 +86,7 @@ export class Blueprint {
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
-    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#panel.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#panel.progress(p); this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -102,10 +99,8 @@ export class Blueprint {
     // the old side panel is retired (the fix bar is the one panel): it takes no keys, so nothing hidden moves the page
     return false;
   }
-  // The queue changed: the panel says what each cause becomes.
-  refresh() {
-    if (this.active) this.#panel.render();
-  }
+  // The queue changed (the old side panel said what each cause becomes; the fix panel reads it when it draws)
+  refresh() {}
   // Through the glass, for a hit test; and the glass's part while words are edited in place.
   through(fn) {
     return this.#glass.through(() => this.#marks.through(fn));
@@ -146,7 +141,6 @@ export class Blueprint {
       document.addEventListener('pointerleave', this.#unpoint);
     } else this.#reader.refresh(); // turned back on while fading out: draw what's already read
     this.#glass.on();
-    this.#panel.show(true);
     this.#fix.show(true);
     this.#set('entering');
     if (instant || still()) return this.#on();
@@ -167,7 +161,6 @@ export class Blueprint {
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
-    this.#panel.show(false);
     this.#fix.show(false);
     this.#set('leaving');
     if (instant || still()) return this.#off();
@@ -214,7 +207,6 @@ export class Blueprint {
     const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
     const r = el?.isConnected ? el.getBoundingClientRect() : null;
     if (r) this.#changes.avoid(r);
-    this.#panel.avoid(r, [this.#changes.rect], r ? [] : this.#marks.zones());
   }
   // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
   #offerWalk() {
@@ -230,7 +222,7 @@ export class Blueprint {
   }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
-  #point = (e) => { this.#panel.fold(); this.#marks.point(this.#under(e.clientX, e.clientY)); this.#marks.near(e.clientX, e.clientY); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
+  #point = (e) => { this.#marks.point(this.#under(e.clientX, e.clientY)); this.#marks.near(e.clientX, e.clientY); this.#selection.point(e.clientX, e.clientY); this.#glass.cursor(this.#selection.cursor(e.clientX, e.clientY)); };
   // the reader's reading of an element, or of the nearest ancestor it read
   #itemOf(el) { return el ? this.#items.find((i) => i.el === el) ?? null : null; }
   // A click on the page: the innermost element under it that the reader read (else the element itself) is selected;
@@ -446,9 +438,9 @@ export class Blueprint {
     this.#set('off');
   }
 
-  // The panel's box, for marks that must not sit under it.
+  // The fix panel's box, for marks that must not sit under it.
   panelRect() {
-    return this.active ? this.#panel.rect : null;
+    return this.active ? this.#fix.rect : null;
   }
 
   #set(state) {
@@ -469,7 +461,6 @@ export class Blueprint {
     document.removeEventListener('pointerleave', this.#unpoint);
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('off');
-    this.#panel.show(false);
     this.#layer.hidden = true;
   }
 }

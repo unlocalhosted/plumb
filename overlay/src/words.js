@@ -372,7 +372,6 @@ export const FIX = {
   inHand: (position, cls, what, n) => `${position}: ${cls}. ${what}, ${count(n, 'place', 'places')}.`,
   // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
   position: (g, list, isNote) => { const same = list.filter((x) => !!isNote(x) === !!isNote(g)); return `${isNote(g) ? 'Note ' : ''}${same.indexOf(g) + 1} of ${same.length}`; },
-  checking: 'Checking this page…',
   stillChecking: 'checking…',
   unchecked: (n) => `${count(n, 'element', 'elements')} can’t be checked`,
   uncheckedTitle: 'Not in your code: drawn by a library, or added to the page at runtime.',
@@ -482,15 +481,7 @@ export const DOCK = {
   idle: 'Hold Alt to inspect',
   // while Blueprint is on, the fix bar has the count: the dock only says how to leave
   blueprint: 'Alt+B to close',
-  checking: 'Checking this page…',
-  undo: 'Undo',
-  undoTitle: 'Undo every change you haven’t applied',
-  apply: (n) => `Apply ${n}`,
   applyChanges: (n) => `Apply ${count(n, 'change', 'changes')}`,
-  applying: 'Applying…',
-  checkAgain: 'Check again',
-  list: 'All problems on this page',
-  listTitle: 'All problems on this page, as a list (L)',
   history: 'History',
   historyTitle: 'Changes you applied. Undo any of them.',
   help: 'Keyboard shortcuts',
