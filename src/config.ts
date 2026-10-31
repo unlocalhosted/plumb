@@ -54,7 +54,7 @@ export interface PlumbConfig {
   /** The craft spec: preset, values by principle, rules on/off and tier, token policy (docs/briefs/craft-spec.md). */
   craft?: CraftConfig;
   /** System proposals (type roles): paths outside the system, never proposed (specimens, demos, brand imitations). */
-  system?: { exclude?: string[] };
+  system?: { exclude?: string[]; /** the owner's decisions per type role, applied before anything is inferred */ type?: { roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> } };
   /** Dependency presets' craft keys, in order, set by loadPresets; never written by hand. */
   craftLayers?: { from: string; craft: CraftConfig }[];
 }
@@ -118,7 +118,18 @@ export function validateConfig(value: unknown): PlumbConfig {
   if ('css' in config) string(config.css, 'css');
   if ('source' in config) strings(config.source, 'source');
   if ('markers' in config) strings(config.markers, 'markers');
-  if ('system' in config) { const system = object(config.system, 'system'); keys(system, ['exclude'], 'system'); if ('exclude' in system) strings(system.exclude, 'system.exclude'); }
+  if ('system' in config) {
+    const system = object(config.system, 'system'); keys(system, ['exclude', 'type'], 'system');
+    if ('exclude' in system) strings(system.exclude, 'system.exclude');
+    if ('type' in system) {
+      const type = object(system.type, 'system.type'); keys(type, ['roles'], 'system.type');
+      if ('roles' in type) for (const [role, value] of Object.entries(object(type.roles, 'system.type.roles'))) {
+        const bundle = object(value, `system.type.roles.${role}`); keys(bundle, ['size', 'lineHeight', 'letterSpacing', 'weight', 'compact'], `system.type.roles.${role}`);
+        for (const key of ['size', 'lineHeight', 'letterSpacing', 'weight']) if (key in bundle && typeof bundle[key] !== 'number') invalid(`system.type.roles.${role}.${key}`, 'a number');
+        if ('compact' in bundle) { const compact = object(bundle.compact, `system.type.roles.${role}.compact`); keys(compact, ['lineHeight'], `system.type.roles.${role}.compact`); if (typeof compact.lineHeight !== 'number') invalid(`system.type.roles.${role}.compact.lineHeight`, 'a number'); }
+      }
+    }
+  }
   if ('classHelpers' in config) {
     if (!Array.isArray(config.classHelpers)) invalid('classHelpers', 'an array of helper names or argument-shape objects');
     for (const [index, item] of config.classHelpers.entries()) {

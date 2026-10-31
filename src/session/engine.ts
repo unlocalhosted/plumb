@@ -30,7 +30,7 @@ import { readText, textSites } from './text.js';
 import { addToken, topBlocks } from '../onboarding/write.js';
 import { loadConfig } from '../config.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
-import type { TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
+import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
 import { useFor } from '../rules/provenance.js';
 import { atSite } from '../surfaces/sites.js';
@@ -82,7 +82,7 @@ export interface PageEntry {
 export interface PageResult { revision: number; items: PageEntry[] }
 /** One measured text element of a page: its stamp and tag, whether it sits in a list, and its computed type values. */
 export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
-export interface SystemOptions { files?: string[]; census?: CensusEntry[]; exclude?: string[] }
+export interface SystemOptions { files?: string[]; census?: CensusEntry[]; exclude?: string[]; /** the owner's decisions per role, as config.system.type.roles, for a dry run */ roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> }
 export type SystemWrite = { tokens: (TypeProposal['write']['tokens'][number] & { file: string; hash: string })[]; css: { file: string; hash: string; css: string }[]; swaps: (TypeProposal['write']['swaps'][number] & { hash: string })[] };
 export interface SystemResult { revision: number; proposal: Omit<TypeProposal, 'write'> & { write: SystemWrite } }
 export interface CssOptions { file: string; hash: string; css: string }
@@ -903,10 +903,12 @@ export class Session extends EventEmitter {
    * that makes it the system, from the report's places and, when a page was measured, the census that confirms them.
    */
   async system(options: SystemOptions = {}): Promise<SystemResult> {
-    const { files, census, exclude } = options ?? {};
+    const { files, census, exclude, roles } = options ?? {};
     if (census !== undefined && (!Array.isArray(census) || census.length > 20000)) throw new UsageError('A census is a list of at most twenty thousand elements.');
     const config = await loadConfig(this.root, this.options.config).catch(() => undefined);
     const excluded = [...(config?.value.system?.exclude ?? []), ...(Array.isArray(exclude) ? exclude.filter((p): p is string => typeof p === 'string') : [])];
+    // decisions win: the config's, then the request's (a dry run with decisions not yet written into the config)
+    const overrides: Record<string, RoleOverride> = { ...(config?.value.system?.type?.roles ?? {}), ...(roles && typeof roles === 'object' ? roles : {}) };
     const members = new Map<string, TypeMember>();
     const member = (where: { file: string; line: number; column: number }, tag: string, declarations: Report['declarations'], entry?: CensusEntry): TypeMember | undefined => {
       const type = declarations.filter(d => isTypeProp(d.prop));
@@ -929,7 +931,8 @@ export class Session extends EventEmitter {
       const lhLowered = lineHeight ? (/^[\d.]+$/.test(lineHeight.resolved.trim()) ? parseFloat(lineHeight.resolved) : (px(lineHeight.resolved, size) ?? 0) / size) : null;
       const current: TypeBundle = {
         size: fluid ? null : size, ...(fluid ? { sizeText: fluid } : {}),
-        lineHeight: computed?.lineHeight !== undefined && computed.lineHeight !== null ? Math.round(computed.lineHeight / size * 1000) / 1000 : lhLowered === null ? null : Math.round(lhLowered * 1000) / 1000,
+        // leading is what the code sets at the element (a class or inline), never the inherited computed value
+        lineHeight: lhLowered === null ? null : Math.round(lhLowered * 1000) / 1000,
         letterSpacing: Math.round(((computed?.letterSpacing !== undefined && computed.letterSpacing !== null ? computed.letterSpacing : (px(letterSpacing?.resolved, size) ?? 0)) / size) * 1000) / 1000,
         weight: computed?.weight ?? (parseInt(weight?.resolved ?? '400', 10) || 400),
         transform: (computed?.transform ?? transform?.resolved) === 'uppercase' ? 'uppercase' : 'none',
@@ -968,7 +971,9 @@ export class Session extends EventEmitter {
         if (m) members.set(`${m.site.file}:${m.site.line}:${m.site.column}`, m);
       });
     }
-    const proposal = proposeTypeRoles([...members.values()], { exclude: excluded });
+    // the theme's own text steps, preferred when within 1px of a cluster's mode
+    const themeSteps = (await this.decisions()).filter(d => d.origin === 'project' && d.family === 'type' && /^--text-[a-z0-9]+$/.test(d.name)).map(d => px(d.resolved ?? d.value)).filter((n): n is number => n !== null);
+    const proposal = proposeTypeRoles([...members.values()], { exclude: excluded, roles: overrides, themeSteps });
     // the write, with the hashes it must find: the theme for tokens and utilities, each source file for its swaps
     const spec = await this.request<ProjectSpec>('spec');
     const theme = spec.tokens.file ?? '', themeHash = spec.tokens.hash ?? '';

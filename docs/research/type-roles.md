@@ -307,3 +307,37 @@ size moves > 2 px (18): the clamp titles at 1280 (46.08/43.52/39.68 → 44) and 
   the lowered classes, not a px guess) puts 155 blueprint/drawing places outside, where the doc's regex found 9; and
   with 15 px ×54 and 16 px ×67 now split by what `var(--z)` removed, the body-large mode landed on 15 (the owner's
   decision is 16: the bundle rule should prefer the theme's existing step when the modes tie within 1 px, Q1 again).
+
+### Layer 2, second cut: decisions, the theme's step, the ladder, declared leading
+
+- `config.system.type.roles` (and `roles` in the `system` request, for a dry run) carries the owner's decisions per
+  role (`size`, `lineHeight`, `letterSpacing`, `weight`, `compact.lineHeight`), applied before anything is inferred
+  (`sizeFrom: 'decision'`). Without one, a role's size is the project theme's own step when it is within 1 px of the
+  cluster's mode and no other cluster already sits on it (`'theme'`), else the mode (`'mode'`). Up the ladder
+  (label-small → display-large) every size must be strictly greater than the one below: a role landing on its
+  neighbour's size takes its cluster's centre (`'centre'`), or, when the centre is no higher, folds into the role
+  below and `merged` says so. `ladder` lists each role's size and the ratio to the one below. Leading is what the
+  code sets at the member (a class or inline value), never the inherited computed value; a member that sets none
+  costs 0 and takes the role's. `clamps` lists the fluid sizes among a role's members with their places.
+- Shape additions (all additive): role `sizeFrom`, role `clamps?`, proposal `ladder`, proposal `merged`; the
+  `system` request accepts `roles`.
+- crafting-ui dry run with the owner's decisions (`roles: { 'body-large': { size: 16, lineHeight: 1.6, compact: { lineHeight: 1.4 } }, 'title-medium': { size: 17 } }`, the five excluded paths, no write), `status 200, 906 ms`:
+
+| role | places | el | files | bundle | from |
+| --- | --- | --- | --- | --- | --- |
+| display-large | 30 | 175 | 19 | `clamp(2rem, 3.4vw, 2.75rem)` / 1.04 / -0.025 / 500 | mode (clamps: `clamp(2rem, 3.4vw, 2.75rem)` ×7, `clamp(2rem, 3.6vw, 3rem)` ×7, `clamp(2.25rem, 5.2vw, 4rem)` ×2: a tie, broken by name; the doc chose the larger) |
+| headline-small | 21 | 186 | 17 | 24 / 1.25 / -0.02 / 500 | mode |
+| title-large | 50 | 398 | 22 | 19 / 1.5 / 0 / 400 | centre (mode 17 sat on title-medium) |
+| title-medium | 29 | 446 | 15 | 17 / 1.3 / -0.01 / 600 | decision |
+| body-large | 104 | 1345 | 22 | 16 / 1.6 / 0 / 400, compact 1.4 | decision |
+| body-small | 46 | 1192 | 19 | 14 / 1.6 / 0 / 400 | mode |
+| label-medium | 100 | 1301 | 18 | 12 / — / 0.08em / 400 uppercase | mode |
+| label-small | 23 | 374 | 8 | 11 / — / 0.1em / 400 uppercase | mode |
+
+  Ladder: 11 → 12 (×1.091) → 14 (×1.167) → 16 (×1.143) → 17 (×1.063) → 19 (×1.118) → 24 (×1.263) → fluid. `merged: []`.
+  Cost: size moves 0 → 220, ≤1 → 98, ≤2 → 46, >2 → 9; line-height 0 → 271, ≤1 → 59, ≤2 → 34, >2 → 39; letter-spacing
+  0 → 298, ≤0.5 → 96, ≤1 → 2, >1 → 7; weight 0 → 353, one step 40, two 10. 568 classes removed; **sizes 34 → 8**.
+  Outside 283 (155 `var(--z)`, 102 excluded paths, 25 SVG, 1 poster); low 39; exceptions 13; write 31 tokens, 1 css
+  block, 237 edits in 30 files. Against the doc (variant A: 550 in, 136 out, sizes 61 → 8): the same eight roles and
+  the same ladder; fewer places because `var(--z)` is read from the classes; headline-small's leading is 1.25 and
+  body-small's 1.6 from what the code declares, where the doc's computed 1.5 was inherited.

@@ -13,6 +13,11 @@ export function App() {
       <h2 id="h2" className="text-[1.5rem] font-medium tracking-[-0.02em]">Rows</h2>
       <p id="prose-a" className="text-[1rem] leading-[1.6]">Prose paragraphs read at a relaxed leading, because they run long.</p>
       <p id="prose-b" className="text-[1rem] leading-[1.6]">A second paragraph, the same.</p>
+      <p id="inherit" className="text-[1rem]">A paragraph that sets no leading of its own, and takes the role's.</p>
+      <h3 id="card-title-a" className="text-[17px] font-semibold">A card title</h3>
+      <p id="card-lead-a" className="text-[17px]">A lead at the same size, regular weight.</p>
+      <h3 id="card-title-b" className="text-[17px] font-semibold">Another card title</h3>
+      <p id="card-lead-b" className="text-[17px]">Another lead at the same size.</p>
       <ul>
         {[0, 1, 2, 3].map(n => <li key={n} id={`row-${n}`}>
           <span id={`row-label-${n}`} className="text-[12px] tracking-[0.1em] uppercase">Row {n}</span>

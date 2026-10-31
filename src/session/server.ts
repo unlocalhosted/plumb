@@ -118,11 +118,12 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')! });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
   if (method === 'system') {
-    const body = params as { files?: unknown; census?: unknown; exclude?: unknown };
+    const body = params as { files?: unknown; census?: unknown; exclude?: unknown; roles?: unknown };
     const system: NonNullable<Parameters<Session['system']>[0]> = {};
     if (Array.isArray(body.files)) system.files = body.files.map(String);
     if (Array.isArray(body.census)) system.census = body.census as NonNullable<typeof system.census>;
     if (Array.isArray(body.exclude)) system.exclude = body.exclude.map(String);
+    if (object(body.roles)) system.roles = body.roles as NonNullable<typeof system.roles>;
     return session.system(system);
   }
   if (method === 'places') {

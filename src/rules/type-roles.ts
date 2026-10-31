@@ -27,7 +27,8 @@ export interface TypeMember {
 }
 export type RoleName = 'display-large' | 'headline-small' | 'title-large' | 'title-medium' | 'body-large' | 'body-small' | 'label-medium' | 'label-small';
 export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; variant?: 'compact'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
-export interface TypeRole { name: RoleName; bundle: TypeBundle; variants?: { compact: { lineHeight: number } }; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[] }
+export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
+export interface TypeRole { name: RoleName; bundle: TypeBundle; variants?: { compact: { lineHeight: number } }; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
 export interface TypeProposal {
   rule: 'system/type-roles'; kind: 'system'; family: 'type';
   roles: TypeRole[];
@@ -35,6 +36,10 @@ export interface TypeProposal {
   low: { site: TypeMember['site']; role: RoleName; why: string }[];
   exceptions: { site: TypeMember['site']; role: RoleName; why: string }[];
   cost: { places: number; elements: number; moves: Record<'size' | 'lineHeight' | 'letterSpacing' | 'weight', Record<string, number>>; classesRemoved: number; sizesBefore: number; sizesAfter: number };
+  /** the sizes up the ladder, each with the ratio to the one below (null for a fluid size) */
+  ladder: { role: RoleName; size: number | null; sizeText?: string; ratio: number | null }[];
+  /** roles folded into another because two clusters sat at one size and the centre could not separate them */
+  merged: { from: RoleName; into: RoleName; why: string }[];
   write: { tokens: { name: string; value: string; why: string }[]; css: string; swaps: { file: string; edits: { line: number; column: number; from: string; to: string }[] }[] };
 }
 
@@ -53,6 +58,8 @@ export function px(value: string | undefined, size = 16): number | null {
 }
 
 export const roleOrder: RoleName[] = ['display-large', 'headline-small', 'title-large', 'title-medium', 'body-large', 'body-small', 'label-medium', 'label-small'];
+/** up the ladder: every size must be strictly greater than the one below */
+export const ladderOrder: RoleName[] = ['label-small', 'label-medium', 'body-small', 'body-large', 'title-medium', 'title-large', 'headline-small', 'display-large'];
 export const roleClass = (name: RoleName, variant?: 'compact') => `type-${name}${variant ? '-compact' : ''}`;
 export const roleToken = (name: RoleName) => `--text-${name}`;
 
@@ -75,8 +82,8 @@ const mode = <T>(values: T[], fallback: T): T => {
 };
 const round = (n: number, places = 3) => Math.round(n * 10 ** places) / 10 ** places;
 
-export function proposeTypeRoles(members: TypeMember[], options: { exclude?: string[] } = {}): TypeProposal {
-  const exclude = options.exclude ?? [];
+export function proposeTypeRoles(members: TypeMember[], options: { exclude?: string[]; roles?: Record<string, RoleOverride>; themeSteps?: number[] } = {}): TypeProposal {
+  const exclude = options.exclude ?? [], overrides = options.roles ?? {}, themeSteps = [...new Set(options.themeSteps ?? [])].sort((a, b) => a - b);
   const outsideOf = (m: TypeMember): string | undefined => {
     const file = m.site.file;
     for (const pattern of exclude) if (file === pattern || file.startsWith(pattern.replace(/\/?$/, '/')) || matchesGlob(file, pattern)) return `excluded by config: ${pattern}`;
@@ -91,6 +98,37 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
   // roles: the members each reaches for; bundles: the most common of the members' own values
   const byRole = new Map<RoleName, TypeMember[]>();
   for (const m of inside) { const r = roleFor(m.current); byRole.set(r, [...byRole.get(r) ?? [], m]); }
+  // the size of each role: the owner's decision, else the theme's step within 1px of the mode, else the mode; then up
+  // the ladder every size must grow: a role at its neighbour's size takes its cluster's centre, or folds into it
+  const sizes = new Map<RoleName, { size: number | null; from: TypeRole['sizeFrom'] }>();
+  const merged: TypeProposal['merged'] = [];
+  // the bundle of a role is its own cluster's; members folded in from another cluster move to it, they do not shape it
+  const clusters = new Map<RoleName, TypeMember[]>([...byRole].map(([name, ms]) => [name, [...ms]]));
+  const centre = (ms: TypeMember[]) => { const s = ms.map(m => m.current.size).filter((n): n is number => n !== null).sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : null; };
+  const modeOf = (ms: TypeMember[]) => mode(ms.map(m => m.current.size).filter((s): s is number => s !== null), null as number | null);
+  const modes = new Set([...byRole.values()].map(modeOf));
+  for (const name of ladderOrder) {
+    const ms = byRole.get(name); if (!ms?.length) continue;
+    const fluid = ms.some(m => m.current.sizeText);
+    const override = overrides[name]?.size;
+    const modeSize = modeOf(ms);
+    // the theme's step within 1px of the mode, unless another role's cluster already sits on that step
+    const step = modeSize === null ? undefined : themeSteps.find(s => Math.abs(s - modeSize) <= 1 && s !== modeSize && !modes.has(s));
+    let size: number | null = fluid ? null : override ?? step ?? modeSize, from: TypeRole['sizeFrom'] = override !== undefined ? 'decision' : step !== undefined ? 'theme' : 'mode';
+    const below = [...sizes.values()].filter(s => s.size !== null).map(s => s.size!).at(-1);
+    if (!fluid && size !== null && below !== undefined && size <= below) {
+      const mid = centre(ms);
+      if (mid !== null && mid > below) { size = mid; from = 'centre'; }
+      else {
+        // one size, two clusters: the smaller cluster folds into the role below it, and says so
+        const intoName = [...sizes.keys()].at(-1)!;
+        merged.push({ from: name, into: intoName, why: `both at ${size}px and the cluster's centre (${mid}px) is no higher; folded into ${intoName}` });
+        byRole.set(intoName, [...byRole.get(intoName)!, ...ms]); byRole.delete(name);
+        continue;
+      }
+    }
+    sizes.set(name, { size, from });
+  }
   const roles: TypeRole[] = [], low: TypeProposal['low'] = [], exceptions: TypeProposal['exceptions'] = [];
   const tokens: TypeProposal['write']['tokens'] = [], utilities: string[] = [], swapsByFile = new Map<string, TypeProposal['write']['swaps'][number]['edits']>();
   const moves = { size: {} as Record<string, number>, lineHeight: {} as Record<string, number>, letterSpacing: {} as Record<string, number>, weight: {} as Record<string, number> };
@@ -98,14 +136,19 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
   let classesRemoved = 0, places = 0, elements = 0;
   for (const name of roleOrder) {
     const ms = byRole.get(name); if (!ms?.length) continue;
-    const label = name.startsWith('label-');
-    const fluidText = mode(ms.map(m => m.current.sizeText).filter((s): s is string => !!s), '');
-    const size = mode(ms.map(m => m.current.size).filter((s): s is number => s !== null), null as number | null);
-    const prose = ms.filter(m => !m.list), lists = ms.filter(m => m.list);
+    const label = name.startsWith('label-'), override = overrides[name] ?? {}, own = clusters.get(name) ?? ms;
+    const clampCounts = new Map<string, number>();
+    for (const m of own) if (m.current.sizeText) clampCounts.set(m.current.sizeText, (clampCounts.get(m.current.sizeText) ?? 0) + 1);
+    const clamps = [...clampCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([text, places]) => ({ text, places }));
+    const fluidText = clamps[0]?.text ?? '';
+    const sized = sizes.get(name) ?? { size: null, from: 'mode' as const };
+    const prose = own.filter(m => !m.list), lists = own.filter(m => m.list);
+    // leading comes from what the code sets at the member; a member that sets none takes the role's, at no cost
     const lh = (set: TypeMember[]) => mode(set.map(m => m.current.lineHeight).filter((s): s is number => s !== null), null as number | null);
-    const lineHeight = lh(prose.length ? prose : ms);
-    const compact = name === 'body-large' && lists.length && lh(lists) !== null && lh(lists) !== lineHeight ? { compact: { lineHeight: lh(lists)! } } : undefined;
-    const bundle: TypeBundle = { size: fluidText ? null : size, ...(fluidText ? { sizeText: fluidText } : {}), lineHeight, letterSpacing: round(mode(ms.map(m => round(m.current.letterSpacing)), 0)), weight: mode(ms.map(m => m.current.weight), 400), transform: label ? 'uppercase' : 'none' };
+    const lineHeight = override.lineHeight ?? lh(prose.length ? prose : own);
+    const compactLh = override.compact?.lineHeight ?? (name === 'body-large' && lists.length ? lh(lists) : null);
+    const compact = compactLh !== null && compactLh !== lineHeight ? { compact: { lineHeight: compactLh } } : undefined;
+    const bundle: TypeBundle = { size: fluidText ? null : sized.size, ...(fluidText ? { sizeText: fluidText } : {}), lineHeight, letterSpacing: override.letterSpacing ?? round(mode(own.map(m => round(m.current.letterSpacing)), 0)), weight: override.weight ?? mode(own.map(m => m.current.weight), 400), transform: label ? 'uppercase' : 'none' };
     const roleMembers: RoleMember[] = [];
     const contexts = new Map<string, number>();
     const fileSet = new Set<string>();
@@ -115,7 +158,7 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
       const refSize = bundle.size ?? m.current.size ?? 16;
       const delta = {
         size: bundle.size !== null && m.current.size !== null ? round(bundle.size - m.current.size, 2) : null,
-        lineHeight: roleLh !== null && m.current.lineHeight !== null ? round((roleLh - m.current.lineHeight) * refSize, 1) : null,
+        lineHeight: roleLh !== null && m.current.lineHeight !== null ? round((roleLh - m.current.lineHeight) * refSize, 1) : m.current.lineHeight === null ? 0 : null,
         letterSpacing: round((bundle.letterSpacing - m.current.letterSpacing) * refSize, 2),
         weight: bundle.weight - m.current.weight,
       };
@@ -132,7 +175,7 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
       const edits = swapsByFile.get(m.site.file) ?? []; swapsByFile.set(m.site.file, edits);
       edits.push({ line: m.site.line, column: m.site.column, from: classes.join(' '), to: roleClass(name, variant) });
     }
-    roles.push({ name, bundle, ...(compact ? { variants: compact } : {}), members: roleMembers, places: ms.length, elements: ms.reduce((n, m) => n + m.elements, 0), files: fileSet.size, contexts: [...contexts].sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, places: n })) });
+    roles.push({ name, bundle, ...(compact ? { variants: compact } : {}), members: roleMembers, places: ms.length, elements: ms.reduce((n, m) => n + m.elements, 0), files: fileSet.size, contexts: [...contexts].sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, places: n })), sizeFrom: fluidText ? 'mode' : sized.from, ...(clamps.length ? { clamps } : {}) });
     // the write: the theme pairs in crafting-ui's own shape, and one utility that sets the whole bundle
     const token = roleToken(name), sizeValue = bundle.sizeText ?? (bundle.size !== null ? `${round(bundle.size / 16, 4)}rem` : null);
     const why = `type role ${name}: ${ms.length} places`;
@@ -147,7 +190,13 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
   }
   const sizesBefore = new Set(inside.map(m => m.current.sizeText ?? m.current.size)).size;
   const sizesAfter = new Set(roles.map(r => r.bundle.sizeText ?? r.bundle.size)).size;
+  const ladder: TypeProposal['ladder'] = [];
+  for (const name of ladderOrder) {
+    const role = roles.find(r => r.name === name); if (!role) continue;
+    const belowSize = [...ladder].reverse().find(step => step.size !== null)?.size ?? null;
+    ladder.push({ role: name, size: role.bundle.size, ...(role.bundle.sizeText ? { sizeText: role.bundle.sizeText } : {}), ratio: role.bundle.size !== null && belowSize !== null ? round(role.bundle.size / belowSize, 3) : null });
+  }
   return { rule: 'system/type-roles', kind: 'system', family: 'type', roles, outside, low, exceptions,
-    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter },
+    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter }, ladder, merged,
     write: { tokens, css: utilities.length ? `/* React Plumber type roles: one class per role, each sets the whole bundle */\n${utilities.join('\n')}\n` : '', swaps: [...swapsByFile].map(([file, edits]) => ({ file, edits })) } };
 }

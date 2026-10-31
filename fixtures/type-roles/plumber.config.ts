@@ -1,1 +1,1 @@
-export default { css: 'src/styles.css', source: ['src/**/*.{tsx,css}'], system: { exclude: ['src/specimen'] } };
+export default { css: 'src/styles.css', source: ['src/**/*.{tsx,css}'], system: { exclude: ['src/specimen'], type: { roles: { 'body-large': { size: 16, lineHeight: 1.6, compact: { lineHeight: 1.4 } } } } } };
