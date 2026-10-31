@@ -53,7 +53,7 @@ const A = 10, B = 3;
 export function Pin() { return <i id="pin-b" style={{ top: A + B }} className="absolute" />; }
 `;
 
-async function site(t, { ownFile = false } = {}) {
+async function site(t, { ownFile = false, remount = false } = {}) {
   let browser;
   try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return null; }
@@ -74,6 +74,18 @@ async function site(t, { ownFile = false } = {}) {
   await writeFile(join(root, 'src/Tall.jsx'), ownFile ? tall.replace("import { Pin as PinB } from './Styled';", "import { Pin as PinB } from './Styled';\nimport { Elsewhere } from './Elsewhere.jsx';").replace('    <Lazy />\n', '    <Lazy />\n    <LazyOwn />\n') + own : tall);
   await writeFile(join(root, 'src/Badge.jsx'), badge);
   await writeFile(join(root, 'src/Styled.jsx'), styled);
+  // controls that re-mount every 150 ms for twelve ticks (a new key each tick), then hold still so the page is done
+  if (remount) {
+    await writeFile(join(root, 'src/Churn.jsx'), `import { useEffect, useState } from 'react';
+export function Churn() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick((n) => (n < 12 ? n + 1 : n)), 150); return () => clearInterval(t); }, []);
+  return <div id="churn">{[0, 1, 2].map((n) => <span key={tick + '-' + n} role="button" tabIndex={0} className="px-[11px] cursor-pointer">{n}</span>)}</div>;
+}
+`);
+    const text = await readFile(join(root, 'src/Tall.jsx'), 'utf8');
+    await writeFile(join(root, 'src/Tall.jsx'), text.replace("import { Pin as PinB } from './Styled';", "import { Pin as PinB } from './Styled';\nimport { Churn } from './Churn.jsx';").replace('    <Pin /><PinB />\n', '    <Pin /><PinB />\n    <Churn />\n'));
+  }
   await writeFile(join(root, 'src/Elsewhere.jsx'), `export function Elsewhere() { return <p id="elsewhere-p" className="mr-[23px]">own file</p>; }\n`);
   // the demo's entry mounts its App; this page mounts the tall one instead
   const entry = await readFile(join(root, 'src/entry.jsx'), 'utf8');
@@ -186,5 +198,20 @@ test('a place on an inline style joins the element that renders it; two files wi
   const pins = await page.evaluate(() => window.__plumb.overlay.places.filter((p) => p.text === 'top: A + B').map((p) => [p.file, p.line, p.column, p.elements]));
   assert.deepEqual(pins.sort(), [['src/Badge.jsx', 3, 55, 1], ['src/Styled.jsx', 3, 55, 1]], JSON.stringify(pins));
   assert.ok(await page.evaluate(() => !!document.getElementById('pin-a') && !!document.getElementById('pin-b')));
+  assert.deepEqual(errors, []);
+});
+
+test('one structure read per source position, however often the elements rendered from it re-mount', { timeout: 120000 }, async (t) => {
+  const s = await site(t, { remount: true }); if (!s) return;
+  const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
+  const structure = new Map();
+  page.on('request', (r) => { const u = new URL(r.url()); if (u.pathname === '/__plumb/structure') { const k = `${u.searchParams.get('file')}:${u.searchParams.get('line')}:${u.searchParams.get('column')}`; structure.set(k, (structure.get(k) ?? 0) + 1); } });
+  await page.keyboard.press('Alt+B');
+  await page.waitForFunction(() => window.__plumb?.overlay?.progress?.done === true, null, { timeout: 60000 });
+
+  const churn = [...structure].filter(([k]) => k.includes('Churn.jsx'));
+  assert.ok(churn.length >= 1, JSON.stringify([...structure]));
+  assert.deepEqual(churn.map(([, n]) => n), churn.map(() => 1), `one read per position: ${JSON.stringify(churn)}`);
+  assert.ok([...structure.values()].every((n) => n === 1), JSON.stringify([...structure]));
   assert.deepEqual(errors, []);
 });

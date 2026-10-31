@@ -106,3 +106,28 @@ test('places answers every finding at the places in a set of files, rendered or 
   assert.deepEqual(here, site.findings.map(f => f.rule).sort());
   assert.equal((await api.call('places', { files: 'nope' }, 'POST')).status, 400);
 });
+
+test('once a theme write lands, the next page and places readings no longer report the adopted default', { timeout: 60000 }, async (t) => {
+  const api = await project(t);
+  await writeFile(join(api.root, 'src/App.tsx'), `import './styles.css';\nexport const App = () => <p id="type" className="leading-relaxed">x</p>;\n`);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  const type = await api.stampOf('type', 'p');
+  const item = { stamp: type.stamp, tag: 'p' };
+  const rules = answer => answer.items[0].site.findings.filter(f => f.sites.some(s => s.text === 'leading-relaxed')).map(f => f.rule);
+  const before = await api.call('page', { items: [item] }, 'POST');
+  assert.deepEqual(rules(before.body), ['provenance/type/framework']);
+  const adopt = before.body.items[0].site.findings.find(f => f.rule === 'provenance/type/framework').adopt;
+  assert.deepEqual(adopt, { name: '--leading-relaxed', value: '1.625' });
+  // the cache is warm for this stamp
+  assert.equal((await api.call('page', { items: [item] }, 'POST')).body.items[0].cached, true);
+  const spec = (await api.call('spec', {})).body;
+  const written = await api.call('apply-all', { tokens: [{ file: spec.tokens.file, hash: spec.tokens.hash, name: adopt.name, value: adopt.value, why: 'Ours now.' }] }, 'POST');
+  assert.equal(written.status, 200, JSON.stringify(written.body));
+  assert.deepEqual(written.body.results.tokens, [{ name: '--leading-relaxed', ok: true }]);
+  // straight after the write: the stamp is unchanged (the TSX did not change), the reading is not
+  const after = await api.call('page', { items: [item] }, 'POST');
+  assert.equal(after.body.items[0].cached, undefined, 'a theme write drops every cached page entry');
+  assert.deepEqual(rules(after.body), []);
+  const places = await api.call('places', { files: ['src/App.tsx'] }, 'POST');
+  assert.deepEqual(places.body.files[0].findings.filter(f => f.sites.some(s => s.text === 'leading-relaxed')).map(f => f.rule), []);
+});

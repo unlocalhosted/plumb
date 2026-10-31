@@ -483,19 +483,28 @@ class PlumbOverlay extends HTMLElement {
   // craft: what the source says about an element (its component, library, handlers), for the rules that judge by it
   // (touch handling, a tooltip provider's delays). Asked only for the elements those rules can judge; when answers
   // land, the page is judged again once.
-  #sourced = new WeakSet(); #resourced = 0;
+  // One structure read per source position per file revision (#structures, dropped with the other caches on a hot
+  // update): a list's rows and every re-render of an element share it; each element still gets the answer applied.
+  #sourced = new WeakSet(); #structures = new Map(); #resourced = 0;
   #learnSource(element, found) {
     if (this.#sourced.has(element) || !Number.isFinite(found.line)) return;
     const candidate = element.matches?.('[role="button"], [data-state], [aria-haspopup]')
       || (!element.matches?.('button, a[href], input, select, textarea, summary, label, option') && getComputedStyle(element).cursor === 'pointer');
     if (!candidate) return;
     this.#sourced.add(element);
-    request('structure', { file: found.file, line: found.line, column: found.column }).then((s) => {
+    const key = `${found.file}:${found.line}:${found.column}`;
+    let structure = this.#structures.get(key);
+    if (!structure) {
+      structure = request('structure', { file: found.file, line: found.line, column: found.column }).catch(() => null);
+      this.#structures.set(key, structure);
+      structure.then((s) => { if (!s || s.error) this.#structures.delete(key); });
+    }
+    structure.then((s) => {
       if (!s || s.error) return;
       setSource(element, s);
       clearTimeout(this.#resourced);
       this.#resourced = setTimeout(() => this.#blueprint?.themeChanged(), 120);
-    }).catch(() => {});
+    });
   }
   get health() { return this.#health; }
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
@@ -516,7 +525,7 @@ class PlumbOverlay extends HTMLElement {
   wrote(result, text) { this.#history?.wrote(result, text); }
   ordered() {}
   #updated = () => this.forget();
-  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); forgetResolved(); }
+  forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); this.#structures = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
   remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place })); } catch {} }

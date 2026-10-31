@@ -145,8 +145,8 @@ export class Session extends EventEmitter {
   private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
   private id = 0;
   private hashes = new Map<string, string>();
-  // the whole-page answers (page): one entry per stamp, tag and classes, good while the file it names keeps its hash;
-  // a traced entry depends on other files too, so it lives for one generation of changes
+  // the whole-page answers (page): one entry per stamp, tag and classes, good for one generation of changes (a theme
+  // write or a ledger entry changes every reading, not only its own file's) and while the file it names keeps its hash
   private pageCache = new Map<string, { file: string; hash: string; generation: number; entry: PageEntry }>();
   private pageGeneration = 0;
   private sourceTexts = new Map<string, string>();
@@ -541,7 +541,7 @@ export class Session extends EventEmitter {
     const fresh: PageItem[] = [];
     for (const [key, item] of unique) {
       const hit = this.pageCache.get(key);
-      if (hit && this.hashes.get(hit.file) === hit.hash && (!hit.entry.traced || hit.generation === this.pageGeneration)) answers.set(key, { ...hit.entry, cached: true });
+      if (hit && this.hashes.get(hit.file) === hit.hash && hit.generation === this.pageGeneration) answers.set(key, { ...hit.entry, cached: true });
       else fresh.push(item);
     }
     if (fresh.length) {
