@@ -901,7 +901,7 @@ class PlumbOverlay extends HTMLElement {
       // One interface: the pick opens blueprint on that element, its cause in the fix panel. Alt is let go with it.
       this.#disarm();
       this.#ready?.dismiss();
-      this.#blueprint.enterAt(element);
+      this.#blueprint.enterAt(element, { card: true });
     }
   };
 

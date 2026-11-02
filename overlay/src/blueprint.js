@@ -95,6 +95,8 @@ export class Blueprint {
       applyStyles: (write, said) => this.#applyStyles(write, said),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
+      recipe: (at, body, said) => this.#applyRecipe(at, body, said),
+      unwant: () => { this.#want = null; },
       // why an element can't be placed in the source, as the panel says it
       why: async (el) => { const state = await this.#host.readMarks?.(el); return state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : null; },
     });
@@ -139,7 +141,7 @@ export class Blueprint {
     this.active ? this.leave(options) : this.enter(options);
   }
 
-  enter({ instant = false, scope = null } = {}) {
+  enter({ instant = false, scope = null, card = false } = {}) {
     if (this.active) return;
     if (this.#host.health === 'failed') return this.#set('refused');
     clearTimeout(this.#timer);
@@ -160,6 +162,7 @@ export class Blueprint {
     this.#glass.on();
     this.#fix.show(true);
     if (scope && hasText(scope)) this.#fix.edit(scope);
+    else if (scope && card) this.#fix.card(scope);
     this.#set('entering');
     if (instant || still()) return this.#on();
     // one frame at opacity 0 before the fade, so the transition has somewhere to start
@@ -460,12 +463,14 @@ export class Blueprint {
   resumed(text, undo, at) { this.#fix.resumed(text, undo, at); }
   // Alt+click: that element and what's inside it are read, never the whole page (Alt+B is the whole page). Another
   // element outside the one being read is read in its place.
-  enterAt(el) {
+  // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it; its cause
+  // is still put in hand as it was (a script's pin, a pick from a list, only that)
+  enterAt(el, { card = false } = {}) {
     if (this.active && this.#scope && !this.#scope.contains(el)) this.leave({ instant: true });
     // words: their own values open in the fix panel (texteditor.js), problem or not
     if (hasText(el)) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
     this.#want = el;
-    this.active ? this.#holdWanted(this.#settled) : this.enter({ scope: el });
+    if (this.active) { if (card) this.#fix.card(el); this.#holdWanted(this.#settled); } else this.enter({ scope: el, card });
   }
   // One value of one element, set on its line of code (the text editor's pick): remembered first, as every write is,
   // so a page the write reloads comes back to the same element with the write said and its Undo
@@ -476,6 +481,18 @@ export class Blueprint {
     catch (error) { this.#host.forgetResume?.(); throw error; }
     this.#host.remember?.(said, result?.undo ? [result.undo] : []);
     this.invalidate({ file: at.file });
+    return result;
+  }
+  // A recipe (a shadow, a motion) written for one element through the recipe engine: remembered first, as every write is;
+  // every file it wrote is read again
+  async #applyRecipe(at, body, said) {
+    this.#host.remember?.(said);
+    let result;
+    try { result = await post('recipes/apply', { file: at.file, hash: at.hash, line: at.line, column: at.column, ...body }); }
+    catch (error) { this.#host.forgetResume?.(); throw error; }
+    this.#host.remember?.(said, result?.undo ?? []);
+    const files = new Set([at.file, ...(result?.undo ?? []).map((h) => h.file).filter(Boolean)]);
+    for (const file of files) this.invalidate({ file });
     return result;
   }
   // the element being read (an Alt+click), or null for the whole page

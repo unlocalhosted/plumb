@@ -29,6 +29,7 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
+import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, written } from './words.js'; // every sentence the panel says
@@ -43,7 +44,7 @@ const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin:
 const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
-export const FIX_CSS = TEXT_EDITOR_CSS + `
+export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
@@ -266,6 +267,19 @@ export class FixPanel {
       dark: () => darkGround(),
       why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
     });
+    // Alt+click on anything else: its own card, Shadow › and Motion › on the recipe engine (elementcard.js)
+    this.#card = new ElementCard(root, {
+      apply: (at, body, said) => this.#host.recipe(at, body, said),
+      said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      problems: () => this.#live().filter((x) => !noteOf(x)).length,
+      show: () => { this.#card.close(); this.hold(0); },
+      closed: () => { this.#html = ''; this.render(); },
+      elsewhere: (el) => stampMates(el),
+      dark: () => darkGround(),
+      why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
+      // working in the card: the cause Blueprint would put in hand once the element is read isn't, and one in hand is put down
+      release: () => { this.#host.unwant?.(); this.release(); },
+    });
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -296,16 +310,19 @@ export class FixPanel {
     });
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor;
+  #editor; #card;
   // Alt+click on words opens their editor; a cause in hand is put down first
-  edit(el) { if (this.#holding) this.release(); this.#editor.edit(el); this.#html = ''; this.render(); }
-  get editing() { return this.#editor.open ? this.#editor.target : null; }
-  // a file was written or undone: the element in the editor is read again
-  changed() { this.#editor.changed(); }
+  edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
+  // Alt+click on anything else opens its card beside it; the element's own cause may still be put in hand (Blueprint
+  // does that once it is read), and the card puts it down when it is worked in
+  card(el) { this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
+  get editing() { return this.#editor.open ? this.#editor.target : this.#card.open ? this.#card.target : null; }
+  // a file was written or undone: the element in the editor (or the card) is read again
+  changed() { this.#editor.changed(); this.#card.changed(); }
   get holding() { return this.#holding; }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -653,6 +670,10 @@ export class FixPanel {
       // the card's keys first: a '.' typed into a number is the number's
       if (this.#editor.key(k)) return true;
       if (k === '.' && this.#live().length) { this.#editor.close(); this.hold(0); return true; }
+    }
+    if (!this.#holding && this.#card.open) {
+      if (this.#card.key(k)) return true;
+      if (k === '.' && this.#live().length) { this.#card.close(); this.hold(0); return true; }
     }
     if (!this.#holding && this.#system?.open) {
       if (k === 'Escape') { this.#closeStyles(); return true; }
