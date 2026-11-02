@@ -261,13 +261,17 @@ test('A suggestion is written in one pick: the concentric corner previews rounde
   assert.deepEqual(errors, []);
 });
 
-test('Alt+click on the non-concentric child opens blueprint with its craft cause in hand, named with its suggestion', { timeout: 120000 }, async (t) => {
+test('Alt+click on the non-concentric child opens its values, and . puts its craft cause in hand, named with its suggestion', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const { page, errors, overlay } = await open(t, launched, url);
   const fx = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText ?? '');
   await page.locator('#cc-bad-child').click({ modifiers: ['Alt'] });
+  // words: their values open beside them; once the element is read, '.' puts its problem in hand
+  await overlay.locator('.tc').waitFor({ timeout: 20000 });
+  await page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 20000 });
+  await page.keyboard.press('.');
   await page.waitForFunction(() => /Corner doesn’t match its parent/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.textContent ?? ''), null, { timeout: 20000 });
   assert.match(await fx(), /rounded-card/);
   // the concentric one beside it carries no craft finding

@@ -1,0 +1,775 @@
+/* ─────────────────────────────────────────────────────────
+ * TEXT CARD · React Plumber overlay
+ *
+ * Alt+click on words opens a card beside them: what the text is now, as values, and an editor for each (docs/design/
+ * text-editor.md, direction D, docs/design/prototypes/text-card.html). The unit is the element; a problem is one
+ * state of a value: off the scale.
+ *
+ *  card      beside the element (right, else left, else below), its caret on the element's middle, the element ringed;
+ *            it follows the element through scrolls and resizes and never leaves the screen
+ *  rest      Style (the project's text styles, a field that opens a list), then value fields for size, leading,
+ *            tracking and weight, then case (segmented) and colour (a chip that opens the swatches). Every value is
+ *            read at rest: off the scale coral with a dot; not set, quiet (the page's value); set in code, locked
+ *  change    the scale appears under the fields only while a value changes: the steps evenly spaced, the off-scale
+ *            value a coral mark where it falls. A field changes by a drag (the whole field is the handle), by ← → or
+ *            by typing a number; every change snaps to a step, previews on the element at once, and Enter (or letting
+ *            go of a drag) writes it with one POST set, said in the fix panel with Undo. Esc puts it back
+ *  drag      past 3px a press is a drag. One spring moves the thumb (transform only, velocity carried); it springs
+ *            toward the hand pulled onto the nearest step by a smooth magnet (no jumps: at the midpoint between two
+ *            steps the magnet lets go), with a rubber band past the ends. Letting go springs it into its step with a
+ *            little overshoot, then writes; Esc or letting go on the value it started on springs it home. The knob
+ *            lifts when held, the value rides above it, numbers roll in from the side they came from, the ticks near
+ *            it swell. The card is never redrawn while the hand is down
+ *  keys      ↑ ↓ the field in hand (stepping when a value is open), ← → step it (previewed), digits type, Enter writes,
+ *            Esc puts back, then closes
+ *  motion    the card pops in from the element's side; the scale opens out of the fields and folds back faster;
+ *            reduced motion: positions only, no spring, roll or swell
+ * ───────────────────────────────────────────────────────── */
+import { request } from './api.js';
+import { locate, componentOf } from './locate.js';
+import { esc } from './choices.js';
+import { namesOf } from './typesystem.js';
+import { FIX } from './words.js';
+import { contextOf } from './hierarchy.js'; // the element's place among its peers: the step that fits, the ones that break the order
+
+const W = FIX.text;
+const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
+const STYLE_PROPS = ['font-size', 'line-height', 'font-weight', 'letter-spacing', 'text-transform'];
+const VALUES = ['font-size', 'line-height', 'letter-spacing', 'font-weight'];
+const WIDTH = 276, GAP = 16, EDGE = 12;
+const CASE_GLYPH = { none: 'Aa', uppercase: 'AA', lowercase: 'aa', capitalize: 'Ab' };
+const WEIGHTS = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+const UNIT = { 'font-size': 'px', 'line-height': '', 'letter-spacing': 'em', 'font-weight': '' };
+const ICON = {
+  'font-size': '<svg viewBox="0 0 14 14"><path d="M2 3.5h7M5.5 3.5v8M9.5 7h3M11 7v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  'line-height': '<svg viewBox="0 0 14 14"><path d="M4 3h8M4 7h8M4 11h8M1.5 2.5v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  'letter-spacing': '<svg viewBox="0 0 14 14"><path d="M1.5 2v10M12.5 2v10M4.5 10l2.5-6 2.5 6M5.4 8h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  'font-weight': '<svg viewBox="0 0 14 14"><path d="M4 2.5h3.6a2.2 2.2 0 0 1 0 4.4H4zM4 6.9h4.3a2.3 2.3 0 0 1 0 4.6H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  lock: '<svg viewBox="0 0 14 14"><rect x="3" y="6.5" width="8" height="5.5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4.8 6.5V5a2.2 2.2 0 0 1 4.4 0v1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+};
+const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const EXPO = 'cubic-bezier(.19, 1, .22, 1)';
+const HOLD = { k: 1400, c: 66 };  // the thumb while held: near critical, quick, no wobble
+const SETTLE = { k: 520, c: 25 }; // let go: a little overshoot into the step (a drag's force, spent)
+const BAND = 26;                  // px the rubber band gives at most past an end
+const SWELL = 18;                 // px around the thumb that ticks swell over
+const ATOM = 1 / 240;             // the spring's step, so it moves the same at any frame rate
+
+// an element whose own words are on the page: a text node with letters among its children
+export const hasText = (el) => !!el && el.nodeType === 1 && [...el.childNodes].some((n) => n.nodeType === 3 && /\S/.test(n.textContent));
+// where a value sits on the scale: steps evenly spaced (it is the theme's ladder, not a ruler), a value between two
+// steps placed between them, in proportion
+const posOf = (ns, n) => { const i = ns.findIndex((x) => x >= n - 1e-9); if (i < 0) return 100; if (i === 0 || Math.abs(ns[i] - n) < 1e-9) return ns.length > 1 ? (i / (ns.length - 1)) * 100 : 50; return ((i - 1 + (n - ns[i - 1]) / (ns[i] - ns[i - 1])) / (ns.length - 1)) * 100; };
+const round = (n) => Math.round(n * 1000) / 1000;
+// a value as a field reads it: size and tracking as numbers (the unit beside them), weight with its name
+const fmtOf = (key, n) => !Number.isFinite(n) ? '–' : String(round(n));
+// what a field reads beside its number: the unit, or a weight's name
+const unitOf = (key, n) => key === 'font-weight' ? WEIGHTS[n] ?? '' : UNIT[key];
+const shortOf = (key, n) => key === 'letter-spacing' ? String(round(n)).replace(/^(-?)0\./, '$1.') : String(round(n));
+// roll a number in from the side it came from (up for larger, down for smaller)
+function roll(el, text, dir) {
+  if (!el || el.textContent === text) return;
+  el.textContent = text;
+  if (!STILL() && dir) el.animate([{ transform: `translateY(${dir > 0 ? 6 : -6}px)`, opacity: 0.2 }, { transform: 'none', opacity: 1 }], { duration: 150, easing: EXPO });
+}
+
+export const TEXT_EDITOR_CSS = `
+  .tc { position: fixed; z-index: 4; width: ${WIDTH}px; max-height: calc(100vh - ${EDGE * 2}px); overflow: auto; overscroll-behavior: contain; box-sizing: border-box; pointer-events: auto;
+    background: rgb(255 255 255 / .9); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); border-radius: 16px; color: #1c1b19;
+    font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; --sky: #2f6bff; --coral: #e2533a; --ink-3: #8b8a85; --wash: rgb(0 0 0 / .04);
+    box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 1px 1px rgb(0 0 0 / .04), 0 10px 24px -10px rgb(0 0 0 / .18), 0 32px 64px -28px rgb(0 0 0 / .22), inset 0 1px 0 rgb(255 255 255 / .9);
+    animation: tc-pop 280ms cubic-bezier(.2, .9, .25, 1.15) both; }
+  .tc[hidden] { display: none; }
+  .tc[data-side="left"] { transform-origin: right center; } .tc[data-side="right"] { transform-origin: left center; } .tc[data-side="below"] { transform-origin: top left; } .tc[data-side="above"] { transform-origin: bottom left; }
+  @keyframes tc-pop { from { opacity: 0; scale: .96; } }
+  .tc button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+  .tc kbd { font: 500 10px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1); color: #55544f; }
+  .tc .hd { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px 8px; }
+  .tc .hd .n { font: 600 13px/1.2 ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tc .hd .n span { color: var(--ink-3); font-weight: 500; }
+  .tc .hd .at { margin-left: auto; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; }
+  .tc .reach { padding: 0 14px 8px; color: #55544f; font-size: 12px; }
+  .tc .down { padding: 4px 14px 14px; color: #c2304f; }
+  .tc .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
+  /* a value field: at rest its value; hover lifts; focused or open it is ringed; a drag's handle is the whole field */
+  .tc .fld { position: relative; display: flex; align-items: center; gap: 7px; min-width: 0; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--wash); outline: none; user-select: none;
+    transition: background 120ms ease-out, box-shadow 120ms ease-out, scale 140ms cubic-bezier(.25, .46, .45, .94); }
+  .tc .fld[data-key] { cursor: ew-resize; }
+  @media (hover: hover) and (pointer: fine) { .tc .fld:hover { background: rgb(0 0 0 / .065); } }
+  .tc .fld:active { scale: .985; }
+  .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing] { background: #fff; box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
+  .tc .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--ink-3); flex: none; font: 600 12px/1 var(--pl-sans, system-ui); }
+  .tc .fld .ic svg { width: 14px; height: 14px; }
+  .tc .fld .val { display: inline-block; font: 500 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld .u { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); }
+  .tc .fld .was { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); text-decoration: line-through; margin-left: auto; }
+  .tc .fld[data-off] .val { color: #d2462c; }
+  .tc .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--coral); }
+  .tc .fld[data-off][data-editing]::after, .tc .fld[data-changed]::after { display: none; }
+  .tc .fld[data-changed] .val { color: var(--sky); }
+  .tc .fld[data-unset]:not([data-changed]) .val { color: var(--ink-3); }
+  .tc .fld[aria-disabled="true"] { cursor: default; opacity: .6; }
+  .tc .fld.wide { grid-column: 1 / -1; }
+  .tc .fld.pick { cursor: pointer; padding-right: 8px; text-align: left; }
+  .tc .fld.pick .chev { margin-left: auto; color: var(--ink-3); font-size: 10px; }
+  .tc .fld .sub { color: var(--ink-3); font: 500 11.5px/1 var(--pl-sans, system-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld .chip { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); flex: none; margin-left: 4px; }
+  /* the scale, on demand: out of the fields while a value changes */
+  .tc .rail { margin: 0 12px 8px; padding: 9px 10px 8px; border-radius: 10px; background: var(--wash); }
+  .tc .rail[data-new] { animation: tc-rail 240ms ${EXPO} both; }
+  @keyframes tc-rail { from { clip-path: inset(0 0 100% 0 round 10px); translate: 0 -4px; opacity: .4; } to { clip-path: inset(0 0 0 0 round 10px); } }
+  .tc .ticks { position: relative; height: 30px; margin: 14px 8px 0; }
+  .tc .ticks::before { content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 2px; border-radius: 1px; background: rgb(0 0 0 / .07); }
+  .tc .tk { position: absolute; top: 3px; translate: -50% 0; display: grid; justify-items: center; gap: 5px; font: 500 10px/1 ui-monospace, monospace; color: var(--ink-3); cursor: pointer; padding: 0 2px; border-radius: 5px; transition: color 120ms; }
+  .tc .tk i { width: 2px; height: 9px; border-radius: 1px; background: currentColor; opacity: .5; transform-origin: 50% 100%; will-change: transform; }
+  .tc .tk b { display: block; font: inherit; }
+  /* the hierarchy, on the scale: the step that fits the element's place marked, the steps that break the order quiet */
+  .tc .tk[data-fit]::before { content: ''; position: absolute; top: -9px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #1a9e62; box-shadow: 0 0 0 2px rgb(26 158 98 / .18); }
+  .tc .tk[data-fit] b { color: #137a4b; }
+  .tc .tk[data-breaks]:not([data-at]) { opacity: .38; }
+  .tc .tk[data-breaks]:not([data-at]) b { text-decoration: line-through; text-decoration-color: rgb(0 0 0 / .35); }
+  .tc .fit { margin-top: 8px; display: flex; gap: 6px; align-items: baseline; font-size: 11.5px; color: #137a4b; }
+  .tc .fit::before { content: ''; flex: none; width: 5px; height: 5px; border-radius: 50%; background: #1a9e62; translate: 0 -1px; }
+  .tc .tk[data-at] { color: var(--sky); } .tc .tk[data-at] i { height: 11px; width: 3px; opacity: 1; }
+  .tc .tk[data-off] { color: #d2462c; cursor: default; } .tc .tk[data-off] i { opacity: 1; height: 11px; width: 3px; background: repeating-linear-gradient(0deg, var(--coral) 0 2px, transparent 2px 3px); }
+  @media (hover: hover) and (pointer: fine) { .tc .tk:not([data-off]):hover { color: #1c1b19; } }
+  .tc .rail[data-dragging] .tk { cursor: ew-resize; }
+  .tc .thumb { position: absolute; left: 0; top: 2px; width: 0; height: 14px; pointer-events: none; will-change: transform; }
+  .tc .knob { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .15), 0 2px 6px rgb(0 0 0 / .2), inset 0 0 0 3.5px var(--sky); }
+  .tc .bub { position: absolute; bottom: calc(100% + 7px); left: 0; translate: -50% 0; padding: 3px 7px; border-radius: 7px; background: #1c1b19; color: #fff; font: 600 10.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; transform-origin: 50% 100%; overflow: hidden; }
+  .tc .bub span { display: inline-block; }
+  .tc .hint { margin-top: 7px; font-size: 11px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .tc .hint .off { color: #d2462c; } .tc .hint .err { color: #c2304f; }
+  /* case, and the lists a field opens (styles, colours) */
+  .tc .seg { display: flex; margin: 0 12px 8px; padding: 2px; border-radius: 9px; background: var(--wash); }
+  .tc .seg .ch { flex: 1; height: 26px; border-radius: 7px; font: 600 12px/1 var(--pl-sans, system-ui); color: #55544f; transition: background 120ms ease-out, box-shadow 120ms ease-out, color 120ms; }
+  .tc .seg .ch[aria-checked="true"] { background: #fff; color: #1c1b19; box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
+  .tc .seg .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
+  .tc .menu { margin: -2px 12px 8px; padding: 4px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 12px 28px -8px rgb(0 0 0 / .25); animation: tc-rail 200ms ${EXPO} both; }
+  .tc .menu .ch { position: relative; width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 7px 9px; border-radius: 8px; text-align: left; transition: background 120ms ease-out, box-shadow 120ms; }
+  @media (hover: hover) and (pointer: fine) { .tc .menu .ch:hover, .tc .seg .ch:hover { background: rgb(0 0 0 / .04); } }
+  .tc .menu .ch[aria-checked="true"] { background: rgb(47 107 255 / .1); color: var(--sky); }
+  .tc .menu .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
+  .tc .menu .ag { width: 30px; line-height: 1; }
+  .tc .menu .nb { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--ink-3); }
+  .tc .menu .sw { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 4px; }
+  .tc .menu .sw .ch { width: 100%; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .tc .menu .sw .ch[aria-checked="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sky); }
+  .tc .menu .sw .ch[data-peek] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(47 107 255 / .5); }
+  .tc .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: #55544f; font-size: 12.5px; }
+  .tc .more .show { margin-left: auto; height: 26px; padding: 0 9px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
+  .tc .more .show:hover { background: var(--wash); }
+  .tc .ph { height: 32px; border-radius: 9px; background: var(--wash); }
+  /* the caret, on the element's middle; the element ringed, glowing while a preview is on it */
+  .tc-caret { position: fixed; z-index: 5; width: 12px; height: 12px; rotate: 45deg; background: rgb(255 255 255 / .96); border-radius: 2px; pointer-events: none; }
+  .tc-caret[hidden], .tc-ring[hidden] { display: none; }
+  .tc-caret[data-side="right"] { box-shadow: -.5px .5px 0 rgb(0 0 0 / .1); } .tc-caret[data-side="left"] { box-shadow: .5px -.5px 0 rgb(0 0 0 / .1); } .tc-caret[data-side="below"] { box-shadow: -.5px -.5px 0 rgb(0 0 0 / .1); }
+  .tc-ring { position: fixed; z-index: 3; border-radius: 8px; box-shadow: 0 0 0 1.5px #2f6bff; pointer-events: none; transition: box-shadow 120ms ease-out; }
+  .tc-ring[data-peek] { box-shadow: 0 0 0 1.5px #2f6bff, 0 0 0 5px rgb(47 107 255 / .14); }
+  :host([data-dragging]), :host([data-dragging]) * { cursor: ew-resize !important; }
+  @media (prefers-reduced-motion: reduce) { .tc, .tc .rail[data-new], .tc .menu { animation: none; } }
+`;
+
+// a CSS length as px for the element it is on (rem from the root, em from the element)
+function pxOf(v, el) {
+  const m = /^(-?[\d.]+)(px|rem|em)?$/.exec(String(v ?? '').trim());
+  if (!m) return NaN;
+  const n = +m[1];
+  if (m[2] === 'rem') return n * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
+  if (m[2] === 'em') return n * (parseFloat(getComputedStyle(el).fontSize) || 16);
+  return n;
+}
+// a step's number on its own row's scale: size in px, leading as a ratio of the size, tracking in em, weight as is
+function numOf(key, v, el) {
+  if (v === null || v === undefined || v === '') return NaN;
+  const s = String(v).trim();
+  // the page's word for no change: tracking 0, leading the browser's 1.2
+  if (s === 'normal') return key === 'letter-spacing' ? 0 : key === 'line-height' ? 1.2 : key === 'font-weight' ? 400 : NaN;
+  if (key === 'font-weight') return parseFloat(s);
+  if (key === 'letter-spacing') { const n = parseFloat(s); return /px$/.test(s) ? n / (parseFloat(getComputedStyle(el).fontSize) || 16) : n; }
+  if (key === 'line-height') { if (/^[\d.]+$/.test(s)) return +s; const px = pxOf(s, el), size = parseFloat(getComputedStyle(el).fontSize) || 16; return Math.round((px / size) * 100) / 100; }
+  return pxOf(s, el);
+}
+// a value in the words people read: sizes in px, the case by its name, normal tracking as 0
+const said = (key, v, el) => {
+  if (key === 'font-size') { const px = Number.isFinite(+v) ? +v : pxOf(v, el ?? document.documentElement); return Number.isFinite(px) ? `${Math.round(px * 100) / 100}px` : String(v); }
+  if (key === 'text-transform') return W.cases[v] ?? String(v);
+  if (key === 'letter-spacing' && v === 'normal') return '0em';
+  return String(v);
+};
+
+export class TextEditor {
+  #el; #caret; #ring; #host;
+  #target = null; #at = null; #props = null; #state = 'off'; #error = null; #rowError = null;
+  #row = 0;            // the field in hand (↑ ↓), an index into the fields shown
+  #peek = null;        // { key, i } the choice previewed on the element
+  #shown = new Map();  // prop → the inline value the preview replaced
+  #seq = 0;
+  #editing = null;     // { key, at, typed, moved } a value open, its scale shown; null at rest
+  #menu = null;        // 'style' | 'color' while its list is open
+  #drag = null;        // the drag in progress: { cancel() }
+  #dragged = false;    // the press that just ended was a drag, not a click
+  #railFor = null;     // the value whose scale is already open (it opens once, not on every step)
+  #ctx = null;         // contextOf(target): its role, its container's levels, and per value the step that fits
+
+  // root: the overlay's shadow root; host: { write(at, key, token, said) → Promise<result>, said(text, undo),
+  // problems() → n, show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null> }
+  constructor(root, host) {
+    this.#host = host;
+    this.#el = Object.assign(document.createElement('div'), { className: 'tc', hidden: true });
+    this.#el.setAttribute('role', 'dialog'); // named for the element when it opens ("Edit Lettering")
+    this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret', hidden: true });
+    this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });
+    root.append(this.#ring, this.#el, this.#caret);
+    this.#el.addEventListener('pointerdown', (e) => { const f = e.target.closest('.fld[data-key]'); if (f && e.button === 0) this.#press(e, f.dataset.key); });
+    this.#el.addEventListener('click', (e) => {
+      if (e.target.closest('.show')) return this.#host.show?.();
+      const f = e.target.closest('.fld[data-key]');
+      if (f) { if (this.#dragged) { this.#dragged = false; return; } return this.#open(f.dataset.key); }
+      const m = e.target.closest('.fld[data-menu]');
+      if (m) return this.#toggleMenu(m.dataset.menu);
+      const t = e.target.closest('.tk[data-i]');
+      if (t && this.#editing) return this.#write(this.#editing.key, +t.dataset.i);
+      const c = e.target.closest('.ch[data-key]');
+      if (c) this.#write(c.dataset.key, +c.dataset.i);
+    });
+    // pointing at a choice (a style, a colour, a case, a step on the scale) previews it; leaving puts back what was shown
+    this.#el.addEventListener('pointerover', (e) => {
+      if (this.#drag) return;
+      const c = e.target.closest('.ch[data-key]'), t = e.target.closest('.tk[data-i]');
+      if (c) this.#peekAt(c.dataset.key, +c.dataset.i);
+      else if (t && this.#editing) this.#peekAt(this.#editing.key, +t.dataset.i);
+    });
+    this.#el.addEventListener('pointerout', (e) => {
+      if (this.#drag) return;
+      const c = e.target.closest('.ch[data-key], .tk[data-i]');
+      if (!c || c.contains(e.relatedTarget)) return;
+      const ed = this.#editing;
+      if (ed?.moved) this.#peekAt(ed.key, ed.at); else this.#unpeek(true);
+    });
+  }
+  get open() { return !!this.#target; }
+  get target() { return this.#target; }
+  get name() { return this.#at?.chain?.[0]?.component ?? componentOf(this.#target) ?? this.#target?.localName ?? ''; }
+
+  async edit(el) {
+    this.#unpeek();
+    this.#drag?.cancel();
+    this.#target = el; this.#at = null; this.#props = null; this.#error = null; this.#rowError = null; this.#row = 0; this.#editing = null; this.#menu = null; this.#railFor = null; this.#ctx = null;
+    this.#state = 'loading';
+    this.#el.hidden = false; this.#caret.hidden = false; this.#ring.hidden = false;
+    // a new element pops in again
+    this.#el.style.animation = 'none'; void this.#el.offsetWidth; this.#el.style.removeProperty('animation');
+    addEventListener('scroll', this.#follow, { passive: true, capture: true });
+    addEventListener('resize', this.#follow);
+    this.#draw();
+    await this.#read();
+  }
+  close() {
+    this.#drag?.cancel();
+    this.#editing = null; this.#menu = null;
+    this.#unpeek(); this.#target = null; this.#state = 'off'; this.#props = null;
+    this.#el.hidden = true; this.#caret.hidden = true; this.#ring.hidden = true; this.#el.innerHTML = '';
+    removeEventListener('scroll', this.#follow, { capture: true });
+    removeEventListener('resize', this.#follow);
+  }
+  // a file was written or undone: the element is read again (a re-render may have replaced it)
+  async changed() {
+    if (!this.#target) return;
+    if (!this.#target.isConnected) {
+      const at = this.#stamp;
+      const again = at ? document.querySelector(`[data-plumb-source^="${CSS.escape(at)}#"]`) : null;
+      if (!again) { this.close(); return this.#host.closed?.(); }
+      this.#target = again;
+    }
+    await this.#read();
+  }
+  #stamp = null;
+
+  async #read() {
+    const el = this.#target, seq = ++this.#seq;
+    this.#stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
+    try {
+      const at = this.#at ?? await locate(el);
+      if (seq !== this.#seq) return;
+      // not placed in the source: why, in the words the fix panel uses (outside the project, or not reachable)
+      if (!at?.file) { const why = await this.#host.why?.(el).catch(() => null); if (seq !== this.#seq) return; this.#state = 'error'; this.#error = why ?? W.unreachable; return this.#draw(); }
+      this.#at = at;
+      const cs = getComputedStyle(el);
+      const computed = Object.fromEntries(ORDER.slice(1).map((k) => [k, cs.getPropertyValue(k)]));
+      const props = await request('props', { file: at.file, line: at.line, column: at.column, computed: JSON.stringify(computed) });
+      if (seq !== this.#seq) return;
+      if (!props?.props) { this.#state = 'error'; this.#error = W.unreachable; return this.#draw(); }
+      this.#props = props; this.#state = 'ready'; this.#error = null;
+      this.#ctx = this.#contextNow();
+    } catch (error) {
+      if (seq !== this.#seq) return;
+      this.#state = 'error';
+      // still reading the project, or failed to start, say so in their own words; no answer at all is a server down
+      this.#error = error?.starting || error?.failed ? error.message : W.down;
+    }
+    this.#draw();
+  }
+
+  // ── the rows ────────────────────────────────────────────
+  #rows() {
+    const el = this.#target, props = this.#props?.props ?? [];
+    const byKey = new Map(props.map((p) => [p.key, p]));
+    const style = byKey.get('style');
+    const names = style ? this.#styleNames(style.steps) : new Map();
+    const styleName = style?.token ? names.get(style.token) ?? style.token : null;
+    const rows = [];
+    for (const key of ORDER) {
+      const p = byKey.get(key);
+      if (!p) continue;
+      const label = W.labels[key];
+      const numeric = key === 'font-size' || key === 'line-height' || key === 'letter-spacing' || key === 'font-weight';
+      let steps = (p.steps ?? []).map((s) => ({ ...s, n: numOf(key, s.value, el), label: key === 'text-transform' ? W.cases[s.token] ?? s.label : key === 'style' ? names.get(s.token) ?? s.label : numeric ? said(key, s.value, el) : s.label }));
+      if (numeric) {
+        steps.sort((a, b) => a.n - b.n);
+        // two tokens with one value are one step on the scale (the theme's own name is kept, the first one)
+        steps = steps.filter((s, k) => !k || Math.abs(s.n - steps[k - 1].n) > 1e-6 || s.token === p.token);
+      }
+      const r = { key, label, p, steps, current: p.token ?? null, drift: null, note: '', kind: '' };
+      if (p.dynamic) { r.disabled = true; r.note = esc(W.setIn(p.dynamic)); }
+      else if (!steps.length) r.note = esc(W.empty(label));
+      const same = p.source === 'class' && !p.token && p.value ? steps.find((s) => Math.abs(s.n - numOf(key, p.value, el)) < 1e-6) : null;
+      if (same) {
+        // the right value, typed by hand: shown as that step, and picking it names it
+        r.current = same.token; r.byHand = true;
+        r.note = esc(W.byHand(same.label));
+      } else if (p.source === 'class' && !p.token && p.value) {
+        const n = numOf(key, p.value, el);
+        r.drift = { n, label: said(key, p.value, el) };
+        const below = [...steps].reverse().find((s) => s.n < n), above = steps.find((s) => s.n > n);
+        r.note = esc(W.offScale(said(key, p.value, el), below?.label, above?.label)); r.kind = 'off';
+      } else if (key === 'style' && !p.token) {
+        const closest = this.#closestStyle(steps);
+        if (closest) r.note = esc(W.closest(closest.label));
+      } else if (key !== 'style' && p.source === 'none' && !p.dynamic) {
+        // nothing set and nothing to say (text as written): no note
+        r.note = esc(styleName && STYLE_PROPS.includes(key) ? W.fromStyle(styleName) : p.default && !(key === 'text-transform' && p.default === 'none') ? W.fromPage(said(key, p.default, el)) : '');
+      } else if (key !== 'style' && styleName && STYLE_PROPS.includes(key) && p.source === 'class') r.note = esc(W.notStyle(styleName));
+      if (this.#rowError?.key === key) { r.note = esc(this.#rowError.text); r.kind = 'error'; }
+      rows.push(r);
+    }
+    return rows;
+  }
+  // the project's text styles in plain words (Body, Title small); a compact variant is the same style for lists
+  #styleNames(steps) {
+    const base = steps.filter((s) => !/-compact$/.test(s.token));
+    const names = namesOf(base.map((s) => ({ name: s.token, bundle: { size: parseFloat(s.size) * (/rem$/.test(s.size) ? 16 : 1) } })));
+    for (const s of steps) if (/-compact$/.test(s.token)) names.set(s.token, W.lists(names.get(s.token.replace(/-compact$/, '')) ?? s.label));
+    return names;
+  }
+  #closestStyle(steps) {
+    const size = parseFloat(getComputedStyle(this.#target).fontSize);
+    let best = null;
+    for (const s of steps) { const d = Math.abs(pxOf(s.size, this.#target) - size); if (!best || d < best.d) best = { d, label: s.label }; }
+    return best;
+  }
+
+  // ── the card ────────────────────────────────────────────
+  // the value a field reads now: off the scale, the step it uses, or what the page shows when nothing sets it
+  #nowOf(r) {
+    if (r.drift) return r.drift.n;
+    const step = r.steps.find((s) => s.token === r.current);
+    if (step) return step.n;
+    return r.p.default ? numOf(r.key, r.p.default, this.#target) : NaN;
+  }
+  // the step a value opens on: its own, else the nearest
+  #startOf(r) {
+    const now = this.#nowOf(r);
+    let at = r.steps.findIndex((s) => s.token === r.current);
+    if (at < 0 && Number.isFinite(now)) r.steps.forEach((s, i) => { if (at < 0 || Math.abs(s.n - now) < Math.abs(r.steps[at].n - now)) at = i; });
+    return Math.max(0, at);
+  }
+  #fields(rows) { return rows.filter((r) => r.key !== 'style' || r.steps.length).map((r) => r.key); }
+  #valueField(r, at) {
+    const ed = this.#editing?.key === r.key ? this.#editing : null, now = this.#nowOf(r);
+    const shownN = ed?.moved ? r.steps[ed.at]?.n : now;
+    const text = ed?.typed ? ed.typed : fmtOf(r.key, shownN);
+    const changed = !!ed?.moved && !ed.typed && shownN !== now;
+    const tip = r.note.replace(/<[^>]+>/g, '').replace(/&#39;|&rsquo;/g, '’').replace(/&amp;/g, '&');
+    const attrs = `${r.drift ? ' data-off' : ''}${!r.drift && !r.current ? ' data-unset' : ''}${ed ? ' data-editing' : ''}${changed ? ' data-changed' : ''}${at ? ' data-at' : ''}${r.disabled ? ' aria-disabled="true"' : ''}`;
+    return `<div class="fld" role="spinbutton" tabindex="-1" data-key="${r.key}" aria-label="${esc(r.label)}" aria-valuetext="${esc(fmtOf(r.key, now))}${UNIT[r.key]}" title="${esc(tip || `Drag to change ${r.label.toLowerCase()}`)}"${attrs}>`
+      + `<span class="ic">${r.disabled ? ICON.lock : ICON[r.key]}</span><span class="val">${esc(text)}</span>${unitOf(r.key, shownN) && !ed?.typed && Number.isFinite(shownN) ? `<span class="u">${unitOf(r.key, shownN)}</span>` : ''}${changed ? `<span class="was">${esc(fmtOf(r.key, now))}</span>` : ''}</div>`;
+  }
+  // the scale, under the fields while a value changes: steps evenly spaced, the off-scale value where it falls
+  #rail(r) {
+    const ed = this.#editing, ns = r.steps.map((s) => s.n), now = this.#nowOf(r);
+    const marks = r.steps.map((s, i) => ({ n: s.n, i }));
+    if (r.drift) marks.push({ n: r.drift.n, off: true });
+    marks.sort((a, b) => a.n - b.n);
+    const fresh = this.#railFor !== r.key; this.#railFor = r.key;
+    const at = ed.moved || !r.drift ? ed.at : -1;
+    const fit = this.#ctx?.fits?.[r.key], near = (a, b) => Math.abs(a - b) < 0.01;
+    // the step that fits, on this scale: the engine's own when it is a step, else the nearest steps that keep the
+    // order (a value off the scale fits between its neighbours, so both are marked when they are as near)
+    const keeps = fit ? ns.filter((n) => !fit.breaks.some((b) => near(b, n))) : [];
+    const best = keeps.length ? Math.min(...keeps.map((n) => Math.abs(n - fit.step))) : 0;
+    const fitting = fit ? (ns.some((n) => near(n, fit.step)) ? [fit.step] : keeps.filter((n) => near(Math.abs(n - fit.step), best))) : [];
+    const ticks = marks.map((m) => { const fits = !m.off && fitting.some((n) => near(n, m.n)), breaks = !m.off && fit && !fits && fit.breaks.some((b) => near(b, m.n)); /* the step that fits is never also dimmed */ return `<span class="tk"${m.off ? ' data-off' : ` data-i="${m.i}"`} style="left:${posOf(ns, m.n)}%"${!m.off && m.i === at ? ' data-at' : ''}${fits ? ' data-fit' : ''}${breaks ? ' data-breaks' : ''} title="${esc(fmtOf(r.key, m.n))}${UNIT[r.key]}${fits ? ` · ${esc(W.fitsHere)}` : breaks ? ` · ${esc(W.breaksHere)}` : ''}"><i></i><b>${m.off ? '' : esc(shortOf(r.key, m.n))}</b></span>`; }).join('');
+    const why = fit ? this.#fitWords(r.key) : '';
+    const note = this.#rowError?.key === r.key ? `<span class="err">${r.note}</span>` : r.drift && !ed.moved ? `<span class="off">${r.note}</span>` : '';
+    const keys = this.#drag ? `<span>${esc(W.letGo)}</span><span><kbd>esc</kbd> ${esc(W.cancel)}</span>` : `<span>${esc(W.dragOr)} <kbd>←</kbd> <kbd>→</kbd></span><span><kbd>↵</kbd> ${esc(W.use)}</span><span><kbd>esc</kbd> ${esc(W.back)}</span>`;
+    void now;
+    return `<div class="rail" aria-hidden="true"${fresh ? ' data-new' : ''}${this.#drag ? ' data-dragging' : ''}><div class="ticks">${ticks}${this.#drag ? '<span class="thumb"><span class="knob"></span><span class="bub"><span></span></span></span>' : ''}</div>${why ? `<div class="fit">${esc(why)}</div>` : ''}<div class="hint">${note}${keys}</div></div>`;
+  }
+  #ch(r, i, inner, label, extra = '') {
+    const step = r.steps[i];
+    return `<button type="button" class="ch" role="radio" data-key="${r.key}" data-i="${i}" aria-checked="${step.token === r.current}" aria-label="${esc(label)}"${r.disabled ? ' disabled' : ''}${extra}>${inner}</button>`;
+  }
+
+  #draw() {
+    if (!this.#target) return;
+    const el = this.#target, name = this.name, at = this.#at ? `${this.#at.file.split('/').pop()}:${this.#at.line}` : '';
+    let body = '';
+    if (this.#state === 'loading') body = `<div class="fields"><div class="ph" style="grid-column:1/-1"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>`;
+    else if (this.#state === 'error') body = `<div class="down" role="alert">${esc(this.#error)}</div>`;
+    else {
+      const rows = this.#rows(), by = new Map(rows.map((r) => [r.key, r])), keys = this.#fields(rows);
+      this.#row = Math.max(0, Math.min(keys.length - 1, this.#row));
+      const inHand = keys[this.#row];
+      const family = esc(getComputedStyle(el).fontFamily);
+      const style = by.get('style');
+      if (style?.steps.length) {
+        const cur = style.steps.find((s) => s.token === style.current);
+        const closest = !cur ? style.note.replace(/^Closest: /, '') : '';
+        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}><span class="ic">Ag</span>${cur ? `<span class="val" style="font-family:inherit">${esc(cur.label)}</span>` : `<span class="val" style="font-family:inherit">${esc(W.noStyle)}</span>${closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : ''}`}<span class="chev">▾</span></button></div>`;
+        if (this.#menu === 'style') body += `<div class="menu" role="listbox" aria-label="${esc(style.label)}">${style.steps.map((s, k) => { const px = pxOf(s.size, el); return this.#ch(style, k, `<span class="ag" style="font-family:${family};font-size:${Math.min(20, px + 2)}px;font-weight:${s.weight ?? 400}">${s.transform === 'uppercase' ? 'AG' : 'Ag'}</span><span>${esc(s.label)}</span><span class="nb">${Math.round(px)} / ${s.lineHeight ?? '–'}</span>`, s.label); }).join('')}</div>`;
+      }
+      const values = VALUES.map((k) => by.get(k)).filter(Boolean);
+      if (values.length) body += `<div class="fields">${values.map((r) => this.#valueField(r, inHand === r.key)).join('')}</div>`;
+      const open = this.#editing && by.get(this.#editing.key);
+      if (open) body += this.#rail(open); else this.#railFor = null;
+      const kase = by.get('text-transform');
+      // nothing set is the text as written
+      const kc = kase && { ...kase, current: kase.current ?? (kase.steps.some((s) => s.token === 'none') && (!kase.p.default || kase.p.default === 'none') ? 'none' : null) };
+      if (kc?.steps.length) body += `<div class="seg" role="radiogroup" aria-label="${esc(kc.label)}"${inHand === 'text-transform' ? ' data-at' : ''}>${kc.steps.map((s, k) => this.#ch(kc, k, CASE_GLYPH[s.token] ?? esc(s.label), s.label)).join('')}</div>`;
+      const color = by.get('color');
+      if (color) {
+        const cur = color.steps.find((s) => s.token === color.current);
+        const swatch = cur?.value ?? color.p.value ?? color.p.default ?? 'transparent';
+        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="color" aria-haspopup="listbox" aria-expanded="${this.#menu === 'color'}"${inHand === 'color' ? ' data-at' : ''}${color.disabled ? ' aria-disabled="true"' : ''}><span class="chip" style="background:${esc(swatch)}"></span><span class="val"${cur ? '' : ' style="color:var(--ink-3)"'}>${esc(cur?.token ?? said('color', color.p.value ?? color.p.default ?? '', el))}</span><span class="chev">▾</span></button></div>`;
+        if (this.#menu === 'color') body += `<div class="menu" role="listbox" aria-label="${esc(color.label)}"><div class="sw">${color.steps.map((s, k) => this.#ch(color, k, '', s.token, ` style="background:${esc(s.value)}" title="${esc(s.token)}"`)).join('')}</div></div>`;
+      }
+    }
+    // a write that was refused says why, under the values (the value stays as it was, to try again)
+    if (this.#rowError && !this.#editing) body += `<div class="down" role="alert">${esc(this.#rowError.text)}</div>`;
+    const reach = this.#state === 'ready' ? this.#host.elsewhere?.(el) ?? 0 : 0;
+    const problems = this.#host.problems?.() ?? 0;
+    const dark = this.#host.dark?.() ? 'dark' : 'light';
+    this.#el.dataset.scheme = dark; this.#caret.dataset.scheme = dark;
+    this.#el.setAttribute('aria-label', W.region(name));
+    this.#el.innerHTML = `<div class="hd"><span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
+      + (reach ? `<div class="reach">${esc(W.reach(reach))}</div>` : '') + body
+      + (problems ? `<div class="more"><span>${esc(W.problems(problems))}</span><button type="button" class="show">${W.show} <kbd>.</kbd></button></div>` : '');
+    this.#mark();
+    this.#place();
+  }
+
+  // beside the element: right when it fits, else left, else below; the caret on the element's middle
+  #follow = () => { if (this.#target) requestAnimationFrame(() => this.#place()); };
+  #place() {
+    const el = this.#target;
+    if (!el?.isConnected) return;
+    const t = el.getBoundingClientRect(), h = Math.min(this.#el.offsetHeight, innerHeight - EDGE * 2), mid = t.top + t.height / 2;
+    let side = t.right + GAP + WIDTH <= innerWidth - EDGE ? 'right' : t.left - GAP - WIDTH >= EDGE ? 'left' : 'below';
+    let left, top, cx, cy;
+    if (side === 'below') {
+      left = Math.max(EDGE, Math.min(innerWidth - WIDTH - EDGE, t.left));
+      top = t.bottom + GAP;
+      if (top + h > innerHeight - EDGE) top = Math.max(EDGE, t.top - GAP - h), side = 'above';
+      cx = Math.max(left + 18, Math.min(left + WIDTH - 18, t.left + Math.min(40, t.width / 2)));
+      cy = side === 'above' ? top + h - 6 : top - 6;
+    } else {
+      left = side === 'right' ? t.right + GAP : t.left - GAP - WIDTH;
+      top = Math.max(EDGE, Math.min(innerHeight - h - EDGE, mid - 60));
+      cx = side === 'right' ? left - 6 : left + WIDTH - 6;
+      cy = Math.max(top + 14, Math.min(top + h - 26, mid - 6));
+    }
+    Object.assign(this.#el.style, { left: `${left}px`, top: `${top}px` });
+    Object.assign(this.#caret.style, { left: `${cx}px`, top: `${cy}px` });
+    Object.assign(this.#ring.style, { left: `${t.left - 6}px`, top: `${t.top - 4}px`, width: `${t.width + 12}px`, height: `${t.height + 8}px` });
+    this.#el.dataset.side = side; this.#caret.dataset.side = side === 'above' ? 'below' : side;
+    // the element off screen: the card waits for it
+    const gone = t.bottom < 0 || t.top > innerHeight;
+    this.#el.style.visibility = this.#caret.style.visibility = this.#ring.style.visibility = gone ? 'hidden' : '';
+  }
+
+  // ── preview ─────────────────────────────────────────────
+  #valuesOf(key, step) {
+    if (key === 'style') return { 'font-size': step.size, 'line-height': step.lineHeight ?? '', 'font-weight': step.weight ?? '', 'letter-spacing': step.letterSpacing ? `${step.letterSpacing}em` : '0em', 'text-transform': step.transform ?? 'none' };
+    return { [key]: step.value ?? step.css };
+  }
+  #peekAt(key, i) {
+    const r = this.#rows().find((x) => x.key === key), step = r?.steps[i];
+    if (!step || r.disabled) return;
+    this.#unpeek();
+    this.#peek = { key, i };
+    for (const [prop, v] of Object.entries(this.#valuesOf(key, step))) {
+      if (v === '' || v === null || v === undefined) continue;
+      this.#shown.set(prop, [this.#target.style.getPropertyValue(prop), this.#target.style.getPropertyPriority(prop)]);
+      this.#target.style.setProperty(prop, String(v), 'important');
+    }
+    this.#mark();
+    this.#ring.setAttribute('data-peek', '');
+    this.#follow();
+  }
+  #unpeek(redraw = false) {
+    for (const [prop, [v, pr]] of this.#shown) { if (v) this.#target?.style.setProperty(prop, v, pr); else this.#target?.style.removeProperty(prop); }
+    this.#shown.clear();
+    const had = !!this.#peek;
+    this.#peek = null;
+    this.#ring?.removeAttribute('data-peek');
+    if (had) this.#follow();
+    if (redraw && had) this.#mark();
+  }
+  // ── write ───────────────────────────────────────────────
+  async #write(key, i) {
+    const r = this.#rows().find((x) => x.key === key), step = r?.steps[i];
+    if (!step || r.disabled || !this.#props || (step.token === r.current && !r.byHand)) return;
+    this.#unpeek();
+    this.#rowError = null;
+    const name = this.name;
+    const text = key === 'style' ? W.styled(step.label, name) : W.changed(r.label, said(key, step.value ?? step.label, this.#target), name);
+    try {
+      const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash }, key, step.token, text);
+      // the write's invalidate reads the element again (changed); the panel says it, with Undo
+      this.#host.said?.(text, result?.undo ? [result.undo] : []);
+    } catch (error) {
+      this.#rowError = { key, text: error?.message ?? String(error) };
+      this.#draw();
+    }
+  }
+
+  // the choice previewed is ringed and the field in hand marked, without drawing the card again
+  #mark() {
+    for (const o of this.#el.querySelectorAll('[data-peek]')) o.removeAttribute('data-peek');
+    if (!this.#peek) return;
+    const o = this.#el.querySelector(`.ch[data-key="${this.#peek.key}"][data-i="${this.#peek.i}"]`);
+    if (o && o.getAttribute('aria-checked') !== 'true') o.setAttribute('data-peek', '');
+  }
+
+  // the element's place, read with the theme's own steps (what props offers for size and weight)
+  #contextNow() {
+    try {
+      const rows = this.#rows(), ns = (k) => rows.find((r) => r.key === k)?.steps.map((s) => s.n).filter(Number.isFinite);
+      const scale = {}; const sizes = ns('font-size'), weights = ns('font-weight');
+      if (sizes?.length) scale.sizes = sizes; if (weights?.length) scale.weights = weights;
+      return contextOf(this.#target, scale);
+    } catch { return null; }
+  }
+  // why a step fits, in plain words: the element's role, and the levels on either side of it in its container
+  #fitWords(key) {
+    const c = this.#ctx; if (!c?.role) return '';
+    const i = c.levels.findIndex((l) => l.role === c.role && l.members?.includes(this.#target));
+    const up = c.levels[i - 1], down = c.levels[i + 1];
+    if (key === 'font-size') return W.fitsSize(c.role, up && { role: up.role, n: up.bundle.size }, down && { role: down.role, n: down.bundle.size });
+    if (key === 'font-weight') return W.fitsWeight(c.role, [up, down].filter((l) => l && l.bundle.size === c.levels[i]?.bundle.size).map((l) => l.role));
+    return '';
+  }
+
+  // ── a value, open ───────────────────────────────────────
+  // a click on a value opens it: its scale shows, nothing changes until a step is picked
+  #open(key) {
+    const rows = this.#rows(), r = rows.find((x) => x.key === key);
+    if (!r || r.disabled || !r.steps.length) return;
+    this.#menu = null;
+    this.#row = this.#fields(rows).indexOf(key);
+    if (this.#editing?.key === key) return;
+    this.#unpeek();
+    this.#editing = { key, at: this.#startOf(r), typed: '', moved: false };
+    this.#draw();
+  }
+  #close() { this.#editing = null; this.#unpeek(); this.#draw(); }
+  // a step of the open value: previewed, the field reading it
+  #step(at) {
+    const r = this.#rows().find((x) => x.key === this.#editing.key);
+    this.#editing = { ...this.#editing, at: Math.max(0, Math.min(r.steps.length - 1, at)), typed: '', moved: true };
+    this.#peekAt(r.key, this.#editing.at);
+    this.#draw();
+  }
+  #commit() {
+    const ed = this.#editing, r = this.#rows().find((x) => x.key === ed.key);
+    if (ed.typed) { const n = Number(ed.typed); let at = 0; r.steps.forEach((s, i) => { if (Math.abs(s.n - n) < Math.abs(r.steps[at].n - n)) at = i; }); ed.at = at; ed.moved = true; ed.typed = ''; }
+    if (!ed.moved) return this.#close();
+    this.#editing = null;
+    this.#write(r.key, ed.at);
+  }
+  #toggleMenu(which) {
+    const r = this.#rows().find((x) => x.key === which);
+    if (r?.disabled) return;
+    this.#editing = null; this.#unpeek();
+    this.#menu = this.#menu === which ? null : which;
+    const keys = this.#fields(this.#rows());
+    if (keys.includes(which)) this.#row = keys.indexOf(which);
+    this.#draw();
+  }
+
+  // ── the drag ────────────────────────────────────────────
+  // The whole field is the handle: past 3px a press is a drag, and the scale opens out of the fields. One spring
+  // moves the thumb toward the hand pulled onto the nearest step by a smooth magnet (on the step near it, free at the
+  // midpoint, so it never jumps), with a rubber band past the ends. The step nearest the hand is the value: previewed
+  // at once, its number rolling in from the side it came from. Letting go springs the thumb into its step, then
+  // writes it; Esc (through key()) or letting go on the value it started on springs it home and changes nothing.
+  // Nothing is redrawn while the hand is down: the field, the ticks and the thumb are moved in place.
+  #press(e, key) {
+    const r = this.#rows().find((x) => x.key === key);
+    if (!r || r.disabled || !r.steps.length || this.#drag) return;
+    const ns = r.steps.map((s) => s.n), origin = this.#nowOf(r), x0 = e.clientX;
+    const from = r.steps.findIndex((s) => s.token === r.current && !r.byHand);
+    const home = from >= 0 ? from : r.byHand ? r.steps.findIndex((s) => s.token === r.current) : -1; // -1: between steps
+    const offHome = home < 0;
+    const host = this.#el.getRootNode().host;
+    let d = null;
+    this.#dragged = false;
+    const label = (n) => `${fmtOf(key, n)}${key === 'font-weight' ? '' : UNIT[key]}`;
+    const begin = () => {
+      this.#dragged = true;
+      this.#menu = null;
+      this.#row = this.#fields(this.#rows()).indexOf(key);
+      this.#editing = { key, at: home >= 0 ? home : this.#startOf(r), typed: '', moved: true };
+      this.#drag = { cancel: () => end(false) };
+      this.#draw();
+      host?.setAttribute('data-dragging', '');
+      const track = this.#el.querySelector('.ticks'), w = track.getBoundingClientRect().width;
+      const xOf = (n) => (posOf(ns, n) / 100) * w;
+      const start = offHome ? xOf(Number.isFinite(origin) ? origin : ns[0]) : xOf(ns[home]);
+      d = { track, w, xOf, start, at: home, hand: start, x: start, v: 0, mode: 'hold', last: performance.now(),
+        thumb: track.querySelector('.thumb'), knob: track.querySelector('.knob'), bub: track.querySelector('.bub'), num: track.querySelector('.bub span'),
+        fld: this.#el.querySelector(`.fld[data-key="${key}"]`), ticks: [...track.querySelectorAll('.tk')].map((t) => ({ i: t.querySelector('i'), x: (parseFloat(t.style.left) / 100) * w })) };
+      d.num.textContent = label(offHome ? origin : ns[home]);
+      if (!STILL()) {
+        d.knob.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }], { duration: 180, easing: EXPO, fill: 'forwards' });
+        d.bub.animate([{ transform: 'translateY(4px) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 200, easing: EXPO });
+      }
+      requestAnimationFrame(frame);
+    };
+    // where the thumb is drawn: the hand, pulled onto the nearest step (a cubic magnet: firm on it, free at the
+    // midpoint); past an end, a rubber band
+    const targetOf = (hand) => {
+      if (hand < 0) return -BAND * (1 - 1 / (1 + -hand / BAND / 2));
+      if (hand > d.w) return d.w + BAND * (1 - 1 / (1 + (hand - d.w) / BAND / 2));
+      const xs = ns.map((n) => d.xOf(n)).concat(offHome ? [d.start] : []);
+      let s0 = xs[0]; for (const x of xs) if (Math.abs(x - hand) < Math.abs(s0 - hand)) s0 = x;
+      const side = xs.filter((x) => (hand >= s0 ? x > s0 : x < s0));
+      const other = side.length ? side.reduce((a, x) => (Math.abs(x - s0) < Math.abs(a - s0) ? x : a)) : null;
+      const half = other === null ? 24 : Math.abs(other - s0) / 2;
+      const u = Math.min(1, Math.abs(hand - s0) / half);
+      return s0 + (hand - s0) * u * u * u;
+    };
+    const choose = (hand) => {
+      let at = 0, best = Infinity;
+      ns.forEach((n, i) => { const dist = Math.abs(d.xOf(n) - hand); if (dist < best) best = dist, at = i; });
+      if (offHome && Math.abs(d.start - hand) < best) at = -1;
+      if (at === d.at) return;
+      const before = d.at < 0 ? origin : ns[d.at], n = at < 0 ? origin : ns[at];
+      const dir = Math.sign(n - before);
+      d.at = at;
+      if (at >= 0) this.#editing.at = at;
+      for (const t of d.track.querySelectorAll('.tk[data-i]')) t.toggleAttribute('data-at', +t.dataset.i === at);
+      const changed = at !== home;
+      roll(d.num, label(n), dir);
+      roll(d.fld.querySelector('.val'), fmtOf(key, n), dir);
+      const u = d.fld.querySelector('.u'); if (u) u.textContent = unitOf(key, n);
+      d.fld.toggleAttribute('data-changed', changed);
+      let was = d.fld.querySelector('.was');
+      if (changed && !was) { was = Object.assign(document.createElement('span'), { className: 'was', textContent: fmtOf(key, origin) }); d.fld.append(was); }
+      if (!changed) was?.remove();
+      if (at >= 0 && changed) this.#peekAt(key, at); else this.#unpeek();
+    };
+    const frame = (now) => {
+      if (!d) return;
+      const dt = Math.min(0.05, (now - d.last) / 1000); d.last = now;
+      const target = d.mode === 'hold' ? targetOf(d.hand) : (d.at < 0 ? d.start : d.xOf(ns[d.at]));
+      const { k, c } = d.mode === 'hold' ? HOLD : SETTLE;
+      if (STILL()) { d.x = target; d.v = 0; }
+      else for (let t = 0; t < dt; t += ATOM) { const h = Math.min(ATOM, dt - t); d.v += (-k * (d.x - target) - c * d.v) * h; d.x += d.v * h; }
+      d.thumb.style.transform = `translateX(${d.x}px)`;
+      if (!STILL()) for (const tk of d.ticks) tk.i.style.transform = `scaleY(${1 + 0.55 * Math.exp(-(((tk.x - d.x) / SWELL) ** 2))})`;
+      if (d.mode !== 'hold' && Math.abs(d.x - target) < 0.15 && Math.abs(d.v) < 4) return d.done();
+      requestAnimationFrame(frame);
+    };
+    const move = (ev) => {
+      if (!d) { if (Math.abs(ev.clientX - x0) < 3) return; begin(); }
+      d.hand = d.start + (ev.clientX - x0);
+      choose(Math.max(0, Math.min(d.w, d.hand)));
+    };
+    const end = (keep) => {
+      removeEventListener('pointermove', move); removeEventListener('pointerup', up);
+      host?.removeAttribute('data-dragging');
+      if (!d) return;
+      if (!keep) { d.at = home; this.#unpeek(); }
+      const at = d.at, wrote = keep && at !== home && at >= 0;
+      if (!STILL()) d.knob.animate([{ transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 220, easing: EXPO, fill: 'forwards' });
+      d.mode = 'settle';
+      d.done = () => {
+        const rail = this.#el.querySelector('.rail');
+        const finish = () => { d = null; this.#drag = null; this.#editing = null; if (wrote) this.#write(key, at); else { this.#unpeek(); this.#draw(); } };
+        // the scale folds back into the fields, quicker than it opened
+        if (STILL() || !rail) return finish();
+        rail.animate([{ clipPath: 'inset(0 0 0 0 round 10px)', opacity: 1 }, { clipPath: 'inset(0 0 100% 0 round 10px)', opacity: 0.4 }], { duration: 150, easing: 'cubic-bezier(.25, .46, .45, .94)', fill: 'forwards' }).finished.then(finish, finish);
+      };
+      if (STILL()) d.done();
+    };
+    const up = () => end(true);
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+  }
+
+  // ── keys ────────────────────────────────────────────────
+  // ↑ ↓ the field in hand (a value open steps instead), ← → step it (previewed; on case, a style or a colour list,
+  // the choices), digits type a value, Enter writes or opens, Esc puts back, then closes the list, then the card.
+  // '.' is the panel's (the problems inside) unless a number is being typed.
+  key(k) {
+    if (!this.#target) return false;
+    if (this.#drag) { if (k === 'Escape') this.#drag.cancel(); return true; }
+    const rows = this.#state === 'ready' ? this.#rows() : [];
+    const keys = this.#fields(rows), r = rows.find((x) => x.key === keys[this.#row]);
+    const ed = this.#editing;
+    if (ed) {
+      const er = rows.find((x) => x.key === ed.key);
+      if (/^\d$/.test(k) || (k === '.' && !ed.typed.includes('.')) || (k === '-' && !ed.typed)) { this.#unpeek(); this.#editing = { ...ed, typed: ed.typed + k }; this.#draw(); return true; }
+      if (k === 'Backspace' && ed.typed) { this.#editing = { ...ed, typed: ed.typed.slice(0, -1) }; this.#draw(); return true; }
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[k];
+      if (d && er) {
+        // from a value between two steps, the first step is the neighbour on that side
+        const above = er.drift ? er.steps.findIndex((s) => s.n > er.drift.n) : -1, hi = above < 0 ? er.steps.length : above;
+        this.#step((ed.moved || !er.drift ? ed.at : d > 0 ? hi - 1 : hi) + d);
+        return true;
+      }
+      if (k === 'Enter') { this.#commit(); return true; }
+      if (k === 'Escape') { this.#close(); return true; }
+      return k !== '.';
+    }
+    if (k === 'ArrowUp' || k === 'ArrowDown') {
+      if (!keys.length) return true;
+      this.#unpeek(); this.#menu = null;
+      this.#row = Math.max(0, Math.min(keys.length - 1, this.#row + (k === 'ArrowDown' ? 1 : -1)));
+      this.#draw();
+      return true;
+    }
+    if ((k === 'ArrowLeft' || k === 'ArrowRight') && r && !r.disabled && r.steps.length) {
+      if (VALUES.includes(r.key)) { this.#open(r.key); return this.key(k); }
+      if ((r.key === 'style' || r.key === 'color') && this.#menu !== r.key) { this.#menu = r.key; this.#draw(); }
+      const from = this.#peek?.key === r.key ? this.#peek.i : r.steps.findIndex((s) => s.token === r.current);
+      const to = from < 0 ? (k === 'ArrowRight' ? 0 : r.steps.length - 1) : Math.max(0, Math.min(r.steps.length - 1, from + (k === 'ArrowRight' ? 1 : -1)));
+      this.#peekAt(r.key, to);
+      return true;
+    }
+    if (k === 'Enter') {
+      if (this.#peek) { this.#write(this.#peek.key, this.#peek.i); return true; }
+      if (r && VALUES.includes(r.key)) { this.#open(r.key); return true; }
+      if (r && (r.key === 'style' || r.key === 'color')) { this.#toggleMenu(r.key); return true; }
+      return true;
+    }
+    if (k === 'Escape') {
+      if (this.#peek) { this.#unpeek(true); return true; }
+      if (this.#menu) { this.#menu = null; this.#draw(); return true; }
+      this.close(); this.#host.closed?.(); return true;
+    }
+    return false;
+  }
+}

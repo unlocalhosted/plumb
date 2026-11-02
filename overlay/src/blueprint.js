@@ -8,6 +8,10 @@
  *
  *  off → entering → on → leaving → off      Alt+B or the dock's button toggles; Esc leaves
  *
+ *  one element  Alt+click reads only the element clicked and what's inside it (Reader scope), never the whole page:
+ *            the page's code and the text styles are not asked, and a fix says which other places on the page the
+ *            same line of code draws. A click outside it leaves; Alt+click elsewhere reads that element; Alt+B widens
+ *
  *  entering  the dim fades in (--pl-dur-dim); the page goes inert under the glass (blueprint-glass.js) and the
  *            Reader starts reading what's in view; elements light up as their readings arrive
  *  on        the MarkLayer cuts each drifted element out of the dim, outlines it in its ink and labels it; a mark
@@ -30,6 +34,7 @@ import { elementEdit, planOf, swapPlanOf } from './inplace.js';
 import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
+import { hasText } from './texteditor.js';
 import { post, request } from './api.js';
 import { locate } from './locate.js';
 
@@ -51,6 +56,7 @@ export class Blueprint {
   #state = 'off';
   #timer = 0;
   #craft; #items = []; #selection; #changes; #walk;
+  #scope = null; // an Alt+click: the element read, with what's inside it; null is the whole page (Alt+B)
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
@@ -87,6 +93,10 @@ export class Blueprint {
       fromCode: (mark, places) => this.#fromCode(mark, places),
       system: () => this.#system(),
       applyStyles: (write, said) => this.#applyStyles(write, said),
+      scope: () => this.#scope,
+      set: (at, key, token, said) => this.#setProp(at, key, token, said),
+      // why an element can't be placed in the source, as the panel says it
+      why: async (el) => { const state = await this.#host.readMarks?.(el); return state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : null; },
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
@@ -129,14 +139,17 @@ export class Blueprint {
     this.active ? this.leave(options) : this.enter(options);
   }
 
-  enter({ instant = false } = {}) {
+  enter({ instant = false, scope = null } = {}) {
     if (this.active) return;
     if (this.#host.health === 'failed') return this.#set('refused');
     clearTimeout(this.#timer);
+    // turned on again mid-fade for something else (one element, or the whole page): read afresh
+    if (this.#state === 'leaving' && scope !== this.#scope) { this.#teardown(); this.#set('off'); }
+    this.#scope = scope;
     if (this.#state === 'off') {
       const t0 = performance.now();
       this.#layer.hidden = false;
-      this.#reader.start();
+      this.#reader.start(scope);
       performance.measure('plumb:reader-start', { start: t0 });
       addEventListener('scroll', this.#invalidate, { passive: true, capture: true });
       addEventListener('resize', this.#invalidate);
@@ -146,6 +159,7 @@ export class Blueprint {
     } else this.#reader.refresh(); // turned back on while fading out: draw what's already read
     this.#glass.on();
     this.#fix.show(true);
+    if (scope && hasText(scope)) this.#fix.edit(scope);
     this.#set('entering');
     if (instant || still()) return this.#on();
     // one frame at opacity 0 before the fade, so the transition has somewhere to start
@@ -180,7 +194,7 @@ export class Blueprint {
 
   invalidate(change) {
     this.#craft.invalidate(); // craft: a written file changes what the page measures
-    if (this.active) this.#reader.invalidate(change);
+    if (this.active) this.#reader.invalidate(change), this.#fix.changed();
   }
 
   // craft: measured again on the next hand-off (a resize moved everything)
@@ -236,6 +250,8 @@ export class Blueprint {
     const near = this.#marks.magnet;
     if (near && this.#fix.holdEl(near)) return;
     const hit = this.#under(e.clientX, e.clientY);
+    // one element is read: a click outside it is done with it (Alt+click reads the element clicked instead)
+    if (this.#scope && !(hit && this.#scope.contains(hit))) { e.altKey && hit && hit !== document.body && hit !== document.documentElement ? this.enterAt(hit) : this.leave(); return; }
     if (!hit || hit === document.body || hit === document.documentElement) { this.#fix.release(); this.#selection.clear(); return; }
     let el = hit;
     while (el && el !== document.body && !this.#itemOf(el)) el = el.parentElement;
@@ -442,9 +458,33 @@ export class Blueprint {
   #want = null;
   // the page came back after a write reloaded it: the fix bar says what was applied
   resumed(text, undo, at) { this.#fix.resumed(text, undo, at); }
+  // Alt+click: that element and what's inside it are read, never the whole page (Alt+B is the whole page). Another
+  // element outside the one being read is read in its place.
   enterAt(el) {
+    if (this.active && this.#scope && !this.#scope.contains(el)) this.leave({ instant: true });
+    // words: their own values open in the fix panel (texteditor.js), problem or not
+    if (hasText(el)) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
     this.#want = el;
-    this.active ? this.#holdWanted(this.#settled) : this.enter();
+    this.active ? this.#holdWanted(this.#settled) : this.enter({ scope: el });
+  }
+  // One value of one element, set on its line of code (the text editor's pick): remembered first, as every write is,
+  // so a page the write reloads comes back to the same element with the write said and its Undo
+  async #setProp(at, key, token, said) {
+    this.#host.remember?.(said);
+    let result;
+    try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token }); }
+    catch (error) { this.#host.forgetResume?.(); throw error; }
+    this.#host.remember?.(said, result?.undo ? [result.undo] : []);
+    this.invalidate({ file: at.file });
+    return result;
+  }
+  // the element being read (an Alt+click), or null for the whole page
+  get scope() { return this.#scope; }
+  // from one element to the whole page (Alt+B while one element is read)
+  widen() {
+    if (!this.#scope) return;
+    this.leave({ instant: true });
+    this.enter();
   }
   #settled = false;
   #holdWanted(done = false) {
@@ -453,6 +493,8 @@ export class Blueprint {
     if (this.#fix.holdEl(want, 'uncover')) return void (this.#want = null);
     if (done) {
       this.#want = null;
+      // one element read: nothing of its own, but something inside it has a problem, so that fix is put in hand
+      if (this.#scope) { this.#fix.hold(0); if (this.#fix.holding) return; }
       this.#selection.select(want, this.#itemOf(want));
       // nothing to put in hand: the bar says why, so a pick never ends in silence (the element's own reading says
       // whether it could be checked at all)
@@ -505,5 +547,6 @@ export class Blueprint {
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('off');
     this.#layer.hidden = true;
+    this.#scope = null;
   }
 }

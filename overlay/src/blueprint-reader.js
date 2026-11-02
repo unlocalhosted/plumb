@@ -35,6 +35,8 @@
  *             their answer, nothing is in flight, and the page has stopped changing: no rescan pending and no relevant
  *             mutation for QUIET ms (FIRST ms after the reader starts: an app mounting right after a reload must not
  *             be counted as an empty page). Reported only when it changes
+ *  scope      start(el) reads one element and what's inside it (an Alt+click): the pool is that subtree, the page's
+ *             code is not asked and no unrendered place is handed on; progress counts only it
  *  order      the items handed on (onChange) are every element with something to show, in document order; a place no
  *             element renders is handed on as { el: null, site, marks } only when the reader was made with
  *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
@@ -51,12 +53,14 @@ const FIRST = 1000; // and for this long after the reader starts (the app may st
 
 export class Reader {
   #host; #onChange; #onProgress; #unrendered;
+  #scope = null; // one element and what's inside it (an Alt+click): only it is read, and the page's code is not asked
   #items = new Map(); // id → { id, el, stamp, tag, classes, sig, state, marks, dims, file, checked, outsideSource }
   #ids = new WeakMap(); // element → id
   #next = 1;
   #mo = null; #throttle = 0; #retry = 0; #progress = '';
   #running = false;
   #inflight = 0; // readings in flight: page requests and per-element readings alike
+  #run = 0; // which reading this is: an answer from a reading that was stopped counts against nothing
   #pending = false; // the server was still starting: the read goes again when it is ready
   #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
   #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
@@ -73,11 +77,12 @@ export class Reader {
     this.#unrendered = unrendered;
   }
 
-  start() {
+  start(scope = null) {
     this.#running = true;
+    this.#scope = scope;
     this.#mo = new MutationObserver((records) => {
       const pinned = this.#host.pinnedElement;
-      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
+      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
       if (relevant) { this.#changed(); this.#throttled(() => this.#scan(true)); }
     });
     this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', 'data-plumb-source'] });
@@ -96,6 +101,7 @@ export class Reader {
 
   stop() {
     this.#running = false;
+    this.#run++;
     this.#mo?.disconnect();
     clearTimeout(this.#throttle); this.#throttle = 0;
     clearTimeout(this.#retry); this.#retry = 0;
@@ -106,6 +112,7 @@ export class Reader {
     this.#inflight = 0;
     this.#pending = false;
     this.#codeKey = ''; this.#codeInflight = 0; this.#code.clear();
+    this.#scope = null;
   }
 
   // Nothing left to read: the code and every element answered, nothing in flight, nothing parked behind a starting
@@ -155,7 +162,7 @@ export class Reader {
     try { this.#scan_(changed); } finally { performance.measure('plumb:reader-scan', { start: t0 }); }
   }
   #scan_(changed) {
-    const pool = document.body.querySelectorAll('*');
+    const pool = this.#scope ? (this.#scope.isConnected ? [this.#scope, ...this.#scope.querySelectorAll('*')] : []) : document.body.querySelectorAll('*');
     for (const el of pool) {
       // inside an <svg>, only authored JSX (stamped) is read: a <text> with a type class is a decision, a library's paths are drawing
       const stamp = el.getAttribute('data-plumb-source') ?? null;
@@ -207,11 +214,12 @@ export class Reader {
 
   // The page's code, asked once per set of rendered files: every finding at the places in them.
   #readCode() {
-    if (this.#noCode) return;
+    if (this.#noCode || this.#scope) return;
     const files = this.#files(), key = files.join('\n');
     if (key === this.#codeKey) return;
     this.#codeKey = key;
     this.#codeInflight++;
+    const run = this.#run;
     this.#host.readCode(files)
       .then((answer) => {
         if (!this.#running || key !== this.#codeKey) return;
@@ -219,12 +227,13 @@ export class Reader {
         this.#code = new Map(answer.map((file) => [file.file, file]));
       })
       .catch((error) => { if (this.#running && key === this.#codeKey) { this.#codeKey = ''; this.#parked([], error); } })
-      .finally(() => { this.#codeInflight--; this.#settle(); });
+      .finally(() => { if (run === this.#run) this.#codeInflight--, this.#settle(); });
   }
 
   // A whole-page request: one answer per (stamp, tag, classes), handed to every element that carries them.
   #page(items) {
     this.#inflight++;
+    const run = this.#run;
     this.#host.readPage(items.map((item) => ({ el: item.el, stamp: item.stamp, tag: item.tag, classes: item.classes })))
       .then((states) => {
         if (!this.#running) return;
@@ -236,7 +245,7 @@ export class Reader {
         if (error?.status === 404) { this.#noPage = true; for (const item of items) if (item.state === 'reading') item.state = 'queued'; this.#elements(items.filter((item) => item.state === 'queued')); return; }
         this.#parked(items, error);
       })
-      .finally(() => { this.#inflight--; this.#settle(); });
+      .finally(() => { if (run === this.#run) this.#inflight--, this.#settle(); });
   }
 
   // Per-element readings, WAVE in flight at once, in document order; a wave that lands starts the next.
@@ -248,10 +257,11 @@ export class Reader {
         const fresh = item.fresh; item.fresh = false;
         item.state = 'reading';
         this.#inflight++;
+        const run = this.#run;
         this.#host.readMarks(item.el, fresh || item.caller === true, { computed: true })
           .then((state) => { if (this.#running) this.#landed(item, state); })
           .catch((error) => { if (this.#running) this.#parked([item], error); })
-          .finally(() => { this.#inflight--; pump(); this.#settle(); });
+          .finally(() => { if (run === this.#run) this.#inflight--, pump(), this.#settle(); });
       }
     };
     pump();
@@ -267,7 +277,7 @@ export class Reader {
       item.state = 'ready';
       item.checked = true; item.outsideSource = false;
       item.file = state.file;
-      if (item.file && !this.#code.has(item.file) && !this.#noCode) this.#readCode();
+      if (item.file && !this.#code.has(item.file) && !this.#noCode && !this.#scope) this.#readCode();
       item.marks = state.marks.filter((m) => m.ledger !== 'exception');
       item.dims = state.dims ?? [];
     } else if (state?.status === 'unplaced') {
@@ -351,7 +361,7 @@ export class Reader {
     // what to hand on: every element with something to show, in document order; then, when the panel can hold them,
     // the places no element renders, in source order
     const shown = enriched.filter((i) => i.marks.length || i.dims.length).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
-    if (this.#unrendered) {
+    if (this.#unrendered && !this.#scope) {
       const absent = [...places.values()].filter((p) => !p.elements.length).sort((a, b) => a.file.localeCompare(b.file) || a.mark.line - b.mark.line || a.mark.column - b.mark.column);
       for (const p of absent) shown.push({ id: `place:${p.key}`, el: null, site: p.site, file: p.file, marks: [p.mark], dims: [], checked: true });
     }

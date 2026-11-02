@@ -78,7 +78,7 @@ test('Alt-hover names an element; Alt+click opens blueprint with that element\'s
   assert.deepEqual(errors, []);
 });
 
-test('pin() opens blueprint with the element\'s cause in hand, never the old card; Esc lifts the preview; unplaced elements say so', { timeout: 90000 }, async t => {
+test('pin() on words opens their values, and . puts the element\'s cause in hand, never the old card; Esc lifts the preview; unplaced elements say so', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await demo(t);
   const page = await launched.newPage({ reducedMotion: 'reduce' });
@@ -91,7 +91,11 @@ test('pin() opens blueprint with the element\'s cause in hand, never the old car
   const before = { cls: await chip.getAttribute('class'), style: await chip.getAttribute('style') };
   await page.evaluate(() => window.__plumb.overlay.pin(document.getElementById('beta-chip')));
 
-  // the fix panel holds one of the chip's own causes; the retired reading card never opens
+  // words: the chip's own values open beside it (texteditor.js); '.' puts the first problem in it in hand in the fix
+  // panel, one of the chip's own causes; the retired reading card never opens
+  await overlay.locator('.tc .fld[data-key="font-size"]').waitFor({ timeout: 20000 });
+  await overlay.locator('.tc .more').waitFor({ timeout: 20000 });
+  await page.keyboard.press('.');
   const held = overlay.locator('.fx .cause .cls');
   await held.waitFor({ timeout: 20000 });
   assert.ok(before.cls.split(/\s+/).includes((await held.innerText()).trim()), `held ${await held.innerText()}, the chip has ${before.cls}`);
@@ -108,7 +112,7 @@ test('pin() opens blueprint with the element\'s cause in hand, never the old car
   await page.evaluate(() => { const d = document.createElement('div'); d.id = 'runtime'; d.textContent = 'Runtime'; document.body.append(d); return window.__plumb.overlay.pin(d); });
   assert.equal(await page.$eval('#runtime', element => window.__plumb.locate(element)), null);
   assert.deepEqual(await page.$eval('#runtime', element => window.__plumb.locate(element, { explain: true })), { location: null, reason: 'no-fiber', detail: {} });
-  await overlay.locator('.fx').filter({ hasText: 'Can’t reach this in your code' }).waitFor({ timeout: 20000 });
-  assert.equal(await overlay.getByRole('dialog').count(), 0);
+  await overlay.locator('.tc').filter({ hasText: 'Can’t reach this in your code' }).waitFor({ timeout: 20000 });
+  assert.equal(await overlay.getByRole('dialog', { name: /React Plumber reading/ }).count(), 0);
   assert.deepEqual(errors, []);
 });

@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.0625rem; --text-xl: 1.1875rem;
+  --spacing: 0.25rem;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+}

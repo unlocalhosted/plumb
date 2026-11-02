@@ -36,6 +36,11 @@ import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
+// the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
+// write changes) and which of the elements written there it was
+const stampedAt = (at) => document.querySelectorAll(`[data-plumb-source^="${CSS.escape(at)}#"]`);
+const scopeKey = (el) => { const at = el?.getAttribute('data-plumb-source')?.split('#')[0]; return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
+const scopeOf = (key) => key?.at ? stampedAt(key.at)[key.nth] ?? null : null;
 const RESUME = 'plumb:resume';
 
 // One status line for a ready reading, shared by the hover tag and the pinned header.
@@ -367,7 +372,7 @@ class PlumbOverlay extends HTMLElement {
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
-    if (saved.blueprint) this.#blueprint?.enter({ instant: true });
+    if (saved.blueprint) this.#blueprint?.enter({ instant: true, scope: scopeOf(saved.scope) });
     if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
@@ -418,6 +423,12 @@ class PlumbOverlay extends HTMLElement {
   #toggleBlueprint(options) {
     this.#ready?.dismiss();
     this.#blueprint.toggle(options);
+  }
+  // Alt+B: the whole page; while one element is read (an Alt+click), the reading widens to the page
+  #wholePage() {
+    if (!this.#blueprint?.scope) return this.#toggleBlueprint();
+    this.#ready?.dismiss();
+    this.#blueprint.widen();
   }
 
   // What blueprint mode needs from the widget: Plumb's findings for an element (not the card's edits and text, and
@@ -531,7 +542,7 @@ class PlumbOverlay extends HTMLElement {
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); this.#structures = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
-  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place })); } catch {} }
+  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place, scope: scopeKey(this.#blueprint?.scope) })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {
@@ -745,7 +756,7 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
-    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleBlueprint(); return; }
+    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed

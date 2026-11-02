@@ -28,6 +28,7 @@
  *
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
+import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, written } from './words.js'; // every sentence the panel says
@@ -42,7 +43,7 @@ const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin:
 const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
-export const FIX_CSS = `
+export const FIX_CSS = TEXT_EDITOR_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
@@ -211,6 +212,18 @@ const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOI
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
 const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
 const drawn = (g) => g.members.some((m) => m.el);
+// the other elements on the page drawn by the same line of code as this one (its stamp), outside it
+const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
+// an Alt+click reads one element (scope): a fix changes its line of code, so the places outside it that the same line
+// draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
+const elsewhere = (g, scope) => {
+  if (!scope) return 0;
+  const stamps = new Set();
+  for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); }
+  let n = 0;
+  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) if (!scope.contains(el)) n++;
+  return n;
+};
 const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
 const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
 
@@ -241,6 +254,18 @@ export class FixPanel {
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
     this.#light = new StyleLight(root);
+    // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
+    this.#editor = new TextEditor(root, {
+      write: (at, key, token, said) => this.#host.set(at, key, token, said),
+      said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      problems: () => this.#live().filter((x) => !noteOf(x)).length,
+      // the problems inside are the fix panel's: the card steps aside for them
+      show: () => { this.#editor.close(); this.hold(0); },
+      closed: () => { this.#html = ''; this.render(); },
+      elsewhere: (el) => stampMates(el),
+      dark: () => darkGround(),
+      why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
+    });
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -271,10 +296,16 @@ export class FixPanel {
     });
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
+  #editor;
+  // Alt+click on words opens their editor; a cause in hand is put down first
+  edit(el) { if (this.#holding) this.release(); this.#editor.edit(el); this.#html = ''; this.render(); }
+  get editing() { return this.#editor.open ? this.#editor.target : null; }
+  // a file was written or undone: the element in the editor is read again
+  changed() { this.#editor.changed(); }
   get holding() { return this.#holding; }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -425,17 +456,17 @@ export class FixPanel {
   // write); offered before the fixes until opened and put down
   #loadStyles() {
     const path = location.pathname;
-    if (!this.#host.system || (this.#system?.path === path && this.#system.state !== 'stale')) return;
+    if (!this.#host.system || this.#host.scope?.() || (this.#system?.path === path && this.#system.state !== 'stale')) return;
     const mine = (this.#system = { path, state: 'loading', proposal: null, open: false, at: 0, dismissed: this.#system?.path === path && this.#system.dismissed });
     this.#host.system().then((p) => { if (this.#system !== mine) return; mine.proposal = p; mine.state = worth(p) ? 'ready' : 'none'; }, () => { if (this.#system === mine) mine.state = 'none'; })
       .finally(() => { if (this.#system === mine) { this.#settled(); this.#html = ''; this.render(); } });
   }
   // settled: every element read, and the styles answered (the resting line never changes under the person after it)
   #settled(done = !!this.#progress && (this.#progress.done ?? this.#progress.read === this.#progress.total)) {
-    const asking = !!this.#host.system && this.#system?.path === location.pathname && this.#system.state === 'loading';
+    const asking = !!this.#host.system && !this.#host.scope?.() && this.#system?.path === location.pathname && this.#system.state === 'loading';
     this.#el.toggleAttribute('data-settled', done && !asking);
   }
-  #offersStyles() { const s = this.#system; return !!s && s.state === 'ready' && !s.dismissed && s.path === location.pathname; }
+  #offersStyles() { const s = this.#system; return !!s && !this.#host.scope?.() && s.state === 'ready' && !s.dismissed && s.path === location.pathname; }
   #openStyles() { if (!this.#offersStyles()) return; this.#system.open = true; this.#system.at = 0; this.#lightStyle(true); this.#host.announce?.(lineOf(this.#system.proposal)); }
   // the style pointed at: its places ringed on the page, every problem's heat quiet (the styles are what is looked at)
   #lightStyle(slide = false) {
@@ -618,6 +649,11 @@ export class FixPanel {
       if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
       if (!this.#holding && a?.classList?.contains('hit')) return false;
     }
+    if (!this.#holding && this.#editor.open) {
+      // the card's keys first: a '.' typed into a number is the number's
+      if (this.#editor.key(k)) return true;
+      if (k === '.' && this.#live().length) { this.#editor.close(); this.hold(0); return true; }
+    }
     if (!this.#holding && this.#system?.open) {
       if (k === 'Escape') { this.#closeStyles(); return true; }
       if (k === 'ArrowUp' || k === 'ArrowDown') { const n = this.#system.proposal.roles.length; this.#system.at = Math.max(0, Math.min(n - 1, this.#system.at + (k === 'ArrowDown' ? 1 : -1))); this.#lightStyle(); return true; }
@@ -690,7 +726,7 @@ export class FixPanel {
       const tail = `${notes ? ` · ${FIX.notes(notes)}` : ''}${unchecked}${settled ? '' : ` · ${FIX.stillChecking}`}`;
       html = places || notes
         ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : places ? `${FIX.problems(places)} <span>· ${FIX.fixes(causes)}${tail}</span>` : `<span>${FIX.notes(notes)}${settled ? '' : ` · ${FIX.stillChecking}`}</span>`}</span><span class="grow"></span><button class="primary start">${FIX.start} <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? FIX.checking : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span></div>`;
+        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span></div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
@@ -736,8 +772,9 @@ export class FixPanel {
         : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span></div>`;
       const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(drawn(g) ? FIX.unseen(placesOf(g)) : FIX.offPage(placesOf(g)))}</div>`;
       // a write that didn't land: why, on the fix it was for (back in hand, to try again)
+      const also = elsewhere(g, this.#host.scope?.()), reach = also ? `<div class="say">${esc(FIX.elsewhere(also))}</div>` : '';
       const failed = this.#error ? `<div class="say err" role="alert">${esc(this.#error)}</div>` : '';
-      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${middle}${acts}</div>`;
+      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${reach}${middle}${acts}</div>`;
     }
     // the last fix written stays said above, with its Undo, until the next one is written
     if (this.#last && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
