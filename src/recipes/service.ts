@@ -42,7 +42,7 @@ export function recipesView(ctx: RecipeContext): Record<string, unknown> {
   };
 }
 
-export interface PlanParams { designTokens?: unknown; transition?: unknown; recipe?: unknown; boxShadow?: unknown; model?: unknown; kind?: unknown; name?: unknown; dials?: unknown; choice?: unknown }
+export interface PlanParams { designTokens?: unknown; transition?: unknown; recipe?: unknown; boxShadow?: unknown; model?: unknown; kind?: unknown; name?: unknown; dials?: unknown; choice?: unknown; forwards?: unknown }
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 /** The recipe a request names (a pack's or the project's by id, a pasted box-shadow, or a model sent whole) with its dials applied. */
 export function resolveRecipe(ctx: RecipeContext, p: PlanParams): Recipe {
@@ -73,7 +73,7 @@ export function recipesPlan(ctx: RecipeContext, p: PlanParams): PlanResult {
   codePaths.set(ctx.index, ctx.paths);
   const recipe = resolveRecipe(ctx, p);
   if (p.choice !== undefined && p.choice !== 'use' && p.choice !== 'move' && p.choice !== 'add') throw new UsageError('choice is use, move or add.');
-  const result = plan({ recipe, choice: p.choice as Choice | undefined, name: typeof p.name === 'string' ? p.name : undefined, index: ctx.index, read: ctx.read, element: ctx.element });
+  const result = plan({ recipe, choice: p.choice as Choice | undefined, name: typeof p.name === 'string' ? p.name : undefined, forwards: p.forwards === true, index: ctx.index, read: ctx.read, element: ctx.element });
   const order = { theme: 0, presets: 1, rule: 2, element: 3 };
   const writes = result.writes.toSorted((a, b) => order[a.role] - order[b.role]).map(w => ({ ...w, hash: sourceHash(w.before), diff: diff(w.before, w.after) }));
   return { recipe, plan: result, writes };

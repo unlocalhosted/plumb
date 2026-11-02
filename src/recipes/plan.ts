@@ -29,6 +29,8 @@ export interface Plan {
 }
 export interface PlanInput {
   recipe: Recipe; choice?: Choice | undefined; name?: string | undefined;
+  /** the caller observed this component usage's className reaching the element, so a class may be added to it */
+  forwards?: boolean | undefined;
   index: ProjectIndex;
   /** a project file's text, by path relative to the root with forward slashes */
   read: (path: string) => string | undefined;
@@ -169,7 +171,7 @@ export function planShadow(i: PlanInput): Plan {
     if (info.kind === 'dynamic') return refuse(verdict, nearest, info.reason ?? 'className is built at runtime; set the class by hand.');
     const from = info.classes.find(c => !variantOf(c) && /^shadow-/.test(c) && knownShadowSuffix(index, c.slice(7)));
     if (from === className) notes.push('The element already wears it.');
-    else if (!from && isComponentJSX(el.tag)) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${className} inside it, by hand.`);
+    else if (!from && isComponentJSX(el.tag) && !i.forwards) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${className} inside it, by hand.`);
     else {
       const why = swap(edits, el, from ? [from] : [], [className!], `${from ?? 'no shadow'} → ${className}`);
       if (why) return refuse(verdict, nearest, why);
@@ -339,7 +341,7 @@ function planMotionTailwind(i: PlanInput, m: MotionModel, exit: MotionModel | un
   const same = from.length === finalTo.length && from.every(c => finalTo.includes(c));
   if (same) notes.push('The element already wears these classes.');
   else {
-    if (!from.length && isComponentJSX(el.tag)) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${finalTo.join(' ')} inside it, by hand.`);
+    if (!from.length && isComponentJSX(el.tag) && !i.forwards) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${finalTo.join(' ')} inside it, by hand.`);
     const why = swap(edits, el, from, finalTo, `${from.join(' ') || 'no motion'} → ${finalTo.join(' ')}`);
     if (why) return refuse(verdict, nearest, why);
   }
