@@ -16,6 +16,8 @@
  *          margin or padding by one step at most (Q5)
  * ───────────────────────────────────────────────────────── */
 
+import { lawsOf } from './laws.js';
+
 const px = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0; };
 const letters = (s) => /[\p{L}\p{N}]/u.test(s ?? '');
 const ownText = (el) => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').replace(/\s+/g, ' ').trim();
@@ -133,7 +135,7 @@ export function tidy(scope, scale) {
   const container = isContainer(scope) ? scope : containerOf(scope);
   if (!container) return changes;
   const levels = levelsOf(container), s = scaleFor(scale, levels);
-  const add = (el, prop, from, to, rule, reason) => { if (from !== to && to !== null && to !== undefined && !changes.some((c) => c.el === el && c.prop === prop)) changes.push({ el, prop, from, to, rule, reason }); };
+  const add = (el, prop, from, to, rule, reason) => { if (from !== to && to !== null && to !== undefined && !changes.some((c) => c.el === el && c.prop === prop)) changes.push({ el, prop, from, to, rule, reason, laws: lawsOf(`hierarchy/${rule}`) }); };
   const runtime = (el) => /var\(--z|calc\(/.test(el.getAttribute('class') ?? '') || el.closest('svg') || el.localName === 'text';
   // T3: cousins at the same level (the same index in sibling containers) share the modal bundle
   const siblings = container.parentElement ? [...container.parentElement.children].filter((c) => isContainer(c) && c !== container) : [];

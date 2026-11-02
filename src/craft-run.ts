@@ -11,7 +11,10 @@ import type { Declaration, Finding, Report, Site } from './report.js';
 
 /** One craft finding as the page reports it (overlay/src/craft-run.js), with its source site. */
 export interface CraftRecord {
-  rule: string; title: string; because: string; action: string; text: string; value: unknown; confidence: number | null;
+  rule: string; title: string; because: string; action: string;
+  /** the laws of UX the rule measures (overlay/src/laws.js); [] when its root is not one; null when unmapped */
+  laws?: { id: string; name: string }[] | null;
+  text: string; value: unknown; confidence: number | null;
   evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
@@ -174,9 +177,11 @@ export function formatCraft(pages: CraftPage[], findings: Finding[], root: strin
   const read = pages.reduce((n, page) => n + page.read, 0);
   const lines = [`React Plumber craft: ${pages.length} ${pages.length === 1 ? 'route' : 'routes'}, ${read} elements read, ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'}`];
   for (const page of pages) if (!page.complete) lines.push(`  ${page.route}: stopped before every element was read (raise --timeout)`);
+  // the laws each rule measures, as its records carry them
+  const laws = new Map(pages.flatMap(page => page.findings.map(record => [record.rule, record.laws ?? []] as const)));
   for (const finding of findings) {
-    const site = finding.sites[0]!;
-    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(finding.action ? [`  → ${finding.action}`] : []));
+    const site = finding.sites[0]!, named = (laws.get(finding.rule) ?? []).map(law => law.name);
+    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(named.length ? [`  Law: ${named.join(', ')}`] : []), ...(finding.action ? [`  → ${finding.action}`] : []));
   }
   return lines.join('\n') + '\n';
 }

@@ -25,6 +25,7 @@ import { rgb, VIRTUAL, SPEC } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
 import { request } from './api.js';
+import { lawsOf } from './laws.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -380,7 +381,7 @@ function markOf(f) {
     key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
     ...(f.tier !== undefined ? { tier: f.tier } : {}),
     text: f.text, props: f.props ?? [], value: f.value, n: f.n,
-    title: f.title, because: f.because, action, what: f.what,
+    title: f.title, because: f.because, action, what: f.what, laws: lawsOf(f.rule),
     choices: [], pick: null,
     craft: { evidence: f.evidence ?? {}, confidence: f.confidence, suggest },
   };

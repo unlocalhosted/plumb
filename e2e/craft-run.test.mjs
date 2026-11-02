@@ -35,6 +35,7 @@ const BROKEN = `export function App() {
     <main className="mx-auto flex max-w-5xl flex-col gap-s6 px-s4 pb-s6">
       <button id="pad" className="rounded-control bg-surface p-s2 text-body">Save</button>
       <span id="track" className="text-[11px] uppercase">Status</span>
+      <button id="tiny" aria-label="Close" className="self-start bg-surface" style={{ width: 16, height: 16 }} />
       <div style={{ height: 1600 }} />
       <span id="faint" className="text-[12px] text-[#b8bcc2]">faint words, far below the fold</span>
     </main>
@@ -60,10 +61,15 @@ test('plumber craft names each broken rule at its source line, writes SARIF, and
   assert.equal(result.code, 1, result.stderr);
   const report = JSON.parse(result.stdout);
   const at = (rule) => report.findings.filter((f) => f.rule === `craft/${rule}`).map((f) => f.sites[0]);
-  for (const [rule, id] of [['button-padding', 'pad'], ['tracking', 'track'], ['contrast', 'faint']]) {
+  for (const [rule, id] of [['button-padding', 'pad'], ['tracking', 'track'], ['contrast', 'faint'], ['hit-target', 'tiny']]) {
     const sites = at(rule);
     assert.ok(sites.some((s) => s.file.endsWith('src/App.jsx') && s.line === lineOf(BROKEN, id)), `${rule}: expected src/App.jsx:${lineOf(BROKEN, id)}, got ${JSON.stringify(sites)}`);
   }
+  // each finding names the laws of UX its rule measures: a decided list for every rule, empty when its root is not one
+  const records = report.routes.flatMap((r) => r.findings);
+  assert.ok(records.length && records.every((r) => Array.isArray(r.laws)), `every rule is mapped: ${JSON.stringify(records.filter((r) => !Array.isArray(r.laws)).map((r) => r.rule))}`);
+  assert.deepEqual(records.find((r) => r.rule === 'craft/hit-target')?.laws, [{ id: 'fitts', name: 'Fitts’s law' }]);
+  assert.deepEqual(records.find((r) => r.rule === 'craft/button-padding')?.laws, []);
   const sarif = JSON.parse(await readFile(sarifPath, 'utf8'));
   const results = sarif.runs[0].results;
   assert.equal(sarif.version, '2.1.0');
@@ -73,6 +79,7 @@ test('plumber craft names each broken rule at its source line, writes SARIF, and
   const text = await plumber(['--url', url, '--root', root]);
   assert.equal(text.code, 1);
   assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'pad')}:\\d+  craft/button-padding`));
+  assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'tiny')}:\\d+  craft/hit-target\\n.*\\n.*\\n  Law: Fitts’s law\\n`));
 });
 
 test('plumber craft on a clean page prints no findings and exits 0', { timeout: 240000 }, async (t) => {
