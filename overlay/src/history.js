@@ -147,7 +147,19 @@ function stepsOf(changes) {
     const first = s.changes[0];
     s.name = first.meta?.step ?? first.meta?.layer ?? (s.changes.every((c) => c.undoes) ? T.undoStepName : short(first.file));
   }
-  return steps;
+  // steps where nothing can be undone now (every change changed since) collapse, each run of them into one step with
+  // one tick, so a history reset by hand doesn't fill the strip: "Edited outside" when no later change here explains
+  // it, "Changed since" when later changes did (undo those and the step comes back)
+  const kindOf = (s) => (s.changes.every((c) => c.state === 'changed') ? (s.changes.some((c) => c.by?.length) ? 'later' : 'outside') : null);
+  const out = [];
+  for (const s of steps) {
+    const kind = kindOf(s);
+    if (!kind) { out.push(s); continue; }
+    const last = out.at(-1), first = s.changes[0];
+    if (last?.outside === kind) { last.changes[0].count += s.changes.length; continue; }
+    out.push({ group: `${kind}:${first.id}`, name: kind === 'later' ? T.changedSince : T.outside, outside: kind, changes: [{ id: `${kind}:${first.id}`, state: 'changed', outside: kind, from: '', to: '', file: first.file, line: first.line, column: first.column, count: s.changes.length }] });
+  }
+  return out;
 }
 const live = (c) => c?.state === 'live';
 // why a change can't be undone here, in words, from its state
@@ -382,7 +394,7 @@ export class History {
     }
     const laws = lawsOf(c);
     track?.setAttribute('aria-valuemin', '1'); track?.setAttribute('aria-valuemax', String(n)); track?.setAttribute('aria-valuenow', String(this.#at + 1));
-    track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from.trim(), c.to.trim(), laws));
+    track?.setAttribute('aria-valuetext', c.outside ? T.valuetextOutside(this.#at + 1, n, c.outside === 'later' ? T.changedRun(c.count) : T.outsideRun(c.count)) : T.valuetext(this.#at + 1, n, c.step.name, c.from.trim(), c.to.trim(), laws));
     // the page as it was here: everything to the right previewed undone; the marks read the page after it. One read
     // of the page's stamps serves both
     const index = pageIndex();
@@ -401,7 +413,7 @@ export class History {
     if (!pill || !tick) return;
     const warn = this.#warn?.id === c.id ? this.#warn : null;
     pill.dataset.kind = warn?.kind ?? '';
-    pill.innerHTML = warn ? esc(warn.text)
+    pill.innerHTML = warn ? esc(warn.text) : c.outside ? esc(c.outside === 'later' ? T.changedRun(c.count) : T.outsideRun(c.count))
       : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from.trim() || '∅')} → ${esc(c.to.trim() || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
     pill.hidden = false;
     // centred on the tick, slid along its line to stay whole on screen
@@ -414,7 +426,7 @@ export class History {
 
   // outline the change's elements; scroll the first into view when none of them can be seen. null clears
   #mark(c, index) {
-    const els = c ? elementsOf(c, index).slice(0, MARKS) : [];
+    const els = c && !c.outside ? elementsOf(c, index).slice(0, MARKS) : [];
     const same = els.length === this.#marked.length && els.every((el, i) => el === this.#marked[i]);
     this.#marked = els;
     if (!els.length) { this.#marks.hidden = true; this.#marks.replaceChildren(); return els; }

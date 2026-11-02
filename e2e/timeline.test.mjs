@@ -149,7 +149,7 @@ test('a change edited by hand is hatched, its Undo change is off, and ⌫ says w
   await overlay(page).locator('.dock .history').click();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 1);
   let s = await strip(page);
-  assert.deepEqual(s.steps, [{ name: 'App.jsx', ticks: ['changed'] }]);
+  assert.deepEqual(s.steps, [{ name: 'Edited outside', ticks: ['changed'] }], 'a step nothing can undo collapses into one tick');
   assert.equal(s.change, true, 'Undo change is off');
   await page.keyboard.press('Backspace');
   s = await strip(page);

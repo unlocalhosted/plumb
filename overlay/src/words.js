@@ -714,6 +714,11 @@ export const TIMELINE = {
   slider: 'Changes, oldest to newest',
   now: 'Now',
   notHere: 'Not on this page',
+  // a run of changes edited outside React Plumber (a git checkout, a hand edit), drawn as one tick
+  outside: 'Edited outside',
+  changedSince: 'Changed since',
+  changedRun: (n) => `${n === 1 ? 'A change' : `${n} changes`} changed again by later ones. Undo those first.`,
+  outsideRun: (n) => `${n === 1 ? 'A change' : `${n} changes`} edited outside React Plumber since. Undo ${n === 1 ? 'it' : 'them'} in your editor.`,
   goBack: 'Go back to here',
   applied: (n) => `Applied ${n} changes`,
   past: (n) => `Showing the page as it was before the last ${n === 1 ? 'change' : `${n} changes`}. Nothing is written until you choose.`,
@@ -733,5 +738,6 @@ export const TIMELINE = {
   failed: (why) => `Couldn’t undo. ${why}`,
   // a step's name when its write didn't name it and it only undoes
   undoStepName: 'Undo',
+  valuetextOutside: (i, n, said) => `Change ${i} of ${n}: ${said}`,
   valuetext: (i, n, step, from, to, laws) => `Change ${i} of ${n}, ${step}: ${from || 'nothing'} to ${to || 'nothing'}${laws.length ? `, ${laws.join(', ')}` : ''}`,
 };

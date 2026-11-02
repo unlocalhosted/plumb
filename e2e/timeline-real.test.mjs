@@ -103,3 +103,29 @@ test('a component rendered once per entry outlines every entry, and the session 
   assert.match(await readFile(join(s.root, '.plumber/cache/.gitignore'), 'utf8'), /^\*$/m);
   assert.deepEqual(s.errors, []);
 });
+
+test('history reset by hand (a git checkout) collapses into one tick that says so, and the live step after it stays', { timeout: 150000 }, async (t) => {
+  // crafting-ui's QA left 10 records behind its resets: 4 hatched ticks, mixed in with live ones (QA issue 5)
+  const s = await standards(t);
+  const original = await readFile(join(s.root, FILE), 'utf8');
+  await s.swap(36, 'mt-2', 'mt-3', { group: 'spacing-1', meta: { step: 'Spacing' } });
+  await s.swap(62, 'mt-2', 'mt-3', { group: 'spacing-1', meta: { step: 'Spacing' } });
+  await s.swap(66, 'pt-[5px]', 'pt-1');
+  await writeFile(join(s.root, FILE), original); // git checkout -- the page
+  const typed = await s.swap(62, 'mt-2', 'mt-4', { meta: { step: 'Type' } });
+  assert.deepEqual(typed.refused ?? [], [], JSON.stringify(typed));
+  await s.page.waitForFunction(() => { const h = document.querySelector('main li h3'); return h && getComputedStyle(h).marginTop === '16px'; }, null, { timeout: 30000 });
+  await s.ready();
+  await s.open(3);
+  const strip = await s.page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt-seg')].map((g) => `${g.querySelector('.tt-name').textContent}: ${[...g.querySelectorAll('.tt-tick')].map((k) => k.dataset.state).join(' ')}`));
+  assert.deepEqual(strip, ['Changed since: changed', 'Edited outside: changed', 'Type: live'], 'Spacing touched later by Type; the untagged step only by hand');
+  await s.page.keyboard.press('Home');
+  await s.page.waitForTimeout(300);
+  assert.equal(await s.pill(), '2 changes changed again by later ones. Undo those first.');
+  await s.page.keyboard.press('ArrowRight');
+  await s.page.waitForTimeout(300);
+  assert.equal(await s.pill(), 'A change edited outside React Plumber since. Undo it in your editor.');
+  assert.deepEqual(await s.marks(), [], 'nothing outlined for them');
+  assert.equal(await s.page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('[data-act="change"]').disabled), true);
+  assert.deepEqual(s.errors, []);
+});
