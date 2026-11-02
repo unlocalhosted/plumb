@@ -32,7 +32,7 @@ async function project(t, css) {
   };
   const props = async line => { const r = await call('props', { file: 'src/App.tsx', line, column: 6 }); assert.equal(r.status, 200, JSON.stringify(r)); return r.body; };
   const prop = (body, key) => body.props.find(p => p.key === key);
-  return { call, props, prop, read: () => readFile(join(root, 'src/App.tsx'), 'utf8') };
+  return { root, call, props, prop, read: () => readFile(join(root, 'src/App.tsx'), 'utf8') };
 }
 const steps = p => p.steps.map(s => [s.token, s.value]);
 
@@ -73,6 +73,12 @@ test('a named --spacing-* step beside --spacing keeps the whole multiplier ladde
   assert.equal(card?.class, 'p-card');
   assert.match(card?.value, /^(?:24px|1\.5rem)$/);
 });
+// regression: named steps with no --spacing of the project's own are the whole scale; Tailwind's default multiplier does not join them
+test('named --spacing-* steps without a --spacing of the project\'s own are exactly the steps', async t => {
+  const api = await project(t, '@import "tailwindcss";\n@theme { --spacing-s1: 0.25rem; --spacing-s2: 0.5rem; --spacing-s3: 1rem; }\n');
+  const padding = api.prop(await api.props(4), 'padding');
+  assert.deepEqual(padding.steps.map(s => s.token), ['s1', 's2', 's3'], JSON.stringify(steps(padding)));
+});
 test('--spacing-*: initial drops the multiplier ladder and leaves only the named steps', async t => {
   const api = await project(t, '@import "tailwindcss";\n@theme { --spacing-*: initial; --spacing: 0.25rem; --spacing-card: 1.5rem; }\n');
   const padding = api.prop(await api.props(4), 'padding');
@@ -89,4 +95,14 @@ test('a --spacing of 0.3rem has steps at 4.8px multiples that can be written and
   assert.equal(write.status, 200, JSON.stringify(write));
   assert.match(await api.read(), /className="grid gap-4 p-4"/);
   assert.equal(api.prop(await api.props(4), 'gap').token, '4');
+});
+// the server reads a clamp/calc/var length in text-[...] as a size, never a colour
+test('text-[clamp(...)] is a font size, not a colour', async t => {
+  const api = await project(t, '@import "tailwindcss";\n@theme { --spacing: 0.25rem; }\n');
+  await writeFile(join(api.root, 'src/App.tsx'), `import './styles.css';\nexport function App() {\n  return <>\n    <p className="text-[clamp(1rem,2vw,2rem)]">a</p>\n    <p className="text-[calc(1rem+2px)]">b</p>\n    <p className="text-[length:var(--x)]">c</p>\n  </>;\n}\n`);
+  for (const line of [4, 5, 6]) {
+    const body = await api.props(line);
+    assert.equal(api.prop(body, 'font-size').source, 'class', `line ${line}: ${JSON.stringify(api.prop(body, 'font-size'))}`);
+    assert.notEqual(api.prop(body, 'color').source, 'class', `line ${line} color: ${JSON.stringify(api.prop(body, 'color'))}`);
+  }
 });
