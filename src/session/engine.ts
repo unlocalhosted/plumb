@@ -1,5 +1,8 @@
-import { environment, stateDirectory, statePath, configurationNames, isLedgerPath } from '../paths.js';
-import { constants, watch } from 'node:fs';
+import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory } from '../paths.js';
+import { constants, readFileSync, watch } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { ChangeLog, locate } from './changes.js';
+import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
 import { stat, lstat, readdir, readFile, realpath, open } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
@@ -136,6 +139,11 @@ export interface UndoResult { revision: number; file: string; hash: string; undo
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string; /** the file was changed outside React Plumber since this write, so it can't be undone */ stale?: true }
 interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
 const historyLimit = 20;
+/** What a caller tags a write with (POST body `trace`): a group several calls share, and anything to read back with each change. */
+export interface TraceTag { group?: string; meta?: unknown }
+export interface UndoChangesResult { revision: number; undone: string[]; undo: UndoHandle[]; files: Record<string, string> }
+/** The writes a tag can follow: every change they record carries it. */
+const tracedMethods = new Set(['apply', 'applyText', 'applyTextAt', 'set', 'swap', 'swaps', 'applyAll', 'propEdit', 'token', 'recipesApply', 'undoChange', 'undoGroup']);
 const shorten = (text: string) => { const one = text.replace(/\s+/g, ' ').trim(); return one.length > 40 ? one.slice(0, 39) + '…' : one; };
 /** A label names only what changed: the words both sides share at the start and the end are left out. */
 function changed(from: string, to: string, quote = '“”'): string {
@@ -193,6 +201,12 @@ export class Session extends EventEmitter {
   private revision = 0;
   private written: Recorded[] = [];
   private writes = 0;
+  // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
+  private changeLog: ChangeLog | undefined;
+  private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
+  private tag: { group: string; meta?: unknown } | undefined;
+  private undoing: ChangeRecord[] | undefined;
+  private nonce = randomBytes(4).toString('hex');
   private native = false;
   private events = new Set<string>();
   private inventoryDirty = false;
@@ -1373,6 +1387,11 @@ export class Session extends EventEmitter {
     const id = `w${++this.writes}`;
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     if (this.written.length > historyLimit) this.written.splice(0, this.written.length - historyLimit);
+    // each change in it, for the trace; the trace never fails a write that already landed
+    try {
+      const after = readFileSync(path, 'utf8');
+      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''));
+    } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
   /** Recent writes, newest first. */
@@ -1417,11 +1436,82 @@ export class Session extends EventEmitter {
         await this.sameFile(file, identity);
       } finally { await handle.close(); }
       this.written = this.written.filter(item => item.id !== id);
+      try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
       if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
       return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
     });
+  }
+  /** Run one write under a tag: every change it records carries the tag's group (a new one when none is given) and meta. */
+  async traced(tag: TraceTag | undefined, method: string, args: unknown[]): Promise<unknown> {
+    if (!tracedMethods.has(method) || !Array.isArray(args)) throw new UsageError(`${String(method)} is not a write that can be traced.`);
+    if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
+    if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
+    if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
+    const previous = this.tag;
+    this.tag = { group: tag?.group ?? this.log.group(), ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
+    try { return await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); } finally { this.tag = previous; }
+  }
+  /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
+  async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
+    if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');
+    const changes = this.log.trace(this.reader());
+    return { changes: group === undefined ? changes : changes.filter(change => change.group === group) };
+  }
+  /** Take back one change: its inverse, written where the change is found now. */
+  undoChange(id: string): Promise<UndoChangesResult> {
+    if (typeof id !== 'string' || !id.trim()) throw new UsageError('Undo takes the id of a change.');
+    return this.undoChanges([id]);
+  }
+  /** Take back every change of a group still standing, all or nothing. */
+  undoGroup(group: string): Promise<UndoChangesResult> {
+    if (typeof group !== 'string' || !group.trim()) throw new UsageError('Undo takes the id of a group.');
+    const standing = this.log.trace(this.reader()).filter(change => change.group === group && change.state !== 'undone');
+    if (!standing.length) throw new UsageError('Nothing in that group is left to undo.');
+    return this.undoChanges(standing.map(change => change.id));
+  }
+  private reader(): (file: string) => string | undefined {
+    const texts = new Map<string, string | undefined>();
+    return file => {
+      if (!texts.has(file)) { let text: string | undefined; try { text = readFileSync(this.file(file), 'utf8'); } catch { /* gone */ } texts.set(file, text); }
+      return texts.get(file);
+    };
+  }
+  /** The inverse of each change, one guarded write per file; a change whose place no longer holds what it wrote refuses
+   * the lot, and a file that fails puts the files already written back as they were. */
+  private async undoChanges(ids: string[]): Promise<UndoChangesResult> {
+    const records = this.log.all(), states = new Map(this.log.trace(this.reader()).map(entry => [entry.id, entry]));
+    const targets = ids.map(id => {
+      const record = records.find(r => r.id === id), state = states.get(id);
+      if (!record || !state) throw new UsageError(`There is no change ${id} in the trace.`);
+      if (state.state === 'undone') throw new UsageError(`${id} is already undone (by ${state.undoneBy}).`);
+      if (state.state === 'changed') throw new UsageError(`${id} can't be undone: its place no longer holds what it wrote${state.by ? `; changed since by ${state.by.join(', ')}` : '; it was edited outside React Plumber'}.`);
+      return record;
+    });
+    const files = new Map<string, ChangeRecord[]>();
+    for (const r of targets) files.set(r.file, [...files.get(r.file) ?? [], r]);
+    const done: UndoHandle[] = [], hashes: Record<string, string> = {};
+    const previous = this.tag;
+    this.tag = { group: previous?.group ?? this.log.group(), ...(previous?.meta === undefined ? {} : { meta: previous.meta }) };
+    this.undoing = targets;
+    try {
+      for (const [file, list] of files) {
+        const path = this.file(file), text = await readFile(path, 'utf8');
+        const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
+        if (placed.some(p => p.at === null)) throw new UsageError('A change moved while it was being undone. Read the trace again.');
+        for (let k = 1; k < placed.length; k++) if (placed[k]!.at! + placed[k]!.r.to.length > placed[k - 1]!.at!) throw new UsageError('Two of these changes overlap; undo them one at a time.');
+        let next = text;
+        for (const { r, at } of placed) next = next.slice(0, at!) + r.from + next.slice(at! + r.to.length);
+        const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120));
+        done.push(result.undo); hashes[file] = result.hash;
+      }
+    } catch (error) {
+      this.undoing = undefined;
+      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
+      throw error;
+    } finally { this.undoing = undefined; this.tag = previous; }
+    return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
   spacingUnit(): Promise<SpacingUnit | null> { return this.read('spacingUnit'); }

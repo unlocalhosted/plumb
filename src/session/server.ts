@@ -50,9 +50,21 @@ function position(params: Record<string, unknown>, name: string, optional = fals
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
+// The writes a request's `trace` tag follows (engine traced): every change they record carries its group and meta.
+const tracedWrites = new Set(['apply', 'applyText', 'applyTextAt', 'set', 'swap', 'swaps', 'applyAll', 'propEdit', 'token', 'recipesApply', 'undoChange', 'undoGroup']);
+function tracing(session: Session, tag: unknown): Session {
+  if (tag !== undefined && !object(tag)) throw new UsageError('trace must be an object: { group, meta }.');
+  return new Proxy(session, { get(target, key) {
+    if (typeof key === 'string' && tracedWrites.has(key)) return (...args: unknown[]) => target.traced(tag as Parameters<Session['traced']>[0], key, args);
+    const value = Reflect.get(target, key, target) as unknown;
+    return typeof value === 'function' ? (value as (...a: unknown[]) => unknown).bind(target) : value;
+  } });
+}
 async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
+  // one request, one group: every write it makes is traced, under the caller's tag when it sends one
+  session = tracing(session, params.trace);
   const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
     json ? session.readJSON(method, args) : Reflect.apply(session[method], session, args);
   if (method === 'readiness' || method === 'readiness/fix') return dispatchReadiness({
@@ -165,6 +177,9 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   }
   if (method === 'undo') return session.undo(text(params, 'id')!);
   if (method === 'history') return session.history();
+  if (method === 'trace') return session.trace(text(params, 'group', true));
+  if (method === 'undo-change') return session.undoChange(text(params, 'id')!);
+  if (method === 'undo-group') return session.undoGroup(text(params, 'group')!);
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
     return session.apply({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: params.edits.map(edit => ({ id: edit.id as string })) });
@@ -230,8 +245,8 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const method = url.pathname.slice(prefix.length);
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
-    const expected = ['try', 'recipes/preview', 'recipes/apply', 'apply', 'apply-text', 'apply-text-at', 'undo', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
-    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
+    const expected = ['try', 'recipes/preview', 'recipes/apply', 'apply', 'apply-text', 'apply-text-at', 'undo', 'undo-change', 'undo-group', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'batch', 'readiness/fix'].includes(method) ? 'POST' : 'GET';
+    const known = client || ['readiness', 'readiness/fix', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'undo-change', 'undo-group', 'history', 'trace', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method);
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
@@ -292,7 +307,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         }
         try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
       }
-      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'try', 'health', 'refresh'].includes(method);
+      const json = !['readiness', 'readiness/fix', 'apply', 'apply-text', 'apply-text-at', 'undo', 'undo-change', 'undo-group', 'history', 'trace', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'try', 'health', 'refresh'].includes(method);
       let result: unknown;
       if (current) result = await dispatchRequest(current, method, params, options, json);
       else {
@@ -399,7 +414,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
       }
       try {
         const method = request.method.replace(/^plumb\./, '');
-        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'history', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
+        if (!['report', 'site', 'classes', 'edits', 'text', 'text-at', 'apply', 'apply-text', 'apply-text-at', 'undo', 'undo-change', 'undo-group', 'history', 'trace', 'props', 'recipes', 'recipes/preview', 'recipes/apply', 'set', 'swap', 'swaps', 'prop', 'token', 'accept', 'apply-all', 'page', 'places', 'system', 'structure', 'try', 'decisions', 'spec', 'why', 'health', 'refresh', 'batch'].includes(method)) {
           if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32601, message: `Unknown method: ${request.method}.` } }); continue;
         }
         const result = await dispatch(session, method, request.params ?? {});
