@@ -6,8 +6,13 @@
 export type RGBA = { r: number; g: number; b: number; a: number; /** how it was written, so it is written back the same way */ notation?: 'rgb' | 'rgba' | 'hex' };
 /** Either a colour with channels, or one CSS colour the model does not take apart (a token, var(), hsl(), oklch()). */
 export type ShadowColor = RGBA | { token: string };
+/** A length as the source wrote it when it was not plain px (`0.25rem`, `calc(1em + 2px)`), with the px it came to, so it reads back as itself while the number has not moved. */
+export interface WrittenLength { text: string; px: number }
 export interface ShadowLayer {
-  x: number; y: number; blur: number; spread: number; color: ShadowColor; inset: boolean;
+  x: number; y: number; blur: number; spread: number;
+  /** null: the layer names no colour, so the browser uses currentColor; nothing is written for it */
+  color: ShadowColor | null; inset: boolean;
+  written?: Partial<Record<'x' | 'y' | 'blur' | 'spread', WrittenLength>>;
   /** written form: how many lengths the source gave, and whether the colour came first. Kept so a string reads back as itself. */
   lengths?: 2 | 3 | 4; colorFirst?: boolean; insetLast?: boolean;
 }

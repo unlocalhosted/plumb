@@ -9,9 +9,14 @@ export interface Block { header: string; open: number; close: number; depth: num
 export function scanStylesheet(css: string): { blocks: Block[]; decls: Decl[]; root: Block } {
   const root: Block = { header: '', open: -1, close: css.length, depth: 0, parent: null, decls: [], blocks: [] };
   const all: Block[] = [], decls: Decl[] = [];
-  let current = root, segment = 0, i = 0, line = 1;
-  const lineAt = (offset: number) => { let n = 1; for (let k = 0; k < offset; k++) if (css.charCodeAt(k) === 10) n++; return n; };
-  void line;
+  let current = root, segment = 0, i = 0;
+  // the line of an offset, counting newlines forward from the last offset asked about (declarations arrive in order)
+  let lineOffset = 0, lineNumber = 1;
+  const lineAt = (offset: number) => {
+    if (offset < lineOffset) { lineOffset = 0; lineNumber = 1; }
+    for (; lineOffset < offset; lineOffset++) if (css.charCodeAt(lineOffset) === 10) lineNumber++;
+    return lineNumber;
+  };
   const take = (end: number, terminated: boolean) => {
     const raw = css.slice(segment, end);
     const clean = raw.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length));

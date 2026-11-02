@@ -1,5 +1,5 @@
 import { num, round } from './model.js';
-import type { Easing, ShadowColor, ShadowLayer, ShadowModel } from './model.js';
+import type { Easing, ShadowColor, ShadowLayer, ShadowModel, WrittenLength } from './model.js';
 
 /** Split on a separator at the top level of parentheses and quotes. */
 export function splitTop(text: string, separator: ',' | ' '): string[] {
@@ -16,7 +16,72 @@ export function splitTop(text: string, separator: ',' | ' '): string[] {
   return out;
 }
 
-const length = /^(-?(?:\d+\.?\d*|\.\d+))(?:px)?$/;
+/** The root font size rem and em are resolved at when the project does not say (the browser's own default). */
+export const defaultRootPx = 16;
+/**
+ * A CSS length as px: `4`, `4px`, `0.25rem`, `1em`, and `calc()` over those with + - * /. rem and em both resolve at the root size
+ * (an em in a shadow is the element's own font size, which is not known here, so the root size is the honest guess).
+ * null for anything else (var(), %, vw, a keyword).
+ */
+export function lengthPx(text: string, rootPx = defaultRootPx): number | null {
+  const source = text.trim().toLowerCase();
+  let at = 0;
+  const spaces = () => { while (source[at] === ' ') at++; };
+  const value = (): number | null => {
+    spaces();
+    if (source.startsWith('calc(', at) || source[at] === '(') {
+      at += source[at] === '(' ? 1 : 5;
+      const inner = sum(); spaces();
+      if (inner === null || source[at] !== ')') return null;
+      at++; return inner;
+    }
+    const m = /^(-?(?:\d+\.?\d*|\.\d+))(px|rem|em)?/.exec(source.slice(at));
+    if (!m) return null;
+    at += m[0].length;
+    return Number(m[1]) * (m[2] === 'rem' || m[2] === 'em' ? rootPx : 1);
+  };
+  const product = (): number | null => {
+    let left = value();
+    for (;;) {
+      spaces();
+      const op = source[at];
+      if (left === null || (op !== '*' && op !== '/')) return left;
+      at++;
+      const right = value();
+      if (right === null || (op === '/' && right === 0)) return null;
+      left = op === '*' ? left * right : left / right;
+    }
+  };
+  const sum = (): number | null => {
+    let left = product();
+    for (;;) {
+      if (left === null) return null;
+      spaces();
+      const op = source[at];
+      // CSS needs the spaces around + and -, which also keeps `1px -2px` from reading as a subtraction
+      if ((op !== '+' && op !== '-') || source[at + 1] !== ' ' || source[at - 1] !== ' ') return left;
+      at++;
+      const right = product();
+      if (right === null) return null;
+      left = op === '+' ? left + right : left - right;
+    }
+  };
+  const result = source.startsWith('calc(') || /^-?[\d.]/.test(source) ? product() : null;
+  spaces();
+  return result !== null && at === source.length && Number.isFinite(result) ? result : null;
+}
+
+/** A class split at the colons that are not inside brackets or parentheses: `[&:hover]:shadow-md` has one variant, `[&:hover]`. */
+export function splitVariants(cls: string): { variants: string[]; utility: string } {
+  const variants: string[] = []; let depth = 0, start = 0;
+  for (let i = 0; i < cls.length; i++) {
+    const ch = cls[i];
+    if (ch === '[' || ch === '(') depth++;
+    else if (ch === ']' || ch === ')') depth--;
+    else if (ch === ':' && depth === 0) { variants.push(cls.slice(start, i)); start = i + 1; }
+  }
+  return { variants, utility: cls.slice(start) };
+}
 export function parseColor(text: string): ShadowColor {
   const s = text.trim();
   const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
@@ -36,7 +101,8 @@ export function parseColor(text: string): ShadowColor {
   }
   return { token: s };
 }
-export function formatColor(color: ShadowColor): string {
+export function formatColor(color: ShadowColor | null): string {
+  if (!color) return '';
   if ('token' in color) return color.token;
   const { r, g, b, a } = color, alpha = num(a);
   if (color.notation === 'hex') {
@@ -47,23 +113,31 @@ export function formatColor(color: ShadowColor): string {
   return a === 1 ? `rgb(${num(r)} ${num(g)} ${num(b)})` : `rgb(${num(r)} ${num(g)} ${num(b)} / ${alpha})`;
 }
 
-/** A box-shadow value as layers, or null when it is not one the model can hold (none, var(), rem lengths, calc). */
-export function parseBoxShadow(text: string): ShadowModel | null {
+/**
+ * A box-shadow value as layers, or null when it is not one the model can hold (none, var(), a length it cannot resolve).
+ * Lengths in rem, em and calc() are resolved at `rootPx` and keep the way they were written. A layer needs a colour or a
+ * blur: `0 4px` alone is two lengths, not a shadow.
+ */
+export function parseBoxShadow(text: string, rootPx = defaultRootPx): ShadowModel | null {
   const value = text.trim().replace(/\s*!important$/, '');
   if (!value || /^(?:none|inherit|initial|unset|revert)$/i.test(value) || /^var\(/i.test(value)) return null;
   const layers: ShadowLayer[] = [];
   for (const part of splitTop(value, ',')) {
     const words = splitTop(part, ' ');
-    let inset = false, insetAt = -1, colorAt = -1, firstLength = -1; const lengths: number[] = []; let color: string | undefined;
+    let inset = false, insetAt = -1, colorAt = -1, firstLength = -1; const lengths: { px: number; text: string }[] = []; let color: string | undefined;
     for (const [i, word] of words.entries()) {
       if (/^inset$/i.test(word)) { inset = true; insetAt = i; continue; }
-      const match = length.exec(word);
-      if (match) { lengths.push(Number(match[1])); if (firstLength < 0) firstLength = i; continue; }
+      const px = lengthPx(word, rootPx);
+      if (px !== null) { lengths.push({ px, text: word }); if (firstLength < 0) firstLength = i; continue; }
       if (color !== undefined) return null;
       color = word; colorAt = i;
     }
     if (lengths.length < 2 || lengths.length > 4) return null;
-    const layer: ShadowLayer = { x: lengths[0]!, y: lengths[1]!, blur: lengths[2] ?? 0, spread: lengths[3] ?? 0, color: color === undefined ? { token: '' } : parseColor(color), inset, lengths: lengths.length as 2 | 3 | 4 };
+    if (color === undefined && lengths.length < 3) return null;
+    const [x, y, blur, spread] = lengths;
+    const written: ShadowLayer['written'] = {};
+    for (const [key, item] of [['x', x], ['y', y], ['blur', blur], ['spread', spread]] as const) if (item && !/^-?(?:\d+\.?\d*|\.\d+)(?:px)?$/i.test(item.text)) written[key] = { text: item.text, px: item.px } satisfies WrittenLength;
+    const layer: ShadowLayer = { x: x!.px, y: y!.px, blur: blur?.px ?? 0, spread: spread?.px ?? 0, color: color === undefined ? null : parseColor(color), inset, lengths: lengths.length as 2 | 3 | 4, ...(Object.keys(written).length ? { written } : {}) };
     if (color !== undefined && colorAt < firstLength) layer.colorFirst = true;
     if (inset && insetAt === words.length - 1) layer.insetLast = true;
     layers.push(layer);
@@ -71,12 +145,17 @@ export function parseBoxShadow(text: string): ShadowModel | null {
   return layers.length ? { layers } : null;
 }
 const px = (n: number): string => n === 0 ? '0' : `${num(n)}px`;
+/** A length as the source wrote it while the number is still what it came to; px once a dial has moved it. */
+const lengthText = (l: ShadowLayer, key: 'x' | 'y' | 'blur' | 'spread'): string => {
+  const kept = l.written?.[key];
+  return kept && Math.abs(kept.px - l[key]) < 0.0005 ? kept.text : px(l[key]);
+};
 export function formatBoxShadow(model: ShadowModel): string {
   return model.layers.map(l => {
-    const lengths = [px(l.x), px(l.y)];
+    const lengths = [lengthText(l, 'x'), lengthText(l, 'y')];
     const count = Math.max(l.lengths ?? 2, l.spread !== 0 ? 4 : l.blur !== 0 || (l.lengths ?? 2) >= 3 ? 3 : 2);
-    if (count >= 3) lengths.push(px(l.blur));
-    if (count >= 4) lengths.push(px(l.spread));
+    if (count >= 3) lengths.push(lengthText(l, 'blur'));
+    if (count >= 4) lengths.push(lengthText(l, 'spread'));
     const color = formatColor(l.color);
     const parts = (l.colorFirst ? [color, ...lengths] : [...lengths, color]).filter(Boolean);
     if (l.inset) l.insetLast ? parts.push('inset') : parts.unshift('inset');

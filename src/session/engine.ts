@@ -44,7 +44,9 @@ import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../sour
 import { forgetProjectFacts } from '../project-facts/index.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
+import { tracedWrites } from './methods.js';
 import { indexProject } from '../recipes/project.js';
+import type { ProjectIndex } from '../recipes/project.js';
 import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js';
 import type { PlanParams, RecipeContext } from '../recipes/service.js';
 export type { TextRun, TextResult } from './text.js';
@@ -143,7 +145,6 @@ const historyLimit = 20;
 export interface TraceTag { group?: string; meta?: unknown }
 export interface UndoChangesResult { revision: number; undone: string[]; undo: UndoHandle[]; files: Record<string, string> }
 /** The writes a tag can follow: every change they record carries it. */
-const tracedMethods = new Set(['apply', 'applyText', 'applyTextAt', 'set', 'swap', 'swaps', 'applyAll', 'propEdit', 'token', 'recipesApply', 'undoChange', 'undoGroup']);
 const shorten = (text: string) => { const one = text.replace(/\s+/g, ' ').trim(); return one.length > 40 ? one.slice(0, 39) + '…' : one; };
 /** A label names only what changed: the words both sides share at the start and the end are left out. */
 function changed(from: string, to: string, quote = '“”'): string {
@@ -171,6 +172,11 @@ export class Session extends EventEmitter {
   // write or a ledger entry changes every reading, not only its own file's) and while the file it names keeps its hash
   private pageCache = new Map<string, { file: string; hash: string; generation: number; entry: PageEntry }>();
   private pageGeneration = 0;
+  /** how many times the recipes' project index was built, for health: a dial drag must not build one per tick */
+  private recipeIndexes = 0;
+  private unitKept: { generation: number; value: SpacingUnit | null } | undefined;
+  /** the recipes' view of the project (recipeContext), kept until a file or a generation of changes moves */
+  private recipeProject: { generation: number; manifest: string; stats: Map<string, string>; texts: Map<string, string>; index: ProjectIndex } | undefined;
   private sourceTexts = new Map<string, string>();
   private dependencies = new Set<string>();
   private patterns: string[] = [];
@@ -747,24 +753,41 @@ export class Session extends EventEmitter {
     }
     return { revision: this.revision, applied: writes.map(w => `${w.role}:${w.file}`), undo: done, files, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
   }
+  /**
+   * What the recipes know of the project: every css and code file read once, and the index built from them. It is kept while
+   * nothing moved: the same files at the same size and modification time, the same generation of changes (every write the session
+   * makes reconciles and counts one), and the element's file reading the same. A dial drag asks per tick; only the element's own
+   * position is made fresh for each ask.
+   */
   private async recipeContext(file: string, line: number, column: number): Promise<RecipeContext> {
     const path = this.file(file); this.position(line); this.position(column);
     const { text, location } = await this.elementFacts(path, line, column);
-    const texts = new Map<string, string>(), paths: string[] = [];
     const found = await glob('**/*.{css,ts,tsx,js,jsx,mjs,mts}', { cwd: this.root, absolute: false, dot: false, followSymbolicLinks: false, ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/*.d.ts', '**/*.min.*'] });
+    const stats = new Map<string, string>();
     for (const rel of found.map(f => f.replaceAll('\\', '/')).sort().slice(0, 1500)) {
       const info = await stat(resolve(this.root, rel)).catch(() => undefined);
-      if (!info?.isFile() || info.size > 300_000) continue;
-      texts.set(rel, await readFile(resolve(this.root, rel), 'utf8')); if (/\.[cm]?[jt]sx?$/.test(rel)) paths.push(rel);
+      if (info?.isFile() && info.size <= 300_000) stats.set(rel, `${info.size}:${info.mtimeMs}`);
     }
-    for (const rel of texts.keys()) if (rel.endsWith('.css')) paths.push(rel);
+    const manifest = await stat(resolve(this.root, 'package.json')).then(info => `${info.size}:${info.mtimeMs}`, () => '');
     const relative_ = relative(this.root, path).replaceAll('\\', '/');
-    texts.set(relative_, text);
-    let dependencies: Record<string, string> = {};
-    try { const pkg = JSON.parse(await readFile(resolve(this.root, 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>; dependencies = { ...pkg.dependencies, ...pkg.devDependencies }; } catch { /* no package.json */ }
-    const spec = await this.request<ProjectSpec>('spec').catch(() => undefined);
-    const index = indexProject({ files: [...texts].map(([p, t]) => ({ path: p, text: t })), dependencies, themeFile: spec?.tokens.file ?? null });
-    return { index, read: p => texts.get(p), paths, element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column } };
+    const kept = this.recipeProject;
+    const same = kept && kept.generation === this.pageGeneration && kept.manifest === manifest && kept.stats.size === stats.size && kept.texts.get(relative_) === text && [...stats].every(([rel, key]) => kept.stats.get(rel) === key);
+    let project: NonNullable<typeof this.recipeProject>;
+    if (same) project = kept;
+    else {
+      const texts = new Map<string, string>();
+      for (const [rel, key] of stats) texts.set(rel, kept?.stats.get(rel) === key ? kept.texts.get(rel)! : await readFile(resolve(this.root, rel), 'utf8'));
+      texts.set(relative_, text);
+      let dependencies: Record<string, string> = {};
+      try { const pkg = JSON.parse(await readFile(resolve(this.root, 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>; dependencies = { ...pkg.dependencies, ...pkg.devDependencies }; } catch { /* no package.json */ }
+      const spec = await this.request<ProjectSpec>('spec').catch(() => undefined);
+      const index = indexProject({ files: [...texts].map(([p, t]) => ({ path: p, text: t })), dependencies, themeFile: spec?.tokens.file ?? null });
+      this.recipeIndexes++;
+      project = { generation: this.pageGeneration, manifest, stats, texts, index };
+      // a project too large to keep read is read again each time rather than held
+      this.recipeProject = [...texts.values()].reduce((n, t) => n + t.length, 0) <= 32_000_000 ? project : undefined;
+    }
+    return { index: project.index, read: p => project.texts.get(p), element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column } };
   }
   /** A whole file replaced with the text a plan made, under the same guards as every write: the hash it was read at, one
    * regular file, a result that still parses, one undo handle. */
@@ -786,6 +809,7 @@ export class Session extends EventEmitter {
         await this.sameFile(path, identity);
       } finally { await handle.close(); }
       await this.reconcile([path]);
+      this.recipeProject = undefined;
       const hashAfter = sourceHash(next);
       if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
       const was = before.split('\n'), now = next.split('\n');
@@ -1445,7 +1469,7 @@ export class Session extends EventEmitter {
   }
   /** Run one write under a tag: every change it records carries the tag's group (a new one when none is given) and meta. */
   async traced(tag: TraceTag | undefined, method: string, args: unknown[]): Promise<unknown> {
-    if (!tracedMethods.has(method) || !Array.isArray(args)) throw new UsageError(`${String(method)} is not a write that can be traced.`);
+    if (!tracedWrites.has(method) || !Array.isArray(args)) throw new UsageError(`${String(method)} is not a write that can be traced.`);
     if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
     if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
     if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
@@ -1514,7 +1538,12 @@ export class Session extends EventEmitter {
     return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
-  spacingUnit(): Promise<SpacingUnit | null> { return this.read('spacingUnit'); }
+  /** The spacing multiplier, read once per generation of changes: every element card asks, and it walks every declaration. */
+  spacingUnit(): Promise<SpacingUnit | null> {
+    const generation = this.pageGeneration;
+    if (this.unitKept?.generation === generation) return Promise.resolve(this.unitKept.value);
+    return this.read<SpacingUnit | null>('spacingUnit').then(value => { this.unitKept = { generation, value }; return value; });
+  }
   /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
   spec(): Promise<ProjectSpec> { return this.read('spec'); }
   /** The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. */
@@ -1550,7 +1579,7 @@ export class Session extends EventEmitter {
     });
   }
   health() {
-    return Promise.resolve({ ...this.healthSnapshot, work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations }, status: this.failure ? 'invalid' : 'ready', root: this.root,
+    return Promise.resolve({ ...this.healthSnapshot, work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
       ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
       revision: this.revision, pid: process.pid, rss: process.memoryUsage().rss,
       ...(this.failure ? { diagnostic: this.failure.message } : {}) });

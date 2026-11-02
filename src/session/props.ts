@@ -208,7 +208,8 @@ function pools(decisions: Decision[], unit?: SpacingUnit) {
   const multiples = unit ? [...new Set([...defaultMultiples, ...unit.used])].sort((a, b) => a - b) : [];
   const steps = (def: Def): PropStep[] => {
     const result: PropStep[] = [];
-    if (unit && def.family === 'spacing' && def.theme && !decisions.some(d => d.family === 'spacing' && d.origin === 'project' && d.name.startsWith('--spacing-'))) {
+    // the multiplier ladder stays beside any named step: in Tailwind v4 `p-4` and `p-card` are both valid
+    if (unit && def.family === 'spacing' && def.theme) {
       for (const n of multiples) result.push({ token: trim(n), value: `${trim(n * unit.px)}px`, label: trim(n), class: def.make(trim(n)), css: `calc(var(--spacing) * ${trim(n)})` });
     }
     if (def.theme) {

@@ -4,10 +4,12 @@ import { resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
+import { patientMethods } from './methods.js';
+import type { EngineMethod, ReadMethod } from './methods.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TraceTag, UndoChangesResult, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spacingUnit' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many' | 'recipes' | 'recipesPreview' | 'recipesApply' | 'traced' | 'trace' | 'undoChange' | 'undoGroup';
-export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'propEdit' | 'token' | 'try' | 'refresh' | 'recipes' | 'recipesPreview' | 'recipesApply' | 'traced' | 'trace' | 'undoChange' | 'undoGroup'>;
+type Method = EngineMethod;
+export type { ReadMethod };
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
@@ -23,7 +25,7 @@ export class Session extends EventEmitter {
   private snapshot: Awaited<ReturnType<Engine['health']>>;
   private constructor(options: SessionOptions) {
     super(); if (options.config !== undefined) this.config = options.config; this.optionsBudget = options.readQueueMs; this.root = resolve(options.root ?? process.cwd());
-    this.snapshot = { status: 'starting', root: this.root, revision: 0, pid: process.pid, rss: 0, caches: {}, work: { reconciliations: 0 } };
+    this.snapshot = { status: 'starting', root: this.root, revision: 0, pid: process.pid, rss: 0, caches: {}, work: { reconciliations: 0, recipeIndexes: 0 } };
     this.worker = new Worker(new URL('./coordinator.js', import.meta.url), { workerData: { ...options, root: this.root } });
   }
   static async create(options: SessionOptions = {}): Promise<Session> {
@@ -69,7 +71,7 @@ export class Session extends EventEmitter {
     if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
-    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'system', 'propEdit', 'token', 'refresh', 'recipesApply', 'traced', 'undoChange', 'undoGroup'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
+    const id = ++this.id, deadline = patientMethods.has(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });

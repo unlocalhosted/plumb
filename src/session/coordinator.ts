@@ -1,13 +1,14 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { Session } from './engine.js';
 import { errorMessage, UsageError } from '../errors.js';
+import { isReadMethod } from './methods.js';
 
 interface Call { id: number; method: string; args: unknown[]; deadline: number; json?: boolean }
 const port = parentPort!;
 const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
 const queue: Call[] = [];
 let running = false;
-const read = (call: Call) => !['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'propEdit', 'token', 'props', 'recipes', 'recipesPreview', 'recipesApply', 'history', 'refresh', 'try', 'traced', 'trace', 'undoChange', 'undoGroup'].includes(call.method);
+const read = (call: Call) => isReadMethod(call.method);
 try {
   const session = await Session.create(workerData);
   const snapshot = async () => ({ health: await session.health(), stats: session.stats });

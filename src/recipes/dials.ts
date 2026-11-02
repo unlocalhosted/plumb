@@ -14,7 +14,7 @@ export function deriveShadow(model: ShadowModel): { height: number; softness: nu
   const top = dominant(model.layers);
   if (!top) return { height: 0, softness: 1, light: 0, layers: 0, tint: null };
   const reach = Math.hypot(top.x, top.y);
-  const color = 'token' in top.color ? null : top.color;
+  const color = !top.color || 'token' in top.color ? null : top.color;
   return { height: round(reach, 2), softness: round(reach ? top.blur / reach : 1, 2), light: round(reach ? deg(Math.atan2(-top.x, top.y)) : model.light ?? 0, 1),
     layers: model.layers.length, tint: color ? `rgb(${round(color.r, 0)} ${round(color.g, 0)} ${round(color.b, 0)})` : null };
 }
@@ -23,7 +23,7 @@ const mapLayers = (model: ShadowModel, fn: (l: ShadowLayer) => ShadowLayer): Sha
 export function shadowHeight(model: ShadowModel, factor: number): ShadowModel {
   if (!(factor > 0)) return model;
   return mapLayers(model, l => ({ ...l, x: round(l.x * factor, 2), y: round(l.y * factor, 2), blur: round(l.blur * factor, 2), spread: round(l.spread * factor, 2),
-    color: 'token' in l.color ? l.color : { ...l.color, a: round(Math.min(1, l.color.a * Math.sqrt(factor)), 3) } }));
+    color: !l.color || 'token' in l.color ? l.color : { ...l.color, a: round(Math.min(1, l.color.a * Math.sqrt(factor)), 3) } }));
 }
 /** Blur against offset: only the blur is multiplied. */
 export function shadowSoftness(model: ShadowModel, factor: number): ShadowModel {
@@ -42,7 +42,7 @@ export function shadowLight(model: ShadowModel, to: number): ShadowModel {
 /** The colour of the surface below: every channel colour moves toward it by `amount` (0 to 1), alpha kept. */
 export function shadowTint(model: ShadowModel, surface: { r: number; g: number; b: number }, amount = 0.6): ShadowModel {
   const mix = (a: number, b: number) => Math.round(a + (b - a) * amount);
-  return mapLayers(model, l => 'token' in l.color ? l : { ...l, color: { ...l.color, r: mix(l.color.r, surface.r), g: mix(l.color.g, surface.g), b: mix(l.color.b, surface.b) } satisfies RGBA });
+  return mapLayers(model, l => !l.color || 'token' in l.color ? l : { ...l, color: { ...l.color, r: mix(l.color.r, surface.r), g: mix(l.color.g, surface.g), b: mix(l.color.b, surface.b) } satisfies RGBA });
 }
 
 export interface ShadowDials { height?: number; softness?: number; light?: number; tint?: { r: number; g: number; b: number; amount?: number } }

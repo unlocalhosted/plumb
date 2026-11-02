@@ -1,11 +1,11 @@
-import { dirname, posix, relative, resolve } from 'node:path';
+import { posix } from 'node:path';
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
 import { classNamesOf, findOpening, swapClasses } from '../session/props.js';
 import type { SourceChange } from '../session/props.js';
 import { isComponentJSX } from '../session/source-location.js';
-import { formatBoxShadow, formatDuration, formatEasing } from './css.js';
+import { formatBoxShadow, formatDuration, splitVariants } from './css.js';
 import { map } from './mapping.js';
 import type { Nearest, Verdict } from './mapping.js';
 import { isShadow, num } from './model.js';
@@ -46,9 +46,26 @@ const refuse = (verdict: Verdict, nearest: Nearest | null, reason: string): Plan
 /** The files a plan touches, each edited by successive text transforms; the writes are what changed in the end. */
 class Edits {
   private texts = new Map<string, string>(); private before = new Map<string, string>(); private roles = new Map<string, Write['role']>(); private summaries = new Map<string, string[]>();
+  /** each text transform of a file as the one splice it made, so an offset in the original text can be followed to where it is now */
+  private splices = new Map<string, { at: number; removed: number; added: number }[]>();
   constructor(private read: (path: string) => string | undefined) {}
   text(path: string): string { if (!this.texts.has(path)) { const t = this.read(path); if (t === undefined) throw new UsageError(`${path} is not a file of this project.`); this.texts.set(path, t); this.before.set(path, t); } return this.texts.get(path)!; }
-  set(path: string, text: string, role: Write['role'], summary: string): void { this.text(path); this.texts.set(path, text); this.roles.set(path, role); this.summaries.set(path, [...(this.summaries.get(path) ?? []), summary]); }
+  set(path: string, text: string, role: Write['role'], summary: string): void {
+    const was = this.text(path);
+    let head = 0; while (head < was.length && head < text.length && was[head] === text[head]) head++;
+    let tail = 0; while (tail < was.length - head && tail < text.length - head && was[was.length - 1 - tail] === text[text.length - 1 - tail]) tail++;
+    this.splices.set(path, [...(this.splices.get(path) ?? []), { at: head, removed: was.length - head - tail, added: text.length - head - tail }]);
+    this.texts.set(path, text); this.roles.set(path, role); this.summaries.set(path, [...(this.summaries.get(path) ?? []), summary]); }
+  /** Where an offset of the file's original text is in its text now. Refused when an edit rewrote the text that offset sits in. */
+  where(path: string, offset: number): number {
+    let at = offset;
+    for (const s of this.splices.get(path) ?? []) {
+      if (at < s.at) continue;
+      if (at < s.at + s.removed) throw new UsageError(`A change to ${path} would rewrite the element itself; set it by hand.`);
+      at += s.added - s.removed;
+    }
+    return at;
+  }
   writes(): Write[] { return [...this.texts].filter(([p, t]) => t !== this.before.get(p)).map(([file, after]) => ({ file, role: this.roles.get(file)!, before: this.before.get(file)!, after, summary: this.summaries.get(file)!.join('; ') })); }
 }
 const lineStartOf = (text: string, at: number) => text.lastIndexOf('\n', at - 1) + 1;
@@ -99,7 +116,7 @@ const declFor = (index: ProjectIndex, token: string): { file: string; decl: Decl
 
 // ------------------------------------------------------------------ the element
 type Element = PlanInput['element'];
-const variantOf = (c: string) => /^(?:[a-z-]+(?:\[[^\]]*\])?:)+/.exec(c)?.[0] ?? '';
+const variantOf = (c: string) => { const { variants } = splitVariants(c); return variants.length ? `${variants.join(':')}:` : ''; };
 function swap(edits: Edits, el: Element, from: string[], to: string[], summary: string): string | null {
   try {
     const change = swapClasses(el.file, edits.text(el.file), el.start, from, to);
@@ -116,7 +133,7 @@ export function describeElement(i: Pick<PlanInput, 'index' | 'read' | 'element'>
   const { index, element: el } = i;
   const info = (() => { try { return classNamesOf(el.file, el.text, el.start); } catch { return { kind: 'dynamic' as const, classes: [] as string[], reason: 'This file does not parse.' }; } })();
   const theme = index.themes.find(t => t.shadows.length || t.motions.length) ?? null;
-  const reading: ClassReading | null = info.kind === 'static' ? readClasses(info.classes, theme) : null;
+  const reading: ClassReading | null = info.kind === 'static' ? readClasses(info.classes, theme, index.rootPx) : null;
   const shadow = reading?.shadow
     ? { source: 'class', class: reading.shadow.class, ...(reading.shadow.recipe.token ? { token: reading.shadow.recipe.token } : {}), value: formatBoxShadow(reading.shadow.recipe.model as ShadowModel), model: reading.shadow.recipe.model, recipe: reading.shadow.recipe.id }
     : info.kind === 'dynamic' ? { source: 'dynamic', reason: info.reason } : { source: 'none' };
@@ -188,28 +205,25 @@ export function planShadow(i: PlanInput): Plan {
       : css.slice(0, lineStartOf(css, block.close)) + `${blockIndent(css, block)}box-shadow: var(${token});\n` + css.slice(lineStartOf(css, block.close));
     if (next === css) notes.push('The rule already uses it.');
     else edits.set(rule.file, next, 'rule', `${rule.selector} { box-shadow: var(${token}) }`);
-    const users = [...i.index.themes.map(t => t.file), ...allCodeFiles(i)].length ? countUsers(i, rule.cls) : 1;
+    const users = countUsers(i, rule.cls);
     if (users > 1) notes.push(`${rule.selector} is used by ${users} elements; they all change.`);
     className = rule.cls;
   }
   return { ok: true, choice, verdict, nearest, writes: edits.writes(), notes, uses: { ...(token ? { token } : {}), ...(className ? { class: className } : {}) } };
 }
 const isThemeFile = (css: string) => scanStylesheet(css).blocks.some(isTheme);
-function allCodeFiles(i: PlanInput): string[] { return [i.element.file]; }
 function countUsers(i: PlanInput, cls: string): number {
   let n = 0;
-  for (const f of codePaths.get(i.index) ?? []) {
+  for (const f of i.index.paths) {
     const t = i.read(f); if (!t || !/\.[cm]?[jt]sx?$/.test(f)) continue;
     for (const m of t.matchAll(/(?:className|class)\s*=\s*(?:"([^"]*)"|'([^']*)'|\{([^}]*)\})/g)) if ((m[1] ?? m[2] ?? m[3] ?? '').split(/[^\w-]+/).includes(cls)) n++;
   }
   return Math.max(1, n);
 }
-/** Paths of the code files, by index, set by the caller so users of a class can be counted. */
-export const codePaths = new WeakMap<ProjectIndex, string[]>();
 function findRule(index: ProjectIndex, read: PlanInput['read'], classes: string[], property: string): { file: string; block: Block; selector: string; cls: string } | null {
   let fallback: { file: string; block: Block; selector: string; cls: string } | null = null;
   const files = [...new Set([...(index.idioms.cssVariables?.files ?? []), ...index.themes.map(t => t.file)])];
-  const all = (codePaths.get(index) ?? []).filter(p => p.endsWith('.css'));
+  const all = index.paths.filter(p => p.endsWith('.css'));
   for (const file of [...new Set([...files, ...all])]) {
     const css = read(file); if (!css) continue;
     for (const b of scanStylesheet(css).blocks) {
@@ -392,7 +406,8 @@ const propObject = (changes: MotionChange[], at: 'from' | 'to', quote: string) =
 /** The path an import should use to reach `target` from `from`: what the project's other files already use (an alias), else relative. */
 function specifierFor(i: PlanInput, from: string, target: string): string {
   const strip = (p: string) => p.replace(/\.[cm]?[jt]sx?$/, '').replace(/\/index$/, '');
-  for (const path of codePaths.get(i.index) ?? []) {
+  for (const path of i.index.paths) {
+    if (!/\.[cm]?[jt]sx?$/.test(path)) continue;
     const text = i.read(path); if (!text) continue;
     for (const m of text.matchAll(/from\s+['"]((?:@|~)\/[^'"]+)['"]/g)) {
       const rest = m[1]!.slice(2);
@@ -460,7 +475,8 @@ function planMotionReact(i: PlanInput): Plan {
     const spec = specifierFor(i, el.file, presetsFile);
     const imports = parseSync(el.file, src).program.body.filter(n => n.type === 'ImportDeclaration') as unknown as { start: number; end: number; source: { value: string }; specifiers: { start: number; end: number; type: string; local: { name: string } }[]; importKind?: string }[];
     const mine = imports.find(n => resolvesTo(n.source.value, el.file, presetsFile));
-    if (!mine?.specifiers.some(s => s.local.name === exportName)) {
+    // a preset declared in the element's own file is in scope: nothing to import
+    if (presetsFile !== el.file && !mine?.specifiers.some(s => s.local.name === exportName)) {
       if (mine && mine.specifiers.some(s => s.type === 'ImportSpecifier')) {
         const lastSpec = mine.specifiers.filter(s => s.type === 'ImportSpecifier').at(-1)!;
         edits.set(el.file, src.slice(0, lastSpec.end) + `, ${exportName}` + src.slice(lastSpec.end), 'element', `import ${exportName}`);
@@ -474,11 +490,9 @@ function planMotionReact(i: PlanInput): Plan {
 
   // the element: the transition prop, and the trigger's props when the element has none
   const text0 = edits.text(el.file);
-  const shift = text0.length - el.text.length;
-  const at = (n: number) => n + shift;
-  const fresh = (() => { const o = findOpening(el.file, text0, at(el.start)); return o; })();
-  void fresh;
-  const re = attributesOf({ ...el, text: text0, start: at(el.start) });
+  let elementAt: number;
+  try { elementAt = edits.where(el.file, el.start); } catch (e) { return refuse(verdict, nearest, e instanceof UsageError ? e.message : 'The element moved while the plan was made.'); }
+  const re = attributesOf({ ...el, text: text0, start: elementAt });
   const pieces: { start: number; end: number; text: string }[] = [];
   const insertAfter = re.attrs.at(-1)?.end ?? re.nameEnd;
   const multiline = re.attrs.length > 0 && text0.slice(re.nameEnd, re.attrs[0]!.start).includes('\n');
@@ -488,9 +502,7 @@ function planMotionReact(i: PlanInput): Plan {
   const added: string[] = [];
   const triggerProp: Record<string, string> = { hover: 'whileHover', press: 'whileTap', focus: 'whileFocus' };
   const hasAttr = (n: string) => re.attrs.some(a => a.name === n);
-  const wantTransition = `transition={${exportName ? expression : expression.startsWith('{') ? `${expression}` : expression}}`.replace('transition={{', 'transition={{');
-  const tText = exportName ? `transition={${expression}}` : `transition={${expression}}`;
-  void wantTransition;
+  const tText = `transition={${expression}}`;
   if (tNow) { if (text0.slice(tNow.start, tNow.end) !== tText) pieces.push({ start: tNow.start, end: tNow.end, text: tText }); } else added.push(tText);
   if (triggerProp[m.trigger] && m.changes.length && !hasAttr(triggerProp[m.trigger]!)) added.push(`${triggerProp[m.trigger]}={${propObject(m.changes, 'to', quote)}}`);
   if (m.trigger === 'enter' && m.changes.length && !hasAttr('initial') && !hasAttr('animate')) {
@@ -528,7 +540,6 @@ function exportEnd(text: string, name: string): number {
 
 // ------------------------------------------------------------------ entry
 export function plan(i: PlanInput): Plan {
-  void dirname; void relative; void resolve; void isShadow; void formatEasing;
   return isShadow(i.recipe.model) ? planShadow(i) : planMotion(i);
 }
 

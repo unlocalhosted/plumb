@@ -1,4 +1,4 @@
-import { parseBoxShadow, parseEasing, parseDuration } from './css.js';
+import { parseBoxShadow, parseEasing } from './css.js';
 import type { Easing, MotionChange, MotionModel, Recipe, Timing, Trigger } from './model.js';
 import { round } from './model.js';
 import { UsageError } from '../errors.js';
@@ -84,8 +84,10 @@ export function timingFromTransition(t: Record<string, unknown> | undefined): Ti
     return { type: 'spring', duration: round(num(t.duration, 0.3) * 1000, 2), bounce: num(t.bounce, 0.25) };
   }
   if (typeof t.duration === 'number' || t.ease !== undefined) {
+    // an ease name this engine does not know is not read at all: guessing ease-in-out would pass for the project's own curve
     const ease = Array.isArray(t.ease) && t.ease.length === 4 && t.ease.every(n => typeof n === 'number') ? t.ease as Easing
-      : typeof t.ease === 'string' ? parseEasing(t.ease) ?? [0.42, 0, 0.58, 1] : [0.42, 0, 0.58, 1] as Easing;
+      : typeof t.ease === 'string' ? parseEasing(t.ease) : [0.42, 0, 0.58, 1] as Easing;
+    if (!ease) return null;
     return { type: 'curve', duration: round(num(t.duration, 0.3) * 1000, 2), easing: ease };
   }
   return null;
@@ -104,6 +106,7 @@ export function readPack(pack: Pack): Recipe[] {
       ...(r.source.licence !== 'none' && r.source.attribution ? { credit: `${r.source.attribution}${r.source.url ? ` ${r.source.url.replace(/\/raw\.githubusercontent\.com\//, '/github.com/').replace('/main/', '/blob/main/')}` : ''}` } : {}), token: `${pack.id}:${r.id}` };
     if (r.kind === 'shadow') {
       for (const token of r.tokens ?? []) {
+        // a token's `dark` value is not read: the model holds one value per recipe (B7 in docs/research/engine-review.md)
         const light = typeof token.value === 'string' ? token.value : token.value.light;
         const text = template(light, scope);
         const model = /\{(?:var|prop|class):/.test(text) ? null : parseBoxShadow(text);
@@ -134,4 +137,3 @@ export function readPack(pack: Pack): Recipe[] {
   return out;
 }
 export const firstPack: Pack = first as unknown as Pack;
-void parseDuration;

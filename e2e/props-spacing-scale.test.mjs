@@ -63,3 +63,30 @@ for (const [name, css, note] of [
     assert.match(await api.read(), /className="grid gap-6 p-4"/);
   });
 }
+
+// B9 (docs/research/engine-review.md): in Tailwind v4 the multiplier and a named step coexist: `p-4` and `p-card` are both valid.
+test('a named --spacing-* step beside --spacing keeps the whole multiplier ladder, and the named step joins it', async t => {
+  const api = await project(t, '@import "tailwindcss";\n@theme { --spacing: 0.25rem; --spacing-card: 1.5rem; }\n');
+  const padding = api.prop(await api.props(4), 'padding');
+  for (const [token, value] of [['4', '16px'], ['2.5', '10px'], ['6', '24px'], ['12', '48px']]) assert.ok(steps(padding).some(([t2, v]) => t2 === token && v === value), `padding has ${token} = ${value}: ${JSON.stringify(steps(padding))}`);
+  const card = padding.steps.find(s => s.token === 'card');
+  assert.equal(card?.class, 'p-card');
+  assert.match(card?.value, /^(?:24px|1\.5rem)$/);
+});
+test('--spacing-*: initial drops the multiplier ladder and leaves only the named steps', async t => {
+  const api = await project(t, '@import "tailwindcss";\n@theme { --spacing-*: initial; --spacing: 0.25rem; --spacing-card: 1.5rem; }\n');
+  const padding = api.prop(await api.props(4), 'padding');
+  assert.ok(!padding.steps.some(s => s.token === '4'), JSON.stringify(steps(padding)));
+  assert.ok(padding.steps.some(s => s.token === 'card'));
+});
+// N8: a base that is not a quarter step keeps its own step, so a card can find the step it just wrote
+test('a --spacing of 0.3rem has steps at 4.8px multiples that can be written and found again', async t => {
+  const api = await project(t, '@import "tailwindcss";\n@theme { --spacing: 0.3rem; }\n');
+  const body = await api.props(4);
+  const padding = api.prop(body, 'padding');
+  assert.deepEqual(steps(padding).find(([token]) => token === '4'), ['4', '19.2px']);
+  const write = await api.call('set', { file: 'src/App.tsx', hash: body.hash, line: 4, column: 6, key: 'gap', token: '4' }, 'POST');
+  assert.equal(write.status, 200, JSON.stringify(write));
+  assert.match(await api.read(), /className="grid gap-4 p-4"/);
+  assert.equal(api.prop(await api.props(4), 'gap').token, '4');
+});

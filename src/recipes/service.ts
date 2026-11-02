@@ -4,19 +4,22 @@ import { deriveMotion, deriveShadow, motionDials, shadowDials } from './dials.js
 import type { MotionDials, ShadowDials } from './dials.js';
 import { map } from './mapping.js';
 import { isShadow } from './model.js';
-import type { Model, MotionModel, Recipe, ShadowModel } from './model.js';
+import type { MotionModel, Recipe } from './model.js';
 import { firstPack, readPack } from './pack.js';
-import { codePaths, describeElement, diff, plan } from './plan.js';
+import type { Pack } from './pack.js';
+import { describeElement, diff, plan } from './plan.js';
 import type { Choice, Plan } from './plan.js';
 import type { ProjectIndex } from './project.js';
-import { readBoxShadow, readDesignTokens, readMotionObject } from './readers.js';
+import { readRecipeRequest } from './request.js';
+import type { RecipeRequest } from './request.js';
 import { renderModel } from './render.js';
 
 export interface RecipeContext {
   index: ProjectIndex;
   /** project file text by path relative to the root, forward slashes */
   read: (path: string) => string | undefined;
-  paths: string[];
+  /** the recipe packs on offer; the default is the one that ships */
+  packs?: Pack[];
   element: { file: string; text: string; start: number; tag: string; line: number; column: number };
 }
 
@@ -27,38 +30,25 @@ export function summarize(r: Recipe, index: ProjectIndex): Record<string, unknow
     model: r.model, derived: isShadow(r.model) ? deriveShadow(r.model) : deriveMotion(r.model), css: renderModel(r.model),
     ...(isShadow(r.model) ? {} : { requires: (r.model as MotionModel).requires }), ...(r.exit ? { exit: r.exit, exitRequires: r.exit.requires } : {}), ...(blocked ? { blocked } : {}) };
 }
-const packRecipes = (): Recipe[] => readPack(firstPack);
+const packRecipes = (ctx: RecipeContext): Recipe[] => (ctx.packs ?? [firstPack]).flatMap(pack => readPack(pack));
 
 /** GET /__plumb/recipes: what the project has, what the packs offer against it, and what the element wears. */
 export function recipesView(ctx: RecipeContext): Record<string, unknown> {
-  codePaths.set(ctx.index, ctx.paths);
   const { index } = ctx;
   return {
     file: ctx.element.file, line: ctx.element.line, column: ctx.element.column, hash: sourceHash(ctx.element.text),
     idioms: index.idioms,
     yours: index.yours.map(r => summarize(r, index)),
-    packs: packRecipes().map(recipe => { const { nearest, verdict } = map(recipe, index.yours); return { recipe: summarize(recipe, index), nearest, verdict }; }),
+    packs: packRecipes(ctx).map(recipe => { const { nearest, verdict } = map(recipe, index.yours); return { recipe: summarize(recipe, index), nearest, verdict }; }),
     element: describeElement({ index, read: ctx.read, element: ctx.element }),
   };
 }
 
-export interface PlanParams { designTokens?: unknown; transition?: unknown; recipe?: unknown; boxShadow?: unknown; model?: unknown; kind?: unknown; name?: unknown; dials?: unknown; choice?: unknown; forwards?: unknown }
+export interface PlanParams extends RecipeRequest { dials?: unknown; choice?: unknown; forwards?: unknown }
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 /** The recipe a request names (a pack's or the project's by id, a pasted box-shadow, or a model sent whole) with its dials applied. */
 export function resolveRecipe(ctx: RecipeContext, p: PlanParams): Recipe {
-  let recipe: Recipe | undefined;
-  if (object(p.designTokens)) recipe = readDesignTokens(p.designTokens).find(r => typeof p.recipe !== 'string' || r.id === p.recipe);
-  else if (object(p.transition)) { const r = readMotionObject({ transition: p.transition }, typeof p.name === 'string' ? p.name : 'transition'); if (r) recipe = { ...r, model: { ...(r.model as MotionModel), requires: 'none' } }; }
-  else if (typeof p.boxShadow === 'string') recipe = readBoxShadow(p.boxShadow, typeof p.name === 'string' ? p.name : 'custom') ?? undefined;
-  else if (typeof p.recipe === 'string') {
-    const id = p.recipe;
-    recipe = packRecipes().find(r => r.id === id || `${firstPack.id}:${r.id}` === id) ?? ctx.index.yours.find(r => r.id === id || r.token === id || r.name === id);
-  } else if (object(p.model)) {
-    const model = p.model as unknown as Model, kind = p.kind === 'motion' || 'trigger' in model ? 'motion' : 'shadow';
-    if (kind === 'shadow' ? !Array.isArray((model as ShadowModel).layers) : !('timing' in model)) throw new UsageError('model is a shadow ({ layers }) or a motion ({ trigger, changes, timing, requires }).');
-    recipe = { id: typeof p.name === 'string' ? p.name : 'custom', name: typeof p.name === 'string' ? p.name : 'custom', kind, model, source: { reader: 'request' } };
-  }
-  if (!recipe) throw new UsageError('Name a recipe (recipe: an id from GET recipes), a boxShadow string, or a model.');
+  let recipe = readRecipeRequest(p, { packs: packRecipes(ctx), yours: ctx.index.yours, rootPx: ctx.index.rootPx });
   if (p.dials !== undefined) {
     if (!object(p.dials)) throw new UsageError('dials is an object.');
     const d = p.dials, numeric = (k: string) => { const v = d[k]; if (v !== undefined && (typeof v !== 'number' || !Number.isFinite(v))) throw new UsageError(`dial ${k} must be a number.`); };
@@ -70,7 +60,6 @@ export function resolveRecipe(ctx: RecipeContext, p: PlanParams): Recipe {
 
 export interface PlanResult { recipe: Recipe; plan: Plan; writes: (Plan['writes'][number] & { hash: string; diff: string })[] }
 export function recipesPlan(ctx: RecipeContext, p: PlanParams): PlanResult {
-  codePaths.set(ctx.index, ctx.paths);
   const recipe = resolveRecipe(ctx, p);
   if (p.choice !== undefined && p.choice !== 'use' && p.choice !== 'move' && p.choice !== 'add') throw new UsageError('choice is use, move or add.');
   const result = plan({ recipe, choice: p.choice as Choice | undefined, name: typeof p.name === 'string' ? p.name : undefined, forwards: p.forwards === true, index: ctx.index, read: ctx.read, element: ctx.element });

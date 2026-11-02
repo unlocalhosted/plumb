@@ -1,8 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
-import { formatBoxShadow, parseBoxShadow, parseDuration, parseEasing, splitTop } from './css.js';
+import { defaultRootPx, formatBoxShadow, parseBoxShadow, parseDuration, parseEasing, splitTop, splitVariants } from './css.js';
 import type { MotionChange, MotionModel, Recipe, RecipeSource, ShadowModel, Timing, Trigger } from './model.js';
-import { round } from './model.js';
 import { timingFromTransition } from './pack.js';
 import { scanStylesheet, isTheme } from './stylesheet.js';
 import type { Decl } from './stylesheet.js';
@@ -30,8 +29,8 @@ export function tailwindDefaults(): Recipe[] {
 }
 
 // ---------------------------------------------------------------- pasted values
-export function readBoxShadow(text: string, name = 'pasted'): Recipe | null {
-  const model = parseBoxShadow(text);
+export function readBoxShadow(text: string, name = 'pasted', rootPx = defaultRootPx): Recipe | null {
+  const model = parseBoxShadow(text, rootPx);
   return model ? { id: name, name, kind: 'shadow', model, source: { reader: 'paste' } } : null;
 }
 /** A CSS transition value or its parts: `transform 200ms cubic-bezier(...)`. */
@@ -57,6 +56,8 @@ export interface ThemeIndex {
   shadowPrefix: string | null; easePrefix: string | null;
   defaults: { duration: number; easing: string };
   decls: Decl[];
+  /** the root font size rem and em lengths were resolved at */
+  rootPx: number;
 }
 const shadowName = /^--(shadow|elevation|shadows|depth|raised)-([\w-]+)$/;
 function readKeyframes(css: string): Map<string, MotionChange[]> {
@@ -76,7 +77,17 @@ function readKeyframes(css: string): Map<string, MotionChange[]> {
   }
   return out;
 }
-export function readTheme(file: string, css: string): ThemeIndex {
+/** The root font size a stylesheet declares for `html` or `:root` (62.5% is 10px), or null when it declares none. */
+export function rootFontSize(css: string): number | null {
+  let found: number | null = null;
+  for (const d of scanStylesheet(css).decls) {
+    if (d.name !== 'font-size' || !/^(?:html|:root)(?:\s*,.*)?$/.test(d.block.header)) continue;
+    const m = /^(\d*\.?\d+)(px|%|rem|em)$/.exec(d.value.trim());
+    if (m) found = Number(m[1]) * (m[2] === '%' ? defaultRootPx / 100 : m[2] === 'rem' || m[2] === 'em' ? defaultRootPx : 1);
+  }
+  return found;
+}
+export function readTheme(file: string, css: string, rootPx = rootFontSize(css) ?? defaultRootPx): ThemeIndex {
   const { decls } = scanStylesheet(css);
   const keyframes = readKeyframes(css);
   const shadows: Recipe[] = [], motions: Recipe[] = [];
@@ -90,8 +101,9 @@ export function readTheme(file: string, css: string): ThemeIndex {
     if (!d.custom) continue;
     const named = shadowName.exec(d.name);
     const theme = isTheme(d.block);
-    const shadow = parseBoxShadow(d.value);
-    if (shadow && (named || (!theme && shadow.layers.some(l => l.x || l.y || l.blur)))) {
+    const shadow = parseBoxShadow(d.value, rootPx);
+    // outside a shadow-named property or @theme, only a value with a colour on every layer is taken for a shadow
+    if (shadow && (named || (!theme && shadow.layers.every(l => l.color) && shadow.layers.some(l => l.x || l.y || l.blur)))) {
       if (/^--(inset-shadow|drop-shadow)-/.test(d.name)) continue;
       const id = named ? named[2]! : d.name.replace(/^--/, '');
       shadows.push({ id, name: d.name.replace(/^--/, ''), kind: 'shadow', model: shadow, source: src(d), token: d.name, ...(named?.[1] === 'shadow' ? { class: `shadow-${id}` } : {}) });
@@ -118,37 +130,48 @@ export function readTheme(file: string, css: string): ThemeIndex {
     }
   }
   const prefixOf = (rs: Recipe[]) => { const counts = new Map<string, number>(); for (const r of rs) { const m = /^(--[a-z]+-)/.exec(r.token ?? ''); if (m) counts.set(m[1]!, (counts.get(m[1]!) ?? 0) + 1); } return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null; };
-  return { file, shadows, motions, shadowPrefix: prefixOf(shadows), easePrefix: prefixOf(motions.filter(m => m.id.startsWith('ease-'))), defaults: { duration, easing }, decls };
+  return { file, shadows, motions, shadowPrefix: prefixOf(shadows), easePrefix: prefixOf(motions.filter(m => m.id.startsWith('ease-'))), defaults: { duration, easing }, decls, rootPx };
 }
 
 // ---------------------------------------------------------------- classes on an element
 export interface ClassReading { shadow?: { class: string; recipe: Recipe }; motion?: MotionModel; transition: { properties: string[]; duration?: number; easing?: string } }
 const variants: Record<string, Trigger> = { hover: 'hover', 'group-hover': 'hover', active: 'press', focus: 'focus', 'focus-visible': 'focus', 'focus-within': 'focus' };
+/** `[&:hover]` is the hover variant written out; any other arbitrary variant is a condition the engine does not read, so it has no trigger. */
+const triggerOf = (variant: string): Trigger | undefined => variants[variant] ?? variants[/^\[&:([\w-]+)\]$/.exec(variant)?.[1] ?? ''];
 const spacingPx = (n: string): number => Number(n) * 4;
+/** `duration-300`, `duration-[300]`, `duration-[0.3s]`, `duration-[300ms]` in ms. */
+function durationOf(utility: string): number | undefined {
+  const plain = /^duration-(\d+)$/.exec(utility);
+  if (plain) return Number(plain[1]);
+  const inner = /^duration-\[([^\]]+)\]$/.exec(utility)?.[1];
+  if (inner === undefined) return undefined;
+  return parseDuration(inner) ?? (/^\d*\.?\d+$/.test(inner) ? Number(inner) : undefined);
+}
 /** The shadow and motion an element's classes say, against the project's own theme first and Tailwind's defaults after. */
-export function readClasses(classes: string[], theme: ThemeIndex | null): ClassReading {
+export function readClasses(classes: string[], theme: ThemeIndex | null, rootPx = theme?.rootPx ?? defaultRootPx): ClassReading {
   const reading: ClassReading = { transition: { properties: [] } };
   const own = new Map((theme?.shadows ?? []).flatMap(r => r.class ? [[r.class, r] as const] : []));
   const defaults = new Map(tailwindDefaults().filter(r => r.kind === 'shadow').map(r => [r.class!, r]));
   const eases = new Map([...tailwindDefaults(), ...(theme?.motions ?? [])].filter(r => r.class?.startsWith('ease-')).map(r => [r.class!, r]));
-  const changes: MotionChange[] = []; let trigger: Trigger | null = null, duration: number | undefined, easing: string | undefined;
+  const changes: MotionChange[] = []; let trigger: Trigger | null = null, duration: number | undefined;
   for (const cls of classes) {
-    const parts = cls.split(':'), utility = parts.pop()!.replace(/^!|!$/g, '');
-    const variant = parts.map(p => variants[p]).find(Boolean);
+    const split = splitVariants(cls), utility = split.utility.replace(/^!|!$/g, '');
+    // a class with any variant is not the element at rest; only the ones that name a state become a change
+    const resting = split.variants.length === 0, variant = split.variants.map(triggerOf).find(Boolean);
     const shadow = own.get(utility) ?? defaults.get(utility);
-    if (/^shadow(?:-|$)/.test(utility) && !variant) {
+    if (/^shadow(?:-|$)/.test(utility) && resting) {
       if (shadow) reading.shadow = { class: utility, recipe: shadow };
-      else if (/^shadow-\[/.test(utility)) { const m = parseBoxShadow(utility.slice(8, -1).replaceAll('_', ' ')); if (m) reading.shadow = { class: utility, recipe: { id: utility, name: utility, kind: 'shadow', model: m, source: { reader: 'classes' } } }; }
+      else if (/^shadow-\[/.test(utility)) { const m = parseBoxShadow(utility.slice(8, -1).replaceAll('_', ' '), rootPx); if (m) reading.shadow = { class: utility, recipe: { id: utility, name: utility, kind: 'shadow', model: m, source: { reader: 'classes' } } }; }
       continue;
     }
     if (/^transition(?:-|$)/.test(utility)) {
       const p = utility === 'transition' ? ['color', 'background-color', 'border-color', 'opacity', 'box-shadow', 'transform'] : utility === 'transition-all' ? ['all'] : utility === 'transition-none' ? [] : utility.startsWith('transition-[') ? utility.slice(12, -1).split(',') : [utility.replace('transition-', '')];
       reading.transition.properties.push(...p); continue;
     }
-    const dur = /^duration-(\d+)$/.exec(utility) ?? /^duration-\[(\d+)ms\]$/.exec(utility);
-    if (dur) { duration = Number(dur[1]); continue; }
+    const ms = durationOf(utility);
+    if (ms !== undefined) { duration = ms; continue; }
     const ease = eases.get(utility);
-    if (ease) { easing = utility; if (ease.kind === 'motion' && ease.model && 'timing' in ease.model) reading.transition.easing = utility; continue; }
+    if (ease) { if (ease.kind === 'motion' && ease.model && 'timing' in ease.model) reading.transition.easing = utility; continue; }
     if (!variant) continue;
     const t = /^(-?)translate-([xy])-(\d+(?:\.\d+)?)$/.exec(utility);
     if (t) { changes.push({ property: t[2]!, from: 0, to: (t[1] ? -1 : 1) * spacingPx(t[3]!) }); trigger ??= variant; continue; }
@@ -156,9 +179,12 @@ export function readClasses(classes: string[], theme: ThemeIndex | null): ClassR
     if (s) { changes.push({ property: 'scale', from: 1, to: Number(s[1]) / 100 }); trigger ??= variant; continue; }
     const o = /^opacity-(\d+)$/.exec(utility);
     if (o) { changes.push({ property: 'opacity', from: 1, to: Number(o[1]) / 100 }); trigger ??= variant; continue; }
-    if (/^shadow-/.test(utility)) { changes.push({ property: 'boxShadow', from: '', to: `var(--${utility})` }); trigger ??= variant; }
+    if (/^shadow-/.test(utility)) {
+      // a named shadow is its custom property; an arbitrary one is its value
+      const value = /^shadow-\[(.*)\]$/.exec(utility)?.[1]?.replaceAll('_', ' ');
+      changes.push({ property: 'boxShadow', from: '', to: value ?? `var(--${utility})` }); trigger ??= variant;
+    }
   }
-  void easing;
   if (duration !== undefined) reading.transition.duration = duration;
   if (changes.length || reading.transition.properties.length || duration !== undefined || reading.transition.easing) {
     const e = reading.transition.easing ? eases.get(reading.transition.easing)?.model : undefined;
@@ -240,4 +266,3 @@ export function readDesignTokens(json: unknown, file = 'tokens.json'): Recipe[] 
 const dim = (v: unknown): string => typeof v === 'number' ? `${v}px` : typeof v === 'object' && v && 'value' in v ? `${(v as { value: number }).value}px` : typeof v === 'string' ? (/^-?[\d.]+$/.test(v) ? `${v}px` : v) : '0';
 
 export const shadowCss = (m: ShadowModel): string => formatBoxShadow(m);
-void round;

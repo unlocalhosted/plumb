@@ -11,15 +11,21 @@ export type VerdictKind = 'same' | 'close' | 'new';
 export interface Verdict { kind: VerdictKind; text: string; differs: string[] }
 export interface Nearest { id: string; name: string; token?: string; class?: string; distance: number }
 
-const alphaOf = (l: ShadowLayer) => 'token' in l.color ? 1 : l.color.a;
+const alphaOf = (l: ShadowLayer) => !l.color || 'token' in l.color ? 1 : l.color.a;
 const empty = (inset: boolean): ShadowLayer => ({ x: 0, y: 0, blur: 0, spread: 0, color: { r: 0, g: 0, b: 0, a: 0 }, inset });
+/**
+ * What one unit of each difference costs against a pixel of offset or spread. Blur counts half because it spreads the same
+ * light over more area; alpha 0.05 is worth about one pixel of offset (a shadow that much darker reads as one that much taller);
+ * a layer that is inset against one that is not is a different shape of shadow, worth four.
+ */
+const WEIGHT = { blur: 0.5, alpha: 20, inset: 4 };
 const size = (l: ShadowLayer) => Math.abs(l.x) + Math.abs(l.y) + l.blur + Math.abs(l.spread);
 function shadowParts(a: ShadowModel, b: ShadowModel): { distance: number; differs: string[] } {
   const n = Math.max(a.layers.length, b.layers.length);
   let total = 0, magnitude = 0; const differs: string[] = [];
   for (let i = 0; i < n; i++) {
     const p = a.layers[i] ?? empty(b.layers[i]!.inset), q = b.layers[i] ?? empty(a.layers[i]!.inset);
-    total += Math.abs(p.x - q.x) + Math.abs(p.y - q.y) + Math.abs(p.blur - q.blur) * 0.5 + Math.abs(p.spread - q.spread) + Math.abs(alphaOf(p) - alphaOf(q)) * 20 + (p.inset !== q.inset ? 4 : 0);
+    total += Math.abs(p.x - q.x) + Math.abs(p.y - q.y) + Math.abs(p.blur - q.blur) * WEIGHT.blur + Math.abs(p.spread - q.spread) + Math.abs(alphaOf(p) - alphaOf(q)) * WEIGHT.alpha + (p.inset !== q.inset ? WEIGHT.inset : 0);
     magnitude += size(p) + size(q) + 1;
     const where = n > 1 ? `layer ${i + 1} ` : '';
     if (!a.layers[i]) differs.push(`yours has an extra layer ${i + 1}`);
@@ -65,6 +71,7 @@ export function distance(a: Recipe, b: Recipe): { distance: number; differs: str
   return isShadow(a.model) && isShadow(b.model) ? shadowParts(a.model, b.model) : motionParts(a.model as MotionModel, b.model as MotionModel);
 }
 
+/** Where a distance stops being the same recipe and stops being a close one, per kind: the verdict boundaries the card copy reads. */
 const thresholds = { shadow: { same: 0.005, close: 0.3 }, motion: { same: 0.02, close: 0.6 } };
 /** The nearest of the project's own recipes to this one, and a plain verdict about it. */
 export function map(recipe: Recipe, yours: Recipe[]): { nearest: Nearest | null; verdict: Verdict } {

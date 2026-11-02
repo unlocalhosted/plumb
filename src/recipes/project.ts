@@ -1,6 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
-import { literal, readMotionObject, readTheme } from './readers.js';
+import { defaultRootPx } from './css.js';
+import { literal, readMotionObject, readTheme, rootFontSize } from './readers.js';
 import type { ThemeIndex } from './readers.js';
 import type { Recipe } from './model.js';
 import { isTheme, scanStylesheet } from './stylesheet.js';
@@ -27,10 +28,14 @@ export interface ProjectIndex {
   yours: Recipe[];
   /** the project's own motion presets (`export const spring = { type: 'spring', ... }`) */
   presets: (Recipe & { exportName: string })[];
+  /** the code files, then the stylesheets, of the project as read (relative paths, forward slashes): what a plan searches for users and import styles */
+  paths: string[];
+  /** the root font size the project's stylesheets declare, else the browser's 16 */
+  rootPx: number;
 }
 
 function presetsIn(file: string, text: string): (Recipe & { exportName: string })[] {
-  if (!/\.[cm]?[jt]s$/.test(file) || !/\b(?:spring|stiffness|duration|ease)\b/.test(text)) return [];
+  if (!/\.[cm]?[jt]sx?$/.test(file) || !/\b(?:spring|stiffness|duration|ease)\b/.test(text)) return [];
   const parsed = parseSync(file, text);
   if (parsed.errors.length) return [];
   const out: (Recipe & { exportName: string })[] = [];
@@ -51,9 +56,10 @@ export function indexProject(input: ProjectInput): ProjectIndex {
   const css = input.files.filter(f => f.path.endsWith('.css'));
   const code = input.files.filter(f => /\.[cm]?[jt]sx?$/.test(f.path));
   const themes: ThemeIndex[] = [];
+  const rootPx = css.map(f => rootFontSize(f.text)).find((n): n is number => n !== null) ?? defaultRootPx;
   let tailwindEntry: string | null = null, themeFile: string | null = null, cssVars: string[] = [];
   for (const f of css) {
-    const index = readTheme(f.path, f.text);
+    const index = readTheme(f.path, f.text, rootPx);
     const blocks = scanStylesheet(f.text).blocks;
     if (/@import\s+["']tailwindcss/.test(f.text) || /@import\s+["']tailwindcss\//.test(f.text)) tailwindEntry ??= f.path;
     const hasTheme = blocks.some(isTheme);
@@ -79,6 +85,7 @@ export function indexProject(input: ProjectInput): ProjectIndex {
       dataState: /@radix-ui\/|@base-ui|@ariakit|vaul|sonner/.test(Object.keys(input.dependencies).join(' ')) || code.some(f => /data-state|data-\[state/.test(f.text)),
       classes: top[1] ? top[0] : 'plain',
     },
-    themes, yours, presets,
+    themes, yours, presets, rootPx,
+    paths: [...code.map(f => f.path), ...css.map(f => f.path)],
   };
 }
