@@ -261,7 +261,7 @@ export class FixPanel {
       said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#live().filter((x) => !noteOf(x)).length,
       // the problems inside are the fix panel's: the card steps aside for them
-      show: () => { this.#editor.close(); this.hold(0); },
+      show: () => this.#handOver(this.#editor),
       closed: () => { this.#html = ''; this.render(); },
       elsewhere: (el) => stampMates(el),
       dark: () => darkGround(),
@@ -275,13 +275,14 @@ export class FixPanel {
       bar: () => this.rect,
       said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#live().filter((x) => !noteOf(x)).length,
-      show: () => { this.#card.close(); this.hold(0); },
+      show: () => this.#handOver(this.#card),
       closed: () => { this.#html = ''; this.render(); },
       elsewhere: (el) => stampMates(el),
       dark: () => darkGround(),
       why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
       // working in the card: the cause Blueprint would put in hand once the element is read isn't, and one in hand is put down
       release: () => { this.#host.unwant?.(); this.release(); },
+      climb: (el) => this.#host.climb?.(el),
     });
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
@@ -319,10 +320,14 @@ export class FixPanel {
   // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open
   card(el) { if (this.#holding) this.release(); this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
   get carding() { return this.#card.open; }
+  // the words' card is open (not an element's)
+  get texting() { return this.#editor.open; }
   get editing() { return this.#editor.open ? this.#editor.target : this.#card.open ? this.#card.target : null; }
   // a file was written or undone: the element in the editor (or the card) is read again
   changed() { this.#editor.changed(); this.#card.changed(); }
   get holding() { return this.#holding; }
+  // a card hands the screen to the fixes: the element's own cause first, else the first one inside it
+  #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
   show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; this.#last = null; this.#resumeAt = null; if (this.#system) this.#system.open = false; this.#preview.clear((el, f) => f()); this.#light?.clear(); } this.render(); }
@@ -675,11 +680,11 @@ export class FixPanel {
     if (!this.#holding && this.#editor.open) {
       // the card's keys first: a '.' typed into a number is the number's
       if (this.#editor.key(k)) return true;
-      if (k === '.' && this.#live().length) { this.#editor.close(); this.hold(0); return true; }
+      if (k === '.' && this.#live().length) { this.#handOver(this.#editor); return true; }
     }
     if (!this.#holding && this.#card.open) {
       if (this.#card.key(k)) return true;
-      if (k === '.' && this.#live().length) { this.#card.close(); this.hold(0); return true; }
+      if (k === '.' && this.#live().length) { this.#handOver(this.#card); return true; }
     }
     if (!this.#holding && this.#system?.open) {
       if (k === 'Escape') { this.#closeStyles(); return true; }

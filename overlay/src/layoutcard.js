@@ -198,7 +198,8 @@ export class Spacing {
   };
   // scroll: one notch (or ~40px of trackpad) is one step; the page doesn't scroll under a band
   #wheel = (e) => {
-    if (!this.#on) return;
+    // Alt+scroll walks the tree (widget.js), never a spacing step
+    if (!this.#on || e.altKey) return;
     const b = this.#act?.band ?? this.#hover;
     if (!b || this.#host.ours?.(e)) return;
     e.preventDefault(); e.stopPropagation();

@@ -72,10 +72,16 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
   assert.equal((await read(page)).state, 'select', 'letting go of Alt does not end Select');
 
-  // Picking opens blueprint on the element with its cause in the fix panel (one interface), and ends Select.
+  // Picking opens blueprint on the element, in its card (one interface), and ends Select; '.' puts its cause in hand.
   const row = await page.locator('#sync-row').boundingBox();
   await page.mouse.move(row.x + row.width / 2, row.y + 3);
   await page.mouse.click(row.x + row.width / 2, row.y + 3);
+  // the card owns the screen (docs/briefs/qa-fixes.md, cause 3): it opens on the row, nothing in hand; '.' hands over to
+  // the fixes, the row's own cause in hand
+  await page.locator('plumb-overlay').locator('.ec .drill').first().waitFor({ timeout: 20000 });
+  assert.match(await page.locator('plumb-overlay').locator('.ec .hd .n').innerText(), /SyncRow/);
+  assert.equal(await page.locator('plumb-overlay').locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
+  await page.keyboard.press('.');
   const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
   await held.waitFor({ timeout: 20000 });
   assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the row\'s own cause is in hand');

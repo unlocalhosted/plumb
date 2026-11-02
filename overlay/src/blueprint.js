@@ -103,6 +103,7 @@ export class Blueprint {
       swaps: (writes, said) => this.#swapsWrite(writes, said),
       batch: (steps, said) => this.#batchWrite(steps, said),
       unwant: () => { this.#want = null; },
+      climb: (el) => this.climbTo(el),
       // why an element can't be placed in the source, as the panel says it
       why: async (el) => { const state = await this.#host.readMarks?.(el); return state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : null; },
     });
@@ -147,7 +148,7 @@ export class Blueprint {
     this.active ? this.leave(options) : this.enter(options);
   }
 
-  enter({ instant = false, scope = null, card = false } = {}) {
+  enter({ instant = false, scope = null, card = false, box = false } = {}) {
     if (this.active) return;
     if (this.#host.health === 'failed') return this.#set('refused');
     clearTimeout(this.#timer);
@@ -167,7 +168,7 @@ export class Blueprint {
     } else this.#reader.refresh(); // turned back on while fading out: draw what's already read
     this.#glass.on();
     this.#fix.show(true);
-    if (scope && hasText(scope)) this.#fix.edit(scope);
+    if (scope && hasText(scope) && !box) this.#fix.edit(scope);
     else if (scope && card) this.#fix.card(scope);
     this.#set('entering');
     if (instant || still()) return this.#on();
@@ -472,12 +473,38 @@ export class Blueprint {
   // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it. The card
   // owns the screen: no cause is put in hand while it is open (the panel is its one line; '.' hands over to the fixes).
   // Without a card (a script's pin, a pick from a list) the element's own cause is put in hand once it is read
-  enterAt(el, { card = false } = {}) {
+  // `box`: the element as a box even when it holds words (a level climbed or walked up to); `trail`: a climb, which keeps
+  // the way back down
+  enterAt(el, { card = false, box = false, trail = false } = {}) {
+    if (!trail) this.#trail = [];
     if (this.active && this.#scope && !this.#scope.contains(el)) this.leave({ instant: true });
     // words: their own values open in the fix panel (texteditor.js), problem or not
-    if (hasText(el)) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
+    if (hasText(el) && !box) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
     this.#want = card ? null : el;
-    if (this.active) { if (card) this.#fix.card(el); else this.#holdWanted(this.#settled); } else this.enter({ scope: el, card });
+    if (this.active) { if (card) this.#fix.card(el); else this.#holdWanted(this.#settled); } else this.enter({ scope: el, card, box });
+  }
+  // ⌥↑ ⌥↓ and the card's levels (docs/briefs/qa-fixes.md, cause 4): up from words is the element that holds them, up
+  // from an element its parent (never <body>); down retraces the way up, one level at a time
+  #trail = []; // [{ el, words }]: where each climb up started
+  climb(dir) {
+    const now = this.#fix.editing; if (!now) return;
+    if (dir > 0) {
+      const words = this.#fix.texting, up = words ? now : now.parentElement;
+      if (!up || up === document.body || up === document.documentElement) return;
+      this.#trail.push({ el: now, words });
+      return this.enterAt(up, { card: true, box: true, trail: true });
+    }
+    let back = this.#trail.pop();
+    while (back && !back.el.isConnected) back = this.#trail.pop();
+    if (!back) return;
+    if (back.words) this.enterAt(back.el, { trail: true }); else this.enterAt(back.el, { card: true, box: true, trail: true });
+  }
+  // a level named in the card's header: up to it, every level passed kept for the way back
+  climbTo(el) {
+    const now = this.#fix.editing; if (!now || !el?.contains(now) || el === now) return;
+    this.#trail.push({ el: now, words: this.#fix.texting });
+    for (let p = now.parentElement; p && p !== el; p = p.parentElement) this.#trail.push({ el: p, words: false });
+    this.enterAt(el, { card: true, box: true, trail: true });
   }
   // One value of one element, set on its line of code (the text editor's pick): remembered first, as every write is,
   // so a page the write reloads comes back to the same element with the write said and its Undo

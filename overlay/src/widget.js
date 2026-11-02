@@ -17,7 +17,9 @@
  *    select    Select pressed or Alt held: the mark takes the instrument colour and the line says how to leave
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
-const WALK = { step: 48, pause: 260 }; // px of scroll per level; ms of stillness that resets the travel
+const WALK = { step: 48, pause: 260 };
+// what a pointer reaches: an icon's <path> or <text> is its <svg> (a box-shadow or a layout is the svg's, never a part's)
+const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
@@ -359,6 +361,8 @@ class PlumbOverlay extends HTMLElement {
     addEventListener('blur', this.#disarm);
     addEventListener('dblclick', this.#onDblClick, true);
     addEventListener('pointerdown', this.#onDown, { capture: true, passive: true });
+    // Alt on a pointer event is an Alt+click, keydown or not (Alt held since before the page loaded, a synthetic click)
+    for (const type of ['pointermove', 'pointerdown', 'click']) addEventListener(type, this.#altSeen, true);
     this.#resume();
   }
 
@@ -419,6 +423,7 @@ class PlumbOverlay extends HTMLElement {
     removeEventListener('blur', this.#disarm);
     removeEventListener('dblclick', this.#onDblClick, true);
     removeEventListener('pointerdown', this.#onDown, { capture: true });
+    for (const type of ['pointermove', 'pointerdown', 'click']) removeEventListener(type, this.#altSeen, true);
     clearTimeout(this.#healthTimer); clearTimeout(this.#foldTimer);
     removeEventListener('resize', this.#sideSoon);
     removeEventListener('hashchange', this.#sideSoon);
@@ -790,6 +795,13 @@ class PlumbOverlay extends HTMLElement {
       if (s?.chain) this.#step(s.index + (event.key === 'ArrowUp' ? 1 : -1));
       return;
     }
+    // ⌥↑ ⌥↓ with a card open (an element's or words'): the card moves to the level above, or back down the way it came
+    if (!this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown') && this.#blueprint?.editing) {
+      event.preventDefault(); event.stopPropagation();
+      this.#disarm();
+      this.#blueprint.climb(event.key === 'ArrowUp' ? 1 : -1);
+      return;
+    }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
     if (event.key === 'Alt' && !event.repeat) this.#arm();
@@ -810,11 +822,23 @@ class PlumbOverlay extends HTMLElement {
   }
   // Select stays on until an element is picked or Esc; Alt is held, so letting go ends it.
   #onKeyUp = event => { if (event.key === 'Alt' && !this.#sticky) this.#disarm(); };
+  // The pointer says Alt is held when the keyboard didn't: armed now, and this very event is handled as armed (the
+  // listeners arming adds don't hear the event that added them). Armed this way, a pointer event without Alt lets go.
+  #byPointer = false;
+  #altSeen = event => {
+    if (!event.altKey) { if (this.#armed && this.#byPointer && !this.#sticky) this.#disarm(); return; }
+    if (this.#armed || this.#ours(event) || event.metaKey || event.ctrlKey) return;
+    this.#arm(); this.#byPointer = true;
+    if (event.type === 'pointermove') this.#onMove(event);
+    else if (event.type === 'pointerdown') this.#swallow(event);
+    else this.#onClick(event);
+  };
 
   #arm(sticky = false) {
     this.#ready?.dismiss();
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
-    this.#armed = true; this.#sticky = sticky;
+    this.#armed = true; this.#sticky = sticky; this.#byPointer = false;
+    this.toggleAttribute('data-armed', true); // the drawings on the page step out of the pointer's way
     this.#help?.hint('inspect');
     this.#blueprint?.yieldInput(true);
     addEventListener('pointermove', this.#onMove, true);
@@ -832,7 +856,8 @@ class PlumbOverlay extends HTMLElement {
   }
   #disarm = () => {
     if (!this.#armed) return;
-    this.#armed = false; this.#sticky = false; clearTimeout(this.#hoverTimer);
+    this.#armed = false; this.#sticky = false; this.#byPointer = false; clearTimeout(this.#hoverTimer);
+    this.removeAttribute('data-armed');
     this.#blueprint?.yieldInput(false);
     this.#hover?.controller.abort();
     removeEventListener('pointermove', this.#onMove, true);
@@ -855,7 +880,7 @@ class PlumbOverlay extends HTMLElement {
 
   #onMove = event => {
     if (this.#ours(event)) return;
-    const under = document.elementFromPoint(event.clientX, event.clientY);
+    const under = reachable(document.elementFromPoint(event.clientX, event.clientY));
     // Walking the tree (two-finger scroll) holds its level while the pointer stays on the element it started from.
     if (this.#walk && under === this.#walk.chain[0]) return;
     this.#walk = null;
@@ -929,14 +954,16 @@ class PlumbOverlay extends HTMLElement {
     if (this.#ours(event)) return;
     event.preventDefault(); event.stopPropagation();
     // The click's own point decides, not the last hover: a pointer can arrive without moving first.
-    const under = document.elementFromPoint(event.clientX, event.clientY);
-    const element = this.#walk?.at && under === this.#walk.chain[0] ? this.#walk.chain[this.#walk.at] : under ?? this.#hover?.element;
+    const under = reachable(document.elementFromPoint(event.clientX, event.clientY));
+    // a level walked up to is a box chosen on purpose: its card, even when it holds words of its own
+    const walked = !!this.#walk?.at && under === this.#walk.chain[0];
+    const element = walked ? this.#walk.chain[this.#walk.at] : under ?? this.#hover?.element;
     this.#walk = null;
     if (element && element !== document.documentElement && element !== document.body) {
-      // One interface: the pick opens blueprint on that element, its cause in the fix panel. Alt is let go with it.
+      // One interface: the pick opens blueprint on that element, in its card. Alt is let go with it.
       this.#disarm();
       this.#ready?.dismiss();
-      this.#blueprint.enterAt(element, { card: true });
+      this.#blueprint.enterAt(element, { card: true, box: walked });
     }
   };
 

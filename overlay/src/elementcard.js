@@ -65,7 +65,13 @@ export const ELEMENT_CARD_CSS = `
   @keyframes ec-pop { from { opacity: 0; scale: .96; } }
   .ec button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
   .ec kbd { font: 500 10px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1); color: var(--ink-2); }
-  .ec .hd { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px 8px; }
+  .ec .hd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 12px 14px 8px; }
+  /* the levels above it: a click (or ⌥↑) moves the card up */
+  .ec .ups { flex-basis: 100%; display: flex; align-items: center; gap: 1px; min-width: 0; margin: -6px 0 -2px -5px; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; overflow: hidden; }
+  .ec .ups .up { padding: 3px 5px; border-radius: 5px; color: var(--ink-3); max-width: 96px; overflow: hidden; text-overflow: ellipsis; transition: background 120ms, color 120ms; }
+  @media (hover: hover) and (pointer: fine) { .ec .ups .up:hover { background: var(--wash); color: var(--ink-2); } }
+  .ec .ups .up:focus-visible { outline: 1.5px solid var(--sky); outline-offset: -1px; }
+  .ec .ups i { font-style: normal; opacity: .6; } .ec .ups kbd { margin-left: auto; }
   .ec .hd .n { font: 600 13px/1.2 ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ec .hd .n span { color: var(--ink-3); font-weight: 500; }
   .ec .hd .at { margin-left: auto; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; }
@@ -250,6 +256,7 @@ export class ElementCard {
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       if (b.classList.contains('show')) return this.#host.show?.();
+      if (b.dataset.up) { let up = this.#target; for (let i = 0; i < +b.dataset.up && up; i++) up = up.parentElement; return up && this.#host.climb?.(up); }
       if (this.#view === 'layout' && this.#layout.click(b)) return;
       if (b.dataset.open) return this.#drill(b.dataset.open);
       if (b.classList.contains('back')) return this.#back();
@@ -585,12 +592,19 @@ export class ElementCard {
     if (this.#wrong && this.#state === 'ready') body += `<div class="down" role="alert">${esc(this.#wrong)}</div>`;
     const reach = this.#state === 'ready' && !this.#locked ? this.#reach() : 0;
     const problems = this.#host.problems?.() ?? 0;
-    this.#el.innerHTML = `<div class="hd"><span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
+    this.#el.innerHTML = `<div class="hd">${this.#upsHtml()}<span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
       + (reach ? `<div class="reach">${esc(FIX.text.reach(reach))}</div>` : '')
       + `<div class="body"${this.#dir ? ` data-in="${this.#dir}"` : ''}>${body}</div>`
       + (problems ? `<div class="more"><span>${esc(FIX.text.problems(problems))}</span><button type="button" class="show">${FIX.text.show} <kbd>.</kbd></button></div>` : '');
     this.#dir = '';
     this.#place();
+  }
+  // the levels above the element, nearest last (up to three, never <body>), each a way up; ⌥↑ is the nearest
+  #upsHtml() {
+    const ups = [];
+    for (let p = this.#target?.parentElement, i = 1; p && p !== document.body && p !== document.documentElement && i <= 3; p = p.parentElement, i++) ups.unshift([i, p]);
+    if (!ups.length) return '';
+    return `<div class="ups" role="group" aria-label="${esc(W.levels)}">${ups.map(([i, p]) => `<button type="button" class="up" data-up="${i}" title="${esc(i === 1 ? W.upOne : W.upTo(p.localName))}">${esc(componentOf(p) ?? p.localName)}</button><i aria-hidden="true">›</i>`).join('')}<kbd title="${esc(W.upOne)}">⌥↑</kbd></div>`;
   }
   // Layout ›: the mode and its controls, the spacing keys, then Writes: the class changes, line by line
   #layoutHtml(name, at) {

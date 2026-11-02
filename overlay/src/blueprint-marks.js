@@ -83,6 +83,8 @@ export const MARKS_CSS = `
   .bp .bp-hint.pill .arr, .bp .bp-hint.pill .n { opacity: .6; } .bp .bp-hint.pill .say { font: 500 12px/1.3 var(--pl-sans); white-space: normal; max-width: 300px; }
   .bp .bp-hint.pill:has(.say) { height: auto; padding: 6px 10px; }
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
+  /* Alt held: the pointer reaches the page through the drawings (an Alt+click or Alt+scroll is aimed at the element) */
+  :host([data-armed]) .bp, :host([data-armed]) .bp * { pointer-events: none !important; }
   .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
   .bp .hit[data-under], .bp svg[data-through] .hit { pointer-events: none; }
   /* Space held: the page is used, so a glow lets the click through to its element like the glass does */

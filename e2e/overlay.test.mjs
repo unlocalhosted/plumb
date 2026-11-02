@@ -39,7 +39,7 @@ async function onRow(page) {
   return { x: b.x + b.width / 2, y: b.y + 3 };
 }
 
-test('Alt-hover names an element; Alt+click opens blueprint with that element\'s cause in hand, and no card', { timeout: 90000 }, async t => {
+test('Alt-hover names an element; Alt+click opens blueprint on it in its card, and . puts the element\'s own cause in hand', { timeout: 90000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const { root, url } = await demo(t);
   const page = await launched.newPage({ reducedMotion: 'reduce' });
@@ -62,6 +62,12 @@ test('Alt-hover names an element; Alt+click opens blueprint with that element\'s
   // cause of the page around it (the page's wrappers are read first).
   await page.mouse.click(point.x, point.y);
   await page.keyboard.up('Alt');
+  // the card owns the screen (docs/briefs/qa-fixes.md, cause 3): it opens on the row, nothing in hand; '.' hands over to
+  // the fixes, the row's own cause in hand
+  await overlay.locator('.ec .drill').first().waitFor({ timeout: 20000 });
+  assert.match(await overlay.locator('.ec .hd .n').innerText(), /SyncRow/);
+  assert.equal(await overlay.locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
+  await page.keyboard.press('.');
   const held = overlay.locator('.fx .cause .cls');
   await held.waitFor({ timeout: 20000 });
   const own = await page.locator('#sync-row').getAttribute('class');

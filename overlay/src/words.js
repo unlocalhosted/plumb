@@ -418,6 +418,10 @@ export const FIX = {
     motion: 'Motion',
     none: 'None',
     setInCode: 'Set in code',
+    // the levels above an element, in its card's header (⌥↑ goes up one, ⌥↓ back down)
+    levels: 'Levels above it',
+    upOne: 'Up a level (⌥↑). ⌥↓ comes back.',
+    upTo: (tag) => `Up to this ${tag}`,
     // where its classes are written (locate.js classSiteOf): nowhere it can be changed, or in more than one place
     builtInCode: 'Its classes are built in code, so they can’t be changed here. Change them in your code.',
     splitClasses: 'These classes are written in different places, so they can’t be changed in one go. Change them in your code.',

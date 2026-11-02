@@ -97,6 +97,12 @@ test('two-finger scroll walks the tree under Alt: up to parents, down back, the 
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tag .path .here')?.textContent === 'SyncRow');
   await page.mouse.down(); await page.mouse.up();
   await page.keyboard.up('Alt');
+  // the card owns the screen (docs/briefs/qa-fixes.md, cause 3): it opens on the walked level, nothing in hand; '.' hands over to
+  // the fixes, the walked level's cause in hand
+  await page.locator('plumb-overlay').locator('.ec .drill').first().waitFor({ timeout: 20000 });
+  assert.match(await page.locator('plumb-overlay').locator('.ec .hd .n').innerText(), /SyncRow/);
+  assert.equal(await page.locator('plumb-overlay').locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
+  await page.keyboard.press('.');
   const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
   await held.waitFor({ timeout: 20000 });
   assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the walked level\'s cause is in hand');
