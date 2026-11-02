@@ -127,6 +127,7 @@ export class Session extends EventEmitter {
   trace(...args: Parameters<Engine['trace']>) { return this.call('trace', args); }
   undoChange(...args: Parameters<Engine['undoChange']>) { return this.call('undoChange', args); }
   undoGroup(...args: Parameters<Engine['undoGroup']>) { return this.call('undoGroup', args); }
+  undoChanges(...args: Parameters<Engine['undoChanges']>) { return this.call('undoChanges', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }
   spacingUnit(...args: Parameters<Engine['spacingUnit']>) { return this.call('spacingUnit', args); }
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }

@@ -1503,8 +1503,10 @@ export class Session extends EventEmitter {
     };
   }
   /** The inverse of each change, one guarded write per file; a change whose place no longer holds what it wrote refuses
-   * the lot, and a file that fails puts the files already written back as they were. */
-  private async undoChanges(ids: string[]): Promise<UndoChangesResult> {
+   * the lot, and a file that fails puts the files already written back as they were. The timeline's Go back to here:
+   * every change after a point, all or nothing. */
+  async undoChanges(ids: string[]): Promise<UndoChangesResult> {
+    if (!Array.isArray(ids) || !ids.length || ids.some(id => typeof id !== 'string' || !id.trim())) throw new UsageError('Undo takes the ids of the changes.');
     const records = this.log.all(), states = new Map(this.log.trace(this.reader()).map(entry => [entry.id, entry]));
     const targets = ids.map(id => {
       const record = records.find(r => r.id === id), state = states.get(id);

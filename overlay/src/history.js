@@ -13,10 +13,16 @@
  *            alone) or an undo (a return notch); loading shows ghost ticks; empty and error say so in one line
  *  undo      Undo change (⌫) and Undo step (⇧⌫) act on the pointed change; an undo is itself a tick. A refusal
  *            shakes the tick and says what to do instead
+ *  reload    an undo from the timeline that makes the dev server reload the page reopens it there, within 15s
  *  keys      the playhead is a slider: ←/→ one change, ⇧←/⇧→ one step, Home/End; Esc closes, back to the button
  *  page      the pointed change's element is outlined on the page (layer 2): the elements stamped at the JSX that holds
  *            the change's line (every row of a list), scrolled into view when they are all off screen, kept on them as
  *            the page scrolls; a change with nothing on this page says so in the pill
+ *  past      the playhead left of Now shows the page as it was there (layer 3), written nowhere: every live change to
+ *            its right is undone on its elements, newest first (the class it added comes off, the classes it took off go
+ *            on as inline styles from the project's own Tailwind via POST try; a text change swaps its words back). The
+ *            strip's edge turns sky, those ticks go hollow, and Go back to here (↵) undoes them all in one write. Esc,
+ *            or the playhead back at Now, puts the page back exactly
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
 import { esc } from './choices.js';
@@ -27,6 +33,8 @@ const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 
 
 const HOLD = 6000;
 const RESUME = 'plumb:wrote';
+// the timeline wrote: a dev server that reloads the page after it brings the timeline back, at Now, and says what was done
+const RESUME_TT = 'plumb:timeline';
 const short = (file) => String(file ?? '').split('/').pop();
 const lawsOf = (c) => (Array.isArray(c?.meta?.laws) ? c.meta.laws : []).map((l) => (typeof l === 'string' ? l : l?.name)).filter(Boolean);
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -53,6 +61,8 @@ export const HISTORY_CSS = `
     padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); color: var(--pl-ink);
     background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
   .tt[hidden] { display: none; }
+  /* in the past: the page isn't current, and the strip says so at its edge */
+  .tt[data-past] { box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--pl-instrument) 55%, transparent); }
   .tt .tt-glyph { flex: none; align-self: center; width: 20px; height: 20px; display: grid; place-items: center; color: var(--pl-ink-2); }
   .tt .tt-glyph svg, .tt .tt-x svg { width: 14px; height: 14px; }
   .tt .tt-track { position: relative; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: visible; scrollbar-width: none; outline: none; padding-top: 6px; touch-action: pan-x; cursor: default; }
@@ -69,6 +79,7 @@ export const HISTORY_CSS = `
   .tt .tt-tick[data-state="changed"] { width: 4px; background: repeating-linear-gradient(-45deg, var(--pl-soft) 0 1.5px, var(--pl-soft-bg) 1.5px 3px); }
   .tt .tt-tick[data-undo] { position: relative; }
   .tt .tt-tick[data-undo]::before { content: ""; position: absolute; top: -3px; left: -2px; width: 3px; height: 2px; border-top: 1px solid currentColor; border-left: 1px solid currentColor; color: var(--pl-ink); }
+  .tt .tt-tick[data-ahead] { width: 4px; background: transparent; box-shadow: inset 0 0 0 1px var(--pl-instrument); }
   .tt .tt-tick[aria-current="true"] { height: 18px; }
   .tt .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { background: var(--pl-accent); }
   .tt .tt-tick[aria-current="true"][data-state="undone"] { box-shadow: inset 0 0 0 1px var(--pl-accent); }
@@ -93,6 +104,9 @@ export const HISTORY_CSS = `
   .tt .tt-pill[data-kind="error"] { font: var(--pl-card-meta); white-space: normal; color: var(--pl-off); }
   .tt .tt-say { align-self: center; margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .tt .tt-acts { flex: none; align-self: center; display: flex; gap: var(--pl-space-2); }
+  .tt .tt-acts button[hidden] { display: none; }
+  .tt .tt-acts button.primary { background: var(--pl-action-soft); color: var(--pl-on-action); }
+  @media (hover: hover) and (pointer: fine) { .tt .tt-acts button.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 80%, var(--pl-action)); } }
   .tt .tt-acts kbd { margin-inline-start: var(--pl-space-3); font: 500 10px/1 var(--pl-mono); color: var(--pl-ink-2); }
   .tt .tt-acts button:disabled kbd { color: var(--pl-ink-3); }
   @media (pointer: coarse) { .tt .tt-acts kbd { display: none; } }
@@ -160,6 +174,7 @@ export class History {
   #toast; #strip; #button; #host; #timer = 0; #last = null;
   #steps = []; #flat = []; #at = -1; #busy = false; #status = 'idle'; #warn = null; #seen = new Set(); #press = false;
   #marks; #marked = []; #follow = 0;
+  #decl = new Map(); #shown = []; #past = false;
 
   // button: the dock's history button; host: announce(text), changed()
   constructor(root, { button, host }) {
@@ -180,7 +195,7 @@ export class History {
     this.#toast.addEventListener('click', (e) => { if (e.target.closest('.undo') && this.#last) this.undo(this.#last); });
     this.#strip.addEventListener('click', (e) => {
       const act = e.target.closest('button[data-act]')?.dataset.act;
-      if (act === 'close') this.toggle(false); else if (act) this.#undo(act);
+      if (act === 'close') this.toggle(false); else if (act === 'back') this.#goBack(); else if (act) this.#undo(act);
     });
     this.#strip.addEventListener('keydown', (e) => this.#key(e));
     this.#strip.addEventListener('pointerdown', (e) => { const track = e.target.closest('.tt-track'); if (!track || e.button !== 0) return; this.#press = true; track.setPointerCapture(e.pointerId); this.#pointAt(e.clientX); });
@@ -231,7 +246,12 @@ export class History {
     this.#grow();
     this.#load();
   }
-  escape() { if (this.open) return this.toggle(false), true; return false; }
+  // Esc: from the past back to Now first; at Now, close
+  escape() {
+    if (!this.open) return false;
+    if (this.#past && this.#flat.length) { this.#warn = null; this.#point(this.#flat.length - 1); return true; }
+    return this.toggle(false), true;
+  }
 
   // the dock grows into the strip: clipped from the dock's box to the strip's, on the spring; still motion fades
   #grow(back = false) {
@@ -249,19 +269,26 @@ export class History {
   }
   async #close() {
     const strip = this.#strip;
+    try { sessionStorage.removeItem(RESUME_TT); } catch {}
+    this.#show(-1);
     this.#mark(null);
     await this.#grow(true);
     strip.hidden = true;
     this.#button.focus({ preventScroll: true });
   }
 
-  async #load() {
+  async #load(tries = 0) {
     try {
       const said = await request('trace', {});
       this.#steps = stepsOf(said?.changes ?? []);
       this.#flat = this.#steps.flatMap((s) => s.changes.map((c) => ({ ...c, step: s })));
       this.#status = this.#flat.length ? 'ready' : 'empty';
-    } catch { this.#status = 'error'; }
+      await this.#learn();
+    } catch {
+      // reopened after a reload, the server may still be starting: wait for it a little
+      if (tries > 0) { setTimeout(() => this.#load(tries - 1), 500); return; }
+      this.#status = 'error';
+    }
     if (this.#at < 0 || this.#at >= this.#flat.length) this.#at = this.#flat.length - 1;
     if (!this.open) return;
     this.#render();
@@ -282,7 +309,7 @@ export class History {
     for (const c of this.#flat) this.#seen.add(c.id);
     this.#strip.innerHTML = `${glyph}<div class="tt-track" role="slider" tabindex="0" aria-label="${esc(T.slider)}"><div class="tt-steps">${steps}<span class="tt-head" aria-hidden="true"${ghost ? ' hidden' : ''}></span></div></div>`
       + `<span class="tt-now" aria-hidden="true">${esc(T.now)}</span><div class="tt-pill" aria-hidden="true" hidden></div>`
-      + `<div class="tt-acts"><button type="button" data-act="change" disabled>${esc(T.undoChange)}<kbd>⌫</kbd></button><button type="button" data-act="step" disabled>${esc(T.undoStep)}<kbd>⇧⌫</kbd></button></div>${x}`;
+      + `<div class="tt-acts"><button type="button" class="primary" data-act="back" hidden>${esc(T.goBack)}<kbd>↵</kbd></button><button type="button" data-act="change" disabled>${esc(T.undoChange)}<kbd>⌫</kbd></button><button type="button" data-act="step" disabled>${esc(T.undoStep)}<kbd>⇧⌫</kbd></button></div>${x}`;
     if (!ghost) this.#point(this.#at, true);
   }
 
@@ -309,11 +336,15 @@ export class History {
     const laws = lawsOf(c);
     track?.setAttribute('aria-valuemin', '1'); track?.setAttribute('aria-valuemax', String(n)); track?.setAttribute('aria-valuenow', String(this.#at + 1));
     track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from, c.to, laws));
+    // the page as it was here: everything to the right previewed undone; the marks read the page after it
+    this.#show(this.#at);
+    for (const t of this.#strip.querySelectorAll('.tt-tick[data-i]')) t.toggleAttribute('data-ahead', +t.dataset.i > this.#at && live(this.#flat[+t.dataset.i]));
     const els = this.#mark(c);
     this.#pill(c, tick, laws, instant, els.length > 0);
-    const [change, step] = this.#strip.querySelectorAll('.tt-acts button');
+    const [back, change, step] = this.#strip.querySelectorAll('.tt-acts button');
+    if (back) { back.hidden = !this.#past; back.disabled = this.#busy; }
     if (change) change.disabled = this.#busy || !live(c);
-    if (step) step.disabled = this.#busy || !c.step.changes.some(live);
+    if (step) { step.hidden = this.#past; step.disabled = this.#busy || !c.step.changes.some(live); }
   }
 
   #pill(c, tick, laws, instant, onPage = true) {
@@ -380,6 +411,7 @@ export class History {
       else { const s = this.#steps.indexOf(c?.step) + dir, step = this.#steps[Math.max(0, Math.min(this.#steps.length - 1, s))]; next = this.#flat.findIndex((f) => f.id === (dir < 0 ? step.changes[0] : step.changes.at(-1)).id); }
     } else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = n - 1;
+    else if (e.key === 'Enter' && this.#past) { e.preventDefault(); e.stopPropagation(); this.#goBack(); return; }
     else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); this.#undo(e.shiftKey ? 'step' : 'change'); return; }
     else return;
     e.preventDefault(); e.stopPropagation();
@@ -393,13 +425,17 @@ export class History {
     if (kind === 'change' && !live(c)) return this.#refuse(c, reasonOf(c), 'warn');
     if (kind === 'step' && !c.step.changes.some(live)) return this.#refuse(c, reasonOf(c), 'warn');
     const targets = kind === 'change' ? [c] : c.step.changes.filter(live);
+    this.#show(-1);
     this.#busy = true;
     for (const t of targets) this.#strip.querySelector(`.tt-tick[data-id="${CSS.escape(t.id)}"]`)?.classList.add('busy');
     this.#point(this.#at);
     this.#host.announce?.(T.undoing);
+    this.#remember();
     try {
       const done = kind === 'change' ? await post('undo-change', { id: c.id }) : await post('undo-group', { group: c.group });
-      this.#host.announce?.(kind === 'change' ? T.undone(c.from, c.to) : T.undoneStep(done?.undone?.length ?? targets.length));
+      const said = kind === 'change' ? T.undone(c.from, c.to) : T.undoneStep(done?.undone?.length ?? targets.length);
+      this.#remember(said);
+      this.#host.announce?.(said);
       this.#at = Infinity;
       this.#busy = false;
       await this.#load();
@@ -408,6 +444,86 @@ export class History {
       this.#busy = false;
       const message = error?.message ?? '';
       this.#refuse(c, /outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : /already undone/.test(message) ? T.undoneAlready : T.failed(message), 'warn');
+    }
+  }
+
+  #remember(said = null) { try { sessionStorage.setItem(RESUME_TT, JSON.stringify({ at: Date.now(), said })); } catch {} }
+
+  // Go back to here: every live change right of the playhead, undone in one write, all or nothing
+  async #goBack() {
+    if (!this.#past || this.#busy) return;
+    const ahead = this.#flat.slice(this.#at + 1).filter(live), c = this.#flat[this.#at];
+    if (!ahead.length) return;
+    this.#show(-1);
+    this.#busy = true;
+    for (const t of ahead) this.#strip.querySelector(`.tt-tick[data-id="${CSS.escape(t.id)}"]`)?.classList.add('busy');
+    this.#host.announce?.(T.undoing);
+    this.#remember();
+    try {
+      const done = await post('undo-changes', { ids: ahead.map((t) => t.id) });
+      const said = T.undoneStep(done?.undone?.length ?? ahead.length);
+      this.#remember(said);
+      this.#host.announce?.(said);
+      this.#at = Infinity;
+      this.#busy = false;
+      await this.#load();
+      this.#host.changed?.();
+    } catch (error) {
+      this.#busy = false;
+      const message = error?.message ?? '';
+      this.#refuse(c, /outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : T.failed(message), 'warn');
+    }
+  }
+
+  // What each class sets, from the project's own Tailwind: one POST try for every class the trace names
+  async #learn() {
+    const tokens = [...new Set(this.#flat.filter(live).flatMap((c) => `${c.from} ${c.to}`.split(/\s+/)).filter((t) => t && /^[^\s"'`<>{}]+$/.test(t) && !this.#decl.has(t)))];
+    if (!tokens.length) return;
+    try {
+      const said = await post('try', { code: `<div className="${tokens.join(' ')}" />`, lang: 'tsx' });
+      for (const t of tokens) this.#decl.set(t, []);
+      for (const d of said?.declarations ?? []) {
+        const token = d.site?.text, plain = (d.when ?? []).every((w) => w.kind === 'selector');
+        if (token && plain && this.#decl.has(token) && d.prop && d.value != null) this.#decl.get(token).push([d.prop, String(d.value)]);
+      }
+    } catch { /* no preview of classes; the timeline still works */ }
+  }
+
+  // Show the page as it was after change `at` (-1: as it is): restore what was shown, then undo every live change to
+  // the right on its elements, newest first. Reads (the elements) before writes; nothing is written to source.
+  #show(at) {
+    for (const undo of this.#shown.reverse()) undo();
+    this.#shown = [];
+    const last = this.#flat.length - 1, past = at >= 0 && at < last && this.#status === 'ready';
+    if (past !== this.#past) { this.#past = past; this.#strip.toggleAttribute('data-past', past); if (past) this.#host.announce?.(T.past(this.#flat.slice(at + 1).filter(live).length)); }
+    if (!past) return;
+    performance.mark('plumb:tt-preview-start');
+    const ahead = this.#flat.slice(at + 1).filter(live).reverse().map((c) => [c, elementsOf(c)]);
+    for (const [c, els] of ahead) for (const el of els) this.#unshow(c, el);
+    performance.measure('plumb:tt-preview', 'plumb:tt-preview-start');
+  }
+  // one change, undone on one element, with what puts it back
+  #unshow(c, el) {
+    const words = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
+    const added = words(c.to), taken = words(c.from);
+    const isClass = added.length ? added.every((t) => el.classList.contains(t)) : taken.length && taken.every((t) => this.#decl.get(t)?.length);
+    if (isClass) {
+      const off = added.filter((t) => el.classList.contains(t)), hadStyle = el.hasAttribute('style');
+      el.classList.remove(...off);
+      const was = [];
+      for (const t of taken) for (const [prop, value] of this.#decl.get(t) ?? []) { was.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, value, 'important'); }
+      this.#shown.push(() => { el.classList.add(...off); for (const [prop, v, pr] of was.reverse()) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); } if (!hadStyle && !el.getAttribute('style')) el.removeAttribute('style'); });
+      return;
+    }
+    // words: the text node that holds what the change wrote gets back what it said before
+    if (!c.to) return;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!n.nodeValue.includes(c.to)) continue;
+      const before = n.nodeValue;
+      n.nodeValue = before.replace(c.to, c.from);
+      this.#shown.push(() => { n.nodeValue = before; });
+      return;
     }
   }
 
@@ -437,6 +553,15 @@ export class History {
   }
 
   #resume() {
+    let open;
+    try { open = JSON.parse(sessionStorage.getItem(RESUME_TT) ?? 'null'); } catch {}
+    if (open && Date.now() - open.at < 15000) setTimeout(() => {
+      if (this.open) return;
+      this.#button.setAttribute('aria-pressed', 'true');
+      this.#strip.hidden = false; this.#seen.clear(); this.#at = -1; this.#status = 'loading';
+      this.#render(); this.#load(20);
+      if (open.said) this.#host.announce?.(open.said);
+    }, 150);
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;

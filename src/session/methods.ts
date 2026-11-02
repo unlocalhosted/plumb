@@ -42,6 +42,7 @@ export const methods = [
   { http: 'undo', engine: 'undo', post: true, patient: true },
   { http: 'undo-change', engine: 'undoChange', post: true, traced: true, patient: true },
   { http: 'undo-group', engine: 'undoGroup', post: true, traced: true, patient: true },
+  { http: 'undo-changes', engine: 'undoChanges', post: true, traced: true, patient: true },
   { http: 'set', engine: 'set', post: true, traced: true, patient: true },
   { http: 'swap', engine: 'swap', post: true, traced: true, patient: true },
   { http: 'swaps', engine: 'swaps', post: true, traced: true, patient: true },

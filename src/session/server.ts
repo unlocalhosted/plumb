@@ -180,6 +180,10 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'trace') return session.trace(text(params, 'group', true));
   if (method === 'undo-change') return session.undoChange(text(params, 'id')!);
   if (method === 'undo-group') return session.undoGroup(text(params, 'group')!);
+  if (method === 'undo-changes') {
+    if (!Array.isArray(params.ids) || !params.ids.length || params.ids.length > 500 || params.ids.some(id => typeof id !== 'string' || !id.trim())) throw new UsageError('ids must be a list of 1 to 500 change ids.');
+    return session.undoChanges(params.ids as string[]);
+  }
   if (method === 'apply') {
     if (!Array.isArray(params.edits) || !params.edits.length || params.edits.some(edit => !object(edit) || typeof edit.id !== 'string' || !edit.id.trim())) throw new UsageError('edits must be a non-empty array of edit ids.');
     return session.apply({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: params.edits.map(edit => ({ id: edit.id as string })) });

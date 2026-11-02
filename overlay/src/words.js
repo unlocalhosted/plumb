@@ -701,6 +701,8 @@ export const TIMELINE = {
   slider: 'Changes, oldest to newest',
   now: 'Now',
   notHere: 'Not on this page',
+  goBack: 'Go back to here',
+  past: (n) => `Showing the page as it was before the last ${n === 1 ? 'change' : `${n} changes`}. Nothing is written until you choose.`,
   empty: 'Nothing changed yet. What you write shows up here.',
   error: 'Couldn’t read the history. Check the dev server, then reopen this.',
   undoChange: 'Undo change',

@@ -1,7 +1,8 @@
 // The history timeline, layer 1 (docs/briefs/time-travel.md): the dock's history button grows into a strip with one
 // tick per change and one segment per step; the playhead points at a change; Undo change and Undo step take back
 // exactly that, in the file; a change edited by hand says why it can't be undone. Layer 2: the pointed change's
-// elements are outlined on the page. Real Vite, React and Chromium.
+// elements are outlined on the page. Layer 3: the playhead in the past shows the page as it was there, writing nothing;
+// Go back to here undoes everything to its right. Real Vite, React and Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -24,7 +25,7 @@ const APP = `export function App() {
 }
 `;
 
-async function demo(t, app = APP, extra = {}) {
+async function demo(t, app = APP, extra = {}, { hot = false } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.timeline-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
@@ -32,7 +33,7 @@ async function demo(t, app = APP, extra = {}) {
   await writeFile(join(root, 'src/App.jsx'), app);
   for (const [file, text] of Object.entries(extra)) await writeFile(join(root, file), text);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],
-    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0 } });
+    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { ...(hot ? {} : { watch: null }), host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}/`;
   const call = async (method, params = {}, verb = 'GET') => {
@@ -72,6 +73,8 @@ const strip = (page) => page.evaluate(() => {
     valuetext: track?.getAttribute('aria-valuetext') ?? null, focused: root.activeElement === track,
     change: tt.querySelector('[data-act="change"]')?.disabled ?? null, step: tt.querySelector('[data-act="step"]')?.disabled ?? null,
     say: tt.querySelector('.tt-say')?.textContent ?? null,
+    past: tt.hasAttribute('data-past'), ahead: [...tt.querySelectorAll('.tt-tick[data-ahead]')].map((k) => k.dataset.i),
+    back: tt.querySelector('[data-act="back"]') ? !tt.querySelector('[data-act="back"]').hidden : null,
     // drawn where they belong: every tick inside the strip, oldest to newest left to right; the playhead and the pill over the pointed one
     laidOut: (() => { const box = tt.getBoundingClientRect(), xs = [...tt.querySelectorAll('.tt-tick[data-i]')].sort((a, b) => a.dataset.i - b.dataset.i).map((k) => k.getBoundingClientRect());
       return xs.every((r) => r.left >= box.left && r.right <= box.right && r.top >= box.top && r.bottom <= box.bottom) && xs.every((r, i) => i === 0 || r.left > xs[i - 1].left); })(),
@@ -184,4 +187,51 @@ test('a list row outlines every row it draws, far down the page comes into view,
   s = await strip(page);
   assert.deepEqual(s.marks, []);
   assert.equal(s.pill, 'm-[3px] → m-1Not on this page');
+});
+
+test('the playhead in the past shows the page as it was there, writes nothing, puts it back exactly, and Go back to here undoes the rest', { timeout: 120000 }, async (t) => {
+  const app = await demo(t, APP, {}, { hot: true }), launched = await browser(t), page = await launched.newPage();
+  await page.goto(app.url);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 60000 });
+  await app.swaps([[4, 'p-4', 'p-6'], [5, 'p-[13px]', 'p-3'], [6, 'mt-[10px]', 'mt-4']], { meta: { step: 'Spacing' } });
+  // the dev server sends the written file to the page
+  await page.waitForFunction(() => { const c = document.getElementById('c'); return c && getComputedStyle(c).marginTop === '16px' && document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready'; }, null, { timeout: 30000 });
+  const written = await app.read();
+  const look = () => page.evaluate(() => Object.fromEntries(['a', 'b', 'c'].map((id) => { const el = document.getElementById(id), cs = getComputedStyle(el); return [id, { pad: cs.paddingTop, mt: cs.marginTop, cls: el.className, style: el.getAttribute('style') }]; })));
+  const now = await look();
+  assert.deepEqual([now.a.pad, now.b.pad, now.c.mt], ['24px', '12px', '16px']);
+
+  await overlay(page).locator('.dock .history').click();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
+  await page.keyboard.press('ArrowLeft');
+  let s = await strip(page), was = await look();
+  assert.ok(s.past && s.back, 'in the past: the strip says so and offers Go back to here');
+  assert.deepEqual(s.ahead, ['2']);
+  assert.deepEqual([was.a.pad, was.b.pad, was.c.mt], ['24px', '12px', '10px'], 'the last change shown undone');
+  await page.keyboard.press('Home');
+  was = await look();
+  assert.deepEqual([was.a.pad, was.b.pad, was.c.mt], ['24px', '13px', '10px'], 'two back: both shown undone');
+  assert.deepEqual((await strip(page)).ahead, ['1', '2']);
+  assert.equal(await app.read(), written, 'scrubbing writes nothing');
+
+  // Esc from the past: back to Now, the page exactly as it was, the strip still open
+  await page.keyboard.press('Escape');
+  s = await strip(page);
+  assert.ok(s && !s.past && !s.back && s.ahead.length === 0);
+  assert.deepEqual(await look(), now, 'classes and inline styles put back exactly');
+
+  // Go back to here from the first change: the two after it go in one write
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 5);
+  assert.equal(await app.read(), APP.replace('p-4 gap-2', 'p-6 gap-2'));
+  s = await strip(page);
+  assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'undone'] }, { name: 'Undo', ticks: ['live+undo', 'live+undo'] }]);
+  assert.ok(!s.past, 'back at Now after it');
+  // the dev server reloads the page for the write: the timeline comes back with it, at Now
+  await page.waitForTimeout(2500);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelectorAll('.tt:not([hidden]) .tt-tick[data-i]').length === 5, null, { timeout: 20000 });
+  s = await strip(page);
+  assert.ok(!s.past && s.pointed === '4', 'reopened at Now');
+  assert.deepEqual(await look().then((l) => [l.a.pad, l.b.pad, l.c.mt]), ['24px', '13px', '10px'], 'the page now is the file');
 });
