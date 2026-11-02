@@ -14,6 +14,9 @@
  *  undo      Undo change (⌫) and Undo step (⇧⌫) act on the pointed change; an undo is itself a tick. A refusal
  *            shakes the tick and says what to do instead
  *  keys      the playhead is a slider: ←/→ one change, ⇧←/⇧→ one step, Home/End; Esc closes, back to the button
+ *  page      the pointed change's element is outlined on the page (layer 2): the elements stamped at the JSX that holds
+ *            the change's line (every row of a list), scrolled into view when they are all off screen, kept on them as
+ *            the page scrolls; a change with nothing on this page says so in the pill
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
 import { esc } from './choices.js';
@@ -94,12 +97,22 @@ export const HISTORY_CSS = `
   .tt .tt-acts button:disabled kbd { color: var(--pl-ink-3); }
   @media (pointer: coarse) { .tt .tt-acts kbd { display: none; } }
   .tt .tt-x { flex: none; align-self: center; width: 28px; height: 28px; padding: 0 !important; display: grid; place-items: center; color: var(--pl-ink-2) !important; }
+  /* the pointed change's elements, outlined the way every instrument line is: sky with a halo */
+  .tt-marks { position: fixed; inset: 0; pointer-events: none; }
+  .tt-marks[hidden] { display: none; }
+  .tt-mark { position: fixed; left: 0; top: 0; box-sizing: border-box; border: 1px solid var(--pl-instrument); border-radius: var(--pl-radius-tag);
+    box-shadow: 0 0 0 1px var(--pl-halo), inset 0 0 0 1px var(--pl-halo); pointer-events: none;
+    transition: translate var(--pl-dur-travel) var(--pl-ease-out), width var(--pl-dur-travel) var(--pl-ease-out), height var(--pl-dur-travel) var(--pl-ease-out), opacity var(--pl-dur-feedback); }
+  .tt-mark.enter { animation: tt-mark-in var(--pl-dur-card) var(--pl-ease-out) both; }
+  .tt .tt-pill .tt-where { font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-start: var(--pl-space-3); }
+  @keyframes tt-mark-in { from { opacity: 0; scale: 1.04; } }
   @keyframes tt-ghost { from { opacity: 0.45; } to { opacity: 1; } }
   @keyframes tt-shake { 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
   @keyframes tt-enter { from { transform: scaleY(0.6); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) {
     .wt { transition: none; translate: 0 0; }
-    .tt .tt-tick, .tt .tt-head, .tt .tt-pill { transition: none; }
+    .tt .tt-tick, .tt .tt-head, .tt .tt-pill, .tt-mark { transition: none; }
+    .tt-mark.enter { animation: none; }
     .tt .tt-tick.shake, .tt .tt-tick.enter, .tt .tt-tick.busy { animation: none; }
   }
 `;
@@ -121,9 +134,32 @@ const live = (c) => c?.state === 'live';
 // why a change can't be undone here, in words, from its state
 const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ? T.changedLater : T.changedByHand);
 
+// The elements on the page drawn by the JSX that holds a change: stamped (data-plumb-source, file:line:column#hash) in
+// the change's file, at the last element start at or before the change's line and column. A className on the third
+// line of a long tag still belongs to that tag; every row a list draws from it shares the stamp.
+const MARKS = 24;
+function elementsOf(c) {
+  if (!c?.file || !/\.[cm]?[jt]sx?$/.test(c.file)) return [];
+  let best = null;
+  const found = [];
+  for (const el of document.querySelectorAll('[data-plumb-source]')) {
+    if (el.closest('plumb-overlay')) continue;
+    const m = /^(.+):(\d+):(\d+)#[a-f0-9]+$/.exec(el.getAttribute('data-plumb-source') ?? '');
+    if (!m) continue;
+    let file = m[1]; try { file = decodeURIComponent(file); } catch {}
+    if (file !== c.file && !file.endsWith('/' + c.file) && !c.file.endsWith('/' + file)) continue;
+    const line = +m[2], column = +m[3];
+    if (line > c.line || (line === c.line && column > c.column)) continue;
+    if (!best || line > best.line || (line === best.line && column > best.column)) best = { line, column };
+    found.push({ el, line, column });
+  }
+  return best ? found.filter((f) => f.line === best.line && f.column === best.column).map((f) => f.el) : [];
+}
+
 export class History {
   #toast; #strip; #button; #host; #timer = 0; #last = null;
   #steps = []; #flat = []; #at = -1; #busy = false; #status = 'idle'; #warn = null; #seen = new Set(); #press = false;
+  #marks; #marked = []; #follow = 0;
 
   // button: the dock's history button; host: announce(text), changed()
   constructor(root, { button, host }) {
@@ -134,7 +170,12 @@ export class History {
     this.#strip = Object.assign(document.createElement('section'), { className: 'tt', hidden: true });
     this.#strip.setAttribute('role', 'dialog');
     this.#strip.setAttribute('aria-label', T.title);
-    root.append(this.#toast, this.#strip);
+    this.#marks = Object.assign(document.createElement('div'), { className: 'tt-marks', hidden: true });
+    root.append(this.#marks, this.#toast, this.#strip);
+    // the marks stay on their elements as the page scrolls or resizes, one read per frame
+    const follow = () => { if (this.#follow || !this.#marked.length) return; this.#follow = requestAnimationFrame(() => { this.#follow = 0; this.#place(); }); };
+    addEventListener('scroll', follow, { passive: true, capture: true });
+    addEventListener('resize', follow, { passive: true });
     button.addEventListener('click', () => this.toggle());
     this.#toast.addEventListener('click', (e) => { if (e.target.closest('.undo') && this.#last) this.undo(this.#last); });
     this.#strip.addEventListener('click', (e) => {
@@ -208,6 +249,7 @@ export class History {
   }
   async #close() {
     const strip = this.#strip;
+    this.#mark(null);
     await this.#grow(true);
     strip.hidden = true;
     this.#button.focus({ preventScroll: true });
@@ -230,7 +272,7 @@ export class History {
   #render() {
     const s = this.#status, x = `<button type="button" class="tt-x" data-act="close" aria-label="${esc(T.close)}">${CLOSE_ICON}</button>`;
     const glyph = `<span class="tt-glyph" aria-hidden="true">${HISTORY_ICON}</span>`;
-    if (s === 'empty' || s === 'error') { this.#strip.innerHTML = `${glyph}<span class="tt-say"${s === 'error' ? ' role="alert"' : ''}>${esc(s === 'error' ? T.error : T.empty)}</span>${x}`; return; }
+    if (s === 'empty' || s === 'error') { this.#mark(null); this.#strip.innerHTML = `${glyph}<span class="tt-say"${s === 'error' ? ' role="alert"' : ''}>${esc(s === 'error' ? T.error : T.empty)}</span>${x}`; return; }
     const ghost = s === 'loading';
     const steps = ghost ? `<div class="tt-seg"><span class="tt-name">&nbsp;</span><div class="tt-ticks">${'<span class="tt-tick ghost"></span>'.repeat(6)}</div></div>`
       : this.#steps.map((step) => `<div class="tt-seg" data-group="${esc(step.group)}"><span class="tt-name">${esc(step.name)}</span><div class="tt-ticks">${step.changes.map((c) => {
@@ -267,19 +309,20 @@ export class History {
     const laws = lawsOf(c);
     track?.setAttribute('aria-valuemin', '1'); track?.setAttribute('aria-valuemax', String(n)); track?.setAttribute('aria-valuenow', String(this.#at + 1));
     track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from, c.to, laws));
-    this.#pill(c, tick, laws, instant);
+    const els = this.#mark(c);
+    this.#pill(c, tick, laws, instant, els.length > 0);
     const [change, step] = this.#strip.querySelectorAll('.tt-acts button');
     if (change) change.disabled = this.#busy || !live(c);
     if (step) step.disabled = this.#busy || !c.step.changes.some(live);
   }
 
-  #pill(c, tick, laws, instant) {
+  #pill(c, tick, laws, instant, onPage = true) {
     const pill = this.#strip.querySelector('.tt-pill');
     if (!pill || !tick) return;
     const warn = this.#warn?.id === c.id ? this.#warn : null;
     pill.dataset.kind = warn?.kind ?? '';
     pill.innerHTML = warn ? esc(warn.text)
-      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from || '∅')} → ${esc(c.to || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}`;
+      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from || '∅')} → ${esc(c.to || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
     pill.hidden = false;
     // centred on the tick, slid along its line to stay whole on screen
     const sr = this.#strip.getBoundingClientRect(), tr = tick.getBoundingClientRect(), w = pill.offsetWidth;
@@ -287,6 +330,38 @@ export class History {
     if (instant) pill.style.transition = 'none';
     pill.style.translate = `${left - sr.left}px 0`;
     if (instant) requestAnimationFrame(() => { pill.style.transition = ''; });
+  }
+
+  // outline the change's elements; scroll the first into view when none of them can be seen. null clears
+  #mark(c) {
+    const els = c ? elementsOf(c).slice(0, MARKS) : [];
+    const same = els.length === this.#marked.length && els.every((el, i) => el === this.#marked[i]);
+    this.#marked = els;
+    if (!els.length) { this.#marks.hidden = true; this.#marks.replaceChildren(); return els; }
+    const seen = els.some((el) => { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; });
+    if (!seen) els[0].scrollIntoView({ block: 'center', inline: 'nearest', behavior: still() ? 'instant' : 'smooth' });
+    if (!same) {
+      // reuse the boxes already drawn so they travel to the new elements; new ones fade in
+      const boxes = [...this.#marks.children];
+      while (boxes.length > els.length) boxes.pop().remove();
+      while (boxes.length < els.length) { const b = Object.assign(document.createElement('div'), { className: 'tt-mark enter' }); this.#marks.append(b); boxes.push(b); }
+    }
+    this.#marks.hidden = false;
+    this.#place();
+    return els;
+  }
+  // every mark on its element: read all the boxes, then write them
+  #place() {
+    const rects = this.#marked.map((el) => el.getBoundingClientRect()), boxes = this.#marks.children, pad = 4;
+    rects.forEach((r, i) => {
+      const b = boxes[i]; if (!b) return;
+      // a new box starts on its element; only a box already drawn travels
+      const fresh = !b.dataset.placed;
+      if (fresh) { b.style.transition = 'none'; b.dataset.placed = '1'; requestAnimationFrame(() => { b.style.transition = ''; }); }
+      b.style.translate = `${Math.round(r.left - pad)}px ${Math.round(r.top - pad)}px`;
+      b.style.width = `${Math.round(r.width + 2 * pad)}px`; b.style.height = `${Math.round(r.height + 2 * pad)}px`;
+      b.style.opacity = r.width || r.height ? '' : '0';
+    });
   }
 
   #pointAt(clientX) {

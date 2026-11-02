@@ -1,6 +1,7 @@
 // The history timeline, layer 1 (docs/briefs/time-travel.md): the dock's history button grows into a strip with one
 // tick per change and one segment per step; the playhead points at a change; Undo change and Undo step take back
-// exactly that, in the file; a change edited by hand says why it can't be undone. Real Vite, React and Chromium.
+// exactly that, in the file; a change edited by hand says why it can't be undone. Layer 2: the pointed change's
+// elements are outlined on the page. Real Vite, React and Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -23,12 +24,13 @@ const APP = `export function App() {
 }
 `;
 
-async function demo(t) {
+async function demo(t, app = APP, extra = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.timeline-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
-  await writeFile(join(root, 'src/App.jsx'), APP);
+  await writeFile(join(root, 'src/App.jsx'), app);
+  for (const [file, text] of Object.entries(extra)) await writeFile(join(root, file), text);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { watch: null, host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
@@ -40,9 +42,10 @@ async function demo(t) {
     return { status: response.status, body: await response.json() };
   };
   const read = () => readFile(join(root, 'src/App.jsx'), 'utf8');
-  const swaps = async (edits, trace) => {
-    const hash = (await call('props', { file: 'src/App.jsx', line: 4, column: 7 })).body.hash;
-    const r = await call('swaps', { file: 'src/App.jsx', hash, edits: edits.map(([line, from, to]) => ({ line, column: 7, from, to })), ...(trace ? { trace } : {}) }, 'POST');
+  const swaps = async (edits, trace, file = 'src/App.jsx') => {
+    const [line0, , , column0 = 7] = edits[0];
+    const hash = (await call('props', { file, line: line0, column: column0 })).body.hash;
+    const r = await call('swaps', { file, hash, edits: edits.map(([line, from, to, column = 7]) => ({ line, column, from, to })), ...(trace ? { trace } : {}) }, 'POST');
     assert.equal(r.status, 200, JSON.stringify(r.body));
   };
   return { root, url, read, swaps };
@@ -52,6 +55,11 @@ async function browser(t) {
   t.after(() => launched.close()); return launched;
 }
 const overlay = (page) => page.locator('plumb-overlay');
+// an outline sits 4px outside its element, all round
+const around = async (page, marks, selectors) => {
+  const boxes = await page.evaluate((sels) => sels.flatMap((sel) => [...document.querySelectorAll(sel)].map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })), selectors);
+  return marks.length === boxes.length && boxes.every(([x, y, w, h], i) => { const [mx, my, mw, mh] = marks[i]; return Math.abs(mx - (x - 4)) <= 1.5 && Math.abs(my - (y - 4)) <= 1.5 && Math.abs(mw - (w + 8)) <= 1.5 && Math.abs(mh - (h + 8)) <= 1.5; });
+};
 // what the strip shows: steps with their ticks, the pointed one, the pill, the slider's words, the actions
 const strip = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay').shadowRoot, tt = root.querySelector('.tt');
@@ -67,6 +75,8 @@ const strip = (page) => page.evaluate(() => {
     // drawn where they belong: every tick inside the strip, oldest to newest left to right; the playhead and the pill over the pointed one
     laidOut: (() => { const box = tt.getBoundingClientRect(), xs = [...tt.querySelectorAll('.tt-tick[data-i]')].sort((a, b) => a.dataset.i - b.dataset.i).map((k) => k.getBoundingClientRect());
       return xs.every((r) => r.left >= box.left && r.right <= box.right && r.top >= box.top && r.bottom <= box.bottom) && xs.every((r, i) => i === 0 || r.left > xs[i - 1].left); })(),
+    // the outlines on the page, as boxes
+    marks: [...root.querySelectorAll('.tt-marks:not([hidden]) .tt-mark')].map((m) => { const r = m.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }),
     headOnTick: (() => { const k = tt.querySelector('.tt-tick[aria-current="true"]'), h = tt.querySelector('.tt-head'); if (!k || !h) return null; const a = k.getBoundingClientRect(), b = h.getBoundingClientRect(); return Math.abs(a.left + a.width / 2 - (b.left + b.width / 2)) < 2; })(),
   };
 });
@@ -92,6 +102,8 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   assert.equal(s.pill, 'mt-[10px] → mt-2.5Law of proximity');
   assert.ok(s.focused, 'the slider has focus');
   assert.ok(s.laidOut, 'ticks drawn in the strip, in order');
+  await page.waitForTimeout(300);
+  assert.ok(await around(page, (await strip(page)).marks, ['#c']), 'the newest change\'s element is outlined');
 
   // ← points at the middle change; ⌫ takes back exactly it
   await page.keyboard.press('ArrowLeft');
@@ -100,6 +112,7 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   assert.equal(s.change, false);
   await page.waitForTimeout(300); // the playhead travels
   assert.ok((await strip(page)).headOnTick, 'the playhead is over the pointed tick');
+  assert.ok(await around(page, (await strip(page)).marks, ['#b']), 'the outline travels to the middle change\'s element');
   await page.keyboard.press('Backspace');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('mt-[10px]', 'mt-2.5'));
@@ -115,9 +128,10 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   assert.equal(await app.read(), APP);
   assert.deepEqual((await strip(page)).steps[0], { name: 'Spacing', ticks: ['undone', 'undone', 'undone'] });
 
-  // Esc closes and hands focus back to the history button
+  // Esc closes and hands focus back to the history button; the outline goes with it
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').hidden);
+  assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt-marks:not([hidden]) .tt-mark').length), 0);
   assert.ok(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.classList.contains('history')));
 });
 
@@ -138,4 +152,36 @@ test('a change edited by hand is hatched, its Undo change is off, and ⌫ says w
   assert.equal(s.warn, 'warn');
   assert.equal(s.pill, 'Edited outside React Plumber, so it can’t be undone here. Undo it in your editor.');
   assert.equal(await app.read(), typed, 'nothing written');
+});
+
+test('a list row outlines every row it draws, far down the page comes into view, and a file this page does not draw says so', { timeout: 120000 }, async (t) => {
+  const LIST = `export function App() {
+  return (
+    <main className="p-6">
+      <div style={{ height: 2400 }} />
+      <ul>
+        {[1, 2, 3].map((i) => <li key={i} className="py-[7px]">Row {i}</li>)}
+      </ul>
+    </main>
+  );
+}
+`;
+  const OTHER = `export const Other = () => <div className="m-[3px]">Elsewhere</div>;\n`;
+  const app = await demo(t, LIST, { 'src/Other.jsx': OTHER }), launched = await browser(t), page = await launched.newPage();
+  await page.goto(app.url);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 60000 });
+  await app.swaps([[1, 'm-[3px]', 'm-1', OTHER.indexOf('<div') + 1]], { meta: { step: 'Other' } }, 'src/Other.jsx');
+  const row = LIST.split('\n')[5];
+  await app.swaps([[6, 'py-[7px]', 'py-2', row.indexOf('<li') + 1]], { meta: { step: 'Rows' } });
+  await overlay(page).locator('.dock .history').click();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 2);
+  await page.waitForTimeout(900); // the page scrolls to the rows
+  let s = await strip(page);
+  assert.equal(s.marks.length, 3, 'one outline per row');
+  assert.ok(await around(page, s.marks, ['li']), 'each row outlined');
+  assert.ok(s.marks.every(([, y, , h]) => y >= 0 && y + h <= 720), 'scrolled into view');
+  await page.keyboard.press('ArrowLeft');
+  s = await strip(page);
+  assert.deepEqual(s.marks, []);
+  assert.equal(s.pill, 'm-[3px] → m-1Not on this page');
 });

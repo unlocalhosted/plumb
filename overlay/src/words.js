@@ -700,6 +700,7 @@ export const TIMELINE = {
   title: 'History',
   slider: 'Changes, oldest to newest',
   now: 'Now',
+  notHere: 'Not on this page',
   empty: 'Nothing changed yet. What you write shows up here.',
   error: 'Couldn’t read the history. Check the dev server, then reopen this.',
   undoChange: 'Undo change',
