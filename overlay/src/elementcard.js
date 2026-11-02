@@ -29,6 +29,7 @@ import { request, post } from './api.js';
 import { locate, componentOf } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
+import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js'; // layer 2: Layout › and the spacing on the element
 
 const W = FIX.card;
 const WIDTH = 276, GAP = 16, EDGE = 12;
@@ -38,6 +39,7 @@ const PAD = { w: 252, h: 150, reach: 34 };   // the light pad: px of reach per 1
 const CV = { w: 252, h: 120, pad: 18 };      // the curve
 const LOOP = 2400;                           // ms between plays of a motion copy
 const LIMITS = { light: [-60, 60], height: [0.25, 3], softness: [0.5, 2], ms: [60, 600] };
+const ICON_LAYOUT = '<svg viewBox="0 0 14 14"><rect x="1.5" y="2" width="4.5" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="2" width="4.5" height="4.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="7.8" width="4.5" height="4.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 const ICON_MOTION = '<svg viewBox="0 0 14 14"><path d="M2 11c3 0 4-8 10-8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/></svg>';
 const CURSOR = '<svg viewBox="0 0 16 16"><path d="M2 1.5v11.2l3.1-2.9 2 4.6 2-.9-2-4.5 4.3-.2z" fill="#1c1b19" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>';
 const clamp = (n, [lo, hi]) => Math.max(lo, Math.min(hi, n));
@@ -154,33 +156,10 @@ export const ELEMENT_CARD_CSS = `
   .ec .v, .ec-strip .v { font: 600 9.5px/1 ui-monospace, monospace; font-style: normal; padding: 3px 6px; border-radius: 5px; white-space: nowrap; }
   .v.now, .v.yours { background: rgb(0 0 0 / .06); color: var(--ink-2); } .v.same { background: rgb(26 158 98 / .12); color: #137a4b; } .v.close { background: rgb(47 107 255 / .1); color: #2f5bd3; } .v.new { background: #fff3e8; color: #a8551b; } .v.need { background: #fde9e5; color: #b23a1e; }
   :host([data-holding]), :host([data-holding]) * { cursor: grabbing !important; }
+  .ec-strip { overflow: hidden; } .ec-strip .reel { flex: 1 1 auto; }
   @media (prefers-reduced-motion: reduce) { .ec, .ec .body[data-in], .ec-strip { animation: none; } }
-`;
+` + LAYOUT_CSS;
 
-// the colour the element sits on: the first ancestor that paints a background
-function groundOf(el) {
-  for (let n = el.parentElement; n; n = n.parentElement) {
-    const c = getComputedStyle(n).backgroundColor;
-    if (c && c !== 'transparent' && !/rgba?\(.*,\s*0\)$/.test(c) && !/\/\s*0\)$/.test(c)) return c;
-  }
-  return '#fff';
-}
-// the element as it looks now, its styles written onto a copy (the strip is outside the page's stylesheets): no ids, no
-// source stamps (the page's lookups never find a copy), no transitions, sat where the strip puts it
-function freeze(el) {
-  const copy = el.cloneNode(true), from = [el, ...el.querySelectorAll('*')], to = [copy, ...copy.querySelectorAll('*')];
-  from.forEach((s, i) => {
-    const d = to[i], cs = getComputedStyle(s);
-    let css = '';
-    for (const p of cs) css += `${p}:${cs.getPropertyValue(p)};`;
-    d.setAttribute('style', css);
-    d.removeAttribute('id'); d.removeAttribute('data-plumb-source'); d.removeAttribute('contenteditable');
-    d.setAttribute('inert', '');
-  });
-  Object.assign(copy.style, { position: 'relative', inset: 'auto', margin: '0', transform: 'none', transition: 'none', animation: 'none', pointerEvents: 'none' });
-  copy.setAttribute('aria-hidden', 'true');
-  return copy;
-}
 // one play of a motion: an entrance comes in; hover and press go to their state and back (a cursor arrives on a copy)
 function play(el, css, cursor) {
   if (!el || !css || STILL()) return;
@@ -212,6 +191,8 @@ export class ElementCard {
   #shown = new Map();   // prop → the inline value a preview replaced
   #loops = [];
   #writing = false; #wrong = null;
+  #props = null;        // the element's props: its line's hash, and the spacing scale
+  #spacing; #layout;
 
   // root: the overlay's shadow root; host: { apply(at, body, said) → Promise<result>, said(text, undo), problems() → n,
   // show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null>, release() }
@@ -224,9 +205,21 @@ export class ElementCard {
     this.#strip = Object.assign(document.createElement('div'), { className: 'ec-strip', hidden: true });
     this.#strip.setAttribute('role', 'listbox');
     root.append(this.#ring, this.#strip, this.#el, this.#caret);
+    const ours = (e) => e.composedPath().some((n) => n === this.#el || n === this.#strip || n.classList?.contains?.('fx') || n.classList?.contains?.('lay-line'));
+    this.#spacing = new Spacing(root, {
+      target: () => this.#target, name: (el) => el === this.#target ? this.name : componentOf(el) ?? el.localName,
+      scale: () => this.#scale(), where: (el) => this.#where(el), held: () => !!this.#hand, ours,
+      write: (writes, said) => this.#swaps(writes, said),
+      refused: (text) => { this.#wrong = text; this.#draw(); },
+      release: () => this.#host.release?.(),
+    });
+    this.#layout = new Layout(root, {
+      target: () => this.#target, redraw: () => this.#draw(), restrip: () => this.#stripDraw(), where: (el) => this.#where(el),
+    });
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       if (b.classList.contains('show')) return this.#host.show?.();
+      if (this.#view === 'layout' && this.#layout.click(b)) return;
       if (b.dataset.open) return this.#drill(b.dataset.open);
       if (b.classList.contains('back')) return this.#back();
       if (b.dataset.tab) return this.#setTab(b.dataset.tab);
@@ -235,9 +228,10 @@ export class ElementCard {
       if (b.classList.contains('play')) return this.#playNow();
     });
     this.#el.addEventListener('pointerdown', (e) => this.#press(e));
-    this.#strip.addEventListener('click', (e) => { const s = e.target.closest('.shot'); if (s) this.#take(s.dataset.key); });
-    this.#strip.addEventListener('pointerover', (e) => { const s = e.target.closest('.shot'); if (s && s.dataset.key !== this.#peek) this.#peekAt(s.dataset.key); });
-    this.#strip.addEventListener('pointerout', (e) => { const s = e.target.closest('.shot'); if (s && !s.contains(e.relatedTarget)) this.#unpeekAt(); });
+    const lay = () => this.#view === 'layout';
+    this.#strip.addEventListener('click', (e) => { const s = e.target.closest('.shot'); if (!s) return; if (lay()) { this.#layout.take(s.dataset.key); } else this.#take(s.dataset.key); });
+    this.#strip.addEventListener('pointerover', (e) => { const s = e.target.closest('.shot'); if (!s || s.dataset.key === this.#peek) return; if (lay()) { this.#peek = s.dataset.key; this.#layout.peek(s.dataset.key); } else this.#peekAt(s.dataset.key); });
+    this.#strip.addEventListener('pointerout', (e) => { const s = e.target.closest('.shot'); if (!s || s.contains(e.relatedTarget)) return; if (lay()) { this.#peek = null; this.#layout.unpeek(); } else this.#unpeekAt(); });
   }
   get open() { return !!this.#target; }
   get target() { return this.#target; }
@@ -252,9 +246,11 @@ export class ElementCard {
     addEventListener('scroll', this.#follow, { passive: true, capture: true });
     addEventListener('resize', this.#follow);
     this.#draw();
+    this.#spacing.on();
     await this.#read();
   }
   close() {
+    this.#spacing.off();
     this.#reset();
     this.#target = null; this.#state = 'off'; this.#data = null;
     this.#el.hidden = this.#caret.hidden = this.#ring.hidden = true; this.#el.innerHTML = '';
@@ -263,14 +259,20 @@ export class ElementCard {
   }
   #reset() {
     this.#hand?.cancel();
-    this.#unshow(); this.#stripClose();
+    this.#unshow(); this.#stripClose(); this.#layout.close();
     this.#view = null; this.#pick = null; this.#peek = null; this.#preview = null; this.#dials = {}; this.#ease = this.#ms = null; this.#scope = 'one'; this.#wrong = null;
   }
   // a file was written or undone: the element is read again (a re-render may have replaced it)
   async changed() {
     if (!this.#target) return;
     if (!this.#target.isConnected) {
-      const again = this.#stamp ? document.querySelector(`[data-plumb-source^="${CSS.escape(this.#stamp)}#"]`) : null;
+      // a re-render may still be under way: the element is looked for again for a moment before the card lets go
+      let again = null;
+      for (let i = 0; i < 8 && !again && this.#target; i++) {
+        again = this.#stamp ? document.querySelector(`[data-plumb-source^="${CSS.escape(this.#stamp)}#"]`) : null;
+        if (!again) await new Promise((r) => setTimeout(r, 150));
+      }
+      if (!this.#target) return;
       if (!again) { this.close(); return this.#host.closed?.(); }
       this.#target = again;
     }
@@ -285,8 +287,9 @@ export class ElementCard {
       if (seq !== this.#seq) return;
       if (!at?.file) { const why = await this.#host.why?.(el).catch(() => null); if (seq !== this.#seq) return; this.#state = 'error'; this.#error = why ?? FIX.text.unreachable; return this.#draw(); }
       this.#at = at;
-      const data = await request('recipes', { file: at.file, line: at.line, column: at.column });
+      const [data, props] = await Promise.all([request('recipes', { file: at.file, line: at.line, column: at.column }), request('props', { file: at.file, line: at.line, column: at.column }).catch(() => null)]);
       if (seq !== this.#seq) return;
+      this.#props = props;
       if (!data?.element) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
       this.#data = data; this.#state = 'ready'; this.#error = null;
     } catch (error) {
@@ -294,13 +297,39 @@ export class ElementCard {
       this.#state = 'error';
       this.#error = error?.starting || error?.failed ? error.message : FIX.text.down;
     }
+    if (this.#view === 'layout') this.#layout.open();
     this.#draw();
     if (this.#view) { this.#stripDraw(); if (this.#pick) this.#ask(); }
+  }
+  // the spacing scale: 0, then the theme's spacing steps in px
+  #scale() {
+    const steps = this.#props?.props?.find((p) => p.key === 'padding')?.steps ?? [];
+    const px = (v) => { const m = /^(-?[\d.]+)(px|rem)?$/.exec(String(v ?? '').trim()); return m ? +m[1] * (m[2] === 'rem' ? (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 1) : NaN; };
+    const out = [{ px: 0, token: '0' }, ...steps.map((s) => ({ px: px(s.value), token: s.token })).filter((s) => Number.isFinite(s.px))];
+    return out.sort((a, b) => a.px - b.px).filter((s, i, all) => !i || s.px !== all[i - 1].px);
+  }
+  // where an element is written, with its file's hash (the element in hand is already read)
+  async #where(el) {
+    if (el === this.#target && this.#props?.hash) return { file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash };
+    const at = await locate(el);
+    if (!at?.file) throw new Error(FIX.text.unreachable);
+    const p = await request('props', { file: at.file, line: at.line, column: at.column });
+    if (!p?.hash) throw new Error(FIX.text.unreachable);
+    return { file: p.file, line: p.line, column: p.column, hash: p.hash };
+  }
+  // class swaps written (layout, spacing), said in the fix panel with Undo
+  async #swaps(writes, said) {
+    this.#wrong = null;
+    const result = await this.#host.swaps(writes, said);
+    this.#host.said?.(said, result?.undo ?? []);
+    if (result?.refused?.length) { this.#wrong = result.refused.join(' '); this.#draw(); }
+    return result;
   }
 
   // ── the options: the project's own first, then the pack's lined up against them ──
   #options(view = this.#view) {
     const d = this.#data; if (!d) return [];
+    if (view === 'layout') return [];
     const mine = d.element?.shadow, kind = view === 'shadow' ? 'shadow' : 'motion';
     const fits = (r) => kind === 'shadow' || (this.#tab === 'enter' ? r.model?.trigger === 'enter' : isMotionHover(r.model?.trigger));
     const yours = d.yours.filter((r) => r.kind === kind && fits(r)).map((r) => {
@@ -410,6 +439,7 @@ export class ElementCard {
     this.#host.release?.();
     this.#view = view; this.#dir = 'fwd'; this.#peek = null; this.#dials = {}; this.#ease = this.#ms = null; this.#scope = 'one'; this.#preview = null; this.#wrong = null;
     this.#pick = view === 'shadow' ? this.#options('shadow').find((o) => o.now)?.key ?? null : null;
+    if (view === 'layout') this.#layout.open();
     this.#draw();
     this.#stripDraw();
     if (this.#pick) this.#ask();
@@ -418,8 +448,8 @@ export class ElementCard {
     this.#hand?.cancel();
     const was = this.#view;
     this.#view = null; this.#dir = 'back'; this.#pick = this.#peek = null; this.#preview = null; this.#wrong = null;
-    this.#unshow(); this.#stripClose();
-    this.#row = was === 'motion' ? 1 : 0;
+    this.#unshow(); this.#stripClose(); this.#layout.close();
+    this.#row = Math.max(0, this.#fieldsNow().indexOf(was));
     this.#draw();
   }
   #setTab(tab) {
@@ -459,10 +489,13 @@ export class ElementCard {
       const motionSub = m.source === 'none' ? W.none : W.triggers[m.trigger ?? m.model?.trigger] ?? W.setInCode;
       const cs = getComputedStyle(el).boxShadow;
       const tile = `<span class="ic"><span class="tile" style="box-shadow:${esc(cs && cs !== 'none' ? cs : 'inset 0 0 0 1px rgb(0 0 0 / .12)')}"></span></span>`;
-      body = `<div class="fields" role="group">`
-        + `<button type="button" class="drill" data-open="shadow" aria-label="${esc(`${W.shadow}: ${shadowSub}`)}"${this.#row === 0 ? ' data-at' : ''}>${tile}<span class="val">${W.shadow}</span><span class="sub">${esc(shadowSub)}</span><span class="chev">›</span></button>`
-        + `<button type="button" class="drill" data-open="motion" aria-label="${esc(`${W.motion}: ${motionSub}`)}"${this.#row === 1 ? ' data-at' : ''}><span class="ic">${ICON_MOTION}</span><span class="val">${W.motion}</span><span class="sub">${esc(motionSub)}</span><span class="chev">›</span></button></div>`;
+      const fields = this.#fieldsNow(), at = (k) => fields[this.#row] === k ? ' data-at' : '';
+      const drill = (k, lead, title, sub) => `<button type="button" class="drill" data-open="${k}" aria-label="${esc(`${title}: ${sub}`)}"${at(k)}>${lead}<span class="val">${title}</span><span class="sub">${esc(sub)}</span><span class="chev">›</span></button>`;
+      body = `<div class="fields" role="group">${drill('shadow', tile, W.shadow, shadowSub)}${drill('motion', `<span class="ic">${ICON_MOTION}</span>`, W.motion, motionSub)}`
+        + (fields.includes('layout') ? drill('layout', `<span class="ic">${ICON_LAYOUT}</span>`, W.layout, this.#layoutSub()) : '') + `</div>`
+        + `<div class="keys" aria-label="${esc(W.spacing)}"><span><b>${esc(W.spacing)}</b> ${esc(W.spacingHint)}</span>${W.spacingKeys.map(([k, v]) => `<span><b>${esc(k)}</b> ${esc(v)}</span>`).join('')}</div>`;
     }
+    if (this.#wrong && this.#state === 'ready') body += `<div class="down" role="alert">${esc(this.#wrong)}</div>`;
     const reach = this.#state === 'ready' ? this.#host.elsewhere?.(el) ?? 0 : 0;
     const problems = this.#host.problems?.() ?? 0;
     this.#el.innerHTML = `<div class="hd"><span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
@@ -472,7 +505,26 @@ export class ElementCard {
     this.#dir = '';
     this.#place();
   }
+  // Layout ›: the mode and its controls, the spacing keys, then Writes: the class changes, line by line
+  #layoutHtml(name, at) {
+    const edits = this.#layout.edits();
+    const writes = edits.length
+      ? edits.map((e) => `<div class="edit"><div class="file">${esc(e.el === this.#target ? name : componentOf(e.el) ?? e.el.localName)}<span>${esc(e.rows > 1 ? W.mates(e.rows - 1) : e.el.localName)}</span></div>${e.from ? `<div class="line del">- ${esc(e.from)}</div>` : ''}<div class="line add">+ ${esc(e.to)}</div></div>`).join('')
+      : `<div class="note">${esc(W.asWritten)}</div>`;
+    return `<div class="hd"><button type="button" class="back" aria-label="${esc(`Back to ${name}`)}">‹ ${esc(name)}</button><span class="title">${W.layout}</span><span class="at">${esc(at)}</span></div>`
+      + `<div class="body"${this.#dir ? ` data-in="${this.#dir}"` : ''}>${this.#layout.html()}<div class="sec writes"><div class="lab">${W.writes}</div>${writes}${this.#wrong ? `<div class="refuse" role="alert">${esc(this.#wrong)}</div>` : ''}</div></div>`
+      + `<div class="acts"><button type="button" class="use"${edits.length && !this.#writing ? '' : ' disabled'}>${W.writeIt} <kbd>↵</kbd></button>${edits.length ? `<button type="button" class="putback">${W.putBack}</button>` : ''}<span class="grow"></span><span class="hint"><kbd>esc</kbd> ${W.back}</span></div>`;
+  }
+  // the fields at rest: Layout only for an element with things inside it
+  #fieldsNow() { return ['shadow', 'motion', ...(this.#target && [...this.#target.children].length ? ['layout'] : [])]; }
+  #layoutSub() {
+    const cs = getComputedStyle(this.#target);
+    if (/grid/.test(cs.display)) return W.layoutNow('grid', W.nColumns(cs.gridTemplateColumns.split(' ').filter(Boolean).length));
+    if (/flex/.test(cs.display)) return W.layoutNow('flex', cs.flexDirection.startsWith('column') ? W.stacked : W.sideBySide);
+    return W.layoutNow('block');
+  }
   #drillHtml(name, at) {
+    if (this.#view === 'layout') return this.#layoutHtml(name, at);
     const shadow = this.#view === 'shadow', o = this.#option(), p = this.#preview;
     let body = '';
     if (!shadow) body += `<div class="seg tabs" role="group">${['hover', 'enter'].map((t) => `<button type="button" data-tab="${t}" aria-pressed="${this.#tab === t}">${esc(W.tabs[t])}</button>`).join('')}</div>`;
@@ -622,11 +674,18 @@ export class ElementCard {
   #stripDraw() {
     this.#stopLoops();
     if (!this.#view || this.#state !== 'ready') return this.#stripClose();
+    const frozen = freeze(this.#target);
+    this.#strip.style.background = groundOf(this.#target);
+    if (this.#view === 'layout') {
+      this.#strip.setAttribute('aria-label', W.layouts);
+      this.#strip.innerHTML = `<div class="head"><b>${esc(W.layouts)}</b><span>${esc(W.layoutsHint)}</span></div><div class="reel"></div>`;
+      // laid out from the element as written, not as previewed
+      this.#layout.fill(this.#strip.querySelector('.reel'), frozen);
+      return this.#stripShow();
+    }
     const opts = this.#options(), cur = this.#pick;
     // the current one first, then yours, then the pack's
     opts.sort((a, b) => (b.key === cur) - (a.key === cur));
-    const frozen = freeze(this.#target);
-    this.#strip.style.background = groundOf(this.#target);
     const title = this.#view === 'shadow' ? W.strip.shadow : W.strip[this.#tab];
     this.#strip.setAttribute('aria-label', title);
     this.#strip.innerHTML = `<div class="head"><b>${esc(title)}</b><span>${esc(W.stripHint)}</span></div><div class="reel"></div>`;
@@ -648,6 +707,9 @@ export class ElementCard {
       shot.insertAdjacentHTML('beforeend', `<span class="cap"><b>${esc(o.name)}</b><em class="v ${o.tag.cls}"${o.verdict?.text ? ` title="${esc(o.verdict.text)}"` : ''}>${esc(o.tag.text)}</em></span>`);
       reel.append(shot);
     }
+    this.#stripShow();
+  }
+  #stripShow() {
     const fresh = this.#strip.hidden;
     this.#strip.hidden = false;
     if (fresh) { this.#strip.style.animation = 'none'; void this.#strip.offsetWidth; this.#strip.style.removeProperty('animation'); }
@@ -655,28 +717,37 @@ export class ElementCard {
   }
   #stopLoops() { for (const l of this.#loops) clearInterval(l); this.#loops = []; }
   #stripClose() { this.#stopLoops(); this.#strip.hidden = true; this.#strip.innerHTML = ''; }
-  // beside the card when there is room (a column, scrolling), else under the element and the card (a row)
+  // Beside the card when there is room (a column, scrolling); else under the element, else above it (a row), never over
+  // the card or the fix bar and never past the screen: with no room anywhere it takes the larger space and scrolls inside
   #placeStrip() {
     if (this.#strip.hidden || !this.#target?.isConnected) return;
-    const t = this.#target.getBoundingClientRect(), c = this.#el.getBoundingClientRect(), need = Math.min(t.width, 480) + 80;
-    const right = innerWidth - c.right - 18 - EDGE, left = c.left - 18 - EDGE, side = this.#el.dataset.side;
-    const s = this.#strip.style;
+    const t = this.#target.getBoundingClientRect(), c = this.#el.getBoundingClientRect(), bar = this.#host.bar?.(), side = this.#el.dataset.side;
+    const st = this.#strip, s = st.style, MIN = 150, need = Math.min(t.width, 480) + 80;
+    // the lowest a box spanning x0..x1 may reach: the fix bar's top when the bar is under it, else the screen's bottom
+    const floor = (x0, x1) => (bar?.width && bar.left < x1 && bar.right > x0 ? Math.min(innerHeight - EDGE, bar.top - 12) : innerHeight - EDGE);
+    const put = (where, x0, w, top, max) => { st.dataset.side = where; Object.assign(s, { left: `${x0}px`, top: `${Math.max(EDGE, top)}px`, width: `${w}px`, maxHeight: `${Math.max(60, max)}px` }); };
+    const right = innerWidth - c.right - 18 - EDGE, left = c.left - 18 - EDGE;
     if ((side !== 'left' && right >= need) || (side === 'left' && left >= need)) {
-      this.#strip.dataset.side = 'beside';
-      const w = Math.min(side === 'left' ? left : right, need + 40);
-      Object.assign(s, { left: `${side === 'left' ? c.left - 18 - w : c.right + 18}px`, top: `${c.top}px`, width: `${w}px`, maxHeight: `${innerHeight - c.top - EDGE}px` });
-    } else {
-      this.#strip.dataset.side = 'below';
-      // never over the card: beside the element's side of it when the card stands beside the element, else under both
-      const beside = side === 'right' || side === 'left';
-      const x0 = beside && side === 'left' ? c.right + 18 : EDGE, x1 = beside && side === 'right' ? c.left - 18 : innerWidth - EDGE;
-      const top = Math.max(EDGE, Math.min(innerHeight - 160, (beside ? t.bottom : Math.max(t.bottom, c.bottom)) + 18));
-      Object.assign(s, { left: `${x0}px`, top: `${top}px`, width: `${Math.max(200, x1 - x0)}px`, maxHeight: `${Math.max(160, innerHeight - top - EDGE)}px` });
+      const w = Math.min(side === 'left' ? left : right, need + 40), x0 = side === 'left' ? c.left - 18 - w : c.right + 18, top = Math.max(EDGE, c.top);
+      if (floor(x0, x0 + w) - top >= MIN) return put('beside', x0, w, top, floor(x0, x0 + w) - top);
     }
+    const beside = side === 'right' || side === 'left';
+    const x0 = beside && side === 'left' ? c.right + 18 : EDGE, x1 = beside && side === 'right' ? c.left - 18 : innerWidth - EDGE, w = Math.max(200, Math.min(x1, innerWidth - EDGE) - x0);
+    // its own height at this width, to know whether it fits
+    st.dataset.side = 'below'; Object.assign(s, { width: `${w}px`, maxHeight: 'none' });
+    const h = st.offsetHeight, low = floor(x0, x0 + w);
+    const below = { top: (beside ? t.bottom : Math.max(t.bottom, c.bottom)) + 18 }, aboveBottom = (beside ? t.top : Math.min(t.top, c.top)) - 18;
+    below.room = low - below.top;
+    const aboveRoom = aboveBottom - EDGE;
+    if (below.room >= Math.min(h, MIN)) return put('below', x0, w, below.top, below.room);
+    if (aboveRoom >= Math.min(h, MIN)) { const hh = Math.min(h, aboveRoom); return put('below', x0, w, aboveBottom - hh, aboveRoom); }
+    // no room either side: the larger space, scrolling inside
+    if (below.room >= aboveRoom) { const top = Math.min(below.top, low - MIN); return put('below', x0, w, top, low - Math.max(EDGE, top)); }
+    return put('below', x0, w, EDGE, aboveRoom);
   }
 
   // ── placement: texteditor.js's, unchanged ──
-  #follow = () => { if (this.#target) requestAnimationFrame(() => { this.#place(); }); };
+  #follow = () => { if (this.#target) requestAnimationFrame(() => { this.#place(); this.#layout.follow(); }); };
   #place() {
     const el = this.#target;
     if (!el?.isConnected) return;
@@ -706,6 +777,7 @@ export class ElementCard {
 
   // ── write: the request previewed, applied; said in the fix panel with Undo ──
   async #use() {
+    if (this.#view === 'layout') return this.#useLayout();
     if (!this.#canUse()) return;
     const o = this.#option(), body = this.#body(o), name = this.name;
     const files = [...new Set(this.#preview.writes.map((w) => w.file.split('/').pop()))];
@@ -723,20 +795,40 @@ export class ElementCard {
     }
   }
 
+  async #useLayout() {
+    if (this.#writing || !this.#layout.edits().length) return;
+    const s = this.#layout.state, said = W.laidOut(this.name, s.mode, s.sub);
+    this.#writing = true; this.#wrong = null; this.#draw();
+    try {
+      const writes = await this.#layout.writes();
+      this.#writing = false;
+      this.#back();
+      await this.#swaps(writes, said);
+    } catch (error) {
+      this.#writing = false;
+      this.#wrong = error?.message ?? String(error);
+      this.#draw();
+    }
+  }
+
   // ── keys ──
   // at rest: ↑ ↓ the field, Enter (or →) opens it, Esc closes the card. In a drill: ↑ ↓ step through the options,
   // ← → turn the light (shadow) or change the time (motion), R plays, Enter writes, Esc goes back. '.' is the panel's.
   key(k) {
     if (!this.#target) return false;
     if (this.#hand) { if (k === 'Escape') this.#hand.cancel(); return true; }
+    // a spacing change in hand on the element: Enter writes it, Esc puts it back
+    if (this.#spacing.key(k)) return true;
     if (!this.#view) {
-      if (k === 'ArrowUp' || k === 'ArrowDown') { this.#row = k === 'ArrowDown' ? 1 : 0; this.#draw(); return true; }
-      if ((k === 'Enter' || k === 'ArrowRight') && this.#state === 'ready') { this.#drill(this.#row ? 'motion' : 'shadow'); return true; }
+      const fields = this.#fieldsNow();
+      if (k === 'ArrowUp' || k === 'ArrowDown') { this.#row = Math.max(0, Math.min(fields.length - 1, this.#row + (k === 'ArrowDown' ? 1 : -1))); this.#draw(); return true; }
+      if ((k === 'Enter' || k === 'ArrowRight') && this.#state === 'ready') { this.#drill(fields[this.#row] ?? 'shadow'); return true; }
       if (k === 'Escape') { this.close(); this.#host.closed?.(); return true; }
       return false;
     }
     if (k === 'Escape') { this.#back(); return true; }
     if (k === 'Enter') { this.#use(); return true; }
+    if (this.#view === 'layout') return k !== '.';
     if (k === 'r' || k === 'R') { this.#playNow(); return true; }
     if (k === 'ArrowUp' || k === 'ArrowDown') {
       const opts = this.#options(); if (!opts.length) return true;

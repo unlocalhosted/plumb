@@ -372,7 +372,8 @@ class PlumbOverlay extends HTMLElement {
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
     await new Promise(r => setTimeout(r, 120)); // let the app render first
-    if (saved.blueprint) this.#blueprint?.enter({ instant: true, scope: scopeOf(saved.scope) });
+    // an element card that was open comes back open on its element
+    if (saved.blueprint) this.#blueprint?.enter({ instant: true, scope: scopeOf(saved.scope), card: !!saved.card });
     if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
@@ -542,7 +543,7 @@ class PlumbOverlay extends HTMLElement {
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); this.#structures = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
-  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place, scope: scopeKey(this.#blueprint?.scope) })); } catch {} }
+  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {

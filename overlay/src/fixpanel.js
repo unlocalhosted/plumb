@@ -270,6 +270,8 @@ export class FixPanel {
     // Alt+click on anything else: its own card, Shadow › and Motion › on the recipe engine (elementcard.js)
     this.#card = new ElementCard(root, {
       apply: (at, body, said) => this.#host.recipe(at, body, said),
+      swaps: (writes, said) => this.#host.swaps(writes, said),
+      bar: () => this.rect,
       said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#live().filter((x) => !noteOf(x)).length,
       show: () => { this.#card.close(); this.hold(0); },
@@ -316,6 +318,7 @@ export class FixPanel {
   // Alt+click on anything else opens its card beside it; the element's own cause may still be put in hand (Blueprint
   // does that once it is read), and the card puts it down when it is worked in
   card(el) { this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
+  get carding() { return this.#card.open; }
   get editing() { return this.#editor.open ? this.#editor.target : this.#card.open ? this.#card.target : null; }
   // a file was written or undone: the element in the editor (or the card) is read again
   changed() { this.#editor.changed(); this.#card.changed(); }

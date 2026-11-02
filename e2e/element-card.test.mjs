@@ -79,6 +79,13 @@ test('Shadow ›: the strip tries each shadow on the element, a pick shows the e
   assert.match(await strip.locator('.shot[data-key="p:raised"] .v').innerText(), /new/);
   await card.locator('.writes .note').filter({ hasText: /Nothing to write/ }).waitFor({ timeout: 20000 });
   assert.equal(await card.locator('.use').isDisabled(), true, 'nothing to write: Write it waits');
+  // the strip is on the screen and never over the card or the fix bar
+  const within = await page.evaluate(() => {
+    const root = document.querySelector('plumb-overlay').shadowRoot, r = (sel) => root.querySelector(sel).getBoundingClientRect();
+    const st = r('.ec-strip'), c = r('.ec'), fx = r('.fx'), apart = (a, b) => !b.width || a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+    return { inside: st.left >= 0 && st.top >= 0 && st.right <= innerWidth && st.bottom <= innerHeight, card: apart(st, c), bar: apart(st, fx) };
+  });
+  assert.deepEqual(within, { inside: true, card: true, bar: true });
 
   // pointing at a copy tries it on the real element; leaving puts it back exactly
   await strip.locator('.shot[data-key="p:floating"]').hover();
@@ -125,8 +132,8 @@ test('Shadow ›: the strip tries each shadow on the element, a pick shows the e
 
   // Undo: every file back exactly
   await overlay.locator('.fx .said .undo').click();
-  // (undoing the theme reloads the page again; the files are the proof)
-  for (let i = 0; i < 40 && JSON.stringify(await read()) !== JSON.stringify(original); i++) await new Promise((r) => setTimeout(r, 250));
+  // undoing the theme reloads the page again: Blueprint comes back saying it was undone, and every file is back exactly
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.deepEqual(await read(), original);
   assert.deepEqual(errors, []);
 });
@@ -173,8 +180,8 @@ test('Motion ›: hover and press options play on copies, a pick shows its edit,
   assert.equal(await el.evaluate((n) => n.getAttribute('style') ?? ''), '');
   assert.deepEqual(await read(), original);
 
-  // again, by keys: back from Motion, Motion is the field in hand; ↓ keeps it, Enter opens it; ↓ takes the first option, Enter writes it
-  await page.keyboard.press('ArrowDown');
+  // again, by keys: back from Motion, Motion is the field in hand and Enter opens it; ↓ takes the first option, Enter writes it
+  assert.equal(await card.locator('.drill[data-at]').getAttribute('data-open'), 'motion');
   await page.keyboard.press('Enter');
   await strip.locator('.shot').first().waitFor();
   await page.keyboard.press('ArrowDown');

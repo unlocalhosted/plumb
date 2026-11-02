@@ -47,6 +47,9 @@ const LAYER_CSS = `
   .bp[data-on] > :is(.labels, svg) { opacity: 1; transition-duration: var(--pl-dur-dim); }
   @media (prefers-reduced-motion: reduce) { .bp > :is(.labels, svg) { transition: none; } }
 `;
+// the server answered no (post() gives it a status); anything else is a request the page cut off (a reload it caused)
+const answeredNo = (error) => Number.isInteger(error?.status);
+
 export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS + FIX_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -88,7 +91,8 @@ export class Blueprint {
       announce: (text) => this.#host.announce?.(text),
       applyAll: (tokens, keeps, total, swaps, said, at) => this.#applyAll(tokens, keeps, total, swaps, said, at),
       // an undo may reload the page as its write did: Blueprint comes back after it, saying it was undone
-      undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
+      // (a request cut off by the reload it caused is not a refusal: what was remembered stays for the page that comes back)
+      undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
       system: () => this.#system(),
@@ -96,6 +100,7 @@ export class Blueprint {
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said) => this.#applyRecipe(at, body, said),
+      swaps: (writes, said) => this.#swapsWrite(writes, said),
       unwant: () => { this.#want = null; },
       // why an element can't be placed in the source, as the panel says it
       why: async (el) => { const state = await this.#host.readMarks?.(el); return state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : null; },
@@ -478,7 +483,7 @@ export class Blueprint {
     this.#host.remember?.(said);
     let result;
     try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token }); }
-    catch (error) { this.#host.forgetResume?.(); throw error; }
+    catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; }
     this.#host.remember?.(said, result?.undo ? [result.undo] : []);
     this.invalidate({ file: at.file });
     return result;
@@ -489,12 +494,30 @@ export class Blueprint {
     this.#host.remember?.(said);
     let result;
     try { result = await post('recipes/apply', { file: at.file, hash: at.hash, line: at.line, column: at.column, ...body }); }
-    catch (error) { this.#host.forgetResume?.(); throw error; }
+    catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; }
     this.#host.remember?.(said, result?.undo ?? []);
     const files = new Set([at.file, ...(result?.undo ?? []).map((h) => h.file).filter(Boolean)]);
     for (const file of files) this.invalidate({ file });
     return result;
   }
+  // Class swaps on one or more lines (the element card's layout and spacing): one POST swaps per file, remembered first as
+  // every write is; each file's undo handle goes with the said line. A place the server refuses is said in its words.
+  async #swapsWrite(writes, said) {
+    this.#host.remember?.(said);
+    const undo = [], refused = [];
+    try {
+      for (const w of writes) {
+        const r = await post('swaps', { file: w.file, hash: w.hash, edits: w.edits });
+        if (r?.undo) undo.push(r.undo);
+        refused.push(...(r?.refused ?? []).map((x) => x.reason));
+      }
+    } catch (error) { if (answeredNo(error)) { if (undo.length) this.#host.remember?.(said, undo); else this.#host.forgetResume?.(); } if (!undo.length) throw error; refused.push(error?.message ?? String(error)); }
+    this.#host.remember?.(said, undo);
+    for (const w of writes) this.invalidate({ file: w.file });
+    return { undo, refused };
+  }
+  // an element card is open (it comes back open after a reload a write causes)
+  get carding() { return this.#fix.carding; }
   // the element being read (an Alt+click), or null for the whole page
   get scope() { return this.#scope; }
   // from one element to the whole page (Alt+B while one element is read)
