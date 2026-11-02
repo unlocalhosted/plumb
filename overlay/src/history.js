@@ -1,24 +1,32 @@
 /* ─────────────────────────────────────────────────────────
  * WRITE HISTORY · React Plumber overlay
  *
- * Every write can be taken back (docs/briefs/editor-roadmap.md). The server keeps the last twenty writes and returns
- * an undo handle with each one (POST /undo restores the file while nothing has touched it since).
+ * Every change can be taken back, on its own (docs/briefs/time-travel.md, layer 1). The server traces each change a
+ * write makes (GET trace) and undoes one, or a step, where it is found now (POST undo-change, undo-group).
  *
- *  toast    after any write (words, a blueprint fix, a card's Write): what was written and where, with Undo, for a
- *           few seconds by the dock. A dev server that reloads the page after the write brings the toast back
- *  list     the dock's history button: the recent writes, newest first, each with Undo. A write that something newer
- *           changed since says so instead of undoing it
- *  undo     restores the file; the page follows through the dev server. A refusal says why, in the toast
+ *  toast     after any write: what was written and where, with Undo, for a few seconds by the dock. A dev server
+ *            that reloads the page after the write brings the toast back
+ *  timeline  the dock's history button grows the dock into a strip: time runs left to right, Now at the right end;
+ *            one tick per change, one segment per step (one write, or one tagged group), the step's name the only
+ *            word at rest. A playhead points at one change: one pill holds its from → to and its laws
+ *  states    a tick is live (ink), undone (hollow), changed since (hatched butter: edited after, can't be undone
+ *            alone) or an undo (a return notch); loading shows ghost ticks; empty and error say so in one line
+ *  undo      Undo change (⌫) and Undo step (⇧⌫) act on the pointed change; an undo is itself a tick. A refusal
+ *            shakes the tick and says what to do instead
+ *  keys      the playhead is a slider: ←/→ one change, ⇧←/⇧→ one step, Home/End; Esc closes, back to the button
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
 import { esc } from './choices.js';
+import { TIMELINE as T } from './words.js';
 
 export const HISTORY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3.75V6l1.6 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 
 const HOLD = 6000;
 const RESUME = 'plumb:wrote';
 const short = (file) => String(file ?? '').split('/').pop();
-const ago = (at) => { const s = Math.round((Date.now() - Date.parse(at)) / 1000); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : `${Math.round(s / 3600)}h ago`; };
+const lawsOf = (c) => (Array.isArray(c?.meta?.laws) ? c.meta.laws : []).map((l) => (typeof l === 'string' ? l : l?.name)).filter(Boolean);
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export const HISTORY_CSS = `
   .wt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4));
@@ -28,30 +36,94 @@ export const HISTORY_CSS = `
     opacity: 0; translate: 0 4px; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
   .wt[data-on] { opacity: 1; translate: 0 0; }
   .wt .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wt .what code, .hl code { font: var(--pl-card-code); }
+  .wt .what code { font: var(--pl-card-code); }
   .wt[data-kind="error"] .what { color: var(--pl-off); white-space: normal; }
-  :is(.wt, .hl) button { all: unset; cursor: pointer; padding: 3px var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); color: var(--pl-accent); white-space: nowrap; }
-  :is(.wt, .hl) button:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 1px; }
-  :is(.wt, .hl) button:disabled { color: var(--pl-ink-3); cursor: default; }
-  @media (hover: hover) and (pointer: fine) { :is(.wt, .hl) button:not(:disabled):hover { background: var(--pl-paper-2); } }
-  .hl { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); width: 360px;
-    max-width: calc(100vw - 2 * var(--pl-space-6)); max-height: min(60vh, 460px); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; pointer-events: auto;
-    padding: var(--pl-space-4) var(--pl-space-3) var(--pl-space-3); background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
-    opacity: 0; translate: 0 4px; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
-  .hl[data-on] { opacity: 1; translate: 0 0; }
-  .hl .title { font: var(--pl-card-title); padding: 0 var(--pl-space-3) var(--pl-space-3); }
-  .hl .row { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: var(--pl-space-4); padding: var(--pl-space-3); border-radius: var(--pl-radius-row); }
-  .hl .row + .row { border-top: 1px solid var(--pl-rule); }
-  .hl .row.stale .label, .hl .row.stale .where { color: var(--pl-ink-2); } .hl .row.stale { grid-template-columns: 1fr; }
-  .hl .row .label { font: var(--pl-card-body); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hl .row .where { grid-column: 1; font: var(--pl-card-meta); color: var(--pl-ink-2); }
-  .hl .row button { grid-row: 1 / span 2; grid-column: 2; }
-  .hl .empty { padding: var(--pl-space-3); font: var(--pl-card-body); color: var(--pl-ink-2); }
-  @media (prefers-reduced-motion: reduce) { .wt, .hl { transition: none; translate: 0 0; } }
+  .wt button, .tt button { all: unset; cursor: pointer; padding: 6px var(--pl-space-4); border-radius: var(--pl-radius-row); font: var(--pl-text-label); color: var(--pl-ink); white-space: nowrap; }
+  .wt button { padding: 3px var(--pl-space-4); color: var(--pl-accent); }
+  :is(.wt, .tt) button:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 1px; }
+  :is(.wt, .tt) button:disabled { color: var(--pl-ink-3); cursor: default; }
+  @media (hover: hover) and (pointer: fine) { :is(.wt, .tt) button:not(:disabled):hover { background: var(--pl-paper-2); } }
+
+  /* the timeline: the dock grown into a strip, same corner */
+  .tt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); box-sizing: border-box; pointer-events: auto;
+    width: min(760px, calc(100vw - 2 * var(--pl-space-6))); display: flex; align-items: flex-end; gap: var(--pl-space-5);
+    padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); color: var(--pl-ink);
+    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
+  .tt[hidden] { display: none; }
+  .tt .tt-glyph { flex: none; align-self: center; width: 20px; height: 20px; display: grid; place-items: center; color: var(--pl-ink-2); }
+  .tt .tt-glyph svg, .tt .tt-x svg { width: 14px; height: 14px; }
+  .tt .tt-track { position: relative; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: visible; scrollbar-width: none; outline: none; padding-top: 6px; touch-action: pan-x; cursor: default; }
+  .tt .tt-track::-webkit-scrollbar { display: none; }
+  /* focus is shown where the keys act: a ring around the playhead's knob */
+  .tt .tt-track:focus-visible .tt-head::before { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 4px var(--pl-accent); }
+  .tt .tt-steps { position: relative; display: flex; align-items: flex-end; gap: var(--pl-space-6); padding: 0 var(--pl-space-2); width: max-content; }
+  .tt .tt-seg { display: flex; flex-direction: column; gap: var(--pl-space-3); }
+  .tt .tt-seg .tt-name { font: var(--pl-text-label); color: var(--pl-ink-2); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .tt .tt-ticks { display: flex; align-items: flex-end; gap: 6px; height: 20px; padding: 0 2px 3px; border-bottom: 1px solid var(--pl-rule); }
+  .tt .tt-tick { flex: none; width: 2px; height: 14px; border-radius: 1px; background: var(--pl-ink); transform-origin: bottom;
+    transition: height var(--pl-dur-feedback) var(--pl-ease-out), background-color var(--pl-dur-feedback), box-shadow var(--pl-dur-feedback); }
+  .tt .tt-tick[data-state="undone"] { width: 4px; background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
+  .tt .tt-tick[data-state="changed"] { width: 4px; background: repeating-linear-gradient(-45deg, var(--pl-soft) 0 1.5px, var(--pl-soft-bg) 1.5px 3px); }
+  .tt .tt-tick[data-undo] { position: relative; }
+  .tt .tt-tick[data-undo]::before { content: ""; position: absolute; top: -3px; left: -2px; width: 3px; height: 2px; border-top: 1px solid currentColor; border-left: 1px solid currentColor; color: var(--pl-ink); }
+  .tt .tt-tick[aria-current="true"] { height: 18px; }
+  .tt .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { background: var(--pl-accent); }
+  .tt .tt-tick[aria-current="true"][data-state="undone"] { box-shadow: inset 0 0 0 1px var(--pl-accent); }
+  .tt .tt-tick[aria-current="true"][data-state="changed"] { box-shadow: 0 0 0 1px var(--pl-accent); }
+  .tt .tt-tick.ghost { background: var(--pl-paper-2); animation: tt-ghost 1.2s ease-in-out infinite alternate; }
+  .tt .tt-tick.busy { animation: tt-ghost 600ms ease-in-out infinite alternate; }
+  .tt .tt-tick.shake { animation: tt-shake 160ms ease-in-out 2; }
+  .tt .tt-tick.enter { animation: tt-enter 280ms var(--pl-spring-pop) both; }
+  @media (hover: hover) and (pointer: fine) { .tt .tt-tick:not(.ghost):hover { height: 16px; } }
+  .tt .tt-head { position: absolute; left: 0; bottom: -4px; width: 1px; height: 26px; background: var(--pl-accent); box-shadow: 0 0 0 1px var(--pl-halo); pointer-events: none;
+    transition: translate var(--pl-dur-travel) var(--pl-ease-out); }
+  .tt .tt-head::before { content: ""; position: absolute; top: -4px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pl-accent); box-shadow: 0 0 0 2px var(--pl-paper); }
+  .tt .tt-now { flex: none; margin-inline-end: auto; padding-bottom: 3px; font: var(--pl-text-label); color: var(--pl-ink-3); }
+  .tt .tt-pill { position: absolute; bottom: calc(100% + var(--pl-space-4)); left: 0; max-width: calc(100vw - 2 * var(--pl-space-6)); box-sizing: border-box;
+    padding: 4px var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-paper); box-shadow: var(--pl-shadow-tag);
+    font: var(--pl-card-code); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    transition: translate var(--pl-dur-travel) var(--pl-ease-out), opacity var(--pl-dur-feedback); }
+  .tt .tt-pill[hidden] { display: none; }
+  .tt .tt-pill .tt-kind { font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-end: var(--pl-space-3); }
+  .tt .tt-pill .tt-law { font: var(--pl-card-meta); color: var(--pl-lilac); margin-inline-start: var(--pl-space-3); }
+  .tt .tt-pill[data-kind="warn"] { font: var(--pl-card-meta); white-space: normal; max-width: min(360px, calc(100vw - 2 * var(--pl-space-6))); box-shadow: 0 0 0 1px var(--pl-soft), 0 2px 6px -2px rgb(28 27 25 / 0.24); }
+  .tt .tt-pill[data-kind="error"] { font: var(--pl-card-meta); white-space: normal; color: var(--pl-off); }
+  .tt .tt-say { align-self: center; margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .tt .tt-acts { flex: none; align-self: center; display: flex; gap: var(--pl-space-2); }
+  .tt .tt-acts kbd { margin-inline-start: var(--pl-space-3); font: 500 10px/1 var(--pl-mono); color: var(--pl-ink-2); }
+  .tt .tt-acts button:disabled kbd { color: var(--pl-ink-3); }
+  @media (pointer: coarse) { .tt .tt-acts kbd { display: none; } }
+  .tt .tt-x { flex: none; align-self: center; width: 28px; height: 28px; padding: 0 !important; display: grid; place-items: center; color: var(--pl-ink-2) !important; }
+  @keyframes tt-ghost { from { opacity: 0.45; } to { opacity: 1; } }
+  @keyframes tt-shake { 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
+  @keyframes tt-enter { from { transform: scaleY(0.6); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .wt { transition: none; translate: 0 0; }
+    .tt .tt-tick, .tt .tt-head, .tt .tt-pill { transition: none; }
+    .tt .tt-tick.shake, .tt .tt-tick.enter, .tt .tt-tick.busy { animation: none; }
+  }
 `;
 
+// The trace, oldest first, cut into steps: consecutive changes of one group
+function stepsOf(changes) {
+  const steps = [];
+  for (const c of [...changes].reverse()) {
+    const last = steps.at(-1);
+    if (last && last.group === c.group) last.changes.push(c); else steps.push({ group: c.group, changes: [c] });
+  }
+  for (const s of steps) {
+    const first = s.changes[0];
+    s.name = first.meta?.step ?? first.meta?.layer ?? (s.changes.every((c) => c.undoes) ? T.undoStepName : short(first.file));
+  }
+  return steps;
+}
+const live = (c) => c?.state === 'live';
+// why a change can't be undone here, in words, from its state
+const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ? T.changedLater : T.changedByHand);
+
 export class History {
-  #toast; #list; #button; #host; #timer = 0; #last = null;
+  #toast; #strip; #button; #host; #timer = 0; #last = null;
+  #steps = []; #flat = []; #at = -1; #busy = false; #status = 'idle'; #warn = null; #seen = new Set(); #press = false;
 
   // button: the dock's history button; host: announce(text), changed()
   constructor(root, { button, host }) {
@@ -59,32 +131,39 @@ export class History {
     this.#host = host;
     this.#toast = Object.assign(document.createElement('div'), { className: 'wt', hidden: true });
     this.#toast.setAttribute('role', 'status');
-    this.#list = Object.assign(document.createElement('section'), { className: 'hl', hidden: true });
-    this.#list.setAttribute('role', 'dialog');
-    this.#list.setAttribute('aria-label', 'History');
-    this.#list.tabIndex = -1;
-    root.append(this.#toast, this.#list);
+    this.#strip = Object.assign(document.createElement('section'), { className: 'tt', hidden: true });
+    this.#strip.setAttribute('role', 'dialog');
+    this.#strip.setAttribute('aria-label', T.title);
+    root.append(this.#toast, this.#strip);
     button.addEventListener('click', () => this.toggle());
     this.#toast.addEventListener('click', (e) => { if (e.target.closest('.undo') && this.#last) this.undo(this.#last); });
-    this.#list.addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) this.undo({ id: b.dataset.id, file: b.dataset.file, label: b.dataset.label }); });
+    this.#strip.addEventListener('click', (e) => {
+      const act = e.target.closest('button[data-act]')?.dataset.act;
+      if (act === 'close') this.toggle(false); else if (act) this.#undo(act);
+    });
+    this.#strip.addEventListener('keydown', (e) => this.#key(e));
+    this.#strip.addEventListener('pointerdown', (e) => { const track = e.target.closest('.tt-track'); if (!track || e.button !== 0) return; this.#press = true; track.setPointerCapture(e.pointerId); this.#pointAt(e.clientX); });
+    this.#strip.addEventListener('pointermove', (e) => { if (this.#press) this.#pointAt(e.clientX); });
+    for (const end of ['pointerup', 'pointercancel']) this.#strip.addEventListener(end, () => { this.#press = false; });
     this.#resume();
   }
 
-  get open() { return !this.#list.hidden; }
-  occluders() { return [this.#toast, this.#list].filter((e) => !e.hidden).map((e) => e.getBoundingClientRect()); }
+  get open() { return !this.#strip.hidden; }
+  occluders() { return [this.#toast, this.#strip].filter((e) => !e.hidden).map((e) => e.getBoundingClientRect()); }
 
   // A write landed: say it, with Undo. `result` is the server's answer (it carries `undo`); `text` says it in words.
   wrote(result, text) {
     const handle = result?.undo;
+    if (this.open) this.#load();
     if (!handle) return this.#say(text ?? `Wrote ${short(result?.file)}`);
     this.#last = handle;
     const said = text ?? `Applied ${handle.label} in ${short(handle.file)}`;
     // a dev server may reload the page after the write: the toast comes back after it
     try { sessionStorage.setItem(RESUME, JSON.stringify({ handle, text: said, at: Date.now() })); } catch {}
     this.#say(said, true);
-    if (this.open) this.#render();
   }
 
+  // the toast's Undo: the whole write, as before (layer 4 makes it the step)
   async undo(handle) {
     try { sessionStorage.removeItem(RESUME); } catch {}
     try {
@@ -95,27 +174,176 @@ export class History {
     } catch (error) {
       this.#say(/changed since/i.test(error?.message ?? '') ? `${short(handle.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : `Couldn’t undo. ${error?.message ?? 'Check again.'}`, false, 'error');
     }
-    if (this.open) this.#render();
+    if (this.open) this.#load();
     this.#host.changed?.();
   }
 
   toggle(on = !this.open) {
+    if (on === this.open) return;
     this.#button.setAttribute('aria-pressed', String(on));
-    if (!on) { this.#list.removeAttribute('data-on'); this.#list.hidden = true; return; }
-    this.#list.hidden = false;
+    if (!on) return this.#close();
+    this.#strip.hidden = false;
+    this.#seen.clear();
+    this.#at = -1;
+    this.#status = 'loading';
     this.#render();
-    requestAnimationFrame(() => this.#list.setAttribute('data-on', ''));
-    this.#list.focus({ preventScroll: true });
+    this.#grow();
+    this.#load();
   }
   escape() { if (this.open) return this.toggle(false), true; return false; }
 
-  async #render() {
-    const said = await request('history', {}).catch(() => null);
-    const writes = said?.writes ?? [];
-    // a write whose file changed outside React Plumber since can't be undone here: it says so, with no Undo to fail
-    const row = (w) => `<div class="row${w.stale ? ' stale' : ''}"><span class="label">${esc(w.label)}</span><span class="where"><code>${esc(short(w.file))}:${w.line}</code> · ${esc(ago(w.at))}${w.stale ? ' · changed since, undo it in your editor' : ''}</span>${w.stale ? '' : `<button type="button" data-id="${esc(w.id)}" data-file="${esc(w.file)}" data-label="${esc(w.label)}">Undo</button>`}</div>`;
-    this.#list.innerHTML = `<div class="title">History</div>${writes.length ? writes.map(row).join('')
-      : '<div class="empty">No changes yet. Changes you apply show up here, ready to undo.</div>'}`;
+  // the dock grows into the strip: clipped from the dock's box to the strip's, on the spring; still motion fades
+  #grow(back = false) {
+    const strip = this.#strip, dock = this.#button.closest('.dock')?.getBoundingClientRect();
+    const box = strip.getBoundingClientRect(), css = getComputedStyle(strip);
+    // keyframes take resolved values: the radius is read, not referenced
+    const round = `round ${css.getPropertyValue('--pl-radius-card').trim() || '12px'}`;
+    const from = dock && dock.width ? `inset(${Math.max(0, dock.top - box.top)}px ${Math.max(0, box.right - dock.right)}px ${Math.max(0, box.bottom - dock.bottom)}px ${Math.max(0, dock.left - box.left)}px ${round})` : `inset(0px 0px 0px 0px ${round})`;
+    const to = `inset(0px 0px 0px 0px ${round})`;
+    const motion = still()
+      ? strip.animate([{ opacity: back ? 1 : 0 }, { opacity: back ? 0 : 1 }], { duration: 120, easing: 'linear' })
+      : strip.animate([{ clipPath: back ? to : from }, { clipPath: back ? from : to }], { duration: back ? 160 : 280, easing: back ? css.getPropertyValue('--pl-ease-out').trim() || 'ease-out' : css.getPropertyValue('--pl-spring').trim() || 'ease-out' });
+    for (const child of strip.children) if (!back && !still()) child.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 120, delay: 60, fill: 'backwards' });
+    return motion.finished.catch(() => {});
+  }
+  async #close() {
+    const strip = this.#strip;
+    await this.#grow(true);
+    strip.hidden = true;
+    this.#button.focus({ preventScroll: true });
+  }
+
+  async #load() {
+    try {
+      const said = await request('trace', {});
+      this.#steps = stepsOf(said?.changes ?? []);
+      this.#flat = this.#steps.flatMap((s) => s.changes.map((c) => ({ ...c, step: s })));
+      this.#status = this.#flat.length ? 'ready' : 'empty';
+    } catch { this.#status = 'error'; }
+    if (this.#at < 0 || this.#at >= this.#flat.length) this.#at = this.#flat.length - 1;
+    if (!this.open) return;
+    this.#render();
+    // a render replaces what had focus: the slider takes it back
+    this.#strip.querySelector('.tt-track')?.focus({ preventScroll: true });
+  }
+
+  #render() {
+    const s = this.#status, x = `<button type="button" class="tt-x" data-act="close" aria-label="${esc(T.close)}">${CLOSE_ICON}</button>`;
+    const glyph = `<span class="tt-glyph" aria-hidden="true">${HISTORY_ICON}</span>`;
+    if (s === 'empty' || s === 'error') { this.#strip.innerHTML = `${glyph}<span class="tt-say"${s === 'error' ? ' role="alert"' : ''}>${esc(s === 'error' ? T.error : T.empty)}</span>${x}`; return; }
+    const ghost = s === 'loading';
+    const steps = ghost ? `<div class="tt-seg"><span class="tt-name">&nbsp;</span><div class="tt-ticks">${'<span class="tt-tick ghost"></span>'.repeat(6)}</div></div>`
+      : this.#steps.map((step) => `<div class="tt-seg" data-group="${esc(step.group)}"><span class="tt-name">${esc(step.name)}</span><div class="tt-ticks">${step.changes.map((c) => {
+        const i = this.#flat.findIndex((f) => f.id === c.id), fresh = !this.#seen.has(c.id);
+        return `<span class="tt-tick${fresh && this.#seen.size ? ' enter' : ''}" data-i="${i}" data-id="${esc(c.id)}" data-state="${esc(c.state)}"${c.undoes ? ' data-undo' : ''}></span>`;
+      }).join('')}</div></div>`).join('');
+    for (const c of this.#flat) this.#seen.add(c.id);
+    this.#strip.innerHTML = `${glyph}<div class="tt-track" role="slider" tabindex="0" aria-label="${esc(T.slider)}"><div class="tt-steps">${steps}<span class="tt-head" aria-hidden="true"${ghost ? ' hidden' : ''}></span></div></div>`
+      + `<span class="tt-now" aria-hidden="true">${esc(T.now)}</span><div class="tt-pill" aria-hidden="true" hidden></div>`
+      + `<div class="tt-acts"><button type="button" data-act="change" disabled>${esc(T.undoChange)}<kbd>⌫</kbd></button><button type="button" data-act="step" disabled>${esc(T.undoStep)}<kbd>⇧⌫</kbd></button></div>${x}`;
+    if (!ghost) this.#point(this.#at, true);
+  }
+
+  // point the playhead at change i: the tick, the head, the pill, the slider's value, the actions
+  #point(i, instant = false) {
+    const n = this.#flat.length;
+    if (!n) return;
+    this.#at = Math.max(0, Math.min(n - 1, i));
+    const c = this.#flat[this.#at], track = this.#strip.querySelector('.tt-track');
+    for (const t of this.#strip.querySelectorAll('.tt-tick[aria-current]')) t.removeAttribute('aria-current');
+    const tick = this.#strip.querySelector(`.tt-tick[data-i="${this.#at}"]`);
+    tick?.setAttribute('aria-current', 'true');
+    // keep it in view: the strip scrolls, the page never does
+    if (tick && track) {
+      const tr = track.getBoundingClientRect(), r = tick.getBoundingClientRect();
+      if (r.left < tr.left + 8) track.scrollLeft -= tr.left + 8 - r.left; else if (r.right > tr.right - 8) track.scrollLeft += r.right - (tr.right - 8);
+    }
+    const head = this.#strip.querySelector('.tt-head'), steps = this.#strip.querySelector('.tt-steps');
+    if (head && tick && steps) {
+      if (instant) head.style.transition = 'none';
+      head.style.translate = `${tick.offsetLeft + tick.offsetWidth / 2}px 0`; // the tick's offsetParent is .tt-steps
+      if (instant) requestAnimationFrame(() => { head.style.transition = ''; });
+    }
+    const laws = lawsOf(c);
+    track?.setAttribute('aria-valuemin', '1'); track?.setAttribute('aria-valuemax', String(n)); track?.setAttribute('aria-valuenow', String(this.#at + 1));
+    track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from, c.to, laws));
+    this.#pill(c, tick, laws, instant);
+    const [change, step] = this.#strip.querySelectorAll('.tt-acts button');
+    if (change) change.disabled = this.#busy || !live(c);
+    if (step) step.disabled = this.#busy || !c.step.changes.some(live);
+  }
+
+  #pill(c, tick, laws, instant) {
+    const pill = this.#strip.querySelector('.tt-pill');
+    if (!pill || !tick) return;
+    const warn = this.#warn?.id === c.id ? this.#warn : null;
+    pill.dataset.kind = warn?.kind ?? '';
+    pill.innerHTML = warn ? esc(warn.text)
+      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from || '∅')} → ${esc(c.to || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}`;
+    pill.hidden = false;
+    // centred on the tick, slid along its line to stay whole on screen
+    const sr = this.#strip.getBoundingClientRect(), tr = tick.getBoundingClientRect(), w = pill.offsetWidth;
+    const centre = tr.left + tr.width / 2, left = Math.max(16, Math.min(innerWidth - 16 - w, centre - w / 2));
+    if (instant) pill.style.transition = 'none';
+    pill.style.translate = `${left - sr.left}px 0`;
+    if (instant) requestAnimationFrame(() => { pill.style.transition = ''; });
+  }
+
+  #pointAt(clientX) {
+    let best = -1, gap = Infinity;
+    for (const t of this.#strip.querySelectorAll('.tt-tick[data-i]')) { const r = t.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - clientX); if (d < gap) { gap = d; best = +t.dataset.i; } }
+    if (best >= 0 && best !== this.#at) { this.#warn = null; this.#point(best); }
+  }
+
+  #key(e) {
+    if (!e.target.closest?.('.tt-track') && !['Backspace', 'Delete'].includes(e.key)) return;
+    const n = this.#flat.length, c = this.#flat[this.#at];
+    let next = null;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      if (!e.shiftKey) next = this.#at + dir;
+      else { const s = this.#steps.indexOf(c?.step) + dir, step = this.#steps[Math.max(0, Math.min(this.#steps.length - 1, s))]; next = this.#flat.findIndex((f) => f.id === (dir < 0 ? step.changes[0] : step.changes.at(-1)).id); }
+    } else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = n - 1;
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); this.#undo(e.shiftKey ? 'step' : 'change'); return; }
+    else return;
+    e.preventDefault(); e.stopPropagation();
+    this.#warn = null;
+    this.#point(next);
+  }
+
+  async #undo(kind) {
+    const c = this.#flat[this.#at];
+    if (!c || this.#busy) return;
+    if (kind === 'change' && !live(c)) return this.#refuse(c, reasonOf(c), 'warn');
+    if (kind === 'step' && !c.step.changes.some(live)) return this.#refuse(c, reasonOf(c), 'warn');
+    const targets = kind === 'change' ? [c] : c.step.changes.filter(live);
+    this.#busy = true;
+    for (const t of targets) this.#strip.querySelector(`.tt-tick[data-id="${CSS.escape(t.id)}"]`)?.classList.add('busy');
+    this.#point(this.#at);
+    this.#host.announce?.(T.undoing);
+    try {
+      const done = kind === 'change' ? await post('undo-change', { id: c.id }) : await post('undo-group', { group: c.group });
+      this.#host.announce?.(kind === 'change' ? T.undone(c.from, c.to) : T.undoneStep(done?.undone?.length ?? targets.length));
+      this.#at = Infinity;
+      this.#busy = false;
+      await this.#load();
+      this.#host.changed?.();
+    } catch (error) {
+      this.#busy = false;
+      const message = error?.message ?? '';
+      this.#refuse(c, /outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : /already undone/.test(message) ? T.undoneAlready : T.failed(message), 'warn');
+    }
+  }
+
+  // a change that can't be taken back: the tick shakes, the pill says why and what to do instead
+  #refuse(c, text, kind) {
+    this.#warn = { id: c.id, text, kind };
+    for (const t of this.#strip.querySelectorAll('.tt-tick.busy')) t.classList.remove('busy');
+    this.#point(this.#at);
+    const tick = this.#strip.querySelector(`.tt-tick[data-id="${CSS.escape(c.id)}"]`);
+    tick?.classList.remove('shake'); void tick?.offsetWidth; tick?.classList.add('shake');
+    this.#host.announce?.(text);
   }
 
   #say(text, undo = false, kind = '') {
@@ -123,8 +351,8 @@ export class History {
     this.#toast.dataset.kind = kind;
     this.#toast.innerHTML = `<span class="what">${esc(text)}</span>${undo ? '<button type="button" class="undo">Undo</button>' : ''}`;
     this.#toast.hidden = false;
-    // History open in the same corner: the toast sits on top of it, never under it
-    this.#toast.style.insetBlockEnd = this.open ? `${innerHeight - this.#list.getBoundingClientRect().top + 8}px` : '';
+    // the timeline open in the same corner: the toast sits above it, never under it
+    this.#toast.style.insetBlockEnd = this.open ? `${innerHeight - this.#strip.getBoundingClientRect().top + 8}px` : '';
     requestAnimationFrame(() => this.#toast.setAttribute('data-on', ''));
     this.#timer = setTimeout(() => {
       this.#toast.removeAttribute('data-on');

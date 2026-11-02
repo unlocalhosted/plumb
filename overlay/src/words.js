@@ -694,3 +694,27 @@ export const SETUP = {
     }[q.id] ?? { title: q.title, loses: q.loses };
   },
 };
+
+// The history timeline (history.js): one tick per change, one segment per step
+export const TIMELINE = {
+  title: 'History',
+  slider: 'Changes, oldest to newest',
+  now: 'Now',
+  empty: 'Nothing changed yet. What you write shows up here.',
+  error: 'Couldn’t read the history. Check the dev server, then reopen this.',
+  undoChange: 'Undo change',
+  undoStep: 'Undo step',
+  close: 'Close history',
+  undo: 'Undo',
+  undoing: 'Undoing…',
+  undone: (from, to) => `Undone: ${from} → ${to}`,
+  undoneStep: (n) => `Undid ${n} ${n === 1 ? 'change' : 'changes'}`,
+  // why a change can't be taken back here, and what to do instead
+  undoneAlready: 'This change is already undone.',
+  changedByHand: 'Edited outside React Plumber, so it can’t be undone here. Undo it in your editor.',
+  changedLater: 'Changed again by a later change. Undo that one first.',
+  failed: (why) => `Couldn’t undo. ${why}`,
+  // a step's name when its write didn't name it and it only undoes
+  undoStepName: 'Undo',
+  valuetext: (i, n, step, from, to, laws) => `Change ${i} of ${n}, ${step}: ${from || 'nothing'} to ${to || 'nothing'}${laws.length ? `, ${laws.join(', ')}` : ''}`,
+};

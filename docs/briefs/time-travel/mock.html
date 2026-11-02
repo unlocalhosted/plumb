@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time travel mock</title>
+<style>
+/* the overlay's own primitives (overlay/src/tokens.css), light scheme */
+:root {
+  --pl-paper: #fdfcf8; --pl-paper-2: #f4f1ea; --pl-rule: #e6e1d6; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+  --pl-sky: #2a7fd0; --pl-sky-soft: #c5e6fd; --pl-coral: #e5503f; --pl-butter: #c48a00; --pl-butter-soft: #ffeab0;
+  --pl-pink: #e0369f; --pl-pink-ink: #5a0d3c; --pl-pink-soft: #ffd0ec; --pl-lilac: #7a5cf0; --pl-mint: #1f9e64;
+  --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --pl-card-meta: 400 12px/17px var(--pl-sans); --pl-card-code: 500 12px/17px var(--pl-mono); --pl-text-label: 600 11px/14px var(--pl-sans);
+  --pl-radius-tag: 6px; --pl-radius-card: 12px;
+  --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
+  --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(28 27 25 / 0.24);
+  --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pl-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1);
+  --pl-dur-travel: 220ms;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e9e7e2; font: 14px/1.4 var(--pl-sans); color: var(--pl-ink); }
+.frames { display: grid; gap: 28px; padding: 28px 16px 48px; max-width: 980px; margin: 0 auto; }
+.frame-name { font: var(--pl-text-label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--pl-ink-2); margin: 0 0 8px; }
+.frame-note { font: var(--pl-card-meta); color: var(--pl-ink-2); margin: 6px 0 0; }
+
+/* the host page, standing in for the user's app */
+.stage { position: relative; height: 360px; border-radius: 10px; overflow: hidden; background: #f6f6f4; box-shadow: 0 0 0 1px #d9d6cf; }
+.stage.past::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--pl-sky) 55%, transparent); pointer-events: none; border-radius: 10px; }
+.app { position: absolute; left: 32px; top: 28px; width: 340px; background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px #e8e8e8;
+  display: flex; flex-direction: column; transition: padding 220ms var(--pl-ease-out), gap 220ms var(--pl-ease-out); }
+.app .label { color: #6c6c6c; transition: font-size 220ms var(--pl-ease-out), font-weight 220ms; }
+.app .num { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+.app .row { display: flex; gap: 8px; transition: margin 220ms var(--pl-ease-out); }
+.app .chip { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #f1f1f1; }
+.reticle { position: absolute; pointer-events: none; outline: 1px solid var(--pl-sky); outline-offset: 3px; box-shadow: 0 0 0 4px rgb(255 255 255 / 0.9);
+  border-radius: 4px; transition: all var(--pl-dur-travel) var(--pl-ease-out); }
+
+/* the timeline strip: the dock grown into it */
+.strip { position: absolute; right: 16px; bottom: 16px; left: 16px; display: flex; align-items: flex-end; gap: 16px; padding: 10px 12px 10px 14px;
+  background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
+.glyph { width: 28px; height: 28px; display: grid; place-items: center; color: var(--pl-ink-2); flex: none; align-self: center; border-radius: 8px; }
+.glyph svg { width: 14px; height: 14px; }
+.track { position: relative; flex: 0 1 auto; display: flex; align-items: flex-end; gap: 16px; min-width: 0; height: 40px; outline: none; }
+.seg { display: flex; flex-direction: column; gap: 6px; }
+.seg-name { font: var(--pl-text-label); color: var(--pl-ink-2); white-space: nowrap; }
+.ticks { display: flex; align-items: flex-end; gap: 6px; height: 18px; border-bottom: 1px solid var(--pl-rule); padding: 0 2px 3px; }
+.tick { width: 2px; height: 14px; border-radius: 1px; background: var(--pl-ink); transition: height 160ms var(--pl-ease-out), background 160ms, box-shadow 160ms; }
+.tick.ahead { background: transparent; box-shadow: inset 0 0 0 1px var(--pl-sky); width: 4px; }
+.tick.undone { background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); width: 4px; }
+.tick.changed { width: 4px; background: repeating-linear-gradient(-45deg, var(--pl-butter) 0 1.5px, var(--pl-butter-soft) 1.5px 3px); }
+.tick.undo { position: relative; }
+.tick.undo::before { content: ""; position: absolute; top: -3px; left: -2px; width: 4px; height: 2px; border-top: 1px solid var(--pl-ink); border-left: 1px solid var(--pl-ink); }
+.tick.pointed { height: 18px; background: var(--pl-sky); box-shadow: none; width: 2px; }
+.now { font: var(--pl-text-label); color: var(--pl-ink-3); align-self: flex-end; padding-bottom: 2px; margin-left: -6px; margin-right: auto; }
+.playhead { position: absolute; top: 20px; bottom: -6px; width: 1px; background: var(--pl-sky); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.9);
+  transition: left var(--pl-dur-travel) var(--pl-ease-out); }
+.playhead::before { content: ""; position: absolute; top: -4px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pl-sky); box-shadow: 0 0 0 2px #fff; }
+.pill { position: absolute; bottom: calc(100% + 14px); transform: translateX(-50%); white-space: nowrap; padding: 4px 8px; border-radius: var(--pl-radius-tag);
+  background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-code); transition: left var(--pl-dur-travel) var(--pl-ease-out); }
+.pill .law { font: var(--pl-card-meta); color: var(--pl-lilac); margin-left: 6px; }
+.pill .kind { font: var(--pl-card-meta); color: var(--pl-ink-2); margin-right: 6px; }
+.pill.warn { box-shadow: 0 0 0 1px var(--pl-butter), 0 2px 6px -2px rgb(28 27 25 / 0.24); font: var(--pl-card-meta); }
+.actions { display: flex; gap: 6px; align-self: center; flex: none; }
+.btn { all: unset; font: var(--pl-text-label); padding: 6px 10px; border-radius: 8px; color: var(--pl-ink); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--pl-paper-2); }
+.btn kbd { font: 500 10px/1 var(--pl-mono); color: var(--pl-ink-2); margin-left: 6px; }
+.btn.primary { background: var(--pl-pink-soft); color: var(--pl-pink-ink); }
+.btn:disabled, .btn[aria-disabled="true"] { color: var(--pl-ink-3); cursor: default; background: none; }
+.empty { font: var(--pl-card-meta); color: var(--pl-ink-2); align-self: center; }
+.close { color: var(--pl-ink-2); }
+</style>
+</head>
+<body>
+<div class="frames">
+
+  <section>
+    <p class="frame-name">1 · Open, at Now · try it: ←/→ moves the playhead, ⇧←/⇧→ by step</p>
+    <div class="stage" id="live">
+      <div class="app" id="card">
+        <span class="label" id="label">Revenue this month</span>
+        <span class="num">$124,860.40</span>
+        <div class="row" id="row"><span class="chip">+4.2%</span><span class="chip">vs September</span></div>
+      </div>
+      <div class="reticle" id="reticle"></div>
+      <div class="strip">
+        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="track" id="track" role="slider" tabindex="0" aria-label="History"></div>
+        <span class="now">Now</span>
+        <div class="actions" id="actions"></div>
+        <button class="btn close" aria-label="Close">✕</button>
+      </div>
+    </div>
+    <p class="frame-note">The last change is pointed at: its element is outlined, one pill holds its value and law. Segment names are the only words at rest.</p>
+  </section>
+
+  <section>
+    <p class="frame-name">2 · Scrubbed into the past (playhead on the first change)</p>
+    <div class="stage past" id="past"></div>
+    <p class="frame-note">Ticks right of the playhead are hollow: the page shows them undone (padding and gap back to before). The sky edge says the page isn't current; Go back to here becomes the primary action.</p>
+  </section>
+
+  <section>
+    <p class="frame-name">3 · A change edited since</p>
+    <div class="stage" id="changed"></div>
+    <p class="frame-note">Butter and hatched: it can't be undone alone. Pointing at it says why and what to do; Undo change is off.</p>
+  </section>
+
+  <section>
+    <p class="frame-name">4 · Empty</p>
+    <div class="stage" style="height:120px">
+      <div class="strip">
+        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="empty">Nothing changed yet. What you write shows up here.</span>
+        <span style="flex:1"></span>
+        <button class="btn close" aria-label="Close">✕</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// the trace as the server gives it, grouped into steps; `apply` is what the change did on the page, for the preview
+const steps = [
+  { name: 'Spacing', changes: [
+    { from: 'gap-2', to: 'gap-3', law: 'Law of similarity', el: 'card', before: { gap: '8px' }, after: { gap: '12px' } },
+    { from: 'p-[13px]', to: 'p-3', law: 'Law of common region', el: 'card', before: { padding: '13px' }, after: { padding: '12px' }, state: 'undone' },
+    { from: 'mt-[10px]', to: 'mt-2.5', law: 'Law of proximity', el: 'row', before: { marginTop: '10px' }, after: { marginTop: '10px' }, state: 'changed' },
+  ] },
+  { name: 'Type', changes: [
+    { from: 'text-[15px]', to: 'text-sm', law: 'Law of similarity', el: 'label', before: { fontSize: '15px' }, after: { fontSize: '14px' } },
+    { from: 'font-bold', to: 'font-medium', law: null, el: 'label', before: { fontWeight: '700' }, after: { fontWeight: '500' } },
+  ] },
+  { name: 'Card padding', changes: [
+    { from: 'p-4', to: 'p-6', law: 'Law of common region', el: 'card', before: { padding: '16px' }, after: { padding: '24px' } },
+  ] },
+  { name: 'Undo', changes: [
+    { from: 'p-3', to: 'p-[13px]', law: null, el: 'card', before: {}, after: {}, state: 'undo' },
+  ] },
+];
+const flat = steps.flatMap((s, si) => s.changes.map((c, ci) => ({ ...c, si, ci })));
+
+function build(stage, { at, scrubbing = false, warnAt = null }) {
+  const card = stage.querySelector('#card') ?? Object.assign(stage.appendChild(document.getElementById('card').cloneNode(true)), { id: 'card' });
+  if (!stage.querySelector('.strip')) {
+    stage.append(document.querySelector('#live .reticle').cloneNode(), document.querySelector('#live .strip').cloneNode(true));
+  }
+  const track = stage.querySelector('.track'), actions = stage.querySelector('.actions'), reticle = stage.querySelector('.reticle');
+  // page: start from the oldest before-state, then play every live change up to the playhead
+  const els = { card, label: card.querySelector('.label'), row: card.querySelector('.row') };
+  Object.assign(els.card.style, { padding: '16px', gap: '8px' }); Object.assign(els.label.style, { fontSize: '15px', fontWeight: '700' }); els.row.style.marginTop = '10px';
+  flat.forEach((c, i) => { if (i <= at && c.state !== 'undone' && c.state !== 'undo') Object.assign(els[c.el].style, c.after); });
+  // strip
+  track.innerHTML = steps.map((s, si) => `<div class="seg"><span class="seg-name">${s.name}</span><div class="ticks">${s.changes.map((c, ci) => {
+    const i = flat.findIndex((f) => f.si === si && f.ci === ci);
+    const cls = i === at ? 'pointed' : i > at && scrubbing ? 'ahead' : c.state ?? '';
+    return `<span class="tick ${cls}" data-i="${i}"></span>`;
+  }).join('')}</div></div>`).join('') + '<div class="playhead"></div><div class="pill"></div>';
+  const tick = track.querySelector(`[data-i="${at}"]`), tr = track.getBoundingClientRect(), r = tick.getBoundingClientRect();
+  const x = r.left - tr.left + r.width / 2, c = flat[at];
+  track.querySelector('.playhead').style.left = `${x}px`;
+  const pill = track.querySelector('.pill'); pill.style.left = `${x}px`;
+  if (warnAt === at || c.state === 'changed') { pill.className = 'pill warn'; pill.textContent = 'Edited outside React Plumber, so it can’t be undone here. Undo it in your editor.'; }
+  else pill.innerHTML = `${c.state === 'undo' ? '<span class="kind">Undo</span>' : ''}${c.from} → ${c.to}${c.law ? `<span class="law">${c.law}</span>` : ''}`;
+  // the pill stays whole on screen: it slides along its line, never off the edge
+  const sr = stage.getBoundingClientRect(), pr = pill.getBoundingClientRect();
+  pill.style.left = `${x + Math.max(sr.left + 12 - pr.left, 0) + Math.min(sr.right - 12 - pr.right, 0)}px`;
+  track.setAttribute('aria-valuetext', `Change ${at + 1} of ${flat.length}, ${steps[c.si].name}: ${c.from} to ${c.to}${c.law ? ', ' + c.law : ''}`);
+  const past = at < flat.length - 1;
+  actions.innerHTML = past
+    ? `<button class="btn primary">Go back to here<kbd>↵</kbd></button><button class="btn" ${c.state === 'changed' ? 'aria-disabled="true"' : ''}>Undo change<kbd>⌫</kbd></button>`
+    : `<button class="btn" ${c.state === 'changed' ? 'aria-disabled="true"' : ''}>Undo change<kbd>⌫</kbd></button><button class="btn">Undo step<kbd>⇧⌫</kbd></button>`;
+  stage.classList.toggle('past', past && scrubbing);
+  // the pointed change's element
+  const place = () => { const t = els[c.el].getBoundingClientRect(), s2 = stage.getBoundingClientRect();
+    Object.assign(reticle.style, { left: `${t.left - s2.left}px`, top: `${t.top - s2.top}px`, width: `${t.width}px`, height: `${t.height}px` }); };
+  place(); setTimeout(place, 240); // again once the element has settled into its previewed size
+}
+
+let at = flat.length - 1;
+const live = document.getElementById('live');
+const draw = () => build(live, { at, scrubbing: at < flat.length - 1 });
+document.getElementById('track').addEventListener('keydown', (e) => {
+  const stepStart = (i, dir) => { const s = flat[i].si + dir; return dir < 0 ? flat.findIndex((f) => f.si === Math.max(0, s)) : flat.findLastIndex((f) => f.si === Math.min(steps.length - 1, s)); };
+  if (e.key === 'ArrowLeft') at = e.shiftKey ? stepStart(at, -1) : Math.max(0, at - 1);
+  else if (e.key === 'ArrowRight') at = e.shiftKey ? stepStart(at, 1) : Math.min(flat.length - 1, at + 1);
+  else if (e.key === 'Home') at = 0; else if (e.key === 'End' || e.key === 'Escape') at = flat.length - 1; else return;
+  e.preventDefault(); draw();
+});
+requestAnimationFrame(() => {
+  draw();
+  build(document.getElementById('past'), { at: 0, scrubbing: true });
+  build(document.getElementById('changed'), { at: 2 });
+  document.getElementById('track').focus();
+});
+</script>
+</body>
+</html>
