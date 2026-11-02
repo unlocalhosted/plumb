@@ -8,12 +8,18 @@ import type { Declaration, Decision } from '../report.js';
  * Pure over source text, the decisions and the element's compiled declarations: no I/O, no session.
  */
 export type PropKey = 'padding' | 'padding-x' | 'padding-y' | 'gap' | 'flex-direction' | 'align-items' | 'justify-content' | 'flex-wrap' | 'radius' |
-  'background' | 'border-color' | 'border-width' | 'shadow' | 'font-size' | 'font-weight' | 'line-height' | 'color' | 'width' | 'height' | 'object-fit' | 'aspect-ratio';
-export interface PropStep { token: string; value: string; label: string; class: string; css: string }
+  'background' | 'border-color' | 'border-width' | 'shadow' | 'font-size' | 'font-weight' | 'line-height' | 'letter-spacing' | 'text-transform' | 'style' | 'color' | 'width' | 'height' | 'object-fit' | 'aspect-ratio';
+/** A text style step (key 'style') also carries the role's bundle. */
+export interface PropStep { token: string; value: string; label: string; class: string; css: string; size?: string | null; lineHeight?: number | null; weight?: number; letterSpacing?: number; transform?: 'uppercase' | 'none' }
 export interface Prop {
   key: PropKey; family: string; value: string | null; token: string | null;
   source: 'class' | 'inline' | 'computed' | 'none'; class: string | null; steps: PropStep[]; dynamic?: string;
+  /** what applies when nothing sets it: the page's computed value when the client sent one, else the theme's or the browser's default, else unknown */
+  default?: string | null;
 }
+/** The owner's decisions per type role (config.system.type.roles). */
+export type RoleOverrides = Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }>;
+export interface PropsOptions { roles?: RoleOverrides; computed?: Record<string, string> }
 export interface Props { kind: 'surface' | 'layout' | 'text' | 'media' | 'control'; tag: string; props: Prop[] }
 
 interface Def {
@@ -73,6 +79,11 @@ const defs: Def[] = [
     make: suffix => `font-${suffix}` },
   { key: 'line-height', family: 'type', css: ['line-height'], theme: { namespace: '--leading-', family: 'type' },
     match: utility => { const suffix = prefixed('leading')(utility); return suffix === '' ? undefined : suffix; }, make: suffix => `leading-${suffix}` },
+  { key: 'letter-spacing', family: 'type', css: ['letter-spacing'], theme: { namespace: '--tracking-', family: 'type' },
+    match: utility => { const suffix = prefixed('tracking')(utility); return suffix === '' ? undefined : suffix; }, make: suffix => `tracking-${suffix}` },
+  { key: 'text-transform', family: 'type', css: ['text-transform'],
+    match: utility => ['uppercase', 'lowercase', 'capitalize', 'normal-case'].includes(utility) ? utility : undefined, make: suffix => suffix,
+    fixed: [{ token: 'none', value: 'none', suffix: 'normal-case' }, { token: 'uppercase', value: 'uppercase' }, { token: 'lowercase', value: 'lowercase' }, { token: 'capitalize', value: 'capitalize' }] },
   { key: 'color', family: 'color', css: ['color'], theme: { namespace: '--color-', family: 'color' },
     match: (utility, sets) => { const suffix = prefixed('text')(utility); return suffix === undefined || suffix === '' || sets.sizes.has(suffix) || /^(?:left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip|\[(?:length:)?\d)/.test(suffix) ? undefined : suffix; },
     make: suffix => `text-${suffix}` },
@@ -206,22 +217,53 @@ function pools(decisions: Decision[]) {
   return { steps, sets };
 }
 
+// an element whose own text is rendered is text, however it lays its children out
 function kindOf(tag: string, utilities: Set<string>): Props['kind'] {
   if (mediaTags.has(tag)) return 'media';
   if (controlTags.has(tag)) return 'control';
-  if ([...utilities].some(utility => /^(?:flex|inline-flex|grid|inline-grid)$/.test(utility))) return 'layout';
   if (textTags.has(tag)) return 'text';
+  if ([...utilities].some(utility => /^(?:flex|inline-flex|grid|inline-grid)$/.test(utility))) return 'layout';
   return 'surface';
 }
+/** What applies when nothing sets a type property: Tailwind's preflight (16px, 1.5, 400, normal, none), or the theme's own default. */
+function defaults(decisions: Decision[]): Partial<Record<PropKey, string>> {
+  const named = (name: string) => decisions.find(d => d.name === name);
+  const size = named('--default-font-size')?.resolved ?? '16px', weight = named('--default-font-weight')?.resolved ?? '400';
+  return { 'font-size': size, 'font-weight': weight, 'line-height': '1.5', 'letter-spacing': '0em', 'text-transform': 'none' };
+}
+const roleName = /^(display|headline|title|body|label)-(large|medium|small)$/;
+const roleLabel = (token: string) => token.replace(/-compact$/, ' (compact)').replace(/^([a-z])/, c => c.toUpperCase()).replace('-', ' ');
+/** The text styles (type roles) this project has: the config's decisions and the roles written to the theme, as steps of the 'style' property. */
+function roleSteps(decisions: Decision[], roles: RoleOverrides = {}): PropStep[] {
+  const named = new Map(decisions.filter(d => d.origin === 'project').map(d => [d.name, d.resolved ?? d.value]));
+  const names = new Set<string>(Object.keys(roles).filter(name => roleName.test(name)));
+  for (const name of named.keys()) { const m = /^--text-((?:display|headline|title|body|label)-(?:large|medium|small))$/.exec(name); if (m) names.add(m[1]!); }
+  const steps: PropStep[] = [];
+  const num = (value: string | undefined) => { const n = value === undefined ? NaN : parseFloat(value); return Number.isFinite(n) ? n : undefined; };
+  for (const name of [...names].sort((a, b) => ['display', 'headline', 'title', 'body', 'label'].indexOf(a.split('-')[0]!) - ['display', 'headline', 'title', 'body', 'label'].indexOf(b.split('-')[0]!) || ['large', 'medium', 'small'].indexOf(a.split('-')[1]!) - ['large', 'medium', 'small'].indexOf(b.split('-')[1]!))) {
+    const over = roles[name] ?? {}, token = `--text-${name}`;
+    const size = over.size !== undefined ? `${over.size}px` : named.get(token) ?? null;
+    const lineHeight = over.lineHeight ?? num(named.get(`${token}--line-height`)) ?? null;
+    const weight = over.weight ?? num(named.get(`${token}--font-weight`)) ?? 400;
+    const letterSpacing = over.letterSpacing ?? num(named.get(`${token}--letter-spacing`)) ?? 0;
+    const transform = name.startsWith('label-') ? 'uppercase' as const : 'none' as const;
+    steps.push({ token: name, value: size ?? '', label: roleLabel(name), class: `type-${name}`, css: `var(${token})`, size, lineHeight, weight, letterSpacing, transform });
+    const compact = over.compact?.lineHeight ?? num(named.get(`${token}-compact--line-height`));
+    if (compact !== undefined) steps.push({ token: `${name}-compact`, value: size ?? '', label: roleLabel(`${name}-compact`), class: `type-${name}-compact`, css: `var(${token})`, size, lineHeight: compact, weight, letterSpacing, transform });
+  }
+  return steps;
+}
+const typeClassKeys = new Set<PropKey>(['font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform']);
 
-export function elementProps(file: string, text: string, start: number, tag: string, decisions: Decision[], declarations: Declaration[]): Props {
-  const el = element(file, text, start), { steps, sets } = pools(decisions);
+export function elementProps(file: string, text: string, start: number, tag: string, decisions: Decision[], declarations: Declaration[], given: PropsOptions = {}): Props {
+  const el = element(file, text, start), { steps, sets } = pools(decisions), fallback = defaults(decisions);
   const present = el.className.kind === 'static' ? classes(el.className.strings).flatMap(item => { const utility = baseUtility(item.text); return utility === undefined ? [] : [{ token: item.text, utility }]; }) : [];
   const own = declarations.filter(d => d.when.length === 0 && d.origin !== 'keyframes' && d.origin !== 'custom-property');
   const result = defs.map((def): Prop => {
     const options = steps(def);
     const base = { key: def.key, family: def.family, steps: options };
-    const dynamic = el.className.kind === 'dynamic' ? el.className.reason : el.style.kind === 'dynamic' ? el.style.reason : undefined;
+    // a property nothing sets can be added to a static className: only a className built at runtime makes it dynamic
+    const dynamic = el.className.kind === 'dynamic' ? el.className.reason : undefined;
     const inline = def.css.map(name => el.style.properties.get(camel(name))).find(Boolean);
     if (inline) {
       const literal = staticLiteral(inline.value);
@@ -241,8 +283,16 @@ export function elementProps(file: string, text: string, start: number, tag: str
     }
     const computed = own.find(d => def.css.includes(d.prop) && !present.some(item => item.token === d.site.text));
     if (computed) return { ...base, value: computed.resolved ?? computed.value, token: null, source: 'computed', class: null, ...(dynamic ? { dynamic } : {}) };
-    return { ...base, value: null, token: null, source: 'none', class: null, ...(dynamic ? { dynamic } : {}) };
+    const applies = given.computed?.[def.key] ?? given.computed?.[def.css[0]!] ?? fallback[def.key] ?? null;
+    return { ...base, value: null, token: null, source: 'none', class: null, ...(dynamic ? { dynamic } : {}), ...(def.family === 'type' || applies !== null ? { default: applies } : {}) };
   });
+  // the text style: the role the element wears now, and every role the project has as a step
+  const roles = roleSteps(decisions, given.roles);
+  if (roles.length) {
+    const worn = present.find(item => roles.some(role => role.class === item.utility));
+    const step = worn ? roles.find(role => role.class === worn.utility) : undefined;
+    result.push({ key: 'style', family: 'type', value: step?.label ?? null, token: step?.token ?? null, source: step ? 'class' : 'none', class: worn?.token ?? null, steps: roles, ...(el.className.kind === 'dynamic' ? { dynamic: el.className.reason } : {}) });
+  }
   return { kind: kindOf(tag, new Set(present.map(item => item.utility))), tag, props: result };
 }
 function staticLiteral(node: Node): string | undefined {
@@ -254,10 +304,20 @@ function staticLiteral(node: Node): string | undefined {
 
 export interface SourceChange { start: number; end: number; replacement: string; at: number }
 /** The one replacement which sets this property to this step, or the reason it cannot be written. */
-export function setProp(file: string, text: string, start: number, tag: string, decisions: Decision[], declarations: Declaration[], key: string, token: string): SourceChange {
+export function setProp(file: string, text: string, start: number, tag: string, decisions: Decision[], declarations: Declaration[], key: string, token: string, options: PropsOptions = {}): SourceChange {
+  const described = elementProps(file, text, start, tag, decisions, declarations, options);
+  if (key === 'style') {
+    // the role class in place of the role worn now and the size, leading, weight, tracking and transform classes it replaces
+    const prop = described.props.find(item => item.key === 'style');
+    const step = prop?.steps.find(item => item.token === token);
+    if (!prop || !step) throw new UsageError(`${token} is not a text style of this project. Read the element's props again.`);
+    const replaced = [...new Set([prop.class, ...described.props.filter(item => typeClassKeys.has(item.key) && item.source === 'class' && item.class).map(item => item.class!)].filter((c): c is string => !!c))];
+    if (replaced.includes(step.class)) throw new UsageError('That text style is already set.');
+    return swapClasses(file, text, start, replaced, [step.class]);
+  }
   const def = defs.find(item => item.key === key);
   if (!def) throw new UsageError(`Unknown property: ${key}.`);
-  const current = elementProps(file, text, start, tag, decisions, declarations).props.find(item => item.key === key)!;
+  const current = described.props.find(item => item.key === key)!;
   const step = current.steps.find(item => item.token === token);
   if (!step) throw new UsageError(`${token} is not a step of ${key}. Read the element's props again.`);
   const el = element(file, text, start), at = el.opening.start;
@@ -284,8 +344,9 @@ export function setProp(file: string, text: string, start: number, tag: string, 
     if (replacement === existing.text) throw new UsageError('That step is already set.');
     return { start: existing.start, end: existing.end, replacement, at };
   }
-  const first = el.className.strings[0]!;
-  return { start: first.end, end: first.end, replacement: first.text.trim() ? ` ${step.class}` : step.class, at };
+  // the new class goes after the last class of the first fixed part, before any trailing space (a template's hole follows it)
+  const first = el.className.strings[0]!, trail = first.text.match(/\s*$/)![0].length;
+  return { start: first.end - trail, end: first.end - trail, replacement: first.text.trim() ? ` ${step.class}` : step.class, at };
 }
 
 /**

@@ -95,7 +95,12 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply-text-at') return session.applyTextAt(params as unknown as Parameters<Session['applyTextAt']>[0]);
   if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
-  if (method === 'props') return session.props(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!);
+  if (method === 'props') {
+    // the page's computed values for what nothing sets, as JSON in the query or an object in a body
+    let computed = (params as { computed?: unknown }).computed;
+    if (typeof computed === 'string') { try { computed = JSON.parse(computed); } catch { throw new UsageError('computed must be a JSON object.'); } }
+    return session.props(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, ...(object(computed) ? [computed as Record<string, string>] : []));
+  }
   if (method === 'swaps') {
     const edits = (params as { edits?: unknown }).edits;
     if (!Array.isArray(edits)) throw new UsageError('Swaps requires edits.');

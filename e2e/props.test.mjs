@@ -42,7 +42,7 @@ test('props lists every family for an element, set or not, with the theme steps'
   const api = await project(t);
   const body = await api.props(5);
   assert.equal(body.kind, 'layout');
-  assert.equal(body.props.length, 21);
+  assert.equal(body.props.length, 23); // letter-spacing and text-transform joined the type family (element editors, layer 1)
   assert.deepEqual(['padding', 'padding-x', 'radius', 'background', 'gap'].map(k => api.prop(body, k).source), ['class', 'none', 'class', 'none', 'class']);
   const padding = api.prop(body, 'padding');
   assert.deepEqual([padding.value, padding.token, padding.class, padding.family], ['12px', 's3', 'p-s3', 'spacing']);

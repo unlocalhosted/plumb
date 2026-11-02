@@ -24,7 +24,7 @@ import type { PositionKind } from './source-location.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
 import { ancestorWith, indexSource } from '../structure/index.js';
 import type { StructureEntry } from '../structure/index.js';
-import type { Props } from './props.js';
+import type { Props, RoleOverrides } from './props.js';
 import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addToken, topBlocks } from '../onboarding/write.js';
@@ -692,11 +692,17 @@ export class Session extends EventEmitter {
     });
   }
   /** Every property family an editor needs for the JSX element at this position, set or not. */
-  async props(file: string, line: number, column: number): Promise<PropsResult> {
+  async props(file: string, line: number, column: number, computed?: Record<string, string>): Promise<PropsResult> {
     const path = this.file(file); this.position(line); this.position(column);
+    if (computed !== undefined && (!computed || typeof computed !== 'object' || Array.isArray(computed) || Object.values(computed).some(v => typeof v !== 'string'))) throw new UsageError('computed is an object of property → value strings.');
     const { text, location, site, decisions } = await this.elementFacts(path, line, column);
     return { file: path, line: location.line, column: location.column, hash: sourceHash(text),
-      ...elementProps(path, text, location.start, location.tag, decisions, site.declarations) };
+      ...elementProps(path, text, location.start, location.tag, decisions, site.declarations, { roles: await this.roleDecisions(), ...(computed ? { computed } : {}) }) };
+  }
+  /** The owner's decisions per type role, from the config (config.system.type.roles). */
+  private async roleDecisions(): Promise<RoleOverrides> {
+    const config = await loadConfig(this.root, this.options.config).catch(() => undefined);
+    return config?.value.system?.type?.roles ?? {};
   }
   private async elementFacts(path: string, line: number, column: number) {
     await this.readableSource(path);
@@ -989,11 +995,12 @@ export class Session extends EventEmitter {
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
-    const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations).props.find(item => item.key === key);
+    const roles = await this.roleDecisions();
+    const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, { roles }).props.find(item => item.key === key);
     const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
     return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token);
+      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles });
       return { ...change, replacement: change.replacement };
     }, label);
   }
