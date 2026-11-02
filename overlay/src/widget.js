@@ -338,7 +338,7 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
-    this.#help = new Help(this.#root, { button: this.#$('.dock .help') });
+    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.()].filter(Boolean) });
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
     this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
@@ -369,13 +369,43 @@ class PlumbOverlay extends HTMLElement {
     // back, and the fix panel goes on with what's left (fixpanel.js)
     try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if (u?.undo?.length && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
     let saved;
-    try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
-    if (!saved || Date.now() - saved.at > 15000) return;
+    try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
+    if (!saved || Date.now() - saved.at > 15000) { this.forgetResume(); return; }
+    // kept until this page has settled: a write the dev server reloads for twice (two files, or a write and its theme)
+    // comes back said on the second page too, with its Undo
+    this.#forgetWhenSettled(saved.at);
     await new Promise(r => setTimeout(r, 120)); // let the app render first
     // an element card that was open comes back open on its element
     if (saved.blueprint) this.#blueprint?.enter({ instant: true, scope: scopeOf(saved.scope), card: !!saved.card });
+    // the page went before the write's answer came back (the dev server reloaded for it first): its undo handles are the
+    // server's writes since it was remembered
+    if (saved.fix && saved.pending && !saved.undo?.length) {
+      const since = saved.at - 250, h = await request('history', {}).catch(() => null);
+      const writes = (h?.writes ?? []).filter((w) => Date.parse(w.at) >= since && !w.stale).reverse().map(({ id, file, label }) => ({ id, file, label }));
+      if (writes.length) { saved.undo = writes; saved.pending = false; try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {} }
+    }
     if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null);
     // the old reading card is retired: a write never comes back as a card pinned to its element
+  }
+
+  // The resume record is let go once the page it came back to is read and has stayed for a moment (another reload in that
+  // time finds it still there). A newer write's record is never this one's to drop.
+  #forgetWhenSettled(at) {
+    const QUIET = 2500, since = performance.now();
+    let readAt = 0;
+    const check = () => {
+      if (!this.isConnected) return;
+      let now = null;
+      try { now = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch {}
+      if (now?.at !== at) return;
+      const p = this.#bp.progress, read = !this.#blueprint?.active || !!p && (p.done ?? (!!p.total && p.read === p.total));
+      if (read && !readAt) readAt = performance.now();
+      if (!read) readAt = 0;
+      if (readAt && performance.now() - readAt >= QUIET && performance.now() - since >= QUIET) return this.forgetResume();
+      if (Date.now() - at > 15000) return this.forgetResume();
+      setTimeout(check, 250);
+    };
+    setTimeout(check, 250);
   }
 
   disconnectedCallback() {
@@ -543,7 +573,8 @@ class PlumbOverlay extends HTMLElement {
   forget() { this.#cache = new WeakMap(); this.#marksCache = new WeakMap(); this.#traces = new Map(); this.#structures = new Map(); forgetResolved(); }
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
-  remember(text, undo = [], place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
+  // Remembered before it is written (no undo given: pending) and again once it is (its undo handles).
+  remember(text, undo, place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {
@@ -551,7 +582,10 @@ class PlumbOverlay extends HTMLElement {
     this.#bp.state = state;
     if (state === 'entering') this.#bp.progress = null;
     // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
-    if (state === 'on') this.#help?.hint('blueprint');
+    // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
+    // is what to work in)
+    if (state === 'entering') this.#ready?.dismiss();
+    if (state === 'on' && !this.#blueprint?.editing) this.#help?.hint('blueprint');
     const on = state === 'entering' || state === 'on';
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in

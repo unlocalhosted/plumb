@@ -21,6 +21,7 @@
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 import { FIX } from './words.js';
+import { clearOf } from './geometry.js';
 
 const W = FIX.card;
 const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -131,7 +132,8 @@ const matesOf = (el) => { const s = stampOf(el); return s ? [...document.querySe
 // ── the spacing grammar ──────────────────────────────────
 // host: { release(), target() → el | null, name(el) → words, scale() → [{ px, token }] (0 first), write([{ el, from, to }],
 //   said) → Promise, refused(text), locked(el) → words | null (its classes can't be written), mates(el) → n | null (the
-//   others drawn from its class site), held() → bool (a card handle is held), ours(event) → bool }
+//   others drawn from its class site), held() → bool (a card handle is held), ours(event) → bool, avoid() → [rect] (the
+//   card, its strip, the fix bar: never pointed through, never covered by the bubble) }
 export class Spacing {
   #host; #layer; #bub; #root;
   #on = false; #hover = null; #act = null; #at = [0, 0];
@@ -186,7 +188,7 @@ export class Spacing {
     if (!this.#on || this.#act?.drag) return;
     const changed = this.#modsOf(e);
     this.#at = [e.clientX, e.clientY];
-    const b = this.#host.held?.() || this.#host.ours?.(e) ? null : this.#find(e.clientX, e.clientY);
+    const b = this.#host.held?.() || this.#host.ours?.(e) || this.#onSurface(e.clientX, e.clientY) ? null : this.#find(e.clientX, e.clientY);
     if (!this.#act && (changed || !same(b, this.#hover))) {
       // pointing at the element's spacing is working in the card: a cause the fix panel holds (and previews) is put down
       if (b && !this.#hover) this.#host.release?.();
@@ -231,6 +233,8 @@ export class Spacing {
     const up = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
   };
+  // the pointer on one of the overlay's own surfaces (the fix bar over a large element) points at it, not at the page
+  #onSurface(x, y) { return (this.#host.avoid?.() ?? []).some((r) => r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom); }
   // an element whose classes can't be written: said once, nothing is tried on it
   #lockedSay(b) { const why = this.#host.locked?.(b.el); if (why) this.#host.refused?.(why); return !!why; }
   // the click a drag ends with is the drag's, never the page's (or Blueprint's "click outside")
@@ -354,8 +358,9 @@ export class Spacing {
     this.#bub.innerHTML = `<b class="${step ? '' : 'off'}">${round}${step && step.token !== '0' ? ` · ${esc(step.token)}` : ''}</b><span>${esc(W.what(b.kind, sides.map((s) => W.sides[s])))}</span>`
       + `<div class="scale">${win.map((s) => `<i class="${Math.abs(s.px - v) < 0.5 ? 'at' : ''} ${fit ? (fit.ok(s.px) ? 'fit' : 'breaks') : ''}">${s.px}</i>`).join('')}</div>${fit ? `<small>${esc(fit.say)}</small>` : ''}`;
     this.#bub.hidden = false;
-    const w = this.#bub.offsetWidth, h = this.#bub.offsetHeight;
-    Object.assign(this.#bub.style, { left: `${Math.min(innerWidth - w - 8, px + 16)}px`, top: `${Math.min(innerHeight - h - 8, py + 14)}px` });
+    // by the pointer, clear of the card, its strip and the fix bar
+    const w = this.#bub.offsetWidth, h = this.#bub.offsetHeight, at = clearOf(px + 16, py + 14, w, h, this.#host.avoid?.() ?? [], { edge: 8 });
+    Object.assign(this.#bub.style, { left: `${at.x}px`, top: `${at.y}px` });
   }
   // the hierarchy for spacing (docs/research/hierarchy.md): inside < between ≤ around
   #fit(b) {

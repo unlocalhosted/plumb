@@ -74,11 +74,12 @@ const store = {
 };
 
 export class Help {
-  #sheet; #hint; #button; #said = new Set(); #timer = 0;
+  #sheet; #hint; #button; #avoid; #said = new Set(); #timer = 0;
 
   // button: the dock's ? button
-  constructor(root, { button }) {
-    this.#button = button;
+  // avoid() → the rects the hint never covers (the fix bar): it sits above them
+  constructor(root, { button, avoid }) {
+    this.#button = button; this.#avoid = avoid;
     this.#sheet = Object.assign(document.createElement('section'), { className: 'hp', hidden: true });
     this.#sheet.setAttribute('role', 'dialog');
     this.#sheet.setAttribute('aria-label', 'Keyboard shortcuts');
@@ -111,6 +112,9 @@ export class Help {
     clearTimeout(this.#timer);
     this.#hint.innerHTML = `<span>${esc(HINTS[key])}</span><button type="button" aria-label="Dismiss">Got it</button>`;
     this.#hint.hidden = false;
+    this.#hint.style.removeProperty('inset-block-end');
+    const r = this.#hint.getBoundingClientRect(), over = (this.#avoid?.() ?? []).filter((a) => a.width && r.left < a.right && a.left < r.right && r.top < a.bottom && a.top < r.bottom);
+    if (over.length) this.#hint.style.insetBlockEnd = `${innerHeight - Math.min(...over.map((a) => a.top)) + 8}px`;
     requestAnimationFrame(() => this.#hint.setAttribute('data-on', ''));
     this.#timer = setTimeout(() => this.#unhint(), HOLD);
     // the next thing the person does takes the tip away (after this task, so the key that opened the mode doesn't)

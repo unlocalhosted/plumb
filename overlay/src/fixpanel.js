@@ -316,9 +316,8 @@ export class FixPanel {
   #editor; #card;
   // Alt+click on words opens their editor; a cause in hand is put down first
   edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
-  // Alt+click on anything else opens its card beside it; the element's own cause may still be put in hand (Blueprint
-  // does that once it is read), and the card puts it down when it is worked in
-  card(el) { this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
+  // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open
+  card(el) { if (this.#holding) this.release(); this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
   get carding() { return this.#card.open; }
   get editing() { return this.#editor.open ? this.#editor.target : this.#card.open ? this.#card.target : null; }
   // a file was written or undone: the element in the editor (or the card) is read again
@@ -373,6 +372,9 @@ export class FixPanel {
   hold(i, lead, reveal = lead ? 'none' : 'show') {
     const live = this.#live();
     if (!live.length) return;
+    // a cause in hand owns the screen: a card open is closed first
+    if (this.#card.open) { this.#card.close(); this.#html = ''; }
+    if (this.#editor.open) { this.#editor.close(); this.#html = ''; }
     this.#notice = null;
     this.#at = (i + live.length) % live.length;
     this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null; this.#keeping = false;
@@ -812,6 +814,8 @@ export class FixPanel {
     if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
     if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; setTimeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
+    // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
+    if (from !== to && this.#card.open) { this.#card.place(); if (!still) setTimeout(() => this.#card.place(), TIMING.open + 40); }
   }
   #html = '';
 

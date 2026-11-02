@@ -1,5 +1,7 @@
-// Alt+click reads one element and what's inside it, never the whole page: the page stays as it is, the fix panel holds
-// the element's own cause and says which other places the same line of code draws; Alt+B widens to the page.
+// Alt+click reads one element and what's inside it, never the whole page: the page stays as it is, and its card opens
+// beside it. The card owns the screen (docs/briefs/qa-fixes.md, cause 3): the fix panel holds nothing and is one line
+// while the card is open; '.' hands over to the fixes: the element's own cause in hand, with the other places the same
+// line of code draws. Alt+B widens to the page.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -51,8 +53,16 @@ test('Alt+click reads only that element and what is inside it; the fix says wher
   const inside = await row.evaluate((el) => 1 + el.querySelectorAll('*').length);
   const rowClasses = (await row.getAttribute('class')).split(/\s+/).concat(...await row.locator('*').evaluateAll((els) => els.map((el) => (el.getAttribute('class') ?? '').split(/\s+/))));
   await row.click({ modifiers: ['Alt'], position: { x: 2, y: 2 } });
-  await overlay.locator('.fx .cause .cls').waitFor({ timeout: 20000 });
+  await overlay.locator('.ec .drill').first().waitFor({ timeout: 20000 });
   await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.done; }, null, { timeout: 20000 });
+  // the card owns the screen: nothing in hand, the panel its one line; the card says where else the code draws
+  await page.waitForTimeout(600);
+  assert.equal(await overlay.locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
+  assert.match(await overlay.locator('.ec .reach').innerText(), /The same code draws 3 other places on this page/);
+  // '.' hands over: the card goes, the element's own cause comes in hand
+  await page.keyboard.press('.');
+  await overlay.locator('.fx .cause .cls').waitFor({ timeout: 20000 });
+  assert.equal(await overlay.locator('.ec').isHidden(), true);
   const one = await progress(page);
   assert.equal(one.total, inside, `read ${one.total} elements, the row holds ${inside}: ${JSON.stringify(one)}`);
   assert.equal(one.unrendered, 0, 'no place the page does not render is counted');

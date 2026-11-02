@@ -200,3 +200,20 @@ export function dimensionsFor(element, props) {
       return { kind: 'tag', x: b.left, y: b.top };
   }
 }
+
+// The overlay's one placement rule (docs/briefs/qa-fixes.md, cause 3): a box of w×h wanted at (x, y) is moved the least
+// it takes to clear every rect in `avoid` (the fix bar, a card, a strip) and stay on the screen. Each rect offers the
+// four places just past its sides; the nearest that clears them all wins. Nothing clears: the wanted place, on screen.
+export function clearOf(x, y, w, h, avoid = [], { edge = 12, gap = 8 } = {}) {
+  const rects = avoid.filter((r) => r && r.width && r.height);
+  const fit = (cx, cy) => [Math.max(edge, Math.min(innerWidth - w - edge, cx)), Math.max(edge, Math.min(innerHeight - h - edge, cy))];
+  const clear = ([cx, cy]) => rects.every((r) => cx + w <= r.left + 0.5 || r.right <= cx + 0.5 || cy + h <= r.top + 0.5 || r.bottom <= cy + 0.5);
+  const want = fit(x, y);
+  if (clear(want)) return { x: want[0], y: want[1], moved: false };
+  const tries = [want];
+  for (const r of rects) tries.push(fit(want[0], r.top - gap - h), fit(want[0], r.bottom + gap), fit(r.left - gap - w, want[1]), fit(r.right + gap, want[1]));
+  // a second round: past two rects at once (a card beside the bar)
+  for (const a of [...tries]) for (const r of rects) tries.push(fit(a[0], r.top - gap - h), fit(r.left - gap - w, a[1]), fit(r.right + gap, a[1]));
+  const ok = tries.filter(clear).sort((a, b) => Math.hypot(a[0] - want[0], a[1] - want[1]) - Math.hypot(b[0] - want[0], b[1] - want[1]))[0];
+  return ok ? { x: ok[0], y: ok[1], moved: true } : { x: want[0], y: want[1], moved: false, covered: true };
+}

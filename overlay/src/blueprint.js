@@ -469,14 +469,15 @@ export class Blueprint {
   resumed(text, undo, at) { this.#fix.resumed(text, undo, at); }
   // Alt+click: that element and what's inside it are read, never the whole page (Alt+B is the whole page). Another
   // element outside the one being read is read in its place.
-  // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it; its cause
-  // is still put in hand as it was (a script's pin, a pick from a list, only that)
+  // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it. The card
+  // owns the screen: no cause is put in hand while it is open (the panel is its one line; '.' hands over to the fixes).
+  // Without a card (a script's pin, a pick from a list) the element's own cause is put in hand once it is read
   enterAt(el, { card = false } = {}) {
     if (this.active && this.#scope && !this.#scope.contains(el)) this.leave({ instant: true });
     // words: their own values open in the fix panel (texteditor.js), problem or not
     if (hasText(el)) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
-    this.#want = el;
-    if (this.active) { if (card) this.#fix.card(el); this.#holdWanted(this.#settled); } else this.enter({ scope: el, card });
+    this.#want = card ? null : el;
+    if (this.active) { if (card) this.#fix.card(el); else this.#holdWanted(this.#settled); } else this.enter({ scope: el, card });
   }
   // One value of one element, set on its line of code (the text editor's pick): remembered first, as every write is,
   // so a page the write reloads comes back to the same element with the write said and its Undo
@@ -549,6 +550,8 @@ export class Blueprint {
   }
   // an element card is open (it comes back open after a reload a write causes)
   get carding() { return this.#fix.carding; }
+  // a card (an element's, or words') is open: it owns the screen
+  get editing() { return !!this.#fix.editing; }
   // the element being read (an Alt+click), or null for the whole page
   get scope() { return this.#scope; }
   // from one element to the whole page (Alt+B while one element is read)

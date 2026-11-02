@@ -431,7 +431,7 @@ export const FIX = {
     close: (name) => `≈ ${name}`,
     fresh: 'new',
     needs: 'motion/react',
-    pickShadow: 'Pick a shadow in the strip beside your element.',
+    pickShadow: 'Pick a shadow in the strip. Each one is tried on your element as you point at it.',
     pickMotion: 'Pick a motion in the strip. Each one plays on your element.',
     yoursSay: 'yours',
     useYours: (name) => `Use your ${name}`,

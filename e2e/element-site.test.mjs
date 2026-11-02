@@ -167,13 +167,22 @@ test('A link that spreads its props, used in a list: the card names the list’s
   assert.match(line, /className="flex gap-s2 rounded-card bg-surface px-s3 py-s2"/, line);
   await undo();
 
-  // Shadow › on the spreading link: no "spreads props" refusal; the engine is asked at the list's line
+  // Shadow › on the spreading link: the engine is asked at the list's line, told its className reaches the link; a pick
+  // that only adds a class is written into <Row className>, and Undo restores the file
   await alt(row, { x: b.width - 4, y: 3 });
   await card.locator('.drill[data-open="shadow"]').click();
   await o.overlay.locator('.ec-strip .shot').first().waitFor();
   await o.overlay.locator('.ec-strip .shot[data-key="y:rest"]').click();
-  await page.waitForFunction(() => !/Reading what it writes/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.ec .writes')?.textContent ?? 'Reading what it writes'), null, { timeout: 20000 });
-  assert.doesNotMatch(await card.locator('.writes').innerText(), /spreads props/);
+  await card.locator('.writes .edit').first().waitFor({ timeout: 20000 });
+  const shadowWrites = await card.locator('.writes').innerText();
+  assert.doesNotMatch(shadowWrites, /spreads props|is a component/, shadowWrites);
+  assert.equal(await card.locator('.use').isDisabled(), false, 'it can be written');
+  await marked();
+  await card.locator('.use').click();
+  await said(/uses .* now/);
+  await settle();
+  assert.match((await read()).split('\n')[at - 1], /className="grid grid-cols-2 gap-s2 rounded-card bg-surface px-s3 py-s2 shadow-rest"/);
+  await undo();
   assert.deepEqual(errors, []);
 });
 

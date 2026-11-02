@@ -32,6 +32,7 @@ import { request, post } from './api.js';
 import { locate, componentOf, classSiteOf, siteMates, BUILT_IN_CODE } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
+import { clearOf } from './geometry.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 
@@ -151,7 +152,7 @@ export const ELEMENT_CARD_CSS = `
   .ec-strip .head { display: grid; gap: 2px; padding: 0 20px 8px; } .ec-strip .head b { font-weight: 600; font-size: 13px; } .ec-strip .head span { color: var(--ink-3); font-size: 12px; }
   .ec-strip .reel { display: flex; gap: 14px; min-height: 0; padding: 10px 20px 6px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
   .ec-strip[data-side="beside"] .reel { flex-direction: column; scroll-snap-type: y proximity; }
-  .ec-strip[data-side="below"] .reel { scroll-snap-type: x proximity; }
+  .ec-strip[data-side="below"] .reel, .ec-strip[data-side="above"] .reel { scroll-snap-type: x proximity; }
   .ec-strip .shot { flex: none; display: grid; gap: 8px; justify-items: start; scroll-snap-align: start; padding: 0; border: 0; background: none; border-radius: 16px; text-align: left; font: inherit; color: inherit; cursor: pointer; }
   .ec-strip .frame { position: relative; display: block; padding: 18px 18px 26px; border-radius: 16px; transition: background 160ms ease-out, box-shadow 160ms ease-out; }
   @media (hover: hover) and (pointer: fine) { .ec-strip .shot:hover .frame { background: rgb(0 0 0 / .025); } }
@@ -231,6 +232,7 @@ export class ElementCard {
       locked: (el) => (el === this.#target ? this.#site?.refused ?? null : null),
       mates: (el) => (el === this.#target && this.#site && !this.#site.refused ? this.#reach() : null),
       refused: (text) => { if (text === this.#site?.refused) return; this.#wrong = text; this.#draw(); },
+      avoid: () => [this.#el, this.#strip].filter((n) => !n.hidden).map((n) => n.getBoundingClientRect()).concat(this.#host.bar?.() ?? []),
       release: () => this.#host.release?.(),
     });
     this.#tidy = new Tidy({ target: () => this.#target, props: () => this.#props, name: (el) => componentOf(el) ?? el.localName });
@@ -260,9 +262,20 @@ export class ElementCard {
     const lay = () => this.#view === 'layout';
     this.#strip.addEventListener('click', (e) => { const s = e.target.closest('.shot'); if (!s) return; if (lay()) { this.#layout.take(s.dataset.key); } else this.#take(s.dataset.key); });
     this.#strip.addEventListener('pointerover', (e) => { const s = e.target.closest('.shot'); if (!s || s.dataset.key === this.#peek) return; if (lay()) { this.#peek = s.dataset.key; this.#layout.peek(s.dataset.key); } else this.#peekAt(s.dataset.key); });
+    // a strip laid out as a row scrolls sideways with an ordinary wheel too: every option can be reached by pointer
+    this.#strip.addEventListener('wheel', (e) => {
+      const reel = e.target.closest?.('.reel'); if (!reel || reel.scrollWidth <= reel.clientWidth + 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const by = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY, room = by > 0 ? reel.scrollWidth - reel.clientWidth - reel.scrollLeft : reel.scrollLeft;
+      if (room <= 0) return;
+      // one option a notch (the reel snaps to its options: a part of one would snap back)
+      const shot = reel.querySelector('.shot'), step = shot ? shot.offsetWidth + (parseFloat(getComputedStyle(reel).columnGap) || 0) : Math.abs(by);
+      e.preventDefault(); reel.scrollBy({ left: Math.sign(by) * step, behavior: 'instant' });
+    }, { passive: false });
     this.#strip.addEventListener('pointerout', (e) => { const s = e.target.closest('.shot'); if (!s || s.contains(e.relatedTarget)) return; if (lay()) { this.#peek = null; this.#layout.unpeek(); } else this.#unpeekAt(); });
   }
   get open() { return !!this.#target; }
+  // placed again (the fix bar it keeps clear of changed size)
+  place() { if (this.#target) this.#place(); }
   get target() { return this.#target; }
   get name() { return this.#at?.chain?.[0]?.component ?? componentOf(this.#target) ?? this.#target?.localName ?? ''; }
 
@@ -344,6 +357,8 @@ export class ElementCard {
     return out.sort((a, b) => a.px - b.px).filter((s, i, all) => !i || s.px !== all[i - 1].px);
   }
   get #locked() { return !!this.#site?.refused; }
+  // a usage whose className the element was seen wearing (classSiteOf): the recipe engine may add a class there
+  #forwards() { return this.#site?.usage && this.#site.prop === 'className' ? { forwards: true } : {}; }
   // the other elements drawn from its class site
   #reach() { return this.#site?.usage ? siteMates(this.#target, this.#site) : this.#host.elsewhere?.(this.#target) ?? 0; }
   // class changes (layout, spacing: [{ el, from, to }]) written where each element's classes are written, in one go
@@ -445,7 +460,7 @@ export class ElementCard {
       const seq = ++this.#pseq, body = this.#body(), at = this.#site?.refused ? null : this.#site;
       if (!body || !at) break;
       let answer;
-      try { answer = await post('recipes/preview', { file: at.file, line: at.line, column: at.column, ...body }); }
+      try { answer = await post('recipes/preview', { file: at.file, line: at.line, column: at.column, ...body, ...this.#forwards() }); }
       catch (error) { answer = { error: error?.message ?? String(error) }; }
       if (seq !== this.#pseq || !this.#target) continue;
       this.#preview = answer;
@@ -829,7 +844,14 @@ export class ElementCard {
     const st = this.#strip, s = st.style, MIN = 150, need = Math.min(t.width, 480) + 80;
     // the lowest a box spanning x0..x1 may reach: the fix bar's top when the bar is under it, else the screen's bottom
     const floor = (x0, x1) => (bar?.width && bar.left < x1 && bar.right > x0 ? Math.min(innerHeight - EDGE, bar.top - 12) : innerHeight - EDGE);
-    const put = (where, x0, w, top, max) => { st.dataset.side = where; Object.assign(s, { left: `${x0}px`, top: `${Math.max(EDGE, top)}px`, width: `${w}px`, maxHeight: `${Math.max(60, max)}px` }); };
+    // set, then kept clear of the bar and the card by the overlay's one rule (geometry.js clearOf): the bar can sit between
+    // the element and the room above or below it
+    const put = (where, x0, w, top, max) => {
+      st.dataset.side = where; Object.assign(s, { left: `${x0}px`, top: `${Math.max(EDGE, top)}px`, width: `${w}px`, maxHeight: `${Math.max(60, Math.min(max, innerHeight - EDGE * 2))}px` });
+      const r = st.getBoundingClientRect(), at = clearOf(r.left, r.top, r.width, r.height, [bar, c], { edge: EDGE });
+      if (at.x !== r.left || at.y !== r.top) Object.assign(s, { left: `${at.x}px`, top: `${at.y}px` });
+      if (where !== 'beside') st.dataset.side = at.y + r.height <= t.top + 0.5 ? 'above' : at.y >= t.bottom - 0.5 ? 'below' : where;
+    };
     const right = innerWidth - c.right - 18 - EDGE, left = c.left - 18 - EDGE;
     if ((side !== 'left' && right >= need) || (side === 'left' && left >= need)) {
       const w = Math.min(side === 'left' ? left : right, need + 40), x0 = side === 'left' ? c.left - 18 - w : c.right + 18, top = Math.max(EDGE, c.top);
@@ -844,10 +866,10 @@ export class ElementCard {
     below.room = low - below.top;
     const aboveRoom = aboveBottom - EDGE;
     if (below.room >= Math.min(h, MIN)) return put('below', x0, w, below.top, below.room);
-    if (aboveRoom >= Math.min(h, MIN)) { const hh = Math.min(h, aboveRoom); return put('below', x0, w, aboveBottom - hh, aboveRoom); }
+    if (aboveRoom >= Math.min(h, MIN)) { const hh = Math.min(h, aboveRoom); return put('above', x0, w, aboveBottom - hh, aboveRoom); }
     // no room either side: the larger space, scrolling inside
     if (below.room >= aboveRoom) { const top = Math.min(below.top, low - MIN); return put('below', x0, w, top, low - Math.max(EDGE, top)); }
-    return put('below', x0, w, EDGE, aboveRoom);
+    return put('above', x0, w, EDGE, aboveRoom);
   }
 
   // ── placement: texteditor.js's, unchanged ──
@@ -870,8 +892,18 @@ export class ElementCard {
       cx = side === 'right' ? left - 6 : left + WIDTH - 6;
       cy = Math.max(top + 14, Math.min(top + h - 26, mid - 6));
     }
+    // never over the fix bar (and off the element when it can be): moved the least it takes; its caret follows, or goes
+    // when the card is no longer against the element's side
+    const bar = this.#host.bar?.();
+    let at = clearOf(left, top, WIDTH, h, [bar, t]);
+    if (at.covered) at = clearOf(left, top, WIDTH, h, [bar]);
+    const slid = at.x !== left;
+    if (at.y !== top && side !== 'below' && side !== 'above') cy = Math.max(at.y + 14, Math.min(at.y + h - 26, mid - 6));
+    else if (at.y !== top) cy += at.y - top;
+    left = at.x; top = at.y;
     Object.assign(this.#el.style, { left: `${left}px`, top: `${top}px` });
     Object.assign(this.#caret.style, { left: `${cx}px`, top: `${cy}px` });
+    this.#caret.style.display = slid || cy < top - 8 || cy > top + h ? 'none' : '';
     Object.assign(this.#ring.style, { left: `${t.left - 6}px`, top: `${t.top - 4}px`, width: `${t.width + 12}px`, height: `${t.height + 8}px` });
     this.#el.dataset.side = side; this.#caret.dataset.side = side === 'above' ? 'below' : side;
     const gone = t.bottom < 0 || t.top > innerHeight;
@@ -889,7 +921,7 @@ export class ElementCard {
     const text = W.used(name, o.name, files);
     this.#writing = true; this.#draw();
     try {
-      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, body, text);
+      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, { ...body, ...this.#forwards() }, text);
       this.#writing = false;
       this.#back();
       this.#host.said?.(text, result?.undo ?? []);
