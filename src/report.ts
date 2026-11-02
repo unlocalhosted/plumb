@@ -143,6 +143,8 @@ export interface Report {
   decisions: Decision[];
   /** Numeric spacing is a base, not a named token; replaced bases do not govern values. */
   numericSpacing?: import('./decisions/spacing.js').NumericSpacing;
+  /** A `--spacing` multiplier the numeric scale above declined (defined twice, or read through another variable): for the element editors only. */
+  spacingBase?: import('./decisions/spacing.js').SpacingBase;
   notes: string[];
   /** Project theme decisions, including keys outside configured judging ladders. */
   decisionInventory?: Decision[];

@@ -45,3 +45,25 @@ export function numericStep(scale: NumericSpacing, step: number): Decision {
 export function numericUse(decision: Decision): string | undefined {
   return decision.family === 'spacing' && decision.refs.includes(decision.value) && /^calc\(var\(--spacing\) \* [\d.]+\)$/.test(decision.value) ? decision.value : undefined;
 }
+
+/** The multiplier an editor needs when {@link numericSpacing} declined it: `--spacing` defined twice with different values, or a
+ * base that reads another variable (`calc(0.25rem * var(--z))`). The last definition wins, and a variable it reads that has no
+ * single value is read at 1, said in `note`. */
+export interface SpacingBase { px: number; text: string; note?: string }
+export function spacingBase(definitions: CssVariable[], variables: Map<string, Variable>, theme: Set<string>): SpacingBase | undefined {
+  if (!theme.has('--spacing')) return;
+  const definition = definitions.findLast(d => d.name === '--spacing' && (d.theme || d.root));
+  if (!definition) return;
+  const text = definition.value.trim(), notes: string[] = [];
+  const known = new Map(variables);
+  if (variables.get('--spacing')?.dynamic) notes.push('--spacing is defined more than once; the last definition is read');
+  known.set('--spacing', { value: text });
+  for (const name of references(text)) {
+    if (name === '--spacing') continue;
+    const variable = variables.get(name);
+    if (!variable || variable.dynamic || resolveValue(`var(${name})`, variables) === undefined) { known.set(name, { value: '1' }); notes.push(`${name} read at 1`); }
+  }
+  const resolved = resolveValue('var(--spacing)', known), px = resolved === undefined ? undefined : pixels(resolved);
+  if (px === undefined || px <= 0) return;
+  return { px, text, ...(notes.length ? { note: `${notes.join('; ')}.` } : {}) };
+}

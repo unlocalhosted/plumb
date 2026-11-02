@@ -22,6 +22,7 @@ import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
+import type { SpacingUnit } from './props.js';
 import { ancestorWith, indexSource } from '../structure/index.js';
 import type { StructureEntry } from '../structure/index.js';
 import type { Props, RoleOverrides } from './props.js';
@@ -698,9 +699,9 @@ export class Session extends EventEmitter {
   async props(file: string, line: number, column: number, computed?: Record<string, string>): Promise<PropsResult> {
     const path = this.file(file); this.position(line); this.position(column);
     if (computed !== undefined && (!computed || typeof computed !== 'object' || Array.isArray(computed) || Object.values(computed).some(v => typeof v !== 'string'))) throw new UsageError('computed is an object of property → value strings.');
-    const { text, location, site, decisions } = await this.elementFacts(path, line, column);
+    const { text, location, site, decisions, unit } = await this.elementFacts(path, line, column);
     return { file: path, line: location.line, column: location.column, hash: sourceHash(text),
-      ...elementProps(path, text, location.start, location.tag, decisions, site.declarations, { roles: await this.roleDecisions(), ...(computed ? { computed } : {}) }) };
+      ...elementProps(path, text, location.start, location.tag, decisions, site.declarations, { roles: await this.roleDecisions(), ...(unit ? { unit } : {}), ...(computed ? { computed } : {}) }) };
   }
   /**
    * Recipes (docs/briefs/recipe-engine.md): the shadows and motion this project already has, what the packs offer against
@@ -789,9 +790,9 @@ export class Session extends EventEmitter {
     const text = await readFile(path, 'utf8');
     const location = jsxLocation(path, text, line, column, undefined, 'any');
     if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
-    const [site, decisions] = await Promise.all([this.site(path, location.line, location.column), this.decisions()]);
+    const [site, decisions, unit] = await Promise.all([this.site(path, location.line, location.column), this.decisions(), this.spacingUnit()]);
     if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw new UsageError(staleFile);
-    return { text, location, site, decisions };
+    return { text, location, site, decisions, unit };
   }
   /**
    * Keep it: each site accepted as an exception in the ledger, exactly as `plumber accept --rule <rule> --site
@@ -1075,11 +1076,11 @@ export class Session extends EventEmitter {
     const facts = await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
     const roles = await this.roleDecisions();
-    const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, { roles }).props.find(item => item.key === key);
+    const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }).props.find(item => item.key === key);
     const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
     return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles });
+      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) });
       return { ...change, replacement: change.replacement };
     }, label);
   }
@@ -1423,6 +1424,7 @@ export class Session extends EventEmitter {
     });
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
+  spacingUnit(): Promise<SpacingUnit | null> { return this.read('spacingUnit'); }
   /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
   spec(): Promise<ProjectSpec> { return this.read('spec'); }
   /** The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. */

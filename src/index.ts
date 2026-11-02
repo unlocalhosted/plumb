@@ -265,6 +265,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     presets: config.presets ?? [],
     decisions: record.decisions,
     ...(record.numericSpacing ? { numericSpacing: record.numericSpacing } : {}),
+    ...(record.spacingBase ? { spacingBase: record.spacingBase } : {}),
     decisionInventory: record.inventory ?? [],
     ...(dead ? { deadDecisions: dead.counts } : {}),
     declarations,

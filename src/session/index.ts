@@ -6,7 +6,7 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many' | 'recipes' | 'recipesPreview' | 'recipesApply';
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spacingUnit' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many' | 'recipes' | 'recipesPreview' | 'recipesApply';
 export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'propEdit' | 'token' | 'try' | 'refresh' | 'recipes' | 'recipesPreview' | 'recipesApply'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
@@ -122,6 +122,7 @@ export class Session extends EventEmitter {
   undo(...args: Parameters<Engine['undo']>) { return this.call('undo', args); }
   history(...args: Parameters<Engine['history']>) { return this.call('history', args); }
   decisions(...args: Parameters<Engine['decisions']>) { return this.call('decisions', args); }
+  spacingUnit(...args: Parameters<Engine['spacingUnit']>) { return this.call('spacingUnit', args); }
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }
   try(...args: Parameters<Engine['try']>) { return this.call('try', args); }
   refresh(...args: Parameters<Engine['refresh']>) { return this.call('refresh', args); }

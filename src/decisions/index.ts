@@ -14,8 +14,8 @@ import { readCssVariables } from './css.js';
 import { resolveValue } from './resolve.js';
 import { themeSourceGraph } from './theme-sources.js';
 import { motionDefinitions } from './motion.js';
-import { numericSpacing } from './spacing.js';
-import type { NumericSpacing } from './spacing.js';
+import { numericSpacing, spacingBase } from './spacing.js';
+import type { NumericSpacing, SpacingBase } from './spacing.js';
 import type { Variable } from './resolve.js';
 
 export { defineDecisions } from './record.js';
@@ -37,7 +37,7 @@ export function matches(value: string, pattern: string): boolean {
   return new RegExp(`^${pattern.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
 }
 
-export interface DecisionRecord { numericSpacing?: NumericSpacing | undefined; inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
+export interface DecisionRecord { numericSpacing?: NumericSpacing | undefined; spacingBase?: SpacingBase | undefined; inventory?: Decision[]; decisions: Decision[]; variables: Map<string, Variable>; theme: Set<string>; defined: Set<string>; frameworkVariables: Map<string, CssVariable>; definitions: CssVariable[] }
 function outside(root: string, file: string): boolean {
   const path = relative(root, resolve(root, file)).replaceAll('\\', '/');
   return path === '..' || path.startsWith('../') || isAbsolute(path);
@@ -174,5 +174,6 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     return [record];
   });
   tokenReasons([...decisions.values(), ...inventory]);
-  return { numericSpacing: numericSpacing(raw, [...decisions.values()], variables, themeNames), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
+  const numeric = numericSpacing(raw, [...decisions.values()], variables, themeNames);
+  return { numericSpacing: numeric, ...(numeric ? {} : { spacingBase: spacingBase(raw, variables, themeNames) }), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }

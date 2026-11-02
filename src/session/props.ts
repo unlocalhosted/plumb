@@ -16,10 +16,14 @@ export interface Prop {
   source: 'class' | 'inline' | 'computed' | 'none'; class: string | null; steps: PropStep[]; dynamic?: string;
   /** what applies when nothing sets it: the page's computed value when the client sent one, else the theme's or the browser's default, else unknown */
   default?: string | null;
+  /** how the steps were read when that took a guess (a base that reads another variable) */
+  note?: string;
 }
 /** The owner's decisions per type role (config.system.type.roles). */
 export type RoleOverrides = Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }>;
-export interface PropsOptions { roles?: RoleOverrides; computed?: Record<string, string> }
+/** Tailwind v4's `--spacing` multiplier with no named steps: `p-4` is 4 × px. `used` are the multiples the project's classes use. */
+export interface SpacingUnit { px: number; text: string; note?: string; used: number[] }
+export interface PropsOptions { roles?: RoleOverrides; computed?: Record<string, string>; unit?: SpacingUnit }
 export interface Props { kind: 'surface' | 'layout' | 'text' | 'media' | 'control'; tag: string; props: Prop[] }
 
 interface Def {
@@ -198,9 +202,15 @@ function baseUtility(token: string): string | undefined {
   return token.replace(/^!/, '').replace(/!$/, '');
 }
 
-function pools(decisions: Decision[]) {
+const defaultMultiples = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96];
+const trim = (n: number) => String(Number(n.toFixed(4)));
+function pools(decisions: Decision[], unit?: SpacingUnit) {
+  const multiples = unit ? [...new Set([...defaultMultiples, ...unit.used])].sort((a, b) => a - b) : [];
   const steps = (def: Def): PropStep[] => {
     const result: PropStep[] = [];
+    if (unit && def.family === 'spacing' && def.theme && !decisions.some(d => d.family === 'spacing' && d.origin === 'project' && d.name.startsWith('--spacing-'))) {
+      for (const n of multiples) result.push({ token: trim(n), value: `${trim(n * unit.px)}px`, label: trim(n), class: def.make(trim(n)), css: `calc(var(--spacing) * ${trim(n)})` });
+    }
     if (def.theme) {
       const named = decisions.filter(d => d.family === def.theme!.family && d.name.startsWith(def.theme!.namespace) && !d.name.slice(def.theme!.namespace.length).includes('--') && d.name.slice(def.theme!.namespace.length) !== '');
       const project = named.filter(d => d.origin === 'project');
@@ -256,12 +266,12 @@ function roleSteps(decisions: Decision[], roles: RoleOverrides = {}): PropStep[]
 const typeClassKeys = new Set<PropKey>(['font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform']);
 
 export function elementProps(file: string, text: string, start: number, tag: string, decisions: Decision[], declarations: Declaration[], given: PropsOptions = {}): Props {
-  const el = element(file, text, start), { steps, sets } = pools(decisions), fallback = defaults(decisions);
+  const el = element(file, text, start), { steps, sets } = pools(decisions, given.unit), fallback = defaults(decisions);
   const present = el.className.kind === 'static' ? classes(el.className.strings).flatMap(item => { const utility = baseUtility(item.text); return utility === undefined ? [] : [{ token: item.text, utility }]; }) : [];
   const own = declarations.filter(d => d.when.length === 0 && d.origin !== 'keyframes' && d.origin !== 'custom-property');
   const result = defs.map((def): Prop => {
     const options = steps(def);
-    const base = { key: def.key, family: def.family, steps: options };
+    const base = { key: def.key, family: def.family, steps: options, ...(given.unit?.note && def.family === 'spacing' && options.length ? { note: given.unit.note } : {}) };
     // a property nothing sets can be added to a static className: only a className built at runtime makes it dynamic
     const dynamic = el.className.kind === 'dynamic' ? el.className.reason : undefined;
     const inline = def.css.map(name => el.style.properties.get(camel(name))).find(Boolean);
@@ -337,7 +347,7 @@ export function setProp(file: string, text: string, start: number, tag: string, 
     return { start: el.opening.name.end, end: el.opening.name.end, replacement: ` className="${step.class}"`, at };
   }
   const all = classes(el.className.strings);
-  const existing = all.find(item => { const utility = baseUtility(item.text); return utility !== undefined && def.match(utility, pools(decisions).sets) !== undefined; });
+  const existing = all.find(item => { const utility = baseUtility(item.text); return utility !== undefined && def.match(utility, pools(decisions, options.unit).sets) !== undefined; });
   if (existing) {
     const important = /^!/.test(existing.text) ? '!' : /!$/.test(existing.text) ? 'end' : '';
     const replacement = important === '!' ? '!' + step.class : important === 'end' ? step.class + '!' : step.class;

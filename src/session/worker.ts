@@ -16,6 +16,7 @@ import { Focus } from './focus.js';
 import { readLedger } from '../ledger/store.js';
 import { profileDuration } from '../profile.js';
 import { readFile } from 'node:fs/promises';
+import { pixels } from '../decisions/resolve.js';
 import { structuredEdits, refusedSites } from '../surfaces/edits.js';
 import { sourceHash } from '../collect/cache.js';
 import { cssCode } from '../collect/stylesheets.js';
@@ -320,6 +321,15 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     return site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
   }
   if (method === 'decisions') return (sharedDirty ? await current() : raw).decisions;
+  // the spacing multiplier an element editor steps by, when the theme has Tailwind's `--spacing` and no named steps replacing it
+  if (method === 'spacingUnit') {
+    const view = sharedDirty ? await current() : raw, numeric = view.numericSpacing;
+    const base = numeric ? numeric.replaced ? undefined : { px: pixels(numeric.unit.resolved ?? ''), text: numeric.unit.value } : view.spacingBase;
+    if (!base || base.px === undefined) return null;
+    const used = new Set<number>();
+    for (const d of view.declarations) if (d.origin === 'class' && d.sourceOrigin !== 'framework') { const m = /^calc\(var\(--spacing\) \* (\d*\.?\d+)\)$/.exec(d.value); if (m) used.add(Number(m[1])); }
+    return { px: base.px, text: base.text, ...('note' in base && base.note ? { note: base.note } : {}), used: [...used].sort((a, b) => a - b) };
+  }
   // the craft spec (docs/briefs/craft-spec.md): the standard as this project's config tunes it, and where a new token goes
   if (method === 'spec') return projectSpec(options.root!, state.settings, sharedDirty ? await current() : raw);
   if (method === 'why') return inspectLedger('why', `${params.file}:${params.line}`, await report());
