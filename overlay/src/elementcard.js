@@ -33,7 +33,7 @@ import { locate, componentOf, classSiteOf, siteMates, BUILT_IN_CODE } from './lo
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
-import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js';
+import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layoutcard.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 
 const W = FIX.card;
@@ -361,7 +361,9 @@ export class ElementCard {
     const steps = this.#props?.props?.find((p) => p.key === 'padding')?.steps ?? [];
     const px = (v) => { const m = /^(-?[\d.]+)(px|rem)?$/.exec(String(v ?? '').trim()); return m ? +m[1] * (m[2] === 'rem' ? (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 1) : NaN; };
     const out = [{ px: 0, token: '0' }, ...steps.map((s) => ({ px: px(s.value), token: s.token })).filter((s) => Number.isFinite(s.px))];
-    return out.sort((a, b) => a.px - b.px).filter((s, i, all) => !i || s.px !== all[i - 1].px);
+    // one step per size: the project's own name for it (s4) over Tailwind's multiplier for the same px (4)
+    const named = (t) => !/^[\d.]+$/.test(t);
+    return out.sort((a, b) => a.px - b.px || named(b.token) - named(a.token)).filter((s, i, all) => !i || s.px !== all[i - 1].px);
   }
   get #locked() { return !!this.#site?.refused; }
   // a usage whose className the element was seen wearing (classSiteOf): the recipe engine may add a class there
@@ -448,7 +450,9 @@ export class ElementCard {
     if (this.#ease) {
       // a dragged curve: the model is sent whole, its time with it
       const t = o.r.model.timing, ms = this.#ms ?? (t.duration ?? (msOf(o.r.css.transitionDuration) || 200));
-      return { model: { ...o.r.model, timing: { type: 'curve', duration: ms, easing: this.#ease } }, kind: 'motion', name: o.r.id, ...(Object.keys(dials).length ? { dials } : {}) };
+      // a curve shaped by hand is its own: added as a new easing, never matched to a near one of yours (an overshoot
+      // would be written as the ease-in-out it was dragged from)
+      return { model: { ...o.r.model, timing: { type: 'curve', duration: ms, easing: this.#ease } }, kind: 'motion', name: o.r.id, choice: 'add', ...(Object.keys(dials).length ? { dials } : {}) };
     }
     if (this.#ms !== null) dials.speed = r2((msOf(o.r.css.transitionDuration) || this.#ms) / this.#ms);
     return { recipe, ...(Object.keys(dials).length ? { dials } : {}) };
@@ -683,7 +687,9 @@ export class ElementCard {
     if (!p) return `<div class="note">${esc(W.reading)}</div>`;
     if (p.error) return `<div class="refuse" role="alert">${esc(p.error)}</div>`;
     if (!p.ok) return `<div class="refuse">${esc(p.refused ?? '')}</div>`;
-    const notes = (p.notes ?? []).map((n) => `<div class="note">${esc(n)}</div>`).join('');
+    // an exit written as data-[state=closed]: plays only when something sets that state, and nothing on the element does
+    const exitIdle = (p.writes ?? []).some((w) => /data-\[state=closed\]:/.test(w.diff ?? '')) && !this.#target?.closest('[data-state]');
+    const notes = [...(p.notes ?? []), ...(exitIdle ? [W.exitIdle] : [])].map((n) => `<div class="note">${esc(n)}</div>`).join('');
     if (!p.writes?.length) return `<div class="note">${esc(W.nothing(this.name, p.uses?.class ?? o.name))}</div>${notes}`;
     return p.writes.map((w) => `<div class="edit"><div class="file">${esc(w.file)}<span>${esc(w.role)}</span></div>${String(w.diff ?? '').split('\n').map((l) => `<div class="line ${l[0] === '+' ? 'add' : l[0] === '-' ? 'del' : ''}">${esc(l)}</div>`).join('')}</div>`).join('') + notes;
   }
@@ -828,7 +834,7 @@ export class ElementCard {
       shot.type = 'button'; shot.className = 'shot'; shot.dataset.key = o.key; shot.setAttribute('role', 'option'); shot.setAttribute('aria-selected', String(o.key === cur));
       shot.setAttribute('aria-label', `${o.name}, ${o.tag.text}`);
       if (o.key === cur) shot.setAttribute('aria-current', 'true');
-      const copy = frozen.cloneNode(true); copy.classList.add('copy');
+      const copy = fitCopy(frozen.cloneNode(true), this.#target); copy.classList.add('copy');
       const frame = document.createElement('span'); frame.className = 'frame'; frame.append(copy);
       if (this.#view === 'shadow') copy.style.boxShadow = o.key === cur && this.#preview?.css?.boxShadow ? this.#preview.css.boxShadow : o.r.css.boxShadow;
       else {

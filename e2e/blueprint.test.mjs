@@ -628,7 +628,7 @@ test('While blueprint is on the page is read, not used: clicks, hovers and keys 
   assert.deepEqual(errors, []);
 });
 
-test('Alt-click while blueprint is on puts that element\'s cause in hand', { timeout: 90000 }, async (t) => {
+test('Alt-click while blueprint is on opens that element\'s card, and . puts its own cause in hand', { timeout: 90000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -639,7 +639,12 @@ test('Alt-click while blueprint is on puts that element\'s cause in hand', { tim
   await page.mouse.move(b.x + 4, b.y + b.height / 2);
   await page.mouse.click(b.x + 4, b.y + b.height / 2);
   await page.keyboard.up('Alt');
-  const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
+  // the card owns the screen (docs/briefs/qa-fixes.md, cause 3): nothing in hand while it is open; '.' hands over
+  const overlay = page.locator('plumb-overlay');
+  await overlay.locator('.ec .drill').first().waitFor({ timeout: 20000 });
+  assert.equal(await overlay.locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
+  await page.keyboard.press('.');
+  const held = overlay.locator('.fx .cause .cls');
   await held.waitFor({ timeout: 20000 });
   assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the row\'s own cause is in hand');
 });

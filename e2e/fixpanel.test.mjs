@@ -219,7 +219,7 @@ export function App() {
 // A component that only passes className through (a router Link, a Button wrapper) writes none of its classes: the
 // code that uses it does. Alt+click reads it there, so its cause is in hand, named by what it is about (letter spacing,
 // not "text size or weight"). Reading the page again never says everything matches before every element is read.
-test('Alt+click on a pass-through component holds the cause where its classes are written; the panel never says all clear mid-read', { timeout: 150000 }, async (t) => {
+test('Alt+click on a pass-through component\'s words, then ., holds the cause where its classes are written; the panel never says all clear mid-read', { timeout: 150000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, `
 function Link({ className, children }) { return <a href="#" className={className}>{children}</a>; }
@@ -249,6 +249,9 @@ export function App() {
   await page.mouse.move(b.x + 4, b.y + b.height / 2);
   await page.mouse.click(b.x + 4, b.y + b.height / 2);
   await page.keyboard.up('Alt');
+  // words: Alt+click opens their card (docs/briefs/qa-fixes.md, cause 4); '.' hands over to their own cause
+  await overlay.locator('.tc').waitFor({ timeout: 20000 });
+  await page.keyboard.press('.');
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'tracking-[0.1em]' }).waitFor({ timeout: 20000 });
   assert.match(await panel(overlay).locator('.cause .what').innerText(), /Letter spacing not in your theme/);
   assert.deepEqual(errors, []);

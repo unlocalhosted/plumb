@@ -266,6 +266,9 @@ export class FixPanel {
       elsewhere: (el) => stampMates(el),
       dark: () => darkGround(),
       why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
+      // the levels above the words (blueprint.js climbTo keeps the way back down); the fix bar it is placed clear of
+      climb: (el) => this.#host.climb?.(el),
+      bar: () => this.rect,
     });
     // Alt+click on anything else: its own card, Shadow › and Motion › on the recipe engine (elementcard.js)
     this.#card = new ElementCard(root, {
@@ -761,7 +764,7 @@ export class FixPanel {
         : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span></div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;

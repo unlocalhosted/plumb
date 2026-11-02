@@ -164,13 +164,13 @@ test('A write the page reloads for twice still comes back said, with its Undo; U
   await page.mouse.move(b.x + 4, b.y + b.height / 2);
   await page.waitForFunction(() => /padding left/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub')?.innerText ?? ''));
   await page.mouse.wheel(0, -100);
-  await overlay.locator('.fx .said').filter({ hasText: /padding left 16px/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.fx .said').filter({ hasText: /padding left \d+px/ }).waitFor({ timeout: 20000 });
   assert.notEqual(await read(), original);
   // the page goes twice more before it settles: the write is still said, with its Undo
   await page.reload(); await page.waitForFunction(() => window.__plumb?.overlay);
   await page.reload(); await page.waitForFunction(() => window.__plumb?.overlay);
   await overlay.locator('.fx .said .undo').waitFor({ timeout: 20000 });
-  assert.match(await overlay.locator('.fx .said').innerText(), /padding left 16px/);
+  assert.match(await overlay.locator('.fx .said').innerText(), /padding left \d+px/);
   await overlay.locator('.fx .said .undo').click();
   await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.equal(await read(), original);

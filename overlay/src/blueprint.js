@@ -345,7 +345,7 @@ export class Blueprint {
   async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length, swaps = [], said = FIX.applied(total), at = null) {
     const undo = (this.#undos = []);
     this.#saying = said; this.#at = at;
-    this.#host.remember?.(said, [], at);
+    this.#host.remember?.(said, undefined, at); // pending: a reload before the answer finds its undo in the server's history
     // the panel's swaps first (Changes: source files, which hot-update without a reload)
     if (this.#changes.count) await this.#changes.accept();
     // then the causes taken from the code alone: their edits by id, per file (POST apply: the server derives each edit
@@ -577,8 +577,9 @@ export class Blueprint {
   }
   // an element card is open (it comes back open after a reload a write causes)
   get carding() { return this.#fix.carding; }
-  // a card (an element's, or words') is open: it owns the screen
-  get editing() { return !!this.#fix.editing; }
+  // a card (an element's, or words') is open: it owns the screen (not `editing`: that is the glass's hole for words
+  // edited in place, a method above)
+  get cardOpen() { return !!this.#fix.editing; }
   // the element being read (an Alt+click), or null for the whole page
   get scope() { return this.#scope; }
   // from one element to the whole page (Alt+B while one element is read)

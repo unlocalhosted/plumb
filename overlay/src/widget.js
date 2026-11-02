@@ -590,7 +590,7 @@ class PlumbOverlay extends HTMLElement {
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
     // is what to work in)
     if (state === 'entering') this.#ready?.dismiss();
-    if (state === 'on' && !this.#blueprint?.editing) this.#help?.hint('blueprint');
+    if (state === 'on' && !this.#blueprint?.cardOpen) this.#help?.hint('blueprint');
     const on = state === 'entering' || state === 'on';
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
@@ -796,7 +796,7 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // ⌥↑ ⌥↓ with a card open (an element's or words'): the card moves to the level above, or back down the way it came
-    if (!this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown') && this.#blueprint?.editing) {
+    if (!this.#pinned && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown') && this.#blueprint?.cardOpen) {
       event.preventDefault(); event.stopPropagation();
       this.#disarm();
       this.#blueprint.climb(event.key === 'ArrowUp' ? 1 : -1);

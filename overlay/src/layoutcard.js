@@ -94,19 +94,44 @@ export function groundOf(el) {
   return '#fff';
 }
 // the element as it looks now, its styles written onto a copy (the strip is outside the page's stylesheets): no ids, no
-// source stamps (the page's lookups never find a copy), no transitions, sat where the strip puts it
+// source stamps (the page's lookups never find a copy), no transitions, sat where the strip puts it. Every computed
+// property is written on the element itself; inside it, the ones that draw a box and its words (reading all ~350 of
+// every node made a large element's strip take seconds), and at most COPY_NODES of them: a copy shows the element, not
+// all of a page section's content
+const COPY_NODES = 300;
+const DRAWN = ['display', 'position', 'top', 'right', 'bottom', 'left', 'z-index', 'box-sizing', 'width', 'height', 'min-width', 'min-height', 'max-width', 'max-height',
+  'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+  'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style',
+  'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius',
+  'flex-direction', 'flex-wrap', 'flex-grow', 'flex-shrink', 'flex-basis', 'align-items', 'align-self', 'align-content', 'justify-content', 'justify-items', 'justify-self', 'order', 'row-gap', 'column-gap',
+  'grid-template-columns', 'grid-template-rows', 'grid-auto-flow', 'grid-auto-columns', 'grid-auto-rows', 'grid-column-start', 'grid-column-end', 'grid-row-start', 'grid-row-end',
+  'overflow-x', 'overflow-y', 'background-color', 'background-image', 'background-size', 'background-position', 'background-repeat', 'background-clip',
+  'color', 'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-align', 'text-transform', 'text-decoration-line', 'text-overflow', 'white-space', 'word-break', 'vertical-align', 'list-style-type',
+  'opacity', 'visibility', 'box-shadow', 'transform', 'transform-origin', 'object-fit', 'aspect-ratio', 'fill', 'stroke', 'stroke-width', 'isolation', 'filter'];
 export function freeze(el) {
   const copy = el.cloneNode(true), from = [el, ...el.querySelectorAll('*')], to = [copy, ...copy.querySelectorAll('*')];
   from.forEach((s, i) => {
-    const d = to[i], cs = getComputedStyle(s);
+    const d = to[i];
+    if (i > COPY_NODES) { d.remove(); return; } // past the cap: left out of the copy (its descendants come later, and go too)
+    const cs = getComputedStyle(s);
     let css = '';
-    for (const p of cs) css += `${p}:${cs.getPropertyValue(p)};`;
+    if (i === 0) for (const p of cs) css += `${p}:${cs.getPropertyValue(p)};`;
+    else for (const p of DRAWN) { const v = cs.getPropertyValue(p); if (v) css += `${p}:${v};`; }
     d.setAttribute('style', css);
     d.removeAttribute('id'); d.removeAttribute('data-plumb-source'); d.removeAttribute('contenteditable');
     d.setAttribute('inert', '');
   });
   Object.assign(copy.style, { position: 'relative', inset: 'auto', margin: '0', transform: 'none', transition: 'none', animation: 'none', pointerEvents: 'none' });
   copy.setAttribute('aria-hidden', 'true');
+  return copy;
+}
+// a copy in the strip: shrunk to its width, so it is seen side to side; a tall one shows its top (a page section shrunk
+// to its height would be a sliver)
+export const COPY_FIT = { w: 480, h: 260 };
+export function fitCopy(copy, el) {
+  const r = el.getBoundingClientRect(), k = Math.min(1, COPY_FIT.w / Math.max(1, r.width));
+  if (k < 1) copy.style.zoom = String(Math.round(k * 1000) / 1000);
+  if (r.height * k > COPY_FIT.h) Object.assign(copy.style, { maxHeight: `${Math.round(COPY_FIT.h / k)}px`, overflow: 'hidden' });
   return copy;
 }
 // inline values put on an element and taken off exactly
@@ -404,18 +429,27 @@ const OPTIONS = [
 const LAYOUT_CLASS = /^(?:block|inline-block|flex|inline-flex|grid|inline-grid|flex-(?:row|col|row-reverse|col-reverse)|flex-(?:wrap|nowrap|wrap-reverse)|grid-cols-.+)$/;
 const ROW_CLASS = /^(?:block|flex|inline-flex|grid|inline-grid|col-span-.+|grid-cols-.+)$/;
 const colsClass = (cols) => cols.every((c) => c === '1fr') ? `grid-cols-${cols.length}` : `grid-cols-[${cols.join('_').replace(/\s+/g, '_')}]`;
+const BREAKPOINTS = ['', 'sm:', 'md:', 'lg:', 'xl:', '2xl:'];
 const colsLabel = (c) => c.replace('repeat(auto-fit,minmax(200px,1fr))', 'fit · min 200px');
 
 // the element's layout as it is now: read from the page, its columns from its own class when it says them
 function readLayout(el) {
   const cs = getComputedStyle(el), cls = classesOf(el), rows = kids(el);
   const mode = /grid/.test(cs.display) ? 'grid' : /flex/.test(cs.display) ? 'flex' : 'block';
-  let cols = null;
-  const c = cls.find((x) => /^grid-cols-/.test(x));
-  if (c) { const n = /^grid-cols-(\d+)$/.exec(c)?.[1], arb = /^grid-cols-\[(.+)\]$/.exec(c)?.[1]; cols = n ? Array(+n).fill('1fr') : arb ? arb.split('_') : null; }
-  if (!cols && mode === 'grid') cols = cs.gridTemplateColumns.split(' ').filter(Boolean).map(() => '1fr');
+  // the columns as written: the grid-cols class that applies now (a breakpoint's, sm:grid-cols-[10rem_1fr_auto], over the
+  // base), known by having as many tracks as the grid draws; else as many equal columns as it draws
+  let cols = null, colsFrom = null, colsVariant = '';
+  if (mode === 'grid') {
+    const drawn = cs.gridTemplateColumns.split(' ').filter(Boolean).length;
+    const parse = (v) => { const n = /^(\d+)$/.exec(v)?.[1], arb = /^\[(.+)\]$/.exec(v)?.[1]; return n ? Array(+n).fill('1fr') : arb ? arb.split('_') : null; };
+    const found = [...el.classList].map((x) => /^((?:(?:sm|md|lg|xl|2xl):)?)grid-cols-(.+)$/.exec(x)).filter(Boolean)
+      .map((m) => ({ cls: m[0], variant: m[1], cols: parse(m[2]) })).filter((f) => f.cols?.length === drawn)
+      .sort((a, b) => BREAKPOINTS.indexOf(b.variant) - BREAKPOINTS.indexOf(a.variant))[0];
+    if (found) ({ cols, cls: colsFrom, variant: colsVariant } = found);
+    else cols = Array(drawn).fill('1fr');
+  }
   const sub = mode === 'grid' && rows.length > 0 && rows.every((r) => classesOf(r).includes('grid-cols-subgrid'));
-  return { mode, dir: cs.flexDirection.startsWith('column') ? 'column' : 'row', wrap: cs.flexWrap === 'wrap' ? 'wrap' : 'nowrap', cols, sub };
+  return { mode, dir: cs.flexDirection.startsWith('column') ? 'column' : 'row', wrap: cs.flexWrap === 'wrap' ? 'wrap' : 'nowrap', cols, colsFrom, colsVariant, sub };
 }
 // columns for "lined up": as many as the first row has things in it (a row of a few things, never a grid of its own), the
 // second taking the room; else two equal columns
@@ -465,8 +499,11 @@ export class Layout {
   edits() {
     const s = this.#s, f = this.#from, t = this.#host.target(); if (!s || sameLayout(s, f)) return [];
     const out = [];
-    const mine = classesOf(t).filter((c) => LAYOUT_CLASS.test(c));
-    const to = s.mode === 'grid' ? ['grid', colsClass(s.cols)] : s.mode === 'flex' ? ['flex', s.dir === 'column' ? 'flex-col' : '', s.wrap === 'wrap' ? 'flex-wrap' : ''].filter(Boolean) : mine;
+    // columns read from a breakpoint's class are changed there; the base's own columns are left as they are
+    const v = f.colsVariant ?? '';
+    let mine = classesOf(t).filter((c) => LAYOUT_CLASS.test(c));
+    if (v) mine = [...mine.filter((c) => !/^grid-cols-/.test(c)), f.colsFrom];
+    const to = s.mode === 'grid' ? ['grid', v + colsClass(s.cols)] : s.mode === 'flex' ? ['flex', s.dir === 'column' ? 'flex-col' : '', s.wrap === 'wrap' ? 'flex-wrap' : ''].filter(Boolean) : mine;
     const gone = mine.filter((c) => !to.includes(c)), add = to.filter((c) => !mine.includes(c));
     if (gone.length || add.length) out.push({ el: t, from: gone.join(' '), to: add.join(' ') || 'block' });
     const subNow = s.mode === 'grid' && s.sub, subWas = f.mode === 'grid' && f.sub;
@@ -518,6 +555,7 @@ export class Layout {
       // the copy grows with its new layout (its frozen height was the old one's)
       inline.set(copy, { height: 'auto', 'min-height': '0', 'max-height': 'none' });
       layOut(copy, o.s, inline);
+      fitCopy(copy, this.#host.target());
       const frame = document.createElement('span'); frame.className = 'frame'; frame.append(copy); shot.append(frame);
       shot.insertAdjacentHTML('beforeend', `<span class="cap"><b>${esc(W.options[o.id])}</b><em class="v ${o.id === cur ? 'now' : 'yours'}">${esc(o.s.mode === 'grid' ? (o.s.sub ? W.kinds.sub : W.kinds.grid) : W.kinds.flex)}</em></span>`);
       reel.append(shot);

@@ -287,16 +287,17 @@ export async function classSiteOf(element, need = []) {
     const l = on.length === 1 ? on[0] : !on.length ? near : null;
     if (l) linkOf.set(c.token, l);
   }
-  // classes the server can't follow into another file (a Link used on another page): up the chain, a usage's string prop
-  // whose classes it wears is where they are written; a usage that builds its className in code puts the rest together
-  for (const l of links.slice(1)) {
+  // classes the server didn't attribute (it can't follow a Link used on another page; and it may answer nothing at all):
+  // its own className when that is a plain string holding them; else up the chain, a usage's string prop whose classes it
+  // wears is where they are written; a usage that builds its className in code puts the rest together
+  for (const l of links) {
     if (wears.every((c) => linkOf.has(c))) break;
     const s = await structure(l);
-    for (const v of Object.values(s?.props ?? {})) {
+    for (const v of Object.values(l === at ? { className: s?.props?.className } : s?.props ?? {})) {
       const list = typeof v === 'string' ? v.split(/\s+/).filter(Boolean) : [];
       if (list.length && list.every((c) => wears.includes(c))) for (const c of list) if (!linkOf.has(c)) linkOf.set(c, l);
     }
-    if (s?.props?.className === null) { for (const c of wears) if (!linkOf.has(c)) linkOf.set(c, l); break; }
+    if (l !== at && s?.props?.className === null) { for (const c of wears) if (!linkOf.has(c)) linkOf.set(c, l); break; }
   }
   let link = null, here = [];
   if (need.length) {

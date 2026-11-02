@@ -122,7 +122,7 @@ test('A component that forwards className: the card names the usage, spacing wri
   // beside the first child, in the left padding (between the two children is the gap)
   await page.mouse.move(b.x + 4, b.y + 22);
   await page.mouse.move(b.x + 3, b.y + 22);
-  await page.waitForFunction(() => /^14 padding left/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub')?.innerText.replace(/\s+/g, ' ') ?? ''));
+  await page.waitForFunction(() => /^14\b.*padding left/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub')?.innerText.replace(/\s+/g, ' ') ?? ''));
   await marked();
   await page.mouse.wheel(0, -100);
   await said(/padding left 16px/);

@@ -120,6 +120,9 @@ test('Alt+click on the element reads the same numbers in the fix panel: 19px now
   await page.mouse.move(box.x + 20, box.y + box.height / 2);
   await page.mouse.click(box.x + 20, box.y + box.height / 2);
   await page.keyboard.up('Alt');
+  // words: Alt+click opens their card (docs/briefs/qa-fixes.md, cause 4); '.' hands over to their own cause
+  await overlay.locator('.tc').waitFor({ timeout: 20000 });
+  await page.keyboard.press('.');
   const fx = overlay.locator('.fx');
   await fx.locator('.cause .cls').filter({ hasText: 'text-[1.1875rem]' }).waitFor({ timeout: 20000 });
   await fx.locator('.sp').first().waitFor({ timeout: 10000 });
