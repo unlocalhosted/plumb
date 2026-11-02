@@ -40,6 +40,9 @@ import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../sour
 import { forgetProjectFacts } from '../project-facts/index.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
+import { indexProject } from '../recipes/project.js';
+import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js';
+import type { PlanParams, RecipeContext } from '../recipes/service.js';
 export type { TextRun, TextResult } from './text.js';
 
 export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean;
@@ -698,6 +701,82 @@ export class Session extends EventEmitter {
     const { text, location, site, decisions } = await this.elementFacts(path, line, column);
     return { file: path, line: location.line, column: location.column, hash: sourceHash(text),
       ...elementProps(path, text, location.start, location.tag, decisions, site.declarations, { roles: await this.roleDecisions(), ...(computed ? { computed } : {}) }) };
+  }
+  /**
+   * Recipes (docs/briefs/recipe-engine.md): the shadows and motion this project already has, what the packs offer against
+   * them, and what the element wears; then a preview of exactly what a recipe would write, and the write.
+   */
+  async recipes(file: string, line: number, column: number): Promise<Record<string, unknown>> {
+    return recipesView(await this.recipeContext(file, line, column));
+  }
+  async recipesPreview(params: PlanParams & { file: string; line: number; column: number }): Promise<Record<string, unknown>> {
+    return recipesPreview(await this.recipeContext(params.file, params.line, params.column), params);
+  }
+  async recipesApply(params: PlanParams & { file: string; line: number; column: number; hash?: string; hashes?: Record<string, string> }): Promise<{ revision: number; applied: string[]; undo: UndoHandle[]; files: Record<string, string>; choice: string; verdict: unknown; nearest: unknown; notes: string[]; uses?: unknown }> {
+    const context = await this.recipeContext(params.file, params.line, params.column);
+    if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw new UsageError(staleFile);
+    const { plan, writes } = recipesPlan(context, params);
+    if (!plan.ok) throw new UsageError(plan.refused ?? 'This recipe cannot be written here.');
+    if (!writes.length) return { revision: this.revision, applied: [], undo: [], files: {}, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
+    for (const w of writes) if (params.hashes?.[w.file] !== undefined && params.hashes[w.file] !== w.hash) throw new UsageError(staleFile);
+    const done: UndoHandle[] = [], files: Record<string, string> = {};
+    try {
+      for (const w of writes) {
+        const result = await this.rewrite(this.file(w.file), w.hash, w.after, `${w.role}: ${w.summary}`.slice(0, 120));
+        done.push(result.undo); files[w.file] = result.hash;
+      }
+    } catch (error) {
+      // nothing half done: the files already written go back as they were
+      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
+      throw error;
+    }
+    return { revision: this.revision, applied: writes.map(w => `${w.role}:${w.file}`), undo: done, files, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
+  }
+  private async recipeContext(file: string, line: number, column: number): Promise<RecipeContext> {
+    const path = this.file(file); this.position(line); this.position(column);
+    const { text, location } = await this.elementFacts(path, line, column);
+    const texts = new Map<string, string>(), paths: string[] = [];
+    const found = await glob('**/*.{css,ts,tsx,js,jsx,mjs,mts}', { cwd: this.root, absolute: false, dot: false, followSymbolicLinks: false, ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/*.d.ts', '**/*.min.*'] });
+    for (const rel of found.map(f => f.replaceAll('\\', '/')).sort().slice(0, 1500)) {
+      const info = await stat(resolve(this.root, rel)).catch(() => undefined);
+      if (!info?.isFile() || info.size > 300_000) continue;
+      texts.set(rel, await readFile(resolve(this.root, rel), 'utf8')); if (/\.[cm]?[jt]sx?$/.test(rel)) paths.push(rel);
+    }
+    for (const rel of texts.keys()) if (rel.endsWith('.css')) paths.push(rel);
+    const relative_ = relative(this.root, path).replaceAll('\\', '/');
+    texts.set(relative_, text);
+    let dependencies: Record<string, string> = {};
+    try { const pkg = JSON.parse(await readFile(resolve(this.root, 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>; dependencies = { ...pkg.dependencies, ...pkg.devDependencies }; } catch { /* no package.json */ }
+    const spec = await this.request<ProjectSpec>('spec').catch(() => undefined);
+    const index = indexProject({ files: [...texts].map(([p, t]) => ({ path: p, text: t })), dependencies, themeFile: spec?.tokens.file ?? null });
+    return { index, read: p => texts.get(p), paths, element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column } };
+  }
+  /** A whole file replaced with the text a plan made, under the same guards as every write: the hash it was read at, one
+   * regular file, a result that still parses, one undo handle. */
+  private async rewrite(path: string, hash: string, next: string, label: string): Promise<{ hash: string; undo: UndoHandle }> {
+    return this.serialize(async () => {
+      const identity = await this.editableFile(path);
+      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
+      let before: string;
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+        before = await readFile(path, 'utf8');
+        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
+        parsesAsBefore(path, before, next);
+        if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+        await this.sameFile(path, identity);
+        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
+        await this.sameFile(path, identity);
+      } finally { await handle.close(); }
+      await this.reconcile([path]);
+      const hashAfter = sourceHash(next);
+      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
+      const was = before.split('\n'), now = next.split('\n');
+      let line = 0; while (line < was.length && line < now.length && was[line] === now[line]) line++;
+      return { hash: hashAfter, undo: this.record(path, before, hashAfter, line + 1, label) };
+    });
   }
   /** The owner's decisions per type role, from the config (config.system.type.roles). */
   private async roleDecisions(): Promise<RoleOverrides> {

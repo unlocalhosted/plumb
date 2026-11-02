@@ -6,8 +6,8 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
-type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many';
-export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'propEdit' | 'token' | 'try' | 'refresh'>;
+type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many' | 'recipes' | 'recipesPreview' | 'recipesApply';
+export type ReadMethod = Exclude<Method, 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'propEdit' | 'token' | 'try' | 'refresh' | 'recipes' | 'recipesPreview' | 'recipesApply'>;
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
@@ -69,7 +69,7 @@ export class Session extends EventEmitter {
     if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
-    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'system', 'propEdit', 'token', 'refresh'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
+    const id = ++this.id, deadline = ['apply', 'applyText', 'applyTextAt', 'undo', 'set', 'swap', 'swaps', 'accept', 'applyAll', 'system', 'propEdit', 'token', 'refresh', 'recipesApply'].includes(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
@@ -104,6 +104,9 @@ export class Session extends EventEmitter {
   applyTextAt(...args: Parameters<Engine['applyTextAt']>) { return this.call('applyTextAt', args); }
   apply(...args: Parameters<Engine['apply']>) { return this.call('apply', args); }
   props(...args: Parameters<Engine['props']>) { return this.call('props', args); }
+  recipes(...args: Parameters<Engine['recipes']>) { return this.call('recipes', args); }
+  recipesPreview(...args: Parameters<Engine['recipesPreview']>) { return this.call('recipesPreview', args); }
+  recipesApply(...args: Parameters<Engine['recipesApply']>) { return this.call('recipesApply', args); }
   set(...args: Parameters<Engine['set']>) { return this.call('set', args); }
   swap(...args: Parameters<Engine['swap']>) { return this.call('swap', args); }
   swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }

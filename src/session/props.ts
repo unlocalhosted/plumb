@@ -423,3 +423,14 @@ export function setJsxProp(file: string, text: string, start: number, name: stri
   }
   throw new UsageError(`${name} is computed at runtime; change it by hand.`);
 }
+
+/** The element's JSX opening tag at a start offset, for editors that write more than a class or a literal prop. */
+export { findOpening };
+/** What an element's className says, for editors that read it: its static classes, or why it cannot be edited. */
+export function classNamesOf(file: string, text: string, start: number): { kind: 'none' | 'static' | 'dynamic'; classes: string[]; reason?: string } {
+  const el = element(file, text, start);
+  if (el.className.kind === 'static') return { kind: 'static', classes: classes(el.className.strings).map(item => item.text) };
+  if (el.className.kind === 'dynamic') return { kind: 'dynamic', classes: [], reason: el.className.reason };
+  const spread = el.opening.attributes.some(a => a.type === 'JSXSpreadAttribute'), hasClass = el.opening.attributes.some(a => a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' && (a.name.name === 'className' || a.name.name === 'class'));
+  return hasClass ? { kind: 'dynamic', classes: [], reason: 'className is built at runtime; set the class by hand.' } : { kind: 'none', classes: [], ...(spread ? { reason: 'This element spreads props, which may carry className; set the class by hand.' } : {}) };
+}

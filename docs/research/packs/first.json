@@ -1,0 +1,1798 @@
+{
+  "$schema": "./recipe-pack.schema.json",
+  "format": "plumb-recipe-pack/1",
+  "id": "plumb.first",
+  "namespace": "plumb-first",
+  "name": "First pack",
+  "version": "0.1.0",
+  "description": "Seven shadows and eleven motion recipes: an elevation ladder, inset, focus and tinted shadows; hover, press and focus states; fade-rise, pop, popover, toast and sheet enters; height, reorder and shared-element layout. Values come from MIT and Apache-2.0 libraries; every recipe names its source.",
+  "publisher": {
+    "name": "Plumb",
+    "url": "https://github.com/unlocalhosted/plumb"
+  },
+  "licence": {
+    "spdx": "MIT",
+    "text": "Structure, formulas and original values in this pack are MIT. Values taken from other libraries stay under those libraries' licences, listed in notices and per recipe."
+  },
+  "requiresPlumb": "^0.1.0",
+  "notices": [
+    {
+      "licence": "MIT",
+      "holders": [
+        "Tailwind Labs, Inc."
+      ],
+      "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/LICENSE",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to including the copyright notice and this permission notice in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND. (Standard MIT text; full text at the URL.)"
+    },
+    {
+      "licence": "MIT",
+      "holders": [
+        "Adam Argyle"
+      ],
+      "url": "https://raw.githubusercontent.com/argyleink/open-props/main/LICENSE",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to including the copyright notice and this permission notice in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND. (Standard MIT text; full text at the URL.)"
+    },
+    {
+      "licence": "MIT",
+      "holders": [
+        "WorkOS (Radix Themes 2023, Radix Primitives 2022)"
+      ],
+      "url": "https://raw.githubusercontent.com/radix-ui/themes/main/LICENSE",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to including the copyright notice and this permission notice in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND. (Standard MIT text; full text at the URL.)"
+    },
+    {
+      "licence": "MIT",
+      "holders": [
+        "Emil Kowalski (Sonner, Vaul)"
+      ],
+      "url": "https://raw.githubusercontent.com/emilkowalski/sonner/main/LICENSE",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to including the copyright notice and this permission notice in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND. (Standard MIT text; full text at the URL.)"
+    },
+    {
+      "licence": "MIT",
+      "holders": [
+        "Motion B.V."
+      ],
+      "url": "https://raw.githubusercontent.com/motiondivision/motion/main/LICENSE.md",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to including the copyright notice and this permission notice in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND. (Standard MIT text; full text at the URL.)"
+    },
+    {
+      "licence": "Apache-2.0",
+      "holders": [
+        "Google LLC"
+      ],
+      "url": "https://raw.githubusercontent.com/material-components/material-web/main/LICENSE",
+      "text": "Licensed under the Apache License, Version 2.0; you may obtain a copy at http://www.apache.org/licenses/LICENSE-2.0. Values come from Material Web token files (SPDX Apache-2.0 header)."
+    }
+  ],
+  "recipes": [
+    {
+      "id": "raised",
+      "name": "Raised",
+      "kind": "shadow",
+      "summary": "A card or button sitting just above the page: a tight shadow with a faint spread.",
+      "source": {
+        "library": "Tailwind CSS v4 (default theme)",
+        "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/packages/tailwindcss/theme.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/LICENSE",
+        "attribution": "Tailwind CSS default theme, (c) Tailwind Labs, Inc., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Layers are Tailwind --shadow-sm (0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)). At the default dials the light value is identical. Dark alphas are our own (3x, capped at 0.9) because Tailwind publishes no dark values; not visually verified."
+      },
+      "tokens": [
+        {
+          "name": "shadow-raised",
+          "value": {
+            "light": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ a1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px rgb(0 0 0 / {{ a2 }})",
+            "dark": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ d1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px rgb(0 0 0 / {{ d2 }})"
+          },
+          "tailwind": "--shadow-raised"
+        }
+      ],
+      "variables": {
+        "x1": "round(0 - sin(light) * 1 * height, 0.5)",
+        "y1": "round(cos(light) * 1 * height, 0.5)",
+        "b1": "round(3 * height * softness, 0.5)",
+        "s1": "round(0 * height, 0.5)",
+        "a1": "round(0.1 * (0.6 + 0.4 * height), 0.001)",
+        "d1": "round(min(0.9, 0.3 * (0.6 + 0.4 * height)), 0.01)",
+        "x2": "round(0 - sin(light) * 1 * height, 0.5)",
+        "y2": "round(cos(light) * 1 * height, 0.5)",
+        "b2": "round(2 * height * softness, 0.5)",
+        "s2": "round(-1 * height, 0.5)",
+        "a2": "round(0.1 * (0.6 + 0.4 * height), 0.001)",
+        "d2": "round(min(0.9, 0.3 * (0.6 + 0.4 * height)), 0.01)"
+      },
+      "dials": [
+        {
+          "id": "height",
+          "label": "Height",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "x1",
+            "y1",
+            "b1",
+            "s1",
+            "a1",
+            "d1",
+            "x2",
+            "y2",
+            "b2",
+            "s2",
+            "a2",
+            "d2"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "b1",
+            "b2"
+          ]
+        },
+        {
+          "id": "light",
+          "label": "Light direction",
+          "min": -60,
+          "max": 60,
+          "step": 1,
+          "default": 0,
+          "unit": "deg",
+          "drives": [
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "raised",
+          "declarations": "box-shadow: {var:shadow-raised};",
+          "tailwind": "shadow-raised"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A white card on a pale page with a thin, close shadow under it.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "floating",
+      "name": "Floating",
+      "kind": "shadow",
+      "summary": "Menus, hovered cards: clearly above the page, shadow offset and soft.",
+      "source": {
+        "library": "Tailwind CSS v4 (default theme)",
+        "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/packages/tailwindcss/theme.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/LICENSE",
+        "attribution": "Tailwind CSS default theme, (c) Tailwind Labs, Inc., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Layers are Tailwind --shadow-lg (0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)). Default dials reproduce it exactly. Dark alphas are ours, not visually verified."
+      },
+      "tokens": [
+        {
+          "name": "shadow-floating",
+          "value": {
+            "light": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ a1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px rgb(0 0 0 / {{ a2 }})",
+            "dark": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ d1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px rgb(0 0 0 / {{ d2 }})"
+          },
+          "tailwind": "--shadow-floating"
+        }
+      ],
+      "variables": {
+        "x1": "round(0 - sin(light) * 10 * height, 0.5)",
+        "y1": "round(cos(light) * 10 * height, 0.5)",
+        "b1": "round(15 * height * softness, 0.5)",
+        "s1": "round(-3 * height, 0.5)",
+        "a1": "round(0.1 * (0.6 + 0.4 * height), 0.001)",
+        "d1": "round(min(0.9, 0.3 * (0.6 + 0.4 * height)), 0.01)",
+        "x2": "round(0 - sin(light) * 4 * height, 0.5)",
+        "y2": "round(cos(light) * 4 * height, 0.5)",
+        "b2": "round(6 * height * softness, 0.5)",
+        "s2": "round(-4 * height, 0.5)",
+        "a2": "round(0.1 * (0.6 + 0.4 * height), 0.001)",
+        "d2": "round(min(0.9, 0.3 * (0.6 + 0.4 * height)), 0.01)"
+      },
+      "dials": [
+        {
+          "id": "height",
+          "label": "Height",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "x1",
+            "y1",
+            "b1",
+            "s1",
+            "a1",
+            "d1",
+            "x2",
+            "y2",
+            "b2",
+            "s2",
+            "a2",
+            "d2"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "b1",
+            "b2"
+          ]
+        },
+        {
+          "id": "light",
+          "label": "Light direction",
+          "min": -60,
+          "max": 60,
+          "step": 1,
+          "default": 0,
+          "unit": "deg",
+          "drives": [
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "floating",
+          "declarations": "box-shadow: {var:shadow-floating};",
+          "tailwind": "shadow-floating"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A card lifted well off the page with a wide soft shadow below.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "overlay",
+      "name": "Overlay",
+      "kind": "shadow",
+      "summary": "Dialogs and sheets: the highest level, one very wide, deep shadow.",
+      "source": {
+        "library": "Tailwind CSS v4 (default theme)",
+        "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/packages/tailwindcss/theme.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/LICENSE",
+        "attribution": "Tailwind CSS default theme, (c) Tailwind Labs, Inc., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Layer is Tailwind --shadow-2xl (0 25px 50px -12px rgb(0 0 0 / 0.25)). Default dials reproduce it. Dark alpha is ours (0.75 = 3x 0.25), not visually verified."
+      },
+      "tokens": [
+        {
+          "name": "shadow-overlay",
+          "value": {
+            "light": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ a1 }})",
+            "dark": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px rgb(0 0 0 / {{ d1 }})"
+          },
+          "tailwind": "--shadow-overlay"
+        }
+      ],
+      "variables": {
+        "x1": "round(0 - sin(light) * 25 * height, 0.5)",
+        "y1": "round(cos(light) * 25 * height, 0.5)",
+        "b1": "round(50 * height * softness, 0.5)",
+        "s1": "round(-12 * height, 0.5)",
+        "a1": "round(0.25 * (0.6 + 0.4 * height), 0.001)",
+        "d1": "round(min(0.9, 0.75 * (0.6 + 0.4 * height)), 0.01)"
+      },
+      "dials": [
+        {
+          "id": "height",
+          "label": "Height",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "x1",
+            "y1",
+            "b1",
+            "s1",
+            "a1",
+            "d1"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "b1"
+          ]
+        },
+        {
+          "id": "light",
+          "label": "Light direction",
+          "min": -60,
+          "max": 60,
+          "step": 1,
+          "default": 0,
+          "unit": "deg",
+          "drives": [
+            "x1",
+            "y1"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "overlay",
+          "declarations": "box-shadow: {var:shadow-overlay};",
+          "tailwind": "shadow-overlay"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A dialog-sized panel with a deep shadow spreading far below.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "soft",
+      "name": "Soft",
+      "kind": "shadow",
+      "summary": "Two quiet layers with a negative spread, tinted slightly blue-grey; light and dark values both come from the library.",
+      "source": {
+        "library": "Open Props",
+        "url": "https://raw.githubusercontent.com/argyleink/open-props/main/src/props.shadows.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/argyleink/open-props/main/LICENSE",
+        "attribution": "Open Props, (c) 2021 Adam Argyle, MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Open Props --shadow-2 with --shadow-color 220 3% 15% / 1% base strength (light) and 220 40% 2% / 25% (dark). Strength steps: strength-4 = base+3%, strength-6 = base+5%. Light alphas 0.04, 0.06; dark 0.28, 0.30. Default dials reproduce both."
+      },
+      "tokens": [
+        {
+          "name": "shadow-soft",
+          "value": {
+            "light": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px hsl(220 3% 15% / {{ a1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px hsl(220 3% 15% / {{ a2 }})",
+            "dark": "{{ x1 }}px {{ y1 }}px {{ b1 }}px {{ s1 }}px hsl(220 40% 2% / {{ d1 }}), {{ x2 }}px {{ y2 }}px {{ b2 }}px {{ s2 }}px hsl(220 40% 2% / {{ d2 }})"
+          },
+          "tailwind": "--shadow-soft"
+        }
+      ],
+      "variables": {
+        "x1": "round(0 - sin(light) * 3 * height, 0.5)",
+        "y1": "round(cos(light) * 3 * height, 0.5)",
+        "b1": "round(5 * height * softness, 0.5)",
+        "s1": "round(-2 * height, 0.5)",
+        "a1": "round(0.04 * (0.6 + 0.4 * height), 0.001)",
+        "d1": "round(min(0.9, 0.28 * (0.6 + 0.4 * height)), 0.01)",
+        "x2": "round(0 - sin(light) * 7 * height, 0.5)",
+        "y2": "round(cos(light) * 7 * height, 0.5)",
+        "b2": "round(14 * height * softness, 0.5)",
+        "s2": "round(-5 * height, 0.5)",
+        "a2": "round(0.06 * (0.6 + 0.4 * height), 0.001)",
+        "d2": "round(min(0.9, 0.3 * (0.6 + 0.4 * height)), 0.01)"
+      },
+      "dials": [
+        {
+          "id": "height",
+          "label": "Height",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "x1",
+            "y1",
+            "b1",
+            "s1",
+            "a1",
+            "d1",
+            "x2",
+            "y2",
+            "b2",
+            "s2",
+            "a2",
+            "d2"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "b1",
+            "b2"
+          ]
+        },
+        {
+          "id": "light",
+          "label": "Light direction",
+          "min": -60,
+          "max": 60,
+          "step": 1,
+          "default": 0,
+          "unit": "deg",
+          "drives": [
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "soft",
+          "declarations": "box-shadow: {var:shadow-soft};",
+          "tailwind": "shadow-soft"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A card with a barely-there blue-grey shadow, softer than Raised.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "sunken",
+      "name": "Sunken",
+      "kind": "shadow",
+      "summary": "Inputs, wells, pressed buttons: the surface looks pushed in, with a one-pixel highlight on the lower edge.",
+      "source": {
+        "library": "Open Props",
+        "url": "https://raw.githubusercontent.com/argyleink/open-props/main/src/props.shadows.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/argyleink/open-props/main/LICENSE",
+        "attribution": "Open Props, (c) 2021 Adam Argyle, MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Open Props --inner-shadow-2 and --inner-shadow-highlight: inset 0 1px 4px 0 hsl(var(--shadow-color) / strength-10), inset 0 -.5px 0 0 #fff, inset 0 .5px 0 0 #0001; dark highlight #fff1 / #0007; strength-10 = 10% light, 34% dark. Default dials reproduce it."
+      },
+      "tokens": [
+        {
+          "name": "shadow-sunken",
+          "value": {
+            "light": "inset 0 {{ y }}px {{ blur }}px 0 hsl(220 3% 15% / 0.1), inset 0 -0.5px 0 0 #fff, inset 0 0.5px 0 0 #0001",
+            "dark": "inset 0 {{ y }}px {{ blur }}px 0 hsl(220 40% 2% / 0.34), inset 0 -0.5px 0 0 #fff1, inset 0 0.5px 0 0 #0007"
+          },
+          "tailwind": "--shadow-sunken"
+        }
+      ],
+      "variables": {
+        "y": "round(1 * depth, 0.5)",
+        "blur": "round(4 * depth * softness, 0.5)"
+      },
+      "dials": [
+        {
+          "id": "depth",
+          "label": "Depth",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "y",
+            "blur"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "blur"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "sunken",
+          "declarations": "box-shadow: {var:shadow-sunken};",
+          "tailwind": "shadow-sunken"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A text field that looks recessed, with a faint light line under its bottom edge.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "focus-glow",
+      "name": "Focus glow",
+      "kind": "shadow",
+      "summary": "A page-coloured gap, a solid accent ring, then a soft glow. Visible on any background.",
+      "source": {
+        "library": "Plumb (original)",
+        "url": "https://www.joshwcomeau.com/css/designing-shadows/",
+        "licence": "none",
+        "attribution": "Original values by the Plumb authors",
+        "copied": "original",
+        "verified": false,
+        "notes": "Authored for this pack; the gap+ring+glow construction is a common pattern and no values were copied. Colours are placeholders the theme replaces with its own accent and page colours. Not visually verified."
+      },
+      "tokens": [
+        {
+          "name": "focus-colour",
+          "value": {
+            "light": "oklch(0.62 0.19 255)",
+            "dark": "oklch(0.74 0.14 255)"
+          },
+          "syntax": "<color>"
+        },
+        {
+          "name": "focus-gap",
+          "value": {
+            "light": "#ffffff",
+            "dark": "#0b0b0c"
+          },
+          "syntax": "<color>"
+        },
+        {
+          "name": "shadow-focus-glow",
+          "value": "0 0 0 {{ gap }}px {var:focus-gap}, 0 0 0 {{ outer }}px {var:focus-colour}, 0 0 {{ glow }}px {{ gap }}px color-mix(in oklab, {var:focus-colour} 40%, transparent)",
+          "tailwind": "--shadow-focus-glow"
+        }
+      ],
+      "variables": {
+        "gap": "2",
+        "outer": "gap + ring"
+      },
+      "dials": [
+        {
+          "id": "ring",
+          "label": "Ring width",
+          "min": 1,
+          "max": 4,
+          "step": 0.5,
+          "default": 2,
+          "unit": "px",
+          "drives": [
+            "outer"
+          ]
+        },
+        {
+          "id": "glow",
+          "label": "Glow",
+          "min": 0,
+          "max": 24,
+          "step": 1,
+          "default": 14,
+          "unit": "px",
+          "drives": [
+            "shadow-focus-glow"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "focus-glow",
+          "declarations": "outline: 2px solid transparent; outline-offset: 2px; box-shadow: {var:shadow-focus-glow};",
+          "tailwind": "shadow-focus-glow outline-2 outline-transparent outline-offset-2"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A button with a white gap, a blue ring and a soft blue halo around it.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "tinted",
+      "name": "Tinted",
+      "kind": "shadow",
+      "summary": "Four doubling layers coloured like the page behind, so the shadow keeps the background hue instead of turning grey.",
+      "source": {
+        "library": "Plumb (original)",
+        "url": "https://www.joshwcomeau.com/css/designing-shadows/",
+        "licence": "none",
+        "attribution": "Original values by the Plumb authors",
+        "copied": "original",
+        "verified": false,
+        "notes": "Authored here. Technique only: layering with doubling offsets (credited on the source page to Tobias Ahlin, https://tobiasahlin.com/blog/layered-smooth-box-shadows/) and matching the shadow hue to the background (Josh W. Comeau, page is all rights reserved, so no values from it are used). Tint colours are placeholders; not visually verified."
+      },
+      "tokens": [
+        {
+          "name": "tint",
+          "value": {
+            "light": "230 50% 35%",
+            "dark": "230 60% 3%"
+          }
+        },
+        {
+          "name": "shadow-tinted",
+          "value": {
+            "light": "{{ x }}px {{ y1 }}px {{ b1 }}px hsl({var:tint} / 0.1), {{ x }}px {{ y2 }}px {{ b2 }}px hsl({var:tint} / 0.1), {{ x }}px {{ y3 }}px {{ b3 }}px hsl({var:tint} / 0.1), {{ x }}px {{ y4 }}px {{ b4 }}px hsl({var:tint} / 0.1)",
+            "dark": "{{ x }}px {{ y1 }}px {{ b1 }}px hsl({var:tint} / 0.3), {{ x }}px {{ y2 }}px {{ b2 }}px hsl({var:tint} / 0.3), {{ x }}px {{ y3 }}px {{ b3 }}px hsl({var:tint} / 0.3), {{ x }}px {{ y4 }}px {{ b4 }}px hsl({var:tint} / 0.3)"
+          },
+          "tailwind": "--shadow-tinted"
+        }
+      ],
+      "variables": {
+        "x": "round(0 - sin(light) * 2 * height, 0.5)",
+        "y1": "round(1 * height, 0.5)",
+        "b1": "round(1 * height * softness, 0.5)",
+        "y2": "round(2 * height, 0.5)",
+        "b2": "round(2 * height * softness, 0.5)",
+        "y3": "round(4 * height, 0.5)",
+        "b3": "round(4 * height * softness, 0.5)",
+        "y4": "round(8 * height, 0.5)",
+        "b4": "round(8 * height * softness, 0.5)"
+      },
+      "dials": [
+        {
+          "id": "height",
+          "label": "Height",
+          "min": 0,
+          "max": 3,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "x",
+            "y1",
+            "b1",
+            "y2",
+            "b2",
+            "y3",
+            "b3",
+            "y4",
+            "b4"
+          ]
+        },
+        {
+          "id": "softness",
+          "label": "Softness",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "drives": [
+            "b1",
+            "b2",
+            "b3",
+            "b4"
+          ]
+        },
+        {
+          "id": "light",
+          "label": "Light direction",
+          "min": -60,
+          "max": 60,
+          "step": 1,
+          "default": 0,
+          "unit": "deg",
+          "drives": [
+            "x"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "class",
+          "requires": "none",
+          "name": "tinted",
+          "declarations": "box-shadow: {var:shadow-tinted};",
+          "tailwind": "shadow-tinted"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "unchanged",
+      "preview": {
+        "description": "A card on a blue-tinted page whose shadow is a deeper blue, not grey.",
+        "states": [
+          "rest"
+        ]
+      }
+    },
+    {
+      "id": "lift",
+      "name": "Lift on hover",
+      "kind": "motion.state",
+      "summary": "On hover the element rises a little and its shadow deepens; it comes down more slowly than it went up.",
+      "source": {
+        "library": "Tailwind CSS v4 (default theme)",
+        "url": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/packages/tailwindcss/theme.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/LICENSE",
+        "attribution": "Tailwind CSS default theme, (c) Tailwind Labs, Inc., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Easing cubic-bezier(0.4, 0, 0.2, 1) and 150ms are Tailwind --default-transition-timing-function / --default-transition-duration. The 2px lift and the 1.6x slower return are ours (unverified as published values)."
+      },
+      "uses": [
+        "raised",
+        "floating"
+      ],
+      "tokens": [
+        {
+          "name": "lift-distance",
+          "value": "{{ lift }}px"
+        },
+        {
+          "name": "lift-in",
+          "value": "{{ round(150 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "lift-out",
+          "value": "{{ round(240 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "lift-ease",
+          "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "tailwind": "--ease-lift"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "lift-in",
+            "lift-out"
+          ]
+        },
+        {
+          "id": "lift",
+          "label": "Lift",
+          "min": 0,
+          "max": 8,
+          "step": 0.5,
+          "default": 2,
+          "unit": "px",
+          "drives": [
+            "lift-distance"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "@media (hover: hover) {\n  .{class:lift} { box-shadow: {var:shadow-raised}; transition: transform {var:lift-out} {var:lift-ease}, box-shadow {var:lift-out} {var:lift-ease}; }\n  .{class:lift}:hover { transform: translateY(calc(-1 * {var:lift-distance})); box-shadow: {var:shadow-floating}; transition-duration: {var:lift-in}; }\n}\n@media (prefers-reduced-motion: reduce) { .{class:lift}, .{class:lift}:hover { transition: none; transform: none; } }",
+          "tailwind": "shadow-raised transition-[transform,box-shadow] duration-150 ease-lift motion-safe:hover:-translate-y-0.5 hover:shadow-floating"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "whileHover": {
+              "y": "{{ 0 - lift }}"
+            },
+            "transition": {
+              "duration": "{{ round(0.15 / speed, 0.01) }}",
+              "ease": [
+                0.4,
+                0,
+                0.2,
+                1
+              ]
+            }
+          },
+          "note": "Shadow change still needs the CSS class or an animated boxShadow value."
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "No movement, no transition; the shadow may still change instantly.",
+      "preview": {
+        "description": "A card; hovering raises it 2px and swaps its shadow from Raised to Floating.",
+        "states": [
+          "rest",
+          "hover"
+        ]
+      }
+    },
+    {
+      "id": "press",
+      "name": "Press down",
+      "kind": "motion.state",
+      "summary": "While pressed the element shrinks slightly, and it springs back on release.",
+      "source": {
+        "library": "Motion (motion-dom 14.9.0)",
+        "url": "https://www.npmjs.com/package/motion-dom/v/14.9.0",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/motiondivision/motion/main/LICENSE.md",
+        "attribution": "Motion, (c) 2024 Motion B.V., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Spring stiffness 500 / damping 25 is the under-damped spring in motion-dom 14.9.0 (dist/motion-dom.dev.js line 4780, \"underDampedSpring\"; which properties use it was not checked). CSS ease cubic-bezier(0, 0, 0.2, 1) is Tailwind --ease-out (MIT, https://raw.githubusercontent.com/tailwindlabs/tailwindcss/main/packages/tailwindcss/theme.css). The 0.97 scale and the 100ms are ours, unverified."
+      },
+      "tokens": [
+        {
+          "name": "press-scale",
+          "value": "{{ scale }}"
+        },
+        {
+          "name": "press-time",
+          "value": "{{ round(100 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "press-ease",
+          "value": "cubic-bezier(0, 0, 0.2, 1)"
+        }
+      ],
+      "variables": {
+        "stiffness": "round(500 * speed * speed, 1)",
+        "damping": "round(25 * speed, 0.1)"
+      },
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "press-time",
+            "stiffness",
+            "damping"
+          ]
+        },
+        {
+          "id": "scale",
+          "label": "Press depth",
+          "min": 0.9,
+          "max": 1,
+          "step": 0.005,
+          "default": 0.97,
+          "drives": [
+            "press-scale"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ".{class:press} { transition: transform {var:press-time} {var:press-ease}; }\n.{class:press}:active { transform: scale({var:press-scale}); }\n@media (prefers-reduced-motion: reduce) { .{class:press}:active { transform: none; } }",
+          "tailwind": "transition-transform duration-100 ease-out motion-safe:active:scale-[0.97]"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "whileTap": {
+              "scale": "{{ scale }}"
+            },
+            "transition": {
+              "type": "spring",
+              "stiffness": "{{ stiffness }}",
+              "damping": "{{ damping }}"
+            }
+          }
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "No scale change.",
+      "preview": {
+        "description": "A button that dips to 97% size while the pointer is down.",
+        "states": [
+          "rest",
+          "pressed"
+        ]
+      }
+    },
+    {
+      "id": "focus-ring",
+      "name": "Focus ring",
+      "kind": "motion.state",
+      "summary": "Keyboard focus fades the Focus glow in quickly; mouse focus shows nothing.",
+      "source": {
+        "library": "Plumb (original)",
+        "url": "https://www.joshwcomeau.com/css/designing-shadows/",
+        "licence": "none",
+        "attribution": "Original values by the Plumb authors",
+        "copied": "original",
+        "verified": false,
+        "notes": "Authored here (100ms is ours). Uses :focus-visible so pointer focus stays quiet. Depends on the Focus glow shadow recipe."
+      },
+      "uses": [
+        "focus-glow"
+      ],
+      "tokens": [
+        {
+          "name": "focus-time",
+          "value": "{{ round(100 / speed, 5) }}ms",
+          "syntax": "<time>"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "focus-time"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ".{class:focus-ring} { transition: box-shadow {var:focus-time} ease-out; }\n.{class:focus-ring}:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: {var:shadow-focus-glow}; }\n@media (prefers-reduced-motion: reduce) { .{class:focus-ring} { transition: none; } }",
+          "tailwind": "transition-shadow duration-100 ease-out focus-visible:shadow-focus-glow focus-visible:outline-2 focus-visible:outline-transparent focus-visible:outline-offset-2"
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Appears with no transition; the ring itself is not motion.",
+      "preview": {
+        "description": "A button; tabbing to it fades in a white gap, blue ring and glow.",
+        "states": [
+          "rest",
+          "focus"
+        ]
+      }
+    },
+    {
+      "id": "fade-rise",
+      "name": "Fade and rise",
+      "kind": "motion.enter-exit",
+      "summary": "Appears by fading in while rising a few pixels; leaves faster, fading and dropping back.",
+      "source": {
+        "library": "Material Web (Material Design 3 tokens, v0_192)",
+        "url": "https://raw.githubusercontent.com/material-components/material-web/main/tokens/versions/v0_192/_md-sys-motion.scss",
+        "licence": "Apache-2.0",
+        "licenceUrl": "https://raw.githubusercontent.com/material-components/material-web/main/LICENSE",
+        "attribution": "Material Design 3 motion tokens via Material Web, (c) Google LLC, Apache-2.0",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Curves: easing-emphasized-decelerate cubic-bezier(0.05, 0.7, 0.1, 1) for entering, easing-emphasized-accelerate cubic-bezier(0.3, 0, 0.8, 0.15) for leaving; durations duration-medium2 300ms and duration-short4 200ms (all read from _md-sys-motion.scss). Which token Material pairs with which transition was not checked; the 8px rise is ours."
+      },
+      "tokens": [
+        {
+          "name": "rise-distance",
+          "value": "{{ distance }}px"
+        },
+        {
+          "name": "rise-in",
+          "value": "{{ round(300 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "rise-out",
+          "value": "{{ round(200 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "rise-ease-in",
+          "value": "cubic-bezier(0.05, 0.7, 0.1, 1)",
+          "tailwind": "--ease-rise-in"
+        },
+        {
+          "name": "rise-ease-out",
+          "value": "cubic-bezier(0.3, 0, 0.8, 0.15)",
+          "tailwind": "--ease-rise-out"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "rise-in",
+            "rise-out"
+          ]
+        },
+        {
+          "id": "distance",
+          "label": "Rise",
+          "min": 0,
+          "max": 24,
+          "step": 1,
+          "default": 8,
+          "unit": "px",
+          "drives": [
+            "rise-distance"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "@keyframes {class:rise-in} { from { opacity: 0; transform: translateY({var:rise-distance}); } to { opacity: 1; transform: none; } }\n@keyframes {class:rise-out} { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY({var:rise-distance}); } }\n.{class:fade-rise}[data-state=\"open\"] { animation: {class:rise-in} {var:rise-in} {var:rise-ease-in} both; }\n.{class:fade-rise}[data-state=\"closed\"] { animation: {class:rise-out} {var:rise-out} {var:rise-ease-out} both; }\n@media (prefers-reduced-motion: reduce) { .{class:fade-rise} { {prop:rise-distance}: 0px; } }"
+        },
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "[popover].{class:fade-rise}, dialog.{class:fade-rise} {\n  opacity: 1; transform: none;\n  transition: opacity {var:rise-in} {var:rise-ease-in}, transform {var:rise-in} {var:rise-ease-in}, overlay {var:rise-in} allow-discrete, display {var:rise-in} allow-discrete;\n  @starting-style { opacity: 0; transform: translateY({var:rise-distance}); }\n}\n[popover].{class:fade-rise}:not(:popover-open), dialog.{class:fade-rise}:not([open]) {\n  opacity: 0; transform: translateY({var:rise-distance});\n  transition-duration: {var:rise-out}; transition-timing-function: {var:rise-ease-out};\n}",
+          "tailwind": "transition-discrete starting:opacity-0 starting:translate-y-2 (open) / not-open:opacity-0 not-open:translate-y-2"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "initial": {
+              "opacity": 0,
+              "y": "{{ distance }}"
+            },
+            "animate": {
+              "opacity": 1,
+              "y": 0,
+              "transition": {
+                "duration": "{{ round(0.3 / speed, 0.01) }}",
+                "ease": [
+                  0.05,
+                  0.7,
+                  0.1,
+                  1
+                ]
+              }
+            },
+            "exit": {
+              "opacity": 0,
+              "y": "{{ distance }}",
+              "transition": {
+                "duration": "{{ round(0.2 / speed, 0.01) }}",
+                "ease": [
+                  0.3,
+                  0,
+                  0.8,
+                  0.15
+                ]
+              }
+            }
+          },
+          "note": "Wrap conditionally rendered elements in <AnimatePresence>; exit does not run without it."
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Fade only: no rise (distance 0).",
+      "preview": {
+        "description": "A panel that fades in and rises 8px when opened, and fades out as it drops back.",
+        "states": [
+          "entering",
+          "leaving"
+        ]
+      }
+    },
+    {
+      "id": "pop",
+      "name": "Pop in",
+      "kind": "motion.enter-exit",
+      "summary": "Small floating things (tooltips, menus) appear by growing from 97% with a tiny slide and a fade; a bounce dial adds overshoot.",
+      "source": {
+        "library": "Radix Themes",
+        "url": "https://raw.githubusercontent.com/radix-ui/themes/main/packages/radix-ui-themes/src/components/tooltip.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/radix-ui/themes/main/LICENSE",
+        "attribution": "Radix Themes, (c) 2023 WorkOS, MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Tooltip: animation-duration 140ms, cubic-bezier(0.16, 1, 0.3, 1) (tooltip.css); keyframes rt-slide-from-top = translateY(4px) scale(0.97) to none, plus rt-fade-in (animations.css). Exit duration 100ms and exit ease Tailwind --ease-in cubic-bezier(0.4, 0, 1, 1) are ours, unverified. The bounce dial is ours: it raises the second control point above 1."
+      },
+      "tokens": [
+        {
+          "name": "pop-scale",
+          "value": "{{ size }}"
+        },
+        {
+          "name": "pop-shift",
+          "value": "4px"
+        },
+        {
+          "name": "pop-in",
+          "value": "{{ round(140 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "pop-out",
+          "value": "{{ round(100 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "pop-ease-in",
+          "value": "cubic-bezier(0.16, {{ round(1 + bounce * 1.5, 0.01) }}, 0.3, 1)",
+          "tailwind": "--ease-pop-in"
+        },
+        {
+          "name": "pop-ease-out",
+          "value": "cubic-bezier(0.4, 0, 1, 1)"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "pop-in",
+            "pop-out"
+          ]
+        },
+        {
+          "id": "size",
+          "label": "Start size",
+          "min": 0.85,
+          "max": 1,
+          "step": 0.005,
+          "default": 0.97,
+          "drives": [
+            "pop-scale"
+          ]
+        },
+        {
+          "id": "bounce",
+          "label": "Bounce",
+          "min": 0,
+          "max": 0.5,
+          "step": 0.05,
+          "default": 0,
+          "drives": [
+            "pop-ease-in"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "@keyframes {class:pop-in} { from { opacity: 0; transform: translateY({var:pop-shift}) scale({var:pop-scale}); } to { opacity: 1; transform: none; } }\n@keyframes {class:pop-out} { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY({var:pop-shift}) scale({var:pop-scale}); } }\n.{class:pop}[data-state=\"open\"], .{class:pop}:not([data-state]) { animation: {class:pop-in} {var:pop-in} {var:pop-ease-in} both; }\n.{class:pop}[data-state=\"closed\"] { animation: {class:pop-out} {var:pop-out} {var:pop-ease-out} both; }\n@media (prefers-reduced-motion: reduce) { .{class:pop} { animation-name: none; } }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "initial": {
+              "opacity": 0,
+              "y": 4,
+              "scale": "{{ size }}"
+            },
+            "animate": {
+              "opacity": 1,
+              "y": 0,
+              "scale": 1,
+              "transition": {
+                "type": "spring",
+                "duration": "{{ round(0.14 / speed, 0.01) }}",
+                "bounce": "{{ bounce }}"
+              }
+            },
+            "exit": {
+              "opacity": 0,
+              "y": 4,
+              "scale": "{{ size }}",
+              "transition": {
+                "duration": "{{ round(0.1 / speed, 0.01) }}",
+                "ease": [
+                  0.4,
+                  0,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          "note": "Spring form (duration + bounce) is the Motion API; at bounce 0 it settles without overshoot, which approximates but does not equal the CSS curve."
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "No animation; element appears and disappears.",
+      "preview": {
+        "description": "A tooltip that grows from 97% and fades in over 140ms.",
+        "states": [
+          "entering",
+          "leaving"
+        ]
+      }
+    },
+    {
+      "id": "grow-from-trigger",
+      "name": "Grow from trigger",
+      "kind": "motion.enter-exit",
+      "summary": "A popover scales up from the point of the thing that opened it, not from its own centre.",
+      "source": {
+        "library": "Radix Primitives (Popover)",
+        "url": "https://raw.githubusercontent.com/radix-ui/primitives/main/packages/react/popover/src/popover.tsx",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/radix-ui/primitives/main/LICENSE",
+        "attribution": "Radix Primitives, (c) 2022 WorkOS, MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Radix Popover sets --radix-popover-content-transform-origin (popover.tsx line 511) and Radix Themes applies transform-origin: var(--radix-popover-content-transform-origin) (popover.css line 16). Base UI exposes a similar variable (--transform-origin): NOT verified. Scale 0.95, 150ms and the ease (Radix tooltip curve cubic-bezier(0.16, 1, 0.3, 1)) are ours combined with Radix values; unverified as a Radix popover default."
+      },
+      "tokens": [
+        {
+          "name": "grow-scale",
+          "value": "{{ size }}"
+        },
+        {
+          "name": "grow-time",
+          "value": "{{ round(150 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "grow-ease",
+          "value": "cubic-bezier(0.16, 1, 0.3, 1)"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "grow-time"
+          ]
+        },
+        {
+          "id": "size",
+          "label": "Start size",
+          "min": 0.8,
+          "max": 1,
+          "step": 0.005,
+          "default": 0.95,
+          "drives": [
+            "grow-scale"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "@keyframes {class:grow-in} { from { opacity: 0; transform: scale({var:grow-scale}); } to { opacity: 1; transform: none; } }\n@keyframes {class:grow-out} { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale({var:grow-scale}); } }\n.{class:grow} { transform-origin: var(--radix-popover-content-transform-origin, var(--transform-origin, center)); }\n.{class:grow}[data-state=\"open\"] { animation: {class:grow-in} {var:grow-time} {var:grow-ease} both; }\n.{class:grow}[data-state=\"closed\"] { animation: {class:grow-out} {var:grow-time} {var:grow-ease} both; }\n@media (prefers-reduced-motion: reduce) { .{class:grow} { animation-name: none; } }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "style": {
+              "transformOrigin": "var(--radix-popover-content-transform-origin, center)"
+            },
+            "initial": {
+              "opacity": 0,
+              "scale": "{{ size }}"
+            },
+            "animate": {
+              "opacity": 1,
+              "scale": 1
+            },
+            "exit": {
+              "opacity": 0,
+              "scale": "{{ size }}"
+            },
+            "transition": {
+              "duration": "{{ round(0.15 / speed, 0.01) }}",
+              "ease": [
+                0.16,
+                1,
+                0.3,
+                1
+              ]
+            }
+          }
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "No animation.",
+      "preview": {
+        "description": "A menu opening under its button, expanding from the button's edge.",
+        "states": [
+          "entering",
+          "leaving"
+        ]
+      }
+    },
+    {
+      "id": "toast",
+      "name": "Toast slide",
+      "kind": "motion.enter-exit",
+      "summary": "A toast slides up from below its own height while fading in; the stack settles over 400ms.",
+      "source": {
+        "library": "Sonner",
+        "url": "https://raw.githubusercontent.com/emilkowalski/sonner/main/src/styles.css",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/emilkowalski/sonner/main/LICENSE",
+        "attribution": "Sonner, (c) 2023 Emil Kowalski, MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "styles.css: [data-sonner-toast] { --y: translateY(100%); opacity: 0; transform: var(--y); transition: transform 400ms, opacity 400ms, ... } and [data-sonner-toast][data-mounted=true] { --y: translateY(0); opacity: 1 }. No timing function is set, so the CSS default \"ease\" (cubic-bezier(0.25, 0.1, 0.25, 1)) applies. Exit mirrors entry here; Sonner exit was not examined."
+      },
+      "tokens": [
+        {
+          "name": "toast-time",
+          "value": "{{ round(400 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "toast-ease",
+          "value": "ease"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "toast-time"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ".{class:toast} { opacity: 0; transform: translateY(100%); transition: transform {var:toast-time} {var:toast-ease}, opacity {var:toast-time} {var:toast-ease}; }\n.{class:toast}[data-mounted=\"true\"] { opacity: 1; transform: translateY(0); }\n@media (prefers-reduced-motion: reduce) { .{class:toast} { transform: none; transition: opacity {var:toast-time} linear; } }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "initial": {
+              "opacity": 0,
+              "y": "100%"
+            },
+            "animate": {
+              "opacity": 1,
+              "y": 0
+            },
+            "exit": {
+              "opacity": 0,
+              "y": "100%"
+            },
+            "transition": {
+              "duration": "{{ round(0.4 / speed, 0.01) }}",
+              "ease": [
+                0.25,
+                0.1,
+                0.25,
+                1
+              ]
+            }
+          }
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Fade only, no slide.",
+      "preview": {
+        "description": "A toast rising into the corner of the page.",
+        "states": [
+          "entering",
+          "leaving"
+        ]
+      }
+    },
+    {
+      "id": "sheet",
+      "name": "Slide-up sheet",
+      "kind": "motion.enter-exit",
+      "summary": "A bottom sheet or drawer glides up from the bottom edge; fast start, long soft landing.",
+      "source": {
+        "library": "Vaul",
+        "url": "https://raw.githubusercontent.com/emilkowalski/vaul/main/src/constants.ts",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/emilkowalski/vaul/main/LICENSE.md",
+        "attribution": "Vaul, (c) 2023 Emil Kowalski, MIT",
+        "copied": "values",
+        "verified": true,
+        "notes": "constants.ts: TRANSITIONS = { DURATION: 0.5, EASE: [0.32, 0.72, 0, 1] }. Copied as published; the slide distance 100% is the obvious off-screen start and ours."
+      },
+      "tokens": [
+        {
+          "name": "sheet-time",
+          "value": "{{ round(500 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "sheet-ease",
+          "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+          "tailwind": "--ease-sheet"
+        }
+      ],
+      "variables": {},
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "sheet-time"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": "@keyframes {class:sheet-in} { from { transform: translateY(100%); } to { transform: translateY(0); } }\n@keyframes {class:sheet-out} { from { transform: translateY(0); } to { transform: translateY(100%); } }\n.{class:sheet}[data-state=\"open\"] { animation: {class:sheet-in} {var:sheet-time} {var:sheet-ease} both; }\n.{class:sheet}[data-state=\"closed\"] { animation: {class:sheet-out} {var:sheet-time} {var:sheet-ease} both; }\n@media (prefers-reduced-motion: reduce) { .{class:sheet} { animation-duration: 1ms; } }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "initial": {
+              "y": "100%"
+            },
+            "animate": {
+              "y": 0
+            },
+            "exit": {
+              "y": "100%"
+            },
+            "transition": {
+              "duration": "{{ round(0.5 / speed, 0.01) }}",
+              "ease": [
+                0.32,
+                0.72,
+                0,
+                1
+              ]
+            }
+          },
+          "note": "Dragging to dismiss with velocity (Vaul VELOCITY_THRESHOLD 0.4, CLOSE_THRESHOLD 0.25) is gesture logic, not part of this recipe."
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Effectively instant (1ms).",
+      "preview": {
+        "description": "A sheet rising from the bottom of the screen and settling gently.",
+        "states": [
+          "entering",
+          "leaving"
+        ]
+      }
+    },
+    {
+      "id": "smooth-height",
+      "name": "Smooth height",
+      "kind": "motion.layout",
+      "summary": "A panel grows or shrinks to fit its content instead of jumping.",
+      "source": {
+        "library": "Material Web (Material Design 3 tokens, v0_192)",
+        "url": "https://raw.githubusercontent.com/material-components/material-web/main/tokens/versions/v0_192/_md-sys-motion.scss",
+        "licence": "Apache-2.0",
+        "licenceUrl": "https://raw.githubusercontent.com/material-components/material-web/main/LICENSE",
+        "attribution": "Material Design 3 motion tokens via Material Web, (c) Google LLC, Apache-2.0",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Curve easing-standard cubic-bezier(0.2, 0, 0, 1) and duration-medium2 300ms from _md-sys-motion.scss. The grid-rows 0fr-to-1fr technique and interpolate-size are CSS features (MDN: interpolate-size is not Baseline, https://developer.mozilla.org/en-US/docs/Web/CSS/interpolate-size). Spring duration/bounce form is the Motion API (https://motion.dev/docs/react-transitions)."
+      },
+      "tokens": [
+        {
+          "name": "height-time",
+          "value": "{{ round(300 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "height-ease",
+          "value": "cubic-bezier(0.2, 0, 0, 1)",
+          "tailwind": "--ease-height"
+        }
+      ],
+      "variables": {
+        "springBounce": "clamp(bounce, 0, 0.5)"
+      },
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "height-time"
+          ]
+        },
+        {
+          "id": "bounce",
+          "label": "Bounce",
+          "min": 0,
+          "max": 0.3,
+          "step": 0.05,
+          "default": 0,
+          "drives": [
+            "springBounce"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ".{class:smooth-height} { display: grid; grid-template-rows: 0fr; transition: grid-template-rows {var:height-time} {var:height-ease}; }\n.{class:smooth-height}[data-open=\"true\"] { grid-template-rows: 1fr; }\n.{class:smooth-height} > * { min-height: 0; overflow: hidden; }\n@media (prefers-reduced-motion: reduce) { .{class:smooth-height} { transition: none; } }",
+          "tailwind": "grid grid-rows-[0fr] data-[open=true]:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-height motion-reduce:transition-none"
+        },
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ":root { interpolate-size: allow-keywords; }\n.{class:smooth-height-auto} { height: 0; overflow: hidden; transition: height {var:height-time} {var:height-ease}; }\n.{class:smooth-height-auto}[data-open=\"true\"] { height: auto; }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "initial": {
+              "height": 0
+            },
+            "animate": {
+              "height": "auto"
+            },
+            "exit": {
+              "height": 0
+            },
+            "style": {
+              "overflow": "hidden"
+            },
+            "transition": {
+              "type": "spring",
+              "duration": "{{ round(0.35 / speed, 0.01) }}",
+              "bounce": "{{ springBounce }}"
+            }
+          }
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Height changes instantly.",
+      "preview": {
+        "description": "An accordion panel opening and closing with its content, no jump.",
+        "states": [
+          "closed",
+          "open"
+        ]
+      }
+    },
+    {
+      "id": "reorder",
+      "name": "Reorder",
+      "kind": "motion.layout",
+      "summary": "When items change order, each slides to its new place with a quick springy settle.",
+      "source": {
+        "library": "Motion (motion-dom 14.9.0)",
+        "url": "https://www.npmjs.com/package/motion-dom/v/14.9.0",
+        "licence": "MIT",
+        "licenceUrl": "https://raw.githubusercontent.com/motiondivision/motion/main/LICENSE.md",
+        "attribution": "Motion, (c) 2024 Motion B.V., MIT",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Spring stiffness 500, damping 25, mass 1 from the under-damped default in motion-dom 14.9.0 (dist/motion-dom.dev.js ~line 4780). Mapped to dials as: speed scales stiffness by speed^2 and damping by speed (keeps the damping ratio); bounce sets damping = 2*sqrt(stiffness)*(1-bounce). At speed 1 and bounce 0.44 this gives stiffness 500, damping 25.0. Using the layout prop with this spring for reorder is our choice (https://motion.dev/docs/react-layout-animations, https://motion.dev/docs/react-reorder); not tested."
+      },
+      "tokens": [],
+      "variables": {
+        "stiffness": "round(500 * speed * speed, 1)",
+        "damping": "round(2 * sqrt(stiffness) * (1 - bounce), 0.1)"
+      },
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "stiffness",
+            "damping"
+          ]
+        },
+        {
+          "id": "bounce",
+          "label": "Bounce",
+          "min": 0,
+          "max": 0.6,
+          "step": 0.02,
+          "default": 0.44,
+          "drives": [
+            "damping"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "layout": true,
+            "transition": {
+              "type": "spring",
+              "stiffness": "{{ stiffness }}",
+              "damping": "{{ damping }}"
+            }
+          },
+          "note": "Put on each item, or use <Reorder.Group>/<Reorder.Item>. Without the library this needs a hand-written FLIP routine (measure, invert, play), which this pack does not provide."
+        }
+      ],
+      "requires": "motion",
+      "reducedMotion": "Items move instantly (use useReducedMotion or MotionConfig reducedMotion=\"user\").",
+      "preview": {
+        "description": "A list where dragging or sorting makes rows slide into their new positions.",
+        "states": [
+          "before",
+          "after"
+        ]
+      }
+    },
+    {
+      "id": "shared-element",
+      "name": "Shared element",
+      "kind": "motion.layout",
+      "summary": "One element (a thumbnail, a tab underline) glides to its new place and size instead of vanishing and reappearing.",
+      "source": {
+        "library": "Material Web (Material Design 3 tokens, v0_192)",
+        "url": "https://raw.githubusercontent.com/material-components/material-web/main/tokens/versions/v0_192/_md-sys-motion.scss",
+        "licence": "Apache-2.0",
+        "licenceUrl": "https://raw.githubusercontent.com/material-components/material-web/main/LICENSE",
+        "attribution": "Material Design 3 motion tokens via Material Web, (c) Google LLC, Apache-2.0",
+        "copied": "adapted",
+        "verified": true,
+        "notes": "Curve easing-emphasized cubic-bezier(0.2, 0, 0, 1) and duration-medium3 350ms from _md-sys-motion.scss. View transitions: document.startViewTransition (MDN https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API; browser versions NOT verified, recalled as Chrome/Edge 111, Safari 18, Firefox 144). view-transition-class support NOT verified. layoutId is the Motion API (https://motion.dev/docs/react-layout-animations)."
+      },
+      "tokens": [
+        {
+          "name": "shared-time",
+          "value": "{{ round(350 / speed, 5) }}ms",
+          "syntax": "<time>"
+        },
+        {
+          "name": "shared-ease",
+          "value": "cubic-bezier(0.2, 0, 0, 1)"
+        }
+      ],
+      "variables": {
+        "springBounce": "clamp(bounce, 0, 0.5)"
+      },
+      "dials": [
+        {
+          "id": "speed",
+          "label": "Speed",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.05,
+          "default": 1,
+          "unit": "×",
+          "drives": [
+            "shared-time"
+          ]
+        },
+        {
+          "id": "bounce",
+          "label": "Bounce",
+          "min": 0,
+          "max": 0.3,
+          "step": 0.05,
+          "default": 0,
+          "drives": [
+            "springBounce"
+          ]
+        }
+      ],
+      "apply": [
+        {
+          "type": "css",
+          "requires": "none",
+          "css": ".{class:shared} { view-transition-class: {class:shared}; }\n::view-transition-group(*.{class:shared}) { animation-duration: {var:shared-time}; animation-timing-function: {var:shared-ease}; }\n@media (prefers-reduced-motion: reduce) { ::view-transition-group(*.{class:shared}) { animation-duration: 1ms; } }"
+        },
+        {
+          "type": "motion-props",
+          "requires": "motion",
+          "props": {
+            "layoutId": "shared-element-id",
+            "transition": {
+              "type": "spring",
+              "duration": "{{ round(0.4 / speed, 0.01) }}",
+              "bounce": "{{ springBounce }}"
+            }
+          },
+          "note": "Give both places the same layoutId; wrap in <LayoutGroup> when several instances exist. For the CSS route the code also sets a unique view-transition-name per element and calls document.startViewTransition()."
+        }
+      ],
+      "requires": "none",
+      "reducedMotion": "Jumps to the end state (1ms).",
+      "preview": {
+        "description": "A thumbnail that grows into a detail view in one continuous move.",
+        "states": [
+          "before",
+          "after"
+        ]
+      }
+    }
+  ]
+}
