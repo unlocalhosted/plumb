@@ -1,4 +1,4 @@
-import { allConfigNames, buildId, cacheDirectory, statePath } from './paths.js';
+import { allConfigNames, buildId, cacheDirectory, ignoreCache, statePath } from './paths.js';
 import { createHash } from 'node:crypto';
 import { existsSync, statSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
@@ -188,6 +188,7 @@ export class CheckCache {
     const inputs = { inventory, files: [...after], stamps, directories, resolutions: [...uniqueResolutions.values()], compiler };
     const generation = hash(JSON.stringify(inputs));
     const receipt: Receipt = { generation, ...inputs };
+    ignoreCache(this.root);
     await mkdir(this.directory, { recursive: true });
     const temporary = await mkdtemp(`${this.directory}.tmp-`);
     try {

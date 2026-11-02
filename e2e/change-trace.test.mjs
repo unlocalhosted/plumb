@@ -106,3 +106,28 @@ test('a file-level undo takes its changes out of the trace', async t => {
   assert.equal(await api.read(), source);
   assert.deepEqual(await api.trace({ group: 'one' }), []);
 });
+
+test('an old record never finds its place on the next element down: crafting-ui\'s h2 and p share `className="mt-2 font-re`', async t => {
+  // found on crafting-ui (docs/qa/timeline-crafting-ui.md): an undo's record (mt-3 → mt-2 on the h2) read as live after
+  // the h2 went back to mt-3, matched on the <p className="mt-2 font-read …"> below it; Go back to here would have
+  // written to that p
+  const api = await project(t);
+  await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(api.root, 'src'), { recursive: true });
+  const FILE = 'src/pages/MotionStandardsPage.tsx', page = () => readFile(join(api.root, FILE), 'utf8');
+  const line = (await page()).split('\n').findIndex(l => l.includes('<h2 id=')) + 1, column = (await page()).split('\n')[line - 1].indexOf('<') + 1;
+  const h2 = async (from, to) => {
+    const { hash } = (await api.call('props', { file: FILE, line, column })).body;
+    const r = await api.call('swaps', { file: FILE, hash, edits: [{ line, column, from, to }] }, 'POST');
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+  };
+  await h2('mt-2', 'mt-3');
+  const first = (await api.trace()).find(c => c.to === 'mt-3');
+  assert.equal((await api.call('undo-change', { id: first.id }, 'POST')).status, 200);
+  const undo = (await api.trace()).find(c => c.undoes?.includes(first.id));
+  await h2('mt-2', 'mt-3');
+  const before = await page();
+  assert.match(before.split('\n')[line], /<p className="mt-2 font-read/, 'the p below still has its mt-2');
+  assert.equal((await api.trace()).find(c => c.id === undo.id).state, 'changed', 'the undo\'s place no longer holds mt-2');
+  assert.equal((await api.call('undo-change', { id: undo.id }, 'POST')).status, 400);
+  assert.equal(await page(), before, 'nothing written, the p least of all');
+});

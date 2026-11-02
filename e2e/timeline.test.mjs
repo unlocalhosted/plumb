@@ -2,7 +2,8 @@
 // tick per change and one segment per step; the playhead points at a change; Undo change and Undo step take back
 // exactly that, in the file; a change edited by hand says why it can't be undone. Layer 2: the pointed change's
 // elements are outlined on the page. Layer 3: the playhead in the past shows the page as it was there, writing nothing;
-// Go back to here undoes everything to its right. Real Vite, React and Chromium.
+// Go back to here undoes everything to its right. Layer 4: one surface: the write toast's Undo takes back the step the
+// timeline shows, and the strip settles where the dock is. Real Vite, React and Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -204,6 +205,8 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   await overlay(page).locator('.dock .history').click();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
   await page.keyboard.press('ArrowLeft');
+  // the past fills in once the class compile lands (the strip never waits for it)
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('c')).marginTop === '10px', null, { timeout: 10000 });
   let s = await strip(page), was = await look();
   assert.ok(s.past && s.back, 'in the past: the strip says so and offers Go back to here');
   assert.deepEqual(s.ahead, ['2']);
@@ -234,4 +237,37 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   s = await strip(page);
   assert.ok(!s.past && s.pointed === '4', 'reopened at Now');
   assert.deepEqual(await look().then((l) => [l.a.pad, l.b.pad, l.c.mt]), ['24px', '13px', '10px'], 'the page now is the file');
+});
+
+test('the write toast\'s Undo takes back the whole step the timeline shows, and the strip settles where the dock is', { timeout: 120000 }, async (t) => {
+  const app = await demo(t), launched = await browser(t), page = await launched.newPage();
+  await page.goto(app.url);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 60000 });
+  // a write the overlay makes: the page posts it and hands the answer to the overlay, as its own panels do
+  const hash = await page.evaluate(async () => (await (await fetch('/__plumb/props?' + new URLSearchParams({ file: 'src/App.jsx', line: 4, column: 7 }))).json()).hash);
+  const result = await page.evaluate(async (h) => {
+    const r = await (await fetch('/__plumb/swaps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: 'src/App.jsx', hash: h, edits: [{ line: 4, column: 7, from: 'gap-2', to: 'gap-3' }, { line: 5, column: 7, from: 'p-[13px]', to: 'p-3' }] }) })).json();
+    document.querySelector('plumb-overlay').wrote(r, 'Applied 2 changes');
+    return r;
+  }, hash);
+  assert.ok(result.trace?.group, 'the write names its step');
+  assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('p-[13px]', 'p-3'));
+  const toast = overlay(page).locator('.wt .undo');
+  await toast.click();
+  await page.waitForFunction(() => /Undid 2 changes/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt')?.textContent ?? ''));
+  assert.equal(await app.read(), APP, 'both changes of the step went');
+  await overlay(page).locator('.dock .history').click();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
+  assert.deepEqual((await strip(page)).steps.map((x) => x.ticks), [['undone', 'undone'], ['live+undo', 'live+undo']], 'the timeline shows the same step undone');
+
+  // a button in the dock's corner sends the dock to the other one: the strip goes with it
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').hidden);
+  await page.evaluate(() => { const b = document.createElement('button'); b.textContent = 'Send feedback'; b.style.cssText = 'position:fixed;right:16px;bottom:16px;width:200px;height:36px;z-index:5'; document.body.append(b); dispatchEvent(new Event('resize')); });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').getAttribute('data-side') === 'start', null, { timeout: 5000 });
+  await overlay(page).locator('.dock .history').click();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
+  await page.waitForTimeout(400);
+  const left = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').getBoundingClientRect().left);
+  assert.ok(Math.abs(left - 16) <= 1, `the strip sits in the start corner, at ${left}px`);
 });

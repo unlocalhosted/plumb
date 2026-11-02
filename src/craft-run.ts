@@ -110,6 +110,18 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
   if (needs.held) await give('held', await takeHeld(browser, url, timeout).catch(quiet('held')));
 }
 
+// A dev server bound to one address family answers on `localhost` but not on `127.0.0.1` (Vite on ::1), or the
+// reverse: the first loopback name that answers is the one the run opens. Any other host is used as given.
+async function reachable(base: string): Promise<string> {
+  const loopback = ['127.0.0.1', 'localhost', '[::1]'], given = new URL(base);
+  if (!loopback.includes(given.hostname)) return base;
+  for (const host of [given.hostname, ...loopback.filter(name => name !== given.hostname)]) {
+    const url = new URL(base); url.hostname = host;
+    try { await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(2000) }); return url.href; } catch { /* the next name */ }
+  }
+  return base;
+}
+
 /** Open every route in headless Chromium and run the craft engine over the whole page. */
 export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   const { chromium } = await playwright();
@@ -121,9 +133,9 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
     throw error;
   }
   try {
-    const pages: CraftPage[] = [];
+    const pages: CraftPage[] = [], base = await reachable(options.url);
     for (const route of options.routes) {
-      const url = new URL(route, options.url).href;
+      const url = new URL(route, base).href;
       // motion on: a page loaded with reduced motion hides every animation from every rule
       const page = await browser.newPage({ reducedMotion: 'no-preference', viewport: options.viewport ?? desktop });
       try {

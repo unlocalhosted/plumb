@@ -22,7 +22,7 @@ async function fixture(t, app, extra = {}) {
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await writeFile(join(root, 'src/App.jsx'), app);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
-    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
+    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: extra.host ?? '127.0.0.1', port: 0 } });
   t.after(() => server.close());
   await server.listen();
   return { root, url: `http://127.0.0.1:${server.httpServer.address().port}/` };
@@ -95,4 +95,14 @@ test('plumber craft says what to do when nothing is listening', { timeout: 60000
   const result = await plumber(['--url', 'http://127.0.0.1:9/', '--timeout', '3000']);
   assert.equal(result.code, 2);
   assert.match(result.stderr, /dev server/);
+});
+
+test('plumber craft finds a dev server that listens on ::1 only when it is asked for at 127.0.0.1', { timeout: 240000 }, async (t) => {
+  // crafting-ui's Vite listens on localhost, which is ::1 only on this Mac: --url http://127.0.0.1:… was told to start it
+  if (!await readFile(cli).then(() => true, () => false)) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, BROKEN, { host: '::1' });
+  const result = await plumber(['--url', url, '--json', '--root', root, '--no-pairs', '--no-probe']);
+  assert.doesNotMatch(result.stderr ?? '', /Could not open/);
+  assert.equal(result.code, 1, result.stderr);
+  assert.ok(JSON.parse(result.stdout).findings.some((f) => f.rule === 'craft/tracking'));
 });

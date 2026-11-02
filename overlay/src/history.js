@@ -4,8 +4,9 @@
  * Every change can be taken back, on its own (docs/briefs/time-travel.md, layer 1). The server traces each change a
  * write makes (GET trace) and undoes one, or a step, where it is found now (POST undo-change, undo-group).
  *
- *  toast     after any write: what was written and where, with Undo, for a few seconds by the dock. A dev server
- *            that reloads the page after the write brings the toast back
+ *  toast     after any write: what was written and where, with Undo, for a few seconds by the dock. Undo takes back
+ *            the write's step (the group its answer names), the same step the timeline shows; a write with no step
+ *            falls back to restoring its file. A dev server that reloads the page after the write brings it back
  *  timeline  the dock's history button grows the dock into a strip: time runs left to right, Now at the right end;
  *            one tick per change, one segment per step (one write, or one tagged group), the step's name the only
  *            word at rest. A playhead points at one change: one pill holds its from → to and its laws
@@ -61,6 +62,10 @@ export const HISTORY_CSS = `
     padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); color: var(--pl-ink);
     background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
   .tt[hidden] { display: none; }
+  /* the strip settles where the dock is: the start corner, or the middle when both corners are taken */
+  :host([data-side="start"]) .tt { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
+  :host([data-side="center"]) :is(.tt, .wt) { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
+  :host([data-side="center"]) .wt:not([data-on]) { translate: -50% 4px; }
   /* in the past: the page isn't current, and the strip says so at its edge */
   .tt[data-past] { box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--pl-instrument) 55%, transparent); }
   .tt .tt-glyph { flex: none; align-self: center; width: 20px; height: 20px; display: grid; place-items: center; color: var(--pl-ink-2); }
@@ -146,28 +151,64 @@ function stepsOf(changes) {
 }
 const live = (c) => c?.state === 'live';
 // why a change can't be undone here, in words, from its state
+// the server's refusal, in the timeline's words
+const whyNot = (message) => (/outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : /already undone/.test(message) ? T.undoneAlready : T.failed(message));
 const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ? T.changedLater : T.changedByHand);
 
-// The elements on the page drawn by the JSX that holds a change: stamped (data-plumb-source, file:line:column#hash) in
-// the change's file, at the last element start at or before the change's line and column. A className on the third
-// line of a long tag still belongs to that tag; every row a list draws from it shares the stamp.
+// The elements on the page drawn by the JSX that holds a change: the last JSX start at or before the change's line and
+// column in its file. A className on the third line of a long tag still belongs to that tag; every row a list draws
+// from it shares the stamp. Two kinds of stamp (data-plumb-source, file:line:column#hash): an element's, on the DOM;
+// and a component's at its usage (<Lettering className="…">), on its fiber's props, whose elements are the top DOM
+// elements it renders (the className it is given lands on those).
 const MARKS = 24;
-function elementsOf(c) {
-  if (!c?.file || !/\.[cm]?[jt]sx?$/.test(c.file)) return [];
-  let best = null;
-  const found = [];
+const STAMP = /^(.+):(\d+):(\d+)#[a-f0-9]+$/;
+const fiberOf = (el) => { for (const k in el) if (k.startsWith('__reactFiber$')) return el[k]; return null; };
+function placeOf(stamp, c) {
+  const m = typeof stamp === 'string' && STAMP.exec(stamp);
+  if (!m) return null;
+  let file = m[1]; try { file = decodeURIComponent(file); } catch {}
+  if (file !== c.file && !file.endsWith('/' + c.file) && !c.file.endsWith('/' + file)) return null;
+  const line = +m[2], column = +m[3];
+  return line < c.line || (line === c.line && column <= c.column) ? { line, column } : null;
+}
+// the top DOM elements a fiber renders: its host descendants with no host between
+function hostsOf(fiber) {
+  const out = [], stack = fiber.child ? [fiber.child] : [];
+  while (stack.length) {
+    const f = stack.pop();
+    if (f.sibling) stack.push(f.sibling);
+    if (f.stateNode instanceof Element) out.push(f.stateNode); else if (f.child) stack.push(f.child);
+  }
+  return out;
+}
+// Every stamp on the page, read once per playhead move: [stamp, elements] for each stamped element and each component
+// stamped at its usage. Many changes are matched against one read (the past view matches every change to the right).
+function pageIndex() {
+  const out = [], roots = new Set();
   for (const el of document.querySelectorAll('[data-plumb-source]')) {
     if (el.closest('plumb-overlay')) continue;
-    const m = /^(.+):(\d+):(\d+)#[a-f0-9]+$/.exec(el.getAttribute('data-plumb-source') ?? '');
-    if (!m) continue;
-    let file = m[1]; try { file = decodeURIComponent(file); } catch {}
-    if (file !== c.file && !file.endsWith('/' + c.file) && !c.file.endsWith('/' + file)) continue;
-    const line = +m[2], column = +m[3];
-    if (line > c.line || (line === c.line && column > c.column)) continue;
-    if (!best || line > best.line || (line === best.line && column > best.column)) best = { line, column };
-    found.push({ el, line, column });
+    out.push([el.getAttribute('data-plumb-source'), [el]]);
+    if (roots.size < 8) { let f = fiberOf(el); while (f?.return) f = f.return; if (f) roots.add(f); }
   }
-  return best ? found.filter((f) => f.line === best.line && f.column === best.column).map((f) => f.el) : [];
+  for (const root of roots) {
+    const stack = [root];
+    while (stack.length) {
+      const f = stack.pop();
+      if (f.sibling) stack.push(f.sibling);
+      if (f.child) stack.push(f.child);
+      const stamp = typeof f.type !== 'string' && f.memoizedProps?.['data-plumb-source'];
+      if (stamp) out.push([stamp, hostsOf(f)]);
+    }
+  }
+  return out;
+}
+function elementsOf(c, index = pageIndex()) {
+  if (!c?.file || !/\.[cm]?[jt]sx?$/.test(c.file)) return [];
+  const found = [];
+  for (const [stamp, els] of index) { const at = els.length && placeOf(stamp, c); if (at) found.push({ ...at, els }); }
+  let best = null;
+  for (const f of found) if (!best || f.line > best.line || (f.line === best.line && f.column > best.column)) best = f;
+  return best ? [...new Set(found.filter((f) => f.line === best.line && f.column === best.column).flatMap((f) => f.els))].filter((el) => !el.closest('plumb-overlay')) : [];
 }
 
 export class History {
@@ -209,26 +250,30 @@ export class History {
 
   // A write landed: say it, with Undo. `result` is the server's answer (it carries `undo`); `text` says it in words.
   wrote(result, text) {
-    const handle = result?.undo;
+    const handle = Array.isArray(result?.undo) ? result.undo[0] : result?.undo, group = result?.trace?.group ?? null;
     if (this.open) this.#load();
-    if (!handle) return this.#say(text ?? `Wrote ${short(result?.file)}`);
-    this.#last = handle;
-    const said = text ?? `Applied ${handle.label} in ${short(handle.file)}`;
+    if (!handle && !group) return this.#say(text ?? `Wrote ${short(result?.file)}`);
+    this.#last = { handle: handle ?? null, group };
+    const said = text ?? (Array.isArray(result?.undo) && result.undo.length > 1 ? T.applied(result.undo.length) : `Applied ${handle?.label ?? ''} in ${short(handle?.file ?? result?.file)}`);
     // a dev server may reload the page after the write: the toast comes back after it
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ handle, text: said, at: Date.now() })); } catch {}
+    try { sessionStorage.setItem(RESUME, JSON.stringify({ ...this.#last, text: said, at: Date.now() })); } catch {}
     this.#say(said, true);
   }
 
-  // the toast's Undo: the whole write, as before (layer 4 makes it the step)
-  async undo(handle) {
+  // the toast's Undo: the write's step, as the timeline would; a write that names no step restores its file
+  async undo(last) {
     try { sessionStorage.removeItem(RESUME); } catch {}
+    const { handle, group } = last ?? {};
     try {
-      await post('undo', { id: handle.id });
-      if (this.#last?.id === handle.id) this.#last = null;
-      this.#say(`Undone in ${short(handle.file)}`);
-      this.#host.announce?.(`Undone in ${short(handle.file)}`);
+      let said;
+      if (group) { const done = await post('undo-group', { group }); said = T.undoneStep(done?.undone?.length ?? 1); }
+      else { await post('undo', { id: handle.id }); said = `Undone in ${short(handle.file)}`; }
+      if (this.#last === last) this.#last = null;
+      this.#say(said);
+      this.#host.announce?.(said);
     } catch (error) {
-      this.#say(/changed since/i.test(error?.message ?? '') ? `${short(handle.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : `Couldn’t undo. ${error?.message ?? 'Check again.'}`, false, 'error');
+      const message = error?.message ?? '';
+      this.#say(group ? whyNot(message) : /changed since/i.test(message) ? `${short(handle?.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : T.failed(message || 'Check again.'), false, 'error');
     }
     if (this.open) this.#load();
     this.#host.changed?.();
@@ -283,7 +328,6 @@ export class History {
       this.#steps = stepsOf(said?.changes ?? []);
       this.#flat = this.#steps.flatMap((s) => s.changes.map((c) => ({ ...c, step: s })));
       this.#status = this.#flat.length ? 'ready' : 'empty';
-      await this.#learn();
     } catch {
       // reopened after a reload, the server may still be starting: wait for it a little
       if (tries > 0) { setTimeout(() => this.#load(tries - 1), 500); return; }
@@ -294,6 +338,9 @@ export class History {
     this.#render();
     // a render replaces what had focus: the slider takes it back
     this.#strip.querySelector('.tt-track')?.focus({ preventScroll: true });
+    // what each class sets only matters to the past view: learnt after the ticks are drawn (a compile can take a
+    // second on a real project), and the past shown again once it is known
+    if (this.#status === 'ready') this.#learn().then(() => { if (this.open && this.#past) this.#point(this.#at, true); });
   }
 
   #render() {
@@ -335,11 +382,13 @@ export class History {
     }
     const laws = lawsOf(c);
     track?.setAttribute('aria-valuemin', '1'); track?.setAttribute('aria-valuemax', String(n)); track?.setAttribute('aria-valuenow', String(this.#at + 1));
-    track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from, c.to, laws));
-    // the page as it was here: everything to the right previewed undone; the marks read the page after it
-    this.#show(this.#at);
+    track?.setAttribute('aria-valuetext', T.valuetext(this.#at + 1, n, c.step.name, c.from.trim(), c.to.trim(), laws));
+    // the page as it was here: everything to the right previewed undone; the marks read the page after it. One read
+    // of the page's stamps serves both
+    const index = pageIndex();
+    this.#show(this.#at, index);
     for (const t of this.#strip.querySelectorAll('.tt-tick[data-i]')) t.toggleAttribute('data-ahead', +t.dataset.i > this.#at && live(this.#flat[+t.dataset.i]));
-    const els = this.#mark(c);
+    const els = this.#mark(c, index);
     this.#pill(c, tick, laws, instant, els.length > 0);
     const [back, change, step] = this.#strip.querySelectorAll('.tt-acts button');
     if (back) { back.hidden = !this.#past; back.disabled = this.#busy; }
@@ -353,7 +402,7 @@ export class History {
     const warn = this.#warn?.id === c.id ? this.#warn : null;
     pill.dataset.kind = warn?.kind ?? '';
     pill.innerHTML = warn ? esc(warn.text)
-      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from || '∅')} → ${esc(c.to || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
+      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from.trim() || '∅')} → ${esc(c.to.trim() || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
     pill.hidden = false;
     // centred on the tick, slid along its line to stay whole on screen
     const sr = this.#strip.getBoundingClientRect(), tr = tick.getBoundingClientRect(), w = pill.offsetWidth;
@@ -364,8 +413,8 @@ export class History {
   }
 
   // outline the change's elements; scroll the first into view when none of them can be seen. null clears
-  #mark(c) {
-    const els = c ? elementsOf(c).slice(0, MARKS) : [];
+  #mark(c, index) {
+    const els = c ? elementsOf(c, index).slice(0, MARKS) : [];
     const same = els.length === this.#marked.length && els.every((el, i) => el === this.#marked[i]);
     this.#marked = els;
     if (!els.length) { this.#marks.hidden = true; this.#marks.replaceChildren(); return els; }
@@ -433,7 +482,7 @@ export class History {
     this.#remember();
     try {
       const done = kind === 'change' ? await post('undo-change', { id: c.id }) : await post('undo-group', { group: c.group });
-      const said = kind === 'change' ? T.undone(c.from, c.to) : T.undoneStep(done?.undone?.length ?? targets.length);
+      const said = kind === 'change' ? T.undone(c.from.trim() || '∅', c.to.trim() || '∅') : T.undoneStep(done?.undone?.length ?? targets.length);
       this.#remember(said);
       this.#host.announce?.(said);
       this.#at = Infinity;
@@ -443,7 +492,7 @@ export class History {
     } catch (error) {
       this.#busy = false;
       const message = error?.message ?? '';
-      this.#refuse(c, /outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : /already undone/.test(message) ? T.undoneAlready : T.failed(message), 'warn');
+      this.#refuse(c, whyNot(message), 'warn');
     }
   }
 
@@ -471,7 +520,7 @@ export class History {
     } catch (error) {
       this.#busy = false;
       const message = error?.message ?? '';
-      this.#refuse(c, /outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : T.failed(message), 'warn');
+      this.#refuse(c, whyNot(message), 'warn');
     }
   }
 
@@ -491,14 +540,15 @@ export class History {
 
   // Show the page as it was after change `at` (-1: as it is): restore what was shown, then undo every live change to
   // the right on its elements, newest first. Reads (the elements) before writes; nothing is written to source.
-  #show(at) {
+  #show(at, index) {
     for (const undo of this.#shown.reverse()) undo();
     this.#shown = [];
     const last = this.#flat.length - 1, past = at >= 0 && at < last && this.#status === 'ready';
     if (past !== this.#past) { this.#past = past; this.#strip.toggleAttribute('data-past', past); if (past) this.#host.announce?.(T.past(this.#flat.slice(at + 1).filter(live).length)); }
     if (!past) return;
     performance.mark('plumb:tt-preview-start');
-    const ahead = this.#flat.slice(at + 1).filter(live).reverse().map((c) => [c, elementsOf(c)]);
+    index ??= pageIndex();
+    const ahead = this.#flat.slice(at + 1).filter(live).reverse().map((c) => [c, elementsOf(c, index)]);
     for (const [c, els] of ahead) for (const el of els) this.#unshow(c, el);
     performance.measure('plumb:tt-preview', 'plumb:tt-preview-start');
   }
@@ -565,7 +615,7 @@ export class History {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
-    this.#last = saved.handle;
+    this.#last = { handle: saved.handle ?? null, group: saved.group ?? null };
     setTimeout(() => this.#say(saved.text, true), 150);
   }
 }

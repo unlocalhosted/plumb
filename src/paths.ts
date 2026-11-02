@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
@@ -18,6 +18,12 @@ export function stateDirectory(root: string): string {
 export const statePath = (root: string, file: string) => join(stateDirectory(root), file);
 export const environment = (name: string) => process.env[`PLUMBER_${name}`] ?? process.env[`PLUMB_${name}`];
 export const cacheDirectory = (root: string) => resolve(environment('CACHE_DIR') ?? statePath(root, 'cache'));
+/** The cache is never committed: its root carries a .gitignore that ignores all of it, written the first time a
+ * session or a check makes the cache. Projects don't have to know the folder exists. */
+export function ignoreCache(root: string): void {
+  const directory = cacheDirectory(root), file = join(directory, '.gitignore');
+  try { if (!existsSync(file)) { mkdirSync(directory, { recursive: true }); writeFileSync(file, "# React Plumber's cache: rebuilt on demand, never committed\n*\n"); } } catch { /* a read-only checkout keeps working */ }
+}
 export const isLedgerPath = (file: string) => /\/\.plumb(?:er)?\/ledger\.jsonl$/.test(file);
 
 let build: string | undefined;

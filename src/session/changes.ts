@@ -62,22 +62,25 @@ export function hunks(before: string, after: string): { start: number; end: numb
   return out;
 }
 
-/** Where a change is now: its offset in the text, or null when the place no longer holds what it wrote. Wider context
- * first; nearest to where it was written wins; bare text only when it occurs once. */
+/** Where a change is now: its offset in the text, or null when the place no longer holds what it wrote. Only the full
+ * context on both sides may be found anywhere (lines above may have moved it); a narrower match counts only on the
+ * change's own line, because `className="mt-2 font-re` is just as true of the next element down. Nearest to where it
+ * was written wins. A place that can't be found this way is refused, never guessed. */
 export function locate(text: string, change: Pick<ChangeRecord, 'line' | 'column' | 'to' | 'prefix' | 'suffix'>): number | null {
   const starts = lineStarts(text), expected = (starts[change.line - 1] ?? text.length) + change.column - 1;
+  const lineOf = (offset: number) => { let lo = 0, hi = starts.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid]! <= offset) lo = mid; else hi = mid - 1; } return lo + 1; };
   const all = (needle: string, skip: number) => { const found: number[] = []; for (let k = text.indexOf(needle); k >= 0; k = text.indexOf(needle, k + 1)) found.push(k + skip); return found; };
   const nearest = (found: number[]) => found.length ? found.reduce((best, k) => Math.abs(k - expected) < Math.abs(best - expected) ? k : best) : null;
+  const here = (found: number[]) => found.filter(k => lineOf(k) === change.line);
   for (const width of [CONTEXT, 16, 8]) {
-    const p = change.prefix.slice(-width), s = change.suffix.slice(0, width);
-    const both = nearest(all(p + change.to + s, p.length));
-    if (both !== null) return both;
+    const p = change.prefix.slice(-width), s = change.suffix.slice(0, width), both = all(p + change.to + s, p.length);
+    const found = nearest(width === CONTEXT ? both : here(both));
+    if (found !== null) return found;
     if (!change.to) continue;
-    const one = nearest([...(p ? all(p + change.to, p.length) : []), ...(s ? all(change.to + s, 0) : [])]);
+    const one = nearest(here([...(p ? all(p + change.to, p.length) : []), ...(s ? all(change.to + s, 0) : [])]));
     if (one !== null) return one;
   }
-  if (change.to) { const bare = all(change.to, 0); if (bare.length === 1) return bare[0]!; }
-  return null;
+  return change.to ? nearest(here(all(change.to, 0))) : null;
 }
 
 /** The log: read once, appended per write, rewritten only to drop records or keep it under its limit. */

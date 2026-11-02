@@ -1,4 +1,4 @@
-import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory } from '../paths.js';
+import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
 import { constants, readFileSync, watch } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { ChangeLog, locate } from './changes.js';
@@ -221,6 +221,7 @@ export class Session extends EventEmitter {
   static async create(options: SessionOptions = {}): Promise<Session> {
     if (options.watch === undefined && environment('WATCH') === '0') options = { ...options, watch: false };
     const session = new Session(options);
+    ignoreCache(session.root);
     try {
       await session.start(); await session.scan(true);
       await session.request('inventory', { files: session.retainedFiles() });
@@ -1473,9 +1474,10 @@ export class Session extends EventEmitter {
     if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
     if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
     if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
-    const previous = this.tag;
-    this.tag = { group: tag?.group ?? this.log.group(), ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
-    try { return await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); } finally { this.tag = previous; }
+    const previous = this.tag, group = tag?.group ?? this.log.group();
+    this.tag = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
+    // the answer names the step its changes went into, so the caller can take back exactly that step (the write toast's Undo)
+    try { const result = await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result; } finally { this.tag = previous; }
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
   async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
