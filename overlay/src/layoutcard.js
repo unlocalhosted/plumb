@@ -16,8 +16,8 @@
  *             the pointer ("16 · s4", coral off the scale) over the scale around it, the step that keeps the hierarchy
  *             marked (inside < between ≤ around) with the rule in words. It writes when the hand stops (or Enter); Esc
  *             puts it back.
- * Writes are class swaps on the element's own line (POST swaps): the classes read from the element, so a class the
- * source doesn't have is refused by the server, in its words.
+ * Writes are class changes on an element ({ el, from, to }): the card writes each where the element's classes are
+ * written (locate.js classSiteOf: its own line, or the usage that passes them in), and refuses one written nowhere.
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
 import { FIX } from './words.js';
@@ -129,8 +129,9 @@ const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? n
 const matesOf = (el) => { const s = stampOf(el); return s ? [...document.querySelectorAll(`[data-plumb-source^="${CSS.escape(s)}#"]`)].filter((x) => x !== el).length : 0; };
 
 // ── the spacing grammar ──────────────────────────────────
-// host: { release(), target() → el | null, name(el) → words, scale() → [{ px, token }] (0 first), where(el) → Promise<{ file, line,
-//   column, hash }>, write(writes, said) → Promise, refused(text), held() → bool (a card handle is held), ours(event) → bool }
+// host: { release(), target() → el | null, name(el) → words, scale() → [{ px, token }] (0 first), write([{ el, from, to }],
+//   said) → Promise, refused(text), locked(el) → words | null (its classes can't be written), mates(el) → n | null (the
+//   others drawn from its class site), held() → bool (a card handle is held), ours(event) → bool }
 export class Spacing {
   #host; #layer; #bub; #root;
   #on = false; #hover = null; #act = null; #at = [0, 0];
@@ -200,6 +201,7 @@ export class Spacing {
     if (!b || this.#host.ours?.(e)) return;
     e.preventDefault(); e.stopPropagation();
     this.#modsOf(e);
+    if (!this.#act && this.#lockedSay(b)) return;
     if (!this.#act) this.#start(b);
     const a = this.#act, d = e.deltaY || e.deltaX, notch = e.deltaMode === 1 || Math.abs(d) >= 50;
     a.acc += notch ? Math.sign(d) * NOTCH : d;
@@ -212,6 +214,7 @@ export class Spacing {
   #down = (e) => {
     if (!this.#on || e.button !== 0 || !this.#hover || this.#act || this.#host.ours?.(e)) return;
     e.preventDefault(); e.stopImmediatePropagation();
+    if (this.#lockedSay(this.#hover)) return;
     const b = this.#hover, vertical = b.kind === 'gap' ? b.axis === 'y' : b.side === 'top' || b.side === 'bottom';
     const sign = b.kind === 'gap' ? 1 : b.side === 'top' || b.side === 'left' ? -1 : 1; // outward is more
     this.#modsOf(e);
@@ -228,6 +231,8 @@ export class Spacing {
     const up = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
   };
+  // an element whose classes can't be written: said once, nothing is tried on it
+  #lockedSay(b) { const why = this.#host.locked?.(b.el); if (why) this.#host.refused?.(why); return !!why; }
   // the click a drag ends with is the drag's, never the page's (or Blueprint's "click outside")
   #click = (e) => { if (this.#swallow || this.#act?.drag) { e.preventDefault(); e.stopImmediatePropagation(); this.#swallow = false; } };
 
@@ -299,11 +304,10 @@ export class Spacing {
     const swap = edit(b, a.sides, step.token, classesOf(b.el));
     this.#draw();
     if (!swap) { this.#inline.clear(); return; }
-    const mates = matesOf(b.el), what = W.what(b.kind, a.sides.map((s) => W.sides[s]));
+    const mates = this.#host.mates?.(b.el) ?? matesOf(b.el), what = W.what(b.kind, a.sides.map((s) => W.sides[s]));
     const said = W.spaced(this.#host.name?.(b.el) ?? b.el.localName, what, a.value, mates);
     try {
-      const at = await this.#host.where(b.el);
-      await this.#host.write([{ file: at.file, hash: at.hash, edits: [{ line: at.line, column: at.column, ...swap }] }], said);
+      await this.#host.write([{ el: b.el, ...swap }], said);
     } catch (error) { this.#host.refused?.(error?.message ?? String(error)); }
     finally { this.#inline.clear(); this.#draw(); }
   }
@@ -335,7 +339,7 @@ export class Spacing {
         else if (Math.abs(c.top - p.top) < 2 && c.left - p.right > 0.5) band('gap', p.right, Math.min(p.top, c.top), c.left - p.right, Math.max(p.height, c.height));
       }
     }
-    const mates = matesOf(el), name = this.#host.name?.(el) ?? el.localName;
+    const mates = this.#host.mates?.(el) ?? matesOf(el), name = this.#host.name?.(el) ?? el.localName;
     parts.push(`<span class="sp-box" style="left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px"><em>${esc(name)}${mates ? ` · ${esc(W.mates(mates))}` : ''}</em></span>`);
     this.#layer.innerHTML = parts.join('');
     this.#bubble(b, sides);
@@ -413,8 +417,7 @@ const rowParts = (el) => { const r = kids(el)[0]; return r ? kids(r).length : 0;
 const linesUp = (el) => rowParts(el) >= 2 && rowParts(el) <= 6;
 const linedCols = (el) => linesUp(el) ? Array.from({ length: rowParts(el) }, (_, i) => (i === 1 ? '1fr' : 'auto')) : ['1fr', '1fr'];
 
-// host: { target() → el, name(el), where(el) → Promise<at>, write(writes, said) → Promise, redraw(), strip() → el,
-//   placeStrip() }
+// host: { target() → el, redraw(), restrip() }
 export class Layout {
   #host; #layer; #from = null; #s = null; #inline = new Inline(); #peek = null; #line = null;
   constructor(root, host) {
@@ -472,15 +475,8 @@ export class Layout {
     }
     return out;
   }
-  async writes() {
-    const edits = this.edits(), byFile = new Map();
-    for (const e of edits) {
-      const at = await this.#host.where(e.el);
-      let w = byFile.get(at.file); if (!w) byFile.set(at.file, (w = { file: at.file, hash: at.hash, edits: [] }));
-      w.edits.push({ line: at.line, column: at.column, from: e.from, to: e.to });
-    }
-    return [...byFile.values()];
-  }
+  // the class changes to write, one per element (the card writes each where its classes are written)
+  writes() { return this.edits().map((e) => ({ el: e.el, from: e.from, to: e.to })); }
   // a click on the layout drill: true when it was the layout's
   click(b) {
     const s = this.#s; if (!s) return false;

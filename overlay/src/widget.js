@@ -932,7 +932,7 @@ class PlumbOverlay extends HTMLElement {
 
   // ── geometry that follows the page ───────────────────────
   #showReticle(element) {
-    const ticks = this.#root.querySelectorAll('.tick');
+    const ticks = this.#root.querySelectorAll('.tick[data-c]'); // the reticle's four corners (the said line's tick is an svg.tick too)
     if (!element) { ticks.forEach(t => t.hidden = true); return; }
     const b = element.getBoundingClientRect(), s = 8;
     const at = { tl: [b.left, b.top, 1, 1], tr: [b.right - s, b.top, -1, 1], bl: [b.left, b.bottom - s, 1, -1], br: [b.right - s, b.bottom - s, -1, -1] };

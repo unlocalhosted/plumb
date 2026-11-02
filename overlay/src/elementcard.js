@@ -19,6 +19,9 @@
  *  handles   shadow: the light pad (the sun's angle is the direction, its reach the height, the halo the softness).
  *            motion: the curve's two handles (past the top line overshoots), the duration on a timeline, the travel by
  *            its ghost. Each change asks the engine again and shows on the element; the card isn't redrawn mid-drag
+ *  where     every read and write is at the element's class site (locate.js classSiteOf): its own line when its
+ *            className is a plain string, else the usage that passes the classes in. The header names it, "N like it"
+ *            counts what is drawn from it; classes written nowhere as a plain string lock the card at rest, said once
  *  write     Write it (Enter) applies the same request: said in the fix panel with Undo (every file, newest first)
  *  keys      at rest ↑ ↓ the field, Enter opens it; in a drill ↑ ↓ step through the options, ← → turn the light (or
  *            change the time), R plays the motion, Enter writes, Esc goes back, then closes
@@ -26,7 +29,7 @@
  *            positions only, no loops, no plays
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
-import { locate, componentOf } from './locate.js';
+import { locate, componentOf, classSiteOf, siteMates, BUILT_IN_CODE } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js';
@@ -81,6 +84,7 @@ export const ELEMENT_CARD_CSS = `
   .ec .drill .val { font-weight: 550; }
   .ec .drill .sub { margin-left: auto; min-width: 0; color: var(--ink-3); font: 500 11.5px/1 ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ec .drill .chev { color: var(--ink-3); margin-left: 4px; }
+  .ec .drill[disabled] { cursor: default; color: var(--ink-3); } .ec .drill[disabled] .chev { visibility: hidden; }
   .ec .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: var(--ink-2); font-size: 12.5px; }
   .ec .more .show { margin-left: auto; height: 26px; padding: 0 9px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
   .ec .more .show:hover { background: var(--wash); }
@@ -204,7 +208,8 @@ export class ElementCard {
   #shown = new Map();   // prop → the inline value a preview replaced
   #loops = [];
   #writing = false; #wrong = null;
-  #props = null;        // the element's props: its line's hash, and the spacing scale
+  #props = null;        // the element's props, read at its class site: that line's hash, and the spacing scale
+  #site = null;         // where its classes are written: { file, line, column, hash, usage } or { refused }
   #spacing; #layout; #tidy; #plan = null;
 
   // root: the overlay's shadow root; host: { apply(at, body, said) → Promise<result>, said(text, undo), problems() → n,
@@ -221,9 +226,11 @@ export class ElementCard {
     const ours = (e) => e.composedPath().some((n) => n === this.#el || n === this.#strip || n.classList?.contains?.('fx') || n.classList?.contains?.('lay-line'));
     this.#spacing = new Spacing(root, {
       target: () => this.#target, name: (el) => el === this.#target ? this.name : componentOf(el) ?? el.localName,
-      scale: () => this.#scale(), where: (el) => this.#where(el), held: () => !!this.#hand, ours,
-      write: (writes, said) => this.#swaps(writes, said),
-      refused: (text) => { this.#wrong = text; this.#draw(); },
+      scale: () => this.#scale(), held: () => !!this.#hand, ours,
+      write: (edits, said) => this.#classWrite(edits, said),
+      locked: (el) => (el === this.#target ? this.#site?.refused ?? null : null),
+      mates: (el) => (el === this.#target && this.#site && !this.#site.refused ? this.#reach() : null),
+      refused: (text) => { if (text === this.#site?.refused) return; this.#wrong = text; this.#draw(); },
       release: () => this.#host.release?.(),
     });
     this.#tidy = new Tidy({ target: () => this.#target, props: () => this.#props, name: (el) => componentOf(el) ?? el.localName });
@@ -236,7 +243,7 @@ export class ElementCard {
     };
     addEventListener('keydown', space, true); addEventListener('keyup', space, true);
     this.#layout = new Layout(root, {
-      target: () => this.#target, redraw: () => this.#draw(), restrip: () => this.#stripDraw(), where: (el) => this.#where(el),
+      target: () => this.#target, redraw: () => this.#draw(), restrip: () => this.#stripDraw(),
     });
     this.#el.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b || b.disabled) return;
@@ -261,7 +268,7 @@ export class ElementCard {
 
   async edit(el) {
     this.#reset();
-    this.#target = el; this.#at = null; this.#data = null; this.#error = null; this.#row = 0;
+    this.#target = el; this.#at = null; this.#site = null; this.#data = null; this.#error = null; this.#row = 0;
     this.#state = 'loading';
     this.#el.hidden = false; this.#caret.hidden = false; this.#ring.hidden = false;
     this.#el.style.animation = 'none'; void this.#el.offsetWidth; this.#el.style.removeProperty('animation');
@@ -309,10 +316,16 @@ export class ElementCard {
       if (seq !== this.#seq) return;
       if (!at?.file) { const why = await this.#host.why?.(el).catch(() => null); if (seq !== this.#seq) return; this.#state = 'error'; this.#error = why ?? FIX.text.unreachable; return this.#draw(); }
       this.#at = at;
-      const [data, props] = await Promise.all([request('recipes', { file: at.file, line: at.line, column: at.column }), request('props', { file: at.file, line: at.line, column: at.column }).catch(() => null)]);
+      // where its classes are written: read and written there (a file's hash changes with every write: read each time)
+      const site = await classSiteOf(el);
+      if (seq !== this.#seq) return;
+      if (!site) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
+      this.#site = site;
+      const here = site.refused ? at : site, pos = { file: here.file, line: here.line, column: here.column };
+      const [data, props] = await Promise.all([site.refused ? null : request('recipes', pos), request('props', pos).catch(() => null)]);
       if (seq !== this.#seq) return;
       this.#props = props;
-      if (!data?.element) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
+      if (!site.refused && !data?.element) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
       this.#data = data; this.#state = 'ready'; this.#error = null;
     } catch (error) {
       if (seq !== this.#seq) return;
@@ -330,21 +343,51 @@ export class ElementCard {
     const out = [{ px: 0, token: '0' }, ...steps.map((s) => ({ px: px(s.value), token: s.token })).filter((s) => Number.isFinite(s.px))];
     return out.sort((a, b) => a.px - b.px).filter((s, i, all) => !i || s.px !== all[i - 1].px);
   }
-  // where an element is written, with its file's hash (the element in hand is already read)
-  async #where(el) {
-    if (el === this.#target && this.#props?.hash) return { file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash };
-    const at = await locate(el);
-    if (!at?.file) throw new Error(FIX.text.unreachable);
-    const p = await request('props', { file: at.file, line: at.line, column: at.column });
-    if (!p?.hash) throw new Error(FIX.text.unreachable);
-    return { file: p.file, line: p.line, column: p.column, hash: p.hash };
-  }
-  // class swaps written (layout, spacing), said in the fix panel with Undo
-  async #swaps(writes, said) {
+  get #locked() { return !!this.#site?.refused; }
+  // the other elements drawn from its class site
+  #reach() { return this.#site?.usage ? siteMates(this.#target, this.#site) : this.#host.elsewhere?.(this.#target) ?? 0; }
+  // class changes (layout, spacing: [{ el, from, to }]) written where each element's classes are written, in one go
+  // with one Undo, said in the fix panel: a swap on its own line, or the usage's className string rewritten (the classes
+  // replaced where the first of them was). A change written nowhere is refused before anything is written.
+  async #classWrite(edits, said) {
     this.#wrong = null;
-    const result = await this.#host.swaps(writes, said);
+    const names = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
+    const places = new Map(); // a class site → { site, edits }
+    for (const e of edits) {
+      const site = await classSiteOf(e.el, names(e.from));
+      if (!site) throw new Error(FIX.text.unreachable);
+      if (site.refused) throw new Error(site.refused);
+      const key = `${site.file}:${site.line}:${site.column}`;
+      if (!places.has(key)) places.set(key, { site, edits: [] });
+      const p = places.get(key);
+      if (!p.edits.some((x) => x.from === e.from && x.to === e.to)) p.edits.push(e);
+    }
+    const steps = [];
+    for (const [key, { site, edits: here }] of places) {
+      const at = { key, file: site.file, hash: site.hash, line: site.line, column: site.column };
+      // a usage's other prop (gapClass="gap-6"): its string, rewritten with the classes replaced where the first of them was
+      if (site.usage && site.prop !== 'className') {
+        let now = site.classes;
+        for (const e of here) {
+          const from = names(e.from), first = from.length ? now.indexOf(from[0]) : now.length;
+          const kept = now.filter((c) => !from.includes(c)), cut = now.slice(0, Math.max(0, first)).filter((c) => !from.includes(c)).length;
+          now = [...new Set([...kept.slice(0, cut), ...names(e.to), ...kept.slice(cut)])];
+        }
+        steps.push({ kind: 'prop', ...at, name: site.prop, value: now.join(' ') });
+        continue;
+      }
+      // a className: swaps on the classes as written. At a usage (a component's tag, where nothing can be added blind) an
+      // added class goes in after one of its classes, in the same swap
+      const adds = here.filter((e) => !names(e.from).length), swaps = here.filter((e) => names(e.from).length);
+      for (const e of swaps) steps.push({ kind: 'swap', ...at, from: e.from, to: e.to });
+      if (!adds.length) continue;
+      const anchor = site.usage ? [site.anchor, ...(site.classes ?? [])].find((c) => c && !swaps.some((e) => names(e.from).includes(c))) : null;
+      if (site.usage && !anchor) throw new Error(BUILT_IN_CODE);
+      if (anchor) steps.push({ kind: 'swap', ...at, from: anchor, to: [anchor, ...adds.flatMap((e) => names(e.to))].join(' ') });
+      else for (const e of adds) steps.push({ kind: 'swap', ...at, from: '', to: e.to });
+    }
+    const result = await this.#host.batch(steps, said);
     this.#host.said?.(said, result?.undo ?? []);
-    if (result?.refused?.length) { this.#wrong = result.refused.join(' '); this.#draw(); }
     return result;
   }
 
@@ -391,7 +434,7 @@ export class ElementCard {
 
   // ── the engine, asked again whenever the option in hand changes (one question at a time, the newest wins) ──
   #ask() {
-    if (!this.#pick || !this.#at) return;
+    if (!this.#pick || !this.#site || this.#locked) return;
     this.#again = true;
     if (!this.#asking) this.#loop();
   }
@@ -399,7 +442,7 @@ export class ElementCard {
     this.#asking = true;
     while (this.#again) {
       this.#again = false;
-      const seq = ++this.#pseq, body = this.#body(), at = this.#at;
+      const seq = ++this.#pseq, body = this.#body(), at = this.#site?.refused ? null : this.#site;
       if (!body || !at) break;
       let answer;
       try { answer = await post('recipes/preview', { file: at.file, line: at.line, column: at.column, ...body }); }
@@ -456,7 +499,7 @@ export class ElementCard {
 
   // ── drill in and out ──
   #drill(view) {
-    if (this.#state !== 'ready') return;
+    if (this.#state !== 'ready' || this.#locked) return;
     // working on the element puts down a cause the fix panel holds: one thing in hand
     this.#host.release?.();
     this.#view = view; this.#dir = 'fwd'; this.#peek = null; this.#dials = {}; this.#ease = this.#ms = null; this.#scope = 'one'; this.#preview = null; this.#wrong = null;
@@ -498,7 +541,8 @@ export class ElementCard {
   // ── the card ──
   #draw() {
     if (!this.#target || this.#hand) return;
-    const el = this.#target, name = this.name, at = this.#at ? `${this.#at.file.split('/').pop()}:${this.#at.line}` : '';
+    const el = this.#target, name = this.name, where = !this.#site ? null : this.#site.refused ? this.#at : this.#site;
+    const at = where ? `${where.file.split('/').pop()}:${where.line}` : '';
     const dark = this.#host.dark?.() ? 'dark' : 'light';
     this.#el.dataset.scheme = dark; this.#caret.dataset.scheme = dark;
     this.#el.setAttribute('aria-label', W.region(name));
@@ -506,7 +550,11 @@ export class ElementCard {
     let body = '';
     if (this.#state === 'loading') body = '<div class="fields"><div class="ph"></div><div class="ph"></div></div>';
     else if (this.#state === 'error') body = `<div class="down" role="alert">${esc(this.#error)}</div>`;
-    else {
+    else if (this.#locked) {
+      // nowhere a plain string: every field locked, the reason said once
+      const lock = (k, title) => `<button type="button" class="drill" disabled aria-label="${esc(`${title}: ${W.setInCode}`)}"><span class="ic"></span><span class="val">${title}</span><span class="sub">${esc(W.setInCode)}</span><span class="chev">›</span></button>`;
+      body = `<div class="fields" role="group">${lock('shadow', W.shadow)}${lock('motion', W.motion)}${this.#fieldsNow().includes('layout') ? lock('layout', W.layout) : ''}</div><div class="down" role="note">${esc(this.#site.refused)}</div>`;
+    } else {
       const e = this.#data.element, s = e.shadow, m = e.motion;
       const shadowSub = s.source === 'class' ? s.class : s.source === 'dynamic' ? W.setInCode : W.none;
       const motionSub = m.source === 'none' ? W.none : W.triggers[m.trigger ?? m.model?.trigger] ?? W.setInCode;
@@ -520,7 +568,7 @@ export class ElementCard {
         + `<div class="keys" aria-label="${esc(W.spacing)}"><span><b>${esc(W.spacing)}</b> ${esc(W.spacingHint)}</span>${W.spacingKeys.map(([k, v]) => `<span><b>${esc(k)}</b> ${esc(v)}</span>`).join('')}</div>`;
     }
     if (this.#wrong && this.#state === 'ready') body += `<div class="down" role="alert">${esc(this.#wrong)}</div>`;
-    const reach = this.#state === 'ready' ? this.#host.elsewhere?.(el) ?? 0 : 0;
+    const reach = this.#state === 'ready' && !this.#locked ? this.#reach() : 0;
     const problems = this.#host.problems?.() ?? 0;
     this.#el.innerHTML = `<div class="hd"><span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
       + (reach ? `<div class="reach">${esc(FIX.text.reach(reach))}</div>` : '')
@@ -533,7 +581,7 @@ export class ElementCard {
   #layoutHtml(name, at) {
     const edits = this.#layout.edits();
     const writes = edits.length
-      ? edits.map((e) => `<div class="edit"><div class="file">${esc(e.el === this.#target ? name : componentOf(e.el) ?? e.el.localName)}<span>${esc(e.rows > 1 ? W.mates(e.rows - 1) : e.el.localName)}</span></div>${e.from ? `<div class="line del">- ${esc(e.from)}</div>` : ''}<div class="line add">+ ${esc(e.to)}</div></div>`).join('')
+      ? edits.map((e) => `<div class="edit"><div class="file">${esc(e.el === this.#target ? name : componentOf(e.el) ?? e.el.localName)}<span>${esc(e.el === this.#target ? at : e.rows > 1 ? W.mates(e.rows - 1) : e.el.localName)}</span></div>${e.from ? `<div class="line del">- ${esc(e.from)}</div>` : ''}<div class="line add">+ ${esc(e.to)}</div></div>`).join('')
       : `<div class="note">${esc(W.asWritten)}</div>`;
     return `<div class="hd"><button type="button" class="back" aria-label="${esc(`Back to ${name}`)}">‹ ${esc(name)}</button><span class="title">${W.layout}</span><span class="at">${esc(at)}</span></div>`
       + `<div class="body"${this.#dir ? ` data-in="${this.#dir}"` : ''}>${this.#layout.html()}<div class="sec writes"><div class="lab">${W.writes}</div>${writes}${this.#wrong ? `<div class="refuse" role="alert">${esc(this.#wrong)}</div>` : ''}</div></div>`
@@ -571,7 +619,7 @@ export class ElementCard {
     }
   }
   // the fields at rest: Layout only for an element with things inside it
-  #fieldsNow() { return ['shadow', 'motion', ...(this.#target && [...this.#target.children].length ? ['layout'] : []), ...(this.#target && Tidy.offered(this.#target) ? ['tidy'] : [])]; }
+  #fieldsNow() { return ['shadow', 'motion', ...(this.#target && [...this.#target.children].length ? ['layout'] : []), ...(this.#target && !this.#locked && Tidy.offered(this.#target) ? ['tidy'] : [])]; }
   #layoutSub() {
     const cs = getComputedStyle(this.#target);
     if (/grid/.test(cs.display)) return W.layoutNow('grid', W.nColumns(cs.gridTemplateColumns.split(' ').filter(Boolean).length));
@@ -841,7 +889,7 @@ export class ElementCard {
     const text = W.used(name, o.name, files);
     this.#writing = true; this.#draw();
     try {
-      const result = await this.#host.apply({ file: this.#at.file, line: this.#at.line, column: this.#at.column, hash: this.#data.hash }, body, text);
+      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, body, text);
       this.#writing = false;
       this.#back();
       this.#host.said?.(text, result?.undo ?? []);
@@ -857,10 +905,10 @@ export class ElementCard {
     const s = this.#layout.state, said = W.laidOut(this.name, s.mode, s.sub);
     this.#writing = true; this.#wrong = null; this.#draw();
     try {
-      const writes = await this.#layout.writes();
+      const edits = this.#layout.writes();
+      await this.#classWrite(edits, said);
       this.#writing = false;
       this.#back();
-      await this.#swaps(writes, said);
     } catch (error) {
       this.#writing = false;
       this.#wrong = error?.message ?? String(error);

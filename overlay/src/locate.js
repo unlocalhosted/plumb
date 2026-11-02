@@ -9,6 +9,7 @@
 import { getOwnerStack, getRawOwnerStack, isSourceFile } from '../vendor/bippy/source.js';
 import { request } from './api.js';
 import { sourceMapVersion, mapFrame } from './sourcemap.js';
+import { FIX } from './words.js';
 
 // Next's ?id names an eval module, and some versions reuse that id on later
 // saves. Only new Error evidence checks its current source version; retained
@@ -250,6 +251,102 @@ export async function locate(element, options = {}) {
   if (index >= 0) chain.splice(index, 1);
   chain.unshift(at);
   return { ...at, tag: element.localName, via: 'stamp', chain, index: 0 };
+}
+
+// Where an element's class list is written: its class site (docs/briefs/qa-fixes.md, cause 1). The server attributes
+// every class the element wears to the string it is written in (GET classes): the element's own line, or a usage up the
+// chain that passes classes in as a prop (a Link used in a list, a Box given its className, a card given gapClass).
+// The site is the JSX at that place: for `need` (the classes a change replaces) the one place that writes all of them;
+// with none, the place that writes most of the element's classes. Answers { file, line, column, hash, usage, prop,
+// classes (that prop's string as a list, or null when it is built in code), anchor (a class of it, for an added one) },
+// { refused } with a sentence, or null when the element can't be placed at all.
+export const BUILT_IN_CODE = FIX.card.builtInCode, SPLIT = FIX.card.splitClasses;
+const sameFile = (a, b) => a === b || a.endsWith('/' + b) || b.endsWith('/' + a);
+export async function classSiteOf(element, need = []) {
+  const at = await locate(element, { chain: true });
+  if (!at?.file) return null;
+  const links = [at, ...(at.chain ?? []).slice(1, 6)].filter((l) => l?.file);
+  // the classes React gave it (a fix tried on the page swaps the element's own class list for a moment)
+  const given = hostOf(element)?.memoizedProps?.className;
+  const wears = typeof given === 'string' ? given.split(/\s+/).filter(Boolean) : [...element.classList];
+  const asked = new Map(), structure = (l) => { if (!asked.has(l)) asked.set(l, request('structure', { file: l.file, line: l.line, column: l.column }).catch(() => null)); return asked.get(l); };
+  // nothing worn yet: a className is added on its own line, when it has none (not one built in code or spread in)
+  if (!wears.length) {
+    const s = await structure(at);
+    return s && !need.length && s.props?.className === undefined ? { file: s.file, line: s.line, column: s.column, hash: s.hash, usage: false, prop: 'className', classes: [], anchor: null } : { refused: BUILT_IN_CODE };
+  }
+  const read = await request('classes', { file: at.file, line: at.line, column: at.column, classes: wears.join(' ') }).catch(() => null);
+  // each class to the JSX it is written in: a link with one of its strings on the link's own line; else (one string, a
+  // tag whose props run over a few lines) the nearest link just above it. A class the server can't narrow (props spread
+  // into the element) lists every string it may come from: only those on the chain count
+  const linkOf = new Map();
+  for (const c of read?.classes ?? []) {
+    const sites = c.sites ?? [];
+    const on = [...new Set(sites.flatMap((s) => links.filter((x) => sameFile(x.file, s.file) && x.line === s.line)))];
+    const near = !c.ambiguous && sites.length === 1 ? links.filter((x) => sameFile(x.file, sites[0].file) && x.line <= sites[0].line && sites[0].line - x.line <= 6).sort((a, b) => b.line - a.line)[0] : null;
+    const l = on.length === 1 ? on[0] : !on.length ? near : null;
+    if (l) linkOf.set(c.token, l);
+  }
+  // classes the server can't follow into another file (a Link used on another page): up the chain, a usage's string prop
+  // whose classes it wears is where they are written; a usage that builds its className in code puts the rest together
+  for (const l of links.slice(1)) {
+    if (wears.every((c) => linkOf.has(c))) break;
+    const s = await structure(l);
+    for (const v of Object.values(s?.props ?? {})) {
+      const list = typeof v === 'string' ? v.split(/\s+/).filter(Boolean) : [];
+      if (list.length && list.every((c) => wears.includes(c))) for (const c of list) if (!linkOf.has(c)) linkOf.set(c, l);
+    }
+    if (s?.props?.className === null) { for (const c of wears) if (!linkOf.has(c)) linkOf.set(c, l); break; }
+  }
+  let link = null, here = [];
+  if (need.length) {
+    const ls = need.map((c) => linkOf.get(c));
+    if (ls.some((l) => !l)) return { refused: BUILT_IN_CODE };
+    if (new Set(ls).size > 1) return { refused: SPLIT };
+    link = ls[0]; here = need;
+  } else {
+    const count = new Map();
+    for (const l of linkOf.values()) count.set(l, (count.get(l) ?? 0) + 1);
+    link = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    if (!link) return { refused: BUILT_IN_CODE };
+    here = [...linkOf].filter(([, l]) => l === link).map(([c]) => c);
+  }
+  const usage = link !== at, s = await structure(link);
+  if (!s) return { refused: BUILT_IN_CODE };
+  const site = { file: s.file, line: s.line, column: s.column, hash: s.hash, usage };
+  if (!usage) {
+    // its own className: written when the server can read it as written (a string, a template, cn()), not built in code
+    const p = await request('props', { file: s.file, line: s.line, column: s.column }).catch(() => null);
+    const dynamic = p?.props?.find((x) => x.source !== 'inline' && x.dynamic)?.dynamic;
+    if (dynamic) return { refused: BUILT_IN_CODE };
+    const cls = typeof s.props?.className === 'string' ? s.props.className.split(/\s+/).filter(Boolean) : null;
+    return { ...site, prop: 'className', classes: cls, anchor: here.at(-1) ?? null };
+  }
+  // a usage: the prop whose string holds those classes; a className built in code there is still the className
+  const strings = Object.entries(s.props ?? {}).filter(([, v]) => typeof v === 'string').map(([k, v]) => [k, v.split(/\s+/).filter(Boolean)]);
+  const held = strings.filter(([, v]) => here.every((c) => v.includes(c))).sort((a, b) => (b[0] === 'className') - (a[0] === 'className'))[0];
+  if (held) return { ...site, prop: held[0], classes: held[1], anchor: held[1].at(-1) ?? null };
+  if (s.props?.className === null) return { ...site, prop: 'className', classes: null, anchor: here.at(-1) ?? null };
+  return { refused: BUILT_IN_CODE };
+}
+// The other elements on the page drawn from an element's class site, outside it: the elements with its own stamp, and
+// when the site is a usage, only those whose component was used at that line (the rows of one list, not every Link).
+export function siteMates(element, site) {
+  const own = element?.getAttribute('data-plumb-source');
+  if (!own) return 0;
+  const same = [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(own)}"]`)].filter((x) => x !== element && !element.contains(x));
+  if (!site?.usage) return same.length;
+  const there = (stamp) => {
+    const m = typeof stamp === 'string' && /^(.+):(\d+):\d+#/.exec(stamp);
+    if (!m || +m[2] !== site.line) return false;
+    const file = decodeURIComponent(m[1]);
+    return site.file === file || site.file.endsWith('/' + file);
+  };
+  return same.filter((x) => {
+    const key = fiberKey(x);
+    for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.['data-plumb-source'])) return true;
+    return false;
+  }).length;
 }
 
 async function locateOwner(element, options = {}) {
