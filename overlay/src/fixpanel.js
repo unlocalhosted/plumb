@@ -271,6 +271,7 @@ export class FixPanel {
     this.#card = new ElementCard(root, {
       apply: (at, body, said) => this.#host.recipe(at, body, said),
       swaps: (writes, said) => this.#host.swaps(writes, said),
+      batch: (steps, said) => this.#host.batch(steps, said),
       bar: () => this.rect,
       said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#live().filter((x) => !noteOf(x)).length,

@@ -101,6 +101,7 @@ export class Blueprint {
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said) => this.#applyRecipe(at, body, said),
       swaps: (writes, said) => this.#swapsWrite(writes, said),
+      batch: (steps, said) => this.#batchWrite(steps, said),
       unwant: () => { this.#want = null; },
       // why an element can't be placed in the source, as the panel says it
       why: async (el) => { const state = await this.#host.readMarks?.(el); return state?.status === 'unplaced' ? (state.outsideSource && state.file ? FIX.outside(state.file) : FIX.unreachable) : null; },
@@ -499,6 +500,36 @@ export class Blueprint {
     const files = new Set([at.file, ...(result?.undo ?? []).map((h) => h.file).filter(Boolean)]);
     for (const file of files) this.invalidate({ file });
     return result;
+  }
+  // A batch of class edits in several places (the element card's Tidy): swaps on a line and string props at a usage,
+  // each file's hash carried from one write to the next; all or nothing (what was written is taken back if one fails);
+  // one said line with every undo handle
+  async #batchWrite(steps, said) {
+    this.#host.remember?.(said);
+    const undo = [], hash = new Map(), files = new Set();
+    const swaps = new Map(); // file → one swaps call for all of its lines
+    for (const st of steps) if (st.kind === 'swap') { if (!swaps.has(st.file)) swaps.set(st.file, []); swaps.get(st.file).push({ line: st.line, column: st.column, from: st.from, to: st.to }); }
+    try {
+      const done = new Set();
+      for (const st of steps) {
+        const h = hash.get(st.file) ?? st.hash;
+        let r;
+        if (st.kind === 'swap') { if (done.has(st.file)) continue; done.add(st.file); r = await post('swaps', { file: st.file, hash: h, edits: swaps.get(st.file) }); if (r?.refused?.length) throw Object.assign(new Error(r.refused.map((x) => x.reason).join(' ')), { status: 400, partial: r }); }
+        else r = await post('prop', { file: st.file, hash: h, line: st.line, column: st.column, name: st.name, value: st.value });
+        if (r?.undo) undo.push(r.undo);
+        if (r?.hash) hash.set(st.file, r.hash);
+        files.add(st.file);
+      }
+    } catch (error) {
+      if (error?.partial?.undo) undo.push(error.partial.undo);
+      for (const h of [...undo].reverse()) await post('undo', { id: h.id }).catch(() => {});
+      if (answeredNo(error)) this.#host.forgetResume?.();
+      for (const f of files) this.invalidate({ file: f });
+      throw error;
+    }
+    this.#host.remember?.(said, undo);
+    for (const f of files) this.invalidate({ file: f });
+    return { undo };
   }
   // Class swaps on one or more lines (the element card's layout and spacing): one POST swaps per file, remembered first as
   // every write is; each file's undo handle goes with the said line. A place the server refuses is said in its words.

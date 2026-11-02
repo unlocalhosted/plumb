@@ -29,7 +29,8 @@ import { request, post } from './api.js';
 import { locate, componentOf } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
-import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js'; // layer 2: Layout › and the spacing on the element
+import { Spacing, Layout, LAYOUT_CSS, freeze, groundOf } from './layoutcard.js';
+import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 
 const W = FIX.card;
 const WIDTH = 276, GAP = 16, EDGE = 12;
@@ -40,6 +41,7 @@ const CV = { w: 252, h: 120, pad: 18 };      // the curve
 const LOOP = 2400;                           // ms between plays of a motion copy
 const LIMITS = { light: [-60, 60], height: [0.25, 3], softness: [0.5, 2], ms: [60, 600] };
 const ICON_LAYOUT = '<svg viewBox="0 0 14 14"><rect x="1.5" y="2" width="4.5" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="2" width="4.5" height="4.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="7.8" width="4.5" height="4.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+const ICON_TIDY = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 3.5h6M2 7h10M2 10.5h8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
 const ICON_MOTION = '<svg viewBox="0 0 14 14"><path d="M2 11c3 0 4-8 10-8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/></svg>';
 const CURSOR = '<svg viewBox="0 0 16 16"><path d="M2 1.5v11.2l3.1-2.9 2 4.6 2-.9-2-4.5 4.3-.2z" fill="#1c1b19" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>';
 const clamp = (n, [lo, hi]) => Math.max(lo, Math.min(hi, n));
@@ -157,6 +159,17 @@ export const ELEMENT_CARD_CSS = `
   .v.now, .v.yours { background: rgb(0 0 0 / .06); color: var(--ink-2); } .v.same { background: rgb(26 158 98 / .12); color: #137a4b; } .v.close { background: rgb(47 107 255 / .1); color: #2f5bd3; } .v.new { background: #fff3e8; color: #a8551b; } .v.need { background: #fde9e5; color: #b23a1e; }
   :host([data-holding]), :host([data-holding]) * { cursor: grabbing !important; }
   .ec-strip { overflow: hidden; } .ec-strip .reel { flex: 1 1 auto; }
+  /* Tidy this card: the button at rest, the list of changes in the drill */
+  .ec .tidy-go { display: flex; align-items: center; gap: 7px; width: calc(100% - 24px); margin: 0 12px 10px; height: 32px; padding: 0 10px; border-radius: 9px; background: rgb(47 107 255 / .08); color: #2f5bd3; font-weight: 600; outline: none; transition: background 120ms, box-shadow 120ms, scale 140ms; }
+  @media (hover: hover) and (pointer: fine) { .ec .tidy-go:hover { background: rgb(47 107 255 / .13); } }
+  .ec .tidy-go:active { scale: .985; } .ec .tidy-go[data-at], .ec .tidy-go:focus-visible { box-shadow: 0 0 0 1.5px var(--sky); }
+  .ec .tidy-go svg { width: 14px; height: 14px; }
+  .ec .tidy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .ec .tidy-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 7px 8px; border-radius: 9px; background: var(--wash); }
+  .ec .tidy-row .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; } .ec .tidy-row .what b { font-weight: 600; }
+  .ec .tidy-row .ft { font: 500 11.5px/1.4 ui-monospace, monospace; white-space: nowrap; color: var(--sky); } .ec .tidy-row .ft i { font-style: normal; color: var(--ink-3); }
+  .ec .tidy-row small { grid-column: 1 / -1; color: var(--ink-3); font-size: 11px; }
+  .ec .lab .was { font-weight: 600; color: #b23a1e; }
   @media (prefers-reduced-motion: reduce) { .ec, .ec .body[data-in], .ec-strip { animation: none; } }
 ` + LAYOUT_CSS;
 
@@ -192,7 +205,7 @@ export class ElementCard {
   #loops = [];
   #writing = false; #wrong = null;
   #props = null;        // the element's props: its line's hash, and the spacing scale
-  #spacing; #layout;
+  #spacing; #layout; #tidy; #plan = null;
 
   // root: the overlay's shadow root; host: { apply(at, body, said) → Promise<result>, said(text, undo), problems() → n,
   // show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null>, release() }
@@ -213,6 +226,15 @@ export class ElementCard {
       refused: (text) => { this.#wrong = text; this.#draw(); },
       release: () => this.#host.release?.(),
     });
+    this.#tidy = new Tidy({ target: () => this.#target, props: () => this.#props, name: (el) => componentOf(el) ?? el.localName });
+    // held Space shows a tidied card as it was (before the glass takes Space for the page: this listener is older)
+    const space = (e) => {
+      if (this.#view !== 'tidy' || e.code !== 'Space' || !this.#tidy.changes.length || e.composedPath()[0]?.matches?.('input, textarea, [contenteditable]')) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.type === 'keydown' && e.repeat) return;
+      this.#tidy.hold(e.type === 'keydown'); this.#draw();
+    };
+    addEventListener('keydown', space, true); addEventListener('keyup', space, true);
     this.#layout = new Layout(root, {
       target: () => this.#target, redraw: () => this.#draw(), restrip: () => this.#stripDraw(), where: (el) => this.#where(el),
     });
@@ -259,7 +281,7 @@ export class ElementCard {
   }
   #reset() {
     this.#hand?.cancel();
-    this.#unshow(); this.#stripClose(); this.#layout.close();
+    this.#unshow(); this.#stripClose(); this.#layout.close(); this.#tidy.close(); this.#plan = null;
     this.#view = null; this.#pick = null; this.#peek = null; this.#preview = null; this.#dials = {}; this.#ease = this.#ms = null; this.#scope = 'one'; this.#wrong = null;
   }
   // a file was written or undone: the element is read again (a re-render may have replaced it)
@@ -440,6 +462,7 @@ export class ElementCard {
     this.#view = view; this.#dir = 'fwd'; this.#peek = null; this.#dials = {}; this.#ease = this.#ms = null; this.#scope = 'one'; this.#preview = null; this.#wrong = null;
     this.#pick = view === 'shadow' ? this.#options('shadow').find((o) => o.now)?.key ?? null : null;
     if (view === 'layout') this.#layout.open();
+    if (view === 'tidy') this.#planTidy();
     this.#draw();
     this.#stripDraw();
     if (this.#pick) this.#ask();
@@ -448,7 +471,7 @@ export class ElementCard {
     this.#hand?.cancel();
     const was = this.#view;
     this.#view = null; this.#dir = 'back'; this.#pick = this.#peek = null; this.#preview = null; this.#wrong = null;
-    this.#unshow(); this.#stripClose(); this.#layout.close();
+    this.#unshow(); this.#stripClose(); this.#layout.close(); this.#tidy.close(); this.#plan = null;
     this.#row = Math.max(0, this.#fieldsNow().indexOf(was));
     this.#draw();
   }
@@ -493,6 +516,7 @@ export class ElementCard {
       const drill = (k, lead, title, sub) => `<button type="button" class="drill" data-open="${k}" aria-label="${esc(`${title}: ${sub}`)}"${at(k)}>${lead}<span class="val">${title}</span><span class="sub">${esc(sub)}</span><span class="chev">›</span></button>`;
       body = `<div class="fields" role="group">${drill('shadow', tile, W.shadow, shadowSub)}${drill('motion', `<span class="ic">${ICON_MOTION}</span>`, W.motion, motionSub)}`
         + (fields.includes('layout') ? drill('layout', `<span class="ic">${ICON_LAYOUT}</span>`, W.layout, this.#layoutSub()) : '') + `</div>`
+        + (fields.includes('tidy') ? `<button type="button" class="tidy-go" data-open="tidy"${at('tidy')}>${ICON_TIDY}${esc(W.tidy.button)}</button>` : '')
         + `<div class="keys" aria-label="${esc(W.spacing)}"><span><b>${esc(W.spacing)}</b> ${esc(W.spacingHint)}</span>${W.spacingKeys.map(([k, v]) => `<span><b>${esc(k)}</b> ${esc(v)}</span>`).join('')}</div>`;
     }
     if (this.#wrong && this.#state === 'ready') body += `<div class="down" role="alert">${esc(this.#wrong)}</div>`;
@@ -515,8 +539,39 @@ export class ElementCard {
       + `<div class="body"${this.#dir ? ` data-in="${this.#dir}"` : ''}>${this.#layout.html()}<div class="sec writes"><div class="lab">${W.writes}</div>${writes}${this.#wrong ? `<div class="refuse" role="alert">${esc(this.#wrong)}</div>` : ''}</div></div>`
       + `<div class="acts"><button type="button" class="use"${edits.length && !this.#writing ? '' : ' disabled'}>${W.writeIt} <kbd>↵</kbd></button>${edits.length ? `<button type="button" class="putback">${W.putBack}</button>` : ''}<span class="grow"></span><span class="hint"><kbd>esc</kbd> ${W.back}</span></div>`;
   }
+  // Tidy: every change, in words; where each is written is worked out as it opens (a change with nowhere to be written
+  // is left alone, and said)
+  #planTidy() {
+    const changes = this.#tidy.open(), mine = (this.#plan = { reading: !!changes.length, steps: [], left: [] });
+    if (!changes.length) return;
+    this.#tidy.writes().then((p) => { if (this.#plan === mine) { Object.assign(mine, p, { reading: false }); this.#draw(); } },
+      (error) => { if (this.#plan === mine) { mine.reading = false; mine.left = [error?.message ?? String(error)]; this.#draw(); } });
+  }
+  #tidyHtml(name, at) {
+    const p = this.#plan, can = !!p && !p.reading && p.steps.length > 0 && !this.#writing;
+    const left = (p?.left ?? []).map((t) => `<div class="note">${esc(t)}</div>`).join('');
+    return `<div class="hd"><button type="button" class="back" aria-label="${esc(`Back to ${name}`)}">‹ ${esc(name)}</button><span class="title">${W.tidy.title}</span><span class="at">${esc(at)}</span></div>`
+      + `<div class="body"${this.#dir ? ` data-in="${this.#dir}"` : ''}>${this.#tidy.html()}${left ? `<div class="sec">${left}</div>` : ''}${this.#wrong ? `<div class="sec"><div class="refuse" role="alert">${esc(this.#wrong)}</div></div>` : ''}</div>`
+      + (this.#tidy.changes.length ? `<div class="acts"><button type="button" class="use"${can ? '' : ' disabled'}>${p?.reading ? W.reading : W.writeIt} <kbd>↵</kbd></button><span class="grow"></span><span class="hint"><kbd>esc</kbd> ${W.back}</span></div>` : `<div class="acts"><span class="grow"></span><span class="hint"><kbd>esc</kbd> ${W.back}</span></div>`);
+  }
+  async #useTidy() {
+    const p = this.#plan;
+    if (this.#writing || !p || p.reading || !p.steps.length) return;
+    const said = W.tidy.tidied(this.name, this.#tidy.changes.length);
+    this.#writing = true; this.#wrong = null; this.#draw();
+    try {
+      const result = await this.#host.batch(p.steps, said);
+      this.#writing = false;
+      this.#back();
+      this.#host.said?.(said, result?.undo ?? []);
+    } catch (error) {
+      this.#writing = false;
+      this.#wrong = error?.message ?? String(error);
+      this.#draw();
+    }
+  }
   // the fields at rest: Layout only for an element with things inside it
-  #fieldsNow() { return ['shadow', 'motion', ...(this.#target && [...this.#target.children].length ? ['layout'] : [])]; }
+  #fieldsNow() { return ['shadow', 'motion', ...(this.#target && [...this.#target.children].length ? ['layout'] : []), ...(this.#target && Tidy.offered(this.#target) ? ['tidy'] : [])]; }
   #layoutSub() {
     const cs = getComputedStyle(this.#target);
     if (/grid/.test(cs.display)) return W.layoutNow('grid', W.nColumns(cs.gridTemplateColumns.split(' ').filter(Boolean).length));
@@ -525,6 +580,7 @@ export class ElementCard {
   }
   #drillHtml(name, at) {
     if (this.#view === 'layout') return this.#layoutHtml(name, at);
+    if (this.#view === 'tidy') return this.#tidyHtml(name, at);
     const shadow = this.#view === 'shadow', o = this.#option(), p = this.#preview;
     let body = '';
     if (!shadow) body += `<div class="seg tabs" role="group">${['hover', 'enter'].map((t) => `<button type="button" data-tab="${t}" aria-pressed="${this.#tab === t}">${esc(W.tabs[t])}</button>`).join('')}</div>`;
@@ -673,7 +729,7 @@ export class ElementCard {
   // ── the strip: the element, once per option ──
   #stripDraw() {
     this.#stopLoops();
-    if (!this.#view || this.#state !== 'ready') return this.#stripClose();
+    if (!this.#view || this.#view === 'tidy' || this.#state !== 'ready') return this.#stripClose();
     const frozen = freeze(this.#target);
     this.#strip.style.background = groundOf(this.#target);
     if (this.#view === 'layout') {
@@ -778,6 +834,7 @@ export class ElementCard {
   // ── write: the request previewed, applied; said in the fix panel with Undo ──
   async #use() {
     if (this.#view === 'layout') return this.#useLayout();
+    if (this.#view === 'tidy') return this.#useTidy();
     if (!this.#canUse()) return;
     const o = this.#option(), body = this.#body(o), name = this.name;
     const files = [...new Set(this.#preview.writes.map((w) => w.file.split('/').pop()))];
@@ -828,7 +885,7 @@ export class ElementCard {
     }
     if (k === 'Escape') { this.#back(); return true; }
     if (k === 'Enter') { this.#use(); return true; }
-    if (this.#view === 'layout') return k !== '.';
+    if (this.#view === 'layout' || this.#view === 'tidy') return k !== '.';
     if (k === 'r' || k === 'R') { this.#playNow(); return true; }
     if (k === 'ArrowUp' || k === 'ArrowDown') {
       const opts = this.#options(); if (!opts.length) return true;
