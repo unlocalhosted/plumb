@@ -45,7 +45,16 @@ const bundleOf = (el) => {
   return { size, weight: parseInt(cs.fontWeight, 10) || 400, lineHeight: cs.lineHeight === 'normal' ? null : px(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing), caps: cs.textTransform === 'uppercase', color: cs.color, muted: /\/\s*0?\.\d+\)$/.test(cs.color) };
 };
 const key = (b) => `${b.size}|${b.weight}|${b.caps ? 'caps' : ''}`;
-const texts = (container) => [...container.querySelectorAll('*')].filter((el) => !el.closest('plumb-overlay') && letters(ownText(el)) && getComputedStyle(el).display !== 'none');
+// an inline run inside running text (bold or emphasised words in a paragraph) is part of that paragraph, not a level
+const inRun = (el) => getComputedStyle(el).display === 'inline' && letters(ownText(el.parentElement ?? el));
+const texts = (container) => [...container.querySelectorAll('*')].filter((el) => !el.closest('plumb-overlay') && letters(ownText(el)) && getComputedStyle(el).display !== 'none' && !inRun(el));
+// the same kind of thing: drawn by the same line of code (its stamp), else the same tag wearing the same classes
+const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
+const sameKind = (a, b) => { const sa = stampOf(a), sb = stampOf(b); return sa && sb ? sa === sb : a.localName === b.localName && (a.getAttribute('class') ?? '') === (b.getAttribute('class') ?? ''); };
+// a shape, not a corner: a circle or a pill (rounded-full reads as a huge radius); never "fixed"
+const shaped = (el, r) => { const b = el.getBoundingClientRect(); return r >= Math.min(b.width, b.height) / 2 - 0.5; };
+// a control people press or type into: its corner is part of what it is, never flattened
+const control = (el) => /^(?:button|input|select|textarea)$/.test(el.localName) || (el.localName === 'a' && el.hasAttribute('href')) || /^(?:button|link|tab|checkbox|switch|menuitem)$/.test(el.getAttribute('role') ?? '');
 const mode = (values) => { const counts = new Map(); for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1); return [...counts].sort((a, b) => b[1] - a[1] || (a[0] > b[0] ? 1 : -1))[0]?.[0]; };
 const nearest = (steps, value) => steps.reduce((best, s) => (Math.abs(s - value) < Math.abs(best - value) ? s : best), steps[0]);
 const stepBelow = (steps, value) => [...steps].filter((s) => s < value).at(-1) ?? null;
@@ -135,14 +144,17 @@ export function tidy(scope, scale) {
   const container = isContainer(scope) ? scope : containerOf(scope);
   if (!container) return changes;
   const levels = levelsOf(container), s = scaleFor(scale, levels);
-  const add = (el, prop, from, to, rule, reason) => { if (from !== to && to !== null && to !== undefined && !changes.some((c) => c.el === el && c.prop === prop)) changes.push({ el, prop, from, to, rule, reason, laws: lawsOf(`hierarchy/${rule}`) }); };
+  const add = (el, prop, from, to, rule, reason, extra = {}) => { if (from !== to && to !== null && to !== undefined && !changes.some((c) => c.el === el && c.prop === prop)) changes.push({ el, prop, from, to, rule, reason, laws: lawsOf(`hierarchy/${rule}`), ...extra }); };
+  // padding raised to a level: only the sides below it move (a 10px by 14px card raised to 12 keeps its 14px sides)
+  const raise = (to) => Object.fromEntries(Object.entries(space.padding).map(([side, v]) => [side, Math.max(v, to)]));
   const runtime = (el) => /var\(--z|calc\(/.test(el.getAttribute('class') ?? '') || el.closest('svg') || el.localName === 'text';
   // T3: cousins at the same level (the same index in sibling containers) share the modal bundle
-  const siblings = container.parentElement ? [...container.parentElement.children].filter((c) => isContainer(c) && c !== container) : [];
+  // the cards beside it are cards of the same kind (cards of another kind beside it set nothing for it)
+  const siblings = container.parentElement ? [...container.parentElement.children].filter((c) => isContainer(c) && c !== container && sameKind(c, container)) : [];
   for (const level of levels) for (const el of level.members) {
     if (runtime(el)) continue;
     const index = [...el.parentElement.children].indexOf(el), depthParent = el.parentElement;
-    const cousins = siblings.map((c) => { let p = c; for (const step of pathTo(container, depthParent)) p = p?.children[step]; return p?.children[index]; }).filter((c) => c && letters(ownText(c))).map(bundleOf);
+    const cousins = siblings.map((c) => { let p = c; for (const step of pathTo(container, depthParent)) p = p?.children[step]; return p?.children[index]; }).filter((c) => c && c.localName === el.localName && letters(ownText(c))).map(bundleOf);
     if (cousins.length < 2) continue;
     const size = mode(cousins.map((b) => b.size)), weight = mode(cousins.map((b) => b.weight));
     if (cousins.filter((b) => b.size === size).length > cousins.length / 2) add(el, 'font-size', level.bundle.size, size, 'T3', `${level.role}: ${cousins.filter((b) => b.size === size).length} of ${cousins.length} peers are ${size}px`);
@@ -176,17 +188,19 @@ export function tidy(scope, scale) {
       const lowerInside = stepBelow(s.spacing, between), raisePadding = stepAbove(s.spacing, inside);
       const viaGap = lowerInside !== null ? inside - lowerInside : Infinity, viaPadding = raisePadding !== null ? raisePadding - space.around : Infinity;
       if (viaGap <= viaPadding && lowerInside !== null) add(container, 'gap', inside, lowerInside, 'S1', `inside ${inside}px is not below the ${between}px between ${container.localName}s`);
-      else if (raisePadding !== null) add(container, 'padding', space.around, raisePadding, 'S1', `around ${space.around}px is not above the ${inside}px inside`);
-    } else if (space.around < between && space.around > 0) add(container, 'padding', space.around, nearest(s.spacing, between), 'S3', `around ${space.around}px is below the ${between}px between ${container.localName}s`);
+      else if (raisePadding !== null) add(container, 'padding', space.around, raisePadding, 'S1', `around ${space.around}px is not above the ${inside}px inside`, { sides: raise(raisePadding) });
+    } else if (space.around < between && space.around > 0) { const to = nearest(s.spacing, between); add(container, 'padding', space.around, to, 'S3', `around ${space.around}px is below the ${between}px between ${container.localName}s`, { sides: raise(to) }); }
   }
-  // L2: inner corners concentric with the container's
+  // L2: inner corners concentric with the container's. A shape (a circle, a pill) is what it is, inside a pill or not;
+  // a control keeps a corner (never flattened to 0)
   const outer = px(getComputedStyle(container).borderRadius);
-  if (outer > 0) for (const kid of kids) {
+  if (outer > 0 && !shaped(container, outer)) for (const kid of kids) {
     const r = px(getComputedStyle(kid).borderRadius);
-    if (!r || runtime(kid)) continue;
+    if (!r || runtime(kid) || shaped(kid, r)) continue;
     const rect = kid.getBoundingClientRect(), box = container.getBoundingClientRect();
     const inset = Math.round(Math.min(rect.left - box.left, rect.top - box.top) * 100) / 100;
     const want = nearest(s.radii, Math.max(0, outer - inset));
+    if (want === 0 && control(kid)) continue;
     if (Math.abs(want - r) >= 1) add(kid, 'radius', r, want, 'L2', `concentric with the ${container.localName}'s ${outer}px corner, ${inset}px in`);
   }
   // L3: edges within one step of the common edge align to it (a margin of one step at most)

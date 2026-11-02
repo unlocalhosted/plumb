@@ -26,13 +26,14 @@
  *            reduced motion: positions only, no spring, roll or swell
  * ───────────────────────────────────────────────────────── */
 import { request } from './api.js';
-import { locate, componentOf } from './locate.js';
+import { locate, componentOf, classSiteOf } from './locate.js';
+import { clearOf } from './geometry.js';
 import { esc } from './choices.js';
 import { namesOf } from './typesystem.js';
 import { FIX } from './words.js';
 import { contextOf } from './hierarchy.js'; // the element's place among its peers: the step that fits, the ones that break the order
 
-const W = FIX.text;
+const W = FIX.text, WC = FIX.card;
 const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
 const STYLE_PROPS = ['font-size', 'line-height', 'font-weight', 'letter-spacing', 'text-transform'];
 const VALUES = ['font-size', 'line-height', 'letter-spacing', 'font-weight'];
@@ -54,6 +55,11 @@ const SETTLE = { k: 520, c: 25 }; // let go: a little overshoot into the step (a
 const BAND = 26;                  // px the rubber band gives at most past an end
 const SWELL = 18;                 // px around the thumb that ticks swell over
 const ATOM = 1 / 240;             // the spring's step, so it moves the same at any frame rate
+const PITCH = 40;                 // px of drag per step at most: a short scale is never a long drag
+const SPILL = 22;                 // px the value pill may reach past the track's ends (the rail's padding), never the card's edge
+// a value the page works out (clamp, var, calc, min, max): fluid, read as what the page shows now
+const fluid = (v) => /\(/.test(String(v ?? ''));
+const isColor = (v) => { try { return CSS.supports('color', String(v ?? '')); } catch { return false; } };
 
 // an element whose own words are on the page: a text node with letters among its children
 export const hasText = (el) => !!el && el.nodeType === 1 && [...el.childNodes].some((n) => n.nodeType === 3 && /\S/.test(n.textContent));
@@ -88,6 +94,16 @@ export const TEXT_EDITOR_CSS = `
   .tc .hd .n { font: 600 13px/1.2 ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tc .hd .n span { color: var(--ink-3); font-weight: 500; }
   .tc .hd .at { margin-left: auto; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; }
+  .tc .hd { flex-wrap: wrap; }
+  /* the levels above the words: a click (or ⌥↑, to their own box first) moves the card up */
+  .tc .ups { flex-basis: 100%; display: flex; align-items: center; gap: 1px; min-width: 0; margin: -6px 0 -2px -5px; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; overflow: hidden; }
+  .tc .ups .up { padding: 3px 5px; border-radius: 5px; color: var(--ink-3); max-width: 96px; overflow: hidden; text-overflow: ellipsis; transition: background 120ms, color 120ms; }
+  @media (hover: hover) and (pointer: fine) { .tc .ups .up:hover { background: var(--wash); color: #55544f; } }
+  .tc .ups .up:focus-visible { outline: 1.5px solid var(--sky); outline-offset: -1px; }
+  .tc .ups i { font-style: normal; opacity: .6; } .tc .ups kbd { margin-left: auto; }
+  /* what can't be changed here, said at rest */
+  .tc .lock { display: flex; gap: 7px; align-items: flex-start; margin: 0 12px 8px; padding: 8px 10px; border-radius: 9px; background: var(--wash); color: #55544f; font-size: 12px; }
+  .tc .lock svg { flex: none; width: 14px; height: 14px; margin-top: 1px; color: var(--ink-3); }
   .tc .reach { padding: 0 14px 8px; color: #55544f; font-size: 12px; }
   .tc .down { padding: 4px 14px 14px; color: #c2304f; }
   .tc .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
@@ -97,7 +113,7 @@ export const TEXT_EDITOR_CSS = `
   .tc .fld[data-key] { cursor: ew-resize; }
   @media (hover: hover) and (pointer: fine) { .tc .fld:hover { background: rgb(0 0 0 / .065); } }
   .tc .fld:active { scale: .985; }
-  .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing] { background: #fff; box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
+  .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing], .tc .seg[data-at] { background: #fff; box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
   .tc .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--ink-3); flex: none; font: 600 12px/1 var(--pl-sans, system-ui); }
   .tc .fld .ic svg { width: 14px; height: 14px; }
   .tc .fld .val { display: inline-block; font: 500 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -105,6 +121,8 @@ export const TEXT_EDITOR_CSS = `
   .tc .fld .was { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); text-decoration: line-through; margin-left: auto; }
   .tc .fld[data-off] .val { color: #d2462c; }
   .tc .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--coral); }
+  .tc .fld.pick[data-off]::after { display: none; } .tc .fld.pick[data-off] .sub { color: #d2462c; }
+  .tc .fld[data-fluid] .val { color: #1c1b19; }
   .tc .fld[data-off][data-editing]::after, .tc .fld[data-changed]::after { display: none; }
   .tc .fld[data-changed] .val { color: var(--sky); }
   .tc .fld[data-unset]:not([data-changed]) .val { color: var(--ink-3); }
@@ -152,8 +170,8 @@ export const TEXT_EDITOR_CSS = `
   .tc .menu .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
   .tc .menu .ag { width: 30px; line-height: 1; }
   .tc .menu .nb { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--ink-3); }
-  .tc .menu .sw { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 4px; }
-  .tc .menu .sw .ch { width: 100%; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .tc .menu .sw { display: grid; grid-template-columns: repeat(auto-fill, minmax(24px, 1fr)); gap: 4px; padding: 4px; }
+  .tc .menu .sw .ch { display: block; width: auto; min-width: 24px; height: auto; min-height: 24px; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
   .tc .menu .sw .ch[aria-checked="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sky); }
   .tc .menu .sw .ch[data-peek] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(47 107 255 / .5); }
   .tc .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: #55544f; font-size: 12.5px; }
@@ -180,14 +198,14 @@ function pxOf(v, el) {
   return n;
 }
 // a step's number on its own row's scale: size in px, leading as a ratio of the size, tracking in em, weight as is
-function numOf(key, v, el) {
+function numOf(key, v, el, size = parseFloat(getComputedStyle(el).fontSize) || 16) {
   if (v === null || v === undefined || v === '') return NaN;
   const s = String(v).trim();
   // the page's word for no change: tracking 0, leading the browser's 1.2
   if (s === 'normal') return key === 'letter-spacing' ? 0 : key === 'line-height' ? 1.2 : key === 'font-weight' ? 400 : NaN;
   if (key === 'font-weight') return parseFloat(s);
-  if (key === 'letter-spacing') { const n = parseFloat(s); return /px$/.test(s) ? n / (parseFloat(getComputedStyle(el).fontSize) || 16) : n; }
-  if (key === 'line-height') { if (/^[\d.]+$/.test(s)) return +s; const px = pxOf(s, el), size = parseFloat(getComputedStyle(el).fontSize) || 16; return Math.round((px / size) * 100) / 100; }
+  if (key === 'letter-spacing') { const n = parseFloat(s); return /px$/.test(s) ? n / size : n; }
+  if (key === 'line-height') { if (/^[\d.]+$/.test(s)) return +s; const px = pxOf(s, el); return Math.round((px / size) * 100) / 100; }
   return pxOf(s, el);
 }
 // a value in the words people read: sizes in px, the case by its name, normal tracking as 0
@@ -211,6 +229,9 @@ export class TextEditor {
   #dragged = false;    // the press that just ended was a drag, not a click
   #railFor = null;     // the value whose scale is already open (it opens once, not on every step)
   #ctx = null;         // contextOf(target): its role, its container's levels, and per value the step that fits
+  #site = null;        // where its classes are written (locate.js classSiteOf): read and written there; refused: locked
+  #read0 = null;       // what the page showed when the words were read: { size (px), values: computed per prop }
+  #focus = false;      // the card takes focus once it is read (Tab reaches every field)
 
   // root: the overlay's shadow root; host: { write(at, key, token, said) → Promise<result>, said(text, undo),
   // problems() → n, show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null> }
@@ -222,8 +243,19 @@ export class TextEditor {
     this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });
     root.append(this.#ring, this.#el, this.#caret);
     this.#el.addEventListener('pointerdown', (e) => { const f = e.target.closest('.fld[data-key]'); if (f && e.button === 0) this.#press(e, f.dataset.key); });
+    this.#el.addEventListener('focusin', (e) => {
+      const f = e.target.closest?.('.fld[data-key], .fld[data-menu], .seg'); if (!f || this.#drag) return;
+      const k = f.dataset.key ?? f.dataset.menu ?? 'text-transform', keys = this.#state === 'ready' ? this.#fields(this.#rows()) : [];
+      const i = keys.indexOf(k); if (i < 0 || i === this.#row) return;
+      this.#row = i;
+      if (this.#editing && this.#editing.key !== k) return this.#close();
+      for (const o of this.#el.querySelectorAll('.fld[data-at], .seg[data-at]')) o.removeAttribute('data-at');
+      f.setAttribute('data-at', '');
+    });
     this.#el.addEventListener('click', (e) => {
       if (e.target.closest('.show')) return this.#host.show?.();
+      const up = e.target.closest('.up[data-up]');
+      if (up) return this.#climb(+up.dataset.up);
       const f = e.target.closest('.fld[data-key]');
       if (f) { if (this.#dragged) { this.#dragged = false; return; } return this.#open(f.dataset.key); }
       const m = e.target.closest('.fld[data-menu]');
@@ -255,7 +287,7 @@ export class TextEditor {
   async edit(el) {
     this.#unpeek();
     this.#drag?.cancel();
-    this.#target = el; this.#at = null; this.#props = null; this.#error = null; this.#rowError = null; this.#row = 0; this.#editing = null; this.#menu = null; this.#railFor = null; this.#ctx = null;
+    this.#target = el; this.#at = null; this.#props = null; this.#error = null; this.#rowError = null; this.#row = 0; this.#editing = null; this.#menu = null; this.#railFor = null; this.#ctx = null; this.#site = null; this.#read0 = null; this.#focus = true;
     this.#state = 'loading';
     this.#el.hidden = false; this.#caret.hidden = false; this.#ring.hidden = false;
     // a new element pops in again
@@ -297,7 +329,14 @@ export class TextEditor {
       this.#at = at;
       const cs = getComputedStyle(el);
       const computed = Object.fromEntries(ORDER.slice(1).map((k) => [k, cs.getPropertyValue(k)]));
-      const props = await request('props', { file: at.file, line: at.line, column: at.column, computed: JSON.stringify(computed) });
+      this.#read0 = { size: parseFloat(cs.fontSize) || 16, values: computed };
+      // where its classes are written: its own line when the className there holds them, else the usage that passes them
+      // in (a file's hash changes with every write: found again each time). Nowhere: the card is locked, and says why
+      const site = await classSiteOf(el).catch(() => null);
+      if (seq !== this.#seq) return;
+      this.#site = site && !site.refused && site.prop !== 'className' ? { refused: W.passedIn(site.prop) } : site;
+      const here = site && !site.refused && site.prop === 'className' ? site : at;
+      const props = await request('props', { file: here.file, line: here.line, column: here.column, computed: JSON.stringify(computed) });
       if (seq !== this.#seq) return;
       if (!props?.props) { this.#state = 'error'; this.#error = W.unreachable; return this.#draw(); }
       this.#props = props; this.#state = 'ready'; this.#error = null;
@@ -319,27 +358,40 @@ export class TextEditor {
     const names = style ? this.#styleNames(style.steps) : new Map();
     const styleName = style?.token ? names.get(style.token) ?? style.token : null;
     const rows = [];
+    // a size written as text-[clamp(…)] reads to the server as a colour: it is the size (fluid), and only the code can
+    // change it (a step written beside it would fight it)
+    const c = byKey.get('color'), misread = c?.source === 'class' && c.value && !isColor(c.value) && c.class ? c : null;
     for (const key of ORDER) {
-      const p = byKey.get(key);
+      let p = byKey.get(key);
       if (!p) continue;
+      if (key === 'font-size' && misread && p.source === 'none') p = { ...p, source: 'class', value: misread.value, class: misread.class, token: null, misread: true };
+      // a class read as a colour that isn't one (text-[clamp(…)] is a size): not the colour; the colour is the page's
+      if (key === 'color' && p.value && !isColor(p.value)) p = { ...p, source: 'none', value: null, token: null, class: null, default: this.#read0?.values.color ?? p.default };
       const label = W.labels[key];
       const numeric = key === 'font-size' || key === 'line-height' || key === 'letter-spacing' || key === 'font-weight';
-      let steps = (p.steps ?? []).map((s) => ({ ...s, n: numOf(key, s.value, el), label: key === 'text-transform' ? W.cases[s.token] ?? s.label : key === 'style' ? names.get(s.token) ?? s.label : numeric ? said(key, s.value, el) : s.label }));
+      let steps = (p.steps ?? []).map((s) => ({ ...s, n: this.#num(key, s.value), label: key === 'text-transform' ? W.cases[s.token] ?? s.label : key === 'style' ? names.get(s.token) ?? s.label : numeric ? said(key, s.value, el) : s.label }));
       if (numeric) {
         steps.sort((a, b) => a.n - b.n);
         // two tokens with one value are one step on the scale (the theme's own name is kept, the first one)
         steps = steps.filter((s, k) => !k || Math.abs(s.n - steps[k - 1].n) > 1e-6 || s.token === p.token);
       }
       const r = { key, label, p, steps, current: p.token ?? null, drift: null, note: '', kind: '' };
-      if (p.dynamic) { r.disabled = true; r.note = esc(W.setIn(p.dynamic)); }
+      if (this.#locked) { r.disabled = true; r.note = esc(this.#site.refused); }
+      else if (p.dynamic) { r.disabled = true; r.note = esc(W.setIn(p.dynamic)); }
       else if (!steps.length) r.note = esc(W.empty(label));
-      const same = p.source === 'class' && !p.token && p.value ? steps.find((s) => Math.abs(s.n - numOf(key, p.value, el)) < 1e-6) : null;
-      if (same) {
+      const same = p.source === 'class' && !p.token && p.value && !fluid(p.value) ? steps.find((s) => Math.abs(s.n - this.#num(key, p.value)) < 1e-6) : null;
+      if (numeric && p.source === 'class' && !p.token && fluid(p.value)) {
+        // a value the page works out (clamp, var): what it shows now, and the value, said plainly
+        const shows = this.#read0?.values[key], n = this.#num(key, shows);
+        r.drift = { n, label: said(key, shows, el), fluid: true }; r.kind = 'fluid';
+        if (p.misread) r.disabled = true;
+        if (!this.#locked && !p.dynamic) r.note = esc(W.fluid(String(p.value).replace(/,\s*/g, ', '), key === 'font-size' ? said(key, shows, el) : fmtOf(key, n)) + (p.misread ? ` ${W.inCode}` : ''));
+      } else if (same) {
         // the right value, typed by hand: shown as that step, and picking it names it
         r.current = same.token; r.byHand = true;
         r.note = esc(W.byHand(same.label));
       } else if (p.source === 'class' && !p.token && p.value) {
-        const n = numOf(key, p.value, el);
+        const n = this.#num(key, p.value);
         r.drift = { n, label: said(key, p.value, el) };
         const below = [...steps].reverse().find((s) => s.n < n), above = steps.find((s) => s.n > n);
         r.note = esc(W.offScale(said(key, p.value, el), below?.label, above?.label)); r.kind = 'off';
@@ -354,6 +406,26 @@ export class TextEditor {
       rows.push(r);
     }
     return rows;
+  }
+  // a value as a number on its row's scale, against the size the words had when they were read (a size previewed never
+  // changes what the leading reads)
+  #num(key, v) { return numOf(key, v, this.#target, this.#read0?.size); }
+  // its classes are written nowhere the card can change them: every value locked, the reason said at rest
+  get #locked() { return !!this.#site?.refused; }
+  // the levels above the words, nearest last (up to three, never <body>), each a way up; ⌥↑ goes to the words' own box
+  #upsHtml() {
+    const ups = [];
+    for (let p = this.#target?.parentElement, i = 1; p && p !== document.body && p !== document.documentElement && i <= 3; p = p.parentElement, i++) ups.unshift([i, p]);
+    if (!ups.length) return '';
+    return `<div class="ups" role="group" aria-label="${esc(WC.levels)}">${ups.map(([i, p]) => `<button type="button" class="up" data-up="${i}" title="${esc(WC.upTo(p.localName))}">${esc(componentOf(p) ?? p.localName)}</button><i aria-hidden="true">›</i>`).join('')}<kbd title="${esc(W.upBox)}">⌥↑</kbd></div>`;
+  }
+  // up to the level named: through the host when it climbs (its way back kept), else as ⌥↑ would, once for the words'
+  // own box and once per level
+  #climb(n) {
+    let up = this.#target; for (let i = 0; i < n && up; i++) up = up.parentElement;
+    if (!up) return;
+    if (this.#host.climb) return this.#host.climb(up);
+    for (let i = 0; i <= n; i++) dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', altKey: true, bubbles: true, cancelable: true }));
   }
   // the project's text styles in plain words (Body, Title small); a compact variant is the same style for lists
   #styleNames(steps) {
@@ -375,7 +447,7 @@ export class TextEditor {
     if (r.drift) return r.drift.n;
     const step = r.steps.find((s) => s.token === r.current);
     if (step) return step.n;
-    return r.p.default ? numOf(r.key, r.p.default, this.#target) : NaN;
+    return r.p.default ? this.#num(r.key, r.p.default) : NaN;
   }
   // the step a value opens on: its own, else the nearest
   #startOf(r) {
@@ -391,8 +463,9 @@ export class TextEditor {
     const text = ed?.typed ? ed.typed : fmtOf(r.key, shownN);
     const changed = !!ed?.moved && !ed.typed && shownN !== now;
     const tip = r.note.replace(/<[^>]+>/g, '').replace(/&#39;|&rsquo;/g, '’').replace(/&amp;/g, '&');
-    const attrs = `${r.drift ? ' data-off' : ''}${!r.drift && !r.current ? ' data-unset' : ''}${ed ? ' data-editing' : ''}${changed ? ' data-changed' : ''}${at ? ' data-at' : ''}${r.disabled ? ' aria-disabled="true"' : ''}`;
-    return `<div class="fld" role="spinbutton" tabindex="-1" data-key="${r.key}" aria-label="${esc(r.label)}" aria-valuetext="${esc(fmtOf(r.key, now))}${UNIT[r.key]}" title="${esc(tip || `Drag to change ${r.label.toLowerCase()}`)}"${attrs}>`
+    const attrs = `${r.drift && !r.drift.fluid ? ' data-off' : ''}${r.drift?.fluid ? ' data-fluid' : ''}${!r.drift && !r.current ? ' data-unset' : ''}${ed ? ' data-editing' : ''}${changed ? ' data-changed' : ''}${at ? ' data-at' : ''}${r.disabled ? ' aria-disabled="true"' : ''}`;
+    const valueNow = Number.isFinite(shownN) ? ` aria-valuenow="${round(shownN)}"` : '';
+    return `<div class="fld" role="spinbutton" tabindex="0" data-key="${r.key}" aria-label="${esc(r.label)}"${valueNow} aria-valuetext="${esc(fmtOf(r.key, shownN))}${UNIT[r.key]}" title="${esc(tip || `Drag to change ${r.label.toLowerCase()}`)}"${attrs}>`
       + `<span class="ic">${r.disabled ? ICON.lock : ICON[r.key]}</span><span class="val">${esc(text)}</span>${unitOf(r.key, shownN) && !ed?.typed && Number.isFinite(shownN) ? `<span class="u">${unitOf(r.key, shownN)}</span>` : ''}${changed ? `<span class="was">${esc(fmtOf(r.key, now))}</span>` : ''}</div>`;
   }
   // the scale, under the fields while a value changes: steps evenly spaced, the off-scale value where it falls
@@ -423,7 +496,9 @@ export class TextEditor {
 
   #draw() {
     if (!this.#target) return;
-    const el = this.#target, name = this.name, at = this.#at ? `${this.#at.file.split('/').pop()}:${this.#at.line}` : '';
+    // the place its classes are written (the usage that passes them in, when that's where), else where it is drawn
+    const where = this.#site?.file ? this.#site : this.#at;
+    const el = this.#target, name = this.name, at = where ? `${where.file.split('/').pop()}:${where.line}` : '';
     let body = '';
     if (this.#state === 'loading') body = `<div class="fields"><div class="ph" style="grid-column:1/-1"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>`;
     else if (this.#state === 'error') body = `<div class="down" role="alert">${esc(this.#error)}</div>`;
@@ -436,7 +511,10 @@ export class TextEditor {
       if (style?.steps.length) {
         const cur = style.steps.find((s) => s.token === style.current);
         const closest = !cur ? style.note.replace(/^Closest: /, '') : '';
-        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}><span class="ic">Ag</span>${cur ? `<span class="val" style="font-family:inherit">${esc(cur.label)}</span>` : `<span class="val" style="font-family:inherit">${esc(W.noStyle)}</span>${closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : ''}`}<span class="chev">▾</span></button></div>`;
+        // a style worn whose size the words don't have (a size set over it, or a rule elsewhere): said, never hidden
+        const here = this.#read0?.size, stylePx = cur ? pxOf(cur.size, el) : NaN, differs = cur && Number.isFinite(stylePx) && Number.isFinite(here) && Math.abs(stylePx - here) > 0.5;
+        const sub = differs ? `<span class="sub">${esc(W.styleHere(`${Math.round(here * 100) / 100}px`))}</span>` : !cur && closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : '';
+        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}${differs ? ` data-off title="${esc(W.styleDiffers(cur.label, `${Math.round(stylePx)}px`, `${Math.round(here * 100) / 100}px`))}"` : ''}${style.disabled ? ' aria-disabled="true"' : ''}><span class="ic">Ag</span><span class="val" style="font-family:inherit">${esc(cur ? cur.label : W.noStyle)}</span>${sub}<span class="chev">▾</span></button></div>`;
         if (this.#menu === 'style') body += `<div class="menu" role="listbox" aria-label="${esc(style.label)}">${style.steps.map((s, k) => { const px = pxOf(s.size, el); return this.#ch(style, k, `<span class="ag" style="font-family:${family};font-size:${Math.min(20, px + 2)}px;font-weight:${s.weight ?? 400}">${s.transform === 'uppercase' ? 'AG' : 'Ag'}</span><span>${esc(s.label)}</span><span class="nb">${Math.round(px)} / ${s.lineHeight ?? '–'}</span>`, s.label); }).join('')}</div>`;
       }
       const values = VALUES.map((k) => by.get(k)).filter(Boolean);
@@ -462,11 +540,19 @@ export class TextEditor {
     const dark = this.#host.dark?.() ? 'dark' : 'light';
     this.#el.dataset.scheme = dark; this.#caret.dataset.scheme = dark;
     this.#el.setAttribute('aria-label', W.region(name));
-    this.#el.innerHTML = `<div class="hd"><span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
-      + (reach ? `<div class="reach">${esc(W.reach(reach))}</div>` : '') + body
+    const lock = this.#state === 'ready' && this.#locked ? `<div class="lock" role="note">${ICON.lock}<span>${esc(this.#site.refused)}</span></div>` : '';
+    const root = this.#el.getRootNode(), focused = this.#focus || this.#el.contains(root.activeElement);
+    this.#el.innerHTML = `<div class="hd">${this.#upsHtml()}<span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
+      + (reach && !this.#locked ? `<div class="reach">${esc(W.reach(reach))}</div>` : '') + lock + body
       + (problems ? `<div class="more"><span>${esc(W.problems(problems))}</span><button type="button" class="show">${W.show} <kbd>.</kbd></button></div>` : '');
     this.#mark();
     this.#place();
+    // focus in the card (once it is read), on the field in hand; kept there through every redraw
+    if (focused && this.#state !== 'loading') {
+      this.#focus = false;
+      const f = this.#el.querySelector('.fld[data-at], .seg[data-at]') ?? this.#el.querySelector('.fld[tabindex="0"], button.fld, .seg .ch, .up');
+      (f?.matches('.seg') ? f.querySelector('.ch[aria-checked="true"]') ?? f.querySelector('.ch') : f)?.focus({ preventScroll: true });
+    }
   }
 
   // beside the element: right when it fits, else left, else below; the caret on the element's middle
@@ -489,8 +575,20 @@ export class TextEditor {
       cx = side === 'right' ? left - 6 : left + WIDTH - 6;
       cy = Math.max(top + 14, Math.min(top + h - 26, mid - 6));
     }
+    // never over the fix bar or another of the overlay's surfaces (and off the words when it can be): moved the least it
+    // takes, by the overlay's one placement rule (geometry.js clearOf); the caret follows, or goes when the card is no
+    // longer against the words' side
+    const root = this.#el.getRootNode(), rect = (n) => (n && !n.hidden && n.isConnected ? n.getBoundingClientRect() : null);
+    const others = [this.#host.bar?.() ?? rect(root.querySelector?.('.fx')), ...[...(root.querySelectorAll?.('.ec, .ec-strip') ?? [])].map(rect)];
+    let at = clearOf(left, top, WIDTH, h, [...others, t], { edge: EDGE });
+    if (at.covered) at = clearOf(left, top, WIDTH, h, others, { edge: EDGE });
+    const slid = at.x !== left;
+    if (at.y !== top && side !== 'below' && side !== 'above') cy = Math.max(at.y + 14, Math.min(at.y + h - 26, mid - 6));
+    else if (at.y !== top) cy += at.y - top;
+    left = at.x; top = at.y;
     Object.assign(this.#el.style, { left: `${left}px`, top: `${top}px` });
     Object.assign(this.#caret.style, { left: `${cx}px`, top: `${cy}px` });
+    this.#caret.style.display = slid || cy < top - 8 || cy > top + h ? 'none' : '';
     Object.assign(this.#ring.style, { left: `${t.left - 6}px`, top: `${t.top - 4}px`, width: `${t.width + 12}px`, height: `${t.height + 8}px` });
     this.#el.dataset.side = side; this.#caret.dataset.side = side === 'above' ? 'below' : side;
     // the element off screen: the card waits for it
@@ -566,7 +664,8 @@ export class TextEditor {
     const c = this.#ctx; if (!c?.role) return '';
     const i = c.levels.findIndex((l) => l.role === c.role && l.members?.includes(this.#target));
     const up = c.levels[i - 1], down = c.levels[i + 1];
-    if (key === 'font-size') return W.fitsSize(c.role, up && { role: up.role, n: up.bundle.size }, down && { role: down.role, n: down.bundle.size });
+    const own = c.levels[i]?.bundle.size;
+    if (key === 'font-size') return W.fitsSize(c.role, up && { role: up.role, n: up.bundle.size, same: up.bundle.size === own }, down && { role: down.role, n: down.bundle.size, same: down.bundle.size === own });
     if (key === 'font-weight') return W.fitsWeight(c.role, [up, down].filter((l) => l && l.bundle.size === c.levels[i]?.bundle.size).map((l) => l.role));
     return '';
   }
@@ -589,6 +688,14 @@ export class TextEditor {
     const r = this.#rows().find((x) => x.key === this.#editing.key);
     this.#editing = { ...this.#editing, at: Math.max(0, Math.min(r.steps.length - 1, at)), typed: '', moved: true };
     this.#peekAt(r.key, this.#editing.at);
+    this.#draw();
+  }
+  // a number typed: the field reads it as typed, and the step nearest it is previewed on the words at once
+  #type(r, typed) {
+    const n = Number(typed), at = typed && Number.isFinite(n) && r?.steps.length ? r.steps.reduce((b, s, i) => (Math.abs(s.n - n) < Math.abs(r.steps[b].n - n) ? i : b), 0) : -1;
+    this.#unpeek();
+    this.#editing = { ...this.#editing, typed, ...(at >= 0 ? { at } : {}) };
+    if (at >= 0) this.#peekAt(r.key, at);
     this.#draw();
   }
   #commit() {
@@ -637,7 +744,9 @@ export class TextEditor {
       const track = this.#el.querySelector('.ticks'), w = track.getBoundingClientRect().width;
       const xOf = (n) => (posOf(ns, n) / 100) * w;
       const start = offHome ? xOf(Number.isFinite(origin) ? origin : ns[0]) : xOf(ns[home]);
-      d = { track, w, xOf, start, at: home, hand: start, x: start, v: 0, mode: 'hold', last: performance.now(),
+      // a short scale has far-apart steps: the hand's travel is geared so a step is never more than PITCH px of drag away
+      const gain = Math.max(1, (ns.length > 1 ? w / (ns.length - 1) : w) / PITCH);
+      d = { track, w, xOf, start, gain, at: home, hand: start, x: start, v: 0, mode: 'hold', last: performance.now(),
         thumb: track.querySelector('.thumb'), knob: track.querySelector('.knob'), bub: track.querySelector('.bub'), num: track.querySelector('.bub span'),
         fld: this.#el.querySelector(`.fld[data-key="${key}"]`), ticks: [...track.querySelectorAll('.tk')].map((t) => ({ i: t.querySelector('i'), x: (parseFloat(t.style.left) / 100) * w })) };
       d.num.textContent = label(offHome ? origin : ns[home]);
@@ -688,13 +797,16 @@ export class TextEditor {
       if (STILL()) { d.x = target; d.v = 0; }
       else for (let t = 0; t < dt; t += ATOM) { const h = Math.min(ATOM, dt - t); d.v += (-k * (d.x - target) - c * d.v) * h; d.x += d.v * h; }
       d.thumb.style.transform = `translateX(${d.x}px)`;
+      // the value pill rides over the thumb, but never past the rail: near an end it slides back to stay whole
+      const half = d.bub.offsetWidth / 2, lo = -SPILL + half, hi = d.w + SPILL - half;
+      d.bub.style.translate = `calc(-50% + ${Math.round((Math.max(lo, Math.min(hi, d.x)) - d.x) * 10) / 10}px) 0`;
       if (!STILL()) for (const tk of d.ticks) tk.i.style.transform = `scaleY(${1 + 0.55 * Math.exp(-(((tk.x - d.x) / SWELL) ** 2))})`;
       if (d.mode !== 'hold' && Math.abs(d.x - target) < 0.15 && Math.abs(d.v) < 4) return d.done();
       requestAnimationFrame(frame);
     };
     const move = (ev) => {
       if (!d) { if (Math.abs(ev.clientX - x0) < 3) return; begin(); }
-      d.hand = d.start + (ev.clientX - x0);
+      d.hand = d.start + (ev.clientX - x0) * d.gain;
       choose(Math.max(0, Math.min(d.w, d.hand)));
     };
     const end = (keep) => {
@@ -731,8 +843,8 @@ export class TextEditor {
     const ed = this.#editing;
     if (ed) {
       const er = rows.find((x) => x.key === ed.key);
-      if (/^\d$/.test(k) || (k === '.' && !ed.typed.includes('.')) || (k === '-' && !ed.typed)) { this.#unpeek(); this.#editing = { ...ed, typed: ed.typed + k }; this.#draw(); return true; }
-      if (k === 'Backspace' && ed.typed) { this.#editing = { ...ed, typed: ed.typed.slice(0, -1) }; this.#draw(); return true; }
+      if (/^\d$/.test(k) || (k === '.' && !ed.typed.includes('.')) || (k === '-' && !ed.typed)) { this.#type(er, ed.typed + k); return true; }
+      if (k === 'Backspace' && ed.typed) { this.#type(er, ed.typed.slice(0, -1)); return true; }
       const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[k];
       if (d && er) {
         // from a value between two steps, the first step is the neighbour on that side
@@ -751,6 +863,8 @@ export class TextEditor {
       this.#draw();
       return true;
     }
+    // digits with a value in hand open it, typing
+    if (/^\d$/.test(k) && r && VALUES.includes(r.key) && !r.disabled && r.steps.length) { this.#open(r.key); return this.key(k); }
     if ((k === 'ArrowLeft' || k === 'ArrowRight') && r && !r.disabled && r.steps.length) {
       if (VALUES.includes(r.key)) { this.#open(r.key); return this.key(k); }
       if ((r.key === 'style' || r.key === 'color') && this.#menu !== r.key) { this.#menu = r.key; this.#draw(); }

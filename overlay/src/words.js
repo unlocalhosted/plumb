@@ -367,7 +367,9 @@ export const FIX = {
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),
   // places are spots in your code; one drawn many times on the page says both
-  places: (n, shown = n) => (shown > n ? `${count(n, 'place', 'places')} in your code · ${shown} on the page` : count(n, 'place', 'places')),
+  // `here`: one element is read (an Alt+click), so what is drawn is counted inside it; the page beyond it is said apart
+  // ("The same code draws N other places on this page"), never as a second page count
+  places: (n, shown = n, here = false) => (shown > n ? `${count(n, 'place', 'places')} in your code · ${shown} ${here ? 'here' : 'on the page'}` : count(n, 'place', 'places')),
   // what a screen reader hears when a fix is put in hand
   inHand: (position, cls, what, n) => `${position}: ${cls}. ${what}, ${count(n, 'place', 'places')}.`,
   // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
@@ -391,7 +393,8 @@ export const FIX = {
     // the hierarchy, on the scale (overlay/src/hierarchy.js): the element's role among its peers
     fitsHere: 'fits its place',
     breaksHere: 'breaks the order',
-    fitsSize: (role, up, down) => `Fits as the ${role}${up ? `, below the ${up.role} (${up.n}px)` : ''}${down ? `${up ? ' and' : ','} above the ${down.role} (${down.n}px)` : ''}.`,
+    // a level at the same size is set apart by weight, never "below" or "above" it
+    fitsSize: (role, up, down) => `Fits as the ${role}${up ? (up.same ? `, at the ${up.role}’s size (${up.n}px) in a lighter weight` : `, below the ${up.role} (${up.n}px)`) : ''}${down ? `${up ? ' and' : ','} ${down.same ? `at the ${down.role}’s size (${down.n}px) in a heavier weight` : `above the ${down.role} (${down.n}px)`}` : ''}.`,
     fitsWeight: (role, beside) => beside.length ? `Fits as the ${role}: at this size, its weight sets it apart from the ${beside.join(' and the ')}.` : `Fits as the ${role}.`,
     closestShort: (name) => `closest ${name}`,
     dragOr: 'Drag the field, or',
@@ -408,6 +411,15 @@ export const FIX = {
     unreachable: 'Can’t find where this is written, so it can’t be edited.',
     problems: (n) => `${n} ${n === 1 ? 'problem' : 'problems'} here`,
     show: 'Show',
+    // a value the page works out (clamp, var, calc): what it shows now, and the value as written
+    fluid: (v, now) => `Fluid: ${v}. ${now} at this width.`,
+    inCode: 'Change it in your code.',
+    // a text style worn, but not measured: the size the words have here
+    styleHere: (px) => `${px} here`,
+    styleDiffers: (name, step, here) => `${name} is ${step}, but these words measure ${here}: something else sets their size.`,
+    // the classes come in through a prop of another name where it's used: the card can't write that prop
+    passedIn: (prop) => `Its classes come in as ${prop} where it’s used, so they can’t be changed here. Change them in your code.`,
+    upBox: 'Up to the box that holds these words (⌥↑). ⌥↓ comes back.',
     changed: (label, to, name) => `Changed ${label.toLowerCase()} to ${to} on ${name}`,
     styled: (style, name) => `${name} uses ${style} now`,
   },
@@ -420,6 +432,7 @@ export const FIX = {
     setInCode: 'Set in code',
     // the levels above an element, in its card's header (⌥↑ goes up one, ⌥↓ back down)
     levels: 'Levels above it',
+    exitIdle: 'Its exit plays when something sets data-state="closed" on it. Nothing does yet, so only the entrance plays.',
     upOne: 'Up a level (⌥↑). ⌥↓ comes back.',
     upTo: (tag) => `Up to this ${tag}`,
     // where its classes are written (locate.js classSiteOf): nowhere it can be changed, or in more than one place
@@ -702,6 +715,7 @@ export const TIMELINE = {
   now: 'Now',
   notHere: 'Not on this page',
   goBack: 'Go back to here',
+  applied: (n) => `Applied ${n} changes`,
   past: (n) => `Showing the page as it was before the last ${n === 1 ? 'change' : `${n} changes`}. Nothing is written until you choose.`,
   empty: 'Nothing changed yet. What you write shows up here.',
   error: 'Couldn’t read the history. Check the dev server, then reopen this.',
