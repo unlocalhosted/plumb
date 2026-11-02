@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text card prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Three directions for the inline text card (docs/design/text-editor.md). The numbers are crafting-ui's hero
+     paragraph: 19px (off the scale), leading 1.5 typed by hand, weight 400 from the page, two text styles. */
+  :root {
+    --ink: #1c1b19; --ink-2: #55544f; --ink-3: #8b8a85; --line: rgb(0 0 0 / .08); --wash: rgb(0 0 0 / .035);
+    --paper: #fff; --glass: rgb(255 255 255 / .88); --sky: #2f6bff; --sky-soft: rgb(47 107 255 / .12);
+    --coral: #e2533a; --coral-soft: rgb(226 83 58 / .12); --page: #fafaf8;
+    --spring: cubic-bezier(.2, .9, .25, 1.15); --ease: cubic-bezier(.2, .8, .2, 1);
+    --mono: 'Geist Mono', ui-monospace, monospace; --sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.4 var(--sans); }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+
+  /* the switcher */
+  .bar { position: sticky; top: 0; z-index: 10; display: flex; gap: 6px; align-items: center; padding: 12px 20px; background: rgb(250 250 248 / .9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .bar .t { font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-right: 10px; }
+  .bar button { height: 30px; padding: 0 12px; border-radius: 9px; color: var(--ink-2); font-weight: 550; }
+  .bar button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .bar .hint { margin-left: auto; color: var(--ink-3); font-size: 12px; }
+
+  /* the page under the card: crafting-ui's hero, its paragraph selected */
+  .stage { position: relative; max-width: 1180px; margin: 0 auto; padding: 72px 40px 160px; display: grid; grid-template-columns: minmax(0, 560px) 1fr; gap: 40px; }
+  .hero h1 { font: 500 44px/1.08 var(--sans); letter-spacing: -.025em; margin: 0 0 22px; }
+  .hero h1 em { font-style: normal; color: var(--sky); }
+  /* the paragraph keeps up with the hand: a preview lands at once (only the colour eases) */
+  #target { position: relative; margin: 0; font-family: var(--sans); font-size: 19px; line-height: 1.5; font-weight: 400; letter-spacing: 0; color: oklch(0.13 0 0); transition: color 160ms ease; }
+  #target::after { content: ''; position: absolute; inset: -6px -8px; border-radius: 8px; box-shadow: 0 0 0 1.5px var(--sky); pointer-events: none; }
+  #target[data-previewing]::after { box-shadow: 0 0 0 1.5px var(--sky), 0 0 0 5px var(--sky-soft); }
+  .cta { margin-top: 30px; display: inline-flex; height: 40px; align-items: center; padding: 0 16px; border: 1px solid var(--ink); font: 500 12px/1 var(--mono); letter-spacing: .08em; }
+
+  /* the card: inline, beside the element, its caret on the element */
+  .card { position: absolute; z-index: 5; width: 300px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    border-radius: 16px; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 1px 1px rgb(0 0 0 / .04), 0 10px 24px -10px rgb(0 0 0 / .18), 0 32px 64px -28px rgb(0 0 0 / .22), inset 0 1px 0 rgb(255 255 255 / .9);
+    transform-origin: left center; animation: pop 280ms var(--spring) both; }
+  .card::before { content: ''; position: absolute; left: -6px; top: var(--caret, 40px); width: 12px; height: 12px; rotate: 45deg; background: var(--paper); box-shadow: -.5px .5px 0 rgb(0 0 0 / .1); border-radius: 2px 0 0 0; }
+  @keyframes pop { from { opacity: 0; scale: .96; translate: -6px 0; } }
+  @media (prefers-reduced-motion: reduce) { .card { animation: none; } #target { transition: none; } }
+  .card[hidden] { display: none; }
+  .card[data-below="y"]::before { left: 40px; top: -6px; box-shadow: -.5px -.5px 0 rgb(0 0 0 / .1); }
+  .head { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px 8px; }
+  .head .n { font: 600 13px/1.2 var(--mono); }
+  .head .n span { color: var(--ink-3); font-weight: 500; }
+  .head .at { margin-left: auto; font: 500 11px/1 var(--mono); color: var(--ink-3); }
+  .sec { padding: 8px 14px; border-top: .5px solid var(--line); }
+  .lab { display: flex; align-items: baseline; justify-content: space-between; font: 600 10.5px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px; }
+  .lab .v { font: 500 11.5px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--ink); }
+  .lab .v.off { color: var(--coral); }
+  .say { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
+  .say.off { color: var(--coral); }
+  .toast { position: fixed; left: 50%; bottom: 28px; translate: -50% 0; display: flex; gap: 12px; align-items: center; padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 550; box-shadow: 0 10px 30px -10px rgb(0 0 0 / .4); animation: pop 240ms var(--spring) both; }
+  .toast button { height: 28px; padding: 0 10px; border-radius: 8px; background: rgb(255 255 255 / .12); }
+  .toast[hidden] { display: none; }
+
+  /* shared pressable choice: hover lifts, pressed sinks, picked fills */
+  .ch { position: relative; border-radius: 8px; transition: background 120ms ease-out, box-shadow 120ms ease-out, scale 120ms ease-out, color 120ms; }
+  @media (hover: hover) { .ch:hover { background: var(--wash); } }
+  .ch:active { scale: .96; }
+  .ch:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sky); }
+  .ch[aria-checked="true"] { background: var(--sky-soft); color: var(--sky); }
+  .ch.off { box-shadow: inset 0 0 0 1.5px var(--coral); background: repeating-linear-gradient(45deg, var(--coral-soft) 0 2px, transparent 2px 6px); color: var(--coral); }
+
+  /* ── A · Figma: compact sections, every value readable, a picker per property ── */
+  .a .styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .a .styles .ch { display: grid; justify-items: start; gap: 2px; padding: 6px 7px 7px; text-align: left; }
+  .a .styles .ag { font-family: var(--sans); line-height: 1; height: 22px; display: flex; align-items: end; }
+  .a .styles .nm { font-size: 11.5px; font-weight: 550; }
+  .a .styles .nb { font: 500 10px/1 var(--mono); color: var(--ink-3); }
+  .a .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .a .ticks { display: flex; align-items: end; gap: 2px; height: 34px; }
+  .a .ticks .ch { flex: 1; height: 100%; display: grid; align-content: end; justify-items: center; gap: 3px; padding: 2px 0 3px; }
+  .a .ticks .ch i { display: block; width: 2px; border-radius: 1px; background: currentColor; opacity: .55; }
+  .a .ticks .ch b { font: 500 9.5px/1 var(--mono); }
+  .a .ticks .ch[aria-checked="true"] i, .a .ticks .ch.off i { opacity: 1; width: 3px; }
+  .a .glyphs { display: flex; gap: 2px; }
+  .a .glyphs .ch { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 5px 0 4px; }
+  .a .glyphs .ch b { font: 500 9.5px/1 var(--mono); color: var(--ink-3); }
+  .a .glyphs .ch[aria-checked="true"] b, .a .glyphs .ch.off b { color: inherit; }
+  .lines { display: grid; width: 18px; } .lines i { display: block; height: 2px; border-radius: 1px; background: currentColor; }
+  .a .weights { display: flex; gap: 0; }
+  .a .weights .ch { flex: 1; padding: 4px 0; display: grid; justify-items: center; gap: 2px; font-family: var(--sans); }
+  .a .weights .ch span { font-size: 15px; line-height: 1; }
+  .a .weights .ch b { font: 500 9px/1 var(--mono); color: var(--ink-3); }
+  .seg { display: flex; padding: 2px; border-radius: 9px; background: var(--wash); }
+  .seg .ch { flex: 1; height: 26px; border-radius: 7px; font: 600 12px/1 var(--sans); color: var(--ink-2); }
+  .seg .ch[aria-checked="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
+  .sw { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+  .sw .ch { aspect-ratio: 1; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .sw .ch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--sky); background: inherit; }
+
+  /* ── B · Framer: sliders that snap to the theme's steps ── */
+  .b .presets { display: flex; gap: 4px; }
+  .b .presets .ch { flex: 1; height: 44px; display: grid; align-content: center; justify-items: start; padding: 0 9px; border-radius: 10px; background: var(--wash); text-align: left; }
+  .b .presets .ch[aria-checked="true"] { background: var(--ink); color: #fff; }
+  .b .presets .ch small { font: 500 9.5px/1 var(--mono); opacity: .6; margin-top: 3px; }
+  .slider { position: relative; height: 30px; touch-action: none; cursor: pointer; }
+  .slider .track { position: absolute; left: 0; right: 0; top: 13px; height: 4px; border-radius: 2px; background: rgb(0 0 0 / .07); }
+  .slider .fill { position: absolute; left: 0; top: 13px; height: 4px; border-radius: 2px; background: var(--sky); transition: width 220ms var(--spring); }
+  .slider .notch { position: absolute; top: 9px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: rgb(0 0 0 / .2); }
+  .slider .notch b { position: absolute; top: 15px; left: 50%; translate: -50% 0; font: 500 9px/1 var(--mono); color: var(--ink-3); white-space: nowrap; }
+  .slider .knob { position: absolute; top: 6px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .15), 0 2px 6px rgb(0 0 0 / .18); transition: left 220ms var(--spring), scale 140ms var(--spring); }
+  .slider:active .knob { scale: 1.15; }
+  .slider .ghost { position: absolute; top: 8px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--coral); background: repeating-linear-gradient(45deg, var(--coral-soft) 0 2px, transparent 2px 5px); }
+  .b .row { display: grid; grid-template-columns: 62px 1fr 44px; gap: 10px; align-items: center; padding: 3px 0 13px; }
+  .b .row .k { font-size: 12px; color: var(--ink-2); font-weight: 550; }
+  .b .row .val { font: 600 12px/1 var(--mono); text-align: right; }
+  .b .row .val.off { color: var(--coral); }
+
+  /* ── C · Webflow: the type ladder, each size as itself ── */
+  .c.card { width: 420px; }
+  .c .split { display: grid; grid-template-columns: 1fr 150px; }
+  .c .ladder { padding: 6px 6px 8px 8px; border-right: .5px solid var(--line); max-height: 300px; overflow: auto; }
+  .c .ladder .ch { width: 100%; display: flex; align-items: baseline; gap: 8px; padding: 4px 8px; text-align: left; white-space: nowrap; overflow: hidden; }
+  .c .ladder .ch span { font-family: var(--sans); line-height: 1.15; overflow: hidden; text-overflow: ellipsis; }
+  .c .ladder .ch b { margin-left: auto; font: 500 10px/1 var(--mono); color: var(--ink-3); flex: none; }
+  .c .ladder .ch.off b, .c .ladder .ch[aria-checked="true"] b { color: inherit; }
+  .c .side { padding: 8px 10px; display: grid; gap: 10px; align-content: start; }
+  .c .side .lab { margin-bottom: 4px; }
+  .c .stack { display: grid; gap: 2px; }
+  .c .stack .ch { display: flex; align-items: center; gap: 8px; padding: 4px 6px; font: 500 10.5px/1 var(--mono); }
+  .c .para { display: grid; width: 22px; } .c .para i { display: block; height: 2px; border-radius: 1px; background: currentColor; opacity: .7; }
+  .c .tags { display: flex; flex-wrap: wrap; gap: 3px; }
+  .c .tags .ch { height: 24px; padding: 0 7px; border-radius: 7px; background: var(--wash); font: 600 11px/1 var(--sans); }
+  .c .foot { padding: 8px 14px 12px; border-top: .5px solid var(--line); }
+  .c .foot .sw { grid-template-columns: repeat(10, 1fr); }
+
+  /* ── D · Editor: what the text is now, as values; the scale only while a value changes ── */
+  .d.card { width: 276px; }
+  .d .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px 12px 10px; }
+  .fld { position: relative; display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--wash); cursor: default; outline: none;
+    transition: background 120ms ease-out, box-shadow 120ms ease-out; user-select: none; }
+  @media (hover: hover) { .fld:hover { background: rgb(0 0 0 / .06); } }
+  .fld:focus-visible, .fld[data-editing] { background: var(--paper); box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
+  .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--ink-3); cursor: ew-resize; flex: none; font: 600 12px/1 var(--sans); }
+  @media (hover: hover) { .fld .ic:hover { color: var(--ink); background: rgb(0 0 0 / .05); } }
+  .fld .ic svg { width: 14px; height: 14px; }
+  .fld .val { font: 500 13px/1 var(--mono); font-variant-numeric: tabular-nums; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fld .u { font: 500 11px/1 var(--mono); color: var(--ink-3); }
+  .fld .was { font: 500 11px/1 var(--mono); color: var(--ink-3); text-decoration: line-through; margin-left: auto; }
+  .fld[data-off] .val { color: var(--coral); }
+  .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--coral); }
+  .fld[data-off][data-editing]::after, .fld[data-changed]::after { display: none; }
+  .fld[data-changed] .val { color: var(--sky); }
+  .fld[data-scrubbing] { cursor: ew-resize; }
+  .fld[aria-disabled="true"] { opacity: .55; } .fld[aria-disabled="true"] .ic { cursor: default; }
+  .fld.wide { grid-column: 1 / -1; }
+  .fld.pick { cursor: pointer; padding-right: 8px; }
+  .fld.pick .chev { margin-left: auto; color: var(--ink-3); font-size: 10px; }
+  .fld .sub { color: var(--ink-3); font: 500 11.5px/1 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fld .chip { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); flex: none; margin-left: 4px; }
+  /* the scale, on demand: under the fields while one is changing; the value's place on it, its neighbours named */
+  .rail { margin: 0 12px 10px; padding: 9px 10px 8px; border-radius: 10px; background: var(--wash); }
+  .rail[data-new] { animation: rail-open 240ms cubic-bezier(.19, 1, .22, 1) both; }
+  @keyframes rail-open { from { clip-path: inset(0 0 100% 0 round 10px); translate: 0 -4px; opacity: .4; } to { clip-path: inset(0 0 0 0 round 10px); } }
+  @media (prefers-reduced-motion: reduce) { .rail[data-new] { animation: rail-fade 160ms ease both; } @keyframes rail-fade { from { opacity: 0; } } }
+  .fld:active { scale: .985; } .fld { transition: background 120ms ease-out, box-shadow 120ms ease-out, scale 140ms cubic-bezier(.25, .46, .45, .94); }
+  @keyframes rail-in { from { opacity: 0; translate: 0 -4px; } }
+  /* the track: steps evenly spaced (it is the theme's ladder, not a ruler); the off-scale value where it falls between */
+  .rail .ticks { position: relative; height: 30px; margin: 14px 8px 0; }
+  .rail .ticks::before { content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 2px; border-radius: 1px; background: rgb(0 0 0 / .07); }
+  .rail .tk { position: absolute; top: 3px; translate: -50% 0; display: grid; justify-items: center; gap: 5px; font: 500 10px/1 var(--mono); color: var(--ink-3); cursor: pointer; padding: 0 2px; border-radius: 5px; transition: color 120ms; }
+  /* the thumb: placed by a spring on transform (JS), the knob inside it lifts when held, the value rides above */
+  .rail .thumb { position: absolute; left: 0; top: 2px; width: 0; height: 14px; pointer-events: none; will-change: transform; }
+  .rail .knob { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 0 .5px rgb(0 0 0 / .15), 0 2px 6px rgb(0 0 0 / .2), inset 0 0 0 3.5px var(--sky); }
+  .rail .bub { position: absolute; bottom: calc(100% + 7px); left: 0; translate: -50% 0; padding: 3px 7px; border-radius: 7px; background: var(--ink); color: #fff;
+    font: 600 10.5px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; transform-origin: 50% 100%; overflow: hidden; }
+  .rail .bub span, .fld .val { display: inline-block; }
+  .rail .tk i { transform-origin: 50% 100%; will-change: transform; }
+  .rail .tk b { display: block; font: inherit; }
+  .rail[data-dragging] .tk { cursor: ew-resize; }
+  .fld[data-key] { cursor: ew-resize; }
+  body[data-dragging], body[data-dragging] * { cursor: ew-resize !important; user-select: none; }
+  .rail .tk i { width: 2px; height: 9px; border-radius: 1px; background: currentColor; opacity: .5; }
+  .rail .tk[data-at] { color: var(--sky); } .rail .tk[data-at] i { height: 11px; width: 3px; opacity: 1; }
+  .rail .tk[data-off] { color: var(--coral); } .rail .tk[data-off] i { opacity: 1; height: 11px; width: 3px; background: repeating-linear-gradient(0deg, var(--coral) 0 2px, transparent 2px 3px); }
+  @media (hover: hover) { .rail .tk:not([data-off]):hover { color: var(--ink); } }
+  .rail .hint { margin-top: 7px; font-size: 11px; color: var(--ink-3); display: flex; gap: 10px; }
+  .rail .hint kbd { font: 500 10px/1 var(--mono); padding: 2px 4px; border-radius: 4px; background: var(--paper); box-shadow: 0 0 0 .5px var(--line); color: var(--ink-2); }
+  .d .seg { margin: 0 12px 10px; }
+  .menu { position: absolute; z-index: 3; left: 12px; right: 12px; top: 74px; padding: 4px; border-radius: 12px; background: var(--paper); box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 12px 28px -8px rgb(0 0 0 / .25); animation: rail-in 180ms var(--ease) both; }
+  .menu .ch { width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 7px 9px; text-align: left; }
+  .menu .ch .ag { width: 30px; font-family: var(--sans); line-height: 1; }
+  .menu .ch .nb { margin-left: auto; font: 500 10.5px/1 var(--mono); color: var(--ink-3); }
+  .menu .sw { padding: 6px; }
+  .d .foot { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid var(--line); color: var(--ink-2); font-size: 12.5px; }
+  .d .foot button { margin-left: auto; height: 26px; padding: 0 9px; border-radius: 8px; color: var(--ink-2); }
+  .d .foot button:hover { background: var(--wash); }
+</style>
+</head>
+<body>
+<div class="bar" role="toolbar" aria-label="Prototype">
+  <span class="t">Text card</span>
+  <button data-v="d" aria-pressed="true">D · Editor</button>
+  <button data-v="a" aria-pressed="false">A · Inspector</button>
+  <button data-v="b" aria-pressed="false">B · Sliders</button>
+  <button data-v="c" aria-pressed="false">C · Ladder</button>
+  <span class="hint">D: drag a field sideways, or click it and use ← → or type · Enter uses it · Esc puts it back</span>
+</div>
+
+<div class="stage">
+  <div class="hero">
+    <h1>The little details behind a <em>great interface</em></h1>
+    <p id="target">Let go fast and the card flies; let go slow and it comes back. That one decision is why a swipe feels like it’s listening, and it lives in four numbers you can tune.</p>
+    <div class="cta">GET STARTED →</div>
+  </div>
+  <div></div>
+  <div class="card d" id="card" role="dialog" aria-label="Edit Hero"></div>
+</div>
+<div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button id="undo">Undo</button></div>
+
+<script>
+// crafting-ui's hero paragraph (Hero.tsx:96) and its theme, as GET props reads them
+const T = {
+  size: { now: 19, off: true, steps: [11, 12, 14, 16, 18, 22, 28] },
+  leading: { now: 1.5, byHand: true, steps: [1.25, 1.375, 1.5, 1.625, 2] },
+  weight: { now: 400, fromPage: true, steps: [300, 400, 500, 600, 700] },
+  tracking: { now: 0, fromPage: true, steps: [-0.025, 0, 0.025, 0.05, 0.1] },
+  case: { now: 'none', steps: ['none', 'uppercase', 'lowercase', 'capitalize'] },
+  color: { now: 'ink', steps: [['ink', 'oklch(0.13 0 0)'], ['ink-2', '#55544f'], ['faint', 'rgb(0 0 0 / .42)'], ['accent', '#2f6bff'], ['accent-deep', '#1238c9'], ['signal', '#e2533a'], ['mute', '#8b8a85'], ['rule', '#d8d6d0']] },
+  styles: [{ id: 'title-medium', name: 'Title small', size: 17, leading: 1.4, weight: 550 }, { id: 'body-large', name: 'Body', size: 16, leading: 1.6, weight: 400 }, { id: 'body-large-compact', name: 'Body, lists', size: 16, leading: 1.4, weight: 400 }],
+};
+const CASES = { none: 'Aa', uppercase: 'AA', lowercase: 'aa', capitalize: 'Ab' };
+const CASE_NAMES = { none: 'As written', uppercase: 'Upper', lowercase: 'Lower', capitalize: 'Title' };
+const target = document.getElementById('target'), card = document.getElementById('card');
+let view = 'd', saved = null;
+
+// the page shows the state; a preview is the state plus one change, lifted when the pointer leaves
+const css = (s) => ({ fontSize: `${s.size.now}px`, lineHeight: String(s.leading.now), fontWeight: String(s.weight.now), letterSpacing: `${s.tracking.now}em`, textTransform: s.case.now, color: s.color.steps.find(([k]) => k === s.color.now)[1] });
+function show(s) { Object.assign(target.style, css(s)); }
+function preview(change) { const s = structuredClone(T); change(s); show(s); target.dataset.previewing = ''; }
+function unpreview() { show(T); delete target.dataset.previewing; }
+function use(change, said) {
+  menu = null;
+  saved = structuredClone(T); change(T); unpreview(); draw();
+  const toast = document.getElementById('toast'); document.getElementById('toastText').textContent = said; toast.hidden = false;
+  clearTimeout(use.t); use.t = setTimeout(() => (toast.hidden = true), 4000);
+}
+document.getElementById('undo').onclick = () => { if (saved) { Object.assign(T, saved); saved = null; unpreview(); draw(); } document.getElementById('toast').hidden = true; };
+
+const setSize = (n) => (s) => { s.size.now = n; s.size.off = false; };
+const setLead = (n) => (s) => { s.leading.now = n; s.leading.byHand = false; };
+const setWeight = (n) => (s) => { s.weight.now = n; s.weight.fromPage = false; };
+const setTrack = (n) => (s) => { s.tracking.now = n; s.tracking.fromPage = false; };
+const setCase = (c) => (s) => { s.case.now = c; };
+const setColor = (c) => (s) => { s.color.now = c; };
+const setStyle = (st) => (s) => { s.size.now = st.size; s.size.off = false; s.leading.now = st.leading; s.leading.byHand = false; s.weight.now = st.weight; s.weight.fromPage = false; s.style = st.id; };
+
+// one choice: data-do names the change; hover and focus preview it, a click uses it
+const ch = (cls, inner, on, checked, off = false, label = '') => `<button class="ch ${cls}${off ? ' off' : ''}" role="radio" aria-checked="${!!checked}" data-do="${on}" ${label ? `aria-label="${label}"` : ''}>${inner}</button>`;
+const ACT = {};
+let seq = 0;
+const act = (change, said) => { const id = `x${seq++}`; ACT[id] = { change, said }; return id; };
+
+const sizeSay = () => T.size.off ? `<div class="say off">${T.size.now}px isn’t in your scale. Nearest: 18 or 22.</div>` : '';
+const leadSay = () => T.leading.byHand ? '<div class="say">1.5, typed by hand. Pick it to use the step.</div>' : '';
+const lines = (lh) => `<span class="lines" style="gap:${Math.round((lh - 1) * 8)}px"><i></i><i></i><i style="width:70%"></i></span>`;
+const head = () => `<div class="head"><span class="n">Hero <span>· p</span></span><span class="at">Hero.tsx:96</span></div>`;
+
+function viewA() {
+  // sizes: the scale as ticks you read at rest, the off-scale value a coral tick where it falls
+  const sizes = [...T.size.steps]; if (T.size.off) sizes.push(T.size.now); sizes.sort((a, b) => a - b);
+  return head()
+    + `<div class="sec"><div class="lab">Style <span class="v">${T.style ? T.styles.find((x) => x.id === T.style).name : 'Closest: Title small'}</span></div><div class="styles">${T.styles.map((st) => ch('', `<span class="ag" style="font-size:${st.size + 2}px;font-weight:${st.weight}">Ag</span><span class="nm">${st.name}</span><span class="nb">${st.size}/${st.leading}</span>`, act(setStyle(st), `Hero uses ${st.name} now`), T.style === st.id)).join('')}</div></div>`
+    + `<div class="sec"><div class="grid">`
+    + `<div style="grid-column:1/-1"><div class="lab">Size <span class="v${T.size.off ? ' off' : ''}">${T.size.now}px</span></div><div class="ticks">${sizes.map((n) => { const off = T.size.off && n === T.size.now; return ch('', `<i style="height:${6 + (n - 10) * 1.2}px"></i><b>${n}</b>`, off ? '' : act(setSize(n), `Changed size to ${n}px`), !off && n === T.size.now, off, `${n}px`); }).join('')}</div>${sizeSay()}</div>`
+    + `<div style="grid-column:1/-1"><div class="lab">Leading <span class="v">${T.leading.now}</span></div><div class="glyphs">${T.leading.steps.map((n) => ch('', `${lines(n)}<b>${n}</b>`, act(setLead(n), `Changed leading to ${n}`), n === T.leading.now)).join('')}</div>${leadSay()}</div>`
+    + `<div style="grid-column:1/-1"><div class="lab">Tracking <span class="v">${T.tracking.now}em</span></div><div class="glyphs">${T.tracking.steps.map((n) => ch('', `<span style="font:600 12px/1 var(--sans);letter-spacing:${n * 3}em">AV</span><b>${n}</b>`, act(setTrack(n), `Changed tracking to ${n}em`), n === T.tracking.now)).join('')}</div></div>`
+    + `<div style="grid-column:1/-1"><div class="lab">Weight <span class="v">${T.weight.now}${T.weight.fromPage ? ' · from the page' : ''}</span></div><div class="weights">${T.weight.steps.map((n) => ch('', `<span style="font-weight:${n}">Ag</span><b>${n}</b>`, act(setWeight(n), `Changed weight to ${n}`), n === T.weight.now)).join('')}</div></div>`
+    + `</div></div>`
+    + `<div class="sec"><div class="lab">Case <span class="v">${CASE_NAMES[T.case.now]}</span></div><div class="seg">${T.case.steps.map((c) => ch('', CASES[c], act(setCase(c), `Changed case to ${CASE_NAMES[c].toLowerCase()}`), c === T.case.now, false, CASE_NAMES[c])).join('')}</div></div>`
+    + `<div class="sec" style="padding-bottom:12px"><div class="lab">Colour <span class="v">${T.color.now}</span></div><div class="sw">${T.color.steps.map(([k, v]) => ch('', '', act(setColor(k), `Changed colour to ${k}`), k === T.color.now, false, k).replace('class="ch', `style="background:${v}" class="ch`)).join('')}</div></div>`;
+}
+
+// a slider over the theme's steps: notches where they are, the knob snaps to one; an off-scale value is a coral ghost
+function slider(name, steps, now, off, set, fmt) {
+  const pos = (n) => { const i = steps.findIndex((x) => x >= n); if (i <= 0) return 0; if (steps[i] === n) return (i / (steps.length - 1)) * 100; return ((i - 1 + (n - steps[i - 1]) / (steps[i] - steps[i - 1])) / (steps.length - 1)) * 100; };
+  const at = steps.includes(now) ? now : null;
+  return `<div class="slider" data-steps="${steps.join(',')}" data-name="${name}" role="slider" tabindex="0" aria-label="${name}" aria-valuetext="${fmt(now)}">
+    <span class="track"></span><span class="fill" style="width:${at === null ? 0 : pos(at)}%"></span>
+    ${steps.map((n) => `<span class="notch" style="left:${pos(n)}%"><b>${fmt(n)}</b></span>`).join('')}
+    ${off ? `<span class="ghost" style="left:${pos(now)}%" title="${fmt(now)} isn’t in your scale"></span>` : ''}
+    ${at === null ? '' : `<span class="knob" style="left:${pos(at)}%"></span>`}</div>`;
+}
+const SLIDERS = { Size: [() => T.size.steps, setSize, (n) => `${n}`, (n) => `Changed size to ${n}px`], Leading: [() => T.leading.steps, setLead, (n) => `${n}`, (n) => `Changed leading to ${n}`], Weight: [() => T.weight.steps, setWeight, (n) => `${n}`, (n) => `Changed weight to ${n}`], Tracking: [() => T.tracking.steps, setTrack, (n) => `${n}`, (n) => `Changed tracking to ${n}em`] };
+function viewB() {
+  const row = (k, now, off, val, fmt) => `<div class="row"><span class="k">${k}</span>${slider(k, SLIDERS[k][0](), now, off, null, fmt)}<span class="val${off ? ' off' : ''}">${val}</span></div>`;
+  return head()
+    + `<div class="sec"><div class="lab">Style <span class="v">${T.style ? T.styles.find((x) => x.id === T.style).name : 'None · closest Title small'}</span></div><div class="presets">${T.styles.map((st) => ch('', `<span style="font-size:${st.size - 4}px;font-weight:${st.weight};white-space:nowrap">${st.name}</span><small>${st.size} / ${st.leading}</small>`, act(setStyle(st), `Hero uses ${st.name} now`), T.style === st.id)).join('')}</div></div>`
+    + `<div class="sec" style="padding-top:12px">`
+    + row('Size', T.size.now, T.size.off, `${T.size.now}px`, (n) => `${n}`)
+    + (T.size.off ? `<div class="say off" style="margin:-8px 0 8px 72px">${T.size.now}px isn’t in your scale. Nearest: 18 or 22.</div>` : '')
+    + row('Leading', T.leading.now, false, T.leading.now, (n) => `${n}`)
+    + row('Weight', T.weight.now, false, T.weight.now, (n) => `${n}`)
+    + row('Tracking', T.tracking.now, false, `${T.tracking.now}`, (n) => `${n}`)
+    + `</div>`
+    + `<div class="sec"><div class="seg">${T.case.steps.map((c) => ch('', CASES[c], act(setCase(c), `Changed case to ${CASE_NAMES[c].toLowerCase()}`), c === T.case.now, false, CASE_NAMES[c])).join('')}</div></div>`
+    + `<div class="sec" style="padding-bottom:12px"><div class="sw">${T.color.steps.map(([k, v]) => ch('', '', act(setColor(k), `Changed colour to ${k}`), k === T.color.now, false, k).replace('class="ch', `style="background:${v}" class="ch`)).join('')}</div></div>`;
+}
+
+function viewC() {
+  const sizes = [...T.size.steps]; if (T.size.off) sizes.push(T.size.now); sizes.sort((a, b) => b - a);
+  const word = 'Let go fast and the card flies';
+  return head()
+    + `<div class="split"><div class="ladder" role="radiogroup" aria-label="Size">${sizes.map((n) => { const off = T.size.off && n === T.size.now; return ch('', `<span style="font-size:${n}px;font-weight:${T.weight.now}">${word}</span><b>${off ? `${n} · off` : n}</b>`, off ? '' : act(setSize(n), `Changed size to ${n}px`), !off && n === T.size.now, off, `${n}px`); }).join('')}</div>`
+    + `<div class="side">`
+    + `<div><div class="lab">Style</div><div class="stack">${T.styles.map((st) => ch('', `<span style="font:${st.weight} ${st.size - 4}px/1 var(--sans)">Ag</span>${st.name}`, act(setStyle(st), `Hero uses ${st.name} now`), T.style === st.id)).join('')}</div></div>`
+    + `<div><div class="lab">Leading</div><div class="stack">${T.leading.steps.map((n) => ch('', `<span class="para" style="gap:${Math.round((n - 1) * 9)}px"><i></i><i></i><i style="width:60%"></i></span>${n}`, act(setLead(n), `Changed leading to ${n}`), n === T.leading.now)).join('')}</div></div>`
+    + `</div></div>`
+    + `<div class="foot"><div class="lab">Weight <span class="v">${T.weight.now}</span></div><div class="tags">${T.weight.steps.map((n) => ch('', `<span style="font-weight:${n}">Ag ${n}</span>`, act(setWeight(n), `Changed weight to ${n}`), n === T.weight.now)).join('')}</div></div>`
+    + `<div class="foot"><div class="lab">Case · tracking</div><div class="tags">${T.case.steps.map((c) => ch('', CASES[c], act(setCase(c), `Changed case to ${CASE_NAMES[c].toLowerCase()}`), c === T.case.now, false, CASE_NAMES[c])).join('')}${T.tracking.steps.map((n) => ch('', `<span style="letter-spacing:${n * 3}em">AV</span>`, act(setTrack(n), `Changed tracking to ${n}em`), n === T.tracking.now, false, `${n}em`)).join('')}</div></div>`
+    + `<div class="foot"><div class="lab">Colour <span class="v">${T.color.now}</span></div><div class="sw">${T.color.steps.map(([k, v]) => ch('', '', act(setColor(k), `Changed colour to ${k}`), k === T.color.now, false, k).replace('class="ch', `style="background:${v}" class="ch`)).join('')}</div></div>`
+    + (T.size.off ? `<div class="foot"><div class="say off" style="margin:0">${T.size.now}px isn’t in your scale. Nearest: 18 or 22.</div></div>` : '');
+}
+
+
+// ── D · Editor ──────────────────────────────────────────
+const WEIGHT_NAMES = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+const ICON = {
+  size: '<svg viewBox="0 0 14 14"><path d="M2 3.5h7M5.5 3.5v8M9.5 7h3M11 7v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  leading: '<svg viewBox="0 0 14 14"><path d="M4 3h8M4 7h8M4 11h8M1.5 2.5v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  tracking: '<svg viewBox="0 0 14 14"><path d="M1.5 2v10M12.5 2v10M4.5 10l2.5-6 2.5 6M5.4 8h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  weight: '<svg viewBox="0 0 14 14"><path d="M4 2.5h3.6a2.2 2.2 0 0 1 0 4.4H4zM4 6.9h4.3a2.3 2.3 0 0 1 0 4.6H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+};
+// each value field: its scale, what it is now, how it reads, what changing it does
+const FIELDS = {
+  size: { label: 'Size', steps: () => T.size.steps, now: () => T.size.now, off: () => T.size.off, unit: 'px', fmt: (n) => `${n}`, set: setSize, said: (n) => `Changed size to ${n}px` },
+  leading: { label: 'Leading', steps: () => T.leading.steps, now: () => T.leading.now, off: () => false, byHand: () => T.leading.byHand, unit: '', fmt: (n) => `${n}`, set: setLead, said: (n) => `Changed leading to ${n}` },
+  tracking: { label: 'Tracking', steps: () => T.tracking.steps, now: () => T.tracking.now, off: () => false, unit: 'em', fmt: (n) => `${n}`, set: setTrack, said: (n) => `Changed tracking to ${n}em` },
+  weight: { label: 'Weight', steps: () => T.weight.steps, now: () => T.weight.now, off: () => false, unit: '', fmt: (n) => `${n} ${WEIGHT_NAMES[n] ?? ''}`.trim(), set: setWeight, said: (n) => `Changed weight to ${n}` },
+};
+let editing = null; // { key, at: index of the step shown, typed: '' } while a value changes; null at rest
+let menu = null;    // 'style' | 'colour' while its list is open
+let railFor = null; // the field whose scale is already showing: it slides in once, not on every step
+// where a value sits on the track: steps evenly spaced, a value between two steps placed between them
+const posOf = (steps, n) => { const i = steps.findIndex((x) => x >= n); if (i < 0) return 100; if (i === 0 || steps[i] === n) return (i / (steps.length - 1)) * 100; return ((i - 1 + (n - steps[i - 1]) / (steps[i] - steps[i - 1])) / (steps.length - 1)) * 100; };
+const nearest = (steps, n) => steps.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
+function viewD() {
+  const st = T.style ? T.styles.find((x) => x.id === T.style) : null;
+  const closest = T.styles.reduce((a, b) => (Math.abs(b.size - T.size.now) < Math.abs(a.size - T.size.now) ? b : a));
+  const field = (key) => {
+    const f = FIELDS[key], ed = editing?.key === key, steps = f.steps();
+    const shown = ed && editing.moved ? (editing.typed ? editing.typed : f.fmt(steps[editing.at])) : f.fmt(f.now());
+    const changed = ed && editing.moved && !editing.typed && steps[editing.at] !== f.now();
+    return `<div class="fld" role="spinbutton" tabindex="0" data-key="${key}" title="Drag to change ${f.label.toLowerCase()}" aria-label="${f.label}" aria-valuetext="${f.fmt(f.now())}${f.unit}"${f.off() ? ' data-off' : ''}${ed ? ' data-editing' : ''}${changed ? ' data-changed' : ''}>`
+      + `<span class="ic">${ICON[key]}</span><span class="val">${shown}</span>${f.unit && !/[a-z]/i.test(shown) ? `<span class="u">${f.unit}</span>` : ''}${changed ? `<span class="was">${f.fmt(f.now())}</span>` : ''}</div>`;
+  };
+  let rail = '';
+  if (!editing) railFor = null;
+  if (editing) {
+    const f = FIELDS[editing.key], steps = f.steps(), now = f.now();
+    const marks = steps.map((n, i) => ({ n, i }));
+    if (f.off()) marks.push({ n: now, off: true });
+    marks.sort((a, b) => a.n - b.n);
+    const lo = [...steps].reverse().find((n) => n < now), hi = steps.find((n) => n > now);
+    const fresh = railFor !== editing.key; railFor = editing.key;
+    rail = `<div class="rail" aria-hidden="true"${fresh ? ' data-new' : ''}${editing.dragging ? ' data-dragging' : ''}><div class="ticks">${marks.map((m) => `<span class="tk"${m.off ? ' data-off' : ` data-i="${m.i}"`} style="left:${posOf(steps, m.n)}%"${!m.off && m.i === editing.at && (editing.moved || !f.off()) ? ' data-at' : ''} title="${m.n}${f.unit}"><i></i><b>${m.off ? '' : m.n}</b></span>`).join('')}${editing.dragging ? `<span class="thumb"><span class="knob"></span><span class="bub"><span></span></span></span>` : ''}</div>`
+      + `<div class="hint">${editing.dragging ? '<span>Let go to use it</span><span><kbd>esc</kbd> cancel</span>' : f.off() && !editing.moved ? `<span style="color:var(--coral)">${now}${f.unit} isn’t a step · nearest ${lo} or ${hi}</span>` : `<span>Drag the field, or <kbd>←</kbd> <kbd>→</kbd></span><span><kbd>↵</kbd> use</span><span><kbd>esc</kbd> back</span>`}</div></div>`;
+  }
+  const styleMenu = menu === 'style' ? `<div class="menu" role="listbox" aria-label="Text styles">${T.styles.map((x) => ch('', `<span class="ag" style="font-size:${Math.min(20, x.size + 2)}px;font-weight:${x.weight}">Ag</span><span>${x.name}</span><span class="nb">${x.size} / ${x.leading}</span>`, act(setStyle(x), `Hero uses ${x.name} now`), T.style === x.id)).join('')}</div>` : '';
+  const colourMenu = menu === 'colour' ? `<div class="menu" style="top:auto;bottom:44px" role="listbox" aria-label="Colour"><div class="sw">${T.color.steps.map(([k, v]) => ch('', '', act(setColor(k), `Changed colour to ${k}`), k === T.color.now, false, k).replace('class="ch', `style="background:${v}" class="ch`)).join('')}</div></div>` : '';
+  return head()
+    + `<div class="fields"><button class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${menu === 'style'}"><span class="ic" style="cursor:pointer">Ag</span>${st ? `<span class="val">${st.name}</span>` : `<span class="val" style="font-family:var(--sans)">No style</span><span class="sub">closest ${closest.name}</span>`}<span class="chev">▾</span></button></div>`
+    + `<div class="fields" style="padding-top:0">${field('size')}${field('leading')}${field('tracking')}${field('weight')}</div>`
+    + rail
+    + `<div class="seg">${T.case.steps.map((c) => ch('', CASES[c], act(setCase(c), `Changed case to ${CASE_NAMES[c].toLowerCase()}`), c === T.case.now, false, CASE_NAMES[c])).join('')}</div>`
+    + `<div class="fields" style="padding-top:0"><button class="fld wide pick" data-menu="colour" aria-haspopup="listbox" aria-expanded="${menu === 'colour'}"><span class="chip" style="background:${T.color.steps.find(([k]) => k === T.color.now)[1]}"></span><span class="val">${T.color.now}</span><span class="chev">▾</span></button></div>`
+    + `<div class="foot"><span>1 problem here</span><button>Show <kbd style="font:500 10px var(--mono);color:var(--ink-3)">.</kbd></button></div>`
+    + styleMenu + colourMenu;
+}
+// ── the drag ────────────────────────────────────────────
+// The whole field is the handle: past 3px a press becomes a drag and the scale opens from the field. One spring moves
+// the thumb (transform only, every frame, velocity carried, so a reversal stays smooth). What it springs toward is the
+// hand pulled by a smooth magnet around each step: on the step when the hand is near, the hand itself at the midpoint
+// between two, so it never jumps. Past either end the hand meets a rubber band. The step nearest the hand is the
+// value: it previews on the paragraph at once (it must keep up with the hand), and its number rolls in from the side
+// it came from. Letting go springs the thumb into its step with a little overshoot (a drag's force, spent), then
+// uses it; Esc, or letting go on the value it started on, springs it home and changes nothing. The card is never
+// redrawn while the hand is down: the field, the ticks and the thumb are moved in place.
+let dragged = false;
+const STILL = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const EXPO = 'cubic-bezier(.19, 1, .22, 1)';
+const HOLD = { k: 1400, c: 66 };   // while held: near critical, quick, no wobble
+const SETTLE = { k: 520, c: 25 };  // let go: a small overshoot into the step
+const BAND = 26;                   // px the rubber band gives at most past an end
+const SWELL = 18;                  // px around the thumb that ticks swell over
+// roll a number in from the side it came from (up for larger, down for smaller)
+function roll(el, text, dir) {
+  if (el.textContent === text) return;
+  el.textContent = text;
+  if (!STILL && dir) el.animate([{ transform: `translateY(${dir > 0 ? 6 : -6}px)`, opacity: 0.2 }, { transform: 'none', opacity: 1 }], { duration: 150, easing: EXPO });
+}
+function drag(key, e) {
+  const f = FIELDS[key], steps = f.steps(), x0 = e.clientX, origin = f.now(), wasOff = f.off();
+  let d = null;
+  dragged = false; // a press is a click until it moves
+  const label = (n) => `${f.fmt(n)}${f.unit && !/[a-z]/i.test(f.fmt(n)) ? f.unit : ''}`;
+  const begin = () => {
+    menu = null;
+    const from = steps.includes(origin) ? steps.indexOf(origin) : -1; // -1: on the off-scale value, between steps
+    editing = { key, at: from < 0 ? steps.indexOf(nearest(steps, origin)) : from, typed: '', moved: true, dragging: true };
+    draw();
+    document.body.dataset.dragging = '';
+    const track = card.querySelector('.rail .ticks'), r = track.getBoundingClientRect();
+    const xOf = (n) => (posOf(steps, n) / 100) * r.width; // in track px
+    d = { track, r, xOf, start: xOf(origin), at: from, hand: xOf(origin), x: xOf(origin), v: 0, mode: 'hold', done: null,
+      thumb: track.querySelector('.thumb'), knob: track.querySelector('.knob'), num: track.querySelector('.bub span'), bub: track.querySelector('.bub'),
+      fld: card.querySelector(`.fld[data-key="${key}"]`), ticks: [...track.querySelectorAll('.tk')].map((t) => ({ t, i: t.querySelector('i'), x: (parseFloat(t.style.left) / 100) * r.width })) };
+    d.num.textContent = label(origin);
+    if (!STILL) {
+      d.knob.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }], { duration: 180, easing: EXPO, fill: 'forwards' });
+      d.bub.animate([{ transform: 'translateY(4px) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 200, easing: EXPO });
+    }
+    d.last = performance.now();
+    requestAnimationFrame(frame);
+  };
+  // where the thumb is drawn toward: the hand, pulled onto the nearest step by a smooth magnet; rubber band past the ends
+  const targetOf = (hand) => {
+    const w = d.r.width;
+    if (hand < 0) return -BAND * (1 - 1 / (1 + -hand / BAND / 2));
+    if (hand > w) return w + BAND * (1 - 1 / (1 + (hand - w) / BAND / 2));
+    const xs = steps.map((n) => d.xOf(n)).concat(wasOff ? [d.start] : []);
+    let s0 = xs[0]; for (const x of xs) if (Math.abs(x - hand) < Math.abs(s0 - hand)) s0 = x;
+    // half the gap to the neighbour on the hand's side: at the midpoint the magnet lets go entirely
+    const other = xs.filter((x) => (hand >= s0 ? x > s0 : x < s0)).reduce((a, x) => (a === null || Math.abs(x - s0) < Math.abs(a - s0) ? x : a), null);
+    const half = other === null ? 24 : Math.abs(other - s0) / 2;
+    const u = Math.min(1, Math.abs(hand - s0) / half);
+    return s0 + (hand - s0) * u * u * u; // cubic: firm on the step, free near the midpoint
+  };
+  const choose = (hand) => {
+    let at = 0, best = Infinity;
+    steps.forEach((n, i) => { const dist = Math.abs(d.xOf(n) - hand); if (dist < best) best = dist, at = i; });
+    if (wasOff && Math.abs(d.start - hand) < best) at = -1;
+    if (at === d.at) return;
+    const before = d.at < 0 ? origin : steps[d.at], n = at < 0 ? origin : steps[at], dir = Math.sign(n - before);
+    d.at = at;
+    if (at >= 0) editing.at = at;
+    for (const t of d.track.querySelectorAll('.tk[data-i]')) t.toggleAttribute('data-at', +t.dataset.i === at);
+    const changed = n !== origin;
+    roll(d.num, label(n), dir);
+    roll(d.fld.querySelector('.val'), f.fmt(n), dir);
+    d.fld.toggleAttribute('data-changed', changed);
+    let was = d.fld.querySelector('.was');
+    if (changed && !was) { was = Object.assign(document.createElement('span'), { className: 'was', textContent: f.fmt(origin) }); d.fld.append(was); }
+    if (!changed) was?.remove();
+    if (changed) preview(f.set(n)); else unpreview();
+  };
+  // one spring, stepped at a fixed 1/240s so it behaves the same at any frame rate
+  const frame = (now) => {
+    if (!d) return;
+    const dt = Math.min(0.05, (now - d.last) / 1000); d.last = now;
+    const target = d.mode === 'hold' ? targetOf(d.hand) : (d.at < 0 ? d.start : d.xOf(steps[d.at]));
+    const { k, c } = d.mode === 'hold' ? HOLD : SETTLE;
+    if (STILL) { d.x = target; d.v = 0; }
+    else for (let t = 0; t < dt; t += 1 / 240) { const h = Math.min(1 / 240, dt - t); d.v += (-k * (d.x - target) - c * d.v) * h; d.x += d.v * h; }
+    d.thumb.style.transform = `translateX(${d.x}px)`;
+    // ticks near the thumb swell a little (a dock's magnification, kept small)
+    if (!STILL) for (const tk of d.ticks) { const g = Math.exp(-(((tk.x - d.x) / SWELL) ** 2)); tk.i.style.transform = `scaleY(${1 + 0.55 * g})`; }
+    if (d.mode !== 'hold' && Math.abs(d.x - target) < 0.15 && Math.abs(d.v) < 4) return d.done();
+    requestAnimationFrame(frame);
+  };
+  const move = (ev) => {
+    if (!d) { if (Math.abs(ev.clientX - x0) < 3) return; dragged = true; begin(); }
+    d.hand = d.start + (ev.clientX - x0);
+    choose(Math.max(0, Math.min(d.r.width, d.hand)));
+  };
+  const end = (keep) => {
+    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('keydown', esc, true);
+    delete document.body.dataset.dragging;
+    if (!d) return;
+    if (!keep && d.at !== (steps.includes(origin) ? steps.indexOf(origin) : -1)) { d.at = steps.includes(origin) ? steps.indexOf(origin) : -1; unpreview(); }
+    const n = d.at < 0 ? origin : steps[d.at];
+    if (!STILL) d.knob.animate([{ transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 220, easing: EXPO, fill: 'forwards' });
+    d.mode = 'settle';
+    d.done = () => {
+      const rail = card.querySelector('.rail'), finish = () => { d = null; editing = null; if (!keep || n === origin) { unpreview(); draw(); } else use(f.set(n), f.said(n)); };
+      // the scale folds back into the field, quicker than it opened
+      if (STILL || !rail) return finish();
+      rail.animate([{ clipPath: 'inset(0 0 0 0 round 10px)', opacity: 1 }, { clipPath: 'inset(0 0 100% 0 round 10px)', opacity: 0.4 }], { duration: 150, easing: 'cubic-bezier(.25, .46, .45, .94)', fill: 'forwards' }).finished.then(finish);
+    };
+  };
+  const up = () => end(true);
+  const esc = (ev) => { if (ev.key === 'Escape' && d) { ev.preventDefault(); ev.stopPropagation(); dragged = true; end(false); } };
+  addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('keydown', esc, true);
+}
+
+// a value field: drag it to move through the steps; click it to change it with the keys or by typing
+function wireFields() {
+  for (const el of card.querySelectorAll('.fld[data-key]')) {
+    const key = el.dataset.key, f = FIELDS[key];
+    const start = () => { const steps = f.steps(); return steps.indexOf(steps.includes(f.now()) ? f.now() : nearest(steps, f.now())); };
+    const show = (at, moved = true) => { editing = { key, at, typed: '', moved }; if (moved) preview(f.set(f.steps()[at])); else unpreview(); draw(); card.querySelector(`.fld[data-key="${key}"]`)?.focus({ preventScroll: true }); };
+    const commit = () => { const n = f.steps()[editing.at]; const same = n === f.now() && !f.off() && !f.byHand?.(); editing = null; if (same) { unpreview(); draw(); } else use(f.set(n), f.said(n)); };
+    const cancel = () => { editing = null; unpreview(); draw(); };
+    el.addEventListener('pointerdown', (e) => { if (e.button === 0) drag(key, e); });
+    el.addEventListener('click', () => { if (dragged) { dragged = false; return; } if (editing?.key === key) return; menu = null; show(start(), false); });
+    el.addEventListener('keydown', (e) => {
+      const steps = f.steps(), at = editing?.key === key ? editing.at : start();
+      if (/^[\d.]$/.test(e.key)) { e.preventDefault(); editing = { key, at, typed: (editing?.key === key ? editing.typed : '') + e.key, moved: true }; draw(); card.querySelector(`.fld[data-key="${key}"]`)?.focus(); return; }
+      if (e.key === 'Backspace' && editing?.typed) { e.preventDefault(); editing.typed = editing.typed.slice(0, -1); draw(); card.querySelector(`.fld[data-key="${key}"]`)?.focus(); return; }
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (d) { e.preventDefault(); const base = editing?.key === key && editing.moved ? at : (f.off() ? (d > 0 ? steps.findIndex((n) => n > f.now()) - 1 : steps.findIndex((n) => n > f.now())) : at); show(Math.max(0, Math.min(steps.length - 1, base + d))); return; }
+      if (e.key === 'Enter') { e.preventDefault(); if (editing?.typed) editing.at = steps.indexOf(nearest(steps, Number(editing.typed))), editing.typed = ''; if (editing?.key === key) commit(); else show(at, false); return; }
+      if (e.key === 'Escape' && editing) { e.preventDefault(); cancel(); }
+    });
+  }
+  for (const t of card.querySelectorAll('.rail .tk[data-i]')) {
+    const i = +t.dataset.i, f = FIELDS[editing.key];
+    t.addEventListener('pointerenter', () => preview(f.set(f.steps()[i])));
+    t.addEventListener('pointerleave', () => preview(f.set(f.steps()[editing.at])));
+    t.addEventListener('click', () => { editing.at = i; const n = f.steps()[i]; editing = null; use(f.set(n), f.said(n)); });
+  }
+  for (const b of card.querySelectorAll('.fld[data-menu]')) b.addEventListener('click', () => { editing = null; unpreview(); menu = menu === b.dataset.menu ? null : b.dataset.menu; draw(); });
+}
+
+function draw() {
+  seq = 0; for (const k of Object.keys(ACT)) delete ACT[k];
+  card.className = `card ${view}`;
+  if (view !== 'd') editing = menu = null;
+  card.innerHTML = { a: viewA, b: viewB, c: viewC, d: viewD }[view]();
+  place();
+  for (const b of card.querySelectorAll('.ch[data-do]')) {
+    const a = ACT[b.dataset.do]; if (!a) continue;
+    b.addEventListener('pointerenter', () => preview(a.change)); b.addEventListener('focus', () => preview(a.change));
+    b.addEventListener('pointerleave', unpreview); b.addEventListener('blur', unpreview);
+    b.addEventListener('click', () => use(a.change, a.said));
+  }
+  for (const s of card.querySelectorAll('.slider')) wireSlider(s);
+  if (view === 'd') wireFields();
+}
+// a slider snaps to the nearest step while dragged (previewed), and uses it on release
+function wireSlider(el) {
+  const steps = el.dataset.steps.split(',').map(Number), [, set, , said] = SLIDERS[el.dataset.name];
+  const at = (x) => { const r = el.getBoundingClientRect(); return steps[Math.round(Math.max(0, Math.min(1, (x - r.left) / r.width)) * (steps.length - 1))]; };
+  const move = (n) => { const p = (steps.indexOf(n) / (steps.length - 1)) * 100; let k = el.querySelector('.knob'); if (!k) { k = Object.assign(document.createElement('span'), { className: 'knob' }); el.append(k); } k.style.left = `${p}%`; el.querySelector('.fill').style.width = `${p}%`; preview(set(n)); };
+  let dragging = false, last = null;
+  el.addEventListener('pointerdown', (e) => { dragging = true; el.setPointerCapture(e.pointerId); last = at(e.clientX); move(last); });
+  el.addEventListener('pointermove', (e) => { if (!dragging) return; const n = at(e.clientX); if (n !== last) { last = n; move(n); } });
+  el.addEventListener('pointerup', () => { if (!dragging) return; dragging = false; use(set(last), said(last)); });
+  el.addEventListener('keydown', (e) => { const i = steps.indexOf(Number(el.getAttribute('aria-valuetext'))); const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key]; if (!d) return; e.preventDefault(); const n = steps[Math.max(0, Math.min(steps.length - 1, (i < 0 ? (d > 0 ? -1 : steps.length) : i) + d))]; use(set(n), said(n)); requestAnimationFrame(() => card.querySelector(`.slider[data-name="${el.dataset.name}"]`)?.focus()); });
+}
+// beside the element, its caret at the element's middle; kept on screen
+function place() {
+  const stage = document.querySelector('.stage').getBoundingClientRect(), t = target.getBoundingClientRect();
+  const w = card.offsetWidth, fits = t.right + 22 + w <= innerWidth - 16;
+  card.dataset.below = fits ? '' : 'y';
+  if (fits) {
+    const top = Math.max(12, t.top - stage.top + t.height / 2 - 60);
+    card.style.left = `${t.right - stage.left + 22}px`; card.style.top = `${top}px`;
+    card.style.setProperty('--caret', `${t.top - stage.top + t.height / 2 - top - 6}px`);
+  } else {
+    card.style.left = `${Math.max(16, t.left - stage.left)}px`; card.style.top = `${t.bottom - stage.top + 18}px`;
+  }
+}
+for (const b of document.querySelectorAll('.bar [data-v]')) b.onclick = () => { view = b.dataset.v; for (const x of document.querySelectorAll('.bar [data-v]')) x.setAttribute('aria-pressed', x === b); draw(); };
+addEventListener('resize', place);
+show(T); draw();
+</script>
+</body>
+</html>
