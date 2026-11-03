@@ -24,12 +24,17 @@ import { answered, post, request } from './api.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
 import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
-import { SHOW_CSS, chipsHtml, Marks, play, ease } from './show.js';
+import { SHOW_CSS, chipsHtml, Marks, play, playAll, ease } from './show.js';
 import { SpacingPass } from './spacing-pass.js';
+import { ColourPass } from './colour-pass.js';
 import { CLEANUP as W } from './words.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
-const SPACING_LAWS = [{ id: 'proximity', name: 'Law of proximity' }, { id: 'common-region', name: 'Law of common region' }];
+// the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
+const SWAP_LAWS = {
+  spacing: [{ id: 'proximity', name: 'Law of proximity' }, { id: 'common-region', name: 'Law of common region' }],
+  colour: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'von-restorff', name: 'Von Restorff effect' }],
+};
 const PASSES = ['text', 'spacing', 'colour', 'icons'];
 // where a clean-up is, kept in the tab: a write (or its undo) can reload the page, and the clean-up comes back to it
 const KEPT = 'plumb:cleanup', FRESH = 60000;
@@ -116,7 +121,11 @@ function nums(b) {
 
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
-  #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null; #spacing = new SpacingPass();
+  #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
+  #swaps = { spacing: new SpacingPass(), colour: new ColourPass() };
+  get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass
+  get #words() { return this.#sw ? W[PASSES[this.#pass]] : W; }
+  #hasNext() { return !!this.#swaps[PASSES[this.#pass + 1]]; }
 
   // host: { render(), announce(text), write(write, said, meta) → { ok, undo, group, why }, undo(group), wrote(result, text), close(), url() }
   constructor(host) { this.#host = host; }
@@ -127,7 +136,7 @@ export class Cleanup {
     this.#pass = 0; this.#done.clear(); this.#saved = null;
     await this.#read();
   }
-  stop() { this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); this.#spacing.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
+  stop() { this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
 
   // back after a reload its own write or undo caused: the step written (with its Undo), or the page read again
   async resume() {
@@ -137,7 +146,7 @@ export class Cleanup {
     // the page went while its write was saving: the server's trace says whether the step landed (it may still be
     // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
     if (v.state === 'writing' && v.group) {
-      this.#page = v.page; if (pass === 1) this.#spacing.page = v.spacing; this.#done = new Map(Object.entries(v.done ?? {}));
+      this.#page = v.page; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#done = new Map(Object.entries(v.done ?? {}));
       this.#state = 'writing'; this.#pass = pass; this.#host.render();
       let changes = [];
       for (let i = 0; i < 6 && !changes.length; i++) {
@@ -147,13 +156,13 @@ export class Cleanup {
       if (changes.length) {
         const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
         const said = v.said;
-        v = { state: 'done', pass, saved: v.saved, page: v.page, spacing: v.spacing, done };
+        v = { state: 'done', pass, saved: v.saved, page: v.page, swap: v.swap, done };
         keep(v);
         this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.saved.group } }, said);
       } else { this.#state = 'idle'; v = { ...v, state: 'read', said: W.reloaded }; }
     }
-    if (v.state === 'done') { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (pass === 1) this.#spacing.page = v.spacing; this.#state = 'done'; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
-    else if (pass === 1) { this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = 1; this.#readSpacing().then(() => v.said && this.#host.announce?.(v.said)); }
+    if (v.state === 'done') { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#state = 'done'; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
+    else if (pass > 0) { this.#done = new Map(Object.entries(v.done ?? {})); this.#readPass(pass).then(() => v.said && this.#host.announce?.(v.said)); }
     else { this.start().then(() => v.said && this.#host.announce?.(v.said)); }
   }
 
@@ -181,11 +190,11 @@ export class Cleanup {
     this.#host.render();
   }
 
-  // the spacing pass: this page's stacks against the site's, refined inside the app's scale
-  async #readSpacing() {
-    this.#pass = 1; this.#saved = null; this.#state = 'reading'; this.#err = null; this.#host.render();
+  // a class-swap pass (spacing, colour): this page against the site's, kept to what the app already has
+  async #readPass(i) {
+    this.#pass = i; this.#saved = null; this.#state = 'reading'; this.#err = null; this.#host.render();
     try {
-      const page = await this.#spacing.read();
+      const page = await this.#sw.read();
       this.#state = page.places ? 'ready' : 'nothing';
     } catch (error) {
       this.#state = /no census/i.test(error?.message ?? '') ? 'no-census' : 'error';
@@ -197,11 +206,11 @@ export class Cleanup {
   #next() {
     const k = PASSES[this.#pass];
     if (!this.#done.has(k)) this.#done.set(k, 'skipped');
-    if (this.#pass === 0) return this.#readSpacing();
+    if (this.#hasNext()) return this.#readPass(this.#pass + 1);
     this.#state = 'done'; this.#host.render();
   }
-  #savedLine(saved) { return saved?.pass === 1 ? W.spacing.saved(saved.places, saved.files) : W.saved(saved.places, saved.files); }
-  #moves() { return this.#pass === 1 ? this.#spacing.page?.places ?? 0 : this.#page?.moves ?? 0; }
+  #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
+  #moves() { return this.#sw ? this.#sw.page?.places ?? 0 : this.#page?.moves ?? 0; }
 
   html() {
     if (this.#state === 'preview') {
@@ -210,7 +219,7 @@ export class Cleanup {
     }
     const steps = PASSES.map((k, i) => {
       const st = this.#done.get(k), now = i === this.#pass && !st;
-      const n = k === 'text' && this.#page ? this.#page.moves : k === 'spacing' && this.#spacing.page ? this.#spacing.page.places : null;
+      const n = k === 'text' ? this.#page?.moves ?? null : this.#swaps[k]?.page?.places ?? null;
       return `<span class="pass ${st ?? (now ? 'now' : '')}"><i>${st === 'done' ? '✓' : ''}</i><span>${esc(W.pass[k])}</span>${n != null ? `<span class="n">${n}</span>` : ''}</span>`;
     }).join('');
     const saved = this.#saved ? `<div class="saved" role="status"><b>${esc(W.pass[PASSES[this.#saved.pass ?? 0]])}</b>${esc(this.#savedLine(this.#saved))}<button type="button" class="cu-btn quiet" data-cu="undo">${esc(W.undo)}</button></div>` : '';
@@ -220,10 +229,10 @@ export class Cleanup {
   #bodyHtml() {
     const s = this.#state, acts = (inner) => `<div class="acts">${inner}</div>`;
     const close = `<button type="button" class="cu-btn quiet" data-cu="close">${esc(W.close)}<kbd>esc</kbd></button>`;
-    if (s === 'reading') return `<div class="body"><div class="sub" role="status">${esc(this.#pass === 1 ? W.spacing.reading : W.reading)}</div></div>`;
+    if (s === 'reading') return `<div class="body"><div class="sub" role="status">${esc(this.#words.reading)}</div></div>`;
     if (s === 'no-census') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
       + `<div class="cmd"><code>plumber census --url ${esc(this.#host.url?.() ?? location.origin + '/')}</code><button type="button" class="cu-btn quiet" data-cu="copy">${esc(W.copy)}</button></div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
-    if (s === 'error') return `<div class="body"><div class="head">${esc(this.#pass === 1 ? W.spacing.couldNot : W.couldNot)}</div><div class="error">${esc(this.#err ?? '')}</div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
+    if (s === 'error') return `<div class="body"><div class="head">${esc(this.#words.couldNot)}</div><div class="error">${esc(this.#err ?? '')}</div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'writing') return `<div class="body"><div class="sub" role="status">${esc(W.writing(this.#moves()))}</div></div>`;
     if (s === 'done' && this.#pass === 0) {
       const p = this.#page, text = this.#done.get('text') === 'done';
@@ -231,7 +240,7 @@ export class Cleanup {
         + (text ? `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(W.sizesPage)}</small></div></div>` : '') + `</div>`
         + acts(`<button type="button" class="cu-btn primary" data-cu="next">${esc(W.next)}<kbd>→</kbd></button><span class="grow"></span>${close}`);
     }
-    if (this.#pass === 1) return this.#spacingHtml(acts, close);
+    if (this.#sw) return this.#swapHtml(acts, close);
     const p = this.#page, names = namesOf(this.#p.roles);
     if (s === 'nothing') return `<div class="body"><div class="head">${esc(W.nothing(this.#p.roles.length))}</div><div class="sub">${esc(W.nothingWhy)}</div></div>${acts(`<span class="grow"></span><button type="button" class="cu-btn primary" data-cu="skip">${esc(W.next)}<kbd>→</kbd></button>`)}`;
     const rows = p.roles.filter((x) => x.here.length).map(({ role, here, moves }) => {
@@ -250,21 +259,22 @@ export class Cleanup {
       + acts(`<button type="button" class="cu-btn primary" data-cu="apply">${esc(W.apply)}<kbd>↵</kbd></button><button type="button" class="cu-btn" data-cu="preview">${esc(W.preview)}<kbd>P</kbd></button><span class="grow"></span><button type="button" class="cu-btn quiet" data-cu="skip">${esc(W.skip(W.pass.text.toLowerCase()))}<kbd>→</kbd></button>`);
   }
 
-  #spacingHtml(acts, close) {
-    const S = W.spacing, s = this.#state, p = this.#spacing.page;
+  #swapHtml(acts, close) {
+    const S = this.#words, s = this.#state, p = this.#sw.page, more = this.#hasNext();
     if (s === 'done') {
-      const did = this.#done.get('spacing') === 'done';
-      return `<div class="body"><div class="head">${esc(did ? S.doneHead : S.doneSkipped)}</div><div class="sub">${esc(S.notYet)}</div>`
+      const did = this.#done.get(PASSES[this.#pass]) === 'done';
+      return `<div class="body"><div class="head">${esc(did ? S.doneHead : S.doneSkipped)}</div><div class="sub">${esc(more ? S.next : S.notYet)}</div>`
         + (did && p ? `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(S.sizesPage)}</small></div></div>` : '')
         + (this.#saved?.refused ? `<div class="sub">${esc(S.refused(this.#saved.refused))}</div>` : '') + `</div>`
-        + acts(`<span class="grow"></span><button type="button" class="cu-btn primary" data-cu="close">${esc(W.done)}<kbd>esc</kbd></button>`);
+        + acts(more ? `<button type="button" class="cu-btn primary" data-cu="next">${esc(W.next)}<kbd>→</kbd></button><span class="grow"></span>${close}`
+          : `<span class="grow"></span><button type="button" class="cu-btn primary" data-cu="close">${esc(W.done)}<kbd>esc</kbd></button>`);
     }
-    if (s === 'nothing') return `<div class="body"><div class="head">${esc(S.nothing)}</div><div class="sub">${esc(S.scale(p?.scale))}</div></div>${acts(`<button type="button" class="cu-btn primary" data-cu="next">${esc(W.done)}<kbd>→</kbd></button><span class="grow"></span>${close}`)}`;
-    const rows = this.#spacing.steps().map((x) => `<li class="moves"><span class="ag" aria-hidden="true"><i class="sp-ic">${x.chip.icon}</i></span><span class="nm">${esc(`${x.chip.from}px → ${x.to}px`)}</span><span class="here">${esc(S.row(x.bands().length))}</span></li>`).join('');
-    return `<div class="body"><div class="head">${esc(S.head(p.before, p.after))}</div><div class="sub">${esc(S.scale(p.scale))}</div><div class="law">${esc(S.law)}</div>`
+    if (s === 'nothing') return `<div class="body"><div class="head">${esc(S.nothing)}</div><div class="sub">${esc(S.sub(p))}</div></div>${acts(`<button type="button" class="cu-btn primary" data-cu="next">${esc(more ? W.next : W.done)}<kbd>→</kbd></button><span class="grow"></span>${close}`)}`;
+    const rows = this.#sw.steps().map((x) => `<li class="moves"><span class="ag" aria-hidden="true"><i class="sp-ic">${x.chip.icon}</i></span><span class="nm">${esc(x.chip.name)}</span><span class="here">${esc(S.row(x.bands().length))}</span></li>`).join('');
+    return `<div class="body"><div class="head">${esc(S.head(p.before, p.after, p.places))}</div><div class="sub">${esc(S.sub(p))}</div><div class="law">${esc(S.law)}</div>`
       + `<ol class="ladder" aria-label="${esc(S.list)}">${rows}</ol>`
-      + `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(S.sizesPage)}</small></div><div><b>${p.places}</b><small>${esc(S.changes)}</small></div></div></div>`
-      + acts(`<button type="button" class="cu-btn primary" data-cu="apply">${esc(W.apply)}<kbd>↵</kbd></button><button type="button" class="cu-btn" data-cu="preview">${esc(W.preview)}<kbd>P</kbd></button><span class="grow"></span><button type="button" class="cu-btn quiet" data-cu="skip">${esc(W.skip(W.pass.spacing.toLowerCase()))}<kbd>→</kbd></button>`);
+      + `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(S.sizesPage)}</small></div><div><b>${p.places}</b><small>${esc(S.changes(p.places))}</small></div></div></div>`
+      + acts(`<button type="button" class="cu-btn primary" data-cu="apply">${esc(W.apply)}<kbd>↵</kbd></button><button type="button" class="cu-btn" data-cu="preview">${esc(W.preview)}<kbd>P</kbd></button><span class="grow"></span><button type="button" class="cu-btn quiet" data-cu="skip">${esc(W.skip(W.pass[PASSES[this.#pass]].toLowerCase()))}<kbd>→</kbd></button>`);
   }
 
   // a click inside the panel's body; true when it was ours
@@ -276,7 +286,7 @@ export class Cleanup {
     else if (act === 'cancel') this.#togglePreview(false);
     else if (act === 'skip' || act === 'next') this.#next();
     else if (act === 'undo') this.#undo();
-    else if (act === 'retry') { if (this.#pass === 1) this.#readSpacing(); else this.#read(); }
+    else if (act === 'retry') { if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
     else if (act === 'copy') { const t = this.#el?.querySelector?.('.cmd code')?.textContent ?? ''; navigator.clipboard?.writeText(t).catch(() => {}); this.#host.announce?.(W.copied); }
     else if (act === 'close') this.#host.close();
     return true;
@@ -286,7 +296,7 @@ export class Cleanup {
   // this page's styles as the show's roles, largest first: each one's chip (its value: the size most of its places have
   // now, rolling to the style's), its places' line boxes, and setting it
   #steps() {
-    if (this.#pass === 1) return this.#spacing.steps();
+    if (this.#sw) return this.#sw.steps();
     const names = namesOf(this.#p.roles);
     // a size as the page draws it: the most common computed size among the places (a fluid style at this width)
     const drawn = (els) => { const n = els.map((el) => parseFloat(getComputedStyle(el).fontSize)).filter(Number.isFinite); return n.sort((a, b) => n.filter((v) => v === b).length - n.filter((v) => v === a).length)[0] ?? null; };
@@ -309,7 +319,7 @@ export class Cleanup {
     this.#marks ??= new Marks(this.#el.getRootNode());
     const chips = [...this.#el.querySelectorAll('.sh-chip')];
     const steps = this.#steps().map((x, i) => ({ ...x, chip: chips[i] }));
-    await play(steps, { marks: this.#marks, signal: stop.signal });
+    await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, signal: stop.signal });
     if (this.#show === stop) this.#show = null;
   }
   #settle() { this.#show?.abort(); this.#show = null; this.#marks?.clear(); }
@@ -318,14 +328,14 @@ export class Cleanup {
       this.#state = 'preview'; this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));
       return this.#play();
     }
-    if (!on && this.#state === 'preview') { this.#settle(); if (this.#pass === 1) this.#spacing.clear(); else this.#preview.clear(glide); this.#state = 'ready'; this.#listen(false); this.#held = false; }
+    if (!on && this.#state === 'preview') { this.#settle(); if (this.#sw) this.#sw.clear(); else this.#preview.clear(glide); this.#state = 'ready'; this.#listen(false); this.#held = false; }
     this.#host.render();
   }
 
   // the styles written once (the theme's tokens and utilities), and only this page's places swapped, as one step
   async #apply() {
     if (!['ready', 'preview'].includes(this.#state)) return;
-    if (this.#pass === 1) return this.#applySpacing();
+    if (this.#sw) return this.#applySwaps();
     const w = this.#p.write ?? {}, sites = new Set(this.#page.roles.flatMap((x) => x.here).map((m) => `${m.site.file}:${m.site.line}:${m.site.column}`));
     const swaps = (w.swaps ?? []).map((f) => ({ ...f, edits: (f.edits ?? []).filter((e) => sites.has(`${f.file}:${e.line}:${e.column}`)) })).filter((f) => f.edits.length);
     if (this.#state === 'ready') await this.#togglePreview(true); // Apply plays the show too
@@ -359,41 +369,44 @@ export class Cleanup {
     finally { removeEventListener('plumb:applied', heard); }
     this.#host.render();
   }
-  // the spacing pass written: one class swap per write, through each class's site, as one step
-  async #applySpacing() {
+  // a class-swap pass written: one class swap per write, through each class's site, as one step
+  async #applySwaps() {
+    const k = PASSES[this.#pass], i = this.#pass, sw = this.#sw, S = W[k];
     if (this.#state === 'ready') await this.#togglePreview(true); // Apply plays the show too
     this.#settle(); this.#listen(false);
-    if (this.#held) { this.#held = false; this.#spacing.show(); }
+    if (this.#held) { this.#held = false; sw.show(); }
     this.#state = 'writing'; this.#host.render();
-    const group = `cleanup-spacing-${Date.now().toString(36)}`;
+    const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
-      const { swaps, refused } = await this.#spacing.edits();
-      if (!swaps.length) throw new Error(refused[0]?.why ?? W.spacing.couldNot);
-      const files = swaps.length, places = this.#spacing.page.places, said = W.spacing.saved(places, files);
+      const { swaps, refused } = await sw.edits();
+      if (!swaps.length) throw new Error(refused[0]?.why ?? S.couldNot);
+      const files = swaps.length, places = sw.page.places, said = S.saved(places, files);
+      const page = this.#page && (({ census: _c, roles: _r, ...rest }) => rest)(this.#page);
       const landed = (undo = []) => {
-        this.#saved = { group, places, files, pass: 1, refused: refused.length };
-        this.#done.set('spacing', 'done'); this.#state = 'done';
-        keep({ state: 'done', pass: 1, saved: this.#saved, page: this.#page && (({ census: _c, roles: _r, ...page }) => page)(this.#page), spacing: this.#spacing.page, done: Object.fromEntries(this.#done) });
+        this.#saved = { group, places, files, pass: i, refused: refused.length };
+        this.#done.set(k, 'done'); this.#state = 'done';
+        keep({ state: 'done', pass: i, saved: this.#saved, page, swap: sw.page, done: Object.fromEntries(this.#done) });
         this.#host.wrote?.({ undo, trace: { group } }, said);
       };
-      keep({ state: 'writing', pass: 1, group, said, saved: { group, places, files, pass: 1, refused: refused.length }, page: this.#page && (({ census: _c, roles: _r, ...page }) => page)(this.#page), spacing: this.#spacing.page, done: Object.fromEntries(this.#done) });
-      const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass.spacing, laws: SPACING_LAWS, group }), group);
+      keep({ state: 'writing', pass: i, group, said, saved: { group, places, files, pass: i, refused: refused.length }, page, swap: sw.page, done: Object.fromEntries(this.#done) });
+      const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
-      if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.spacing.couldNot);
+      if (!r?.lost && !r?.ok) throw new Error(r?.why ?? S.couldNot);
       landed(r.undo);
-      // the page now draws the spaces from its own classes: the preview's inline sizes (the same) are let go
-      requestAnimationFrame(() => this.#spacing.clear());
-      this.#host.announce?.(`${W.pass.spacing}: ${said}`);
-    } catch (error) { keep(null); this.#spacing.clear(); this.#state = 'error'; this.#err = error?.message ?? W.spacing.couldNot; }
+      // the page now draws the change from its own classes: the preview's inline values (the same) are let go
+      requestAnimationFrame(() => sw.clear());
+      this.#host.announce?.(`${W.pass[k]}: ${said}`);
+    } catch (error) { keep(null); sw.clear(); this.#state = 'error'; this.#err = error?.message ?? S.couldNot; }
     this.#host.render();
   }
   async #undo() {
     if (!this.#saved) return;
-    const spacing = this.#saved.pass === 1, said = spacing ? W.spacing.undone : W.undone;
-    keep({ state: 'read', pass: spacing ? 1 : 0, said, done: Object.fromEntries(this.#done) });
+    const i = this.#saved.pass ?? 0, k = PASSES[i], said = (i ? W[k] : W).undone;
+    keep({ state: 'read', pass: i, said, done: Object.fromEntries(this.#done) });
     try {
       await this.#host.undo(this.#saved.group); this.#saved = null;
-      if (spacing) { this.#done.delete('spacing'); await this.#readSpacing(); } else { this.#done.delete('text'); this.#pass = 0; await this.#read(); }
+      this.#done.delete(k);
+      if (i) await this.#readPass(i); else { this.#pass = 0; await this.#read(); }
       this.#host.announce?.(said);
     }
     catch (error) { keep(null); this.#err = error?.message ?? W.couldNot; this.#state = 'error'; this.#host.render(); }
@@ -404,7 +417,7 @@ export class Cleanup {
     if (this.#state === 'idle') return false;
     if (k === 'Enter' && ['ready', 'preview'].includes(this.#state)) { this.#apply(); return true; }
     if ((k === 'p' || k === 'P') && this.#state === 'ready') { this.#togglePreview(true); return true; }
-    if (k === 'ArrowRight' && (['ready', 'nothing'].includes(this.#state) || (this.#state === 'done' && this.#pass === 0))) { this.#next(); return true; }
+    if (k === 'ArrowRight' && (['ready', 'nothing'].includes(this.#state) || (this.#state === 'done' && (this.#pass === 0 || this.#hasNext())))) { this.#next(); return true; }
     // Space is Blueprint's (hold to use the page) except while previewing, where held Space compares (#space)
     if (k === ' ') return this.#state === 'preview';
     return k !== 'Escape' && this.running; // nothing else reaches the fixes underneath while a clean-up runs
@@ -412,9 +425,9 @@ export class Cleanup {
   // held Space while previewing: the page as it was, back on release. Listened for only while previewing
   #space = (e) => {
     if (e.key !== ' ' || this.#state !== 'preview') return;
-    const spacing = this.#pass === 1;
-    if (e.type === 'keydown' && !this.#held) { this.#settle(); this.#held = true; if (spacing) this.#spacing.clear(); else this.#preview.clear((el, f) => f()); }
-    if (e.type === 'keyup' && this.#held) { this.#held = false; if (spacing) this.#spacing.show(); else this.#preview.show(this.#p, null); }
+    const sw = this.#sw;
+    if (e.type === 'keydown' && !this.#held) { this.#settle(); this.#held = true; if (sw) sw.clear(); else this.#preview.clear((el, f) => f()); }
+    if (e.type === 'keyup' && this.#held) { this.#held = false; if (sw) sw.show(); else this.#preview.show(this.#p, null); }
   };
   #listen(on) { for (const t of ['keydown', 'keyup']) (on ? addEventListener : removeEventListener)(t, this.#space, true); }
   // Esc: the preview first, then the clean-up

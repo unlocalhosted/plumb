@@ -39,6 +39,11 @@ export const SHOW_CSS = `
   .sh-chip .d { display: inline-block; height: 11px; overflow: hidden; }
   .sh-chip .d > span { display: flex; flex-direction: column; transition: translate ${BEAT.move}ms var(--pl-spring); }
   .sh-chip .d > span > b { height: 11px; font-weight: inherit; }
+  /* a colour role's swatch: the colour its places have now, turning to the token's as the role plays (a hairline ring
+     keeps a white or near-ground swatch visible on the panel) */
+  .sh-chip .sw, .sp-ic .sw { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--sw); box-shadow: inset 0 0 0 0.5px color-mix(in oklab, currentColor 35%, transparent);
+    transition: background-color ${BEAT.move}ms var(--pl-ease-out); }
+  .sh-chip[data-on] .sw, .sh-chip[data-done] .sw { background: var(--sw-to, var(--sw)); }
   ${HUES.map((h) => `.sh-chip[data-tone="${h}"], .sh-mark[data-tone="${h}"] { --hue: var(--pl-${h}); --hue-soft: var(--pl-${h}-soft); --hue-ink: var(--pl-${h}-ink); }`).join('\n  ')}
 
   .sh-marks { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
@@ -46,13 +51,31 @@ export const SHOW_CSS = `
   .sh-mark.line { background: color-mix(in oklab, var(--hue) 14%, transparent); box-shadow: inset 0 -1px 0 0 color-mix(in oklab, var(--hue) 70%, transparent); }
   .sh-mark.pad { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--hue) 60%, transparent) 0 1px, transparent 1px 6px); background-color: color-mix(in oklab, var(--hue) 12%, transparent); }
   .sh-mark.gap { background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--hue) 55%, transparent) 0 1px, transparent 1px 4px); background-color: color-mix(in oklab, var(--hue) 14%, transparent); }
+  /* colour: a ring, never a fill, so the colour under it is what's judged */
+  .sh-mark.ink { border: 1.5px dashed color-mix(in oklab, var(--hue) 85%, transparent); border-radius: 5px; margin: -4.5px 0 0 -4.5px; padding: 3px; box-sizing: content-box; }
   .sh-mark.mar { background-image: radial-gradient(color-mix(in oklab, var(--hue) 65%, transparent) 0.75px, transparent 0.9px); background-size: 3px 3px; }
+  /* a measured space, as the reference draws it: two hairlines across the page at its edges, an I-beam in the gutter,
+     its size in a pill beside it (coral off the scale, sky once it lands). The pill reads the space live */
+  .sh-ms { position: fixed; pointer-events: none; }
+  .sh-ms.hl { left: 0; width: 100vw; height: 1px; background: color-mix(in oklab, var(--ms) 55%, transparent); transition: background-color 200ms var(--pl-ease-out); }
+  .sh-ms.beam { width: 9px; border-left: 0; box-sizing: border-box; }
+  .sh-ms.beam::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1.5px; background: var(--ms); }
+  .sh-ms.beam::after { content: ''; position: absolute; inset: 0; border-top: 1.5px solid var(--ms); border-bottom: 1.5px solid var(--ms); }
+  .sh-ms.pill { height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ms); color: #fff; font: 600 12px/22px var(--pl-sans); font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em; white-space: nowrap; translate: -100% -50%; box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: background-color 200ms var(--pl-ease-out); }
+  .sh-marks { --ms: var(--pl-coral); }
+  .sh-marks [data-on-scale] { --ms: var(--pl-sky); }
+  .sh-marks[data-phase="in"] .sh-ms.hl { animation: sh-draw ${BEAT.in * 2}ms var(--pl-ease-out) both; }
+  .sh-marks[data-phase="in"] .sh-ms.pill, .sh-marks[data-phase="in"] .sh-ms.beam { animation: sh-pop ${BEAT.in}ms var(--pl-ease-out) both; }
+  .sh-marks[data-phase="out"] .sh-ms { opacity: 0; transition: opacity ${BEAT.out}ms var(--pl-ease-out); }
+  @keyframes sh-draw { from { clip-path: inset(0 100% 0 0); } }
+  @keyframes sh-pop { from { opacity: 0; scale: 0.92; } }
   .sh-marks[data-phase="in"] .sh-mark { animation: sh-sweep ${BEAT.in}ms var(--pl-ease-out) both; }
   .sh-marks[data-phase="out"] .sh-mark { opacity: 0; transition: opacity ${BEAT.out}ms var(--pl-ease-out); }
   @keyframes sh-sweep { from { clip-path: inset(0 100% 0 0); opacity: .4; } }
   @media (prefers-reduced-motion: reduce) {
     .sh-chip, .sh-chip .d > span { transition: none; }
-    .sh-marks[data-phase="in"] .sh-mark { animation: none; }
+    .sh-marks[data-phase="in"] .sh-mark, .sh-marks[data-phase="in"] .sh-ms { animation: none; }
     .sh-marks[data-phase="out"] .sh-mark { transition: none; }
   }
 `;
@@ -90,19 +113,33 @@ export class Marks {
     this.#layer.setAttribute('aria-hidden', 'true');
     root.append(this.#layer);
   }
-  // bands: [{ rect: () => DOMRect-like, kind: 'line'|'pad'|'gap'|'mar' }]
+  // bands: [{ rect: () => DOMRect-like, kind: 'line'|'pad'|'gap'|'mar'|'ink'|'measure', to? }]. A measure band is a
+  // space drawn as the reference draws it (hairlines, gutter I-beam, live pill); `to` is the size it lands on
   show(bands, hue) {
     cancelAnimationFrame(this.#frame);
     this.#bands = bands;
     this.#layer.dataset.phase = 'in';
-    this.#layer.replaceChildren(...bands.map((b) => Object.assign(document.createElement('i'), { className: `sh-mark ${b.kind}` })));
+    const make = (cls) => Object.assign(document.createElement('i'), { className: cls });
+    const parts = bands.map((b) => (b.kind === 'measure' ? [make('sh-ms hl'), make('sh-ms hl'), make('sh-ms beam'), make('sh-ms pill')] : [make(`sh-mark ${b.kind}`)]));
+    this.#layer.replaceChildren(...parts.flat());
     for (const el of this.#layer.children) el.dataset.tone = hue;
+    // one gutter for every measure, left of the leftmost space measured, as the reference keeps its pills in a column
+    const lefts = bands.filter((b) => b.kind === 'measure').map((b) => b.rect()?.left).filter(Number.isFinite);
+    const gutter = lefts.length ? Math.max(58, Math.min(...lefts) - 16) : 0;
     const draw = () => {
       this.#bands.forEach((b, i) => {
-        const r = b.rect(), el = this.#layer.children[i];
-        if (!el) return;
-        const off = !r || r.width < 0.5 || r.height < 0.5 || r.bottom < 0 || r.top > innerHeight;
-        el.style.cssText = off ? 'display:none' : `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+        const r = b.rect(), els = parts[i];
+        const off = !r || r.width < 0.5 || (b.kind !== 'measure' && r.height < 0.5) || r.bottom < 0 || r.top > innerHeight;
+        if (b.kind !== 'measure') { els[0].style.cssText = off ? 'display:none' : `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`; return; }
+        const [top, bot, beam, pill] = els;
+        if (off) { for (const el of els) el.style.display = 'none'; return; }
+        const h = Math.max(0, r.height), size = Math.round(h);
+        top.style.cssText = `top:${r.top}px`; bot.style.cssText = `top:${r.top + h}px`;
+        beam.style.cssText = `left:${gutter - 4}px;top:${r.top}px;height:${Math.max(1.5, h)}px`;
+        pill.style.cssText = `left:${gutter - 10}px;top:${r.top + h / 2}px`;
+        if (pill.textContent !== `${size}px`) pill.textContent = `${size}px`;
+        const landed = b.to != null && Math.abs(h - b.to) < 0.75;
+        for (const el of els) el.toggleAttribute('data-on-scale', landed);
       });
       this.#frame = requestAnimationFrame(draw);
     };
@@ -129,6 +166,19 @@ export function ease(el, set, { props = ['font-size', 'line-height', 'letter-spa
     if (v) el.style.setProperty('transition', v, pr); else el.style.removeProperty('transition');
     if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
   }, BEAT.move + 60);
+}
+
+// The reference's beat: every place of a pass measured at once, a hold to read them, then every place eased together
+// while the measures follow the page live, a hold on the landed values, and the marks lift. One pass, one beat
+export const SWEEP = { read: 1100, land: 900 };
+export async function playAll(steps, { marks, signal } = {}) {
+  const quick = signal?.aborted || still();
+  for (const s of steps) s.chip?.setAttribute('data-on', '');
+  if (!quick) { marks?.show(steps.flatMap((s) => s.bands()), 'sky'); await wait(SWEEP.read, signal); }
+  steps.forEach((s) => { roll(s.chip, s.to); s.morph(!(signal?.aborted || still())); });
+  if (!signal?.aborted && !still()) { await wait(BEAT.move, signal); await wait(SWEEP.land, signal); marks?.lift(); await wait(BEAT.out, signal); }
+  marks?.clear();
+  for (const s of steps) { s.chip?.removeAttribute('data-on'); s.chip?.setAttribute('data-done', ''); }
 }
 
 // The sequencer. steps: [{ chip, to, bands() → [{ rect, kind }], morph(animate) }]; morph sets the role's places, with

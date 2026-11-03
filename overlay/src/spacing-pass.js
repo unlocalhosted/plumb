@@ -32,6 +32,7 @@ const classFor = (prefix, v, step) => { const n = v / step; return `${prefix}-${
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 
 export class SpacingPass {
+  beat = 'all'; // measured all at once, then snapped together (show.js playAll), as the reference does
   #writes = []; #held = new Map(); // el → { prop: [value, priority] } as the page had it
   page = null; // { moves, writes, places, before, after, scale, levels }
 
@@ -55,6 +56,16 @@ export class SpacingPass {
     const all = new Map();
     for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
     for (const [k, w] of writes) if ((all.get(k) ?? 0) > w.gaps.length || new Set(w.gaps.map((g) => p.moves.find((m) => m.gap === g)?.to)).size > 1) writes.delete(k);
+    // a size moves everywhere on this page or nowhere: moving some of the 7s and leaving the rest would add a size, and a
+    // pass that adds values is never offered (pass-spacing.md step 8)
+    const rowsOf = new Map();
+    for (const g of stacks.flatMap((x) => x.gaps)) if (g.d > 0.5 && !g.section) { const k = Math.round(g.d); rowsOf.set(k, (rowsOf.get(k) ?? 0) + 1); }
+    for (let changed = true; changed;) {
+      changed = false;
+      const movedOf = new Map();
+      for (const w of writes.values()) for (const g of w.gaps) { const k = Math.round(g.d); movedOf.set(k, (movedOf.get(k) ?? 0) + 1); }
+      for (const [k, w] of writes) if (w.gaps.some((g) => (movedOf.get(Math.round(g.d)) ?? 0) < (rowsOf.get(Math.round(g.d)) ?? 0))) { writes.delete(k); changed = true; }
+    }
     this.#writes = [...writes.values()];
     // distinct spaces among this page's rows, before and after (the same rows: section breaks and refusals stay)
     const rows = stacks.flatMap((s) => s.gaps).filter((g) => g.d > 0.5 && !g.section), moved = new Map(this.#writes.flatMap((w) => w.gaps.map((g) => [g, w.to])));
@@ -71,9 +82,9 @@ export class SpacingPass {
       const gaps = ws.flatMap((w) => w.gaps), from = mostOf(gaps.map((g) => Math.round(g.d)));
       const icon = BLOCK_ICONS[mostOf(gaps.map((g) => (g.by === 'gap' ? 'g' : 'm')))];
       return {
-        chip: { label: `Space: ${from}px to ${to}px`, icon, from },
+        chip: { label: `Space: ${from}px to ${to}px`, name: `${from}px → ${to}px`, icon, from },
         to,
-        bands: () => gaps.map((g) => ({ kind: g.by === 'gap' ? 'gap' : 'mar', rect: () => {
+        bands: () => gaps.map((g) => ({ kind: 'measure', to, rect: () => {
           const a = g.above.getBoundingClientRect(), b = g.below.getBoundingClientRect(), left = Math.min(a.left, b.left), right = Math.max(a.right, b.right);
           return { left, right, top: a.bottom, bottom: b.top, width: right - left, height: b.top - a.bottom };
         } })),

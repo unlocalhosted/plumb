@@ -455,7 +455,7 @@ const PALETTE = /^(?:black|white|transparent|current|inherit|(?:slate|gray|zinc|
 // whether `prefix-rest` names a colour: one of the theme's, Tailwind's palette, or an arbitrary colour
 const isColour = (rest, theme) => PALETTE.test(rest) || (theme?.colors?.() ?? []).some((c) => rest === c.short || rest.startsWith(`${c.short}/`));
 // the classes of an element whose prefix sets a colour, e.g. border-ink-muted (not border, border-2, border-t)
-function colourClass(el, prefix, theme) {
+export function colourClass(el, prefix, theme) {
   for (const c of classesOf(el).split(/\s+/)) {
     if (!c.startsWith(prefix + '-') || c.includes(':')) continue;
     const rest = c.slice(prefix.length + 1);
@@ -483,7 +483,7 @@ function rowsOf(facts, table) {
 }
 
 // APCA 0.0.98G lightness contrast of text on ground, both [r, g, b]; positive for dark on light
-function apca(text, ground) {
+export function apca(text, ground) {
   const y = ([r, g, b]) => { const l = (c) => Math.pow(c / 255, 2.4); const v = 0.2126729 * l(r) + 0.7151522 * l(g) + 0.072175 * l(b); return v < 0.022 ? v + Math.pow(0.022 - v, 1.414) : v; };
   const yt = y(text), yb = y(ground);
   if (Math.abs(yb - yt) < 0.0005) return 0;

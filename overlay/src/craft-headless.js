@@ -58,7 +58,7 @@ export function fromKey(key) {
 
 // ── colour and shadow, from computed strings ────────────────
 
-function oklab([r, g, b]) {
+export function oklab([r, g, b]) {
   const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
   const [R, G, B] = [lin(r), lin(g), lin(b)];
   const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B), m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B), q = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);

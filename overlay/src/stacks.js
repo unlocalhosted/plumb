@@ -154,9 +154,21 @@ export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, si
   const nearest = (d) => scale.near(d);
   for (const s of stacks) {
     const live = s.gaps.filter((g) => g.d > 0.5 && !g.section);
-    for (const g of s.gaps) if (g.section && g.d > 0.5) kept.push({ stack: s, gap: g, section: true });
+    // a space between landmarks is a level of its own (never evened out), but one off the scale still goes onto it
+    for (const g of s.gaps) if (g.section && g.d > 0.5) {
+      const near = g.by && !on(g.d) ? nearest(g.d) : null;
+      if (near != null && Math.abs(near - g.d) <= g.d * NEAR_SHARE && Math.abs(near - g.d) > NEAR) moves.push({ stack: s, gap: g, from: g.d, to: near, rule: 'craft/rhythm' });
+      else kept.push({ stack: s, gap: g, section: true });
+    }
     for (const g of live) if (!g.by && g.why) refused.push({ stack: s, gap: g });
-    if (grouped(live)) { groupedStacks.push(s); continue; }
+    // grouped: its two levels are kept (no S2 evening-out), but a level off the scale still goes onto it, as long as the
+    // two levels stay two (an inside 7 and a between 18 become 8 and 20, never both 8)
+    const isGrouped = grouped(live);
+    if (isGrouped) {
+      groupedStacks.push(s);
+      const levels = [...new Set(live.map((g) => Math.round(g.d)))].map((d) => (on(d) ? d : nearest(d)));
+      if (new Set(levels).size < 2) continue;
+    }
     // uneven: siblings of one kind (rows of a list, cards: one tag) the same distance apart, most at one value, a few
     // not: the few go to it. A stack of different things (an eyebrow, a title, its rule, a figure) is a hierarchy, not a
     // row: its distances differ on purpose (S2 is similarity, and they aren't similar)
@@ -164,7 +176,7 @@ export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, si
     const alike = new Set(live.flatMap((g) => [g.above?.localName, g.below?.localName])).size === 1;
     for (const g of live) { const k = [...counts.keys()].find((v) => Math.abs(v - g.d) <= TOL) ?? g.d; counts.set(k, (counts.get(k) ?? 0) + 1); }
     const mode = [...counts].sort((a, b) => b[1] - a[1])[0];
-    if (alike && live.length >= 3 && mode && mode[1] > live.length / 2) for (const g of live) if (Math.abs(g.d - mode[0]) > TOL) to.set(g, { d: mode[0], rule: 'hierarchy/S2' });
+    if (!isGrouped && alike && live.length >= 3 && mode && mode[1] > live.length / 2) for (const g of live) if (Math.abs(g.d - mode[0]) > TOL) to.set(g, { d: mode[0], rule: 'hierarchy/S2' });
     for (const g of live) {
       if (!g.by) continue;
       // off the scale: only to a value close to it. A distance with none within a quarter of it is a level of its own:

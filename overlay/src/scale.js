@@ -114,12 +114,18 @@ export function scaleOf(items, { grid = 4 } = {}) {
   const d = detectScale(items), whole = items.filter((i) => i.v > 0 && Math.abs(i.v - Math.round(i.v)) < 0.1);
   const counted = items.some((i) => (i.n ?? 1) !== 1); // a list without counts (a token scale) is all in use
   const used = (keep) => [...new Set(whole.filter((i) => (!counted || i.n >= 2) && !d.dropped.includes(i.v) && keep(i.v)).map((i) => Math.round(i.v)))]; // the detector's outliers are drift, not positions
-  const top = Math.max(...whole.map((i) => i.v), grid);
+  // the positions reach past the largest value in use (a 34 needs its 32 and 36, an 80 is on the grid, even when the
+  // site's largest is 18)
+  const top = Math.max(...whole.map((i) => i.v), grid * 64);
   const ladder = (anchor, r, from, to) => { const out = []; for (let k = -40; k <= 40; k++) { const s = Math.round(anchor * r ** k); if (s >= from && s <= to) out.push(s); } return out; };
   let kind = d.kind.replace(/^weak /, ''), score, unit = null, ratio = null, positions, halves = [];
   if (d.kind === 'linear' || d.kind === 'ambiguous') {
     kind = 'linear'; score = d.linear.score; unit = d.linear.unit;
-    const core = unit === 2 && d.shares[4] >= 0.6 ? 4 : unit;
+    // a 2px grid is a 4px grid with half steps when its uses sit mostly on 4px, or when the steps off 4px are only the
+    // small half steps Tailwind has (2, 6, 10, 14: crafting-ui's most-used gap is 10, gap-2.5): an 18 or a 26 is never one
+    const odd = whole.filter((i) => Math.round(i.v) % 4 === 2), w = (xs) => xs.reduce((n, i) => n + (i.n ?? 1), 0);
+    const smallHalves = odd.length > 0 && w(odd.filter((i) => i.v >= HALVES * 4)) / w(odd) < 0.1;
+    const core = unit === 2 && (d.shares[4] >= 0.6 || smallHalves) ? 4 : unit;
     positions = Array.from({ length: Math.ceil(top / core) + 1 }, (_, i) => (i + 1) * core);
     halves = used((v) => v % unit === 0 && v % core !== 0 && v < HALVES * core);
     unit = core;
