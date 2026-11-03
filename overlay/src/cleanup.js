@@ -27,6 +27,7 @@ import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
 import { SHOW_CSS, chipsHtml, Marks, play, playAll, ease } from './show.js';
 import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
+import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
@@ -34,6 +35,7 @@ const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-
 const SWAP_LAWS = {
   spacing: [{ id: 'proximity', name: 'Law of proximity' }, { id: 'common-region', name: 'Law of common region' }],
   colour: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'von-restorff', name: 'Von Restorff effect' }],
+  icons: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'aesthetic-usability', name: 'Aesthetic-usability effect' }],
 };
 const PASSES = ['text', 'spacing', 'colour', 'icons'];
 // where a clean-up is, kept in the tab: a write (or its undo) can reload the page, and the clean-up comes back to it
@@ -122,7 +124,7 @@ function nums(b) {
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
   #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
-  #swaps = { spacing: new SpacingPass(), colour: new ColourPass() };
+  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass() };
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass
   get #words() { return this.#sw ? W[PASSES[this.#pass]] : W; }
   #hasNext() { return !!this.#swaps[PASSES[this.#pass + 1]]; }
@@ -381,9 +383,10 @@ export class Cleanup {
     this.#state = 'writing'; this.#host.render();
     const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
-      const { swaps, refused } = await sw.edits();
+      const { swaps, refused, places: wrote } = await sw.edits();
       if (!swaps.length) throw new Error(refused[0]?.why ?? S.couldNot);
-      const files = swaps.length, places = sw.page.places, said = S.saved(places, files);
+      // the places written when the pass counts them (a refused edit is not a place that now follows)
+      const files = swaps.length, places = wrote ?? sw.page.places, said = S.saved(places, files);
       const page = this.#page && (({ census: _c, roles: _r, ...rest }) => rest)(this.#page);
       const landed = (undo = []) => {
         this.#saved = { group, places, files, pass: i, refused: refused.length };
