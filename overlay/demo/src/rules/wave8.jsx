@@ -10,8 +10,6 @@ export function App() {
         <div id="heading-lead-good" className="max-w-[320px]"><p className="text-[15px]">{TEXT}</p><h3 className="mt-s6 mb-s2 text-[20px] font-semibold">Where it stops</h3><p className="text-[15px]">{TEXT}</p></div>
         <div id="pair-spacing-bad" className="max-w-[320px]"><h3 className="text-[22px] font-semibold">Anticipation</h3><p className="mt-s6 text-[14px]">The wind-up before a move</p><p className="mt-s2 text-[15px]">{TEXT}</p></div>
         <div id="pair-spacing-good" className="max-w-[320px]"><h3 className="text-[22px] font-semibold">Anticipation</h3><p className="mt-s1 text-[14px]">The wind-up before a move</p><p className="mt-s4 text-[15px]">{TEXT}</p></div>
-        <div><div id="relative-spacing-bad" className="max-w-[320px] p-[18px] text-[15px]">Space written in pixels around words.</div></div>
-        <div><div id="relative-spacing-good" className="max-w-[320px] p-s4 text-[15px]">Space from the scale around words.</div></div>
         <div><div id="card-optical-padding-bad" className="max-w-[320px] rounded-[12px] border border-line bg-surface p-s6"><h3 className="text-[24px] leading-[1.6] font-semibold">Card title</h3><p className="text-[15px]">{TEXT}</p></div></div>
         <div><div id="card-optical-padding-good" className="max-w-[320px] rounded-[12px] border border-line bg-surface px-s6 pb-s6 pt-s4"><h3 className="text-[24px] leading-[1.6] font-semibold">Card title</h3><p className="text-[15px]">{TEXT}</p></div></div>
       </div>

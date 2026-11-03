@@ -513,7 +513,7 @@ test('Registration keeps the page as it is: a coloured spot is its own pixel und
   assert.deepEqual(await pixel(page, 1190, 400), [r0, g0, b0], 'the pixel is as it was');
 });
 
-test('With motion: the zones pulse in, then rest; turning around mid-arrival and removing the overlay leave nothing behind', { timeout: 90000 }, async (t) => {
+test('With motion: the heat map stays out of sight as Blueprint arrives (the page is clean at rest); turning around mid-arrival and removing the overlay leave nothing behind', { timeout: 90000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await demo(t);
@@ -522,9 +522,9 @@ test('With motion: the zones pulse in, then rest; turning around mid-arrival and
 
   await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone').length > 0, null, { timeout: 20000 });
-  // a zone's opacity, every frame for 1.2s: it pulses (rises above where it rests and falls back)
+  // a zone's opacity, every frame for 1.2s: the heat map is noise at rest, so no zone ever shows (no arrival pulse either)
   const seen = await page.evaluate(() => new Promise((done) => { const out = [], t0 = performance.now(); const tick = () => { const z = document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp .heat .zone'); if (z) out.push([+getComputedStyle(z).opacity, +z.style.opacity]); if (performance.now() - t0 < 1200) requestAnimationFrame(tick); else done(out); }; requestAnimationFrame(tick); }));
-  assert.ok(seen.some(([o, rest]) => o > rest + 0.05), `the zone pulses above its rest: ${seen.slice(0, 12).map(([o]) => o.toFixed(2))}`);
+  assert.ok(seen.length && seen.every(([o]) => o < 0.01), `no zone shows: ${seen.slice(0, 12).map(([o]) => o.toFixed(2))}`);
   await page.keyboard.press('Alt+B'); // turn around mid-arrival
   await off(page);
   assert.equal(await footprint(page), before, 'a reversed arrival leaves nothing behind');

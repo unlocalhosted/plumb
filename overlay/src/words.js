@@ -236,11 +236,6 @@ export const CRAFT = {
     line: `The text starts ${ab.toFixed(2)}em below its heading: further than the heading is tall.`,
     reason: 'Past about one line of the heading, the text stops reading as the heading’s.',
   }),
-  'relative-spacing': ({ n, cls }) => ({
-    label: 'Space doesn’t grow with the text',
-    line: `${cls} stays ${px(n)} when someone makes their text bigger.`,
-    reason: 'People raise their browser’s text size. Space in rem grows with it; space in px squeezes the bigger text.',
-  }),
   'card-optical-padding': ({ top, left }) => ({
     label: 'Card looks taller on top',
     line: `The first letters sit ${px(Math.round(top))} from the top edge, ${px(left)} from the side.`,

@@ -1421,28 +1421,6 @@ export const pairSpacing = {
   },
 };
 
-// Spacing in fixed pixels doesn't grow when a person raises their browser's text size; the text does
-const PX_SPACE = /^(p|px|py|pt|pr|pb|pl|ps|pe|m|mx|my|mt|mr|mb|ml|ms|me|gap|gap-x|gap-y|space-y|space-x)-\[(\d+(?:\.\d+)?)px\]$/;
-export const relativeSpacing = {
-  id: 'craft/relative-spacing', family: 'craft', number: [], owns: ['padding', 'margin', 'gap'], once: 'ancestor', reads: ['style', 'kids', 'text'],
-  check({ el, facts }, theme) {
-    if (!facts.text(el) && !facts.kids(el).some((k) => facts.text(k))) return [];
-    const cls = classesOf(el).split(/\s+/).find((c) => PX_SPACE.test(c));
-    if (!cls) return [];
-    const [, prefix, v] = PX_SPACE.exec(cls), n = Number(v), unit = theme.unit?.() ?? 4, steps = n / unit;
-    // fine detail stays in px: hairlines, a nudge that lines a label up with the text beside it (pt-[5px]), a chip's
-    // few pixels of side padding
-    if (n <= 6) return [];
-    const to = Number.isInteger(steps * 2) ? `${prefix}-${steps}` : `${prefix}-[${+(n / 16).toFixed(4)}rem]`;
-    return [{
-      ...say(this.id, { n, cls }),
-      key: this.id, text: cls, props: [prefix.startsWith('gap') ? 'gap' : prefix.startsWith('m') || prefix.startsWith('space') ? 'margin' : 'padding'], value: `${n}px`, n,
-      evidence: { class: cls }, confidence: 0.8,
-      suggest: { kind: 'class', from: cls, to, why: 'the same space, growing with the text' },
-    }];
-  },
-};
-
 // A card's top padding measured from the letters: the first line's box carries space above its capitals, so equal
 // padding looks taller on top (trim-leading, for a card with more than one line of words)
 export const cardOpticalPadding = {
@@ -1452,7 +1430,8 @@ export const cardOpticalPadding = {
     const kids = facts.kids(el), first = kids[0];
     if (!first || !facts.text(first) || el.matches('input, textarea, select, button')) return [];
     const s = facts.style(el), b = facts.box(el);
-    if (!(b.pt > 0 && b.pl > 0) || !((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || b.bt > 0)) return [];
+    // a card: a filled or bordered box with a card's side padding (a chip's or a row's few pixels are not one)
+    if (!(b.pt > 0 && b.pl >= T.side) || !((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || b.bt > 0)) return [];
     if (/trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
     const m = facts.metrics(first);
     if (!m) return [];
@@ -1772,6 +1751,6 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
-  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, relativeSpacing, cardOpticalPadding,
+  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,
   weightLevels, greyLevels, rhythm,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];

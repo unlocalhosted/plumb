@@ -62,7 +62,7 @@ const within = (page, id, m, slack = 16) => page.evaluate(([id, m, slack]) => { 
 // the page is the demo's own (open /?rules=5 in the demo app): what is proved here is what you can try there
 const PAGE = await readFile(new URL('../overlay/demo/src/rules/wave8.jsx', import.meta.url), 'utf8');
 
-const RULES = ['heading-lead', 'pair-spacing', 'relative-spacing', 'card-optical-padding'];
+const RULES = ['heading-lead', 'pair-spacing', 'card-optical-padding'];
 
 test('Wave eight: each spacing rule marks the element that breaks it and leaves the one beside it that follows it', { timeout: 240000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;

@@ -131,6 +131,10 @@ Covers A5.
 ### craft/relative-spacing. Spacing follows the user's font size
 Covers A11.
 
+> **Not built (2026-11-03).** Built, then removed: every arbitrary `[…px]` spacing class is already Blueprint's drift
+> finding, whose fix (the theme's step, in rem) also makes the space grow with the text, so the rule gave the same
+> class a second verdict. A rule here would only add something for inline-style px, which nothing writes.
+
 - **Checks.** Padding, margin and gap written in fixed pixels do not grow when the person raises the browser's default
   font size, so the layout loses its proportions while the text grows.
 - **Measure.** Computed styles are always px, so compare: with the root `font-size` raised from 16 to 24 in a

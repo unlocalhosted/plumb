@@ -78,7 +78,6 @@ const RULE_LAWS = {
   'craft/rhythm': ['similarity'],
   'craft/heading-lead': ['proximity', 'common-region'],
   'craft/pair-spacing': ['proximity', 'similarity'],
-  'craft/relative-spacing': [],
   'craft/card-optical-padding': [],
   'craft/optical-centre': [],
   'craft/overshoot': [],
