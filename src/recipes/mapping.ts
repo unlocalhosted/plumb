@@ -1,4 +1,4 @@
-import { formatEasing } from './css.js';
+import { formatColor, formatEasing } from './css.js';
 import { deriveMotion } from './dials.js';
 import { isShadow, num } from './model.js';
 import type { MotionModel, Recipe, ShadowLayer, ShadowModel, Timing } from './model.js';
@@ -19,10 +19,23 @@ const empty = (inset: boolean): ShadowLayer => ({ x: 0, y: 0, blur: 0, spread: 0
  * a layer that is inset against one that is not is a different shape of shadow, worth four.
  */
 const WEIGHT = { blur: 0.5, alpha: 20, inset: 4 };
+/**
+ * A colour that differs is never the same shadow (N-01: `var(--line)` against `var(--line-strong)`), but it is no further
+ * than close: the shape is what the eye reads first. Added after the shape is normalised, so it holds at any size. Two
+ * tokens (or a token and a written colour) that differ cost `token`; two written colours cost up to `channel` by how far
+ * apart their channels are (alpha is in the shape's sum already).
+ */
+const COLOUR = { token: 0.1, channel: 0.2 };
+function colourCost(p: ShadowLayer, q: ShadowLayer): number {
+  const a = p.color, b = q.color;
+  if (!a || !b) return a === b ? 0 : COLOUR.token;
+  if ('token' in a || 'token' in b) return 'token' in a && 'token' in b && a.token === b.token ? 0 : COLOUR.token;
+  return (Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b)) / 765 * COLOUR.channel;
+}
 const size = (l: ShadowLayer) => Math.abs(l.x) + Math.abs(l.y) + l.blur + Math.abs(l.spread);
 function shadowParts(a: ShadowModel, b: ShadowModel): { distance: number; differs: string[] } {
   const n = Math.max(a.layers.length, b.layers.length);
-  let total = 0, magnitude = 0; const differs: string[] = [];
+  let total = 0, magnitude = 0, colour = 0; const differs: string[] = [];
   for (let i = 0; i < n; i++) {
     const p = a.layers[i] ?? empty(b.layers[i]!.inset), q = b.layers[i] ?? empty(a.layers[i]!.inset);
     total += Math.abs(p.x - q.x) + Math.abs(p.y - q.y) + Math.abs(p.blur - q.blur) * WEIGHT.blur + Math.abs(p.spread - q.spread) + Math.abs(alphaOf(p) - alphaOf(q)) * WEIGHT.alpha + (p.inset !== q.inset ? WEIGHT.inset : 0);
@@ -35,9 +48,11 @@ function shadowParts(a: ShadowModel, b: ShadowModel): { distance: number; differ
       if (p.blur !== q.blur) differs.push(`${where}blur ${num(p.blur)}px, yours ${num(q.blur)}px`);
       if (p.spread !== q.spread) differs.push(`${where}spread ${num(p.spread)}px, yours ${num(q.spread)}px`);
       if (alphaOf(p) !== alphaOf(q)) differs.push(`${where}alpha ${num(alphaOf(p))}, yours ${num(alphaOf(q))}`);
+      const c = colourCost(p, q);
+      if (c) { colour += c; differs.push(`${where}colour ${formatColor(p.color) || 'currentColor'}, yours ${formatColor(q.color) || 'currentColor'}`); }
     }
   }
-  return { distance: total / (magnitude / 2 || 1), differs };
+  return { distance: total / (magnitude / 2 || 1) + colour, differs };
 }
 const sameTrigger = (a: MotionModel, b: MotionModel) => a.trigger === b.trigger || !a.changes.length || !b.changes.length;
 function timingParts(a: Timing, b: Timing): { distance: number; differs: string[] } {
@@ -79,7 +94,8 @@ export function map(recipe: Recipe, yours: Recipe[]): { nearest: Nearest | null;
   for (const r of yours) {
     if (r.kind !== recipe.kind) continue;
     const d = distance(recipe, r);
-    if (!best || d.distance < best.distance) best = { r, ...d };
+    // on a tie the recipe's own token wins: a pick of your --shadow-2 is your shadow-2, not an equal one before it
+    if (!best || d.distance < best.distance || d.distance === best.distance && !!recipe.token && r.token === recipe.token) best = { r, ...d };
   }
   if (!best || !isFinite(best.distance)) return { nearest: null, verdict: { kind: 'new', text: `new to this project`, differs: [] } };
   const nearest: Nearest = { id: best.r.id, name: best.r.name, ...(best.r.token ? { token: best.r.token } : {}), ...(best.r.class ? { class: best.r.class } : {}), distance: Math.round(best.distance * 1000) / 1000 };

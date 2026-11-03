@@ -24,10 +24,19 @@ export function numericExpression(value: string): boolean {
 
 /** Layout geometry is not a reusable ladder, even when three dimensions are small. */
 const layoutRole = /(?:^|-)(?:page|rail|content|reader|safe|tab|sidebar|header|footer|panel|shell|viewport|screen|container|width|height|max|min)(?:-|$)/;
-export function numericSpacing(definitions: CssVariable[], decisions: Decision[], variables: Map<string, Variable>, theme: Set<string>): NumericSpacing | undefined {
-  // one reader of --spacing: a second definition or a base that reads a variable with no single value is a guess, and a guess is not a scale
+/**
+ * The one reader of `--spacing` (engine review D10): the base an editor steps by, read once, and the numeric scale the rules
+ * judge by when that base is certain. A second definition or a base that reads a variable with no single value is a guess
+ * (said in `base.note`), and a guess is never a scale. The last definition in file order is read, not the cascade's: an
+ * imported file's @theme after a local :root is read as the later one.
+ */
+export interface SpacingReading { base?: SpacingBase; numeric?: NumericSpacing }
+export function readSpacing(definitions: CssVariable[], decisions: Decision[], variables: Map<string, Variable>, theme: Set<string>): SpacingReading {
   const base = spacingBase(definitions, variables, theme);
-  if (!base || base.note) return;
+  const numeric = base && !base.note ? numericSpacing(definitions, decisions, variables) : undefined;
+  return { ...(base ? { base } : {}), ...(numeric ? { numeric } : {}) };
+}
+function numericSpacing(definitions: CssVariable[], decisions: Decision[], variables: Map<string, Variable>): NumericSpacing | undefined {
   const definition = definitions.findLast(d => d.name === '--spacing' && (d.theme || d.root));
   const value = variables.get('--spacing');
   if (!definition || !value || value.dynamic) return;
@@ -55,7 +64,7 @@ export function numericUse(decision: Decision): string | undefined {
 export interface SpacingBase { px: number; text: string; note?: string; own: boolean }
 /** Only a `--spacing` the project wrote (any form, calc/var included) earns the multiplier ladder; Tailwind's default alone does not. */
 const ownSpacing = (definitions: CssVariable[]) => definitions.some(d => d.name === '--spacing' && d.origin === 'project');
-export function spacingBase(definitions: CssVariable[], variables: Map<string, Variable>, theme: Set<string>): SpacingBase | undefined {
+function spacingBase(definitions: CssVariable[], variables: Map<string, Variable>, theme: Set<string>): SpacingBase | undefined {
   if (!theme.has('--spacing')) return;
   const definition = definitions.findLast(d => d.name === '--spacing' && (d.theme || d.root));
   if (!definition) return;

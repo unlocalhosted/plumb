@@ -106,11 +106,11 @@ export function readPack(pack: Pack): Recipe[] {
       ...(r.source.licence !== 'none' && r.source.attribution ? { credit: `${r.source.attribution}${r.source.url ? ` ${r.source.url.replace(/\/raw\.githubusercontent\.com\//, '/github.com/').replace('/main/', '/blob/main/')}` : ''}` } : {}), token: `${pack.id}:${r.id}` };
     if (r.kind === 'shadow') {
       for (const token of r.tokens ?? []) {
-        // a token's `dark` value is not read: the model holds one value per recipe (B7 in docs/research/engine-review.md)
-        const light = typeof token.value === 'string' ? token.value : token.value.light;
-        const text = template(light, scope);
-        const model = /\{(?:var|prop|class):/.test(text) ? null : parseBoxShadow(text);
-        if (model) { out.push({ id: r.id, name: r.name, kind: 'shadow', model, source, ...(r.summary ? { summary: r.summary } : {}) }); break; }
+        // the first token that is a shadow is the recipe; its dark value, when the pack gives one, rides along
+        const read = (value: string | undefined) => { if (value === undefined) return null; const text = template(value, scope); return /\{(?:var|prop|class):/.test(text) ? null : parseBoxShadow(text); };
+        const model = read(typeof token.value === 'string' ? token.value : token.value.light);
+        const dark = typeof token.value === 'string' ? null : read(token.value.dark);
+        if (model) { out.push({ id: r.id, name: r.name, kind: 'shadow', model, ...(dark ? { dark } : {}), source, ...(r.summary ? { summary: r.summary } : {}) }); break; }
       }
       continue;
     }

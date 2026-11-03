@@ -106,7 +106,8 @@ const controlTags = new Set(['button', 'input', 'select', 'textarea']);
 const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'strong', 'em', 'small', 'label', 'a', 'li', 'code', 'blockquote']);
 
 /** A string in source which holds class names: where its content starts and ends, between the quotes. */
-interface Text { start: number; end: number; text: string; quote?: string }
+export interface Branch { condition: string; which: 'then' | 'else'; /** the conditions outside it, outermost first, when it sits under more than one */ within?: { condition: string; which: 'then' | 'else' }[] }
+interface Text { start: number; end: number; text: string; quote?: string; branch?: Branch }
 type ClassName =
   | { kind: 'none' }
   | { kind: 'static'; attribute: Node; strings: Text[] }
@@ -137,35 +138,83 @@ function staticText(node: Node, source: string): Text | undefined {
   if (value.type === 'TemplateLiteral' && !value.expressions.length) return { start: value.start + 1, end: value.end - 1, text: source.slice(value.start + 1, value.end - 1) };
   return undefined;
 }
+export type Trail = { condition: string; which: 'then' | 'else' }[];
+export const branchOf = (trail: Trail): Branch | undefined => trail.length ? { ...trail.at(-1)!, ...(trail.length > 1 ? { within: trail.slice(0, -1) } : {}) } : undefined;
+const withBranch = (text: Text, trail: Trail): Text => { const branch = branchOf(trail); return branch ? { ...text, branch } : text; };
+/** The fixed parts of a template literal, each narrowed to the whole classes it holds on its own (a class glued to an expression is built at runtime). */
+function quasiTexts(expression: Extract<Node, { type: 'TemplateLiteral' }>, source: string): Text[] {
+  return expression.quasis.flatMap((quasi, i): Text[] => {
+    const raw = quasi.value.raw, open = quasi.start + (expression.quasis[0]!.start === expression.start ? 1 : 0); // TS spans include delimiters; JS spans don't
+    if (source.slice(open, open + raw.length) !== raw) return [];
+    const lead = i > 0 ? raw.match(/^\S*/)![0].length : 0, trail = i < expression.quasis.length - 1 ? raw.match(/\S*$/)![0].length : 0;
+    if (lead + trail >= raw.length) return [];
+    const start = open + lead, end = open + raw.length - trail;
+    return /\S/.test(raw.slice(lead, raw.length - trail)) ? [{ start, end, text: source.slice(start, end), quote: '`' }] : [];
+  });
+}
+/** A name an expression reads its classes from (a variable, a prop, `props.className`), with the conditions it is under. */
+export interface ClassRef { name: string; property?: string; start: number; trail: Trail }
+/** What an expression can put into a class list: its plain strings (a literal, a template's fixed parts, the branches
+ * of a ternary or `&&`, the arguments of cn()/clsx(), the keys of an object given to one), each with the condition it is
+ * under, and the names it reads the rest from. Anything else (a sum, a call that is not a class helper) is built in code. */
+export function classSources(node: Node, source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
+  const strings: Text[] = [], refs: ClassRef[] = [];
+  const condition = (test: Node) => source.slice(test.start, test.end).replace(/\s+/g, ' ').trim();
+  const visit = (node: Node, trail: Trail): void => {
+    const expression = unwrap(node), direct = staticText(expression, source);
+    if (direct) { if (!trail.length || /\S/.test(direct.text)) strings.push(withBranch(direct, trail)); return; }
+    switch (expression.type) {
+      case 'Identifier': refs.push({ name: expression.name, start: expression.start, trail }); return;
+      case 'MemberExpression':
+        if (!expression.computed && expression.object.type === 'Identifier' && expression.property.type === 'Identifier') refs.push({ name: expression.object.name, property: expression.property.name, start: expression.start, trail });
+        return;
+      case 'ConditionalExpression': {
+        const c = condition(expression.test);
+        visit(expression.consequent, [...trail, { condition: c, which: 'then' }]); visit(expression.alternate, [...trail, { condition: c, which: 'else' }]); return;
+      }
+      case 'LogicalExpression':
+        if (expression.operator === '&&') { visit(expression.right, [...trail, { condition: condition(expression.left), which: 'then' }]); return; }
+        visit(expression.left, trail); visit(expression.right, [...trail, { condition: condition(expression.left), which: 'else' }]); return;
+      case 'TemplateLiteral':
+        strings.push(...quasiTexts(expression, source).map(text => withBranch(text, trail)));
+        for (const inner of expression.expressions) visit(inner, trail);
+        return;
+      case 'ArrayExpression': for (const item of expression.elements) if (item && item.type !== 'SpreadElement') visit(item, trail); return;
+      case 'ObjectExpression':
+        for (const property of expression.properties) {
+          if (property.type !== 'Property' || property.computed || property.key.type !== 'Literal' || typeof property.key.value !== 'string') continue;
+          strings.push(withBranch({ start: property.key.start + 1, end: property.key.end - 1, text: property.key.value }, [...trail, { condition: condition(property.value), which: 'then' }]));
+        }
+        return;
+      case 'CallExpression': {
+        const callee = expression.callee, name = callee.type === 'Identifier' ? callee.name : callee.type === 'MemberExpression' && callee.property.type === 'Identifier' ? callee.property.name : undefined;
+        if (name && wrappers.has(name)) for (const argument of expression.arguments) if (argument.type !== 'SpreadElement') visit(argument, trail);
+        return;
+      }
+      default: return;
+    }
+  };
+  visit(node, trail);
+  return { strings, refs };
+}
+const stringsIn = (node: Node, source: string, trail: Trail): Text[] => classSources(node, source, trail).strings;
 function classNameOf(attribute: Node | undefined, source: string): ClassName {
   if (!attribute || attribute.type !== 'JSXAttribute') return { kind: 'none' };
   const value = attribute.value;
   if (!value) return { kind: 'dynamic', reason: 'className has no value.' };
   if (value.type === 'Literal') { const text = staticText(value, source); return text ? { kind: 'static', attribute, strings: [text] } : { kind: 'dynamic', reason: 'className is not a string.' }; }
   if (value.type !== 'JSXExpressionContainer' || value.expression.type === 'JSXEmptyExpression') return { kind: 'dynamic', reason: 'className is not a plain expression.' };
-  const expression = unwrap(value.expression), direct = staticText(expression, source);
-  if (direct) return { kind: 'static', attribute, strings: [direct] };
+  const expression = unwrap(value.expression);
   if (expression.type === 'CallExpression') {
     const callee = expression.callee, name = callee.type === 'Identifier' ? callee.name : callee.type === 'MemberExpression' && callee.property.type === 'Identifier' ? callee.property.name : undefined;
     if (name && wrappers.has(name)) {
-      const strings = expression.arguments.flatMap(argument => { const text = argument.type === 'SpreadElement' ? undefined : staticText(argument, source); return text ? [text] : []; });
+      const strings = stringsIn(expression, source, []);
       return strings.length ? { kind: 'static', attribute, strings }
         : { kind: 'dynamic', reason: `${name}(…) has no plain string argument to hold the class; add one by hand.` };
     }
   }
-  // A template literal's fixed parts hold classes as plainly as a literal does. A class glued to an expression
-  // (`text-${size}`) is built at runtime: each part is narrowed to the whole classes it holds on its own.
-  if (expression.type === 'TemplateLiteral') {
-    const strings = expression.quasis.flatMap((quasi, i): Text[] => {
-      const raw = quasi.value.raw, open = quasi.start + (expression.quasis[0]!.start === expression.start ? 1 : 0); // TS spans include delimiters; JS spans don't
-      if (source.slice(open, open + raw.length) !== raw) return [];
-      const lead = i > 0 ? raw.match(/^\S*/)![0].length : 0, trail = i < expression.quasis.length - 1 ? raw.match(/\S*$/)![0].length : 0;
-      if (lead + trail >= raw.length) return [];
-      const start = open + lead, end = open + raw.length - trail;
-      return /\S/.test(raw.slice(lead, raw.length - trail)) ? [{ start, end, text: source.slice(start, end), quote: '`' }] : [];
-    });
-    if (strings.length) return { kind: 'static', attribute, strings };
-  }
+  const strings = stringsIn(expression, source, []);
+  if (strings.length) return { kind: 'static', attribute, strings };
   const what = expression.type === 'TemplateLiteral' ? 'a template literal with expressions' : expression.type === 'ConditionalExpression' || expression.type === 'LogicalExpression' ? 'a condition' : expression.type === 'Identifier' || expression.type === 'MemberExpression' ? 'a variable' : 'an expression';
   return { kind: 'dynamic', reason: `className is built at runtime (${what}); set the class by hand.` };
 }
@@ -192,6 +241,19 @@ function element(file: string, text: string, start: number): Element {
   return { opening, className: classNameOf(named('className') ?? named('class'), text), style: styleOf(named('style')) };
 }
 
+/** Where a class that is written nowhere yet is added: the first string that always applies. One under a condition would
+ * add it to one case only, so when every string is under a condition, nothing is added. */
+export const ADD_UNDER_CONDITION = 'Every class here is under a condition, so a new one would apply to one case only. Change a class that is there, or add it by hand.';
+function addTarget(strings: Text[]): Text {
+  const always = strings.find(item => !item.branch);
+  if (!always) throw new UsageError(ADD_UNDER_CONDITION);
+  return always;
+}
+/** Why a class written in more than one string is not changed without saying which: the cases it is written for. */
+function severalCases(strings: Text[]): string {
+  const cases = [...new Set(strings.map(item => item.branch?.condition).filter((c): c is string => !!c))];
+  return `This is written in more than one place here${cases.length ? ` (once for each case of ${cases.map(c => '`' + c + '`').join(', ')})` : ''}, so one change would miss a case. Change it by hand.`;
+}
 /** Class names in the static strings: variants carry their own state and never count as the base property. */
 function classes(strings: Text[]): { text: string; start: number; end: number; string: Text }[] {
   return strings.flatMap(string => [...string.text.matchAll(/\S+/g)].map(match => ({ text: match[0], start: string.start + match.index, end: string.start + match.index + match[0].length, string })));
@@ -348,7 +410,11 @@ export function setProp(file: string, text: string, start: number, tag: string, 
     return { start: el.opening.name.end, end: el.opening.name.end, replacement: ` className="${step.class}"`, at };
   }
   const all = classes(el.className.strings);
-  const existing = all.find(item => { const utility = baseUtility(item.text); return utility !== undefined && def.match(utility, pools(decisions, options.unit).sets) !== undefined; });
+  const sets = pools(decisions, options.unit).sets;
+  const setting = all.filter(item => { const utility = baseUtility(item.text); return utility !== undefined && def.match(utility, sets) !== undefined; });
+  // set in more than one string (each case of a condition): one write would change one case and leave the other
+  if (new Set(setting.map(item => item.string)).size > 1) throw new UsageError(severalCases(setting.map(item => item.string)));
+  const existing = setting[0];
   if (existing) {
     const important = /^!/.test(existing.text) ? '!' : /!$/.test(existing.text) ? 'end' : '';
     const replacement = important === '!' ? '!' + step.class : important === 'end' ? step.class + '!' : step.class;
@@ -356,7 +422,7 @@ export function setProp(file: string, text: string, start: number, tag: string, 
     return { start: existing.start, end: existing.end, replacement, at };
   }
   // the new class goes after the last class of the first fixed part, before any trailing space (a template's hole follows it)
-  const first = el.className.strings[0]!, trail = first.text.match(/\s*$/)![0].length;
+  const first = addTarget(el.className.strings), trail = first.text.match(/\s*$/)![0].length;
   return { start: first.end - trail, end: first.end - trail, replacement: first.text.trim() ? ` ${step.class}` : step.class, at };
 }
 
@@ -365,7 +431,13 @@ export function setProp(file: string, text: string, start: number, tag: string, 
  * Used for craft suggestions (rounded-card → rounded-control; opacity-65 → text-ink-muted), which name classes rather
  * than one property's step. Every `from` class must be in one static string (a literal, or one string of cn/cva).
  */
-export function swapClasses(file: string, text: string, start: number, from: string[], to: string[]): SourceChange {
+export function swapClasses(file: string, text: string, start: number, from: string[], to: string[], pin?: number): SourceChange {
+  // a string named by position (where a class-site reported it: a variable, a branch): the change is made in that string
+  if (pin !== undefined) {
+    const string = stringAtOffset(file, text, pin);
+    if (!string) throw new UsageError('There is no plain string of classes at that position; read the element again.');
+    return rewriteString(text, string, classes([string]), from, to, string.start);
+  }
   const el = element(file, text, start), at = el.opening.start;
   if (el.className.kind === 'dynamic') throw new UsageError(el.className.reason);
   if (el.className.kind === 'none') {
@@ -378,8 +450,35 @@ export function swapClasses(file: string, text: string, start: number, from: str
   const found = from.map(name => all.find(item => item.text === name));
   const missing = from.filter((_, i) => !found[i]);
   if (missing.length) throw new UsageError(`${missing.join(' ')} is not written on this element; read it again.`);
-  const string = found[0]?.string ?? el.className.strings[0]!;
+  for (const name of from) {
+    const holding = all.filter(item => item.text === name).map(item => item.string);
+    if (new Set(holding).size > 1) throw new UsageError(severalCases(holding));
+  }
+  const string = found[0]?.string ?? addTarget(el.className.strings);
   if (found.some(item => item!.string !== string)) throw new UsageError('These classes sit in different parts of the className; change them by hand.');
+  // a class is already there only where it applies whenever this string does: in it, or in a string under no condition
+  // (`flex` in the other branch of a ternary is not on the element in this one)
+  return rewriteString(text, string, all.filter(item => item.string === string || !item.string.branch), from, to, at);
+}
+/** The plain string of classes (a literal, or a template's fixed part) that holds an offset, wherever it is in the file. */
+export function stringAtOffset(file: string, text: string, offset: number): Text | undefined {
+  const parsed = parseSync(file, text);
+  if (parsed.errors.length) throw new UsageError('This file does not parse; fix it before editing properties.');
+  let found: Text | undefined;
+  const walk = (node: Node): void => {
+    if (found || node.start > offset || node.end < offset) return;
+    const own = node.type === 'Literal' && typeof node.value === 'string' ? [staticText(node, text)] : node.type === 'TemplateLiteral' ? quasiTexts(node, text) : [];
+    for (const item of own) if (item && item.start <= offset && offset <= item.end) { found = item; return; }
+    const record = node as unknown as Record<string, unknown>;
+    for (const key of visitorKeys[node.type] ?? []) {
+      const value = record[key];
+      for (const child of Array.isArray(value) ? value : [value]) if (child && typeof child === 'object') walk(child as Node);
+    }
+  };
+  walk(parsed.program);
+  return found;
+}
+function rewriteString(text: string, string: Text, all: { text: string }[], from: string[], to: string[], at: number): SourceChange {
   // The edit is made on the string as written, token by token: escapes, quotes, line breaks and indentation stay
   // exactly as they are, and only the named classes move.
   const raw = text.slice(string.start, string.end), delimiter = string.quote ?? text[string.start - 1]!;
@@ -444,4 +543,22 @@ export function classNamesOf(file: string, text: string, start: number): { kind:
   if (el.className.kind === 'dynamic') return { kind: 'dynamic', classes: [], reason: el.className.reason };
   const spread = el.opening.attributes.some(a => a.type === 'JSXSpreadAttribute'), hasClass = el.opening.attributes.some(a => a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' && (a.name.name === 'className' || a.name.name === 'class'));
   return hasClass ? { kind: 'dynamic', classes: [], reason: 'className is built at runtime; set the class by hand.' } : { kind: 'none', classes: [], ...(spread ? { reason: 'This element spreads props, which may carry className; set the class by hand.' } : {}) };
+}
+
+// ---------------------------------------------------------------- where classes are written (class-site)
+export type { Text as ClassString };
+/** An element's attributes as class sources: per attribute name, its plain strings and the names it reads from. */
+export interface ElementSources { tag: string; start: number; attributes: Map<string, { strings: Text[]; refs: ClassRef[] }>; spread: boolean; /** the names spread into it (`{...props}`), which may carry its className */ spreads: ClassRef[] }
+export function elementSources(file: string, text: string, start: number): ElementSources {
+  const opening = findOpening(file, text, start);
+  if (!opening) throw new UsageError('Source position does not identify an authored JSX element.');
+  const attributes = new Map<string, { strings: Text[]; refs: ClassRef[] }>();
+  for (const attribute of opening.attributes) {
+    if (attribute.type !== 'JSXAttribute' || attribute.name.type !== 'JSXIdentifier' || !attribute.value) continue;
+    const value = attribute.value;
+    if (value.type === 'Literal') { const text0 = staticText(value, text); attributes.set(attribute.name.name, { strings: text0 ? [text0] : [], refs: [] }); }
+    else if (value.type === 'JSXExpressionContainer' && value.expression.type !== 'JSXEmptyExpression') attributes.set(attribute.name.name, classSources(value.expression, text));
+  }
+  return { tag: text.slice(opening.name.start, opening.name.end), start: opening.start, attributes, spread: opening.attributes.some(a => a.type === 'JSXSpreadAttribute'),
+    spreads: opening.attributes.flatMap(a => a.type === 'JSXSpreadAttribute' && a.argument.type === 'Identifier' ? [{ name: a.argument.name, property: 'className', start: a.argument.start, trail: [] }] : []) };
 }

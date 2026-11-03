@@ -25,6 +25,8 @@ import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
+import { classSites } from './class-site.js';
+import type { ClassSiteAnswer } from './class-site.js';
 import type { SpacingUnit } from './props.js';
 import { ancestorWith, indexSource } from '../structure/index.js';
 import type { StructureEntry } from '../structure/index.js';
@@ -132,14 +134,17 @@ export interface StructureResult {
   /** For a tooltip: the provider whose delays it follows (the one above it in its file, else the project's only one). */
   provider?: { file: string; line: number; column: number; hash: string; component: string; library: string | null; props: StructureEntry['props'] };
 }
-export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string }[] }
+/** GET class-site: where each class of an element is written, and the hash of every file a site is in. */
+export interface ClassSiteResult extends ClassSiteAnswer { revision: number; file: string; hash: string; hashes: Record<string, string> }
+export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string; /** the plain string the change is made in (class-site's string.line and string.column), when it is not the element's own */ at?: { line: number; column: number } }[] }
 /** A new token for the theme (a craft suggestion of kind token), then the class that uses it (docs/briefs/craft-spec.md §4). */
 export interface TokenOptions { file: string; hash: string; name: string; value: string; why?: string; then?: SwapOptions }
 export interface TokenResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; then?: ApplyResult }
-export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string }
+export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string; at?: { line: number; column: number } }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
-export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string; /** the file was changed outside React Plumber since this write, so it can't be undone */ stale?: true }
-interface Recorded extends HistoryEntry { path: string; before: string; hashAfter: string }
+export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string; /** the file was changed outside React Plumber since this write, so it can't be undone */ stale?: true; /** a write made as one over several files (a recipe's theme and element): every file it changed */ files?: string[] }
+/** One file write. Writes made as one carry the same `batch`: history lists them as one entry, undo takes them back together. */
+interface Recorded extends Omit<HistoryEntry, 'files'> { path: string; before: string; hashAfter: string; batch?: { id: string; label: string } }
 const historyLimit = 20;
 /** What a caller tags a write with (POST body `trace`): a group several calls share, and anything to read back with each change. */
 export interface TraceTag { group?: string; meta?: unknown }
@@ -160,6 +165,13 @@ const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(file);
 const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file);
 const missing = (error: unknown) => ['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
+/** The offset of a 1-based line and column in a text (a pinned string's `at`). */
+function offsetOf(text: string, at: { line: number; column: number }): number {
+  if (!Number.isSafeInteger(at.line) || !Number.isSafeInteger(at.column) || at.line < 1 || at.column < 1) throw new UsageError('at is { line, column }, both positive integers.');
+  let offset = 0;
+  for (let line = 1; line < at.line; line++) { const next = text.indexOf('\n', offset); if (next < 0) throw new UsageError('That line is past the end of the file.'); offset = next + 1; }
+  return offset + at.column - 1;
+}
 
 /** Owns one warm analysis worker and serializes changes with reads. */
 export class Session extends EventEmitter {
@@ -748,11 +760,13 @@ export class Session extends EventEmitter {
         done.push(result.undo); files[w.file] = result.hash;
       }
     } catch (error) {
-      // nothing half done: the files already written go back as they were
+      // nothing half done: the files already written go back as they were, and their history entries and trace go with them
       for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
       throw error;
     }
-    return { revision: this.revision, applied: writes.map(w => `${w.role}:${w.file}`), undo: done, files, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
+    // one recipe, one entry in the history and one undo, however many files it wrote
+    const label = `${plan.choice} ${plan.uses?.class ?? plan.uses?.token ?? 'recipe'}`;
+    return { revision: this.revision, applied: writes.map(w => `${w.role}:${w.file}`), undo: [this.asOneWrite(done, label)], files, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
   }
   /**
    * What the recipes know of the project: every css and code file read once, and the index built from them. It is kept while
@@ -1125,7 +1139,7 @@ export class Session extends EventEmitter {
   }
   /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
   async swap(options: SwapOptions): Promise<ApplyResult> {
-    const { file, hash, line, column, from, to } = options ?? {} as SwapOptions;
+    const { file, hash, line, column, from, to, at } = options ?? {} as SwapOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof from !== 'string' || typeof to !== 'string' || !to.trim()) throw new UsageError('Swap requires file, hash, line, column, from and to.');
     const names = (v: string) => v.split(/\s+/).filter(Boolean);
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
@@ -1133,10 +1147,10 @@ export class Session extends EventEmitter {
     const facts = await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
-    if (!names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+    if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      return swapClasses(_file, source, facts.location.start, names(from), names(to));
+      return swapClasses(_file, source, facts.location.start, names(from), names(to), at ? offsetOf(source, at) : undefined);
     }, changed(from, to, ''));
   }
   /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
@@ -1168,6 +1182,29 @@ export class Session extends EventEmitter {
       if (provider) out.provider = { file: where === path ? file : rel(where), line: provider.line, column: provider.column, hash: sourceHash(whereText), component: provider.component, library: provider.library, props: provider.props };
     }
     return out;
+  }
+  /**
+   * Where each class of an element is written (src/session/class-site.ts): its own className, a variable it reads, or the
+   * usage up `chain` (the usages above it, nearest first) that passes the prop it reads. `classes` is a space-separated
+   * list; every class of the strings found when absent. Each file a site is in comes with its hash, for the write.
+   */
+  async classSite(file: string, line: number, column: number, classes?: string, chain: { file: string; line: number; column: number }[] = []): Promise<ClassSiteResult> {
+    if (!Array.isArray(chain) || chain.length > 32) throw new UsageError('chain is a list of at most 32 { file, line, column }.');
+    if (classes !== undefined && (typeof classes !== 'string' || classes.length > 4000)) throw new UsageError('classes is a space-separated list of class names.');
+    const texts = new Map<string, string>();
+    const source = async (name: string, line: number, column: number) => {
+      const path = this.file(name); this.position(line); this.position(column);
+      if (!texts.has(path)) { await this.readableSource(path); texts.set(path, await readFile(path, 'utf8')); }
+      return { file: name, path, text: texts.get(path)!, line, column };
+    };
+    const element = await source(file, line, column);
+    const links = [];
+    for (const link of chain) links.push(await source(link?.file, link?.line, link?.column));
+    const names = classes?.split(/\s+/).filter(Boolean);
+    const answer = classSites({ element, chain: links, ...(names?.length ? { classes: names } : {}) });
+    const hashes: Record<string, string> = {};
+    for (const name of [element, ...links]) hashes[name.file] = sourceHash(name.text);
+    return { revision: this.revision, file, hash: hashes[file]!, hashes, ...answer };
   }
   /** Set a literal prop on a component (a craft suggestion of kind prop: delayDuration={500}), in one guarded write. */
   async propEdit(options: PropEditOptions): Promise<ApplyResult> {
@@ -1250,7 +1287,7 @@ export class Session extends EventEmitter {
     const names = (v: string) => v.split(/\s+/).filter(Boolean);
     const path = this.file(file);
     // one swap per element: the same element twice with the same edit is one
-    const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}`, e])).values()];
+    const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}|${e.at?.line ?? ''}:${e.at?.column ?? ''}`, e])).values()];
     for (const e of unique) {
       if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || !e.to.trim() || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs from and to (at most eight classes).');
       this.position(e.line); this.position(e.column);
@@ -1264,13 +1301,13 @@ export class Session extends EventEmitter {
       if (!(error instanceof UsageError) || error.message === staleFile) throw error;
       refused.push({ line: e.line, column: e.column, from: e.from, to: e.to, reason: error.message });
     };
-    const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[] }[] = [];
+    const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[]; pin?: number }[] = [];
     for (const e of unique) {
       try {
         const facts = await this.elementFacts(path, e.line, e.column);
         if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
-        if (!names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
-        starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to) });
+        if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+        starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(e.at ? { pin: offsetOf(facts.text, e.at) } : {}) });
       } catch (error) { refuse(e, error); }
     }
     const written: SwapsOptions['edits'] = [];
@@ -1280,7 +1317,7 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
-        try { changes.push({ ...swapClasses(_file, source, s.start, s.from, s.to), edit: s.edit }); }
+        try { changes.push({ ...swapClasses(_file, source, s.start, s.from, s.to, s.pin), edit: s.edit }); }
         catch (error) { refuse(s.edit, error); }
       }
       changes.sort((a, b) => b.start - a.start);
@@ -1419,7 +1456,13 @@ export class Session extends EventEmitter {
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
-  /** Recent writes, newest first. */
+  /** Writes made as one: their entries share a batch, named by a handle of its own (the last file's, a new id). */
+  private asOneWrite(handles: UndoHandle[], label: string): UndoHandle {
+    if (handles.length < 2) return handles[0]!;
+    const id = `w${++this.writes}`, members = new Set(handles.map(h => h.id));
+    for (const entry of this.written) if (members.has(entry.id)) entry.batch = { id, label };
+    return { id, file: handles.at(-1)!.file, label };
+  }
   /** Newest first. A write is stale when the file no longer holds what it wrote and no newer write here explains the
    * difference: something else changed the file, so undo would overwrite that change. Undo itself still refuses it. */
   async history(): Promise<{ writes: HistoryEntry[] }> {
@@ -1432,11 +1475,22 @@ export class Session extends EventEmitter {
         expected = sourceHash(entry.before);
       }
     }
-    return { writes: this.written.toReversed().map(({ id, file, line, label, at }) => ({ id, file, line, label, at, ...(stale.has(id) ? { stale: true as const } : {}) })) };
+    // a batch is one entry, where its newest write is, and stale when any of its writes is
+    const entries: HistoryEntry[] = [], batches = new Map<string, HistoryEntry>();
+    for (const w of this.written.toReversed()) {
+      const kept = w.batch && batches.get(w.batch.id);
+      if (kept) { kept.files!.push(w.file); if (stale.has(w.id)) kept.stale = true; continue; }
+      const entry: HistoryEntry = { id: w.batch?.id ?? w.id, file: w.file, line: w.line, label: w.batch?.label ?? w.label, at: w.at, ...(stale.has(w.id) ? { stale: true as const } : {}), ...(w.batch ? { files: [w.file] } : {}) };
+      if (w.batch) batches.set(w.batch.id, entry);
+      entries.push(entry);
+    }
+    return { writes: entries };
   }
   /** Restore the file as it was before a write, when nothing has changed it since. Goes through the same guards as a write. */
   undo(id: string): Promise<UndoResult> {
     if (typeof id !== 'string' || !id.trim()) throw new UsageError('Undo requires the id of a write.');
+    const members = this.written.filter(item => item.batch?.id === id);
+    if (members.length) return this.undoBatch(id, members);
     return this.serialize(async () => {
       const entry = this.written.find(item => item.id === id);
       if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.');
@@ -1467,6 +1521,15 @@ export class Session extends EventEmitter {
       if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
       return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
     });
+  }
+  /** Take back writes made as one: every file is checked before any is written, then each goes back, newest first. */
+  private async undoBatch(id: string, members: Recorded[]): Promise<UndoResult> {
+    // a file written twice in the batch holds what its newest write left
+    const newest = [...new Map(members.map(entry => [entry.path, entry])).values()];
+    for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw new UsageError(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
+    let last: UndoResult | undefined;
+    for (const entry of members.toReversed()) last = await this.undo(entry.id);
+    return { ...last!, undone: id };
   }
   /** Run one write under a tag: every change it records carries the tag's group (a new one when none is given) and meta. */
   async traced(tag: TraceTag | undefined, method: string, args: unknown[]): Promise<unknown> {

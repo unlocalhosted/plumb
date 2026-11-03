@@ -14,7 +14,7 @@ import { literal, readClasses, readMotionObject, tailwindDefaults } from './read
 import type { ClassReading } from './readers.js';
 import type { ProjectIndex } from './project.js';
 import { timingToCss } from './render.js';
-import { blockIndent, isTheme, scanStylesheet } from './stylesheet.js';
+import { blockIndent, isDark, isTheme, scanStylesheet } from './stylesheet.js';
 import type { Block, Decl } from './stylesheet.js';
 
 export type Choice = 'use' | 'move' | 'add';
@@ -110,9 +110,24 @@ function setDeclValue(css: string, decl: Decl, value: string, note: string | und
   return css.slice(0, decl.start) + lead + css.slice(decl.start, at) + spacing + shaped + css.slice(valueEnd);
 }
 const declFor = (index: ProjectIndex, token: string): { file: string; decl: Decl } | null => {
-  for (const t of index.themes) { const decl = t.decls.find(d => d.name === token); if (decl) return { file: t.file, decl }; }
+  for (const t of index.themes) { const decl = t.decls.find(d => d.name === token && !isDark(d.block)); if (decl) return { file: t.file, decl }; }
   return null;
 };
+/**
+ * A token's dark value, written where the project keeps its dark theme's values, never assumed (docs/research/recipe-pack.md):
+ * over the token's own dark value when it has one, else in the dark block that holds tokens of this prefix, else in any dark
+ * block of custom properties; the light token's file first. Answers what to say when there is nowhere to write it.
+ */
+function writeDark(edits: Edits, files: string[], prefix: string, name: string, value: string): string | null {
+  for (const file of [...new Set(files)]) {
+    const css = edits.text(file), blocks = scanStylesheet(css).blocks.filter(b => isDark(b) && b.decls.some(d => d.custom));
+    const own = blocks.flatMap(b => b.decls).find(d => d.name === name);
+    if (own) { if (own.value !== value) edits.set(file, setDeclValue(css, own, value, undefined), 'theme', `${name} (dark) → ${value}`); return null; }
+    const block = blocks.find(b => b.decls.some(d => d.name.startsWith(prefix))) ?? blocks[0];
+    if (block) { edits.set(file, insertDecl(css, block, prefix, name, value, undefined), 'theme', `add ${name} (dark): ${value}`); return null; }
+  }
+  return `Its dark value (${value}) is not written: your stylesheets have no dark block (.dark, [data-theme="dark"] or prefers-color-scheme: dark) to put it in.`;
+}
 
 // ------------------------------------------------------------------ the element
 type Element = PlanInput['element'];
@@ -167,6 +182,9 @@ export function planShadow(i: PlanInput): Plan {
     const found = declFor(index, nearest!.token ?? '');
     if (!found) return refuse(verdict, nearest, `${nearest!.name} is not a token in your theme, so it cannot be moved.`);
     edits.set(found.file, setDeclValue(edits.text(found.file), found.decl, value, note), 'theme', `${found.decl.name} → ${value}`);
+    const prefix = /^(--[a-z]+-)/.exec(found.decl.name)?.[1] ?? '--shadow-';
+    if (i.recipe.dark) { const said = writeDark(edits, [found.file, ...themeFiles(index)], prefix, found.decl.name, formatBoxShadow(i.recipe.dark)); if (said) notes.push(said); }
+    else if (index.yours.find(r => r.token === found.decl.name)?.dark) notes.push(`Your dark value of ${found.decl.name} stays as it is; this recipe has none.`);
   } else if (choice === 'add') {
     const prefix = index.themes.map(t => t.shadowPrefix).find(Boolean) ?? '--shadow-';
     let name = `${prefix}${slug(i.name ?? i.recipe.id)}`, n = 2;
@@ -178,6 +196,7 @@ export function planShadow(i: PlanInput): Plan {
       const css = edits.text(file), block = tokenBlock(css, prefix, !!tailwind && isThemeFile(css));
       if (!block) return refuse(verdict, nearest, `${file} has no ${tailwind ? '@theme' : ':root'} block to add the token to.`);
       edits.set(file, insertDecl(css, block, prefix, name, value, note), 'theme', `add ${name}: ${value}`);
+      if (i.recipe.dark) { const said = writeDark(edits, [file, ...themeFiles(index)], prefix, name, formatBoxShadow(i.recipe.dark)); if (said) notes.push(said); }
     } else notes.push(`${name} is already in your theme with this value.`);
     token = name; nearest = nearest ?? null;
   }
@@ -212,6 +231,8 @@ export function planShadow(i: PlanInput): Plan {
   return { ok: true, choice, verdict, nearest, writes: edits.writes(), notes, uses: { ...(token ? { token } : {}), ...(className ? { class: className } : {}) } };
 }
 const isThemeFile = (css: string) => scanStylesheet(css).blocks.some(isTheme);
+/** The stylesheets that hold the project's tokens, the theme file first. */
+const themeFiles = (index: ProjectIndex): string[] => [...(index.idioms.tailwind?.themeFile ? [index.idioms.tailwind.themeFile] : []), ...index.themes.map(t => t.file), ...(index.idioms.cssVariables?.files ?? [])];
 function countUsers(i: PlanInput, cls: string): number {
   let n = 0;
   for (const f of i.index.paths) {
@@ -347,7 +368,13 @@ function planMotionTailwind(i: PlanInput, m: MotionModel, exit: MotionModel | un
       edits.set(found.file, setDeclValue(edits.text(found.file), found.decl, css.easing, note), 'theme', `${found.decl.name} → ${css.easing}`);
       easeClass = nearest.class!; uses = { token: nearest.token!, class: easeClass };
     } else { easeClass = nearest.class!; uses = { ...(nearest.token ? { token: nearest.token } : {}), class: easeClass }; }
-    wanted.push(transitionClass(m), durationClass(css.duration), easeClass, ...stateClasses(m));
+    // a timing equal to a duration of the project's is written as its class (N-13); one the element wears that the pick
+    // changes is said, never replaced silently
+    const durations = index.themes.flatMap(t => t.durations);
+    const timed = durations.find(d => d.ms === css.duration)?.class ?? durationClass(css.duration);
+    const worn = durations.find(d => existingAll.includes(d.class));
+    if (worn && worn.class !== timed) notes.push(`Your ${worn.class} (${num(worn.ms)}ms) is replaced by ${timed}: the timing picked is ${num(css.duration)}ms.`);
+    wanted.push(transitionClass(m), timed, easeClass, ...stateClasses(m));
     replace.push(...existingAll.filter(c => (!variantOf(c) && /^(?:transition(?:-[\w[\],-]+)?|duration-[\w[\]]+|ease-[\w-]+)$/.test(c)) || (variantOf(c) === states[m.trigger] && /(?:translate-|scale-|opacity-)/.test(c))));
   }
   const from = [...new Set(replace)], to = [...new Set(wanted)].filter(c => !existingAll.includes(c) || from.includes(c));

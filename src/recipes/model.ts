@@ -45,6 +45,9 @@ export interface Recipe {
   model: Model;
   /** an enter recipe's leaving half, when the source has one; written only where something can drive it (data-state, a library) */
   exit?: MotionModel;
+  /** a shadow's value in a dark theme, when its source has one (a pack's `{ light, dark }`, a project's dark override);
+   * `model` is the light one. Written under the project's own dark selector, never assumed (docs/research/recipe-pack.md) */
+  dark?: ShadowModel;
   source: RecipeSource;
   summary?: string;
   /** the CSS custom property it lives in, when it lives in the project's theme */

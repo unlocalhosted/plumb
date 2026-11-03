@@ -77,7 +77,8 @@ test('set writes into cn(...)s first string, creates a className, and edits a st
   assert.deepEqual([api.prop(inline, 'padding').source, api.prop(inline, 'padding').value], ['inline', '10px']);
   assert.equal((await api.set(inline, 9, 'padding', 's3')).status, 200);
   const text = await api.read();
-  assert.match(text, /cn\('text-brand font-semibold', on && 'font-medium'\)/);
+  // the weight is written in the `on && …` string, so it changes there: never a second weight beside it (N-02)
+  assert.match(text, /cn\('text-brand', on && 'font-semibold'\)/);
   assert.match(text, /<aside className="rounded-card" \/>/);
   assert.match(text, /style=\{\{ padding: "var\(--spacing-s3\)" \}\}/);
 });

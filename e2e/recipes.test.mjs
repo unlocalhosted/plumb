@@ -4,7 +4,7 @@
 // where it cannot write safely, and undo.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { link, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serve } from '../dist/session/server.js';
@@ -121,7 +121,7 @@ test('Tailwind v4 with cn(): the project’s own shadows and easings come first,
   const css = await api.read('src/styles.css');
   assert.match(css, /\/\* Tailwind CSS default theme, \(c\) Tailwind Labs, Inc\., MIT https:\/\/github\.com\/tailwindlabs\/tailwindcss\/blob\/main\/packages\/tailwindcss\/theme\.css \*\/\n  --shadow-md: 0 1px 3px 0 rgb\(0 0 0 \/ 0\.1\), 0 1px 2px -1px rgb\(0 0 0 \/ 0\.1\);/);
   assert.ok((await api.read('src/App.tsx')).includes('<section id="panel" className="rounded-lg p-4 shadow-md">'));
-  assert.equal(moved.body.undo.length, 2);
+  assert.equal(moved.body.undo.length, 1, 'two files, one write: one undo (N5)');
   await api.undo(moved.body.undo);
   assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css]);
 
@@ -361,8 +361,173 @@ test('GET /__plumb/recipes has one shape', async t => {
   const api = await project(t, tailwind);
   const body = await api.view(await api.at('src/App.tsx', '<section id="panel"'));
   assert.deepEqual(Object.keys(body).sort(), ['column', 'element', 'file', 'hash', 'idioms', 'line', 'packs', 'yours']);
-  assert.deepEqual(Object.keys(body.idioms).sort(), ['classes', 'cssVariables', 'dataState', 'motion', 'tailwind']);
+  assert.deepEqual(Object.keys(body.idioms).sort(), ['classes', 'cssVariables', 'dataState', 'evidence', 'motion', 'tailwind']);
   assert.deepEqual(Object.keys(body.packs[0]).sort(), ['nearest', 'recipe', 'verdict']);
   assert.deepEqual(Object.keys(body.packs[0].verdict).sort(), ['differs', 'kind', 'text']);
   for (const r of body.yours) for (const key of ['id', 'name', 'kind', 'source', 'model', 'derived', 'css']) assert.ok(key in r, `${r.id} has ${key}`);
+});
+
+// docs/qa/element-card-retest.md N-01, N-12, N-13, on a project shaped like crafting-ui: shadow tokens that differ only in
+// their colour token, a prototype stylesheet under public/ that names the same easing, and a duration utility of its own.
+const drafted = {
+  'package.json': '{ "name": "fx-drafted", "private": true, "type": "module", "dependencies": { "tailwindcss": "^4.0.0" } }\n',
+  'plumber.config.ts': config,
+  'src/styles.css': `@import "tailwindcss";
+
+@theme {
+  --shadow-1: 0 0 0 1px var(--line);
+  --shadow-2: 0 0 0 1px var(--line-strong);
+  --ease-*: initial;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 140ms;
+}
+@utility duration-fast { transition-duration: 140ms; }
+`,
+  'public/prototypes/kit.css': ':root {\n  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);\n  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.2);\n}\n',
+  'src/App.tsx': `export function Nav() {
+  return <nav><a id="tab" className="rounded px-2.5 py-1 transition-colors duration-fast hover:bg-gray-100">Motion</a><a id="slow" className="rounded px-2 duration-300 hover:bg-gray-100">Slow</a></nav>;
+}
+`,
+};
+
+test('N-01: two shadows that differ only in their colour token are not the same; the one picked is the one written', async t => {
+  const api = await project(t, drafted);
+  const tab = await api.at('src/App.tsx', '<a id="tab"');
+  const body = await api.view(tab);
+  const preview = await api.preview(tab, { recipe: '--shadow-2' });
+  assert.equal(preview.status, 200, JSON.stringify(preview.body));
+  assert.equal(preview.body.nearest.token, '--shadow-2', JSON.stringify(preview.body.nearest));
+  assert.equal(preview.body.verdict.kind, 'same');
+  assert.equal(preview.body.uses.class, 'shadow-2');
+  assert.match(preview.body.writes[0].diff, /^\+ .*shadow-2/m);
+  assert.doesNotMatch(preview.body.writes[0].diff, /shadow-1/);
+  // against each other: close, and the colour is what differs
+  const one = body.yours.find(r => r.token === '--shadow-1');
+  const asked = await api.preview(tab, { boxShadow: '0 0 0 1px var(--line-strong)', name: 'drawn' });
+  assert.equal(asked.status, 200, JSON.stringify(asked.body));
+  assert.equal(asked.body.nearest.token, '--shadow-2');
+  const pack = body.packs.find(p => p.recipe.kind === 'shadow');
+  assert.ok(pack, 'a pack shadow is mapped');
+  assert.ok(one, 'shadow-1 is the project’s');
+  const across = await api.preview(tab, { boxShadow: '0 0 0 1px var(--line)', name: 'drawn' });
+  assert.equal(across.body.nearest.token, '--shadow-1');
+  const between = await api.preview(tab, { boxShadow: '0 0 0 1px var(--line-other)', name: 'drawn' });
+  assert.equal(between.body.verdict.kind, 'close', JSON.stringify(between.body.verdict));
+  assert.match(between.body.verdict.text, /colour var\(--line-other\), yours var\(--line/);
+});
+
+test('N-12: a token named in two stylesheets is one option, the app’s own; N-13: a timing equal to a duration of the project’s is written as its class', async t => {
+  const api = await project(t, drafted);
+  const tab = await api.at('src/App.tsx', '<a id="tab"'), slow = await api.at('src/App.tsx', '<a id="slow"');
+  const original = await api.read('src/App.tsx');
+  const body = await api.view(tab);
+  const keys = body.yours.map(r => `${r.kind}:${r.id}`);
+  assert.deepEqual(keys, [...new Set(keys)], 'no option twice');
+  const easeOut = body.yours.filter(r => r.id === 'ease-out');
+  assert.equal(easeOut.length, 1);
+  assert.equal(easeOut[0].source.file, 'src/styles.css');
+  assert.equal(body.yours.find(r => r.id === '1').source.file, 'src/styles.css');
+
+  // the project's ease-out at its default 140ms: duration-fast stays, never duration-150
+  const kept = await api.preview(tab, { recipe: '--ease-out' });
+  assert.equal(kept.status, 200, JSON.stringify(kept.body));
+  const keptDiff = kept.body.writes.find(w => w.file === 'src/App.tsx').diff;
+  assert.match(keptDiff, /^\+ .*id="tab" className="[^"]*duration-fast/m);
+  assert.doesNotMatch(keptDiff, /duration-150|duration-140/);
+  assert.ok(!kept.body.notes.some(n => /replaced/.test(n)), JSON.stringify(kept.body.notes));
+  // 140ms on an element written at 300: the project's class, not duration-140
+  const reused = await api.preview(slow, { recipe: '--ease-out' });
+  assert.equal(reused.status, 200, JSON.stringify(reused.body));
+  assert.match(reused.body.writes.find(w => w.file === 'src/App.tsx').diff, /^\+ .*duration-fast/m);
+  // a pick at another timing replaces the project's class, and says so
+  const other = await api.preview(tab, { recipe: '--ease-out', dials: { speed: 2 } });
+  assert.equal(other.status, 200, JSON.stringify(other.body));
+  assert.doesNotMatch(other.body.writes.find(w => w.file === 'src/App.tsx').diff, /^\+ .*id="tab" className="[^"]*duration-fast/m);
+  assert.ok(other.body.notes.some(n => /duration-fast \(140ms\) is replaced/.test(n)), JSON.stringify(other.body.notes));
+  assert.equal(await api.read('src/App.tsx'), original);
+});
+
+// docs/research/engine-review.md B7: a pack's { light, dark } and a project's dark override are both read; the dark value
+// moves with the dials, is shown, and is written under the project's own dark selector, never assumed.
+test('B7: a shadow’s dark value is read from the pack and the project, moves with the dials, and is written where the project keeps its dark values', async t => {
+  const darkTheme = { ...tailwind, 'src/styles.css': tailwind['src/styles.css'] + `
+.dark {
+  --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+}
+` };
+  const api = await project(t, darkTheme);
+  const panel = await api.at('src/App.tsx', '<section id="panel"');
+  const original = { app: await api.read('src/App.tsx'), css: await api.read('src/styles.css') };
+  const body = await api.view(panel);
+  // the pack's dark value rides on its recipe, with the CSS to show it
+  const raised = body.packs.find(p => p.recipe.id === 'raised').recipe;
+  assert.equal(raised.dark.layers.length, 2);
+  assert.equal(raised.dark.layers[0].color.a, 0.3);
+  assert.match(raised.cssDark.boxShadow, /rgb\(0 0 0 \/ 0\.3\)/);
+  // the project's dark override is its token's dark, not a recipe of its own
+  const md = body.yours.filter(r => r.token === '--shadow-md');
+  assert.equal(md.length, 1);
+  assert.equal(md[0].dark.layers[0].color.a, 0.4);
+  assert.equal(md[0].model.layers[0].color.a, 0.12);
+
+  // the dials move the dark value with the light one
+  const tall = await api.preview(panel, { recipe: 'raised', dials: { height: 2 } });
+  assert.equal(tall.status, 200, JSON.stringify(tall.body));
+  assert.equal(tall.body.recipe.dark.layers[0].y, raised.dark.layers[0].y * 2);
+  assert.equal(tall.body.recipe.model.layers[0].y, raised.model.layers[0].y * 2);
+
+  // add: the light value in @theme, the dark one in the project's .dark block
+  const added = await api.apply(panel, { recipe: 'raised', choice: 'add' });
+  assert.equal(added.status, 200, JSON.stringify(added.body));
+  const css = await api.read('src/styles.css');
+  assert.match(css, /@theme \{[\s\S]*--shadow-raised: 0 1px 3px 0 rgb\(0 0 0 \/ 0\.1\)[\s\S]*\}\n\n\.dark \{[\s\S]*--shadow-raised: 0 1px 3px 0 rgb\(0 0 0 \/ 0\.3\), 0 1px 2px -1px rgb\(0 0 0 \/ 0\.3\);\n\}/);
+  assert.equal(css.match(/--shadow-raised:/g).length, 2);
+  await api.undo(added.body.undo);
+  assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css]);
+
+  // move: the project's own dark value takes the recipe's dark
+  const moved = await api.apply(panel, { recipe: 'raised', choice: 'move' });
+  assert.equal(moved.status, 200, JSON.stringify(moved.body));
+  assert.match(await api.read('src/styles.css'), /\.dark \{\n  --shadow-md: 0 1px 3px 0 rgb\(0 0 0 \/ 0\.3\), 0 1px 2px -1px rgb\(0 0 0 \/ 0\.3\);\n\}/);
+  await api.undo(moved.body.undo);
+  assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css]);
+});
+
+test('B7: with no dark block in the project, only the light value is written, and that is said', async t => {
+  const api = await project(t, tailwind);
+  const panel = await api.at('src/App.tsx', '<section id="panel"');
+  const preview = await api.preview(panel, { recipe: 'raised', choice: 'add' });
+  assert.equal(preview.status, 200, JSON.stringify(preview.body));
+  assert.ok(preview.body.notes.some(n => /dark value .* is not written/.test(n)), JSON.stringify(preview.body.notes));
+  assert.doesNotMatch(preview.body.writes.find(w => w.file === 'src/styles.css').diff, /\.dark/);
+});
+
+// docs/research/engine-review.md N5: a recipe that writes several files is one write in the history, taken back by one undo;
+// one that fails part way leaves nothing behind, in the files, the history or the trace.
+test('N5: a recipe’s writes are one history entry and one undo; a batch that fails half way leaves no entry and no change', async t => {
+  const api = await project(t, tailwind);
+  const panel = await api.at('src/App.tsx', '<section id="panel"');
+  const original = { app: await api.read('src/App.tsx'), css: await api.read('src/styles.css') };
+  const added = await api.apply(panel, { recipe: 'overlay' });
+  assert.equal(added.status, 200, JSON.stringify(added.body));
+  assert.equal(added.body.applied.length, 2);
+  assert.equal(added.body.undo.length, 1);
+  const history = (await api.call('history')).body.writes;
+  assert.equal(history.length, 1, JSON.stringify(history));
+  assert.deepEqual([history[0].id, history[0].files.toSorted()], [added.body.undo[0].id, ['src/App.tsx', 'src/styles.css']]);
+  assert.match(history[0].label, /shadow-overlay/);
+  // the timeline sees the same one step: one group for both files
+  const groups = new Set((await api.call('trace')).body.changes.map(c => c.group));
+  assert.equal(groups.size, 1);
+  await api.undo(added.body.undo);
+  assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css]);
+  assert.equal((await api.call('history')).body.writes.length, 0);
+
+  // the element's file is hard-linked, so its write is refused after the theme's landed: the theme goes back, and nothing is listed
+  await link(`${api.root}/src/App.tsx`, `${api.root}/src/App.copy.tsx`);
+  const failed = await api.apply(panel, { recipe: 'overlay' });
+  assert.equal(failed.status, 400, JSON.stringify(failed.body));
+  assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css]);
+  assert.equal((await api.call('history')).body.writes.length, 0);
+  assert.ok((await api.call('trace')).body.changes.every(c => c.state === 'undone' || !/shadow-overlay/.test(JSON.stringify(c))), 'no live change of the failed batch');
 });

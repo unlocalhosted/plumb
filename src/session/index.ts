@@ -6,7 +6,7 @@ import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
 import { patientMethods } from './methods.js';
 import type { EngineMethod, ReadMethod } from './methods.js';
-export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TraceTag, UndoChangesResult, TextRun, TextResult, SourceResolution } from './engine.js';
+export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, ClassSiteResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TraceTag, UndoChangesResult, TextRun, TextResult, SourceResolution } from './engine.js';
 
 type Method = EngineMethod;
 export type { ReadMethod };
@@ -121,6 +121,7 @@ export class Session extends EventEmitter {
   spec(...args: Parameters<Engine['spec']>) { return this.call('spec', args); }
   token(...args: Parameters<Engine['token']>) { return this.call('token', args); }
   structure(...args: Parameters<Engine['structure']>) { return this.call('structure', args); }
+  classSite(...args: Parameters<Engine['classSite']>) { return this.call('classSite', args); }
   undo(...args: Parameters<Engine['undo']>) { return this.call('undo', args); }
   history(...args: Parameters<Engine['history']>) { return this.call('history', args); }
   traced(...args: Parameters<Engine['traced']>) { return this.call('traced', args); }

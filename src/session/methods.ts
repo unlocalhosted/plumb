@@ -28,6 +28,7 @@ export const methods = [
   { http: 'text', engine: 'text', read: true, json: true },
   { http: 'text-at', engine: 'textAt', read: true, json: true },
   { http: 'structure', engine: 'structure', read: true, json: true },
+  { http: 'class-site', engine: 'classSite', read: true, json: true },
   { http: 'decisions', engine: 'decisions', read: true, json: true },
   { http: 'spec', engine: 'spec', read: true, json: true },
   { http: 'why', engine: 'why', read: true, json: true },

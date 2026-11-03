@@ -14,7 +14,7 @@ import { readCssVariables } from './css.js';
 import { resolveValue } from './resolve.js';
 import { themeSourceGraph } from './theme-sources.js';
 import { motionDefinitions } from './motion.js';
-import { numericSpacing, spacingBase } from './spacing.js';
+import { readSpacing } from './spacing.js';
 import type { NumericSpacing, SpacingBase } from './spacing.js';
 import type { Variable } from './resolve.js';
 
@@ -174,6 +174,6 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     return [record];
   });
   tokenReasons([...decisions.values(), ...inventory]);
-  const numeric = numericSpacing(raw, [...decisions.values()], variables, themeNames);
-  return { numericSpacing: numeric, ...(numeric ? {} : { spacingBase: spacingBase(raw, variables, themeNames) }), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
+  const spacing = readSpacing(raw, [...decisions.values()], variables, themeNames);
+  return { numericSpacing: spacing.numeric, ...(spacing.numeric || !spacing.base ? {} : { spacingBase: spacing.base }), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };
 }

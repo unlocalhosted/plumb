@@ -28,6 +28,7 @@ export function summarize(r: Recipe, index: ProjectIndex): Record<string, unknow
   const blocked = (r.model as MotionModel).requires === 'motion' && !index.idioms.motion.installed ? 'needs motion/react, which this project does not have' : undefined;
   return { id: r.id, name: r.name, kind: r.kind, ...(r.token ? { token: r.token } : {}), ...(r.class ? { class: r.class } : {}), source: r.source, ...(r.summary ? { summary: r.summary } : {}),
     model: r.model, derived: isShadow(r.model) ? deriveShadow(r.model) : deriveMotion(r.model), css: renderModel(r.model),
+    ...(r.dark ? { dark: r.dark, cssDark: renderModel(r.dark) } : {}),
     ...(isShadow(r.model) ? {} : { requires: (r.model as MotionModel).requires }), ...(r.exit ? { exit: r.exit, exitRequires: r.exit.requires } : {}), ...(blocked ? { blocked } : {}) };
 }
 const packRecipes = (ctx: RecipeContext): Recipe[] => (ctx.packs ?? [firstPack]).flatMap(pack => readPack(pack));
@@ -53,7 +54,10 @@ export function resolveRecipe(ctx: RecipeContext, p: PlanParams): Recipe {
     if (!object(p.dials)) throw new UsageError('dials is an object.');
     const d = p.dials, numeric = (k: string) => { const v = d[k]; if (v !== undefined && (typeof v !== 'number' || !Number.isFinite(v))) throw new UsageError(`dial ${k} must be a number.`); };
     for (const k of ['height', 'softness', 'light', 'speed', 'bounce', 'distance', 'startScale']) numeric(k);
-    recipe = isShadow(recipe.model) ? { ...recipe, model: shadowDials(recipe.model, d as ShadowDials) } : { ...recipe, model: motionDials(recipe.model, d as MotionDials), ...(recipe.exit ? { exit: motionDials(recipe.exit, d as MotionDials) } : {}) };
+    // the dark value moves with the light one (height, softness, light); a tint is the light page's surface, so it stays light
+    const { tint: _tint, ...shape } = d as ShadowDials;
+    recipe = isShadow(recipe.model) ? { ...recipe, model: shadowDials(recipe.model, d as ShadowDials), ...(recipe.dark ? { dark: shadowDials(recipe.dark, shape) } : {}) }
+      : { ...recipe, model: motionDials(recipe.model, d as MotionDials), ...(recipe.exit ? { exit: motionDials(recipe.exit, d as MotionDials) } : {}) };
   }
   return recipe;
 }

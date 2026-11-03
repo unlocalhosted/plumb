@@ -54,3 +54,6 @@ export function blockIndent(css: string, block: Block): string {
   return base + (base.includes('\t') ? '\t' : '  ');
 }
 export const isTheme = (b: Block) => /^@theme\b/.test(b.header);
+/** A block that holds the dark theme's values: `.dark`, `[data-theme="dark"]`, `@media (prefers-color-scheme: dark)`,
+ * `@variant dark`, or any block inside one. */
+export const isDark = (b: Block | null): boolean => !!b && (/prefers-color-scheme:\s*dark|(?:^|[\s.,(:\[="'])dark\b/.test(b.header) || isDark(b.parent));

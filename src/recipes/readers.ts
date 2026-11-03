@@ -3,7 +3,7 @@ import type { Node } from 'oxc-parser';
 import { defaultRootPx, formatBoxShadow, parseBoxShadow, parseDuration, parseEasing, splitTop, splitVariants } from './css.js';
 import type { MotionChange, MotionModel, Recipe, RecipeSource, ShadowModel, Timing, Trigger } from './model.js';
 import { timingFromTransition } from './pack.js';
-import { scanStylesheet, isTheme } from './stylesheet.js';
+import { isDark, isTheme, scanStylesheet } from './stylesheet.js';
 import type { Decl } from './stylesheet.js';
 
 // ---------------------------------------------------------------- defaults
@@ -55,6 +55,8 @@ export interface ThemeIndex {
   /** the property the project's shadow tokens share: --shadow- or --elevation- */
   shadowPrefix: string | null; easePrefix: string | null;
   defaults: { duration: number; easing: string };
+  /** the project's own duration utilities (`@utility duration-fast { transition-duration: 140ms }`), so a timing equal to one is written as it */
+  durations: { class: string; ms: number; line: number }[];
   decls: Decl[];
   /** the root font size rem and em lengths were resolved at */
   rootPx: number;
@@ -88,8 +90,13 @@ export function rootFontSize(css: string): number | null {
   return found;
 }
 export function readTheme(file: string, css: string, rootPx = rootFontSize(css) ?? defaultRootPx): ThemeIndex {
-  const { decls } = scanStylesheet(css);
+  const { decls, blocks } = scanStylesheet(css);
   const keyframes = readKeyframes(css);
+  const durations = blocks.flatMap(b => {
+    const name = /^@utility\s+(duration-[\w-]+)$/.exec(b.header)?.[1];
+    const only = b.decls.length === 1 && b.decls[0]!.name === 'transition-duration' ? parseDuration(b.decls[0]!.value) : null;
+    return name && only !== null ? [{ class: name, ms: only, line: b.decls[0]!.line }] : [];
+  });
   const shadows: Recipe[] = [], motions: Recipe[] = [];
   let duration = tailwindDefaultTransition.duration, easing = tailwindDefaultTransition.easing;
   for (const d of decls) {
@@ -97,8 +104,10 @@ export function readTheme(file: string, css: string, rootPx = rootFontSize(css) 
     if (d.name === '--default-transition-timing-function') easing = d.value;
   }
   const src = (d: Decl): RecipeSource => ({ reader: 'theme', file, line: d.line, token: d.name });
+  // a dark theme's value of a token is that token's `dark`, never a recipe of its own
+  const darkValues = new Map(decls.filter(d => d.custom && isDark(d.block)).map(d => [d.name, d]));
   for (const d of decls) {
-    if (!d.custom) continue;
+    if (!d.custom || isDark(d.block)) continue;
     const named = shadowName.exec(d.name);
     const theme = isTheme(d.block);
     const shadow = parseBoxShadow(d.value, rootPx);
@@ -106,7 +115,8 @@ export function readTheme(file: string, css: string, rootPx = rootFontSize(css) 
     if (shadow && (named || (!theme && shadow.layers.every(l => l.color) && shadow.layers.some(l => l.x || l.y || l.blur)))) {
       if (/^--(inset-shadow|drop-shadow)-/.test(d.name)) continue;
       const id = named ? named[2]! : d.name.replace(/^--/, '');
-      shadows.push({ id, name: d.name.replace(/^--/, ''), kind: 'shadow', model: shadow, source: src(d), token: d.name, ...(named?.[1] === 'shadow' ? { class: `shadow-${id}` } : {}) });
+      const darkDecl = darkValues.get(d.name), dark = darkDecl ? parseBoxShadow(darkDecl.value, rootPx) : null;
+      shadows.push({ id, name: d.name.replace(/^--/, ''), kind: 'shadow', model: shadow, ...(dark ? { dark } : {}), source: src(d), token: d.name, ...(named?.[1] === 'shadow' ? { class: `shadow-${id}` } : {}) });
       continue;
     }
     const ease = /^--ease-([\w-]+)$/.exec(d.name);
@@ -130,7 +140,7 @@ export function readTheme(file: string, css: string, rootPx = rootFontSize(css) 
     }
   }
   const prefixOf = (rs: Recipe[]) => { const counts = new Map<string, number>(); for (const r of rs) { const m = /^(--[a-z]+-)/.exec(r.token ?? ''); if (m) counts.set(m[1]!, (counts.get(m[1]!) ?? 0) + 1); } return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null; };
-  return { file, shadows, motions, shadowPrefix: prefixOf(shadows), easePrefix: prefixOf(motions.filter(m => m.id.startsWith('ease-'))), defaults: { duration, easing }, decls, rootPx };
+  return { file, shadows, motions, shadowPrefix: prefixOf(shadows), easePrefix: prefixOf(motions.filter(m => m.id.startsWith('ease-'))), defaults: { duration, easing }, durations, decls, rootPx };
 }
 
 // ---------------------------------------------------------------- classes on an element
@@ -154,6 +164,7 @@ export function readClasses(classes: string[], theme: ThemeIndex | null, rootPx 
   const defaults = new Map(tailwindDefaults().filter(r => r.kind === 'shadow').map(r => [r.class!, r]));
   const eases = new Map([...tailwindDefaults(), ...(theme?.motions ?? [])].filter(r => r.class?.startsWith('ease-')).map(r => [r.class!, r]));
   const changes: MotionChange[] = []; let trigger: Trigger | null = null, duration: number | undefined;
+  const durations = new Map((theme?.durations ?? []).map(d => [d.class, d.ms]));
   for (const cls of classes) {
     const split = splitVariants(cls), utility = split.utility.replace(/^!|!$/g, '');
     // a class with any variant is not the element at rest; only the ones that name a state become a change
@@ -168,7 +179,7 @@ export function readClasses(classes: string[], theme: ThemeIndex | null, rootPx 
       const p = utility === 'transition' ? ['color', 'background-color', 'border-color', 'opacity', 'box-shadow', 'transform'] : utility === 'transition-all' ? ['all'] : utility === 'transition-none' ? [] : utility.startsWith('transition-[') ? utility.slice(12, -1).split(',') : [utility.replace('transition-', '')];
       reading.transition.properties.push(...p); continue;
     }
-    const ms = durationOf(utility);
+    const ms = durations.get(utility) ?? durationOf(utility);
     if (ms !== undefined) { duration = ms; continue; }
     const ease = eases.get(utility);
     if (ease) { if (ease.kind === 'motion' && ease.model && 'timing' in ease.model) reading.transition.easing = utility; continue; }
