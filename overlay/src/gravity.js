@@ -184,7 +184,8 @@ export class Gravity {
         ctx.beginPath(); ctx.moveTo(sx, cy() - 8); ctx.quadraticCurveTo((sx + ax) / 2, cy() - 52, ax, cy() - radius(hover.a) - 2); ctx.stroke(); ctx.setLineDash([]);
       }
     };
-    const frame = (now) => { if (!visible || document.hidden) { raf = 0; return; } tick(now); draw(now); raf = requestAnimationFrame(frame); };
+    // the loop stops when the plot is off screen, the tab is hidden, or the plot was taken off the page for good
+    const frame = (now) => { if (!visible || document.hidden || !canvas.isConnected) { raf = 0; return; } tick(now); draw(now); raf = requestAnimationFrame(frame); };
     const run = () => { if (!raf && visible && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
 
     // the readout, for a cluster pointed at (a step says its own value on its mark)

@@ -20,7 +20,9 @@
   import { PRIMITIVES_CSS, stepper, swatches, segments, align, bind, place } from '../src/editor-primitives.js';
   import { SCALE_CSS, step as stepMark, place as placeMark, places as placeMarks, count as countMark, rollCount } from '../src/scale-marks.js';
   import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
-  import { BLOCK_ICONS } from '../src/boxmodel.js';
+  import { BLOCK_ICONS, BOXMODEL_CSS, boxModel, pointAt } from '../src/boxmodel.js';
+  import { GRAVITY_CSS, Gravity } from '../src/gravity.js';
+  import CRAFTING from '../../docs/design/prototypes/data/crafting-ui.json';
   import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
   import { DOCK, TIMELINE } from '../src/words.js';
 
@@ -48,7 +50,7 @@
     { id: 'welcome', label: 'Welcome' },
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], ['voice', 'Voice and tone'], ['tokens', 'Tokens']] },
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], [null, 'Readout']] },
-    { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
+    { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
   ];
@@ -100,14 +102,19 @@
     return block.split('\n').flatMap((line) => { const note = /\/\*\s*(.*?)\s*\*\//.exec(line)?.[1] ?? ''; return [...line.matchAll(/(--pl-[\w-]+):\s*[^;]+;/g)].map(([, name]) => ({ name, note })); }); })();
   const isColour = (v) => /^#|^rgb|^color-mix|^oklch/.test(v);
 
+  // the box model's scale for the specimen: what its steps are called
+  const SPECIMEN_SCALE = { spacing: [[0, 's0'], [4, 's1'], [8, 's2'], [12, 's3'], [16, 's4'], [20, 's5'], [24, 's6'], [32, 's8']], radius: [[4, 'sm'], [6, 'md'], [10, 'lg'], [14, 'xl']], type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg']] };
+  const tokenOf = (family, n) => SPECIMEN_SCALE[family]?.find(([v]) => Math.abs(v - n) < 0.5)?.[1] ?? null;
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
       lede: 'The colours, type, marks and components every part of Plumber is built from: the overlay on your page, the page that opens when you run it, and everything after. Precise like an instrument, friendly like a toy.',
       sections: [
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
-          <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
+          <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card('#boxmodel', 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Patterns:</b> the box model, Gravity and the clean-up show, all live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Voice and tone, and every token,</b> read from the code itself.</span></li>
           <li><span class="when">Nov 3</span><span><b>Six foundations:</b> spacing, shape, elevation, motion, texture and iconography.</span></li>
           <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count documented,</b> playing and rolling live.</span></li>
@@ -424,6 +431,36 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       ],
     }),
 
+    boxmodel: () => ({
+      title: 'Box model',
+      lede: 'How Plumber draws an element on your page: each part of its box in its own pattern, in the colour of its verdict. At rest only the name shows; point at a band for its value.',
+      sections: [
+        sec('live', 'Live', `<p>The same renderer the overlay uses, drawn over the card below from its real layout. One side of its padding is off the scale: it’s coral. Point at a band.</p><div class="stage bm-stage"><div class="bm-spec" id="bm-spec"><span class="a">Opus 5.5</span><span class="b">High</span></div></div>`),
+        sec('parts', 'Parts', `<table class="tok"><thead><tr><th>Part</th><th>Drawn as</th><th>Its value</th></tr></thead><tbody>${[['p', 'Padding', 'The 45° hatch, per side', 's3 · 12, on the side'], ['m', 'Margin', 'A dot dither outside the border', 'On the side'], ['g', 'Gap', 'Stripes across each gap', 'In the first gap'], ['b', 'Border', 'A band its own width', 'At the top-left corner'], ['r', 'Radius', 'An arc at each corner', 'Beside the arc'], ['line', 'Type', 'Each line as a faint band, a dashed baseline', 'At the first line'], ['c', 'Size', 'A 1px outline', 'W Fill 500 · H Hug 64']].map(([k, n, how, v]) => `<tr><td><span class="inline-ic">${BLOCK_ICONS[k]}</span>${n}</td><td>${how}</td><td>${v}</td></tr>`).join('')}</tbody></table>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>Zero draws nothing.</li><li>A value sits on its side, never over the content, and appears only for the band you point at.</li><li>Sky when a value is on your scale, coral when it’s off. Everything is drawn by the overlay, never on your page.</li></ul>`),
+      ],
+    }),
+
+    gravity: () => ({
+      title: 'Gravity',
+      lede: 'Every place in your code that types a size by hand, around the steps of your scale. The project page leads with it.',
+      sections: [
+        sec('live', 'Live, on crafting-ui', `<p>Real numbers from crafting-ui. Point at a step, click one to pull its places in, or snap them all.</p><div id="gravity-live"></div>`),
+        sec('built', 'Built from', `<div class="tiles">${card('#step/overview', 'Step', 'One size of your scale.', '<span class="pl-tag">sm</span>')}${card('#place/overview', 'Place', 'One spot in your code.', placeMarks(6, 'off') + placeMarks(4, 'typed'))}${card('#count/overview', 'Count', 'The number that rolls.', '<b style="font:var(--pl-page-figure)">621</b>')}${card('#action/overview', 'Action', 'Snap to your scale.', '<span class="pl-act" style="pointer-events:none">Snap</span>')}</div>`),
+        sec('states', 'States', `<ul class="plain"><li><b>Arrival</b> steps appear left to right; places fall onto their spots with one small bounce.</li><li><b>Point</b> a step shows its value; its places come forward. A cluster says its size and how it’s written.</li><li><b>Pull</b> a click pulls one step’s places in; Snap pulls them all, nearest first, and the count rolls.</li><li><b>Reduced motion</b> no drift, no fall: places sit still and move at once.</li></ul>`),
+      ],
+    }),
+
+    show: () => ({
+      title: 'The clean-up show',
+      lede: 'When Plumber cleans up a page it plays each decision, one at a time: a chip lights, the places it changes are marked in its colour and pattern, its value rolls, and the page eases to it.',
+      sections: [
+        sec('live', 'Live', `<p>Press Play: each role lights in turn, and its places on the card are marked in the role’s colour and pattern.</p><div class="stage col show-stage"><div class="chips-demo">${chipsHtml(ROLES.slice(0, 3))}</div><div class="show-card"><div class="row1"><span class="mk-pad" data-role="0"></span><span class="t">Reasoned for 6.2s</span></div><div class="row2"><span class="pill-a">Search</span><span class="mk-gap" data-role="1"></span><span class="pill-a">Read</span></div><span class="mk-mar" data-role="2"></span></div><button type="button" class="pl-act quiet" data-show>Play the show</button></div>`),
+        sec('beat', 'One beat per role', `<table class="tok"><thead><tr><th>Beat</th><th>Time</th><th>What happens</th></tr></thead><tbody><tr><td>In</td><td>240ms</td><td>The marks sweep onto the places</td></tr><tr><td>Move</td><td>520ms</td><td>The value rolls; the places ease to it</td></tr><tr><td>Hold</td><td>200ms</td><td>A breath</td></tr><tr><td>Out</td><td>160ms</td><td>The marks lift</td></tr></tbody></table><p>Eight roles play in about five seconds. Esc, Space or Apply stops it, and every role left is set at once.</p>`),
+        sec('built', 'Built from', `<div class="tiles">${card('#chip/overview', 'Role chip', 'The decision, lit in its colour.', chipsHtml(ROLES.slice(0, 1)))}${card('#texture', 'Texture', 'The pattern of what it changes.', '<span class="pl-hatch hatch"></span>')}${card('#motion', 'Motion', 'The beat and the spring.', '')}</div>`),
+      ],
+    }),
+
     type: () => ({
       title: 'Typography',
       lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
@@ -505,7 +542,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
   // ---------- the shell ----------
   const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}${BOXMODEL_CSS}${GRAVITY_CSS}
     :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
     a { color: inherit; }
     code { font: 500 12.5px/1.5 var(--pl-mono); }
@@ -646,6 +683,18 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     .filter:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
     table.all td:last-child { color: var(--pl-ink-3); font: var(--pl-page-meta); }
     .same { font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .bm-stage { padding: 56px 48px; }
+    .bm-spec { display: flex; align-items: center; gap: 8px; margin: 16px; padding: 20px 24px 20px 10px; min-width: 300px; border: 1px solid var(--pl-rule); border-radius: 10px; background: var(--pl-paper); font: 600 15px var(--pl-sans); color: var(--pl-ink); }
+    .bm-spec .b { font: 600 12px var(--pl-mono); color: var(--pl-mint-ink); background: var(--pl-mint-soft); padding: 3px 8px; border-radius: 7px; }
+    .inline-ic { display: inline-grid; width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; color: var(--pl-sky); } .inline-ic svg { width: 14px; height: 14px; }
+    .show-card { position: relative; width: 320px; padding: 16px; border-radius: 12px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); font: 600 15px var(--pl-sans); color: var(--pl-ink); }
+    .show-card .row1 { position: relative; margin-bottom: 12px; } .show-card .row2 { position: relative; display: flex; gap: 12px; }
+    .show-card .pill-a { padding: 4px 10px; border-radius: 7px; background: var(--pl-paper-2); font: 500 13px var(--pl-sans); }
+    .show-card [data-role] { position: absolute; border-radius: 3px; opacity: 0; transition: opacity 240ms var(--pl-ease-out); pointer-events: none; }
+    .show-card [data-role].on { opacity: 1; }
+    .show-card .mk-pad { inset: -6px; background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-sky) 60%, transparent) 0 1px, transparent 1px 6px); background-color: color-mix(in oklab, var(--pl-sky) 12%, transparent); }
+    .show-card .mk-gap { position: static !important; width: 12px; margin: 0 -12px; background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 55%, transparent) 0 1px, transparent 1px 4px); background-color: color-mix(in oklab, var(--pl-lilac) 14%, transparent); }
+    .show-card .mk-mar { inset: -14px; z-index: -1; background-image: radial-gradient(color-mix(in oklab, var(--pl-mint) 65%, transparent) 0.75px, transparent 0.9px); background-size: 3px 3px; border-radius: 16px; }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
@@ -697,6 +746,19 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       for (const [i, c] of chips.entries()) { c.setAttribute('data-on', ''); roll(c, to[i]); await new Promise((r) => setTimeout(r, 700)); c.removeAttribute('data-on'); c.setAttribute('data-done', ''); }
       e.target.disabled = false;
     });
+    drawBoxes();
+    const gv = page.querySelector('#gravity-live');
+    if (gv) new Gravity(gv, { steps: CRAFTING.size.steps, strays: CRAFTING.size.strays.filter((x) => x.px >= 6) });
+    page.querySelector('[data-show]')?.addEventListener('click', async (e) => {
+      const chips = [...page.querySelectorAll('.chips-demo .sh-chip')], to = [16, 12, 24], marks = [...page.querySelectorAll('[data-role]')];
+      e.target.disabled = true;
+      for (const [i, c] of chips.entries()) {
+        c.setAttribute('data-on', ''); roll(c, to[i]); marks[i].classList.add('on');
+        await new Promise((r) => setTimeout(r, 960));
+        c.removeAttribute('data-on'); c.setAttribute('data-done', ''); marks[i].classList.remove('on');
+      }
+      e.target.disabled = false;
+    });
     const filter = page.querySelector('.filter');
     filter?.addEventListener('input', () => { const q = filter.value.trim().toLowerCase(); page.querySelectorAll('tr[data-name]').forEach((tr) => { tr.hidden = !!q && !tr.textContent.toLowerCase().includes(q); }); });
     page.querySelectorAll('[data-curve]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('go')));
@@ -733,6 +795,17 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       page: (n, start) => { d.s.start = start; const g = box.querySelector('[role="radiogroup"]'); g.outerHTML = d.kind(name, d.s); wire(box); },
     });
   }
+  // the box model, over the specimen on its page: redrawn as the page moves; pointing shows one band's value
+  const bmLayer = document.createElement('div'), bmPoint = document.createElement('div'); let bmBands = [];
+  function drawBoxes() {
+    const spec = root.getElementById('bm-spec');
+    if (!spec) { bmLayer.innerHTML = ''; bmPoint.innerHTML = ''; bmBands = []; return; }
+    const m = boxModel(spec, { name: 'ModelRow', tokenOf }); bmBands = m.bands; bmLayer.innerHTML = m.html;
+    if (!bmLayer.isConnected) root.append(bmLayer, bmPoint);
+  }
+  addEventListener('scroll', () => drawBoxes(), { passive: true });
+  addEventListener('resize', () => drawBoxes());
+  addEventListener('pointermove', (e) => { if (bmBands.length) pointAt(bmPoint, bmBands, e.clientX, e.clientY); }, { passive: true });
   addEventListener('hashchange', show);
   // the phone menu: opens the sidebar as a drawer; choosing a page or Esc closes it
   const menu = root.querySelector('.menu');
