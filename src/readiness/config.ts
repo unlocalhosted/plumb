@@ -79,8 +79,11 @@ function refreshImport(ast: ReturnType<typeof parse>, source: string, module: st
   const edit = new MagicString(source);
   if (!name) {
     const names = new Set<string>(); walk(ast, node => { if (node.type === 'Identifier') names.add(node.name); });
-    name = 'plumberReact'; while (names.has(name)) name += '_';
-    edit.appendLeft(ast.body[0]?.start ?? 0, `import ${name} from '${module}';\n`);
+    // the name everyone writes for it, unless the file already uses it; and the file's own semicolons
+    name = ['react', 'reactRefresh', 'viteReact'].find(candidate => !names.has(candidate)) ?? 'reactRefresh_';
+    while (names.has(name)) name += '_';
+    const semi = ast.body.filter(item => item.type === 'ImportDeclaration').some(item => source.slice(item.start, item.end).trimEnd().endsWith(';')) ? ';' : '';
+    edit.appendLeft(ast.body[0]?.start ?? 0, `import ${name} from '${module}'${semi}\n`);
   }
   return { name, edit };
 }

@@ -230,14 +230,31 @@ function nextLayout(file: string, source: string): string {
   parse(file, result, true);
   return result;
 }
+/** A unified diff of one edit: a line diff (longest common subsequence), each change with three lines around it, so
+ * two edits far apart are two hunks, not one block of everything between them. */
 function diff(edit: Edit, root: string): string {
   const lines = (source: string | undefined) => source ? source.replace(/\n$/, '').split('\n') : [];
-  const file = relative(root, edit.file), before = lines(edit.before), after = lines(edit.after);
-  let start = 0, end = 0;
-  while (start < before.length && start < after.length && before[start] === after[start]) start++;
-  while (end < before.length - start && end < after.length - start && before[before.length - end - 1] === after[after.length - end - 1]) end++;
-  const old = before.slice(start, before.length - end), next = after.slice(start, after.length - end);
-  return `--- ${edit.before === undefined ? '/dev/null' : file}\n+++ ${file}\n@@ -${old.length ? start + 1 : start},${old.length} +${next.length ? start + 1 : start},${next.length} @@\n` + [...old.flatMap((line, index) => ['-' + line, ...(start + index === before.length - 1 && !edit.before?.endsWith('\n') ? ['\\ No newline at end of file'] : [])]), ...next.flatMap((line, index) => ['+' + line, ...(start + index === after.length - 1 && !edit.after.endsWith('\n') ? ['\\ No newline at end of file'] : [])])].join('\n') + '\n';
+  const file = relative(root, edit.file), a = lines(edit.before), b = lines(edit.after), context = 3;
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let x = a.length - 1; x >= 0; x--) for (let y = b.length - 1; y >= 0; y--) dp[x]![y] = a[x] === b[y] ? dp[x + 1]![y + 1]! + 1 : Math.max(dp[x + 1]![y]!, dp[x]![y + 1]!);
+  const ops: { t: ' ' | '-' | '+'; line: string; x: number; y: number }[] = [];
+  for (let x = 0, y = 0; x < a.length || y < b.length;) {
+    if (x < a.length && y < b.length && a[x] === b[y]) ops.push({ t: ' ', line: a[x]!, x: x++, y: y++ });
+    else if (x < a.length && (y === b.length || dp[x + 1]![y]! >= dp[x]![y + 1]!)) ops.push({ t: '-', line: a[x]!, x: x++, y });
+    else ops.push({ t: '+', line: b[y]!, x, y: y++ });
+  }
+  const noNewline = (o: (typeof ops)[number]) => (o.t !== '+' && o.x === a.length - 1 && edit.before !== undefined && !edit.before.endsWith('\n')) || (o.t !== '-' && o.y === b.length - 1 && !edit.after.endsWith('\n'));
+  const changed = ops.map((o, k) => (o.t === ' ' ? -1 : k)).filter(k => k >= 0);
+  const hunks: [number, number][] = [];
+  for (const k of changed) { const from = Math.max(0, k - context), to = Math.min(ops.length - 1, k + context); const last = hunks[hunks.length - 1]; if (last && from <= last[1] + 1) last[1] = to; else hunks.push([from, to]); }
+  let out = `--- ${edit.before === undefined ? '/dev/null' : file}\n+++ ${file}\n`;
+  for (const [from, to] of hunks) {
+    const part = ops.slice(from, to + 1), first = part[0]!;
+    const olds = part.filter(o => o.t !== '+').length, news = part.filter(o => o.t !== '-').length;
+    out += `@@ -${olds ? first.x + 1 : first.x},${olds} +${news ? first.y + 1 : first.y},${news} @@\n`;
+    for (const o of part) out += `${o.t === ' ' ? ' ' : o.t}${o.line}\n${noNewline(o) ? '\\ No newline at end of file\n' : ''}`;
+  }
+  return out;
 }
 
 /** Plan and validate all files before writing; no package manager or parent-repo discovery. */

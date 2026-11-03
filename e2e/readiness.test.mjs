@@ -101,8 +101,8 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       await symlink(join(repo, 'node_modules/@vitejs/plugin-react'), join(root, 'node_modules/@vitejs/plugin-react'));
       ready = await report(); fix = item(ready, 'write.refresh').fix;
       assert.equal(fix.kind, 'diff', JSON.stringify(fix));
-      assert.match(fix.diff, /import plumberReact from '@vitejs\/plugin-react'/);
-      assert.match(fix.diff, /tailwindcss\(\), inspect\(\), plumberReact\(\)/);
+      assert.match(fix.diff, /import react from '@vitejs\/plugin-react'/);
+      assert.match(fix.diff, /tailwindcss\(\), inspect\(\), react\(\)/);
       assert.match(run(root, ['doctor']), /plumber fix write.refresh/);
       const applied = await request('readiness/fix', { id: 'write.refresh', hash: fix.hash, confirm: true, allowDirty: true });
       assert.equal(applied.status, 200, await applied.clone().text());
@@ -120,15 +120,18 @@ test('Fast Refresh diff is offered on its own when the config has no plugins at 
   assert.equal(refresh.status, 'missing');
   assert.match(refresh.loses, /reloads the whole page and loses its state/);
   assert.equal(refresh.fix.kind, 'diff', JSON.stringify(refresh.fix));
-  assert.match(refresh.fix.diff, /\+import plumberReact from '@vitejs\/plugin-react'/);
-  assert.match(refresh.fix.diff, /\+.*plugins: \[plumberReact\(\)\]/);
+  // the name everyone writes, in the file's own style (this one ends its imports with semicolons)
+  assert.match(refresh.fix.diff, /\+import react from '@vitejs\/plugin-react';\n/);
+  assert.match(refresh.fix.diff, /\+.*plugins: \[react\(\)\]/);
+  // found walking setup on the demo: two edits far apart read as a rewrite of every line between them
+  assert.doesNotMatch(refresh.fix.diff, /^-import \{ defineConfig \}/m, refresh.fix.diff);
   const applied = await request('readiness/fix', { id: 'write.refresh', hash: refresh.fix.hash, confirm: true, allowDirty: true });
   assert.equal(applied.status, 200, await applied.clone().text());
   ready = await report();
   assert.equal(item(ready, 'write.refresh').status, 'ok');
   assert.equal(item(ready, 'locate.plugin').status, 'missing');
   run(root, ['fix', 'locate.plugin', '--yes']);
-  assert.match(await readFile(file, 'utf8'), /plugins: \[plumb\(\), plumberReact\(\)\]/);
+  assert.match(await readFile(file, 'utf8'), /plugins: \[plumb\(\), react\(\)\]/);
   ready = await report();
   assert.equal(item(ready, 'locate.order').status, 'ok');
   assert.equal(item(ready, 'write.refresh').status, 'ok');
@@ -668,17 +671,17 @@ test('live readiness survives failed analysis startup and never widens the route
 });
 
 test('new React import avoids local bindings; shown diff applies without a trailing newline', async t => {
-  const root = await fixture(t, config.replace("import react from '@vitejs/plugin-react';\n", 'const plumberReact = 1;\n').replace('inspect(), react()', 'inspect()').trimEnd());
+  const root = await fixture(t, config.replace("import react from '@vitejs/plugin-react';\n", 'const react = 1;\n').replace('inspect(), react()', 'inspect()').trimEnd());
   const { report } = await api(t, root);
   const ready = await report(), fix = item(ready, 'write.refresh').fix;
   assert.equal(fix.kind, 'diff');
-  assert.match(fix.diff, /import plumberReact_ from '@vitejs\/plugin-react'/);
+  assert.match(fix.diff, /import reactRefresh from '@vitejs\/plugin-react'/);
   assert.match(fix.diff, /\\ No newline at end of file/);
   const applicable = spawnSync('git', ['apply', '--check', '-p0'], { cwd: root, input: fix.diff, encoding: 'utf8' });
   assert.equal(applicable.status, 0, applicable.stderr);
   run(root, ['fix', 'write.refresh', '--yes']);
   const written = await readFile(join(root, 'vite.config.mjs'), 'utf8');
-  assert.match(written, /plugins: \[inspect\(\), plumberReact_\(\)\]/);
+  assert.match(written, /plugins: \[inspect\(\), reactRefresh\(\)\]/);
   assert.ok(!written.endsWith('\n'));
 });
 

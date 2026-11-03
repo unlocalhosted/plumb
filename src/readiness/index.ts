@@ -171,7 +171,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   const declaredHost = facts.host.value?.id;
   const hostState: Status = runtime || host || declaredHost === 'vite' || declaredHost === 'next' ? 'ok' : declaredHost ? 'missing' : 'unknown';
   const hostEvidence = facts.host.evidence.length ? facts.host.evidence.map(item => ({ ...item, text: `${item.text}${facts.host.conflicts?.length ? `; also ${facts.host.conflicts.map(claim => claim.evidence[0]?.file ?? claim.detector).join(', ')}, ignored` : ''}` })) : evidence('plugin', 'No Vite or Next.js config found');
-  add('locate.host', 'locate', hostState, runtime ? `${runtime.host} dev server is running` : host ? `${host.host} config found; the app isn’t running` : declaredHost ? `${declaredHost} is in package.json` : 'No dev server found', hostEvidence,
+  add('locate.host', 'locate', hostState, runtime ? `${runtime.host} dev server is running` : host ? `${host.host} config found; the running app is checked in the browser` : declaredHost ? `${declaredHost} is in package.json` : 'No dev server found', hostEvidence,
     'Clicking an element may not find its place in your code.', step('Run the app with Vite or Next.js in development.', `${packageManager(root)} run dev`));
   const plugin = runtime?.plugin ?? host?.plugin;
   const observed = await options.sourceEvidence?.() ?? [];
