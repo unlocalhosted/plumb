@@ -94,8 +94,31 @@ test('the write reloads the page: the clean-up comes back done, with its Undo, a
   assert.match(done, /Undo/, done);
   assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), original, 'the page\'s own places were swapped');
   await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
-  for (let i = 0; i < 60 && (await readFile(join(s.root, FILE), 'utf8')) !== original; i++) await new Promise((r) => setTimeout(r, 500));
+  // one undo, more than one file (the page and the theme's tokens): each lands in its own moment
+  for (let i = 0; i < 60 && JSON.stringify(await snapshot(s.root)) !== JSON.stringify(all); i++) await new Promise((r) => setTimeout(r, 500));
   assert.deepEqual(await snapshot(s.root), all, 'Undo put every file back as it was');
   await s.until(/Apply to this page/, 60000);
+  assert.deepEqual(s.errors, []);
+});
+
+test('a reload while the write is saving: the clean-up comes back done, with its Undo, not offering the pass again', { timeout: 300000 }, async (t) => {
+  const s = await standards(t);
+  const original = await readFile(join(s.root, FILE), 'utf8'), all = await snapshot(s.root);
+  await s.begin();
+  await s.page.keyboard.press('Enter');
+  // the failure, on the fixture: the file was written, and the page came back offering the text pass again, its record
+  // stuck at "writing", with no word of the write and no Undo
+  await s.page.waitForFunction(() => JSON.parse(sessionStorage.getItem('plumb:cleanup') ?? 'null')?.state === 'writing', null, { timeout: 60000, polling: 10 });
+  await s.page.reload();
+  // the write's own reload may follow the first one: the panel is read once a page has stayed
+  let done = '';
+  for (let i = 0; i < 4 && !done; i++) { try { await s.until(/places? in \d+ files?/, 60000); await new Promise((r) => setTimeout(r, 1500)); done = await s.panel(); } catch (e) { if (!/context was destroyed|navigation/.test(e.message)) throw e; } }
+  assert.match(done, /Undo/, done);
+  assert.doesNotMatch(done, /Apply to this page/, done);
+  assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), original, 'the write landed');
+  await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
+  // one undo, more than one file (the page and the theme's tokens): each lands in its own moment
+  for (let i = 0; i < 60 && JSON.stringify(await snapshot(s.root)) !== JSON.stringify(all); i++) await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(await snapshot(s.root), all, 'Undo put every file back as it was');
   assert.deepEqual(s.errors, []);
 });

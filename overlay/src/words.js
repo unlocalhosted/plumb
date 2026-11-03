@@ -788,6 +788,7 @@ export const CLEANUP = {
   undo: 'Undo',
   undone: 'Text changes undone.',
   lost: 'Your dev server restarted while saving, so nothing was written. Try again.',
+  reloaded: 'The page reloaded before saving finished, so nothing was written. Try again.',
   close: 'Close',
   done: 'Done',
   next: 'Next pass',
