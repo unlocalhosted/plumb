@@ -87,7 +87,7 @@
     <div class="row-s"><span class="lbl">Step</span><div class="steps">${states.map(([state, name, n, uses]) => `<div class="cell">${step({ name: name || `${n}px`, n, uses, took: state === 'pulled' ? 87 : 0, state })}<small>${state}</small></div>`).join('')}</div></div>
     <div class="row-s"><span class="lbl">Place</span><div class="steps">${[['off', 'not on your scale'], ['typed', 'yours, typed by hand'], ['on', 'on your scale']].map(([t, w]) => `<div class="cell"><span class="trio">${['rest', 'dim', 'lit'].map((sh) => mark(t, sh)).join('')}</span><small>${w}</small></div>`).join('')}</div></div>
     <div class="row-s"><span class="lbl">Places by a step</span><div class="near">${places(9, 'off')}${places(14, 'typed')}${step({ name: 'xs', n: 12, uses: 11, state: 'rest' })}${places(6, 'off')}${places(11, 'off')}${step({ name: 'sm', n: 14, uses: 15, state: 'pointed' })}${places(4, 'typed', 'lit')}</div></div>
-    <div class="row-s"><span class="lbl">Count</span><div class="cnt">${count(45, 'places use your scale')}<button type="button" class="act" id="roll">Snap to your scale</button></div></div>
+    <div class="row-s"><span class="lbl">Count</span><div class="cnt">${count(45, 'places use your scale')}<button type="button" class="pl-act" id="roll">Snap to your scale</button></div></div>
   </section>`;
   // what the overlay already draws in colour: the clean-up's role chips (an icon lit in its role's hue, the value rolls)
   // and a glyph for each family Plumber judges
@@ -97,8 +97,12 @@
     <div class="row-s"><span class="lbl">Role chips</span><div class="chips-at" data-state="rest">${chipsHtml(chipRoles)}</div></div>
     <div class="row-s"><span class="lbl">Playing</span><div class="chips-at" id="playing">${chipsHtml(chipRoles)}</div></div>
     <div class="row-s"><span class="lbl">Families</span><div class="fams">${families.map((f, i) => `<span class="fam" style="--hue:var(--pl-${HUES[i % HUES.length]})">${glyph(f)}<small>${f}</small></span>`).join('')}</div></div>
-    <div class="row-s"><span class="lbl"></span><button type="button" class="act quiet" id="play">Play the chips</button></div>
+    <div class="row-s"><span class="lbl"></span><button type="button" class="pl-act quiet" id="play">Play the chips</button></div>
   </section>`;
+  // the page's type: five steps, calm editorial; mono only for code
+  const typeRows = [['display', 'page-display', '576 places type a size by hand.'], ['title', 'page-title', 'Where your text sizes land'], ['body', 'page-body', 'Your theme has 10 text sizes; your code uses 49.'], ['small', 'page-small', 'places use your scale'], ['meta', 'page-meta', 'On your scale · sm · 2xs'], ['figure', 'page-figure', '621']];
+  const typeCard = `<section class="card typ"><div class="head">Page type</div>${typeRows.map(([n, t, sample]) => `<div class="tr"><span class="lbl">${n}<small>--pl-${t}</small></span><span style="font:var(--pl-${t});${t === 'page-display' ? 'letter-spacing:var(--pl-tracking-display)' : t === 'page-title' ? 'letter-spacing:var(--pl-tracking-title)' : t === 'page-figure' ? 'font-variant-numeric:tabular-nums;letter-spacing:var(--pl-tracking-display)' : ''}">${sample}</span></div>`).join('')}
+    <div class="tr"><span class="lbl">code<small>--pl-card-code</small></span><span style="font:var(--pl-card-code)">text-[0.9375rem] ×62</span></div></section>`;
   const scale = { spacing: [[0, 's0'], [4, 's1'], [8, 's2'], [12, 's3'], [16, 's4'], [20, 's5'], [24, 's6'], [32, 's8']], radius: [[4, 'sm'], [6, 'md'], [10, 'lg'], [14, 'xl']], type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg']] };
   const tokenOf = (family, n) => scale[family]?.find(([v]) => Math.abs(v - n) < 0.5)?.[1] ?? null;
   const css = `${tokens}${PRIMITIVES_CSS}${LANGUAGE_CSS}${BOXMODEL_CSS}${SCRUB_CSS}${CHANGES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}
@@ -113,9 +117,9 @@
     .scm .near > * { position: relative; }
     .scm .near .sc-step { translate: 0 6px; }
     .scm .cnt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .act { font: 600 13px/1 var(--pl-sans); height: 34px; padding: 0 14px; border: 0; border-radius: var(--pl-radius-pill); background: var(--pl-pink-soft); color: var(--pl-pink-ink); cursor: pointer; transition: scale 140ms var(--pl-ease-out); }
-    .act:active { scale: .97; }
-    .act.quiet { background: var(--pl-paper-2); color: var(--pl-ink); }
+    .typ .tr { display: grid; grid-template-columns: 112px 1fr; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--pl-rule); }
+    .typ .lbl { font: var(--pl-card-meta); color: var(--pl-ink-2); display: grid; }
+    .typ .lbl small { font: 500 10.5px var(--pl-mono); color: var(--pl-ink-3); }
     .scc .fams { display: flex; flex-wrap: wrap; gap: 10px 14px; }
     .scc .fam { display: grid; justify-items: center; gap: 4px; color: var(--hue); }
     .scc .fam svg { width: 26px; height: 26px; padding: 6px; border-radius: 8px; background: color-mix(in oklab, var(--hue) 14%, transparent); }
@@ -155,6 +159,7 @@
     root.innerHTML = `<style>${css}</style><div class="grid">${[
       language,
       boxes,
+      typeCard,
       scaleCard,
       chipsCard,
       card('Scale stepper', ['Padding', 'Padding picked', 'Padding drift', 'Gap disabled', 'Gap loading', 'Padding refused']),

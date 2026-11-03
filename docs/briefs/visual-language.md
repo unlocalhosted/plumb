@@ -47,7 +47,7 @@ and its rainbow, each used for one thing only.
 | `--pl-sky` / `-soft` / `-ink` | `#7cc4fa` / `#0077d1` / `#ffffff` | `#2f8fe0` / `#c5e6fd` / `#0b3554` | selected, measure, focus |
 | `--pl-coral` … | `#ff7a6b` / `#eb1800` / `#ffffff` | `#e5503f` / `#ffd3cd` / `#5c160e` | off the system |
 | `--pl-mint` … | `#7ee0b0` / `#12874e` / `#ffffff` | `#1f9e64` / `#c9f2dd` / `#0b3d26` | on the system, written |
-| `--pl-butter` … | `#ffd166` / `#9c6d00` / `#ffffff` | `#c48a00` / `#ffeab0` / `#4a3400` | soft trouble |
+| `--pl-butter` … | `#ffd166` / `#9c6d00` / `#ffffff` | `#bd8500` / `#ffeab0` / `#4a3400` | soft trouble |
 | `--pl-pink` … | `#ff6ec7` / `#e3008b` / `#ffffff` | `#e0369f` / `#ffd0ec` / `#5a0d3c` | actions |
 | `--pl-lilac` … | `#b9a6ff` / `#7b57ff` / `#ffffff` | `#7a5cf0` / `#e3dcff` / `#2b1a6b` | names |
 

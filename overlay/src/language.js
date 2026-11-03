@@ -13,6 +13,7 @@
  *  checker   a transparent fill
  *  ants      picked but not written: MacPaint's marching selection, a 1px dashed outline whose dashes march
  *  rainbow   pink, mint, butter, sky as one striped band: the dock's mark, used nowhere else
+ *  act       the action: a pink pill button (white lettering at night); .quiet or aria-pressed sits on the paper
  *  pop       anything that appears (a pill, a tag, a card) pops from 0.92 on a spring that overshoots ~4%
  *
  * Reduced motion: the ants stand still, nothing pops, the rainbow does not shimmer.
@@ -44,8 +45,19 @@ export const LANGUAGE_CSS = `
 
   .pl-rainbow { background: linear-gradient(90deg, var(--pl-pink) 0 25%, var(--pl-mint) 0 50%, var(--pl-butter) 0 75%, var(--pl-sky) 0); }
 
+  /* the action: what you can do, in pink; a quiet one sits on the paper. Pressed, it gives a little; on, it settles to
+     the paper so the next press reads as undo */
+  .pl-act { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: var(--pl-radius-pill); box-sizing: border-box;
+    font: 600 13px/1 var(--pl-sans); white-space: nowrap; cursor: pointer; background: var(--pl-pink-soft); color: var(--pl-pink-ink);
+    transition: scale 140ms var(--pl-ease-out), filter 180ms var(--pl-ease-out), background-color 200ms var(--pl-ease-out), color 200ms var(--pl-ease-out); }
+  .pl-act:hover { filter: brightness(1.06) saturate(1.04); }
+  .pl-act:active { scale: .97; }
+  .pl-act:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  .pl-act:disabled { cursor: not-allowed; background: var(--pl-paper-2); color: var(--pl-ink-3); filter: none; }
+  .pl-act[aria-pressed="true"], .pl-act.quiet { background: var(--pl-paper-2); color: var(--pl-ink); }
+
   .pl-pop { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   @keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
 
-  @media (prefers-reduced-motion: reduce) { .pl-ants { animation: none; } .pl-pop { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .pl-ants { animation: none; } .pl-pop { animation: none; } .pl-act { transition: none; } }
 `;

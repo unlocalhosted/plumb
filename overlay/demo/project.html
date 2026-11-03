@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>crafting-ui · React Plumber</title>
+<style>
+  /* the page around the shadow root follows its scheme, so the page and the plate always match */
+  body { margin: 0; background: #ecebe7; }
+  body.dark { background: #0f0f11; }
+</style>
+</head>
+<body>
+<div id="page"></div>
+<script type="module">
+  // The project page `npx plumber` opens (docs/design/onboarding.md, "The page"), built only from the overlay's own
+  // modules: tokens.css, language.js, scale-marks.js, gravity.js. For now it draws crafting-ui's numbers, read
+  // 2026-11-03 (docs/design/prototypes/data/extract-system.py over plumber check --json).
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+  import { SCALE_CSS } from '../src/scale-marks.js';
+  import { GRAVITY_CSS, Gravity } from '../src/gravity.js';
+  import DATA from '../../docs/design/prototypes/data/crafting-ui.json';
+
+  const nf = new Intl.NumberFormat('en');
+  const steps = DATA.size.steps, strays = DATA.size.strays.filter((s) => s.px >= 6);
+  const onScale = steps.reduce((n, s) => n + s.uses, 0), byHand = strays.reduce((n, s) => n + s.places, 0);
+  const copies = strays.filter((s) => s.copy).reduce((n, s) => n + s.places, 0), unused = steps.filter((s) => !s.uses);
+  const inUse = new Set([...strays.map((s) => s.px), ...steps.filter((s) => s.uses).map((s) => s.px)]).size;
+
+  const host = document.getElementById('page'), root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}
+    :host { display: block; }
+    .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px 32px; background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
+    .top b { font: 600 14px var(--pl-sans); color: var(--pl-ink); }
+    .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
+    .top .read { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+    .top .pl-act { margin-left: auto; }
+    main { max-width: 1120px; margin: 0 auto; padding: 56px 32px 96px; color: var(--pl-ink); }
+    .eyebrow { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
+    h1 .n { font-variant-numeric: tabular-nums; }
+    h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
+    .lede { max-width: 60ch; margin: 0 0 32px; font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
+    @media (max-width: 720px) { main { padding: 32px 16px 64px; } .top { padding: 10px 16px; } h1 { font-size: 30px; line-height: 36px; } }
+  </style>
+  <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${DATA.project}</span><span class="read">${nf.format(DATA.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
+  <main>
+    <span class="eyebrow">Your type scale</span>
+    <h1><span class="n off">${nf.format(byHand)}</span> places type a text size by hand. Only <span class="n on">${nf.format(onScale)}</span> use your scale.</h1>
+    <p class="lede">Your theme has ${steps.length} text sizes; your code uses ${inUse}. ${nf.format(copies)} of the hand-typed places pick a size your theme already has, so they're one rename away.${unused.length ? ` ${unused.length === 1 ? 'One size' : `${unused.length} sizes`} in your theme ${unused.length === 1 ? 'is' : 'are'} never used: ${unused.map((s) => s.name).join(', ')}.` : ''}</p>
+    <div id="gravity"></div>
+  </main>`;
+  new Gravity(root.getElementById('gravity'), { steps, strays });
+
+  // one scheme for the page and the plate: the OS's at first, then the button's
+  const button = root.getElementById('scheme');
+  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; button.textContent = dark ? 'Day' : 'Night'; };
+  setScheme(matchMedia('(prefers-color-scheme: dark)').matches);
+  button.addEventListener('click', () => setScheme(!document.body.classList.contains('dark')));
+</script>
+</body>
+</html>

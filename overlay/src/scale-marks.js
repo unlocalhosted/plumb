@@ -17,7 +17,9 @@
  *             on        mint: on your scale (snapped, or written)
  *           and how it shows: rest, dim (another step is pointed at), lit (its step is pointed at), arrive (pops in)
  *  count    a number that rolls to its value digit by digit, on the overlay's spring, with the sentence that says what
- *           it counts beside it
+ *           it counts under it: one block, the figure first
+ *  quiet    .sc-quiet around steps (a page, not the gallery): names are lilac words, not filled tags, and a step's pill
+ *           shows only while it's pointed at (visual, not labels: nothing loud at rest)
  *
  * Reduced motion: no pop, no roll; values change at once.
  * ───────────────────────────────────────────────────────── */
@@ -36,6 +38,10 @@ export const SCALE_CSS = `
   .sc-step[data-state="pointed"] .v, .sc-step[data-state="pulled"] .v, .sc-step[data-state="off"] .v { opacity: 1; scale: 1; }
   .sc-step[data-state="pulled"] .ring { box-shadow: inset 0 0 0 1.5px var(--pl-mint); background: color-mix(in oklab, var(--pl-mint) 30%, transparent); }
   .sc-step[data-state="off"] .ring { box-shadow: inset 0 0 0 1.5px var(--pl-coral); background: color-mix(in oklab, var(--pl-coral) 14%, transparent); }
+  /* the value pill takes its colour from the step's state, so a step that changes state changes its pill too */
+  .sc-step .v { --pill-soft: var(--pl-sky-soft); --pill-ink: var(--pl-sky-ink); }
+  .sc-step[data-state="pulled"] .v { --pill-soft: var(--pl-mint-soft); --pill-ink: var(--pl-mint-ink); }
+  .sc-step[data-state="off"] .v { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); }
 
   .sc-place { display: inline-block; width: 4px; height: 4px; border-radius: 1px; background: var(--pl-coral); transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
   .sc-place[data-tone="typed"] { background: var(--pl-butter); }
@@ -45,12 +51,18 @@ export const SCALE_CSS = `
   .sc-place[data-show="arrive"] { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .sc-places { display: inline-flex; flex-direction: column-reverse; gap: 2px; }
 
-  .sc-count { display: inline-flex; align-items: baseline; gap: 10px; }
-  .sc-count .n { display: inline-flex; overflow: hidden; height: 1em; font: 700 32px/1 var(--pl-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; color: var(--pl-ink); }
+  .sc-count { display: inline-grid; gap: 4px; }
+  .sc-count .n { display: inline-flex; overflow: hidden; height: 1em; font: var(--pl-page-figure); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: var(--pl-tracking-display); color: var(--pl-ink); }
   .sc-count .d { display: inline-block; height: 1em; overflow: hidden; }
   .sc-count .d > span { display: flex; flex-direction: column; transition: translate 520ms var(--pl-spring); }
   .sc-count .d b { height: 1em; font-weight: inherit; }
-  .sc-count .say { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .sc-count .say { font: var(--pl-page-small); color: var(--pl-ink-2); }
+
+  /* the name sits on a plate of the card's own colour: invisible, except that marks behind it never cross the word */
+  .sc-quiet .sc-step .pl-tag { height: auto; padding: 0 5px; border-radius: 5px; background: var(--pl-paper); font: var(--pl-page-meta); color: var(--pl-lilac); transition: color 160ms var(--pl-ease-out); }
+  .sc-quiet .sc-step[data-state="unused"] .pl-tag { color: var(--pl-ink-3); }
+  .sc-quiet .sc-step[data-state="pointed"] .pl-tag { color: var(--pl-ink); font-weight: 600; }
+  .sc-quiet .sc-step:not([data-state="pointed"]) .v { opacity: 0; scale: .92; }
 
   @media (prefers-reduced-motion: reduce) {
     .sc-step .ring, .sc-step .v, .sc-place, .sc-count .d > span { transition: none; }
@@ -62,8 +74,7 @@ export const SCALE_CSS = `
 export function step({ name, n, uses = 0, took = 0, state = uses ? 'rest' : 'unused' }) {
   const r = 9 + Math.sqrt(uses + took) * 1.7;
   const value = state === 'pulled' ? `+${took}` : `${+(+n).toFixed(2)}`;
-  const hue = state === 'pulled' ? 'mint' : state === 'off' ? 'coral' : 'sky';
-  return `<span class="sc-step" data-state="${state}" style="--r:${r.toFixed(1)}px"><span class="pl-pill v" data-hue="${hue}">${esc(value)}</span><span class="ring"></span>${state === 'off' ? '' : `<span class="pl-tag" data-hue="lilac">${esc(name)}</span>`}</span>`;
+  return `<span class="sc-step" data-state="${state}" style="--r:${r.toFixed(1)}px"><span class="pl-pill v">${esc(value)}</span><span class="ring"></span>${state === 'off' ? '' : `<span class="pl-tag" data-hue="lilac">${esc(name)}</span>`}</span>`;
 }
 
 // one place, or a column of them

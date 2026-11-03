@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumber design system</title>
+<style>
+  body { margin: 0; background: #fdfcf8; }
+  body.dark { background: #1c1c1e; }
+</style>
+</head>
+<body>
+<div id="system"></div>
+<script type="module">
+  /* Plumber's design system, documented (structure after mews.design: a sidebar tree, an on-this-page rail, overview
+     cards, and the same tabs on every component; the look is ours). Built from the overlay's own modules, so every
+     example on these pages is the real thing and the docs can't drift from the code.
+     First slice (2026-11-03): the shell, Welcome, Foundations · Colour, Components · Pill. */
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+
+  // ---------- contrast, measured on the live tokens of each scheme ----------
+  const rgb = (c) => { const h = c.trim().replace('#', ''); return h.length >= 6 ? [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) : null; };
+  const lum = (c) => c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const ratio = (a, b) => { const x = rgb(a), y = rgb(b); if (!x || !y) return null; const [p, q] = [lum(x), lum(y)].sort((m, n) => n - m); return (p + 0.05) / (q + 0.05); };
+  // two probes, one per scheme, so a page can quote day and night at once
+  const probe = (scheme) => { const el = document.createElement('div'); el.dataset.scheme = scheme; el.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden'; el.attachShadow({ mode: 'open' }).innerHTML = `<style>${tokens}</style><i></i>`; document.body.append(el); return (name) => getComputedStyle(el.shadowRoot.querySelector('i')).getPropertyValue(name).trim(); };
+  const tok = { day: probe('light'), night: probe('dark') };
+  // a verdict: the pairing itself as a sample, then pass or fail with its ratio against what it needs
+  const badge = (fg, bg, need, mark = false) => { const r = ratio(fg, bg); if (r == null) return ''; const ok = r >= need;
+    return `<span class="verdict"><span class="sample" style="background:${bg};color:${fg}">${mark ? `<i style="background:${fg}"></i>` : 'Aa'}</span><span class="ratio ${ok ? 'ok' : 'low'}" title="needs ${need}:1">${ok ? '✓' : '✗'} ${r.toFixed(1)}:1</span></span>`; };
+
+  // ---------- the map: what exists, what's coming ----------
+  const HUES = [
+    ['sky', 'Selected, measured, focus', 'What you picked, the measurements on it, the focus ring.'],
+    ['coral', 'Off your system', 'A value your scale doesn’t have; something broken. Nothing else is ever coral.'],
+    ['mint', 'On your system, written', 'A value from your scale; a change that landed.'],
+    ['butter', 'Softer trouble', 'Your own value typed by hand; a framework default; the wrong tier.'],
+    ['pink', 'What you can do', 'The action: Write, Snap, Fix all.'],
+    ['lilac', 'Names', 'A component, an element, a step of a scale.'],
+  ];
+  const NAV = [
+    { id: 'welcome', label: 'Welcome' },
+    { label: 'Foundations', items: [['colour', 'Colour'], [null, 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
+    { label: 'Components', items: [['pill', 'Pill'], [null, 'Tag'], [null, 'Action'], [null, 'Stepper'], [null, 'Swatches'], [null, 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
+    { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
+    { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
+    { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
+  ];
+  const TABS = ['Overview', 'Style', 'Usage', 'Code', 'Accessibility'];
+
+  // ---------- pages: each returns { title, lede, tabs?, sections: [{ id, title, html }] } ----------
+  const sec = (id, title, html) => ({ id, title, html });
+  // a card links only to a page that exists; one still to come says so and isn't a link
+  const card = (href, title, text, art = '') => href ? `<a class="tile" href="${href}"><span class="art">${art}</span><b>${title}</b><span>${text}</span></a>`
+    : `<div class="tile soon"><span class="art">${art}</span><b>${title}<span class="pl-pill coming-pill">Coming</span></b><span>${text}</span></div>`;
+  const pills = (txt) => HUES.map(([h]) => `<span class="pl-pill" data-hue="${h}">${txt(h)}</span>`).join('');
+
+  const pages = {
+    welcome: () => ({
+      title: 'Plumber design system',
+      lede: 'The colours, type, marks and components every part of Plumber is built from: the overlay on your page, the page that opens when you run it, and everything after. Precise like an instrument, friendly like a toy.',
+      sections: [
+        sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
+          <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
+        sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Night pills in white.</b> Every pill is a deep version of its colour with white lettering; lines and marks keep the bright pastels.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Page type.</b> Five steps for anything bigger than a card: display, title, body, small, meta.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Scale marks.</b> Step, place and count: a scale and the places that use it.</span></li>
+          <li><span class="when">Nov 3</span><span><b>The action.</b> One button for what you can do, in pink.</span></li></ul>`),
+        sec('principles', 'Principles', `<div class="rules">
+          <div><b>One colour, one meaning</b><p>A colour says one thing everywhere. Coral is only ever "off your system".</p></div>
+          <div><b>Visual, not labels</b><p>Say it with shape, pattern and colour. At rest, only names; a value appears for the one thing you point at.</p></div>
+          <div><b>Pastel fills, inked words</b><p>A pill is a fill and lettering of the same colour, never white on pastel by day.</p></div>
+          <div><b>A little bounce</b><p>Things that appear pop from 0.92 with a 4% overshoot. Nothing loops but the marching ants.</p></div></div>`),
+      ],
+    }),
+
+    colour: () => ({
+      title: 'Colour',
+      lede: 'Six colours, each with one meaning, on warm paper by day and soft charcoal at night. Colour always pairs with a shape or a word, so it never carries meaning alone.',
+      sections: [
+        sec('meanings', 'One colour, one meaning', `<div class="hue-grid">${HUES.map(([h, name, text]) => `<div class="hue-card">
+            <div class="chips"><i class="line" style="background:var(--pl-${h})"></i><span class="pl-pill" data-hue="${h}">${h}</span></div>
+            <b>${name}</b><p>${text}</p></div>`).join('')}</div>`),
+        sec('day-night', 'Day and night', `<p>By day a pill is a pale fill lettered in the colour's deep ink. At night it's a deep, saturated fill lettered in white, while lines and marks keep the bright pastels. Both are measured below.</p>
+          <div class="pair">${['day', 'night'].map((s) => `<div class="mini" data-mini="${s}"></div>`).join('')}</div>`),
+        sec('neutrals', 'Neutrals', `<table class="tok"><thead><tr><th>Token</th><th>Day</th><th>Night</th><th>Use</th></tr></thead><tbody>${[
+            ['--pl-paper', 'Card and page ground'], ['--pl-paper-2', 'Inset, hover, pressed'], ['--pl-rule', 'Dividers and hairlines'],
+            ['--pl-ink', 'Titles and readings'], ['--pl-ink-2', 'Supporting words'], ['--pl-ink-3', 'Ticks and quiet hints, never meaning alone']]
+          .map(([t, use]) => `<tr><td><code>${t}</code></td>${['day', 'night'].map((s) => `<td><span class="dot" style="background:${tok[s](t)}"></span><code>${tok[s](t)}</code></td>`).join('')}<td>${use}</td></tr>`).join('')}</tbody></table>`),
+        sec('contrast', 'Contrast', `<p>Measured on the live tokens. Words need 4.5:1 on their ground; marks and lines need 3:1.</p>
+          <table class="tok"><thead><tr><th>Colour</th><th>Pill lettering, day</th><th>Pill lettering, night</th><th>Line on the card, day</th><th>Line on the card, night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td>
+            <td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td>
+            <td>${badge(tok.day(`--pl-${h}`), tok.day('--pl-paper'), 3, true)}</td><td>${badge(tok.night(`--pl-${h}`), tok.night('--pl-paper'), 3, true)}</td></tr>`).join('')}</tbody></table>`),
+        sec('rules', 'Do and don’t', `<div class="dd">
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="pl-pill" data-hue="mint">s3</span></div><p>Pair the colour with its words: the class itself says what's off.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-pill" data-hue="coral">Write</span></div><p>Use coral for anything but "off your system". The action is pink.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="sw-dot" style="background:var(--pl-coral)"></span><span class="note">a place off your scale</span></div><p>Let a mark carry the verdict on a drawing, and name it once in a legend.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="bad">Off</span></div><p>Letter a bright block in dark ink at night. It reads as black.</p></div></div>`),
+        sec('tokens', 'Tokens', `<table class="tok"><thead><tr><th>Colour</th><th>Line</th><th>Fill</th><th>Lettering</th><th>Day</th><th>Night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><b>${h}</b></td><td><code>--pl-${h}</code></td><td><code>--pl-${h}-soft</code></td><td><code>--pl-${h}-ink</code></td>${['day', 'night'].map((s) => `<td>${['', '-soft', '-ink'].map((p) => `<span class="dot" title="${tok[s](`--pl-${h}${p}`)}" style="background:${tok[s](`--pl-${h}${p}`)}"></span>`).join('')}</td>`).join('')}</tr>`).join('')}</tbody></table>`),
+      ],
+    }),
+
+    pill: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', `<div class="status">${[['Designed', 'In the visual language, day and night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-pill</code>'], ['Used', 'Box model values, the show’s chips, scale steps, legends']].map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`),
+          sec('intro', 'Introduction', `<p>A pill holds one short value: a measurement, a count, a token, a class. Its colour says what the value means, its lettering is the value itself, set in mono with tabular figures so numbers line up.</p><div class="stage">${pills((h) => ({ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]))}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card(null, 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card(null, 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card(null, 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
+        ],
+        style: [
+          sec('anatomy', 'Anatomy', `<div class="stage anat"><div class="spec-pill"><span class="pl-pill xl" data-hue="mint">s3 · 12</span><span class="mk m1">1</span><span class="mk m2">2</span><span class="mk m3">3</span></div><ol><li><span class="mk">1</span><span><b>Fill</b> the colour’s soft tone, <code>--pill-soft</code></span></li><li><span class="mk">2</span><span><b>Lettering</b> the colour’s ink, mono 600 11px, tabular figures, <code>--pill-ink</code></span></li><li><span class="mk">3</span><span><b>Shape</b> 20px tall, 7px sides, 7px corners, <code>--pl-radius-pill</code></span></li></ol></div><p>Drawn here at 2.4× its size. At 1×: <span class="pl-pill" data-hue="mint">s3 · 12</span></p>`),
+          sec('variants', 'Colours', `<div class="stage col">${HUES.map(([h, name]) => `<div class="v"><span class="pl-pill" data-hue="${h}">${{ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]}</span><span>${name}</span><code>data-hue="${h}"</code></div>`).join('')}</div>`),
+          sec('content', 'Content', `<div class="stage">${['12', 's3 · 12', '+87', 'p-[10px]', 'W Fill 500px'].map((v) => `<span class="pl-pill">${v}</span>`).join('')}</div><p>One value, or a token and its number joined by a middle dot. Never a sentence.</p>`),
+        ],
+        usage: [
+          sec('when', 'When to use it', `<ul class="plain"><li>A value someone needs to read exactly: a size, a count, a token.</li><li>A verdict that needs words as well as colour: <span class="pl-pill" data-hue="coral">p-[10px]</span> off your scale.</li><li>The one value of the thing being pointed at.</li></ul>`),
+          sec('not', 'When not to', `<ul class="plain"><li>For a name: use a <b>tag</b>.</li><li>For an action: use the <b>action</b> button.</li><li>On everything at once: at rest, a drawing shows only names (visual, not labels).</li></ul>`),
+          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-pill" data-hue="mint">s3 · 12</span></div><p>Join a token and its number with a middle dot.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-pill">The padding is 12px</span></div><p>Put a sentence in a pill.</p></div></div>`),
+        ],
+        code: [
+          sec('use', 'Use', `<pre><code>&lt;span class="pl-pill" data-hue="mint"&gt;s3&lt;/span&gt;</code></pre><p>Any of <code>sky</code> (the default), <code>coral</code>, <code>mint</code>, <code>butter</code>, <code>pink</code>, <code>lilac</code>. The styles come with <code>LANGUAGE_CSS</code>:</p><pre><code>import { LANGUAGE_CSS } from './language.js';
+root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</code></pre>`),
+          sec('custom', 'Custom colour', `<p>A pill reads two variables, so a component can colour one without a new hue:</p><pre><code>.my-thing .pl-pill { --pill-soft: var(--pl-paper-2); --pill-ink: var(--pl-ink-2); }</code></pre>`),
+        ],
+        accessibility: [
+          sec('contrast', 'Contrast', `<p>Every pill's lettering clears 4.5:1 on its fill, in both schemes, measured here on the live tokens:</p><table class="tok"><thead><tr><th>Colour</th><th>Day</th><th>Night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td><td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td></tr>`).join('')}</tbody></table>`),
+          sec('meaning', 'Never colour alone', `<p>The value is always in the lettering, so a pill reads the same to someone who can't tell coral from mint. Where colour adds a verdict, a word or a legend says it too.</p>`),
+          sec('reading', 'Screen readers', `<p>A pill is plain text: it's read as its value. Don't put a button or a link inside one; use the action instead.</p>`),
+        ],
+      };
+      return { title: 'Pill', lede: 'One short value, coloured by what it means.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+  };
+
+  // ---------- the shell ----------
+  const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+    :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
+    a { color: inherit; }
+    code { font: 500 12.5px/1.5 var(--pl-mono); }
+    .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 24px; background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
+    .top .pl-rainbow { width: 20px; height: 12px; border-radius: 3px; }
+    .top b { font: 600 15px var(--pl-sans); }
+    .top .ver { font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .top .pl-act { margin-left: auto; }
+    .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    nav.side { position: sticky; top: 56px; height: calc(100vh - 56px); overflow: auto; padding: 18px 12px 40px; box-shadow: 1px 0 0 var(--pl-rule); }
+    nav.side a, nav.side span { display: block; padding: 6px 10px; border-radius: 8px; font: var(--pl-page-small); text-decoration: none; color: var(--pl-ink-2); }
+    nav.side a:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
+    nav.side a[aria-current="page"] { background: var(--pl-paper-2); color: var(--pl-ink); font-weight: 600; box-shadow: inset 2px 0 0 var(--pl-sky); border-radius: 0 8px 8px 0; }
+    nav.side .group { margin-top: 14px; padding: 6px 10px; font: 600 12px/16px var(--pl-sans); color: var(--pl-ink); }
+    nav.side .coming { padding: 4px 10px; font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .content { display: grid; grid-template-columns: minmax(0, 760px) 200px; gap: 48px; justify-content: center; padding: 48px 40px 120px; }
+    .page h1 { margin: 0 0 10px; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); }
+    .page .lede { margin: 0 0 28px; max-width: 60ch; font: var(--pl-page-body); font-size: 18px; line-height: 28px; color: var(--pl-ink-2); text-wrap: pretty; }
+    .tabs { display: flex; gap: 4px; margin: 0 0 8px; box-shadow: inset 0 -1px 0 var(--pl-rule); }
+    .tabs a { padding: 10px 12px; font: var(--pl-page-small); font-weight: 500; text-decoration: none; color: var(--pl-ink-2); border-bottom: 2px solid transparent; }
+    .tabs a:hover { color: var(--pl-ink); }
+    .tabs a[aria-selected="true"] { color: var(--pl-ink); border-bottom-color: var(--pl-pink); }
+    .page section { padding-top: 36px; scroll-margin-top: 72px; }
+    .page h2 { margin: 0 0 12px; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+    .page p { margin: 0 0 14px; max-width: 64ch; color: var(--pl-ink-2); }
+    .rail { position: sticky; top: 88px; align-self: start; padding-top: 100px; }
+    .rail b { display: block; margin-bottom: 8px; font: 600 11px/14px var(--pl-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--pl-ink-3); }
+    .rail a { display: block; padding: 4px 0 4px 12px; font: var(--pl-page-meta); text-decoration: none; color: var(--pl-ink-2); box-shadow: inset 1px 0 0 var(--pl-rule); }
+    .rail a[aria-current="true"] { color: var(--pl-ink); box-shadow: inset 2px 0 0 var(--pl-sky); }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .tile { display: flex; flex-direction: column; gap: 4px; padding: 0 0 16px; border-radius: var(--pl-radius-card); background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); text-decoration: none; overflow: hidden; transition: box-shadow 180ms var(--pl-ease-out), translate 180ms var(--pl-ease-out); }
+    a.tile:hover { box-shadow: 0 0 0 1px var(--pl-rule), var(--pl-shadow-card); translate: 0 -1px; }
+    .tile.soon .art { opacity: .7; }
+    .tile b { display: flex; align-items: center; gap: 8px; }
+    .coming-pill { --pill-soft: var(--pl-paper-2); --pill-ink: var(--pl-ink-3); height: 18px; font-size: 10.5px; }
+    .tile .art { display: flex; align-items: center; justify-content: center; gap: 6px; height: 104px; margin-bottom: 10px; background: var(--pl-paper-2); }
+    .tile b { padding: 0 16px; font: 600 15px/22px var(--pl-sans); color: var(--pl-ink); }
+    .tile > span:last-child { padding: 0 16px; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .hues { display: flex; gap: 6px; } .hues i { width: 18px; height: 18px; border-radius: 6px; }
+    .hatch { width: 72px; height: 40px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--pl-sky); }
+    .log { list-style: none; margin: 0; padding: 0; }
+    .log li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 0; box-shadow: inset 0 -1px 0 var(--pl-rule); color: var(--pl-ink-2); font: var(--pl-page-small); }
+    .log .when { font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .log b { color: var(--pl-ink); font-weight: 600; }
+    .rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .rules > div { padding: 16px; border-radius: var(--pl-radius-card); background: var(--pl-paper-2); }
+    .rules b { font: 600 15px/22px var(--pl-sans); } .rules p { margin: 4px 0 0; font: var(--pl-page-small); }
+    .hue-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .hue-card { padding: 16px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .hue-card .chips { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .hue-card .line { width: 28px; height: 4px; border-radius: 2px; }
+    .hue-card b { font: 600 15px/22px var(--pl-sans); } .hue-card p { margin: 4px 0 0; font: var(--pl-page-small); }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mini { height: 196px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); overflow: hidden; }
+    table.tok { width: 100%; border-collapse: collapse; font: var(--pl-page-small); }
+    table.tok th { text-align: left; padding: 8px 10px 8px 0; font: 600 12px/16px var(--pl-sans); color: var(--pl-ink-3); box-shadow: inset 0 -1px 0 var(--pl-rule); }
+    table.tok td { padding: 10px 10px 10px 0; color: var(--pl-ink-2); box-shadow: inset 0 -1px 0 var(--pl-rule); vertical-align: middle; }
+    table.tok td code { color: var(--pl-ink-2); }
+    .dot { display: inline-block; width: 18px; height: 18px; margin-right: 6px; border-radius: 5px; vertical-align: -2px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .verdict { display: inline-flex; align-items: center; gap: 8px; }
+    .verdict .sample { display: inline-grid; place-items: center; width: 34px; height: 24px; border-radius: 6px; font: 600 12px var(--pl-sans); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .verdict .sample i { width: 18px; height: 4px; border-radius: 2px; }
+    .ratio { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 7px; font: 600 11px var(--pl-mono); font-variant-numeric: tabular-nums; }
+    .ratio.ok { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
+    .ratio.low { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+    .dd { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dd > div { padding: 14px 16px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .dd .do { box-shadow: inset 0 3px 0 var(--pl-mint), 0 0 0 1px var(--pl-rule); } .dd .dont { box-shadow: inset 0 3px 0 var(--pl-coral), 0 0 0 1px var(--pl-rule); }
+    .dd .ex { display: flex; align-items: center; gap: 8px; min-height: 64px; margin: 10px 0; padding: 0 14px; border-radius: 8px; background: var(--pl-paper-2); }
+    .dd p { margin: 0; font: var(--pl-page-small); }
+    .dd .note { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .sw-dot { width: 6px; height: 6px; border-radius: 1.5px; }
+    .bad { display: inline-flex; height: 20px; align-items: center; padding: 0 7px; border-radius: 7px; background: #ff7a6b; color: #3a0b06; font: 600 11px var(--pl-mono); }
+    .status { display: grid; gap: 10px; } .status > div { display: flex; align-items: center; gap: 12px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .stage { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 28px; border-radius: var(--pl-radius-card); background: var(--pl-paper-2); margin: 4px 0 16px; }
+    .stage.col { display: grid; gap: 10px; } .stage .v { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; gap: 12px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .stage .v > .pl-pill { justify-self: start; }
+    .anat { gap: 40px; padding: 40px 32px; }
+    .spec-pill { position: relative; padding: 18px 26px 26px 18px; }
+    /* the pill at 2.4x, drawn at that size (not scaled), so it stays crisp */
+    .pl-pill.xl { height: 48px; padding: 0 17px; border-radius: 17px; font-size: 26px; gap: 10px; }
+    .mk { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px var(--pl-sans); flex: none; }
+    .spec-pill .mk { position: absolute; box-shadow: 0 0 0 3px var(--pl-paper-2); }
+    .spec-pill .m1 { left: 6px; top: 6px; } .spec-pill .m2 { left: 50%; bottom: 0; translate: -50% 0; } .spec-pill .m3 { right: 8px; top: 6px; }
+    .anat ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .anat li { display: flex; gap: 10px; align-items: baseline; } .anat li b { color: var(--pl-ink); }
+    ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
+    pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
+    @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
+    .menu { display: none; width: 34px; height: 34px; margin-left: -6px; border: 0; border-radius: 8px; background: none; color: var(--pl-ink); cursor: pointer; place-items: center; }
+    .menu:hover { background: var(--pl-paper-2); }
+    @media (max-width: 760px) {
+      .menu { display: grid; } .top { padding: 0 12px; } .top .ver { display: none; }
+      .shell { grid-template-columns: 1fr; }
+      nav.side { position: fixed; z-index: 4; top: 56px; left: 0; bottom: 0; width: 272px; height: auto; background: var(--pl-paper); box-shadow: 1px 0 0 var(--pl-rule), 16px 0 40px -20px rgb(0 0 0 / .5);
+        translate: -100% 0; transition: translate 240ms var(--pl-ease-out); }
+      nav.side.open { translate: 0 0; }
+      .content { padding: 28px 16px 80px; } .hue-grid, .rules, .dd, .pair { grid-template-columns: 1fr; }
+      table.tok { display: block; overflow-x: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) { nav.side { transition: none; } }
+  </style>
+  <header class="top"><button type="button" class="menu" aria-label="Open the menu" aria-expanded="false"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><span class="pl-rainbow"></span><b>Plumber design system</b><span class="ver">first slice</span><button type="button" class="pl-act quiet" id="scheme">Night</button></header>
+  <div class="shell"><nav class="side" aria-label="Design system"></nav><div class="content"><article class="page"></article><aside class="rail" aria-label="On this page"></aside></div></div>`;
+
+  const side = root.querySelector('nav.side'), page = root.querySelector('.page'), rail = root.querySelector('.rail');
+  const navHtml = (current) => NAV.map((g) => g.id ? `<a href="#${g.id}" ${current === g.id ? 'aria-current="page"' : ''}>${g.label}</a>`
+    : `<div class="group">${g.label}</div>${g.items.filter(([id]) => id).map(([id, label]) => `<a href="#${id}${g.label === 'Components' ? '/overview' : ''}" ${current === id ? 'aria-current="page"' : ''}>${label}</a>`).join('')}${(() => { const later = g.items.filter(([id]) => !id); return later.length ? `<span class="coming" title="${later.map(([, l]) => l).join(', ')}">${g.items.some(([id]) => id) ? `${later.length} more coming` : `${later.length} pages coming`}</span>` : ''; })()}`).join('');
+
+  // a small sample drawn in one scheme, for the side by side on Colour
+  function mini(el, scheme) {
+    const r = el.attachShadow({ mode: 'open' });
+    r.innerHTML = `<style>${tokens}${LANGUAGE_CSS} :host{display:block;height:100%} .m{height:100%;box-sizing:border-box;padding:18px;background:var(--pl-paper);color:var(--pl-ink);font:var(--pl-page-small)} .m b{display:block;margin-bottom:10px;font:var(--pl-page-meta);color:var(--pl-ink-2)} .r{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px} .l{display:flex;gap:8px;margin-bottom:16px} .l i{width:22px;height:4px;border-radius:2px} .d{display:flex;align-items:center;gap:6px} .d i{width:4px;height:4px;border-radius:1px} .d .ring{width:20px;height:20px;margin-left:8px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--pl-sky);background:color-mix(in oklab,var(--pl-sky) 16%,transparent)} .d .ring.on{box-shadow:inset 0 0 0 1.5px var(--pl-mint);background:color-mix(in oklab,var(--pl-mint) 30%,transparent)}</style>
+      <div class="m"><b>${scheme === 'light' ? 'Day' : 'Night'}</b><div class="r">${HUES.map(([h]) => `<span class="pl-pill" data-hue="${h}">${h}</span>`).join('')}</div><div class="l">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</div>
+        <div class="d">${['coral', 'coral', 'butter', 'coral', 'butter', 'butter', 'mint', 'coral', 'butter', 'mint', 'mint', 'coral'].map((h) => `<i style="background:var(--pl-${h})"></i>`).join('')}<span class="ring"></span><span class="ring on"></span></div></div>`;
+    el.dataset.scheme = scheme;
+  }
+
+  function show() {
+    const [id = 'welcome', tab] = location.hash.slice(1).split('/');
+    const make = pages[id] ?? pages.welcome, p = make(tab);
+    side.innerHTML = navHtml(pages[id] ? id : 'welcome');
+    page.innerHTML = `<h1>${p.title}</h1><p class="lede">${p.lede}</p>${p.tabs ? `<div class="tabs" role="tablist">${TABS.map((t) => `<a role="tab" href="#${id}/${t.toLowerCase()}" aria-selected="${(p.tab ?? 'overview') === t.toLowerCase()}">${t}</a>`).join('')}</div>` : ''}${p.sections.map((s) => `<section id="${s.id}"><h2>${s.title}</h2>${s.html}</section>`).join('')}`;
+    rail.innerHTML = `<b>On this page</b>${p.sections.map((s) => `<a href="#${id}${tab ? `/${tab}` : ''}" data-to="${s.id}">${s.title}</a>`).join('')}`;
+    page.querySelectorAll('[data-mini]').forEach((el) => mini(el, el.dataset.mini === 'day' ? 'light' : 'dark'));
+    scrollTo(0, 0); watch();
+  }
+  // the rail jumps within the page and marks the section in view
+  rail.addEventListener('click', (e) => { const a = e.target.closest('[data-to]'); if (!a) return; e.preventDefault(); root.getElementById(a.dataset.to)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+  let io;
+  function watch() {
+    io?.disconnect();
+    io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) rail.querySelectorAll('[data-to]').forEach((a) => a.setAttribute('aria-current', String(a.dataset.to === e.target.id))); }, { rootMargin: '-80px 0px -60% 0px' });
+    page.querySelectorAll('section').forEach((s) => io.observe(s));
+  }
+  addEventListener('hashchange', show);
+  // the phone menu: opens the sidebar as a drawer; choosing a page or Esc closes it
+  const menu = root.querySelector('.menu');
+  const drawer = (open) => { side.classList.toggle('open', open); menu.setAttribute('aria-expanded', String(open)); menu.setAttribute('aria-label', open ? 'Close the menu' : 'Open the menu'); };
+  menu.addEventListener('click', () => drawer(!side.classList.contains('open')));
+  side.addEventListener('click', (e) => { if (e.target.closest('a')) drawer(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
+
+  // one scheme for the page and its examples: the OS's at first, then the button's
+  const button = root.getElementById('scheme');
+  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; button.textContent = dark ? 'Day' : 'Night'; };
+  setScheme(matchMedia('(prefers-color-scheme: dark)').matches);
+  button.addEventListener('click', () => setScheme(!document.body.classList.contains('dark')));
+  show();
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@
   --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measure, focus */
   --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* off the system */
   --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on the system, written */
-  --pl-butter: #c48a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* softer trouble */
+  --pl-butter: #bd8500; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* softer trouble (a mark: 3.1:1 on the paper) */
   --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
@@ -49,6 +49,16 @@
   --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, where */
   --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, the change itself */
   --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
+  /* a page (the project page, anything bigger than a card): five steps, calm editorial. All sans; numbers set tabular;
+     mono only for real code. Each step a clear jump from the next, so the eye always knows what to read first */
+  --pl-page-display: 600 40px/46px var(--pl-sans);      /* the one sentence a page leads with */
+  --pl-page-title: 600 20px/28px var(--pl-sans);        /* a card or a section */
+  --pl-page-body: 400 16px/26px var(--pl-sans);         /* what you read: the lede, explanations */
+  --pl-page-small: 400 14px/22px var(--pl-sans);        /* supporting lines, a readout */
+  --pl-page-meta: 400 13px/20px var(--pl-sans);         /* names on a drawing, a legend, captions */
+  --pl-page-figure: 600 32px/36px var(--pl-sans);       /* a number that matters, tabular */
+  --pl-tracking-display: -0.025em;
+  --pl-tracking-title: -0.01em;
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
   /* older role names, each now one of the five */
