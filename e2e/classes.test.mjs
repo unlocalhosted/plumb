@@ -9,7 +9,7 @@ import { test } from 'node:test';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
 function run(directory, cache, args = []) {
-  const result = spawnSync(process.execPath, [cli, '--root', directory, ...args], {
+  const result = spawnSync(process.execPath, [cli, ...(args.length ? [] : ['check']), '--root', directory, ...args], {
     encoding: 'utf8', timeout: 15_000, env: { ...process.env, PLUMB_CACHE_DIR: cache },
   });
   assert.ifError(result.error);
@@ -225,7 +225,7 @@ test('warm collection keeps inline companion identity and revalidates imported c
   assert.deepEqual(report().findings, remapped.findings);
   // A normal text check must never serialize the complete report. Execute the
   // real CLI with a guard around JSON.stringify, allowing small cache payloads.
-  const guarded = spawnSync(process.execPath, ['--input-type=module', '-e', `const stringify=JSON.stringify; JSON.stringify=function(value,...args) { if(value?.schemaVersion===1 && value?.findings && value?.coverage) throw new Error('full report serialization in text mode'); return stringify.call(JSON,value,...args); }; process.argv=['node','--root',${JSON.stringify(directory)}]; await import(${JSON.stringify(new URL('../dist/cli.js', import.meta.url).href)});`], { encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache } });
+  const guarded = spawnSync(process.execPath, ['--input-type=module', '-e', `const stringify=JSON.stringify; JSON.stringify=function(value,...args) { if(value?.schemaVersion===1 && value?.findings && value?.coverage) throw new Error('full report serialization in text mode'); return stringify.call(JSON,value,...args); }; process.argv=['node','check','--root',${JSON.stringify(directory)}]; await import(${JSON.stringify(new URL('../dist/cli.js', import.meta.url).href)});`], { encoding: 'utf8', env: { ...process.env, PLUMB_CACHE_DIR: cache } });
   assert.ifError(guarded.error);
   assert.equal(guarded.stderr, '');
   assert.ok([0, 1].includes(guarded.status));

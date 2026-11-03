@@ -143,7 +143,7 @@ test('--version prints the package version without discovering a project', () =>
 });
 
 test('text mode prints header, counts, timing and layer status', () => {
-  const result = run(['--root', fixture('tailwind-min')]);
+  const result = run(['check', '--root', fixture('tailwind-min')]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stderr, '');
   assert.ok(result.stdout.startsWith('React Plumber  tailwind-min · Tailwind '));

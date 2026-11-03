@@ -10,7 +10,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
 const defaults = ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'];
 function run(directory, args = [], status = 0, executable = cli) {
-  const result = spawnSync(process.execPath, [executable, ...args], { cwd: directory, encoding: 'utf8', timeout: 20_000,
+  const result = spawnSync(process.execPath, [executable, ...(args.length ? args : ['check'])], { cwd: directory, encoding: 'utf8', timeout: 20_000,
     // Git never looks above the temporary directory the fixtures live in, so install --ci writes the workflow into the fixture even when the
     // temporary directory sits inside another repository (React Plumber's own, under a TMPDIR set to fixtures/).
     env: { ...process.env, PLUMB_CACHE_DIR: join(directory, '.cache'), GIT_CEILING_DIRECTORIES: tmpdir() } });

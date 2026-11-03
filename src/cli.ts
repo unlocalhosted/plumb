@@ -191,8 +191,9 @@ async function main(): Promise<void> {
     !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), async () => { await prepare(); return run(); });
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
   if (bare) {
-    const { runPage } = await import('./onboarding/path.js');
-    if (await runPage({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true })) return;
+    const { runBare } = await import('./onboarding/path.js');
+    await runBare({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true, report: () => analyzing(() => check({ ...options })) });
+    return;
   }
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);

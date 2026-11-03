@@ -5,6 +5,9 @@ import { performance } from 'node:perf_hooks';
 import { serve } from '../session/server.js';
 import { projectFacts } from '../project-facts/index.js';
 import type { Report } from '../report.js';
+import type { Cause } from '../causes.js';
+import { count } from '../messages.js';
+import { wrap } from '../cli-table.js';
 
 /**
  * The path a newcomer takes: `npx plumber`, nothing else. On a terminal it reads the code, serves a page about the
@@ -17,6 +20,8 @@ export interface PathContext {
   /** Checks that the project can be read at all (the same gate every analysis passes); prints its own notices. */
   prepare(): Promise<void>;
   noOpen: boolean;
+  /** The project's report, with progress shown where it helps. */
+  report(): Promise<Report>;
 }
 
 /** Are we on a terminal where a browser tab is a fair thing to open? `PLUMBER_TERMINAL=1` says so for tests. */
@@ -53,6 +58,51 @@ export async function stackLine(report: Report): Promise<string> {
 export const filesCount = (report: Report): number => Object.values(report.files as unknown as Record<string, number>).reduce((sum, n) => sum + n, 0);
 export const seconds = (ms: number): string => `${(ms / 1000).toFixed(ms < 9950 ? 1 : 0)}s`;
 
+const nouns: Record<string, string> = { 'font-size': 'text size', 'font-weight': 'text weight', 'letter-spacing': 'letter spacing', 'line-height': 'line height', 'border-radius': 'corner radius' };
+const families: Record<string, string> = { color: 'colour', spacing: 'spacing', radius: 'corner radius', type: 'text style', motion: 'timing', elevation: 'shadow', z: 'layer order' };
+const stepOf: Record<string, string> = { color: 'your colours', spacing: 'your spacing', radius: 'your corner radii', type: 'your type scale', motion: 'your timings', elevation: 'your shadows', z: 'your layers' };
+
+/** One cause in a sentence or two a person would say out loud: what they wrote, how many places, what their theme calls it. */
+export function sayCause(cause: Cause, report: Report): string {
+  const property = /^value:[^:]+:([a-z-]+):/.exec(cause.id)?.[1];
+  const noun = (property && nouns[property]) ?? families[cause.family] ?? cause.family;
+  const ways = cause.spellings.length;
+  let text = cause.family === 'color'
+    ? `You wrote ${cause.label} ${ways > 1 ? `${ways} ways, ` : ''}in ${count(cause.count, 'place')}.`
+    : `You set ${noun} ${cause.label} ${ways > 1 ? `${ways} ways, ` : ''}in ${count(cause.count, 'place')}.`;
+  const step = cause.suggestion && report.decisions.find(decision => decision.name === cause.suggestion!.token);
+  const raw = step ? step.resolved ?? step.value : undefined;
+  // a person says 16px, not 1rem
+  const value = raw && /^[\d.]+rem$/.test(raw) ? `${Number(raw.slice(0, -3)) * 16}px` : raw;
+  if (cause.suggestion) {
+    text += cause.suggestion.exact ? ` Your theme calls it ${cause.suggestion.name}.`
+      : ` The closest in ${stepOf[cause.family] ?? 'your theme'} is ${cause.suggestion.name}${value ? ` (${value})` : ''}.`;
+  }
+  if (cause.rendersNothing) text += ` ${cause.rendersNothing === cause.count ? 'All of them render' : cause.rendersNothing === 1 ? '1 renders' : `${cause.rendersNothing} render`} nothing.`;
+  return text;
+}
+
+/**
+ * The same story with no browser to open (a pipe, CI, --no-open): the 3 biggest causes, one sentence or two each, and
+ * exactly one next step. Whether the project is set up decides which step (docs/design/onboarding.md, sections 1 and 5).
+ */
+export function plainVersion(report: Report): string {
+  const causes = (report.causes ?? []).slice(0, 3);
+  const open = report.causes?.length ?? 0;
+  // set up: a config, and today's state recorded (the ledger); a config alone leaves every problem new
+  const setUp = report.config.path !== null && report.ledger?.exists === true;
+  // what would fail a pull request: new problems the ledger doesn't know (a value off your theme warns, it doesn't fail)
+  const fresh = report.ledger?.new ?? 0;
+  const lines = [`Plumber · ${count(filesCount(report), 'file')} in ${seconds(report.timing.totalMs)}`];
+  if (!open) lines.push(setUp ? '  Nothing to fix. Nothing new since you set up.' : '  Nothing to fix in your styles.');
+  else {
+    if (setUp) lines.push(fresh ? `  ${count(fresh, 'new problem')} since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} open, the biggest:` : `  Nothing new since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} still open${open === 1 ? ':' : ', the biggest:'}`);
+    for (const cause of causes) lines.push(wrap('  ' + sayCause(cause, report)));
+  }
+  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : 'Next: run npx plumber in a terminal to see this in your browser, or npx plumber --yes to set it up here.');
+  return lines.join('\n') + '\n';
+}
+
 /** Open the person's browser. `PLUMBER_OPENER` names a command to run with the address instead (tests set it; nothing opens). */
 export function openBrowser(url: string): Promise<boolean> {
   const stub = process.env.PLUMBER_OPENER;
@@ -67,11 +117,11 @@ export function openBrowser(url: string): Promise<boolean> {
 }
 
 /**
- * Serve the page and open it. Returns false when this isn't a case for the page, so the caller does what it did before.
+ * Serve the page and open it; with no browser to open, say the same thing in the terminal.
  */
-export async function runPage(context: PathContext): Promise<boolean> {
-  if (!onTerminal(context.noOpen)) return false;
+export async function runBare(context: PathContext): Promise<void> {
   await context.prepare();
+  if (!onTerminal(context.noOpen)) { process.stdout.write(plainVersion(await context.report())); return; }
   const started = performance.now();
   process.stdout.write('Plumber · reading your app…\n');
   const daemon = await serve({ root: context.root, ...(context.config === undefined ? {} : { config: context.config }), page: true, port: 7331, portSearch: 40 });
@@ -89,5 +139,4 @@ export async function runPage(context: PathContext): Promise<boolean> {
   const written = (await daemon.session.history()).writes.length;
   await daemon.close();
   process.stdout.write(written ? '\n' : '\nNo changes made.\n');
-  return true;
 }

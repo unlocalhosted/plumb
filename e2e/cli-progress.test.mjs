@@ -63,7 +63,7 @@ async function fixture(t, delay = 180, rows = 1) {
 
 function run(project, args = [], options = {}) {
   const env = { ...project.env, ...options.env };
-  const command = [process.execPath, ...(options.preload ? ['--import', options.preload] : []), cli, ...args, '--root', project.root];
+  const command = [process.execPath, ...(options.preload ? ['--import', options.preload] : []), cli, ...(args.length ? args : ['check']), '--root', project.root];
   return new Promise((resolve, reject) => {
     const child = options.pipe ? spawn(command[0], command.slice(1), { cwd: repo, env }) : spawn('python3', [helper], { cwd: repo });
     let stdout = '', stderr = '';
@@ -153,7 +153,7 @@ onProgress(event => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 90);
 });
 `);
-  const args = ['--config', project.config];
+  const args = ['check', '--config', project.config];
   const cold = await run(project, args, { preload });
   const lines = assertBar(cold);
   assert.match(plain(cold.stderr), /Tracing computed classes: \d+ of \d+ files/);
@@ -188,7 +188,7 @@ test('cold-cache notice appears once, uses the actual override, stays after clea
   // A whole-report cache hit skips all inner phases and still completes.
   // Executable configs (including the notice fixture's delay) bypass this cache.
   await writeFile(project.config, "export default { css: 'src/styles.css' };\n");
-  const args = ['--config', project.config];
+  const args = ['check', '--config', project.config];
   const events = join(project.cache, 'progress.jsonl');
   const preload = join(project.cache, 'observe-progress.mjs');
   await writeFile(preload, `

@@ -11,7 +11,7 @@ const repo = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(repo, 'dist/cli.js');
 function run(root, args = [], options = {}) {
   const env = { ...process.env, CI: '1', COLUMNS: '100', ...options.env };
-  const result = spawnSync(process.execPath, [...(options.replay ? ['--import', join(repo, 'e2e/fixtures/report-before/replay.mjs')] : []), cli, '--root', root, ...args],
+  const result = spawnSync(process.execPath, [...(options.replay ? ['--import', join(repo, 'e2e/fixtures/report-before/replay.mjs')] : []), cli, ...(args.length ? [] : ['check']), '--root', root, ...args],
     { cwd: repo, encoding: 'utf8', timeout: 15000, env });
   assert.ifError(result.error);
   assert.ok([0, 1].includes(result.status), result.stderr);
@@ -94,7 +94,7 @@ test('large first-run summary fits one screen and every detail command selects i
     delete env.NO_COLOR;
     if (noColor) env.NO_COLOR = '1';
     const result = spawnSync('python3', [join(repo, 'e2e/helpers/cli-pty.py')], { encoding: 'utf8', timeout: 15000,
-      input: JSON.stringify({ command: [process.execPath, cli, '--root', root], cwd: repo, env, columns: 100, stdoutTTY: true }) });
+      input: JSON.stringify({ command: [process.execPath, cli, 'check', '--root', root], cwd: repo, env, columns: 100, stdoutTTY: true }) });
     assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
     return JSON.parse(result.stdout).stdout;
   };

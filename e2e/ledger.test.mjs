@@ -8,7 +8,7 @@ import { test } from 'node:test';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
 function run(directory, args = [], status = 0, json = true) {
-  const result = spawnSync(process.execPath, [cli, '--root', directory, ...args, ...(json ? ['--json'] : [])], { encoding: 'utf8', timeout: 15_000 });
+  const result = spawnSync(process.execPath, [cli, ...(args.length || json ? [] : ['check']), '--root', directory, ...args, ...(json ? ['--json'] : [])], { encoding: 'utf8', timeout: 15_000 });
   assert.ifError(result.error);
   assert.equal(result.status, status, result.stderr || result.stdout);
   return json && status !== 2 ? JSON.parse(result.stdout) : result;
