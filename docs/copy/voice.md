@@ -105,6 +105,22 @@ The short label is what a panel row says. The line is what `i` shows. The reason
 | Undid px-s4 in App.jsx | Undone in App.jsx |
 | React Plumber · Alt to inspect | Hold `Alt` to inspect |
 
+## Slop to cut (owner, 2026-11-03)
+
+Found in the design system docs (`overlay/demo/system.html`) and removed in one pass. Check every new string against
+this list before it ships.
+
+| Pattern | Example removed | Write instead |
+| --- | --- | --- |
+| Slogans and aphorisms | "Precise like an instrument, friendly like a toy." "Two sizes, for two places." | Say the fact: "Cards come in two sizes." |
+| "The one X" | "The one thing you can do here." "The one sentence a page leads with" | "The main thing you can do", "A page's headline" |
+| Colon chains | "Held: not floating far: a hairline…" | Short sentences, one idea each |
+| Private metaphors | ink, paper, plate, held, lifted, verdict, drift, heat, breathes, a breath | text colour, background, readout, over your page, shadow, result, off the scale, brightness, pulses, a short pause |
+| Rhythmic triplets | "One sentence leads, one drawing proves it, and nothing else competes." | "A headline states the finding and a chart backs it up." |
+| Personified UI | "the eye learns…", "the ants stand still", "the marks lift" | Plain cause and effect: "the ants stop", "the marks fade out" |
+| Coined headings | "Visual, not labels", "Pastel fills, inked words", "How hot" | A heading that names the rule: "Shapes before words", "Brightness" |
+| Vague "readers" | "Readers don't get the plate" | "Screen readers" |
+
 ## Decided
 
 1. The button is **Apply changes** ("Apply 3 changes"); the toast says **Applied**. (Owner, 2026-10-27.)

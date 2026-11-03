@@ -84,8 +84,8 @@
   const ICON_MODELS = '<svg viewBox="0 0 12 12"><rect x="1.5" y="2" width="9" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="7" width="5" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
   const contrastRows = (hues) => `<table class="tok"><thead><tr><th>Colour</th><th>Day</th><th>Night</th></tr></thead><tbody>${hues.map((h) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td><td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td></tr>`).join('')}</tbody></table>`;
   const TYPE = {
-    page: [['display', '--pl-page-display', '576 places type a size by hand.', '40 / 46', '600', 'The one sentence a page leads with'], ['title', '--pl-page-title', 'Where your text sizes land', '20 / 28', '600', 'A card or a section'], ['body', '--pl-page-body', 'Your theme has 10 text sizes; your code uses 49.', '16 / 26', '400', 'What you read: the lede, explanations'], ['small', '--pl-page-small', 'places use your scale', '14 / 22', '400', 'Supporting lines, a readout'], ['meta', '--pl-page-meta', 'On your scale · sm · 2xs', '13 / 20', '400', 'Names on a drawing, a legend, captions'], ['figure', '--pl-page-figure', '621', '32 / 36', '600', 'A number that matters, tabular']],
-    card: [['title', '--pl-card-title', 'Padding is off your scale', '14 / 20', '600', 'What is off, in words'], ['body', '--pl-card-body', 'Your scale has 8 and 12; this is 10.', '13 / 19', '400', 'Reasons and guidance'], ['meta', '--pl-card-meta', '3 places · Board.jsx', '12 / 17', '400', 'Counts, notes, where'], ['code', '--pl-card-code', 'p-[10px] → p-3', '12 / 17', '500 mono', 'Classes, values, file:line, the change'], ['label', '--pl-text-label', 'WRITE · FIX ALL', '11 / 14', '600', 'Tags, buttons, column labels']],
+    page: [['display', '--pl-page-display', '576 places type a size by hand.', '40 / 46', '600', 'A page’s headline'], ['title', '--pl-page-title', 'Where your text sizes land', '20 / 28', '600', 'A card or a section'], ['body', '--pl-page-body', 'Your theme has 10 text sizes; your code uses 49.', '16 / 26', '400', 'Body text: the intro and explanations'], ['small', '--pl-page-small', 'places use your scale', '14 / 22', '400', 'Supporting lines, a readout'], ['meta', '--pl-page-meta', 'On your scale · sm · 2xs', '13 / 20', '400', 'Names on a drawing, a legend, captions'], ['figure', '--pl-page-figure', '621', '32 / 36', '600', 'A key number']],
+    card: [['title', '--pl-card-title', 'Padding is off your scale', '14 / 20', '600', 'What’s off, in a sentence'], ['body', '--pl-card-body', 'Your scale has 8 and 12; this is 10.', '13 / 19', '400', 'Reasons and guidance'], ['meta', '--pl-card-meta', '3 places · Board.jsx', '12 / 17', '400', 'Counts, notes, file names'], ['code', '--pl-card-code', 'p-[10px] → p-3', '12 / 17', '500 mono', 'Classes, values, file:line, the change'], ['label', '--pl-text-label', 'WRITE · FIX ALL', '11 / 14', '600', 'Tags, buttons, column labels']],
   };
   const typeTable = (rows) => `<div class="ramp">${rows.map(([n, t, sample, size, weight, use]) => `<div class="tr"><div class="meta"><b>${n}</b><code>${t}</code><span>${size} · ${weight}</span></div><div class="sample" style="font:var(${t});${t === '--pl-page-display' ? 'letter-spacing:var(--pl-tracking-display);' : t === '--pl-page-title' ? 'letter-spacing:var(--pl-tracking-title);' : t === '--pl-page-figure' ? 'font-variant-numeric:tabular-nums;letter-spacing:var(--pl-tracking-display);' : ''}">${sample}</div><div class="use">${use}</div></div>`).join('')}</div>`;
 
@@ -99,7 +99,7 @@
   const DEMOS = {};
   const demo = (name, kind, state, caption = '') => { DEMOS[name] = { kind, s: structuredClone(state) }; return `<div class="demo" data-demo="${name}">${kind(name, DEMOS[name].s)}<span class="say">${caption}</span></div>`; };
   const states = (kind, rows) => `<div class="stage col states-list">${rows.map(([label, name, st, note]) => `<div class="srow"><span class="lbl">${label}</span>${demo(name, kind, st, note ?? '')}</div>`).join('')}</div>`;
-  const keys = `<ul class="plain"><li>One tab stop for the whole control; ← → (and ↑ ↓) move between steps, Home and End go to the ends.</li><li>Enter or Space picks; pointing or focusing shows what a step would be.</li><li>Each control is a <code>radiogroup</code>; each step a <code>radio</code> with <code>aria-checked</code>.</li></ul>`;
+  const keys = `<ul class="plain"><li>One tab stop for the whole control; ← → (and ↑ ↓) move between steps, Home and End go to the ends.</li><li>Enter or Space picks; pointing or focusing previews a step.</li><li>Each control is a <code>radiogroup</code>; each step a <code>radio</code> with <code>aria-checked</code>.</li></ul>`;
 
   // ---------- the scale marks and the show's chips ----------
   const ROLES = [['p', 12], ['g', 8], ['m', 24], ['r', 10], ['line', 14]].map(([k, v]) => ({ label: { p: 'padding', g: 'gap', m: 'margin', r: 'radius', line: 'type' }[k], icon: BLOCK_ICONS[k], from: v }));
@@ -108,8 +108,8 @@
   // ---------- foundations data ----------
   const SPACE = [1, 2, 3, 4, 5, 6, 7, 8].map((k) => [`--pl-space-${k}`, [2, 4, 6, 8, 12, 16, 20, 24][k - 1]]);
   const RADII = [['--pl-radius-mark', 2, 'A mark on the page: a place, a tick'], ['--pl-radius-tag', 6, 'A tag'], ['--pl-radius-pill', 7, 'A pill, an action'], ['--pl-radius-row', 8, 'A row, a control'], ['--pl-radius-card', 12, 'A card, a panel']];
-  const DURS = [['--pl-dur-feedback', 120, 'A press, a copy confirmed'], ['--pl-dur-undim', 120, 'Blueprint’s dim leaving'], ['--pl-dur-drop', 140, 'The plumb line reaching its tag'], ['--pl-dur-dim', 160, 'Blueprint’s dim arriving'], ['--pl-dur-card', 180, 'A card pinning'], ['--pl-dur-travel', 220, 'The reticle moving to the next element'], ['pop', 260, 'Anything appearing (pl-pop)'], ['roll', 520, 'A value rolling, a fill sliding']];
-  const CURVES = [['--pl-ease-out', 'Ease out', 'Things that arrive or answer you: fast, then settling.'], ['--pl-spring', 'Spring', 'Things that move between places: under 2% overshoot.'], ['--pl-spring-pop', 'Pop', 'Things that appear: about 4% overshoot, then still.']];
+  const DURS = [['--pl-dur-feedback', 120, 'A press, a copy confirmed'], ['--pl-dur-undim', 120, 'Blueprint’s dimming fading out'], ['--pl-dur-drop', 140, 'The line growing to its tag'], ['--pl-dur-dim', 160, 'Blueprint’s dimming fading in'], ['--pl-dur-card', 180, 'A card opening'], ['--pl-dur-travel', 220, 'The selection moving to the next element'], ['pop', 260, 'Anything appearing (pl-pop)'], ['roll', 520, 'A value rolling, a fill sliding']];
+  const CURVES = [['--pl-ease-out', 'Ease out', 'For things that arrive or respond to you: fast, then slowing down.'], ['--pl-spring', 'Spring', 'For things moving from one place to another. Overshoots by under 2%.'], ['--pl-spring-pop', 'Pop', 'For things that appear. Overshoots by about 4%.']];
   const FAMILY_NAMES = { spacing: 'Spacing', radius: 'Radius', type: 'Type', color: 'Colour', shadow: 'Elevation', z: 'Layers', motion: 'Motion', habit: 'Habit', ownership: 'Ownership', imitation: 'Imitation', craft: 'Craft', existence: 'Existence' };
   const BLOCK_NAMES = { p: 'Padding', m: 'Margin', g: 'Gap', b: 'Border', r: 'Radius', line: 'Type', c: 'Size' };
 
@@ -126,51 +126,54 @@
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
-      lede: 'The colours, type, marks and components every part of Plumber is built from: the overlay on your page, the page that opens when you run it, and everything after. Precise like an instrument, friendly like a toy.',
+      lede: 'The colours, type, marks and components Plumber is built from. The overlay on your page uses them, and so does the project page that opens when you run Plumber.',
       sections: [
-        sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
-          <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card('#boxmodel', 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
+        sec('start', 'Start here', `<p>Every example here runs the same code as the overlay, so it looks exactly like the product. Use the button at the top right to switch between day and night.</p>
+          <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape and motion.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'Each component with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card('#boxmodel', 'Patterns', 'Components working together, like the box model, Gravity and the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
-          <li><span class="when">Nov 3</span><span><b>Patterns:</b> the box model, Gravity and the clean-up show, all live.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Voice and tone, and every token,</b> read from the code itself.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Six foundations:</b> spacing, shape, elevation, motion, texture and iconography.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count documented,</b> playing and rolling live.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments documented,</b> every state live.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action documented.</b> And a fix: a tag asked for sky now draws in sky.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Night pills in white.</b> Every pill is a deep version of its colour with white lettering; lines and marks keep the bright pastels.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Page type.</b> Five steps for anything bigger than a card: display, title, body, small, meta.</span></li>
-          <li><span class="when">Nov 3</span><span><b>Scale marks.</b> Step, place and count: a scale and the places that use it.</span></li>
-          <li><span class="when">Nov 3</span><span><b>The action.</b> One button for what you can do, in pink.</span></li></ul>`),
+          <li><span class="when">Nov 3</span><span><b>Resources.</b> Gallery, Briefs and Source.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Layout.</b> Card and Page.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Readout and Blueprint marks.</b> The marks run live over two sample cards.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Patterns.</b> The box model, Gravity and the clean-up show, all live.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Voice and tone, and Tokens.</b> Both read directly from the code.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Six foundations.</b> Spacing, shape, elevation, motion, texture and iconography.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count.</b> Each one live.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments.</b> Every state live.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action.</b> Also fixed: a tag set to sky now shows in sky.</span></li>
+          <li><span class="when">Nov 3</span><span><b>White text on night pills.</b> At night a pill has a deep fill with white text. Lines and marks stay bright.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Page type.</b> Five sizes for anything bigger than a card: display, title, body, small and meta.</span></li>
+          <li><span class="when">Nov 3</span><span><b>Scale marks.</b> Step, place and count, for drawing a scale and where it’s used.</span></li>
+          <li><span class="when">Nov 3</span><span><b>The action button.</b> Pink, for the main thing you can do.</span></li></ul>`),
         sec('principles', 'Principles', `<div class="rules">
-          <div><b>One colour, one meaning</b><p>A colour says one thing everywhere. Coral is only ever "off your system".</p></div>
-          <div><b>Visual, not labels</b><p>Say it with shape, pattern and colour. At rest, only names; a value appears for the one thing you point at.</p></div>
-          <div><b>Pastel fills, inked words</b><p>A pill is a fill and lettering of the same colour, never white on pastel by day.</p></div>
-          <div><b>A little bounce</b><p>Things that appear pop from 0.92 with a 4% overshoot. Nothing loops but the marching ants.</p></div></div>`),
+          <div><b>Each colour has one meaning</b><p>A colour means the same thing everywhere. Coral only ever means “off your system”.</p></div>
+          <div><b>Shapes before words</b><p>Use shape, pattern and colour to show what’s going on. At rest only names show; a value appears only for what you point at.</p></div>
+          <div><b>Pills are tinted</b><p>A pill’s fill and text are two shades of the same colour: a pale fill with dark text by day, a deep fill with white text at night.</p></div>
+          <div><b>Motion is quick</b><p>Things that appear scale up from 92% with a slight overshoot. Only the marching ants loop.</p></div></div>`),
       ],
     }),
 
     colour: () => ({
       title: 'Colour',
-      lede: 'Six colours, each with one meaning, on warm paper by day and soft charcoal at night. Colour always pairs with a shape or a word, so it never carries meaning alone.',
+      lede: 'Six colours, each with one meaning, on an off-white background by day and dark grey at night. Colour always comes with a shape or a word, so nobody has to rely on colour alone.',
       sections: [
         sec('meanings', 'One colour, one meaning', `<div class="hue-grid">${HUES.map(([h, name, text]) => `<div class="hue-card">
             <div class="chips"><i class="line" style="background:var(--pl-${h})"></i><span class="pl-pill" data-hue="${h}">${h}</span></div>
             <b>${name}</b><p>${text}</p></div>`).join('')}</div>`),
-        sec('day-night', 'Day and night', `<p>By day a pill is a pale fill lettered in the colour's deep ink. At night it's a deep, saturated fill lettered in white, while lines and marks keep the bright pastels. Both are measured below.</p>
+        sec('day-night', 'Day and night', `<p>By day a pill has a pale fill with dark text in the same colour. At night it has a deep fill with white text, and lines and marks use the bright pastels. The contrast of both is measured below.</p>
           <div class="pair">${['day', 'night'].map((s) => `<div class="mini" data-mini="${s}"></div>`).join('')}</div>`),
         sec('neutrals', 'Neutrals', `<table class="tok"><thead><tr><th>Token</th><th>Day</th><th>Night</th><th>Use</th></tr></thead><tbody>${[
             ['--pl-paper', 'Card and page ground'], ['--pl-paper-2', 'Inset, hover, pressed'], ['--pl-rule', 'Dividers and hairlines'],
-            ['--pl-ink', 'Titles and readings'], ['--pl-ink-2', 'Supporting words'], ['--pl-ink-3', 'Ticks and quiet hints, never meaning alone']]
+            ['--pl-ink', 'Titles and readings'], ['--pl-ink-2', 'Supporting words'], ['--pl-ink-3', 'Ticks and faint hints, never the only sign of something']]
           .map(([t, use]) => `<tr><td><code>${t}</code></td>${['day', 'night'].map((s) => `<td><span class="dot" style="background:${tok[s](t)}"></span><code>${tok[s](t)}</code></td>`).join('')}<td>${use}</td></tr>`).join('')}</tbody></table>`),
-        sec('contrast', 'Contrast', `<p>Measured on the live tokens. Words need 4.5:1 on their ground; marks and lines need 3:1.</p>
+        sec('contrast', 'Contrast', `<p>Measured from the current tokens. Text needs 4.5:1 against its background; marks and lines need 3:1.</p>
           <table class="tok"><thead><tr><th>Colour</th><th>Pill lettering, day</th><th>Pill lettering, night</th><th>Line on the card, day</th><th>Line on the card, night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td>
             <td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td>
             <td>${badge(tok.day(`--pl-${h}`), tok.day('--pl-paper'), 3, true)}</td><td>${badge(tok.night(`--pl-${h}`), tok.night('--pl-paper'), 3, true)}</td></tr>`).join('')}</tbody></table>`),
         sec('rules', 'Do and don’t', `<div class="dd">
-          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="pl-pill" data-hue="mint">s3</span></div><p>Pair the colour with its words: the class itself says what's off.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="pl-pill" data-hue="mint">s3</span></div><p>Show the class next to the colour, so the words say what’s off.</p></div>
           <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-pill" data-hue="coral">Write</span></div><p>Use coral for anything but "off your system". The action is pink.</p></div>
-          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="sw-dot" style="background:var(--pl-coral)"></span><span class="note">a place off your scale</span></div><p>Let a mark carry the verdict on a drawing, and name it once in a legend.</p></div>
-          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="bad">Off</span></div><p>Letter a bright block in dark ink at night. It reads as black.</p></div></div>`),
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="sw-dot" style="background:var(--pl-coral)"></span><span class="note">a place off your scale</span></div><p>On a drawing, let the mark’s colour show the result, and explain it once in a legend.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="bad">Off</span></div><p>Put dark text on a bright fill at night. It looks black.</p></div></div>`),
         sec('tokens', 'Tokens', `<table class="tok"><thead><tr><th>Colour</th><th>Line</th><th>Fill</th><th>Lettering</th><th>Day</th><th>Night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><b>${h}</b></td><td><code>--pl-${h}</code></td><td><code>--pl-${h}-soft</code></td><td><code>--pl-${h}-ink</code></td>${['day', 'night'].map((s) => `<td>${['', '-soft', '-ink'].map((p) => `<span class="dot" title="${tok[s](`--pl-${h}${p}`)}" style="background:${tok[s](`--pl-${h}${p}`)}"></span>`).join('')}</td>`).join('')}</tr>`).join('')}</tbody></table>`),
       ],
     }),
@@ -178,8 +181,8 @@
     pill: (tab = 'overview') => {
       const t = {
         overview: [
-          sec('status', 'Status', `<div class="status">${[['Designed', 'In the visual language, day and night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-pill</code>'], ['Used', 'Box model values, the show’s chips, scale steps, legends']].map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`),
-          sec('intro', 'Introduction', `<p>A pill holds one short value: a measurement, a count, a token, a class. Its colour says what the value means, its lettering is the value itself, set in mono with tabular figures so numbers line up.</p><div class="stage">${pills((h) => ({ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]))}</div>`),
+          sec('status', 'Status', `<div class="status">${[['Designed', 'In the visual language, day and night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-pill</code>'], ['Used', 'Box model values, clean-up show chips, scale steps, legends']].map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`),
+          sec('intro', 'Introduction', `<p>A pill holds one short value: a measurement, a count, a token, a class. Its colour shows what the value means. The value is set in mono with tabular figures so numbers line up.</p><div class="stage">${pills((h) => ({ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]))}</div>`),
           sec('related', 'Related components', `<div class="tiles">${card('#tag/overview', 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card('#step/overview', 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card('#chip/overview', 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
         ],
         style: [
@@ -188,8 +191,8 @@
           sec('content', 'Content', `<div class="stage">${['12', 's3 · 12', '+87', 'p-[10px]', 'W Fill 500px'].map((v) => `<span class="pl-pill">${v}</span>`).join('')}</div><p>One value, or a token and its number joined by a middle dot. Never a sentence.</p>`),
         ],
         usage: [
-          sec('when', 'When to use it', `<ul class="plain"><li>A value someone needs to read exactly: a size, a count, a token.</li><li>A verdict that needs words as well as colour: <span class="pl-pill" data-hue="coral">p-[10px]</span> off your scale.</li><li>The one value of the thing being pointed at.</li></ul>`),
-          sec('not', 'When not to', `<ul class="plain"><li>For a name: use a <b>tag</b>.</li><li>For an action: use the <b>action</b> button.</li><li>On everything at once: at rest, a drawing shows only names (visual, not labels).</li></ul>`),
+          sec('when', 'When to use it', `<ul class="plain"><li>A value someone needs to read exactly: a size, a count, a token.</li><li>A result that needs words as well as colour: <span class="pl-pill" data-hue="coral">p-[10px]</span> off your scale.</li><li>The value of whatever you’re pointing at.</li></ul>`),
+          sec('not', 'When not to', `<ul class="plain"><li>For a name: use a <b>tag</b>.</li><li>For an action: use the <b>action</b> button.</li><li>On everything at once. At rest, a drawing shows only names.</li></ul>`),
           sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-pill" data-hue="mint">s3 · 12</span></div><p>Join a token and its number with a middle dot.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-pill">The padding is 12px</span></div><p>Put a sentence in a pill.</p></div></div>`),
         ],
         code: [
@@ -199,8 +202,8 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
         ],
         accessibility: [
           sec('contrast', 'Contrast', `<p>Every pill's lettering clears 4.5:1 on its fill, in both schemes, measured here on the live tokens:</p><table class="tok"><thead><tr><th>Colour</th><th>Day</th><th>Night</th></tr></thead><tbody>${HUES.map(([h]) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td><td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td></tr>`).join('')}</tbody></table>`),
-          sec('meaning', 'Never colour alone', `<p>The value is always in the lettering, so a pill reads the same to someone who can't tell coral from mint. Where colour adds a verdict, a word or a legend says it too.</p>`),
-          sec('reading', 'Screen readers', `<p>A pill is plain text: it's read as its value. Don't put a button or a link inside one; use the action instead.</p>`),
+          sec('meaning', 'Never colour alone', `<p>The value is always in the lettering, so a pill reads the same to someone who can't tell coral from mint. Where colour shows a result, a word or legend says it too.</p>`),
+          sec('reading', 'Screen readers', `<p>A pill is plain text: it's read as its value. Don't put a button or a link inside one; use an action button instead.</p>`),
         ],
       };
       return { title: 'Pill', lede: 'One short value, coloured by what it means.', tabs: true, tab, sections: t[tab] ?? t.overview };
@@ -210,7 +213,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Every state, night and day'], ['Built', '<code>overlay/src/editor-primitives.js</code>, <code>stepper()</code>'], ['Used', 'Spacing and size in the element card, type in the text editor']])),
-          sec('intro', 'Introduction', `<p>A stepper picks a value on a scale: spacing, size, type. Each step is a bar as wide as its value, so you choose by shape, and only your theme’s steps can be pressed. Try it: point, press, use the arrows.</p><div class="stage">${demo('Padding', stepper, { steps: SPACING, current: 's3' })}</div>`),
+          sec('intro', 'Introduction', `<p>A stepper picks a value on a scale: spacing, size, type. Each step is a bar as wide as its value, so you can compare them at a glance. Only your theme’s steps can be picked. Try pointing, clicking or the arrow keys.</p><div class="stage">${demo('Padding', stepper, { steps: SPACING, current: 's3' })}</div>`),
           sec('related', 'Related components', `<div class="tiles">${card('#swatches/overview', 'Swatches', 'The same, for colour.', '')}${card('#segments/overview', 'Segments', 'Two to four named options.', '')}</div>`),
         ],
         style: [
@@ -222,7 +225,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
             ['Loading', 'Loading', { steps: [], busy: true }, 'The scale isn’t read yet.'],
             ['Refused', 'Refused', { steps: SPACING, current: 's3', picked: 's5' }, 'The write was refused; the pick stays for a retry.'],
           ])}`),
-          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Steps</b> bars as wide as their value, in a window of steps around the current one.</li><li><b>‹ ›</b> move the window to smaller or larger steps.</li><li><b>Name</b> a step’s name shows only while it’s pointed at or focused.</li></ul>`),
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Steps</b> bars as wide as their value, showing the steps around the current one.</li><li><b>‹ ›</b> move the window to smaller or larger steps.</li><li><b>Name</b> a step’s name shows only while it’s pointed at or focused.</li></ul>`),
         ],
         usage: [
           sec('when', 'When to use it', `<ul class="plain"><li>A value on an ordered scale: spacing, size, type, radius.</li><li>When the shape of the value helps you choose.</li></ul>`),
@@ -231,9 +234,9 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
         code: [sec('use', 'Use', `<pre><code>import { stepper, bind } from './editor-primitives.js';
 host.innerHTML = stepper('Padding', { steps, current: 's3' });
 bind(host, { pick: (name, i) => …, peek: (name, i) => …, unpeek: (name) => … });</code></pre><p>The state: <code>current</code>, <code>picked</code>, <code>drift: { n, label }</code>, <code>disabled</code>, <code>busy</code>, <code>start</code> (the window).</p>`)],
-        accessibility: [sec('keys', 'Keyboard and readers', keys), sec('meaning', 'Never colour alone', `<p>Drift is coral <i>and</i> a bar at its own width between two steps, so it reads without colour.</p>`)],
+        accessibility: [sec('keys', 'Keyboard and screen readers', keys), sec('meaning', 'Never colour alone', `<p>A value off the scale is coral <i>and</i> drawn at its own width between two steps, so it reads without colour.</p>`)],
       };
-      return { title: 'Stepper', lede: 'A value on a scale, chosen by its shape.', tabs: true, tab, sections: t[tab] ?? t.overview };
+      return { title: 'Stepper', lede: 'Pick a value on a scale by its size.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
     swatches: (tab = 'overview') => {
@@ -251,7 +254,7 @@ bind(host, { pick: (name, i) => …, peek: (name, i) => …, unpeek: (name) => �
         usage: [sec('when', 'When to use it', `<ul class="plain"><li>Any colour property: fill, text, border.</li><li>Order the chips as the theme does; don’t sort by hue.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>host.innerHTML = swatches('Fill', { steps: [{ token: 'surface', swatch: '#fff' }, …], current: 'surface' });
 bind(host, { pick: (name, i) => … });</code></pre>`)],
-        accessibility: [sec('keys', 'Keyboard and readers', keys), sec('names', 'Names, not just colours', `<p>Each chip is announced by its token’s name, so a colour can be chosen without seeing it.</p>`)],
+        accessibility: [sec('keys', 'Keyboard and screen readers', keys), sec('names', 'Names, not just colours', `<p>Each chip is announced by its token’s name, so a colour can be chosen without seeing it.</p>`)],
       };
       return { title: 'Swatches', lede: 'A colour from your theme.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
@@ -262,11 +265,11 @@ bind(host, { pick: (name, i) => … });</code></pre>`)],
           sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/editor-primitives.js</code>, <code>segments()</code> and <code>align()</code>'], ['Used', 'Direction, wrap, fit and alignment in the layout card']])),
           sec('intro', 'Introduction', `<p>Segments pick one of two to four named options, each with a glyph and a word. Alignment is the same idea on a 3×3 grid: the dot is where the children sit.</p><div class="stage col"><div class="srow"><span class="lbl">Direction</span>${demo('Direction', segments, { steps: DIRS, current: 'row' })}</div><div class="srow"><span class="lbl">Wrap</span>${demo('Wrap', segments, { steps: WRAP, current: 'nowrap' })}</div><div class="srow"><span class="lbl">Fit</span>${demo('Fit', segments, { steps: FIT, current: 'cover' })}</div><div class="srow"><span class="lbl">Align</span>${demo('Align', align, { steps: CELLS, current: 'center start' })}</div></div>`),
         ],
-        style: [sec('motion', 'Motion', `<p>The current fill slides to the option you pick, on the overlay’s spring; under reduced motion it moves at once.</p>`), sec('words', 'Words', `<p>Each option is a glyph <i>and</i> a short word: <b>Row</b>, <b>One line</b>, <b>Cover</b>. Never a glyph alone.</p>`)],
+        style: [sec('motion', 'Motion', `<p>The highlight slides to the option you pick, on the spring curve; under reduced motion it moves at once.</p>`), sec('words', 'Words', `<p>Each option is a glyph <i>and</i> a short word: <b>Row</b>, <b>One line</b>, <b>Cover</b>. Never a glyph alone.</p>`)],
         usage: [sec('when', 'When to use it', `<ul class="plain"><li>Two to four options with no order.</li><li>For more than four, or an ordered scale, use a <b>stepper</b>.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>host.innerHTML = segments('Direction', { steps: [{ token: 'row', label: 'Row', glyph: 'row' }, …], current: 'row' });
 host.innerHTML = align('Align', { steps: cells, current: 'center start' });</code></pre>`)],
-        accessibility: [sec('keys', 'Keyboard and readers', keys + `<p>Alignment moves in two dimensions: ← → across, ↑ ↓ between rows.</p>`)],
+        accessibility: [sec('keys', 'Keyboard and screen readers', keys + `<p>Alignment moves in two dimensions: ← → across, ↑ ↓ between rows.</p>`)],
       };
       return { title: 'Segments', lede: 'One of a few named options.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
@@ -275,39 +278,39 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/show.js</code>, <code>chipsHtml()</code> and <code>roll()</code>'], ['Used', 'The clean-up show: one chip per role while the page is cleaned up']])),
-          sec('intro', 'Introduction', `<p>A role chip is one decision in a clean-up: an icon for the property and its value. While the show plays that role, the chip lights in the role’s colour and its value rolls to where the role sets it, digit by digit. Press Play.</p><div class="stage col"><div class="chips-demo">${chipsHtml(ROLES)}</div><button type="button" class="pl-act quiet" data-play>Play the chips</button></div>`),
+          sec('intro', 'Introduction', `<p>A role chip stands for one change in a clean-up, with an icon for the property and its value. When the show reaches that change, the chip lights up in its colour and the value rolls to the new number. Press Play.</p><div class="stage col"><div class="chips-demo">${chipsHtml(ROLES)}</div><button type="button" class="pl-act quiet" data-play>Play the chips</button></div>`),
         ],
         style: [
-          sec('states', 'States', `<div class="stage col states-list"><div class="srow"><span class="lbl">Rest</span><div>${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Playing</span><div class="force-on">${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Done</span><div class="force-done">${chipsHtml(ROLES.slice(0, 3))}</div></div></div><p>At rest the chip is neutral and its icon quiet. Playing, a ring and a tint in the role’s colour, and the icon lights. Done, the icon keeps its colour.</p>`),
+          sec('states', 'States', `<div class="stage col states-list"><div class="srow"><span class="lbl">Rest</span><div>${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Playing</span><div class="force-on">${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Done</span><div class="force-done">${chipsHtml(ROLES.slice(0, 3))}</div></div></div><p>At rest the chip is neutral and its icon quiet. While playing, it gets a ring and tint in the role’s colour and the icon lights up. When done, the icon keeps its colour.</p>`),
           sec('hues', 'Colours', `<p>Roles take sky, lilac, mint, butter and pink in turn. Never coral: coral only ever means off your system.</p>`),
         ],
-        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show the decisions a clean-up makes, one at a time, while it makes them.</li><li>Not as buttons: a chip says what’s happening; it doesn’t do anything.</li></ul>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show the changes a clean-up makes, one at a time, as it makes them.</li><li>Don’t use them as buttons. A chip shows what’s happening; clicking it does nothing.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>import { SHOW_CSS, chipsHtml, roll } from './show.js';
 host.innerHTML = chipsHtml([{ label: 'padding', icon: BLOCK_ICONS.p, from: 12 }, …]);
 chip.setAttribute('data-on', ''); roll(chip, 16);   // light it, roll its value</code></pre>`)],
-        accessibility: [sec('read', 'Readers and motion', `<p>The chips are a list; each is labelled by its role. Under reduced motion the value changes at once instead of rolling.</p>`)],
+        accessibility: [sec('read', 'Screen readers and motion', `<p>The chips are a list; each is labelled by its role. Under reduced motion the value changes at once instead of rolling.</p>`)],
       };
-      return { title: 'Role chip', lede: 'One decision in a clean-up, playing.', tabs: true, tab, sections: t[tab] ?? t.overview };
+      return { title: 'Role chip', lede: 'One change in a clean-up, shown as it happens.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
     step: (tab = 'overview') => {
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Every state, night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>step()</code>'], ['Used', 'Gravity, on the project page']])),
-          sec('intro', 'Introduction', `<p>A step is one size of your scale: a ring that grows with the places that use it, named underneath. It’s how Gravity draws your scale.</p><div class="stage">${stepMark({ name: 'xs', n: 12, uses: 11 })}${stepMark({ name: 'sm', n: 14, uses: 15 })}${stepMark({ name: 'md', n: 16, uses: 8 })}${stepMark({ name: '2xl', n: 28, uses: 0 })}</div>`),
+          sec('intro', 'Introduction', `<p>A step is one size of your scale: a ring that grows with the number of places using it, with its name underneath. Gravity uses steps to draw your scale.</p><div class="stage">${stepMark({ name: 'xs', n: 12, uses: 11 })}${stepMark({ name: 'sm', n: 14, uses: 15 })}${stepMark({ name: 'md', n: 16, uses: 8 })}${stepMark({ name: '2xl', n: 28, uses: 0 })}</div>`),
           sec('related', 'Related components', `<div class="tiles">${card('#place/overview', 'Place', 'The places around a step.', placeMarks(6, 'off') + placeMarks(4, 'typed'))}${card('#tag/overview', 'Tag', 'Names the step.', '<span class="pl-tag">sm</span>')}</div>`),
         ],
         style: [
           sec('states', 'States', `<div class="stage col states-list">${STEP_STATES.map(([st, name, n, uses, note]) => `<div class="srow"><span class="lbl">${st}</span><div class="demo">${stepMark({ name, n, uses, took: st === 'pulled' ? 87 : 0, state: st })}<span class="say">${note}</span></div></div>`).join('')}</div>`),
-          sec('quiet', 'Quiet', `<p>On a page’s drawing, wrap steps in <code>.sc-quiet</code>: the name becomes lilac words on a plate, and the pill appears only while the step is pointed at.</p><div class="stage sc-quiet">${STEP_STATES.slice(0, 4).map(([st, name, n, uses]) => stepMark({ name, n, uses, took: st === 'pulled' ? 87 : 0, state: st })).join('')}</div>`),
+          sec('quiet', 'Quiet', `<p>On a page’s drawing, wrap steps in <code>.sc-quiet</code>: the name shows as lilac text on a small background, and the pill appears only while the step is pointed at.</p><div class="stage sc-quiet">${STEP_STATES.slice(0, 4).map(([st, name, n, uses]) => stepMark({ name, n, uses, took: st === 'pulled' ? 87 : 0, state: st })).join('')}</div>`),
           sec('size', 'Size', `<p>The ring’s radius is 9px plus 1.7× the square root of the places it holds, so a step with four times the places is twice as wide.</p>`),
         ],
-        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To draw a scale and how it’s used.</li><li>One step per token of your theme; a value off the scale is drawn <b>off</b>, never as a step.</li></ul>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To draw a scale and how it’s used.</li><li>One step per token of your theme; a value that isn’t on the scale is drawn as a place, never as a step.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>import { SCALE_CSS, step } from './scale-marks.js';
 host.innerHTML = step({ name: 'sm', n: 14, uses: 15 });               // rest
 host.innerHTML = step({ name: 'xs', n: 12, uses: 11, took: 87, state: 'pulled' });
 mark.dataset.state = 'pointed';   // a step changes state in place; its pill follows</code></pre>`)],
-        accessibility: [sec('read', 'Readers', `<p>A drawing of steps is a picture: give its container <code>role="img"</code> and a table of the numbers for readers, as Gravity does.</p>`)],
+        accessibility: [sec('read', 'Screen readers', `<p>A drawing of steps is a picture: give its container <code>role="img"</code> and a table of the numbers for readers, as Gravity does.</p>`)],
       };
       return { title: 'Step', lede: 'One size of your scale.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
@@ -317,17 +320,17 @@ mark.dataset.state = 'pointed';   // a step changes state in place; its pill fol
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>place()</code> and <code>places()</code>'], ['Used', 'Gravity draws hundreds of them on a canvas, in the same colours']])),
-          sec('intro', 'Introduction', `<p>A place is one spot in your code, as a 4px square in its verdict’s colour. On their own they’re tiny; together they show where your code really is.</p><div class="stage">${placeMarks(9, 'off')}${placeMarks(14, 'typed')}${stepMark({ name: 'xs', n: 12, uses: 11 })}${placeMarks(6, 'off')}${placeMarks(11, 'off')}${stepMark({ name: 'sm', n: 14, uses: 15 })}${placeMarks(4, 'typed')}</div>`),
+          sec('intro', 'Introduction', `<p>A place is one spot in your code, drawn as a 4px square coloured by its result. One is tiny on its own; hundreds together show how your code actually uses the scale.</p><div class="stage">${placeMarks(9, 'off')}${placeMarks(14, 'typed')}${stepMark({ name: 'xs', n: 12, uses: 11 })}${placeMarks(6, 'off')}${placeMarks(11, 'off')}${stepMark({ name: 'sm', n: 14, uses: 15 })}${placeMarks(4, 'typed')}</div>`),
         ],
         style: [
           sec('tones', 'Colours', `<div class="stage col states-list">${tones.map(([tone, name, h]) => `<div class="srow"><span class="lbl">${h}</span><div class="demo"><span class="trio">${placeMark(tone)}</span><span class="say">${name}</span></div></div>`).join('')}</div>`),
           sec('show', 'How it shows', `<div class="stage col states-list">${[['rest', 'At rest'], ['dim', 'Another step is pointed at: it steps back'], ['lit', 'Its step is pointed at: it grows and rings'], ['arrive', 'Arriving: it pops in']].map(([sh, note]) => `<div class="srow"><span class="lbl">${sh}</span><div class="demo"><span class="trio">${tones.map(([tone]) => placeMark(tone, sh)).join('')}</span><span class="say">${note}</span></div></div>`).join('')}</div>`),
         ],
-        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show where many things are at once. One place is one spot in code; never a count.</li><li>With a legend: the colour says the verdict, the legend says it once in words.</li></ul>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show where many things are at once. One place is one spot in code; never a count.</li><li>With a legend, so the colours are explained once in words.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>import { place, places } from './scale-marks.js';
 host.innerHTML = place('typed');          // one
 host.innerHTML = places(14, 'off');      // a column of 14</code></pre><p>For hundreds, draw them on a canvas in <code>--pl-coral</code>, <code>--pl-butter</code> and <code>--pl-mint</code>, read from the tokens, as Gravity does.</p>`)],
-        accessibility: [sec('read', 'Readers', `<p>Places are decoration on their own; the numbers they add up to belong in text: a count, a table.</p>`)],
+        accessibility: [sec('read', 'Screen readers', `<p>Screen readers skip places. Put the totals in text, like a count or a table.</p>`)],
       };
       return { title: 'Place', lede: 'One spot in your code.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
@@ -336,19 +339,19 @@ host.innerHTML = places(14, 'off');      // a column of 14</code></pre><p>For hu
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>count()</code> and <code>rollCount()</code>'], ['Used', 'Gravity’s footer']])),
-          sec('intro', 'Introduction', `<p>A count is a number that matters, with the sentence that says what it counts. When it changes it rolls to its new value digit by digit, so you see it climb. Press Snap.</p><div class="stage">${countMark(45, 'places use your scale')}<button type="button" class="pl-act" data-roll style="margin-left:auto">Snap to your scale</button></div>`),
+          sec('intro', 'Introduction', `<p>A count is a key number with a short line saying what it counts. When it changes, each digit rolls to its new value. Press Snap.</p><div class="stage">${countMark(45, 'places use your scale')}<button type="button" class="pl-act" data-roll style="margin-left:auto">Snap to your scale</button></div>`),
         ],
         style: [
-          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Figure</b> <code>--pl-page-figure</code>, 32/36 600, tabular figures, tracking −0.025em.</li><li><b>Sentence</b> <code>--pl-page-small</code> in the second ink, right under it: one block, the figure first.</li></ul>`),
-          sec('motion', 'Motion', `<p>Each digit is a column of 0–9 that slides to its digit on the overlay’s spring, in 520ms. A change in length draws the new number as zeroes first, then rolls.</p>`),
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Figure</b> <code>--pl-page-figure</code>, 32/36 600, tabular figures, tracking −0.025em.</li><li><b>Sentence</b> <code>--pl-page-small</code> in the secondary text colour, right under the number.</li></ul>`),
+          sec('motion', 'Motion', `<p>Each digit is a column of 0–9 that slides to its digit on the spring curve, in 520ms. A change in length draws the new number as zeroes first, then rolls.</p>`),
         ],
-        usage: [sec('when', 'When to use it', `<ul class="plain"><li>For the one number a surface is about.</li><li>Say what changed in the sentence: “places use your scale” becomes “places on your scale, if every size snapped to it”.</li></ul>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>For the main number on a card or page.</li><li>Say what changed in the sentence: “places use your scale” becomes “places on your scale, if every size snapped to it”.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>import { count, rollCount } from './scale-marks.js';
 host.innerHTML = count(45, 'places use your scale');
 rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
-        accessibility: [sec('read', 'Readers and motion', `<p>The rolling digits are hidden from readers; announce the settled number in a polite live region, as Gravity does. Under reduced motion the number changes at once.</p>`)],
+        accessibility: [sec('read', 'Screen readers and motion', `<p>The rolling digits are hidden from readers; announce the settled number in a polite live region, as Gravity does. Under reduced motion the number changes at once.</p>`)],
       };
-      return { title: 'Count', lede: 'A number that matters, and what it counts.', tabs: true, tab, sections: t[tab] ?? t.overview };
+      return { title: 'Count', lede: 'A key number and what it counts.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
     readout: (tab = 'overview') => {
@@ -356,111 +359,111 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       const stepRead = `<div class="gv-read"><b>sm · 14px</b>15 places use it<br>87 places type a size close to it<br><span class="to">Click to pull them in</span></div>`;
       const t = {
         overview: [
-          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/gravity.js</code>, the <code>.gv-read</code> plate'], ['Used', 'Gravity, for the step or cluster you point at']])),
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/gravity.js</code>, the <code>.gv-read</code> class'], ['Used', 'Gravity, for the step or cluster you point at']])),
           sec('intro', 'Introduction', `<p>A readout says what you’re pointing at, in words: what it is, how it’s written in your code, and what to do with it. Only one shows at a time, beside the pointer, and it goes when you move away.</p><div class="stage ro-stage">${cluster}${stepRead}</div>`),
         ],
         style: [
-          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Title</b> 600 14/20 in the ink: the thing and how much of it (“13px · 41 places”).</li><li><b>Code</b> <code>--pl-card-code</code> in the second ink: how it’s written, most common first.</li><li><b>Outcome</b> in the ink: where it would go, or what a click does.</li><li><b>Plate</b> <code>--pl-paper-2</code>, a hairline ring in <code>--pl-rule</code> and a soft drop shadow, so it lifts off the drawing under it.</li></ul>`),
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Title</b> 600 14/20 in the main text colour: the size and how many places use it (“13px · 41 places”).</li><li><b>Code</b> <code>--pl-card-code</code> in the secondary text colour: how it’s written, most common first.</li><li><b>Next step</b> in the main text colour: where it would move, or what clicking does.</li><li><b>Background</b> <code>--pl-paper-2</code>, a hairline ring in <code>--pl-rule</code> and a soft drop shadow, so it stands out from the drawing behind it.</li></ul>`),
           sec('place', 'Placement', `<p>14px right of and below the pointer; a step’s readout sits under its mark. It’s kept inside the plot, so it never spills off the card.</p>`),
-          sec('open', 'Open', `<ul class="plain"><li>The plate’s 10px corners sit between two tokens (<code>--pl-radius-row</code> 8, <code>--pl-radius-card</code> 12) and should move onto one.</li></ul>`),
+          sec('open', 'Open', `<ul class="plain"><li>The readout’s 10px corners sit between two tokens (<code>--pl-radius-row</code> 8, <code>--pl-radius-card</code> 12) and should move onto one.</li></ul>`),
         ],
-        usage: [sec('when', 'When to use it', `<ul class="plain"><li>For the one thing pointed at. Never for something at rest: at rest a drawing shows only names.</li><li>Lead with the number, then the code as written, then the way out. Three lines at most.</li></ul>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>Only for what you’re pointing at. At rest, a drawing shows only names.</li><li>Start with the number, then the code as written, then what to do. Three lines at most.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>&lt;div class="gv-read"&gt;
   &lt;b&gt;13px · 41 places&lt;/b&gt;
   &lt;code&gt;text-[13px] ×38&lt;/code&gt;
   &lt;span class="to"&gt;Nearest on your scale: sm (14px)&lt;/span&gt;
 &lt;/div&gt;</code></pre><p>Part of <code>GRAVITY_CSS</code>; Gravity places it and fills it as you point.</p>`)],
-        accessibility: [sec('read', 'Readers', `<p>The plate ignores the pointer, so it never gets in the way of what’s under it. Readers don’t get the plate: Gravity says the same thing in its polite live region when a step is focused from the keyboard.</p>`)],
+        accessibility: [sec('read', 'Screen readers', `<p>The readout ignores the pointer, so it never blocks what’s under it. Screen readers don’t read it; Gravity announces the same text in a live region when a step gets keyboard focus.</p>`)],
       };
-      return { title: 'Readout', lede: 'What you’re pointing at, said in words.', tabs: true, tab, sections: t[tab] ?? t.overview };
+      return { title: 'Readout', lede: 'Describes what you’re pointing at.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
     spacing: () => ({
       title: 'Spacing',
-      lede: 'One ladder, 2 to 24px, mostly 4 apart, for everything inside a card. The gaps between sections of a page sit above it.',
+      lede: 'One scale from 2 to 24px, mostly in steps of 4, for everything inside a card. Gaps between sections of a page are larger and aren’t on this scale yet.',
       sections: [
-        sec('ladder', 'The ladder', `<div class="ladder">${SPACE.map(([t, n]) => `<div class="lr"><code>${t}</code><span class="bar" style="width:${n * 6}px"></span><span>${n}px</span></div>`).join('')}</div><p>Six steps of the ladder are 4 apart; the two smallest, 2 and 6, are for hairline adjustments inside a control.</p>`),
-        sec('card', 'Card geometry', `<table class="tok"><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>${[['--pl-card-pad', '16px', 'A card’s inset, and the gap between its sections'], ['--pl-card-w', '360px', 'The width of a card held over your page'], ['--pl-row-h', '40px', 'A row: a property and its amount, then its reading'], ['--pl-tag-h', '22px', 'A tag’s height'], ['--pl-drop', '16px', 'The plumb line, from an element’s edge to its tag'], ['--pl-tick', '8px', 'The reticle’s corner arm']].map(([t, v, u]) => `<tr><td><code>${t}</code></td><td>${v}</td><td>${u}</td></tr>`).join('')}</tbody></table>`),
-        sec('rules', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="gapdemo" style="gap:var(--pl-space-4)"><i></i><i></i><i></i></span></div><p>Space related things a step apart: 8px between pills in a row.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="gapdemo" style="gap:10px"><i></i><i></i><i></i></span></div><p>Use a value between steps (10px). Plumber would flag it on your page; it shouldn’t on its own.</p></div></div>`),
-        sec('gap', 'Known gap', `<p>A page’s larger gaps (32, 48, 64px between sections) are written in place, not tokens yet. <span class="pl-pill" data-hue="butter">Known gap</span> The next step is a page spacing ladder beside the type scale.</p>`),
+        sec('ladder', 'The ladder', `<div class="ladder">${SPACE.map(([t, n]) => `<div class="lr"><code>${t}</code><span class="bar" style="width:${n * 6}px"></span><span>${n}px</span></div>`).join('')}</div><p>Most steps are 4px apart. 2 and 6 are for small adjustments inside a control.</p>`),
+        sec('card', 'Card geometry', `<table class="tok"><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>${[['--pl-card-pad', '16px', 'A card’s inset, and the gap between its sections'], ['--pl-card-w', '360px', 'The width of a card shown over your page'], ['--pl-row-h', '40px', 'A row with two lines: the property and its value, then its reading'], ['--pl-tag-h', '22px', 'A tag’s height'], ['--pl-drop', '16px', 'The line from an element’s edge to its tag'], ['--pl-tick', '8px', 'Each corner tick around the selected element']].map(([t, v, u]) => `<tr><td><code>${t}</code></td><td>${v}</td><td>${u}</td></tr>`).join('')}</tbody></table>`),
+        sec('rules', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="gapdemo" style="gap:var(--pl-space-4)"><i></i><i></i><i></i></span></div><p>Space related things a step apart: 8px between pills in a row.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="gapdemo" style="gap:10px"><i></i><i></i><i></i></span></div><p>Use a value between steps, like 10px. Plumber flags this on your page, so it shouldn’t do it itself.</p></div></div>`),
+        sec('gap', 'Known gap', `<p>A page’s larger gaps (32, 48 and 64px between sections) are typed in place; they aren’t tokens yet. Next: a spacing scale for pages, to match the page type scale.</p>`),
       ],
     }),
 
     shape: () => ({
       title: 'Shape',
-      lede: 'Five corners, from a 2px mark to a 12px card: the bigger and more held the thing, the rounder. Lines are always 1px.',
+      lede: 'Five corner sizes, from 2px on a mark to 12px on a card. Bigger things get rounder corners. Lines are always 1px.',
       sections: [
         sec('radii', 'Corners', `<div class="radii">${RADII.map(([t, n, use]) => `<div class="rc"><span class="sq" style="border-radius:var(${t})"></span><b>${n}px</b><code>${t}</code><span>${use}</span></div>`).join('')}</div>`),
-        sec('nesting', 'Nesting', `<p>A rounded thing inside another loses the space between them from its corner, so the two curves run parallel: a 12px card with 4px of padding holds an 8px row.</p><div class="stage"><div class="nest"><div class="nest-in"></div></div></div>`),
-        sec('lines', 'Lines', `<p>Every line the instrument draws is <code>--pl-line</code>, 1px, snapped to the screen’s pixels so it’s never blurred. Hairlines inside a card are <code>--pl-rule</code>.</p>`),
+        sec('nesting', 'Nesting', `<p>A rounded box inside another takes the outer radius minus the space between them, so the curves stay parallel. A 12px card with 4px of padding holds an 8px row.</p><div class="stage"><div class="nest"><div class="nest-in"></div></div></div>`),
+        sec('lines', 'Lines', `<p>Every line Plumber draws is <code>--pl-line</code>, 1px, snapped to screen pixels so it stays sharp. Dividers inside a card are <code>--pl-rule</code>.</p>`),
       ],
     }),
 
     elevation: () => ({
       title: 'Elevation',
-      lede: 'Two heights only: a card that’s held, and a tag that floats on the page. Each has a night version, deeper and darker.',
+      lede: 'Two shadow levels: one for cards and one for tags. Each has a darker version for night.',
       sections: [
-        sec('levels', 'Levels', `<div class="elev"><div class="el" style="box-shadow:var(--pl-shadow-card)"><b>Card</b><code>--pl-shadow-card</code><span>A hairline, a contact shadow, and a long soft one: held, not floating far.</span></div><div class="el small" style="box-shadow:var(--pl-shadow-tag)"><b>Tag</b><code>--pl-shadow-tag</code><span>A hairline and a short shadow: sits just above the page.</span></div></div>`),
-        sec('rules', 'Rules', `<ul class="plain"><li>Nothing floats higher than a card. A third height would mean a third kind of thing; there isn’t one.</li><li>Every shadow starts with a 1px hairline, so edges hold up on any page, light or dark.</li></ul>`),
+        sec('levels', 'Levels', `<div class="elev"><div class="el" style="box-shadow:var(--pl-shadow-card)"><b>Card</b><code>--pl-shadow-card</code><span>A 1px outline, a tight shadow and a long soft one. The card sits just above the page.</span></div><div class="el small" style="box-shadow:var(--pl-shadow-tag)"><b>Tag</b><code>--pl-shadow-tag</code><span>A 1px outline and a short shadow.</span></div></div>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>Nothing sits higher than a card. Don’t add a third level.</li><li>Every shadow starts with a 1px outline, so edges stay visible on light and dark pages.</li></ul>`),
       ],
     }),
 
     motion: () => ({
       title: 'Motion',
-      lede: 'Quick, with a little bounce for what appears, and nothing that loops but the marching ants. Under reduced motion every timing is zero.',
+      lede: 'Motion is quick. Things that appear get a slight bounce, and only the marching ants loop. With reduced motion on, every duration is zero.',
       sections: [
         sec('curves', 'Curves', `<p>Press a curve to play it.</p><div class="curves">${CURVES.map(([t, n, use]) => `<button type="button" class="cv" data-curve="${t}"><span class="track"><span class="ball" style="transition-timing-function:var(${t})"></span></span><b>${n}</b><code>${t}</code><span>${use}</span></button>`).join('')}</div>`),
         sec('timing', 'Timing', `<div class="ladder">${DURS.map(([t, ms, use]) => `<div class="lr"><code>${t}</code><span class="bar time" style="width:${ms * 0.8}px"></span><span>${ms}ms · ${use}</span></div>`).join('')}</div>`),
-        sec('pop', 'The pop', `<p>Anything that appears (a pill, a tag, a readout) pops from 0.92 on <code>--pl-spring-pop</code> in 260ms.</p><div class="stage"><span class="pl-tag" data-pop>Models</span><span class="pl-pill" data-hue="mint" data-pop>s3 · 12</span><button type="button" class="pl-act quiet" data-replay>Pop again</button></div>`),
-        sec('reduced', 'Reduced motion', `<p>When the system asks for less motion, the duration tokens become 0ms: nothing pops, slides or rolls, and the ants stand still. States still change, at once.</p>`),
+        sec('pop', 'The pop', `<p>Anything that appears, like a pill, tag or readout, scales up from 92% on <code>--pl-spring-pop</code> in 260ms.</p><div class="stage"><span class="pl-tag" data-pop>Models</span><span class="pl-pill" data-hue="mint" data-pop>s3 · 12</span><button type="button" class="pl-act quiet" data-replay>Pop again</button></div>`),
+        sec('reduced', 'Reduced motion', `<p>When reduced motion is on, every duration token becomes 0ms. Nothing pops, slides or rolls, and the ants stop. Changes still happen, just instantly.</p>`),
       ],
     }),
 
     texture: () => ({
       title: 'Texture',
-      lede: 'Patterns from the old Mac, each meaning one thing. They say what a part of the page is without a single word.',
+      lede: 'Patterns from the classic Mac, each with one meaning. They show which part of an element you’re looking at without a label.',
       sections: [
-        sec('patterns', 'Patterns', `<div class="tex">${[['pl-hatch', 'Hatch', 'Padding: 45° lines, 1px at 6px pitch'], ['pl-dither', 'Dither', 'Margin: a 50% dot dither'], ['pl-checker', 'Checker', 'A transparent fill'], ['pl-ants', 'Marching ants', 'Picked, not written yet: the dashes march'], ['pl-rainbow', 'Rainbow', 'Plumber’s mark: used once, nowhere else']].map(([c, n, use]) => `<div class="tx"><span class="sw ${c}"></span><b>${n}</b><code>.${c}</code><span>${use}</span></div>`).join('')}</div>`),
+        sec('patterns', 'Patterns', `<div class="tex">${[['pl-hatch', 'Hatch', 'Padding: 1px lines at 45°, 6px apart'], ['pl-dither', 'Dither', 'Margin: a fine dot pattern'], ['pl-checker', 'Checker', 'A transparent fill'], ['pl-ants', 'Marching ants', 'Picked but not saved yet; the dashes move'], ['pl-rainbow', 'Rainbow', 'Plumber’s logo, used nowhere else']].map(([c, n, use]) => `<div class="tx"><span class="sw ${c}"></span><b>${n}</b><code>.${c}</code><span>${use}</span></div>`).join('')}</div>`),
         sec('on-page', 'On your page', `<p>The box model draws padding as hatch and margin as dither in the band’s own colour: sky when it’s on your scale, coral when it’s off.</p><div class="stage"><div class="bm-demo"><div class="pad pl-hatch"><div class="inner">Opus 5.5</div></div></div><div class="bm-demo off"><div class="pad pl-hatch"><div class="inner">Opus 5.5</div></div></div></div>`),
       ],
     }),
 
     icons: () => ({
       title: 'Iconography',
-      lede: 'Two sets: block icons for the parts of an element, and glyphs for the families Plumber judges. Each draws the thing itself, never an action.',
+      lede: 'Two sets: block icons for the parts of an element, and glyphs for the kinds of problem Plumber checks. Each icon shows a thing, not an action.',
       sections: [
-        sec('blocks', 'Block icons', `<p>One per part of the box model, on a 16px grid, drawn in the band’s own colour.</p><div class="icons">${Object.entries(BLOCK_NAMES).map(([k, n]) => `<div class="ic"><span class="ki">${BLOCK_ICONS[k]}</span><b>${n}</b><code>BLOCK_ICONS.${k}</code></div>`).join('')}<div class="ic"><span class="ki off">${BLOCK_ICONS.p}</span><b>Off your scale</b><code>coral</code></div></div>`),
-        sec('glyphs', 'Family glyphs', `<p>Drawn with a drafting pen: one constant 1px line at every size, square ends, sharp joins, on a 24-unit grid.</p><div class="icons glyphs">${Object.keys(GLYPHS).map((k) => `<div class="ic"><span class="gl">${glyph(k)}</span><b>${FAMILY_NAMES[k] ?? k}</b><code>${k}</code></div>`).join('')}</div>`),
-        sec('rules', 'Rules', `<ul class="plain"><li>An icon draws the property, never an action: no arrows, cursors, locks or toggles.</li><li>Fills only where a part is solid by meaning: a sampled colour, a shadow, the plumb bob.</li><li>An icon beside a word repeats it, so it’s hidden from screen readers.</li></ul>`),
+        sec('blocks', 'Block icons', `<p>One for each part of the box model, on a 16px grid, in that part’s colour.</p><div class="icons">${Object.entries(BLOCK_NAMES).map(([k, n]) => `<div class="ic"><span class="ki">${BLOCK_ICONS[k]}</span><b>${n}</b><code>BLOCK_ICONS.${k}</code></div>`).join('')}<div class="ic"><span class="ki off">${BLOCK_ICONS.p}</span><b>Off your scale</b><code>coral</code></div></div>`),
+        sec('glyphs', 'Family glyphs', `<p>Drawn on a 24-unit grid with a 1px line at every size, square ends and sharp corners.</p><div class="icons glyphs">${Object.keys(GLYPHS).map((k) => `<div class="ic"><span class="gl">${glyph(k)}</span><b>${FAMILY_NAMES[k] ?? k}</b><code>${k}</code></div>`).join('')}</div>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>An icon shows the property, not an action. No arrows, cursors, locks or toggles.</li><li>Fill a shape only when the thing itself is solid, like a colour sample or a shadow.</li><li>An icon beside a word repeats it, so it’s hidden from screen readers.</li></ul>`),
       ],
     }),
 
     voice: () => ({
       title: 'Voice and tone',
-      lede: 'Plumber talks like a careful colleague: plain words a tired reader gets on the first pass, about your code, never about Plumber’s insides.',
+      lede: 'Plumber writes plainly and about your code, in words a tired reader understands the first time.',
       sections: [
         sec('rules', 'Rules', `<div class="rules">
-          <div><b>Say it plainly</b><p>Words a tired reader gets first time. No idioms, no jokes that don’t travel.</p></div>
+          <div><b>Say it plainly</b><p>Use everyday words. No idioms, and no jokes that don’t translate.</p></div>
           <div><b>Talk to you</b><p>“Your theme has 10 sizes”, not “the user’s theme”. Errors don’t say “we”.</p></div>
-          <div><b>No internal names</b><p>Never a rule id, a CSS variable or a word only Plumber’s code uses. Say what it means for your page.</p></div>
+          <div><b>No internal names</b><p>Don’t show rule IDs, CSS variables or words only Plumber’s code uses. Say what it means for the page.</p></div>
           <div><b>Buttons start with a verb</b><p>“Snap to your scale”, “Write 2”, “Undo”. Never “OK”.</p></div>
-          <div><b>Errors say how to fix</b><p>What happened, then the one thing to do, beside where it broke. No “oops”, no exclamation marks.</p></div>
-          <div><b>Whole sentences</b><p>Built whole, with plurals done properly: “1 place”, “2 places”, never “place(s)”.</p></div></div>`),
+          <div><b>Errors say how to fix</b><p>Say what happened, then what to do, next to where it happened. No “oops”, no exclamation marks.</p></div>
+          <div><b>Whole sentences</b><p>Write complete sentences and handle plurals properly: “1 place”, “2 places”, never “place(s)”.</p></div></div>`),
         sec('tone', 'Tone by moment', `<table class="tok"><thead><tr><th>Moment</th><th>Tone</th><th>Plumber says</th></tr></thead><tbody>
           <tr><td>Waiting</td><td>Neutral, short</td><td>${DOCK.starting}</td></tr>
-          <tr><td>At rest</td><td>A hint, never a nag</td><td>${DOCK.idle}</td></tr>
-          <tr><td>A mode</td><td>What the next key does</td><td>${DOCK.scoped}</td></tr>
+          <tr><td>At rest</td><td>A hint, not a nag</td><td>${DOCK.idle}</td></tr>
+          <tr><td>A mode</td><td>What the next key does</td><td>${DOCK.blueprintScoped}</td></tr>
           <tr><td>History</td><td>What it is, what you can do</td><td>${DOCK.historyTitle}</td></tr>
           <tr><td>Blocked</td><td>Calm: why, then what to do</td><td>${TIMELINE.changedLater}</td></tr>
-          <tr><td>Failed</td><td>Plain, with the fix</td><td>${DOCK.failed}</td></tr></tbody></table><p>Every line above is the live string from <code>overlay/src/words.js</code>, the one place the overlay’s copy lives.</p>`),
+          <tr><td>Failed</td><td>Plain, with the fix</td><td>${DOCK.failed}</td></tr></tbody></table><p>Each line above is the actual string from <code>overlay/src/words.js</code>, where all of the overlay’s copy lives.</p>`),
         sec('rewrites', 'Before and after', `<p>Real rewrites from Plumber’s own copy.</p><div class="dd">
-          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><code>0 new findings</code><code>no findings</code></div><p>Two lines that contradict each other, in Plumber’s words.</p></div>
-          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Nothing new since your baseline.</span></div><p>One sentence that’s true.</p></div>
-          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><span>Changed case to As written</span></div><p>A button’s label dropped into a sentence.</p></div>
-          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Changed case to as written</span></div><p>The word as it reads inside a sentence.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><code>0 new findings</code><code>no findings</code></div><p>Two lines that contradict each other.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Nothing new since your baseline.</span></div><p>One accurate sentence.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><span>Changed case to As written</span></div><p>A button label pasted into a sentence.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Changed case to as written</span></div><p>Lowercase, as it reads mid-sentence.</p></div>
           <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><span>Alt+B to close</span></div><p>On a view where Alt+B widens, it didn’t close.</p></div>
-          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>${DOCK.scoped}</span></div><p>Says what the key will do here.</p></div></div>`),
-        sec('home', 'Where copy lives', `<p>All of the overlay’s words are in <code>overlay/src/words.js</code>, never written inline in a component. A change of wording is one change, everywhere.</p>`),
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>${DOCK.blueprintScoped}</span></div><p>Says what the key will do here.</p></div></div>`),
+        sec('home', 'Where copy lives', `<p>All of the overlay’s words are in <code>overlay/src/words.js</code>, never written inline in a component. Change a word once and it changes everywhere.</p>`),
       ],
     }),
 
@@ -474,19 +477,19 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
     boxmodel: () => ({
       title: 'Box model',
-      lede: 'How Plumber draws an element on your page: each part of its box in its own pattern, in the colour of its verdict. At rest only the name shows; point at a band for its value.',
+      lede: 'How Plumber draws an element on your page: each part of its box in its own pattern, coloured by whether it’s on your scale. At rest only the name shows; point at a band for its value.',
       sections: [
-        sec('live', 'Live', `<p>The same renderer the overlay uses, drawn over the card below from its real layout. One side of its padding is off the scale: it’s coral. Point at a band.</p><div class="stage bm-stage"><div class="bm-spec" id="bm-spec"><span class="a">Opus 5.5</span><span class="b">High</span></div></div>`),
+        sec('live', 'Live', `<p>The overlay’s own renderer, drawn over the card below using its real layout. One side’s padding isn’t on the scale, so it’s coral. Point at a band to see its value.</p><div class="stage bm-stage"><div class="bm-spec" id="bm-spec"><span class="a">Opus 5.5</span><span class="b">High</span></div></div>`),
         sec('parts', 'Parts', `<table class="tok"><thead><tr><th>Part</th><th>Drawn as</th><th>Its value</th></tr></thead><tbody>${[['p', 'Padding', 'The 45° hatch, per side', 's3 · 12, on the side'], ['m', 'Margin', 'A dot dither outside the border', 'On the side'], ['g', 'Gap', 'Stripes across each gap', 'In the first gap'], ['b', 'Border', 'A band its own width', 'At the top-left corner'], ['r', 'Radius', 'An arc at each corner', 'Beside the arc'], ['line', 'Type', 'Each line as a faint band, a dashed baseline', 'At the first line'], ['c', 'Size', 'A 1px outline', 'W Fill 500 · H Hug 64']].map(([k, n, how, v]) => `<tr><td><span class="inline-ic">${BLOCK_ICONS[k]}</span>${n}</td><td>${how}</td><td>${v}</td></tr>`).join('')}</tbody></table>`),
-        sec('rules', 'Rules', `<ul class="plain"><li>Zero draws nothing.</li><li>A value sits on its side, never over the content, and appears only for the band you point at.</li><li>Sky when a value is on your scale, coral when it’s off. Everything is drawn by the overlay, never on your page.</li></ul>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>A value of zero isn’t drawn.</li><li>A value sits on its side, never over the content, and appears only for the band you point at.</li><li>Sky when a value is on your scale, coral when it’s off. Plumber draws on its own layer and never changes your page.</li></ul>`),
       ],
     }),
 
     gravity: () => ({
       title: 'Gravity',
-      lede: 'Every place in your code that types a size by hand, around the steps of your scale. The project page leads with it.',
+      lede: 'Every place in your code that sets a text size by hand, grouped around the sizes in your scale. It’s the first thing on the project page.',
       sections: [
-        sec('live', 'Live, on crafting-ui', `<p>Real numbers from crafting-ui. Point at a step, click one to pull its places in, or snap them all.</p><div id="gravity-live"></div>`),
+        sec('live', 'Live, on crafting-ui', `<p>Real numbers from crafting-ui. Point at a size, click it to pull nearby places onto it, or snap them all.</p><div id="gravity-live"></div>`),
         sec('built', 'Built from', `<div class="tiles">${card('#step/overview', 'Step', 'One size of your scale.', '<span class="pl-tag">sm</span>')}${card('#place/overview', 'Place', 'One spot in your code.', placeMarks(6, 'off') + placeMarks(4, 'typed'))}${card('#count/overview', 'Count', 'The number that rolls.', '<b style="font:var(--pl-page-figure)">621</b>')}${card('#action/overview', 'Action', 'Snap to your scale.', '<span class="pl-act" style="pointer-events:none">Snap</span>')}</div>`),
         sec('states', 'States', `<ul class="plain"><li><b>Arrival</b> steps appear left to right; places fall onto their spots with one small bounce.</li><li><b>Point</b> a step shows its value; its places come forward. A cluster says its size and how it’s written.</li><li><b>Pull</b> a click pulls one step’s places in; Snap pulls them all, nearest first, and the count rolls.</li><li><b>Reduced motion</b> no drift, no fall: places sit still and move at once.</li></ul>`),
       ],
@@ -494,66 +497,66 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
     show: () => ({
       title: 'The clean-up show',
-      lede: 'When Plumber cleans up a page it plays each decision, one at a time: a chip lights, the places it changes are marked in its colour and pattern, its value rolls, and the page eases to it.',
+      lede: 'When Plumber cleans up a page, it shows each change one at a time: a chip lights up, the places it changes are marked in its colour and pattern, its value rolls, and the page animates to the new value.',
       sections: [
         sec('live', 'Live', `<p>Press Play: each role lights in turn, and its places on the card are marked in the role’s colour and pattern.</p><div class="stage col show-stage"><div class="chips-demo">${chipsHtml(ROLES.slice(0, 3))}</div><div class="show-card"><div class="row1"><span class="mk-pad" data-role="0"></span><span class="t">Reasoned for 6.2s</span></div><div class="row2"><span class="pill-a">Search</span><span class="mk-gap" data-role="1"></span><span class="pill-a">Read</span></div><span class="mk-mar" data-role="2"></span></div><button type="button" class="pl-act quiet" data-show>Play the show</button></div>`),
-        sec('beat', 'One beat per role', `<table class="tok"><thead><tr><th>Beat</th><th>Time</th><th>What happens</th></tr></thead><tbody><tr><td>In</td><td>240ms</td><td>The marks sweep onto the places</td></tr><tr><td>Move</td><td>520ms</td><td>The value rolls; the places ease to it</td></tr><tr><td>Hold</td><td>200ms</td><td>A breath</td></tr><tr><td>Out</td><td>160ms</td><td>The marks lift</td></tr></tbody></table><p>Eight roles play in about five seconds. Esc, Space or Apply stops it, and every role left is set at once.</p>`),
-        sec('built', 'Built from', `<div class="tiles">${card('#chip/overview', 'Role chip', 'The decision, lit in its colour.', chipsHtml(ROLES.slice(0, 1)))}${card('#texture', 'Texture', 'The pattern of what it changes.', '<span class="pl-hatch hatch"></span>')}${card('#motion', 'Motion', 'The beat and the spring.', '')}</div>`),
+        sec('beat', 'One beat per role', `<table class="tok"><thead><tr><th>Beat</th><th>Time</th><th>What happens</th></tr></thead><tbody><tr><td>In</td><td>240ms</td><td>The marks sweep onto the places</td></tr><tr><td>Move</td><td>520ms</td><td>The value rolls; the places ease to it</td></tr><tr><td>Hold</td><td>200ms</td><td>A short pause</td></tr><tr><td>Out</td><td>160ms</td><td>The marks fade out</td></tr></tbody></table><p>Eight changes take about five seconds. Esc, Space or Apply skips to the end and applies the rest at once.</p>`),
+        sec('built', 'Built from', `<div class="tiles">${card('#chip/overview', 'Role chip', 'The change, lit in its colour.', chipsHtml(ROLES.slice(0, 1)))}${card('#texture', 'Texture', 'The pattern of what it changes.', '<span class="pl-hatch hatch"></span>')}${card('#motion', 'Motion', 'Timing and easing.', '')}</div>`),
       ],
     }),
 
     marks: () => ({
       title: 'Blueprint marks',
-      lede: 'How Blueprint shows what’s off on your page. At rest your page is left alone; point at it and what’s off glows, as much as it’s off.',
+      lede: 'How Blueprint shows what’s off on your page. Nothing is drawn until you point; then the problem glows, brighter the further off it is.',
       sections: [
-        sec('live', 'Live', `<p>The real marks layer, over two cards. The first has too much padding, a gap that’s too small and a title one size off; the second has the same padding. Point at the padding: both cards light, because it’s one cause. Tab walks the marks, worst first.</p><div class="stage col bp-stage"><slot name="bp-spec"></slot><div class="bp-acts"><button type="button" class="pl-act quiet" data-bp-all aria-pressed="false">Light every mark</button><span class="say" data-bp-say>Nothing picked</span></div></div>`),
+        sec('live', 'Live', `<p>The real marks layer, over two cards. The first has too much padding, a gap that’s too small and a title one size off; the second has the same padding. Point at the padding: both cards light up because they share the same problem. Press Tab to step through the marks, worst first.</p><div class="stage col bp-stage"><slot name="bp-spec"></slot><div class="bp-acts"><button type="button" class="pl-act quiet" data-bp-all aria-pressed="false">Light every mark</button><span class="say" data-bp-say>Nothing picked</span></div></div>`),
         sec('drawn', 'What’s drawn', `<table class="tok"><thead><tr><th>Drawing</th><th>Means</th><th>Where</th></tr></thead><tbody><tr><td><span class="bp-sw heat"></span>Magenta glow</td><td>Too much: space past what your scale has, or a size or weight that’s off</td><td>The extra band of padding, margin or gap; the words themselves</td></tr><tr><td><span class="bp-sw dots"></span>Cyan dots</td><td>Space that’s missing</td><td>Where the space should be</td></tr><tr><td><span class="bp-sw edge"></span>Edge glow</td><td>Off, with nowhere of its own to show: a colour, a radius, a shadow</td><td>Along the element’s edge</td></tr></tbody></table>`),
-        sec('heat', 'How hot', `<p>Heat says how far off it is, against the step: <code>${HEAT.min} + ${HEAT.gain} × |is − should| / should</code>, up to 1. So a 1px slip still shows, 18 against 16 is a haze, and 28 against 16 glows. Hotter is brighter and spreads further: the blur runs ${HEAT.blur[0]} to ${HEAT.blur[1]}px. A framework default rests at the minimum.</p>`),
-        sec('states', 'States', `<ul class="plain"><li><b>Rest</b> nothing is drawn: your page is clean until you point.</li><li><b>Point</b> the mark breathes, everything with the same cause lights, and one pill by the pointer says the class and what it becomes, ×n when it’s in more places.</li><li><b>Fix in hand</b> its marks light and the one it’s on pulses twice; everything else goes quiet.</li><li><b>All clear</b> the last one fixed: four registration marks spring onto the corners of the screen, hold, and go.</li><li><b>Covered</b> a mark is cut to what you can see of its element; nothing under a drawer is drawn or clickable.</li></ul>`),
-        sec('keys', 'Keyboard', `<ul class="plain"><li><b>Tab</b> walks the marks, worst first. Each says its class and fix to readers.</li><li><b>Enter</b> picks the element, as a click does.</li></ul>`),
+        sec('heat', 'Brightness', `<p>Brightness shows how far off a value is, compared with the step: <code>${HEAT.min} + ${HEAT.gain} × |is − should| / should</code>, up to 1. So a 1px difference still shows, 18 instead of 16 is faint, and 28 instead of 16 is bright. Brighter marks also spread further: the blur runs ${HEAT.blur[0]} to ${HEAT.blur[1]}px. A framework default rests at the minimum.</p>`),
+        sec('states', 'States', `<ul class="plain"><li><b>Rest</b> nothing is drawn: your page is clean until you point.</li><li><b>Point</b> the mark pulses, everything with the same cause lights, and one pill by the pointer says the class and what it becomes, ×n when it’s in more places.</li><li><b>Fixing</b> its marks light up and the current one pulses twice; everything else fades.</li><li><b>All clear</b> when the last problem is fixed, four crosshair marks spring into the corners of the screen, then fade.</li><li><b>Covered</b> a mark is cut to what you can see of its element; nothing under a drawer is drawn or clickable.</li></ul>`),
+        sec('keys', 'Keyboard', `<ul class="plain"><li><b>Tab</b> steps through the marks, worst first. Each says its class and fix to readers.</li><li><b>Enter</b> picks the element, as a click does.</li></ul>`),
         sec('open', 'Open', `<ul class="plain"><li>Magenta and cyan are the only colours here outside the six hues. They’re set in <code>blueprint-marks.js</code>, not tokens, and follow the OS’s scheme rather than the page’s.</li></ul>`),
       ],
     }),
 
     card: () => ({
       title: 'Card',
-      lede: 'The one lifted thing. Everything Plumber shows sits on a card: paper, 12px corners, a hairline ring and a soft shadow. Two sizes, for two places.',
+      lede: 'Everything Plumber shows sits on a card: a solid background, 12px corners, a 1px outline and a soft shadow. Cards come in two sizes.',
       sections: [
         sec('kinds', 'Two cards', `<div class="cards-two">
-          <div><div class="held" data-open-demo><div class="h-top"><span class="pl-tag">ModelRow</span><span class="n">3 off</span><span class="file">ModelRow.tsx:42</span></div><div class="h-body"><b>Padding 10px isn’t on your scale</b><p>The nearest step is s3, 12px.</p><div class="h-acts"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="arr">→</span><span class="pl-pill" data-hue="mint">p-s3</span><button type="button" class="pl-act">Use s3</button></div></div></div><span class="cap">Held: over your page</span></div>
+          <div><div class="held" data-open-demo><div class="h-top"><span class="pl-tag">ModelRow</span><span class="n">3 off</span><span class="file">ModelRow.tsx:42</span></div><div class="h-body"><b>Padding 10px isn’t on your scale</b><p>The nearest step is s3, 12px.</p><div class="h-acts"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="arr">→</span><span class="pl-pill" data-hue="mint">p-s3</span><button type="button" class="pl-act">Use s3</button></div></div></div><span class="cap">Shown over your page</span></div>
           <div><div class="paged"><div class="p-head"><h3>Where your text sizes land</h3><p>Each dot is a place that types a size by hand.</p></div><div class="p-body">${[['xs', 12, 11], ['sm', 14, 15], ['md', 16, 9], ['lg', 18, 6]].map(([name, n, uses]) => stepMark({ name, n, uses })).join('')}</div><div class="p-foot">${countMark(45, 'places use your scale')}<button type="button" class="pl-act">Snap to your scale</button></div></div><span class="cap">On a page: the project page</span></div>
-        </div><button type="button" class="pl-act quiet" data-open-replay>Open the held card again</button>`),
-        sec('recipe', 'The recipe', `<table class="tok"><thead><tr><th>Part</th><th>Token</th><th>Why</th></tr></thead><tbody>${[['Ground', '--pl-paper', 'Warm off-white by day, near-black at night: it separates from any page under it'], ['Corners', '--pl-radius-card', '12px: a held object; the instrument inside it stays square'], ['Edge and lift', '--pl-shadow-card', 'A 1px ring in --pl-rule, then a tight shadow and a long soft one'], ['Words', '--pl-ink', 'Set on the card, so everything inside inherits it'], ['Inside edges', 'overflow: clip', 'A head or foot rule stops at the corners']].map(([a, t, w]) => `<tr><td>${a}</td><td><code>${t}</code></td><td>${w}</td></tr>`).join('')}</tbody></table>`),
-        sec('sizes', 'Held and on a page', `<table class="tok"><thead><tr><th></th><th>Held</th><th>On a page</th></tr></thead><tbody><tr><td>Width</td><td><code>--pl-card-w</code> 360px</td><td>The column it sits in</td></tr><tr><td>Inset</td><td><code>--pl-card-pad</code> 16px</td><td>24px</td></tr><tr><td>Type</td><td>The card scale: title 14, body 13, meta 12</td><td>The page scale: title 20, small 14, figure 32</td></tr><tr><td>Regions</td><td>Head (32px, the element), body, foot</td><td>Head, body, foot with the count and the action</td></tr><tr><td>Gap to its element</td><td><code>--pl-card-gap</code> 12px</td><td>None: it is the content</td></tr></tbody></table>`),
+        </div><button type="button" class="pl-act quiet" data-open-replay>Replay the opening</button>`),
+        sec('recipe', 'The recipe', `<table class="tok"><thead><tr><th>Part</th><th>Token</th><th>Why</th></tr></thead><tbody>${[['Ground', '--pl-paper', 'Off-white by day, near-black at night, so it stands out from the page underneath'], ['Corners', '--pl-radius-card', '12px. Marks inside it keep small, square corners'], ['Edge and lift', '--pl-shadow-card', 'A 1px ring in --pl-rule, then a tight shadow and a long soft one'], ['Words', '--pl-ink', 'Set on the card, so everything inside inherits it'], ['Inside edges', 'overflow: clip', 'A head or foot rule stops at the corners']].map(([a, t, w]) => `<tr><td>${a}</td><td><code>${t}</code></td><td>${w}</td></tr>`).join('')}</tbody></table>`),
+        sec('sizes', 'The two sizes', `<table class="tok"><thead><tr><th></th><th>Over your page</th><th>On a page</th></tr></thead><tbody><tr><td>Width</td><td><code>--pl-card-w</code> 360px</td><td>The column it sits in</td></tr><tr><td>Inset</td><td><code>--pl-card-pad</code> 16px</td><td>24px</td></tr><tr><td>Type</td><td>The card scale: title 14, body 13, meta 12</td><td>The page scale: title 20, small 14, figure 32</td></tr><tr><td>Regions</td><td>Head (32px, the element), body, foot</td><td>Head, body, foot with the count and the action</td></tr><tr><td>Gap to its element</td><td><code>--pl-card-gap</code> 12px</td><td>None; it’s part of the page</td></tr></tbody></table>`),
         sec('regions', 'Regions', `<ul class="plain"><li><b>Head</b> which thing: a tag with its name, a count, where it’s written. A hairline under it.</li><li><b>Body</b> what’s off in words, then the change as pills, coral to mint.</li><li><b>Foot</b> what you can do: one pink action, on the right. A hairline over it.</li><li>Inside, space goes by relationship: 4 within a group, 8 between parts, 12 between rows, 16 between sections.</li></ul>`),
-        sec('motion', 'Opening', `<p>A held card pins in <code>--pl-dur-card</code> (180ms) on the ease-out, from 4px above and 98.5% size, grown from the corner nearest its element. It leaves at once. Under reduced motion it just appears.</p>`),
-        sec('open', 'Open', `<ul class="plain"><li>There’s no card class yet: twelve modules each write the same paper, corners and shadow. One <code>.pl-card</code> in <code>language.js</code> would make this page the only place it’s defined.</li><li>The page card’s 24px inset isn’t a token.</li></ul>`),
+        sec('motion', 'Opening', `<p>A card over your page opens in <code>--pl-dur-card</code> (180ms) on the ease-out, from 4px above and 98.5% size, growing from the corner nearest its element. It leaves at once. Under reduced motion it just appears.</p>`),
+        sec('open', 'Open', `<ul class="plain"><li>There’s no card class yet: twelve modules each set the same background, corners and shadow. A single <code>.pl-card</code> class in <code>language.js</code> would define it once.</li><li>The page card’s 24px inset isn’t a token.</li></ul>`),
       ],
     }),
 
     page: () => ({
       title: 'Page',
-      lede: 'How a full page is laid out: the project page <code>npx plumber</code> opens. One sentence leads, one drawing proves it, and nothing else competes.',
+      lede: 'How a full page is laid out: the project page <code>npx plumber</code> opens. A headline states the finding, a chart backs it up, and nothing else gets in the way.',
       sections: [
         sec('live', 'Live', `<p>The real project page, on crafting-ui’s numbers.</p><div class="frame"><iframe title="The project page" src="project.html?scheme=${host.dataset.scheme ?? 'light'}" loading="lazy"></iframe></div><p><a href="project.html" target="_blank" rel="noopener">Open it on its own</a></p>`),
-        sec('order', 'Top to bottom', `<table class="tok"><thead><tr><th>Part</th><th>Set in</th><th>Its job</th></tr></thead><tbody>${[['Bar', 'Sticky, 88% paper with a 12px blur, a hairline under it', 'Where you are: the mark, the project, how much was read, day or night'], ['Eyebrow', '--pl-page-meta, the second ink', 'What the page is about, in three words'], ['Headline', '--pl-page-display, at most 26 characters a line, balanced', 'The one finding, with its numbers coloured by verdict'], ['Lede', '--pl-page-body, at most 60 characters a line', 'Why it matters, and the way out'], ['Hero', 'A page card', 'The drawing that proves the headline']].map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table>`),
+        sec('order', 'Top to bottom', `<table class="tok"><thead><tr><th>Part</th><th>Set in</th><th>Its job</th></tr></thead><tbody>${[['Bar', 'Sticky, 88% paper with a 12px blur, a hairline under it', 'The logo, the project name, how many files were read, and the day/night switch'], ['Eyebrow', '--pl-page-meta, in the secondary text colour', 'What the page is about, in three words'], ['Headline', '--pl-page-display, at most 26 characters a line, balanced', 'The main finding, with its numbers in coral or mint'], ['Lede', '--pl-page-body, at most 60 characters a line', 'Why it matters and how to fix it'], ['Hero', 'A page card', 'The chart that backs up the headline']].map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table>`),
         sec('grid', 'Measure and gutters', `<ul class="plain"><li><b>Column</b> 1120px at most, centred.</li><li><b>Gutters</b> 32px each side; 16px under 720px wide.</li><li><b>Top and bottom</b> 56px above the eyebrow, 96px under the last card; 32 and 64 on a phone.</li><li><b>Headline</b> 40/46 drops to 30/36 on a phone.</li></ul>`),
-        sec('rules', 'Rules', `<ul class="plain"><li>One headline per page, and it’s a finding, not a name.</li><li>Numbers in the headline take their verdict’s colour: coral for off, mint for on.</li><li>The page follows the OS’s day or night until you choose; the bar’s button switches the page and every card at once.</li></ul>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>One headline per page. It states a finding, not a title.</li><li>Numbers in the headline are coloured by result: coral for off your scale, mint for on it.</li><li>The page follows the OS’s day or night until you choose; the bar’s button switches the page and every card at once.</li></ul>`),
         sec('open', 'Open', `<ul class="plain"><li>The page’s gaps, 32, 56, 64 and 96, sit above the spacing ladder and aren’t tokens yet.</li></ul>`),
       ],
     }),
 
     gallery: () => ({
       title: 'Gallery',
-      lede: 'The working pages behind this system: each one built to try a single part on its own, with the real modules.',
+      lede: 'Test pages used to build this system. Each one tries out a single part, using the real modules.',
       sections: [
         sec('pages', 'Pages', `<div class="tiles">${[
           ['project.html', 'The project page', 'What <code>npx plumber</code> opens: your type scale, led by Gravity.', '<b style="font:var(--pl-page-figure);color:var(--pl-coral)">576</b>'],
           ['primitives.html', 'Editor primitives', 'Every primitive side by side, night and day: steppers, swatches, scale marks, roles.', '<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>'],
-          ['registration.html', 'Registration', 'The storyboard Blueprint marks came from: heat where the page is off.', '<span class="bp-sw heat"></span><span class="bp-sw dots"></span>'],
+          ['registration.html', 'Registration', 'The prototype Blueprint marks grew from.', '<span class="bp-sw heat"></span><span class="bp-sw dots"></span>'],
           ['mark-states.html', 'Marks at rest', 'How a mark looks when nothing is pointed at.', '<span class="pl-tag">Card</span>'],
-          ['fix-flow.html', 'Fix flow', 'Picking a fix, from the mark to the write.', '<span class="pl-act" style="pointer-events:none">Use s3</span>'],
-          ['fix-states.html', 'Fix in place', 'Each state of a fix taken on the element itself.', '<span class="pl-pill" data-hue="mint">✓ Written</span>'],
+          ['fix-flow.html', 'Fix flow', 'Choosing a fix, from the mark to saving it.', '<span class="pl-act" style="pointer-events:none">Use s3</span>'],
+          ['fix-states.html', 'Fix in place', 'Each state of a fix applied directly on the element.', '<span class="pl-pill" data-hue="mint">✓ Written</span>'],
           ['index.html', 'Settings demo', 'A sample app page the overlay runs on.', '<span class="pl-rainbow" style="width:28px;height:12px;border-radius:3px"></span>'],
         ].map(([href, t, d, art]) => `<a class="tile" href="${href}" target="_blank" rel="noopener"><span class="art">${art}</span><b>${t}</b><span>${d}</span></a>`).join('')}</div>`),
         sec('run', 'Running them', `<pre><code>~/.claude/bin/dev-server overlay/demo npx vite --config vite.config.mjs</code></pre><p>Then open <code>http://127.0.0.1:4311/</code> and the page’s name. The overlay runs on every page, so you can try it on the gallery itself.</p>`),
@@ -562,17 +565,17 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
     briefs: () => ({
       title: 'Briefs',
-      lede: 'Where the decisions are written down. When this site and a brief disagree, the brief says why; the code says what.',
+      lede: 'The documents where design decisions are recorded. If this site and a brief disagree, the brief explains the reasoning and the code is what ships.',
       sections: [
         sec('list', 'The briefs', `<table class="tok"><thead><tr><th>Brief</th><th>What it decides</th></tr></thead><tbody>${[
-          ['docs/briefs/visual-language.md', 'A toy you can trust: the six hues and one meaning each, the patterns, the pill and tag, night as white on deep.'],
-          ['docs/briefs/readiness.md', 'The overlay’s first tokens (2026-10-23): one accent, colour kept to verdicts, the card as the only lifted thing.'],
-          ['docs/briefs/blueprint-v2.md', 'Blueprint: a quiet surface that owns input, findings grouped by cause.'],
-          ['docs/briefs/cleanup-show-v2.md', 'The clean-up show: a chip per role, its places marked, the page easing to it.'],
+          ['docs/briefs/visual-language.md', 'The six colours and their meanings, the patterns, pills and tags, and white text on deep colours at night.'],
+          ['docs/briefs/readiness.md', 'The overlay’s first tokens (2026-10-23): one accent colour, colour used only for results, and shadows only on cards.'],
+          ['docs/briefs/blueprint-v2.md', 'Blueprint as a calm view that takes over input, with problems grouped by cause.'],
+          ['docs/briefs/cleanup-show-v2.md', 'The clean-up show: one chip per change, its places marked, the page animating to it.'],
           ['docs/design/onboarding.md', 'One command to your own page: the project page and what leads it.'],
           ['docs/research/libraries-dev.md', 'What the primitives can take from libraries.dev; ideas only, nothing imported.'],
         ].map(([f, d]) => `<tr><td><code>${f}</code></td><td>${d}</td></tr>`).join('')}</tbody></table>`),
-        sec('rules', 'How they’re used', `<ul class="plain"><li>A decision lands in a brief first, with the date and the owner’s words, then in code.</li><li>A brief that’s been replaced says so at the top and names what replaced it.</li></ul>`),
+        sec('rules', 'How they’re used', `<ul class="plain"><li>A decision is written in a brief first, with the date and the owner’s words, then built.</li><li>A brief that’s been replaced says so at the top and names what replaced it.</li></ul>`),
       ],
     }),
 
@@ -580,7 +583,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       title: 'Source',
       lede: 'Every piece on this site is imported from the overlay’s own modules, in <code>overlay/src</code>. Here’s where each one lives.',
       sections: [
-        sec('modules', 'Modules', `<table class="tok"><thead><tr><th>File</th><th>Gives</th><th>Documented in</th></tr></thead><tbody>${[
+        sec('modules', 'Modules', `<table class="tok"><thead><tr><th>File</th><th>Exports</th><th>Documented in</th></tr></thead><tbody>${[
           ['tokens.css', 'Every token, day and night', '#colour', 'Colour, Typography, Spacing, Tokens'],
           ['language.js', '<code>LANGUAGE_CSS</code>: pill, tag, action, hatch, dither, checker, ants, rainbow, pop', '#pill/overview', 'Pill, Tag, Action, Texture'],
           ['editor-primitives.js', '<code>stepper</code>, <code>swatches</code>, <code>segments</code>, <code>align</code>, <code>bind</code>', '#stepper/overview', 'Stepper, Swatches, Segments'],
@@ -588,7 +591,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
           ['show.js', '<code>chipsHtml</code>, <code>roll</code>', '#chip/overview', 'Role chip, The clean-up show'],
           ['boxmodel.js', '<code>boxModel</code>, <code>pointAt</code>, <code>BLOCK_ICONS</code>', '#boxmodel', 'Box model, Iconography'],
           ['glyphs.js', '<code>GLYPHS</code>, <code>glyph</code>', '#icons', 'Iconography'],
-          ['gravity.js', '<code>Gravity</code>, the readout plate', '#gravity', 'Gravity, Readout'],
+          ['gravity.js', '<code>Gravity</code>, and the readout’s styles', '#gravity', 'Gravity, Readout'],
           ['blueprint-marks.js', '<code>MarkLayer</code>, <code>HEAT</code>', '#marks', 'Blueprint marks'],
           ['words.js', 'Every string the overlay says', '#voice', 'Voice and tone'],
         ].map(([f, g, href, docs]) => `<tr><td><code>${f}</code></td><td>${g}</td><td><a href="${href}">${docs}</a></td></tr>`).join('')}</tbody></table>`),
@@ -597,23 +600,23 @@ import { LANGUAGE_CSS } from './language.js';
 
 const root = host.attachShadow({ mode: 'open' });
 root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
-  &lt;span class="pl-pill" data-hue="mint"&gt;s3&lt;/span&gt;\`;</code></pre><p>Everything is scoped to a shadow root (<code>:host</code>), so nothing leaks onto the page under it, or in from it. Set <code>data-scheme="dark"</code> or <code>"light"</code> on the host to override the OS.</p>`),
+  &lt;span class="pl-pill" data-hue="mint"&gt;s3&lt;/span&gt;\`;</code></pre><p>All styles are scoped to a shadow root (<code>:host</code>), so they don’t affect the page and the page doesn’t affect them. Set <code>data-scheme="dark"</code> or <code>"light"</code> on the host to override the OS.</p>`),
       ],
     }),
 
     type: () => ({
       title: 'Typography',
-      lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
+      lede: 'Two scales: a small one for cards shown over your page, and a larger one for full pages. Plumber uses the fonts already on your computer, so nothing is downloaded.',
       sections: [
-        sec('page', 'Page scale', `<p>Five steps and a figure, each a clear jump from the next, so the eye always knows what to read first. Set in the sans; numbers use tabular figures so they line up.</p>${typeTable(TYPE.page)}`),
-        sec('card', 'Card scale', `<p>For the overlay’s cards, panels and readouts: small, because they sit over someone else’s page and must not compete with it.</p>${typeTable(TYPE.card)}`),
-        sec('faces', 'Faces', `<div class="faces"><div><span class="big" style="font-family:var(--pl-sans)">Aa</span><b>Sans</b><code>--pl-sans</code><p>Everything you read. The system’s UI face: San Francisco on a Mac, Segoe on Windows.</p></div><div><span class="big" style="font-family:var(--pl-mono)">Aa</span><b>Mono</b><code>--pl-mono</code><p>Only for real code: a class, a value, a file and line, the change itself.</p></div></div>`),
+        sec('page', 'Page scale', `<p>Five sizes plus one for key numbers. Each is clearly bigger than the next, so it’s obvious what to read first. All sans; numbers use tabular figures so they line up.</p>${typeTable(TYPE.page)}`),
+        sec('card', 'Card scale', `<p>For the overlay’s cards, panels and readouts. It’s small so it doesn’t compete with the page underneath.</p>${typeTable(TYPE.card)}`),
+        sec('faces', 'Faces', `<div class="faces"><div><span class="big" style="font-family:var(--pl-sans)">Aa</span><b>Sans</b><code>--pl-sans</code><p>For all text. It’s the system font: San Francisco on a Mac, Segoe UI on Windows.</p></div><div><span class="big" style="font-family:var(--pl-mono)">Aa</span><b>Mono</b><code>--pl-mono</code><p>Only for code: a class, a value, a file and line, a change.</p></div></div>`),
         sec('numbers', 'Numbers', `<p>Numbers that change, or sit in a column, use tabular figures, so every digit is the same width and nothing jumps.</p><div class="stage nums"><div><span class="lbl">Tabular</span><span style="font:var(--pl-page-figure);font-variant-numeric:tabular-nums">111 · 888</span></div><div><span class="lbl">Proportional</span><span style="font:var(--pl-page-figure);font-variant-numeric:proportional-nums">111 · 888</span></div></div>`),
         sec('rules', 'Do and don’t', `<div class="dd">
-          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex col"><span style="font:var(--pl-page-title)">Where your text sizes land</span><span style="font:var(--pl-page-small);color:var(--pl-ink-2)">Each dot is a place that types a size by hand.</span></div><p>Step down one clear jump at a time: title, then a smaller line.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex col"><span style="font:var(--pl-page-title)">Where your text sizes land</span><span style="font:var(--pl-page-small);color:var(--pl-ink-2)">Each dot is a place that types a size by hand.</span></div><p>Step down one size at a time: a title, then a smaller line.</p></div>
           <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex col"><span style="font:600 20px/28px var(--pl-mono)">Where your text sizes land</span></div><p>Set sentences in mono. Mono is for code.</p></div>
           <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><code>p-[10px] → p-3</code></div><p>Use mono for the class itself, so it reads as code you can find.</p></div>
-          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex col"><span style="font:700 40px/1 var(--pl-sans)">576</span><span style="font:400 11px var(--pl-sans);color:var(--pl-ink-3)">places</span></div><p>Jump from a display size straight to tiny text: nothing in between reads as broken.</p></div></div>`),
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex col"><span style="font:700 40px/1 var(--pl-sans)">576</span><span style="font:400 11px var(--pl-sans);color:var(--pl-ink-3)">places</span></div><p>Jump from a headline straight to tiny text. With no size in between, it looks broken.</p></div></div>`),
         sec('tokens', 'Tokens', `<table class="tok"><thead><tr><th>Token</th><th>Size / line</th><th>Weight</th><th>Use</th></tr></thead><tbody>${[...TYPE.page, ...TYPE.card].map(([, t, , size, weight, use]) => `<tr><td><code>${t}</code></td><td>${size}</td><td>${weight}</td><td>${use}</td></tr>`).join('')}<tr><td><code>--pl-tracking-display</code></td><td colspan="2">−0.025em</td><td>Display and figures</td></tr><tr><td><code>--pl-tracking-title</code></td><td colspan="2">−0.01em</td><td>Titles</td></tr></tbody></table>`),
       ],
     }),
@@ -622,7 +625,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Lilac by default; sky for a measurement'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-tag</code>'], ['Used', 'Element and component names on the box model, step names, the project name']])),
-          sec('intro', 'Introduction', `<p>A tag names something: a component, an element, a step of a scale. Names are lilac, so the eye learns that lilac means “this is called…”. A tag can lead with a small icon that says what kind of thing it is.</p><div class="stage"><span class="pl-tag">${ICON_MODELS}Models</span><span class="pl-tag">ModelRow</span><span class="pl-tag">Board › Card</span><span class="pl-tag" data-hue="sky">W Fill 500px</span></div>`),
+          sec('intro', 'Introduction', `<p>A tag names something: a component, an element, a step of a scale. Names are always lilac, so lilac comes to mean “this is called”. A tag can lead with a small icon that says what kind of thing it is.</p><div class="stage"><span class="pl-tag">${ICON_MODELS}Models</span><span class="pl-tag">ModelRow</span><span class="pl-tag">Board › Card</span><span class="pl-tag" data-hue="sky">W Fill 500px</span></div>`),
           sec('related', 'Related components', `<div class="tiles">${card('#pill/overview', 'Pill', 'A value, not a name: mono, coloured by meaning.', '<span class="pl-pill" data-hue="mint">s3</span>')}${card('#step/overview', 'Step', 'A step of a scale, named by a tag.', '<span class="pl-tag">sm</span>')}</div>`),
         ],
         style: [
@@ -632,13 +635,13 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
         ],
         usage: [
           sec('when', 'When to use it', `<ul class="plain"><li>To name what you’re looking at: the component, the element, the step.</li><li>Once per thing, at its top-left, above it.</li></ul>`),
-          sec('not', 'When not to', `<ul class="plain"><li>For a value or a count: use a <b>pill</b>.</li><li>For a verdict: names are lilac whatever their state.</li><li>Inside a page’s drawing at rest, use the quiet tag (the name as words) so the drawing stays calm.</li></ul>`),
-          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-tag">Board › Card</span></div><p>Show where it sits, parent first.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-tag" data-hue="coral">ModelRow</span></div><p>Colour a name by its verdict. The name stays lilac; the marks say what’s off.</p></div></div>`),
+          sec('not', 'When not to', `<ul class="plain"><li>For a value or a count: use a <b>pill</b>.</li><li>To show a result. A name stays lilac whatever its state.</li><li>Inside a page’s drawing at rest, use the quiet tag (plain text on a small background) so the drawing stays uncluttered.</li></ul>`),
+          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-tag">Board › Card</span></div><p>Show where it sits, parent first.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-tag" data-hue="coral">ModelRow</span></div><p>Colour a name by its result. Names stay lilac; the marks show what’s off.</p></div></div>`),
         ],
         code: [
           sec('use', 'Use', `<pre><code>&lt;span class="pl-tag"&gt;ModelRow&lt;/span&gt;
 &lt;span class="pl-tag"&gt;&lt;svg viewBox="0 0 12 12"&gt;…&lt;/svg&gt;Models&lt;/span&gt;
-&lt;span class="pl-tag" data-hue="sky"&gt;W Fill 500px&lt;/span&gt;</code></pre><p>The styles come with <code>LANGUAGE_CSS</code>. On a page’s drawing, wrap steps in <code>.sc-quiet</code> and the tag becomes words on a plate.</p>`),
+&lt;span class="pl-tag" data-hue="sky"&gt;W Fill 500px&lt;/span&gt;</code></pre><p>The styles come with <code>LANGUAGE_CSS</code>. On a page’s drawing, wrap steps in <code>.sc-quiet</code> and the tag becomes lilac text on a small background.</p>`),
         ],
         accessibility: [
           sec('contrast', 'Contrast', `<p>A tag letters its name in the colour’s ink on its fill: 4.5:1 or more in both schemes.</p>${contrastRows(['lilac', 'sky'])}`),
@@ -653,22 +656,22 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
       const t = {
         overview: [
           sec('status', 'Status', status([['Designed', 'Pink; white lettering at night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-act</code>'], ['Used', 'Snap to your scale, Write, Play the chips']])),
-          sec('intro', 'Introduction', `<p>The action is the one thing you can do here. It’s pink, the colour that means “you can do this”, and it’s the only pink thing on a surface. A quiet action sits on the paper for anything secondary.</p><div class="stage">${btn()}${btn('quiet', 'Let go')}</div>`),
+          sec('intro', 'Introduction', `<p>The action button is the main thing you can do on a card or page. It’s pink, and it’s the only pink thing there. Secondary actions use the quiet style, on the background colour.</p><div class="stage">${btn()}${btn('quiet', 'Let go')}</div>`),
         ],
         style: [
-          sec('states', 'States', `<p>Point at them and press them: these are live.</p><div class="stage states">${[['Rest', ''], ['Hover', 'is-hover'], ['Pressed', 'is-press'], ['Focus', 'is-focus'], ['On', '', 'aria-pressed="true"'], ['Disabled', '', 'disabled']].map(([n, c, a = '']) => `<div class="st">${btn(c, n === 'On' ? 'Let go' : 'Snap to your scale', a)}<small>${n}</small></div>`).join('')}</div>`),
-          sec('quiet', 'Quiet', `<div class="stage">${btn('quiet', 'Play the chips')}${btn('quiet', 'Day')}</div><p>For a secondary action or a switch: the paper, with ink lettering.</p>`),
+          sec('states', 'States', `<p>These are live. Point at them and press them.</p><div class="stage states">${[['Rest', ''], ['Hover', 'is-hover'], ['Pressed', 'is-press'], ['Focus', 'is-focus'], ['On', '', 'aria-pressed="true"'], ['Disabled', '', 'disabled']].map(([n, c, a = '']) => `<div class="st">${btn(c, n === 'On' ? 'Let go' : 'Snap to your scale', a)}<small>${n}</small></div>`).join('')}</div>`),
+          sec('quiet', 'Quiet', `<div class="stage">${btn('quiet', 'Play the chips')}${btn('quiet', 'Day')}</div><p>For a secondary action or a toggle: background colour with dark text.</p>`),
           sec('size', 'Size', `<p>34px tall, 14px sides, 7px corners, sans 600 13px. On a page’s footer it grows to 40px and 14px lettering.</p>`),
         ],
         usage: [
-          sec('one', 'One per surface', `<p>A card or a page has one action. If two things compete, one of them is quiet.</p>`),
+          sec('one', 'One per surface', `<p>A card or page has one action. If there are two, make one of them quiet.</p>`),
           sec('words', 'Words', `<ul class="plain"><li>Start with the verb: <b>Snap to your scale</b>, <b>Write 2</b>, <b>Fix all</b>.</li><li>Say what happens, not “OK” or “Go”.</li><li>A toggle says what the next press does: <b>Snap to your scale</b> → <b>Let go</b>.</li></ul>`),
-          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex">${btn('', 'Write 2')}${btn('quiet', 'Cancel')}</div><p>One pink action, the rest quiet.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex">${btn('', 'Write 2')}${btn('', 'Cancel')}</div><p>Two pink buttons side by side: neither is the action any more.</p></div></div>`),
+          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex">${btn('', 'Write 2')}${btn('quiet', 'Cancel')}</div><p>One pink action, the rest quiet.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex">${btn('', 'Write 2')}${btn('', 'Cancel')}</div><p>Two pink buttons side by side. Neither stands out.</p></div></div>`),
         ],
         code: [
           sec('use', 'Use', `<pre><code>&lt;button type="button" class="pl-act"&gt;Snap to your scale&lt;/button&gt;
 &lt;button type="button" class="pl-act quiet"&gt;Cancel&lt;/button&gt;
-&lt;button type="button" class="pl-act" aria-pressed="true"&gt;Let go&lt;/button&gt;</code></pre><p>A toggle sets <code>aria-pressed</code>; pressed, it settles to the paper so the next press reads as undo.</p>`),
+&lt;button type="button" class="pl-act" aria-pressed="true"&gt;Let go&lt;/button&gt;</code></pre><p>A toggle sets <code>aria-pressed</code>; when pressed it switches to the quiet style, so pressing again reads as undo.</p>`),
         ],
         accessibility: [
           sec('contrast', 'Contrast', `<p>The lettering on the pink clears 4.5:1 in both schemes:</p>${contrastRows(['pink'])}`),
@@ -676,7 +679,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
           sec('touch', 'Touch', `<p>It’s 34px tall. On touch screens the target should be 44px: give it room around it, or use the 40px page size. <span class="pl-pill" data-hue="butter">Known gap</span></p>`),
         ],
       };
-      return { title: 'Action', lede: 'The one thing you can do here.', tabs: true, tab, sections: t[tab] ?? t.overview };
+      return { title: 'Action', lede: 'The main thing you can do on a card or page.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
   };
 
