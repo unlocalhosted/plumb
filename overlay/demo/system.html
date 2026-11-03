@@ -21,6 +21,7 @@
   import { SCALE_CSS, step as stepMark, place as placeMark, places as placeMarks, count as countMark, rollCount } from '../src/scale-marks.js';
   import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
   import { BLOCK_ICONS } from '../src/boxmodel.js';
+  import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
 
   // ---------- contrast, measured on the live tokens of each scheme ----------
   const rgb = (c) => { const h = c.trim().replace('#', ''); return h.length >= 6 ? [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) : null; };
@@ -44,7 +45,7 @@
   ];
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
-    { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
+    { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], [null, 'Readout']] },
     { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
@@ -84,6 +85,14 @@
   const ROLES = [['p', 12], ['g', 8], ['m', 24], ['r', 10], ['line', 14]].map(([k, v]) => ({ label: { p: 'padding', g: 'gap', m: 'margin', r: 'radius', line: 'type' }[k], icon: BLOCK_ICONS[k], from: v }));
   const STEP_STATES = [['rest', 'sm', 14, 15, 'In use: a sky ring, filled by how much it’s used.'], ['unused', '2xl', 28, 0, 'In your theme, nowhere in your code: dashed.'], ['pointed', 'md', 16, 8, 'Pointed at: the sky hatch, its value in a pill.'], ['pulled', 'xs', 12, 11, 'Places pulled in: mint, with what it took.'], ['off', '15px', 15, 0, 'A size your scale doesn’t have: coral, no name.']];
 
+  // ---------- foundations data ----------
+  const SPACE = [1, 2, 3, 4, 5, 6, 7, 8].map((k) => [`--pl-space-${k}`, [2, 4, 6, 8, 12, 16, 20, 24][k - 1]]);
+  const RADII = [['--pl-radius-mark', 2, 'A mark on the page: a place, a tick'], ['--pl-radius-tag', 6, 'A tag'], ['--pl-radius-pill', 7, 'A pill, an action'], ['--pl-radius-row', 8, 'A row, a control'], ['--pl-radius-card', 12, 'A card, a panel']];
+  const DURS = [['--pl-dur-feedback', 120, 'A press, a copy confirmed'], ['--pl-dur-undim', 120, 'Blueprint’s dim leaving'], ['--pl-dur-drop', 140, 'The plumb line reaching its tag'], ['--pl-dur-dim', 160, 'Blueprint’s dim arriving'], ['--pl-dur-card', 180, 'A card pinning'], ['--pl-dur-travel', 220, 'The reticle moving to the next element'], ['pop', 260, 'Anything appearing (pl-pop)'], ['roll', 520, 'A value rolling, a fill sliding']];
+  const CURVES = [['--pl-ease-out', 'Ease out', 'Things that arrive or answer you: fast, then settling.'], ['--pl-spring', 'Spring', 'Things that move between places: under 2% overshoot.'], ['--pl-spring-pop', 'Pop', 'Things that appear: about 4% overshoot, then still.']];
+  const FAMILY_NAMES = { spacing: 'Spacing', radius: 'Radius', type: 'Type', color: 'Colour', shadow: 'Elevation', z: 'Layers', motion: 'Motion', habit: 'Habit', ownership: 'Ownership', imitation: 'Imitation', craft: 'Craft', existence: 'Existence' };
+  const BLOCK_NAMES = { p: 'Padding', m: 'Margin', g: 'Gap', b: 'Border', r: 'Radius', line: 'Type', c: 'Size' };
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
@@ -92,6 +101,7 @@
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
           <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Six foundations:</b> spacing, shape, elevation, motion, texture and iconography.</span></li>
           <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count documented,</b> playing and rolling live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments documented,</b> every state live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action documented.</b> And a fix: a tag asked for sky now draws in sky.</span></li>
@@ -309,6 +319,66 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       return { title: 'Count', lede: 'A number that matters, and what it counts.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
+    spacing: () => ({
+      title: 'Spacing',
+      lede: 'One ladder, 2 to 24px, mostly 4 apart, for everything inside a card. The gaps between sections of a page sit above it.',
+      sections: [
+        sec('ladder', 'The ladder', `<div class="ladder">${SPACE.map(([t, n]) => `<div class="lr"><code>${t}</code><span class="bar" style="width:${n * 6}px"></span><span>${n}px</span></div>`).join('')}</div><p>Six steps of the ladder are 4 apart; the two smallest, 2 and 6, are for hairline adjustments inside a control.</p>`),
+        sec('card', 'Card geometry', `<table class="tok"><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>${[['--pl-card-pad', '16px', 'A card’s inset, and the gap between its sections'], ['--pl-card-w', '360px', 'The width of a card held over your page'], ['--pl-row-h', '40px', 'A row: a property and its amount, then its reading'], ['--pl-tag-h', '22px', 'A tag’s height'], ['--pl-drop', '16px', 'The plumb line, from an element’s edge to its tag'], ['--pl-tick', '8px', 'The reticle’s corner arm']].map(([t, v, u]) => `<tr><td><code>${t}</code></td><td>${v}</td><td>${u}</td></tr>`).join('')}</tbody></table>`),
+        sec('rules', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="gapdemo" style="gap:var(--pl-space-4)"><i></i><i></i><i></i></span></div><p>Space related things a step apart: 8px between pills in a row.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="gapdemo" style="gap:10px"><i></i><i></i><i></i></span></div><p>Use a value between steps (10px). Plumber would flag it on your page; it shouldn’t on its own.</p></div></div>`),
+        sec('gap', 'Known gap', `<p>A page’s larger gaps (32, 48, 64px between sections) are written in place, not tokens yet. <span class="pl-pill" data-hue="butter">Known gap</span> The next step is a page spacing ladder beside the type scale.</p>`),
+      ],
+    }),
+
+    shape: () => ({
+      title: 'Shape',
+      lede: 'Five corners, from a 2px mark to a 12px card: the bigger and more held the thing, the rounder. Lines are always 1px.',
+      sections: [
+        sec('radii', 'Corners', `<div class="radii">${RADII.map(([t, n, use]) => `<div class="rc"><span class="sq" style="border-radius:var(${t})"></span><b>${n}px</b><code>${t}</code><span>${use}</span></div>`).join('')}</div>`),
+        sec('nesting', 'Nesting', `<p>A rounded thing inside another loses the space between them from its corner, so the two curves run parallel: a 12px card with 4px of padding holds an 8px row.</p><div class="stage"><div class="nest"><div class="nest-in"></div></div></div>`),
+        sec('lines', 'Lines', `<p>Every line the instrument draws is <code>--pl-line</code>, 1px, snapped to the screen’s pixels so it’s never blurred. Hairlines inside a card are <code>--pl-rule</code>.</p>`),
+      ],
+    }),
+
+    elevation: () => ({
+      title: 'Elevation',
+      lede: 'Two heights only: a card that’s held, and a tag that floats on the page. Each has a night version, deeper and darker.',
+      sections: [
+        sec('levels', 'Levels', `<div class="elev"><div class="el" style="box-shadow:var(--pl-shadow-card)"><b>Card</b><code>--pl-shadow-card</code><span>A hairline, a contact shadow, and a long soft one: held, not floating far.</span></div><div class="el small" style="box-shadow:var(--pl-shadow-tag)"><b>Tag</b><code>--pl-shadow-tag</code><span>A hairline and a short shadow: sits just above the page.</span></div></div>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>Nothing floats higher than a card. A third height would mean a third kind of thing; there isn’t one.</li><li>Every shadow starts with a 1px hairline, so edges hold up on any page, light or dark.</li></ul>`),
+      ],
+    }),
+
+    motion: () => ({
+      title: 'Motion',
+      lede: 'Quick, with a little bounce for what appears, and nothing that loops but the marching ants. Under reduced motion every timing is zero.',
+      sections: [
+        sec('curves', 'Curves', `<p>Press a curve to play it.</p><div class="curves">${CURVES.map(([t, n, use]) => `<button type="button" class="cv" data-curve="${t}"><span class="track"><span class="ball" style="transition-timing-function:var(${t})"></span></span><b>${n}</b><code>${t}</code><span>${use}</span></button>`).join('')}</div>`),
+        sec('timing', 'Timing', `<div class="ladder">${DURS.map(([t, ms, use]) => `<div class="lr"><code>${t}</code><span class="bar time" style="width:${ms * 0.8}px"></span><span>${ms}ms · ${use}</span></div>`).join('')}</div>`),
+        sec('pop', 'The pop', `<p>Anything that appears (a pill, a tag, a readout) pops from 0.92 on <code>--pl-spring-pop</code> in 260ms.</p><div class="stage"><span class="pl-tag" data-pop>Models</span><span class="pl-pill" data-hue="mint" data-pop>s3 · 12</span><button type="button" class="pl-act quiet" data-replay>Pop again</button></div>`),
+        sec('reduced', 'Reduced motion', `<p>When the system asks for less motion, the duration tokens become 0ms: nothing pops, slides or rolls, and the ants stand still. States still change, at once.</p>`),
+      ],
+    }),
+
+    texture: () => ({
+      title: 'Texture',
+      lede: 'Patterns from the old Mac, each meaning one thing. They say what a part of the page is without a single word.',
+      sections: [
+        sec('patterns', 'Patterns', `<div class="tex">${[['pl-hatch', 'Hatch', 'Padding: 45° lines, 1px at 6px pitch'], ['pl-dither', 'Dither', 'Margin: a 50% dot dither'], ['pl-checker', 'Checker', 'A transparent fill'], ['pl-ants', 'Marching ants', 'Picked, not written yet: the dashes march'], ['pl-rainbow', 'Rainbow', 'Plumber’s mark: used once, nowhere else']].map(([c, n, use]) => `<div class="tx"><span class="sw ${c}"></span><b>${n}</b><code>.${c}</code><span>${use}</span></div>`).join('')}</div>`),
+        sec('on-page', 'On your page', `<p>The box model draws padding as hatch and margin as dither in the band’s own colour: sky when it’s on your scale, coral when it’s off.</p><div class="stage"><div class="bm-demo"><div class="pad pl-hatch"><div class="inner">Opus 5.5</div></div></div><div class="bm-demo off"><div class="pad pl-hatch"><div class="inner">Opus 5.5</div></div></div></div>`),
+      ],
+    }),
+
+    icons: () => ({
+      title: 'Iconography',
+      lede: 'Two sets: block icons for the parts of an element, and glyphs for the families Plumber judges. Each draws the thing itself, never an action.',
+      sections: [
+        sec('blocks', 'Block icons', `<p>One per part of the box model, on a 16px grid, drawn in the band’s own colour.</p><div class="icons">${Object.entries(BLOCK_NAMES).map(([k, n]) => `<div class="ic"><span class="ki">${BLOCK_ICONS[k]}</span><b>${n}</b><code>BLOCK_ICONS.${k}</code></div>`).join('')}<div class="ic"><span class="ki off">${BLOCK_ICONS.p}</span><b>Off your scale</b><code>coral</code></div></div>`),
+        sec('glyphs', 'Family glyphs', `<p>Drawn with a drafting pen: one constant 1px line at every size, square ends, sharp joins, on a 24-unit grid.</p><div class="icons glyphs">${Object.keys(GLYPHS).map((k) => `<div class="ic"><span class="gl">${glyph(k)}</span><b>${FAMILY_NAMES[k] ?? k}</b><code>${k}</code></div>`).join('')}</div>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>An icon draws the property, never an action: no arrows, cursors, locks or toggles.</li><li>Fills only where a part is solid by meaning: a sampled colour, a shadow, the plumb bob.</li><li>An icon beside a word repeats it, so it’s hidden from screen readers.</li></ul>`),
+      ],
+    }),
+
     type: () => ({
       title: 'Typography',
       lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
@@ -390,7 +460,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
   // ---------- the shell ----------
   const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}
     :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
     a { color: inherit; }
     code { font: 500 12.5px/1.5 var(--pl-mono); }
@@ -501,12 +571,39 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     .stage .sc-step { margin: 0 6px; }
     .stage.col > .pl-act { justify-self: start; }
     .tile .art .sc-places { margin: 0 2px; }
+    .ladder { display: grid; gap: 8px; margin-bottom: 12px; }
+    .lr { display: grid; grid-template-columns: 170px auto 1fr; align-items: center; gap: 14px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .lr code { color: var(--pl-ink-2); }
+    .lr .bar { height: 12px; border-radius: 3px; background: var(--pl-sky); } .lr .bar.time { background: var(--pl-lilac); }
+    .gapdemo { display: inline-flex; } .gapdemo i { width: 34px; height: 20px; border-radius: 7px; background: var(--pl-sky-soft); }
+    .radii, .icons, .tex { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .rc, .ic, .tx { display: grid; gap: 4px; padding: 16px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .rc b, .ic b, .tx b { font: 600 14px/20px var(--pl-sans); color: var(--pl-ink); } .rc code, .ic code, .tx code { font-size: 11.5px; color: var(--pl-ink-3); }
+    .rc .sq { width: 56px; height: 56px; margin-bottom: 8px; background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1px var(--pl-sky); }
+    .nest { width: 220px; padding: 4px; border-radius: 12px; background: var(--pl-paper); box-shadow: inset 0 0 0 1px var(--pl-rule); } .nest-in { height: 56px; border-radius: 8px; background: var(--pl-sky-soft); }
+    .elev { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px; border-radius: var(--pl-radius-card); background: var(--pl-paper-2); }
+    .el { display: grid; gap: 4px; padding: 20px; border-radius: var(--pl-radius-card); background: var(--pl-paper); font: var(--pl-page-meta); color: var(--pl-ink-2); } .el.small { border-radius: var(--pl-radius-tag); align-self: start; }
+    .el b { font: 600 14px var(--pl-sans); color: var(--pl-ink); } .el code { color: var(--pl-ink-3); font-size: 11.5px; }
+    .curves { display: grid; gap: 10px; }
+    .cv { display: grid; grid-template-columns: 220px 90px 150px 1fr; align-items: center; gap: 14px; padding: 12px 14px; border: 0; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); color: var(--pl-ink-2); font: var(--pl-page-meta); text-align: left; cursor: pointer; }
+    .cv:hover { box-shadow: inset 0 0 0 1px var(--pl-rule); } .cv b { font: 600 14px var(--pl-sans); color: var(--pl-ink); } .cv code { font-size: 11.5px; color: var(--pl-ink-3); }
+    .cv .track { position: relative; height: 16px; border-radius: 8px; background: var(--pl-paper); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .cv .ball { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--pl-pink); transition: translate 900ms; }
+    .cv.go .ball { translate: 202px 0; }
+    .tx .sw { height: 56px; margin-bottom: 8px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--pl-rule); } .tx .sw.pl-ants { box-shadow: none; } .tx .sw.pl-rainbow { height: 14px; margin: 21px 0 29px; }
+    .bm-demo { padding: 10px; border-radius: 12px; box-shadow: 0 0 0 1px var(--pl-sky); } .bm-demo .pad { padding: 12px; border-radius: 9px; --hatch: var(--pl-sky); }
+    .bm-demo.off { box-shadow: 0 0 0 1px var(--pl-coral); } .bm-demo.off .pad { --hatch: var(--pl-coral); }
+    .bm-demo .inner { padding: 8px 12px; border-radius: 6px; background: var(--pl-paper); font: 600 14px var(--pl-sans); color: var(--pl-ink); }
+    .ic .ki, .ic .gl { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 8px; border-radius: 10px; color: var(--pl-sky); background: color-mix(in oklab, var(--pl-sky) 14%, transparent); }
+    .ic .ki svg { width: 20px; height: 20px; } .ic .ki.off { color: var(--pl-coral); background: color-mix(in oklab, var(--pl-coral) 14%, transparent); }
+    .ic .gl { color: var(--pl-lilac); background: color-mix(in oklab, var(--pl-lilac) 14%, transparent); } .ic .gl svg { width: 24px; height: 24px; }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
     .menu { display: none; width: 34px; height: 34px; margin-left: -6px; border: 0; border-radius: 8px; background: none; color: var(--pl-ink); cursor: pointer; place-items: center; }
     .menu:hover { background: var(--pl-paper-2); }
     @media (max-width: 760px) {
+      .lr { grid-template-columns: 1fr; } .cv { grid-template-columns: 1fr; } .cv.go .ball { translate: 0 0; } .elev { grid-template-columns: 1fr; }
       .ramp .tr { grid-template-columns: 1fr; } .ramp .use { grid-column: 1; } .faces { grid-template-columns: 1fr; }
       .menu { display: grid; } .top { padding: 0 12px; } .top .ver { display: none; }
       .shell { grid-template-columns: 1fr; }
@@ -551,6 +648,8 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       for (const [i, c] of chips.entries()) { c.setAttribute('data-on', ''); roll(c, to[i]); await new Promise((r) => setTimeout(r, 700)); c.removeAttribute('data-on'); c.setAttribute('data-done', ''); }
       e.target.disabled = false;
     });
+    page.querySelectorAll('[data-curve]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('go')));
+    page.querySelector('[data-replay]')?.addEventListener('click', () => page.querySelectorAll('[data-pop]').forEach((t) => { t.classList.remove('pl-pop'); void t.offsetWidth; t.classList.add('pl-pop'); }));
     page.querySelector('[data-roll]')?.addEventListener('click', (e) => {
       const on = e.target.getAttribute('aria-pressed') !== 'true', c = page.querySelector('.sc-count');
       e.target.setAttribute('aria-pressed', String(on)); e.target.textContent = on ? 'Let go' : 'Snap to your scale';
