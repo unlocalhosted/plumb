@@ -322,9 +322,15 @@ export class Blueprint {
       const results = answer?.results ?? {}, undo = answer?.undo ?? [];
       const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
       for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
-      if (failed.length) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why: /changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot }; }
+      // a write that partly lands is a step all the same: what it changed is kept, with its Undo, and what it left as it is
+      // is said. Forgetting it would leave changed files behind a reload with no word and no Undo (found on crafting-ui:
+      // one swap of seventeen refused, classes split across a template string)
+      const wrote = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length));
+      const why = failed.length ? (/changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
+      if (failed.length && !wrote) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
       this.#host.remember?.(said, undo, null, trace.group);
-      return { ok: true, undo, group: trace.group };
+      const left = failed.flatMap((f) => (f.refused?.length ? f.refused.map((r) => ({ file: f.file, ...r })) : [{ file: f.file, reason: f.error ?? why }]));
+      return { ok: true, undo, group: trace.group, refused: left };
     } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
   }
