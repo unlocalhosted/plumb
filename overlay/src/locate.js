@@ -270,7 +270,9 @@ const readSites = async (element, need) => {
   const chain = (at.chain ?? []).slice(1, 9).filter((l) => l?.file).map(({ file, line, column }) => ({ file, line, column }));
   const params = { file: at.file, line: at.line, column: at.column, ...(chain.length ? { chain: JSON.stringify(chain) } : {}), ...(need?.length ? { classes: need.join(' ') } : {}) };
   const answer = await request('class-site', params).catch(() => null);
-  return answer ? { at, answer } : null;
+  // `of`: the element and chain the sites were read through, sent with a pinned write so the server checks the pin
+  // against the same reading (a usage's prop, a variable, a branch) instead of the written element alone
+  return answer ? { at, answer, of: { file: at.file, line: at.line, column: at.column, chain } } : null;
 };
 const keyOf = (e) => `${e.file}:${e.line}:${e.column}`;
 export async function classSiteOf(element, need = []) {
@@ -316,8 +318,8 @@ export async function classEditsOf(element, from, to) {
   const out = names(from), add = names(to);
   const read = await readSites(element, out);
   if (!read) throw new Error(FIX.text.unreachable);
-  const { answer } = read, hashes = answer.hashes ?? {};
-  const edit = (el, string, f, t) => ({ file: el.file, hash: hashes[el.file], edit: { line: el.line, column: el.column, from: f, to: t, ...(string ? { at: { line: string.line, column: string.column } } : {}) } });
+  const { answer, of } = read, hashes = answer.hashes ?? {};
+  const edit = (el, string, f, t) => ({ file: el.file, hash: hashes[el.file], edit: { line: el.line, column: el.column, from: f, to: t, ...(string ? { at: { line: string.line, column: string.column }, of } : {}) } });
   if (!out.length) {
     // a class added beside the one of its family it overrides (pl-3 beside px-2.5, in the variable or the branch that
     // writes px-2.5), so the two stay together where the element's spacing is written; else where the server says

@@ -673,7 +673,8 @@ export class TextEditor {
     const name = this.name;
     const text = key === 'style' ? W.styled(step.label, name) : W.changed(r.label, said(key, step.value ?? step.label, this.#target), name);
     try {
-      const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash }, key, step.token, text);
+      // a value written in one branch (a ternary's case) is changed in that string: its position goes with the write
+      const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash, ...(r.p?.at ? { at: r.p.at } : {}) }, key, step.token, text);
       // the write's invalidate reads the element again (changed); the panel says it, with Undo
       this.#host.said?.(text, result?.undo ? [result.undo] : []);
     } catch (error) {

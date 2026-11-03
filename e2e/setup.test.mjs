@@ -175,7 +175,7 @@ test('overlay installer edits supported configs in place and refuses ambiguous o
   for (const flags of [['install', '--write'], ['check', '--write'], ['install', '--overlay', '--write', '--list']]) command(root, process.execPath, [cli, ...flags], 2);
 });
 
-test('packed setup: advisory drift, init baseline, install, stamped Alt-hover and a written token fix', { timeout: 300000 }, async t => {
+test('packed setup: advisory drift, init baseline, install, stamped Alt-hover, the element card and a written token fix', { timeout: 300000 }, async t => {
   let server, browser;
   t.after(async () => {
     await browser?.close();
@@ -285,18 +285,26 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   // Init accepted today's drift as debt: the tag need not call it "new/off".
   // A component's outermost div is named by the component, its tag beside it; any other div by its tag.
   await overlay.locator('.tag').filter({ has: page.locator('.el, .who').filter({ hasText: /^div$/ }) }).waitFor();
+  // Alt+click reads that element alone and opens its own card, named by its component, at the line it is written
   await page.mouse.click(point.x, point.y); await page.keyboard.up('Alt');
-  const reading = overlay.getByRole('dialog', { name: /^React Plumber reading for (div|\w+ \(div\))/ });
-  await reading.waitFor();
-  const pinnedLocation = (await reading.locator('.top .file').getAttribute('title')).split(' · ')[0];
-  assert.equal(pinnedLocation, `${located.file}:${located.line}:${located.column}`);
-  assert.match(await reading.locator('.read .t').first().innerText(), /gap-\[10px\]/);
-  await reading.locator('.opt[data-pick]').filter({ hasText: /s2/ }).first().click();
-  await reading.filter({ hasText: /gap-s2/ }).waitFor();
-  assert.equal(await page.locator('#calendar-row').evaluate(element => getComputedStyle(element).gap), '8px');
-  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source, 'preview has not changed disk');
-  await reading.getByRole('button', { name: 'Write 1 edit' }).click();
-  await overlay.locator('.synced .state').filter({ hasText: 'Applied 1 change in src/App.jsx' }).waitFor({ timeout: 15000 });
+  await overlay.locator('.ec .hd .n').filter({ hasText: /CalendarRow/ }).waitFor({ timeout: 20000 });
+  await overlay.locator('.ec .hd .at').filter({ hasText: new RegExp(`App\\.jsx:${located.line}$`) }).waitFor({ timeout: 20000 });
+  // init took today's drift as debt, so the fix panel offers it no cause; it is fixed on the element: pointing between
+  // the row's first two items shows the gap's band, one notch down is one step on the theme's scale (10 → 8, s2)
+  await page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 20000 });
+  const itemA = await page.locator('#calendar-row > span').nth(0).boundingBox(), itemB = await page.locator('#calendar-row > span').nth(1).boundingBox();
+  await page.mouse.move((itemA.x + itemA.width + itemB.x) / 2, itemB.y + itemB.height / 2);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.sp-band.gap').length > 0, null, { timeout: 10000 });
+  const bubble = () => page.evaluate(() => { const b = document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub'); return b && !b.hidden ? b.innerText.replace(/\s+/g, ' ') : ''; });
+  assert.match(await bubble(), /^10 gap/);
+  await page.mouse.wheel(0, 100);
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('calendar-row')).gap === '8px', null, { timeout: 5000 });
+  assert.match(await bubble(), /^8 · s2 gap/);
+  assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source, 'the step is tried on the page, not written yet');
+  // Enter writes it
+  await page.keyboard.press('Enter');
+  await overlay.locator('.fx .said').filter({ hasText: /gap 8px/ }).waitFor({ timeout: 20000 });
+  for (let i = 0; i < 100 && (await readFile(join(root, 'src/App.jsx'), 'utf8')) === source; i++) await page.waitForTimeout(100);
   assert.equal(await readFile(join(root, 'src/App.jsx'), 'utf8'), source.replace('gap-[10px]', 'gap-s2'), 'exactly the chosen token edit');
   const checked = JSON.parse(plumb('check', '--json'));
   const sourceSite = site => site.file === join(root, 'src/App.jsx');

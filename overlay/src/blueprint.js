@@ -527,7 +527,7 @@ export class Blueprint {
     const trace = traceOf(meta);
     this.#host.remember?.(said, undefined, null, trace.group);
     let result;
-    try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token, trace }); }
+    try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token, ...(at.at ? { at: at.at } : {}), trace }); }
     catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; }
     this.#host.remember?.(said, result?.undo ? [result.undo] : [], null, trace.group);
     this.invalidate({ file: at.file });
