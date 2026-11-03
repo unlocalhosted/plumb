@@ -62,6 +62,28 @@ export function hunks(before: string, after: string): { start: number; end: numb
   return out;
 }
 
+/** An inserted block split into one hunk per line, so each line (a theme token) is a change of its own: a line that is
+ * only a comment or blank goes with the line after it (a role's comment with its first token). Other hunks stay whole. */
+export function byLine(list: ReturnType<typeof hunks>): ReturnType<typeof hunks> {
+  return list.flatMap(h => {
+    if (h.from || !h.to.includes('\n')) return [h];
+    // the diff may put the block's newline first ("\n  --a: 1;\n  --b: 2;") or last ("  --a: 1;\n  --b: 2;\n")
+    const leading = h.to.startsWith('\n');
+    const pieces = leading ? h.to.split(/(?=\n)/) : h.to.split(/(?<=\n)/);
+    const merged: string[] = [];
+    let carry = '';
+    for (const piece of pieces) {
+      const content = piece.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+      if (!content) { carry += piece; continue; }
+      merged.push(carry + piece); carry = '';
+    }
+    if (carry) { if (merged.length) merged[merged.length - 1] += carry; else merged.push(carry); }
+    if (merged.length < 2) return [h];
+    let offset = 0;
+    return merged.map(to => { const piece = { start: h.start, end: h.end, at: h.at + offset, from: '', to }; offset += to.length; return piece; });
+  });
+}
+
 /** Where a change is now: its offset in the text, or null when the place no longer holds what it wrote. Only the full
  * context on both sides may be found anywhere (lines above may have moved it); a narrower match counts only on the
  * change's own line, because `className="mt-2 font-re` is just as true of the next element down. Nearest to where it
@@ -99,9 +121,9 @@ export class ChangeLog {
   }
   group(): string { this.all(); return `g${++this.groups}`; }
   /** Record a write's changes: the diff of the file before and after it. */
-  add(write: { write: string; file: string; group: string; meta?: unknown; undoing?: ChangeRecord[] }, before: string, after: string, label: (from: string, to: string) => string): ChangeRecord[] {
+  add(write: { write: string; file: string; group: string; meta?: unknown; undoing?: ChangeRecord[] }, before: string, after: string, label: (from: string, to: string) => string, split: (list: ReturnType<typeof hunks>) => ReturnType<typeof hunks> = list => list): ChangeRecord[] {
     const records = this.all(), at = new Date().toISOString(), starts = lineStarts(after);
-    const made = hunks(before, after).map(h => {
+    const made = split(hunks(before, after)).map(h => {
       let line = 1; while (line < starts.length && starts[line]! <= h.at) line++;
       const undoes = write.undoing?.filter(o => o.to === h.from && o.from === h.to).map(o => o.id);
       return {

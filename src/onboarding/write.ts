@@ -42,7 +42,8 @@ export function topBlocks(css: string): Block[] {
 
 const names: Record<string, string> = { color: 'colour', z: 'z-index' };
 const declares = (css: string, name: string) => new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`).test(css);
-const lines = (tokens: Token[], indent = '  '): string[] => tokens.flatMap(token => [`${indent}/* why: ${token.why} */`, `${indent}${token.name}: ${token.value};`]);
+/** Each token under its why; `shared`: one comment above each run of tokens with the same why (a type role's four lines carry the role's comment once). */
+const lines = (tokens: Token[], indent = '  ', shared = false): string[] => tokens.flatMap((token, index) => [...(shared && index && tokens[index - 1]!.why === token.why ? [] : [`${indent}/* why: ${token.why} */`]), `${indent}${token.name}: ${token.value};`]);
 
 /** Lines go before the closing brace of a block that is already there; otherwise a block of their own closes the file. */
 function put(css: string, selector: RegExp, header: string, body: string[], comment?: string): { css: string; added: string[] } {
@@ -60,10 +61,12 @@ function put(css: string, selector: RegExp, header: string, body: string[], comm
 
 /** One token into the theme, in the shape it has (docs/briefs/craft-spec.md §4, candidate c): `@theme`, shadcn's
  * `@theme inline`, or `:root`. The block is extended in place; a file with no such block gets one. Reads nothing. */
-export function addToken(css: string, shape: Shape, token: Token): { css: string; added: string[] } {
-  if (shape === 'root') return put(css, /^:root$/, ':root', lines([token]));
-  if (shape === 'shadcn') return put(css, /^@theme inline$/, '@theme inline', lines([token]));
-  return put(css, /^@theme$/, '@theme', lines([token]));
+export function addToken(css: string, shape: Shape, token: Token): { css: string; added: string[] } { return addTokens(css, shape, [token]); }
+/** Several tokens into the theme as one edit, in their order; a run of tokens with the same why shares one comment. */
+export function addTokens(css: string, shape: Shape, tokens: Token[]): { css: string; added: string[] } {
+  if (shape === 'root') return put(css, /^:root$/, ':root', lines(tokens, '  ', true));
+  if (shape === 'shadcn') return put(css, /^@theme inline$/, '@theme inline', lines(tokens, '  ', true));
+  return put(css, /^@theme$/, '@theme', lines(tokens, '  ', true));
 }
 
 /** `@import "./theme.css";` after the imports a stylesheet already begins with. */
