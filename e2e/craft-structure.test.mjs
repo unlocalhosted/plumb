@@ -30,19 +30,27 @@ test('structure: a tooltip with the wrong delay names its provider’s prop; wri
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  const result = await page.evaluate(async (s) => {
-    const { post } = await import('/__plumb/src/api.js');
-    return post('prop', { file: s.site.file, hash: s.site.hash, line: s.site.line, column: s.site.column, name: s.name, value: s.to });
-  }, suggest);
+  // the overlay's address and token, read from the page; the request itself is sent from here, because the write
+  // changes App.jsx and Vite reloads the page (no React refresh here), which can cut off a request made in it
+  const { base, token } = await page.evaluate(() => {
+    const base = new URL('/__plumb/', location.href).href;
+    const script = [...document.querySelectorAll('script[type="module"][src]')].find((s) => s.src === base + 'client.js');
+    return { base, token: script?.dataset.plumbToken };
+  });
+  const post = async (method, body) => {
+    const response = await fetch(new URL(method, base), { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: new URL(base).origin, ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error ?? `refused ${method}`);
+    return result;
+  };
+  const { site } = suggest;
+  const result = await post('prop', { file: site.file, hash: site.hash, line: site.line, column: site.column, name: suggest.name, value: suggest.to });
   assert.equal(result.applied[0], 'prop:delayDuration');
   const source = await readFile(join(root, 'src/App.jsx'), 'utf8');
   assert.match(source, /<Tooltip\.Provider delayDuration=\{500\}>/);
 
   // a stale hash is refused, and nothing is written
-  const stale = await page.evaluate(async (s) => {
-    const { post } = await import('/__plumb/src/api.js');
-    return post('prop', { file: s.site.file, hash: s.site.hash, line: s.site.line, column: s.site.column, name: s.name, value: 900 }).then(() => 'written', (e) => e.message);
-  }, suggest);
+  const stale = await post('prop', { file: site.file, hash: site.hash, line: site.line, column: site.column, name: suggest.name, value: 900 }).then(() => 'written', (e) => e.message);
   assert.match(stale, /changed since|Read it again/);
   assert.match(await readFile(join(root, 'src/App.jsx'), 'utf8'), /delayDuration=\{500\}/);
 
