@@ -856,4 +856,26 @@ export const CLEANUP = {
     notYet: 'Icons come to Plumber next.',
     couldNot: 'Couldn’t read this page’s colours.',
   },
+  icons: {
+    reading: 'Reading the icons on this page…',
+    head: (before, after, n) => `${n} ${n === 1 ? 'icon is' : 'icons are'} off your icon system.`,
+    // never invent a mark (icon-system.md §9.1): an emoji with no mark of yours is said, and stays
+    sub: (p) => (p?.noMark ? `Each moves to your own size, stroke and place beside its label. ${p.noMark} emoji ${p.noMark === 1 ? 'stays' : 'stay'}: your icons have no mark for ${p.noMark === 1 ? 'it' : 'them'} yet.`
+      : 'Each moves to your own size, stroke and place beside its label.'),
+    law: 'Why: icons that do the same job should look the same (law of similarity).',
+    list: 'Icons that change',
+    row: (n) => `${n} ${n === 1 ? 'icon' : 'icons'}`,
+    sizesPage: 'icon sizes and strokes on this page',
+    changes: (n) => (n === 1 ? 'icon changes' : 'icons change'),
+    nothing: 'The icons on this page already follow your icon system.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'icon' : 'icons'} in ${files} ${files === 1 ? 'file' : 'files'} now follow${places === 1 ? 's' : ''} your icon system`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Icon changes undone.',
+    doneHead: 'Icons are cleaned up on this page.',
+    doneSkipped: 'You skipped icons on this page.',
+    next: '',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s icons.',
+  },
 };
