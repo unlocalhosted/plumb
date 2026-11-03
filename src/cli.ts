@@ -171,7 +171,7 @@ async function main(): Promise<void> {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
   // craft reads a running page, not the project: no workspace to choose, the root only shortens paths
-  const project = command === 'craft' || command === 'census' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
+  const project = bare ? await (await import('./onboarding/gates.js')).chooseProject(args.values.root) : command === 'craft' || command === 'census' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
   if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.

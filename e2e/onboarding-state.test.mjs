@@ -64,7 +64,7 @@ for (const [name, expected] of Object.entries(cases)) {
 test('the state sentence is the line under the check header, in every view of the report', async t => {
   const cache = await scratch(t);
   for (const name of ['onboard-clean', 'onboard-partial', 'onboard-framework', 'onboard-bare', 'onboard-chaos']) {
-    for (const args of [[], ['--rule', 'provenance']]) {
+    for (const args of [['check'], ['--rule', 'provenance']]) {
       const result = run(['--root', fixture(name), ...args], cache);
       assert.ok([0, 1].includes(result.status), result.stderr);
       const header = result.stdout.split('\n\n')[0].split('\n');

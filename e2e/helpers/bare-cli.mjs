@@ -43,7 +43,7 @@ export async function start(t, args, extra = {}, ready = 'Press Ctrl+C') {
 }
 
 /** A plain run to completion. */
-export function run(args, extra = {}, input) {
-  const result = spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', env: env(extra), timeout: 90_000, maxBuffer: 64 * 1024 * 1024, ...(input === undefined ? {} : { input }) });
+export function run(args, extra = {}, input, cwd) {
+  const result = spawnSync(process.execPath, [cli, ...args], { ...(cwd ? { cwd } : {}), encoding: 'utf8', env: env(extra), timeout: 90_000, maxBuffer: 64 * 1024 * 1024, ...(input === undefined ? {} : { input }) });
   return { code: result.status, stdout: strip(result.stdout), stderr: strip(result.stderr) };
 }

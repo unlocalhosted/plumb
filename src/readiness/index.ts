@@ -52,7 +52,7 @@ export interface Runtime {
   polling?: boolean;
   watching?: boolean;
 }
-export interface ReadinessOptions { root: string; config?: string; rootOverride?: boolean; runtime?: Runtime; report?: () => Promise<Report>; sourceEvidence?: () => Promise<string[]> }
+export interface ReadinessOptions { root: string; config?: string; rootOverride?: boolean; runtime?: Runtime; report?: () => Promise<Report>; /** Read the project's setup rows without analysing its styles (the rows that need the report say unknown). */ noReport?: boolean; sourceEvidence?: () => Promise<string[]> }
 const labels: Record<Capability, string> = { read: 'Read', remember: 'Remember', fast: 'Fast', locate: 'Locate', preview: 'Preview', write: 'Write in place', blueprint: 'Blueprint', system: 'System panel' };
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const status = (value: boolean | undefined): Status => value === undefined ? 'unknown' : value ? 'ok' : 'missing';
@@ -122,7 +122,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
         [{ file: project.tailwind.entry ? relative(root, project.tailwind.entry) : 'package.json', line: 1, text: project.tailwind.version ?? 'plain CSS' }],
         'Your values can’t be checked against the CSS your app uses.', step('Install the project’s dependencies, or upgrade Tailwind to version 4.', problem?.includes('upgrade') ? 'npx @tailwindcss/upgrade' : `${packageManager(root)} install`));
       themeFile = project.tailwind.entry ? relative(root, project.tailwind.entry) : undefined;
-      if (readStatus === 'ok') report = await (options.report ? options.report() : check({ root, ...(options.config ? { config: options.config } : {}) }));
+      if (readStatus === 'ok' && !options.noReport) report = await (options.report ? options.report() : check({ root, ...(options.config ? { config: options.config } : {}) }));
     }
   } catch (error) { analysisError = userMessage(error); }
   // One row per system plumb does not judge in full, with the evidence and the next step (the support model).

@@ -7,6 +7,7 @@ import { projectFacts } from '../project-facts/index.js';
 import type { Report } from '../report.js';
 import type { Cause } from '../causes.js';
 import { count } from '../messages.js';
+import { projectGates } from './gates.js';
 import { wrap } from '../cli-table.js';
 
 /**
@@ -120,8 +121,11 @@ export function openBrowser(url: string): Promise<boolean> {
  * Serve the page and open it; with no browser to open, say the same thing in the terminal.
  */
 export async function runBare(context: PathContext): Promise<void> {
+  const page = onTerminal(context.noOpen);
+  // the page offers setup, which writes into the dev config; the plain version only reads
+  await projectGates(context.root, context.config, page);
   await context.prepare();
-  if (!onTerminal(context.noOpen)) { process.stdout.write(plainVersion(await context.report())); return; }
+  if (!page) { process.stdout.write(plainVersion(await context.report())); return; }
   const started = performance.now();
   process.stdout.write('Plumber · reading your app…\n');
   const daemon = await serve({ root: context.root, ...(context.config === undefined ? {} : { config: context.config }), page: true, port: 7331, portSearch: 40 });

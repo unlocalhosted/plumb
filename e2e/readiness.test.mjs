@@ -538,7 +538,7 @@ test('one missing token family degrades Read; the CLI cannot see runtime; plumbe
   assert.match(doctor, /^  degraded\s+Read$/m);
   for (const label of ['Locate', 'Preview', 'Blueprint']) assert.match(doctor, new RegExp(`^  verify in dev\\s+${label}$`, 'm'), label);
   assert.match(doctor, /fix Add layer order \(z-index\) steps to your theme/);
-  assert.match(run(root, []), /! 1 setup gap\b/);
+  assert.match(run(root, ['check']), /! 1 setup gap\b/);
   // Same project through the live host: runtime is observed, so nothing is left to verify.
   const { report } = await api(t, root, runtime);
   const ready = await report();
