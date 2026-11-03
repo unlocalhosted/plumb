@@ -11,7 +11,8 @@ import { projectGates } from './gates.js';
 import { loadConfig } from '../config.js';
 import { installOverlay } from '../adoption/install.js';
 import { initProject } from '../adoption/init.js';
-import { entryCount } from '../ledger/store.js';
+import { entryCount, readLedger } from '../ledger/store.js';
+import { ledgerCommand } from '../ledger/commands.js';
 import { packageManager } from '../setup-messages.js';
 import type { ReadinessReport } from '../readiness/index.js';
 import { wrap } from '../cli-table.js';
@@ -95,11 +96,9 @@ export function sayCause(cause: Cause, report: Report): string {
  * The same story with no browser to open (a pipe, CI, --no-open): the 3 biggest causes, one sentence or two each, and
  * exactly one next step. Whether the project is set up decides which step (docs/design/onboarding.md, sections 1 and 5).
  */
-export function plainVersion(report: Report): string {
+export function plainVersion(report: Report, setUp: boolean): string {
   const causes = (report.causes ?? []).slice(0, 3);
   const open = report.causes?.length ?? 0;
-  // set up: a config, and today's state recorded (the ledger); a config alone leaves every problem new
-  const setUp = report.config.path !== null && report.ledger?.exists === true;
   // what would fail a pull request: new problems the ledger doesn't know (a value off your theme warns, it doesn't fail)
   const fresh = report.ledger?.new ?? 0;
   const lines = [`Plumber · ${count(filesCount(report), 'file')} in ${seconds(report.timing.totalMs)}`];
@@ -126,6 +125,19 @@ export function openBrowser(url: string): Promise<boolean> {
 }
 
 /**
+ * What setting up still has to do. Set up means all three: Plumber in the dev config, a config, and today's state
+ * recorded (a config alone leaves every problem new). The plain version and --yes ask this one question.
+ */
+export async function setupGaps(root: string, config: string | undefined, ready: ReadinessReport): Promise<{ devConfig: boolean; config: boolean; state: boolean }> {
+  return {
+    devConfig: ready.requirements.find(item => item.id === 'locate.plugin')?.status !== 'ok',
+    config: (await loadConfig(root, config)).path === null,
+    state: !(await readLedger(root)).exists,
+  };
+}
+const isSetUp = (gaps: { devConfig: boolean; config: boolean; state: boolean }) => !gaps.devConfig && !gaps.config && !gaps.state;
+
+/**
  * Serve the page and open it; with no browser to open, say the same thing in the terminal.
  */
 export async function runBare(context: PathContext): Promise<void> {
@@ -134,7 +146,7 @@ export async function runBare(context: PathContext): Promise<void> {
   const ready = await projectGates(context.root, context.config, page || context.yes === true);
   await context.prepare();
   if (context.yes) { process.stdout.write(await setUp(context, ready)); return; }
-  if (!page) { process.stdout.write(plainVersion(await context.report())); return; }
+  if (!page) { process.stdout.write(plainVersion(await context.report(), isSetUp(await setupGaps(context.root, context.config, ready)))); return; }
   const started = performance.now();
   process.stdout.write('Plumber · reading your app…\n');
   const daemon = await serve({ root: context.root, ...(context.config === undefined ? {} : { config: context.config }), page: true, port: 7331, portSearch: 40 });
@@ -162,17 +174,21 @@ export async function runBare(context: PathContext): Promise<void> {
 export async function setUp(context: PathContext, ready: ReadinessReport): Promise<string> {
   const root = context.root;
   const lines: string[] = [];
-  const inDevConfig = ready.requirements.find(item => item.id === 'locate.plugin')?.status === 'ok';
-  const configured = (await loadConfig(root, context.config)).path !== null;
-  if (!inDevConfig) {
+  const gaps = await setupGaps(root, context.config, ready);
+  if (gaps.devConfig) {
     // first: the dev config is the step that can be refused (an unusual config), and a refusal writes nothing
     const wrote = [...(await installOverlay(root, true)).matchAll(/^Wrote (.+)\.$/gm)].map(match => match[1]!);
     for (const file of wrote.length ? wrote : ['your dev config']) lines.push(`  ✓ Added Plumber to ${file}`);
   }
-  if (!configured) {
-    const result = await initProject(root, { ...(context.config === undefined ? {} : { config: context.config }), unattended: true, quiet: true }, () => {});
-    const places = result.entries.filter(entry => entry.kind === 'debt').reduce((sum, entry) => sum + entryCount(entry), 0);
+  // a config with no state recorded (set up by hand, or before this): record today's state against it
+  const saved = (entries: import('../ledger/types.js').LedgerEntry[]) => {
+    const places = entries.filter(entry => entry.kind === 'debt').reduce((sum, entry) => sum + entryCount(entry), 0);
     lines.push(`  ✓ Saved today's state${places ? ` (${count(places, 'place')})` : ''}, so only new problems fail from now on`, '  Your theme is untouched.');
+  };
+  if (!gaps.config) { if (gaps.state) saved((await ledgerCommand('baseline', await context.report(), {})).entries); }
+  else {
+    const result = await initProject(root, { ...(context.config === undefined ? {} : { config: context.config }), unattended: true, quiet: true }, () => {});
+    saved(result.entries);
   }
   if (!lines.length) return 'Plumber is already set up here.\n\nNext: press Alt+B on your page to fix it there.\n';
   const manager = packageManager(root);
