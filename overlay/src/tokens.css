@@ -110,6 +110,9 @@
   color-scheme: light;
 }
 
+/* Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
+   pastels; a pill is a deep, saturated version of its hue lettered in white (4.5:1 or more), never dark lettering on a
+   bright block. Butter can only carry white as an ochre. */
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
     --pl-paper: #1c1c1e;
@@ -118,12 +121,12 @@
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #7cc4fa;    --pl-sky-ink: #08263d;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #ff7a6b;  --pl-coral-ink: #3a0b06;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #7ee0b0;   --pl-mint-ink: #06301d;
-    --pl-butter: #ffd166; --pl-butter-soft: #ffd166; --pl-butter-ink: #3a2a00;
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #ff6ec7;   --pl-pink-ink: #3d0629;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #b9a6ff;  --pl-lilac-ink: #1d1240;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
@@ -141,12 +144,12 @@
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #7cc4fa;    --pl-sky-ink: #08263d;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #ff7a6b;  --pl-coral-ink: #3a0b06;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #7ee0b0;   --pl-mint-ink: #06301d;
-    --pl-butter: #ffd166; --pl-butter-soft: #ffd166; --pl-butter-ink: #3a2a00;
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #ff6ec7;   --pl-pink-ink: #3d0629;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #b9a6ff;  --pl-lilac-ink: #1d1240;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;

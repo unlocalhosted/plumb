@@ -20,7 +20,8 @@ and its rainbow, each used for one thing only.
    Pink is what you can do (Write, Fix all, the primary button). Lilac names things (component tags, the element's
    name). Nothing else gets colour.
 2. **Pastel fills, inked words.** A pill or chip is filled with its pastel and lettered in the same hue's deep ink,
-   never white on pastel; in dark mode the pastel itself is bright enough to carry dark ink.
+   never white on pastel. At night (owner, 2026-11-03) a pill is a deep, saturated version of its hue lettered in white
+   (4.5:1 or more), while lines and marks keep the bright pastels: dark lettering on a bright block read as black.
 3. **Patterns from the old Mac.** Padding is a 45° hatch in sky (the reference's hatch, MacPaint's pattern); margin is
    a 50% dot dither; a transparent fill is a checkerboard. Patterns are 1px lines at 6px pitch, drawn by the overlay,
    never by the page.
@@ -43,12 +44,12 @@ and its rainbow, each used for one thing only.
 | `--pl-paper-2` | `#26262a` | `#f4f1ea` | inset, hover, pressed |
 | `--pl-rule` | `#323236` | `#e6e1d6` | dividers |
 | `--pl-ink` / `-2` / `-3` | `#f4f3ef` / `#a8a6a0` / `#5f5d58` | `#1d1b17` / `#6b665c` / `#b3ad9f` | words |
-| `--pl-sky` / `-soft` / `-ink` | `#7cc4fa` / `#7cc4fa` / `#08263d` | `#2f8fe0` / `#c5e6fd` / `#0b3554` | selected, measure, focus |
-| `--pl-coral` … | `#ff7a6b` / `#ff7a6b` / `#3a0b06` | `#e5503f` / `#ffd3cd` / `#5c160e` | off the system |
-| `--pl-mint` … | `#7ee0b0` / `#7ee0b0` / `#06301d` | `#1f9e64` / `#c9f2dd` / `#0b3d26` | on the system, written |
-| `--pl-butter` … | `#ffd166` / `#ffd166` / `#3a2a00` | `#c48a00` / `#ffeab0` / `#4a3400` | soft trouble |
-| `--pl-pink` … | `#ff6ec7` / `#ff6ec7` / `#3d0629` | `#e0369f` / `#ffd0ec` / `#5a0d3c` | actions |
-| `--pl-lilac` … | `#b9a6ff` / `#b9a6ff` / `#1d1240` | `#7a5cf0` / `#e3dcff` / `#2b1a6b` | names |
+| `--pl-sky` / `-soft` / `-ink` | `#7cc4fa` / `#0077d1` / `#ffffff` | `#2f8fe0` / `#c5e6fd` / `#0b3554` | selected, measure, focus |
+| `--pl-coral` … | `#ff7a6b` / `#eb1800` / `#ffffff` | `#e5503f` / `#ffd3cd` / `#5c160e` | off the system |
+| `--pl-mint` … | `#7ee0b0` / `#12874e` / `#ffffff` | `#1f9e64` / `#c9f2dd` / `#0b3d26` | on the system, written |
+| `--pl-butter` … | `#ffd166` / `#9c6d00` / `#ffffff` | `#c48a00` / `#ffeab0` / `#4a3400` | soft trouble |
+| `--pl-pink` … | `#ff6ec7` / `#e3008b` / `#ffffff` | `#e0369f` / `#ffd0ec` / `#5a0d3c` | actions |
+| `--pl-lilac` … | `#b9a6ff` / `#7b57ff` / `#ffffff` | `#7a5cf0` / `#e3dcff` / `#2b1a6b` | names |
 
 The existing semantic tokens map onto these: `--pl-accent` and `--pl-instrument` → sky (selection, focus, the
 reticle); a new `--pl-action` → pink; `--pl-off` → coral; `--pl-on` → mint; `--pl-soft` → butter. Components keep
