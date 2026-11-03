@@ -70,7 +70,12 @@ test('set replaces the class that sets the property, adds one where none does, a
 
 test('set writes into cn(...)s first string, creates a className, and edits a static inline value', async t => {
   const api = await project(t);
-  assert.equal((await api.set(await api.props(6), 6, 'font-weight', 'semibold')).status, 200);
+  // the weight is set in the `on && …` case only (engine review 2, B3): the card lists it with its case, and a set names
+  // that string (`at`) to change it there; unnamed, it is refused rather than read as the element's resting weight
+  const cased = await api.props(6), weight = api.prop(cased, 'font-weight');
+  assert.deepEqual([weight.source === 'class', weight.class, weight.branch], [false, 'font-medium', { condition: 'on', which: 'then' }]);
+  assert.equal((await api.set(cased, 6, 'font-weight', 'semibold')).status, 400);
+  assert.equal((await api.call('set', { file: 'src/App.tsx', hash: cased.hash, line: 6, column: 6, key: 'font-weight', token: 'semibold', at: weight.at }, 'POST')).status, 200);
   assert.equal(api.prop(await api.props(6), 'color').class, 'text-brand');
   assert.equal((await api.set(await api.props(7), 7, 'radius', 'card')).status, 200);
   const inline = await api.props(9);

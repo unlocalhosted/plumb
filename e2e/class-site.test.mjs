@@ -47,10 +47,10 @@ const files = {
   'src/Link.tsx': 'export function Link({ className, ...props }) { return <a className={`inline-flex ${className}`} {...props} />; }\n',
 };
 
-async function open(t) {
+async function open(t, set = files) {
   const root = await mkdtemp(join(repo, 'fixtures/.class-site-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  for (const [name, text] of Object.entries(files)) { await mkdir(dirname(join(root, name)), { recursive: true }); await writeFile(join(root, name), text); }
+  for (const [name, text] of Object.entries(set)) { await mkdir(dirname(join(root, name)), { recursive: true }); await writeFile(join(root, name), text); }
   const server = await serve({ root, watch: false }); t.after(() => server.close());
   const base = `http://127.0.0.1:${server.info.port}`;
   const headers = { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json' };
@@ -286,4 +286,203 @@ test('F1-01: an element that spreads its props in is written where its usage pas
   assert.ok((await o.read()).includes('<Row id="row" to="/one" className="flex gap-2 p-s4">'));
   assert.equal((await o.post('undo', { id: r.body.undo.id })).status, 200);
   assert.equal(await o.read(), o.original);
+});
+
+// ---------------------------------------------------------------- engine review 2 (docs/research/engine-review-2.md)
+// A second project, the shapes the review found read or written wrong: a pinned write the server did not check (B6), a
+// rest spread that kept className (B1), memo(function Inner) (B2), a branch read as worn (B3), an object prop read by
+// path (B4/D3), clsx's identifier keys (B5), a shared variable as the place to add (R3), a same-named component on the
+// chain (R4), a usage that spreads its props on (R5).
+const review = {
+  'package.json': '{ "name": "fx-r2", "private": true, "type": "module", "dependencies": { "tailwindcss": "^4.0.0", "clsx": "^2" } }\n',
+  'plumber.config.ts': `export default { css: 'src/styles.css', source: ['src/**/*.{ts,tsx,js,jsx,css}'] };\n`,
+  'src/styles.css': '@import "tailwindcss";\n\n@theme {\n  --spacing-s2: 8px;\n  --spacing-s3: 12px;\n  --spacing-s4: 16px;\n}\n',
+  'src/ui/Card.tsx': 'export function Card({ className, children }) { return <div className={`border ${className}`}>{children}</div>; }\n',
+  'src/list/Card.tsx': "import { Card as Base } from '../ui/Card';\nexport function Card({ children }) { return <Base className=\"p-6\">{children}</Base>; }\n",
+  'src/App.tsx': `import { memo } from 'react';
+import clsx from 'clsx';
+import { Card } from './list/Card';
+const look = 'px-2.5 py-1 rounded';
+const Panel = memo(function Inner({ className, children }) { return <div className={\`rounded-card \${className}\`}>{children}</div>; });
+function Row({ className, ...rest }) { return <div className={className}><a {...rest} /></div>; }
+function Row2(props) { const { className, ...rest } = props; return <div className={className}><b {...rest} /></div>; }
+function Box({ styles }) { return <div className={styles.root}>b</div>; }
+function Outer(props) { return <Panel {...props} />; }
+export function A({ on, tone, open, bad, active }) {
+  return (
+    <section>
+      <div id="obj" className={clsx('flex', { hidden: !open, 'text-red': bad, active })}>x</div>
+      <Panel className="p-4 flex gap-2"><span id="p">panel</span></Panel>
+      <Row id="row" href="/one" className="flex gap-2 p-3">row</Row>
+      <Row2 id="row2" href="/two" className="flex p-3">row</Row2>
+      <Box styles={{ 'root': 'p-4 flex' }} />
+      <Box id="box2" styles={{ root: 'p-5 grid' }} />
+      <div id="v1" className={look}>x</div>
+      <div id="v2" className={look}>x</div>
+      <div id="tern" className={tone ? 'flex gap-s2 p-s3' : 'grid'}>x</div>
+      <div id="both" className={tone ? 'p-s3' : 'p-s2'}>x</div>
+      <Outer className="p-2 m-1">o</Outer>
+      <Card className="m-2">c</Card>
+    </section>
+  );
+}
+`,
+};
+const message = (r) => r.body.error ?? r.body.message ?? JSON.stringify(r.body);
+
+test('B6: a pinned write is checked against the strings the element reaches: an add into a branch, a pin into a non-class string or into another element\'s string is refused', async (t) => {
+  const o = await open(t, review);
+  const body = await o.site('<div id="tern"', 'grid p-s3');
+  const hash = body.hashes['src/App.tsx'];
+  const grid = o.byToken(body).grid.sites[0], then = o.byToken(body)['p-s3'].sites[0];
+  // an add pinned into the else branch: one case only
+  const branch = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ line: grid.element.line, column: grid.element.column, from: '', to: 'pt-2', at: { line: grid.string.line, column: grid.string.column } }] });
+  assert.equal(branch.status, 400, JSON.stringify(branch.body));
+  assert.match(message(branch), /condition/i);
+  // a pin into the href of <Row>: not a string of its classes
+  const href = o.at('"/one"');
+  const wrong = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ ...o.at('<Row id="row"'), from: '', to: 'pt-2', at: { line: href.line, column: href.column + 1 } }] });
+  assert.equal(wrong.status, 400, JSON.stringify(wrong.body));
+  // a pin into another element's string (#both's), sent with #tern
+  const other = o.at("tone ? 'p-s3' : 'p-s2'");
+  const stray = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ ...o.at('<div id="tern"'), from: 'p-s3', to: 'p-s4', at: { line: other.line, column: other.column + 8 } }] });
+  assert.equal(stray.status, 400, JSON.stringify(stray.body));
+  // the single swap says the same
+  const single = await o.post('swap', { file: 'src/App.tsx', hash, ...o.at('<Row id="row"'), from: '', to: 'pt-2', at: { line: href.line, column: href.column + 1 } });
+  assert.equal(single.status, 400, JSON.stringify(single.body));
+  assert.equal(await o.read(), o.original);
+  // a pin into the string the class is in still writes, in that case only
+  const ok = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ line: then.element.line, column: then.element.column, from: 'p-s3', to: 'p-s4', at: { line: then.string.line, column: then.string.column } }] });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.ok((await o.read()).includes(`className={tone ? 'flex gap-s2 p-s4' : 'grid'}`));
+  assert.equal((await o.post('undo', { id: ok.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});
+
+test('B1: a rest spread that the component took className out of carries no className: the usage\'s classes are not the inner element\'s', async (t) => {
+  const o = await open(t, review);
+  const usage = o.at('<Row id="row"');
+  const body = await o.site('<a {...rest}', '', { chain: JSON.stringify([usage]) });
+  assert.deepEqual(body.classes.map((c) => c.class), []);
+  assert.notEqual(body.add?.kind, 'usage', JSON.stringify(body.add));
+  // the same with the rest taken in the body: const { className, ...rest } = props
+  const usage2 = o.at('<Row2 id="row2"');
+  const body2 = await o.site('<b {...rest}', '', { chain: JSON.stringify([usage2]) });
+  assert.deepEqual(body2.classes.map((c) => c.class), []);
+  assert.notEqual(body2.add?.kind, 'usage', JSON.stringify(body2.add));
+});
+
+test('B2: memo(function Inner) assigned to Panel is the component Panel; without its usage, an add into the component is said to be shared', async (t) => {
+  const o = await open(t, review);
+  const usage = o.at('<Panel className');
+  const body = await o.site('<div className={`rounded-card', 'rounded-card p-4', { chain: JSON.stringify([usage]) });
+  const p4 = o.byToken(body)['p-4'];
+  assert.deepEqual([p4.sites[0]?.kind, p4.sites[0]?.element.tag, p4.sites[0]?.line], ['usage', 'Panel', usage.line], JSON.stringify(p4));
+  assert.deepEqual([body.add.kind, body.add.element.line], ['usage', usage.line]);
+  // no chain: the class comes in from a usage that was not found, so an add into the component's own string changes every Panel
+  const alone = await o.site('<div className={`rounded-card', 'rounded-card');
+  assert.equal(alone.add?.shared, true, JSON.stringify(alone.add));
+});
+
+test('B4 + D3: an object prop read by path (styles.root) is followed to the value at that path; its keys are never classes', async (t) => {
+  const o = await open(t, review);
+  const usage = o.at('<Box styles');
+  const element = o.at('<div className={styles.root}');
+  const body = await o.site('<div className={styles.root}', '', { chain: JSON.stringify([usage]) });
+  assert.deepEqual(body.classes.map((c) => c.class).sort(), ['flex', 'p-4']);
+  const s = o.byToken(body)['p-4'].sites[0];
+  assert.deepEqual([s.kind, s.prop, s.line, s.string.text, s.branch], ['usage', 'styles', usage.line, 'p-4 flex', undefined]);
+  // an identifier key reads the same
+  const usage2 = o.at('<Box id="box2"');
+  const body2 = await o.site('<div className={styles.root}', '', { chain: JSON.stringify([usage2]) });
+  assert.deepEqual(body2.classes.map((c) => c.class).sort(), ['grid', 'p-5']);
+  // the write, pinned and sent with the element and chain it was read through
+  const hash = body.hashes['src/App.tsx'];
+  const edit = { line: s.element.line, column: s.element.column, from: 'p-4', to: 'p-6', at: { line: s.string.line, column: s.string.column } };
+  const r = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ ...edit, of: { ...element, chain: [usage] } }] });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.ok((await o.read()).includes(`<Box styles={{ 'root': 'p-6 flex' }} />`), await o.read());
+  assert.equal((await o.post('undo', { id: r.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});
+
+test('B5: the identifier keys of a clsx object are classes, under their condition; a write re-quotes a key that is not an identifier', async (t) => {
+  const o = await open(t, review);
+  const body = await o.site('<div id="obj"', '');
+  const c = o.byToken(body);
+  assert.deepEqual(Object.keys(c).sort(), ['active', 'flex', 'hidden', 'text-red']);
+  assert.deepEqual(c.hidden.sites[0].branch, { condition: '!open', which: 'then' });
+  assert.equal(c.flex.sites[0].branch, undefined);
+  const hash = body.hashes['src/App.tsx'];
+  const pin = (s, from, to) => ({ line: s.element.line, column: s.element.column, from, to, at: { line: s.string.line, column: s.string.column } });
+  const hidden = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [pin(c.hidden.sites[0], 'hidden', 'sr-only')] });
+  assert.equal(hidden.status, 200, JSON.stringify(hidden.body));
+  assert.ok((await o.read()).includes(`clsx('flex', { 'sr-only': !open, 'text-red': bad, active })`), await o.read());
+  assert.equal((await o.post('undo', { id: hidden.body.undo.id })).status, 200);
+  // a shorthand key keeps its value
+  const active = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [pin(c.active.sites[0], 'active', 'is-active')] });
+  assert.equal(active.status, 200, JSON.stringify(active.body));
+  assert.ok((await o.read()).includes(`clsx('flex', { hidden: !open, 'text-red': bad, 'is-active': active })`), await o.read());
+  assert.equal((await o.post('undo', { id: active.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});
+
+test('R3: a variable other elements read is never where a class is added; a class in it can still be changed, and says how many read it', async (t) => {
+  const o = await open(t, review);
+  const body = await o.site('<div id="v1"', 'px-2.5');
+  assert.equal(body.add, null, JSON.stringify(body.add));
+  assert.match(body.addRefused ?? '', /look/);
+  const s = o.byToken(body)['px-2.5'].sites[0];
+  assert.equal(s.readers, 2);
+  const hash = body.hashes['src/App.tsx'];
+  const added = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ line: s.element.line, column: s.element.column, from: '', to: 'pl-3', at: { line: s.string.line, column: s.string.column } }] });
+  assert.equal(added.status, 400, JSON.stringify(added.body));
+  assert.equal(await o.read(), o.original);
+  const changed = await o.post('swaps', { file: 'src/App.tsx', hash, edits: [{ line: s.element.line, column: s.element.column, from: 'px-2.5', to: 'px-3', at: { line: s.string.line, column: s.string.column } }] });
+  assert.equal(changed.status, 200, JSON.stringify(changed.body));
+  assert.equal((await o.post('undo', { id: changed.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});
+
+test('B3: a class in one branch is not read as worn by the props card, and is set only with its string named', async (t) => {
+  const o = await open(t, review);
+  const tern = o.at('<div id="tern"');
+  const p = await o.get('props', tern);
+  assert.equal(p.status, 200, JSON.stringify(p.body));
+  const padding = p.body.props.find((x) => x.key === 'padding');
+  assert.notEqual(padding.source, 'class', JSON.stringify(padding));
+  assert.deepEqual([padding.class, padding.branch], ['p-s3', { condition: 'tone', which: 'then' }], JSON.stringify(padding));
+  const unpinned = await o.post('set', { file: 'src/App.tsx', hash: p.body.hash, ...tern, key: 'padding', token: 's4' });
+  assert.equal(unpinned.status, 400, JSON.stringify(unpinned.body));
+  assert.match(message(unpinned), /tone/);
+  assert.equal(await o.read(), o.original);
+  const string = o.at("'flex gap-s2 p-s3'");
+  const pinned = await o.post('set', { file: 'src/App.tsx', hash: p.body.hash, ...tern, key: 'padding', token: 's4', at: { line: string.line, column: string.column + 1 } });
+  assert.equal(pinned.status, 200, JSON.stringify(pinned.body));
+  assert.ok((await o.read()).includes(`className={tone ? 'flex gap-s2 p-s4' : 'grid'}`), await o.read());
+  assert.equal((await o.post('undo', { id: pinned.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});
+
+test('R5: a usage that spreads its props on is followed up the chain to where className is passed', async (t) => {
+  const o = await open(t, review);
+  const spread = o.at('<Panel {...props}'), outer = o.at('<Outer className');
+  const body = await o.site('<div className={`rounded-card', 'rounded-card p-2', { chain: JSON.stringify([spread, outer]) });
+  const s = o.byToken(body)['p-2'].sites[0];
+  assert.deepEqual([s?.kind, s?.prop, s?.line, s?.element.tag], ['usage', 'className', outer.line, 'Outer'], JSON.stringify(body));
+});
+
+test('R4: a usage named like the component but imported from another file is not its usage', async (t) => {
+  const o = await open(t, review);
+  const own = await o.atIn('src/ui/Card.tsx', '<div className');
+  const base = await o.atIn('src/list/Card.tsx', '<Base className');
+  const app = o.at('<Card className="m-2"');
+  // the full chain: the ui Card is used as <Base> in list/Card.tsx
+  const full = await o.get('class-site', { ...own, chain: JSON.stringify([base, app]) });
+  assert.equal(full.status, 200, JSON.stringify(full.body));
+  assert.deepEqual(full.body.classes.map((c) => c.class).sort(), ['border', 'p-6']);
+  // a chain that skips it: App's <Card> is list/Card's Card, not this one, so m-2 is not this element's
+  const skipped = await o.get('class-site', { ...own, chain: JSON.stringify([app]) });
+  assert.equal(skipped.status, 200, JSON.stringify(skipped.body));
+  assert.deepEqual(skipped.body.classes.map((c) => c.class), ['border'], JSON.stringify(skipped.body.classes));
 });

@@ -60,6 +60,20 @@ function tracing(session: Session, tag: unknown): Session {
     return typeof value === 'function' ? (value as (...a: unknown[]) => unknown).bind(target) : value;
   } });
 }
+/** The usages above an element, nearest first (class-site's chain): [{ file, line, column }], as JSON in a query or a list in a body. */
+function chainOf(value: unknown): { file: string; line: number; column: number }[] {
+  let chain = value;
+  if (typeof chain === 'string') { try { chain = JSON.parse(chain); } catch { throw new UsageError('chain must be a JSON list of { file, line, column }.'); } }
+  if (chain !== undefined && !Array.isArray(chain)) throw new UsageError('chain must be a list of { file, line, column }.');
+  return ((chain ?? []) as unknown[]).map(link => { if (!object(link)) throw new UsageError('chain must be a list of { file, line, column }.'); return { file: text(link, 'file')!, line: position(link, 'line')!, column: position(link, 'column')! }; });
+}
+/** A swap's pinned string (`at`) and, when it was reached through the element's usages, the element and chain it was asked with (`of`). */
+function pinOf(edit: Record<string, unknown>): { at?: { line: number; column: number }; of?: { file: string; line: number; column: number; chain: { file: string; line: number; column: number }[] } } {
+  const at = edit?.at, of = edit?.of;
+  if (of !== undefined && !object(of)) throw new UsageError('of is { file, line, column, chain }.');
+  return { ...(object(at) ? { at: { line: Number(at.line), column: Number(at.column) } } : {}),
+    ...(object(of) ? { of: { file: text(of, 'file')!, line: position(of, 'line')!, column: position(of, 'column')!, chain: chainOf(of.chain) } } : {}) };
+}
 async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
   const params = raw;
@@ -113,23 +127,17 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     if (typeof computed === 'string') { try { computed = JSON.parse(computed); } catch { throw new UsageError('computed must be a JSON object.'); } }
     return session.props(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, ...(object(computed) ? [computed as Record<string, string>] : []));
   }
-  if (method === 'recipes') return session.recipes(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!);
+  if (method === 'recipes') return session.recipes(text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, chainOf(params.chain));
   if (method === 'recipes/preview' || method === 'recipes/apply') {
-    const body = { ...params, file: text(params, 'file')!, line: position(params, 'line')!, column: position(params, 'column')! } as Parameters<Session['recipesPreview']>[0];
+    const body = { ...params, file: text(params, 'file')!, line: position(params, 'line')!, column: position(params, 'column')!, chain: chainOf(params.chain) } as Parameters<Session['recipesPreview']>[0];
     return method === 'recipes/preview' ? session.recipesPreview(body) : session.recipesApply(body);
   }
   if (method === 'swaps') {
     const edits = (params as { edits?: unknown }).edits;
     if (!Array.isArray(edits)) throw new UsageError('Swaps requires edits.');
-    return session.swaps({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: edits.map((e: Record<string, unknown>) => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '', ...(object(e?.at) ? { at: { line: Number(e.at.line), column: Number(e.at.column) } } : {}) })) });
+    return session.swaps({ file: text(params, 'file')!, hash: text(params, 'hash')!, edits: edits.map((e: Record<string, unknown>) => ({ line: Number(e?.line), column: Number(e?.column), from: typeof e?.from === 'string' ? e.from : '', to: typeof e?.to === 'string' ? e.to : '', ...pinOf(e) })) });
   }
-  if (method === 'class-site') {
-    // the chain is the usages above the element, nearest first: [{ file, line, column }], as JSON in a query or an array in a body
-    let chain = params.chain;
-    if (typeof chain === 'string') { try { chain = JSON.parse(chain); } catch { throw new UsageError('chain must be a JSON list of { file, line, column }.'); } }
-    if (chain !== undefined && !Array.isArray(chain)) throw new UsageError('chain must be a list of { file, line, column }.');
-    return read('classSite', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, text(params, 'classes', true), (chain ?? []).map((link: unknown) => { if (!object(link)) throw new UsageError('chain must be a list of { file, line, column }.'); return { file: text(link, 'file')!, line: position(link, 'line')!, column: position(link, 'column')! }; })]);
-  }
+  if (method === 'class-site') return read('classSite', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, text(params, 'classes', true), chainOf(params.chain)]);
   if (method === 'structure') return read('structure', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'prop') {
     // a JSON body carries the value as itself; a query carries it as JSON text
@@ -144,8 +152,8 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     return session.token({ file: text(params, 'file')!, hash: text(params, 'hash')!, name: text(params, 'name')!, value: text(params, 'value')!, ...(params.why === undefined ? {} : { why: text(params, 'why')! }),
       ...(then ? { then: { file: text(then, 'file')!, hash: text(then, 'hash')!, line: position(then, 'line')!, column: position(then, 'column')!, from: text(then, 'from', true) ?? '', to: text(then, 'to')! } } : {}) });
   }
-  if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')!, ...(object(params.at) ? { at: { line: Number(params.at.line), column: Number(params.at.column) } } : {}) });
-  if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')! });
+  if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')!, ...pinOf(params) });
+  if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')!, ...(object(params.at) ? { at: { line: Number(params.at.line), column: Number(params.at.column) } } : {}) });
   if (method === 'system') {
     const body = params as { files?: unknown; census?: unknown; scope?: unknown; exclude?: unknown; roles?: unknown };
     const system: NonNullable<Parameters<Session['system']>[0]> = {};

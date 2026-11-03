@@ -2,8 +2,10 @@ import { posix } from 'node:path';
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
-import { classNamesOf, findOpening, swapClasses } from '../session/props.js';
+import { findOpening, swapClasses } from '../session/props.js';
 import type { SourceChange } from '../session/props.js';
+import { classSites, pinnedString } from '../session/class-site.js';
+import type { ClassSiteAnswer, ClassSiteInput, ElementRef, StringRef } from '../session/class-site.js';
 import { isComponentJSX } from '../session/source-location.js';
 import { formatBoxShadow, formatDuration, splitVariants } from './css.js';
 import { map } from './mapping.js';
@@ -34,7 +36,8 @@ export interface PlanInput {
   index: ProjectIndex;
   /** a project file's text, by path relative to the root with forward slashes */
   read: (path: string) => string | undefined;
-  element: { file: string; text: string; start: number; tag: string };
+  /** the element, and the usages above it (nearest first, as class-site takes them), whose classes may be written there */
+  element: { file: string; text: string; start: number; tag: string; line: number; column: number; chain?: { file: string; line: number; column: number }[] };
 }
 
 // ------------------------------------------------------------------ small helpers
@@ -132,10 +135,50 @@ function writeDark(edits: Edits, files: string[], prefix: string, name: string, 
 // ------------------------------------------------------------------ the element
 type Element = PlanInput['element'];
 const variantOf = (c: string) => { const { variants } = splitVariants(c); return variants.length ? `${variants.join(':')}:` : ''; };
-function swap(edits: Edits, el: Element, from: string[], to: string[], summary: string): string | null {
+/** What the element wears, read where each class is written (class-site, the resolver the cards ask): `classes` are the
+ * ones that always apply (a class in one branch of a ternary is not its resting class); `site` is the answer a write goes by. */
+interface Worn { kind: 'static' | 'none' | 'dynamic'; classes: string[]; reason?: string; site?: ClassSiteAnswer; input?: ClassSiteInput }
+function siteInput(i: Pick<PlanInput, 'element' | 'read'>): ClassSiteInput {
+  const el = i.element, text = (file: string) => file === el.file ? el.text : i.read(file);
+  const link = (l: { file: string; line: number; column: number }) => { const t = text(l.file); if (t === undefined) throw new UsageError(`${l.file} is not a file of this project.`); return { file: l.file, path: l.file, text: t, line: l.line, column: l.column }; };
+  return { element: link(el), chain: (el.chain ?? []).map(link) };
+}
+function wornBy(i: Pick<PlanInput, 'element' | 'read'>): Worn {
   try {
-    const change = swapClasses(el.file, edits.text(el.file), el.start, from, to);
-    edits.set(el.file, apply(edits.text(el.file), change), 'element', summary);
+    const input = siteInput(i), site = classSites(input);
+    if (site.classes.length) return { kind: 'static', classes: site.classes.filter(c => c.sites.some(s => !s.branch)).map(c => c.class), site, input };
+    if (site.add) return { kind: site.add.string ? 'static' : 'none', classes: [], site, input };
+    return { kind: 'dynamic', classes: [], reason: site.addRefused ?? site.refused ?? 'className is built at runtime; set the class by hand.', site, input };
+  } catch (e) { return { kind: 'dynamic', classes: [], reason: e instanceof UsageError ? e.message : 'This file does not parse.' }; }
+}
+/** `from` taken out and `to` put in where class-site says they are written: in every string that holds all of `from`
+ * whatever the conditions, or, with nothing taken out, where it says a class is added. Each string goes through
+ * pinnedString, the check every pinned writer makes. */
+function swap(edits: Edits, i: PlanInput, worn: Worn, from: string[], to: string[], summary: string): string | null {
+  try {
+    const el = i.element, site = worn.site;
+    if (!site || !worn.input) return worn.reason ?? 'className is built at runtime; set the class by hand.';
+    const targets: { element: ElementRef; string: StringRef }[] = [];
+    if (!from.length) {
+      if (!site.add) return site.addRefused ?? site.refused ?? 'There is no place here a class always applies; add it by hand.';
+      // no className at all: one is written on the element
+      if (!site.add.string) { edits.set(el.file, apply(edits.text(el.file), swapClasses(el.file, edits.text(el.file), el.start, [], to)), 'element', summary); return null; }
+      targets.push({ element: site.add.element, string: site.add.string });
+    } else {
+      const held = new Map<string, { element: ElementRef; string: StringRef; n: number }>();
+      for (const name of from) for (const s of site.classes.find(c => c.class === name)?.sites ?? []) {
+        if (s.branch) continue;
+        const key = `${s.element.file}@${s.string.start}`;
+        held.set(key, { element: s.element, string: s.string, n: (held.get(key)?.n ?? 0) + 1 });
+      }
+      targets.push(...[...held.values()].filter(h => h.n === from.length));
+      if (!targets.length) return `${from.join(' ')} ${from.length > 1 ? 'are' : 'is'} not written in one string that always applies here; change ${from.length > 1 ? 'them' : 'it'} by hand.`;
+    }
+    // every pin is found in the texts as class-site read them, then written from the last to the first, so earlier offsets hold
+    const read = new Map([worn.input.element, ...worn.input.chain].map(l => [l.file, l.text]));
+    if (targets.some(t => edits.text(t.element.file) !== read.get(t.element.file))) return 'This recipe would change the file the classes are written in twice; set it by hand.';
+    const pins = targets.map(t => ({ file: t.element.file, pin: pinnedString(worn.input!, { path: t.element.file, line: t.element.line, column: t.element.column }, t.string.start, !from.length) }));
+    for (const { file, pin } of pins.toSorted((a, b) => b.pin.start - a.pin.start)) edits.set(file, apply(edits.text(file), swapClasses(file, edits.text(file), 0, from, to, pin)), 'element', summary);
     return null;
   } catch (error) { if (error instanceof UsageError) return error.message; throw error; }
 }
@@ -146,7 +189,7 @@ function shadowClassFor(token: string | undefined, id: string): string { return 
 /** What an element says it has now, for GET: its shadow and its motion, from its classes or its motion props. */
 export function describeElement(i: Pick<PlanInput, 'index' | 'read' | 'element'>): { shadow: Record<string, unknown>; motion: Record<string, unknown> } {
   const { index, element: el } = i;
-  const info = (() => { try { return classNamesOf(el.file, el.text, el.start); } catch { return { kind: 'dynamic' as const, classes: [] as string[], reason: 'This file does not parse.' }; } })();
+  const info = wornBy(i);
   const theme = index.themes.find(t => t.shadows.length || t.motions.length) ?? null;
   const reading: ClassReading | null = info.kind === 'static' ? readClasses(info.classes, theme, index.rootPx) : null;
   const shadow = reading?.shadow
@@ -174,7 +217,7 @@ export function planShadow(i: PlanInput): Plan {
   const edits = new Edits(i.read);
   const note = credit(i.recipe);
   const tailwind = index.idioms.tailwind;
-  const info = (() => { try { return classNamesOf(el.file, el.text, el.start); } catch (e) { return { kind: 'dynamic' as const, classes: [], reason: e instanceof UsageError ? e.message : 'This file does not parse.' }; } })();
+  const info = wornBy(i);
   let token = nearest?.token, className: string | undefined;
 
   // 1. the token: reuse (nothing to write), move (the project's own token takes the recipe's value), or add under the project's naming
@@ -209,7 +252,7 @@ export function planShadow(i: PlanInput): Plan {
     if (from === className) notes.push('The element already wears it.');
     else if (!from && isComponentJSX(el.tag) && !i.forwards) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${className} inside it, by hand.`);
     else {
-      const why = swap(edits, el, from ? [from] : [], [className!], `${from ?? 'no shadow'} → ${className}`);
+      const why = swap(edits, i, info, from ? [from] : [], [className!], `${from ?? 'no shadow'} → ${className}`);
       if (why) return refuse(verdict, nearest, why);
     }
   } else {
@@ -299,7 +342,7 @@ export function planMotion(i: PlanInput): Plan {
 function planMotionTailwind(i: PlanInput, m: MotionModel, exit: MotionModel | undefined): Plan {
   const { index, element: el } = i;
   const css = timingToCss(m.timing);
-  const info = (() => { try { return classNamesOf(el.file, el.text, el.start); } catch (e) { return { kind: 'dynamic' as const, classes: [], reason: e instanceof UsageError ? e.message : 'This file does not parse.' }; } })();
+  const info = wornBy(i);
   const edits = new Edits(i.read), notes: string[] = [], note = credit(i.recipe);
   const themeFile = index.idioms.tailwind!.themeFile;
   if (info.kind === 'dynamic') return refuse(none(), null, info.reason ?? 'className is built at runtime; set the classes by hand.');
@@ -383,7 +426,7 @@ function planMotionTailwind(i: PlanInput, m: MotionModel, exit: MotionModel | un
   if (same) notes.push('The element already wears these classes.');
   else {
     if (!from.length && isComponentJSX(el.tag) && !i.forwards) return refuse(verdict, nearest, `<${el.tag}> is a component; add ${finalTo.join(' ')} inside it, by hand.`);
-    const why = swap(edits, el, from, finalTo, `${from.join(' ') || 'no motion'} → ${finalTo.join(' ')}`);
+    const why = swap(edits, i, info, from, finalTo, `${from.join(' ') || 'no motion'} → ${finalTo.join(' ')}`);
     if (why) return refuse(verdict, nearest, why);
   }
   if (css.easing.startsWith('linear(') && m.timing.type === 'spring') notes.push('A spring is written as a CSS linear() curve and the time it settles in, so it needs no library.');

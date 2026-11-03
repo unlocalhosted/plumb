@@ -25,7 +25,9 @@ import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
-import { classSites } from './class-site.js';
+import { classSites, pinnedString } from './class-site.js';
+import type { Located } from './class-site.js';
+import type { ClassString } from './props.js';
 import type { ClassSiteAnswer } from './class-site.js';
 import type { SpacingUnit } from './props.js';
 import { ancestorWith, indexSource } from '../structure/index.js';
@@ -119,7 +121,7 @@ export interface ApplyAllResult {
 export interface RefusedSwap { line: number; column: number; from: string; to: string; reason: string }
 export interface ApplyResult { revision: number; file: string; hash: string; applied: string[]; remaining: Report['findings']; undo: UndoHandle; /** swaps: the places that could not be written, each with its reason; the others were. */ refused?: RefusedSwap[] }
 export interface PropsResult extends Props { file: string; line: number; column: number; hash: string }
-export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string }
+export interface SetOptions { file: string; hash: string; line: number; column: number; key: string; token: string; /** the string of the element's className to set it in, when the class is under a condition (a ternary's branch) */ at?: { line: number; column: number } }
 /** A write may never leave a source file that parses worse than it did: every writer's last guard. */
 function parsesAsBefore(file: string, before: string, next: string): void {
   if (!/\.[cm]?[jt]sx?$/.test(file)) return;
@@ -137,15 +139,23 @@ export interface StructureResult {
 }
 /** GET class-site: where each class of an element is written, and the hash of every file a site is in. */
 export interface ClassSiteResult extends ClassSiteAnswer { revision: number; file: string; hash: string; hashes: Record<string, string> }
-export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string; /** the plain string the change is made in (class-site's string.line and string.column), when it is not the element's own */ at?: { line: number; column: number } }[] }
+/** A pinned string's element as class-site was asked about it: the element and its chain, when the string was reached
+ * through the element's usages (a prop other than className at a usage, `styles.root`). Without it the string must be one
+ * the written element reaches on its own. */
+/** A usage above an element, as the overlay names it (class-site's chain). */
+export interface ChainLink { file: string; line: number; column: number }
+export interface PinOrigin { file: string; line: number; column: number; chain?: { file: string; line: number; column: number }[] }
+export interface SwapsOptions { file: string; hash: string; edits: { line: number; column: number; from: string; to: string; /** the plain string the change is made in (class-site's string.line and string.column), when it is not the element's own */ at?: { line: number; column: number }; of?: PinOrigin }[] }
 /** A new token for the theme (a craft suggestion of kind token), then the class that uses it (docs/briefs/craft-spec.md §4). */
 export interface TokenOptions { file: string; hash: string; name: string; value: string; why?: string; then?: SwapOptions }
 export interface TokenResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; then?: ApplyResult }
-export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string; at?: { line: number; column: number } }
+export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string; at?: { line: number; column: number }; of?: PinOrigin }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
 export interface HistoryEntry { id: string; file: string; line: number; label: string; at: string; /** the file was changed outside React Plumber since this write, so it can't be undone */ stale?: true; /** a write made as one over several files (a recipe's theme and element): every file it changed */ files?: string[] }
-/** One file write. Writes made as one carry the same `batch`: history lists them as one entry, undo takes them back together. */
-interface Recorded extends Omit<HistoryEntry, 'files'> { path: string; before: string; hashAfter: string; batch?: { id: string; label: string } }
+/** One file write. Writes made as one are a batch (Session.batches): history lists them as one entry, undo takes them back together. */
+interface Recorded extends Omit<HistoryEntry, 'files'> { path: string; before: string; hashAfter: string }
+/** Writes made as one (a recipe's theme and element): its own id and label, and its members' ids, oldest first. */
+interface Batch { label: string; members: string[] }
 const historyLimit = 20;
 /** What a caller tags a write with (POST body `trace`): a group several calls share, and anything to read back with each change. */
 export interface TraceTag { group?: string; meta?: unknown }
@@ -171,6 +181,9 @@ function offsetOf(text: string, at: { line: number; column: number }): number {
   if (!Number.isSafeInteger(at.line) || !Number.isSafeInteger(at.column) || at.line < 1 || at.column < 1) throw new UsageError('at is { line, column }, both positive integers.');
   let offset = 0;
   for (let line = 1; line < at.line; line++) { const next = text.indexOf('\n', offset); if (next < 0) throw new UsageError('That line is past the end of the file.'); offset = next + 1; }
+  // a column past the line's end would land on the next line
+  const end = text.indexOf('\n', offset);
+  if (offset + at.column - 1 > (end < 0 ? text.length : end)) throw new UsageError('That column is past the end of its line.');
   return offset + at.column - 1;
 }
 
@@ -219,6 +232,8 @@ export class Session extends EventEmitter {
   private lastStats: unknown;
   private revision = 0;
   private written: Recorded[] = [];
+  /** The batches of writes made as one, by their id: history, eviction and undo all read this one structure. */
+  private batches = new Map<string, Batch>();
   private writes = 0;
   // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
   private changeLog: ChangeLog | undefined;
@@ -741,14 +756,14 @@ export class Session extends EventEmitter {
    * Recipes (docs/briefs/recipe-engine.md): the shadows and motion this project already has, what the packs offer against
    * them, and what the element wears; then a preview of exactly what a recipe would write, and the write.
    */
-  async recipes(file: string, line: number, column: number): Promise<Record<string, unknown>> {
-    return recipesView(await this.recipeContext(file, line, column));
+  async recipes(file: string, line: number, column: number, chain: ChainLink[] = []): Promise<Record<string, unknown>> {
+    return recipesView(await this.recipeContext(file, line, column, chain));
   }
-  async recipesPreview(params: PlanParams & { file: string; line: number; column: number }): Promise<Record<string, unknown>> {
-    return recipesPreview(await this.recipeContext(params.file, params.line, params.column), params);
+  async recipesPreview(params: PlanParams & { file: string; line: number; column: number; chain?: ChainLink[] }): Promise<Record<string, unknown>> {
+    return recipesPreview(await this.recipeContext(params.file, params.line, params.column, params.chain), params);
   }
-  async recipesApply(params: PlanParams & { file: string; line: number; column: number; hash?: string; hashes?: Record<string, string> }): Promise<{ revision: number; applied: string[]; undo: UndoHandle[]; files: Record<string, string>; choice: string; verdict: unknown; nearest: unknown; notes: string[]; uses?: unknown }> {
-    const context = await this.recipeContext(params.file, params.line, params.column);
+  async recipesApply(params: PlanParams & { file: string; line: number; column: number; chain?: ChainLink[]; hash?: string; hashes?: Record<string, string> }): Promise<{ revision: number; applied: string[]; undo: UndoHandle[]; files: Record<string, string>; choice: string; verdict: unknown; nearest: unknown; notes: string[]; uses?: unknown }> {
+    const context = await this.recipeContext(params.file, params.line, params.column, params.chain);
     if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw new UsageError(staleFile);
     const { plan, writes } = recipesPlan(context, params);
     if (!plan.ok) throw new UsageError(plan.refused ?? 'This recipe cannot be written here.');
@@ -775,7 +790,8 @@ export class Session extends EventEmitter {
    * makes reconciles and counts one), and the element's file reading the same. A dial drag asks per tick; only the element's own
    * position is made fresh for each ask.
    */
-  private async recipeContext(file: string, line: number, column: number): Promise<RecipeContext> {
+  private async recipeContext(file: string, line: number, column: number, chain: ChainLink[] = []): Promise<RecipeContext> {
+    if (!Array.isArray(chain) || chain.length > 32) throw new UsageError('chain is a list of at most 32 { file, line, column }.');
     const path = this.file(file); this.position(line); this.position(column);
     const { text, location } = await this.elementFacts(path, line, column);
     const found = await glob('**/*.{css,ts,tsx,js,jsx,mjs,mts}', { cwd: this.root, absolute: false, dot: false, followSymbolicLinks: false, ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/*.d.ts', '**/*.min.*'] });
@@ -803,7 +819,14 @@ export class Session extends EventEmitter {
       // a project too large to keep read is read again each time rather than held
       this.recipeProject = [...texts.values()].reduce((n, t) => n + t.length, 0) <= 32_000_000 ? project : undefined;
     }
-    return { index: project.index, read: p => project.texts.get(p), element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column } };
+    // the usages above the element (as class-site takes them), read fresh: a class passed in is read, and written, there
+    const links: { file: string; line: number; column: number }[] = [], fresh = new Map<string, string>([[relative_, text]]);
+    for (const link of chain) {
+      const linked = await this.sources()(link?.file, link?.line, link?.column), rel = relative(this.root, linked.path).replaceAll('\\', '/');
+      if (!fresh.has(rel)) fresh.set(rel, linked.text);
+      links.push({ file: rel, line: linked.line, column: linked.column });
+    }
+    return { index: project.index, read: p => fresh.get(p) ?? project.texts.get(p), element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column, ...(links.length ? { chain: links } : {}) } };
   }
   /** A whole file replaced with the text a plan made, under the same guards as every write: the hash it was read at, one
    * regular file, a result that still parses, one undo handle. */
@@ -1134,7 +1157,7 @@ export class Session extends EventEmitter {
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
   async set(options: SetOptions): Promise<ApplyResult> {
-    const { file, hash, line, column, key, token } = options ?? {} as SetOptions;
+    const { file, hash, line, column, key, token, at } = options ?? {} as SetOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof key !== 'string' || !key.trim() || typeof token !== 'string' || !token.trim()) throw new UsageError('Set requires file, hash, line, column, key and token.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
@@ -1144,13 +1167,13 @@ export class Session extends EventEmitter {
     const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
     return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) });
+      const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }, at ? offsetOf(source, at) : undefined);
       return { ...change, replacement: change.replacement };
     }, label);
   }
   /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
   async swap(options: SwapOptions): Promise<ApplyResult> {
-    const { file, hash, line, column, from, to, at } = options ?? {} as SwapOptions;
+    const { file, hash, line, column, from, to, at, of } = options ?? {} as SwapOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof from !== 'string' || typeof to !== 'string' || !to.trim()) throw new UsageError('Swap requires file, hash, line, column, from and to.');
     const names = (v: string) => v.split(/\s+/).filter(Boolean);
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
@@ -1159,10 +1182,35 @@ export class Session extends EventEmitter {
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+    const pinned = at ? await this.pinned(path, facts, { line, column, at, ...(of ? { of } : {}) }, !names(from).length) : undefined;
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-      return swapClasses(_file, source, facts.location.start, names(from), names(to), at ? offsetOf(source, at) : undefined);
+      return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
+  }
+  /** The files class-site reads, each once: an element and the usages of its chain, as the resolver takes them. */
+  private sources(texts = new Map<string, string>()) {
+    return async (name: string, line: number, column: number): Promise<Located> => {
+      if (typeof name !== 'string' || !name.trim()) throw new UsageError('A chain link is { file, line, column }.');
+      const path = this.file(name); this.position(line); this.position(column);
+      if (!texts.has(path)) { await this.readableSource(path); texts.set(path, await readFile(path, 'utf8')); }
+      return { file: name, path, text: texts.get(path)!, line, column };
+    };
+  }
+  /**
+   * The string a pinned write names, checked by class-site (`pinnedString`): one of the strings the written element reaches
+   * on its own, or, with `of`, one of those reached from the element class-site was asked about through its chain, held
+   * by the written element. An add must go into a string that always applies and no other place reads. Never a free
+   * offset: a stale or wrong pin is refused, not written somewhere else.
+   */
+  private async pinned(path: string, facts: { text: string; location: { line: number; column: number } }, edit: { line: number; column: number; at: { line: number; column: number }; of?: PinOrigin }, adding: boolean): Promise<ClassString> {
+    const source = this.sources(new Map([[path, facts.text]]));
+    const of = edit.of;
+    if (of !== undefined && (!of || typeof of !== 'object' || (of.chain !== undefined && (!Array.isArray(of.chain) || of.chain.length > 32)))) throw new UsageError('of is { file, line, column, chain }.');
+    const element = of ? await source(of.file, of.line, of.column) : { file: relative(this.root, path).replaceAll('\\', '/'), path, text: facts.text, line: edit.line, column: edit.column };
+    const chain: Located[] = [];
+    for (const link of of?.chain ?? []) chain.push(await source(link?.file, link?.line, link?.column));
+    return pinnedString({ element, chain }, { path, line: facts.location.line, column: facts.location.column }, offsetOf(facts.text, edit.at), adding);
   }
   /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
   async structure(file: string, line: number, column: number): Promise<StructureResult | null> {
@@ -1202,12 +1250,7 @@ export class Session extends EventEmitter {
   async classSite(file: string, line: number, column: number, classes?: string, chain: { file: string; line: number; column: number }[] = []): Promise<ClassSiteResult> {
     if (!Array.isArray(chain) || chain.length > 32) throw new UsageError('chain is a list of at most 32 { file, line, column }.');
     if (classes !== undefined && (typeof classes !== 'string' || classes.length > 4000)) throw new UsageError('classes is a space-separated list of class names.');
-    const texts = new Map<string, string>();
-    const source = async (name: string, line: number, column: number) => {
-      const path = this.file(name); this.position(line); this.position(column);
-      if (!texts.has(path)) { await this.readableSource(path); texts.set(path, await readFile(path, 'utf8')); }
-      return { file: name, path, text: texts.get(path)!, line, column };
-    };
+    const source = this.sources();
     const element = await source(file, line, column);
     const links = [];
     for (const link of chain) links.push(await source(link?.file, link?.line, link?.column));
@@ -1312,13 +1355,14 @@ export class Session extends EventEmitter {
       if (!(error instanceof UsageError) || error.message === staleFile) throw error;
       refused.push({ line: e.line, column: e.column, from: e.from, to: e.to, reason: error.message });
     };
-    const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[]; pin?: number }[] = [];
+    const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[]; pin?: ClassString }[] = [];
     for (const e of unique) {
       try {
         const facts = await this.elementFacts(path, e.line, e.column);
         if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
-        starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(e.at ? { pin: offsetOf(facts.text, e.at) } : {}) });
+        const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, !names(e.from).length) : undefined;
+        starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(pin ? { pin } : {}) });
       } catch (error) { refuse(e, error); }
     }
     const written: SwapsOptions['edits'] = [];
@@ -1459,7 +1503,7 @@ export class Session extends EventEmitter {
     const file = relative(this.root, path).replaceAll('\\', '/');
     const id = `w${++this.writes}`;
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
-    if (this.written.length > historyLimit) this.written.splice(0, this.written.length - historyLimit);
+    this.evict();
     // each change in it, for the trace; the trace never fails a write that already landed
     try {
       const after = readFileSync(path, 'utf8');
@@ -1467,11 +1511,28 @@ export class Session extends EventEmitter {
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
-  /** Writes made as one: their entries share a batch, named by a handle of its own (the last file's, a new id). */
+  /** The history keeps the last 20 writes; a batch is kept or dropped whole, never part of one (undo would take the part
+   * back as if it were the whole). */
+  private evict(): void {
+    while (this.written.length > historyLimit) {
+      const oldest = this.written[0]!, batch = this.batchOf(oldest.id);
+      if (!batch) { this.written.shift(); continue; }
+      const members = new Set(this.batches.get(batch)!.members);
+      this.written = this.written.filter(entry => !members.has(entry.id));
+      this.batches.delete(batch);
+    }
+  }
+  /** The batch a write is a member of. */
+  private batchOf(write: string): string | undefined {
+    for (const [id, batch] of this.batches) if (batch.members.includes(write)) return id;
+    return undefined;
+  }
+  /** Writes made as one: a batch of its own, named by a handle of its own (the last file's, a new id). */
   private asOneWrite(handles: UndoHandle[], label: string): UndoHandle {
     if (handles.length < 2) return handles[0]!;
-    const id = `w${++this.writes}`, members = new Set(handles.map(h => h.id));
-    for (const entry of this.written) if (members.has(entry.id)) entry.batch = { id, label };
+    const id = `w${++this.writes}`;
+    this.batches.set(id, { label, members: handles.map(h => h.id) });
+    this.evict();
     return { id, file: handles.at(-1)!.file, label };
   }
   /** Newest first. A write is stale when the file no longer holds what it wrote and no newer write here explains the
@@ -1487,12 +1548,12 @@ export class Session extends EventEmitter {
       }
     }
     // a batch is one entry, where its newest write is, and stale when any of its writes is
-    const entries: HistoryEntry[] = [], batches = new Map<string, HistoryEntry>();
+    const entries: HistoryEntry[] = [], listed = new Map<string, HistoryEntry>();
     for (const w of this.written.toReversed()) {
-      const kept = w.batch && batches.get(w.batch.id);
+      const id = this.batchOf(w.id), batch = id === undefined ? undefined : this.batches.get(id), kept = id === undefined ? undefined : listed.get(id);
       if (kept) { kept.files!.push(w.file); if (stale.has(w.id)) kept.stale = true; continue; }
-      const entry: HistoryEntry = { id: w.batch?.id ?? w.id, file: w.file, line: w.line, label: w.batch?.label ?? w.label, at: w.at, ...(stale.has(w.id) ? { stale: true as const } : {}), ...(w.batch ? { files: [w.file] } : {}) };
-      if (w.batch) batches.set(w.batch.id, entry);
+      const entry: HistoryEntry = { id: id ?? w.id, file: w.file, line: w.line, label: batch?.label ?? w.label, at: w.at, ...(stale.has(w.id) ? { stale: true as const } : {}), ...(batch ? { files: [w.file] } : {}) };
+      if (id !== undefined) listed.set(id, entry);
       entries.push(entry);
     }
     return { writes: entries };
@@ -1500,46 +1561,60 @@ export class Session extends EventEmitter {
   /** Restore the file as it was before a write, when nothing has changed it since. Goes through the same guards as a write. */
   undo(id: string): Promise<UndoResult> {
     if (typeof id !== 'string' || !id.trim()) throw new UsageError('Undo requires the id of a write.');
-    const members = this.written.filter(item => item.batch?.id === id);
-    if (members.length) return this.undoBatch(id, members);
     return this.serialize(async () => {
+      if (this.batches.has(id)) return this.undoBatch(id);
       const entry = this.written.find(item => item.id === id);
       if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.');
-      const file = this.file(entry.path);
-      await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-      await this.reconcile([file]);
-      if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-      const identity = await this.editableFile(file);
-      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(file, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-        await this.sameFile(file, identity);
-        await handle.writeFile(entry.before, 'utf8'); await handle.truncate(Buffer.byteLength(entry.before));
-        await this.sameFile(file, identity);
-      } finally { await handle.close(); }
-      this.written = this.written.filter(item => item.id !== id);
-      try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
-      await this.reconcile([file]);
-      const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
-      if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
-      return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
+      if (this.batchOf(id) !== undefined) throw new UsageError('That write is part of one made as one; undo that one, whole.');
+      return this.undoOne(entry);
     });
   }
-  /** Take back writes made as one: every file is checked before any is written, then each goes back, newest first. */
-  private async undoBatch(id: string, members: Recorded[]): Promise<UndoResult> {
+  /** One write taken back; the caller holds the lock (serialize). */
+  private async undoOne(entry: Recorded): Promise<UndoResult> {
+    const id = entry.id;
+    const file = this.file(entry.path);
+    await this.editableFile(file);
+    if (sourceHash(await readFile(file, 'utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+    await this.reconcile([file]);
+    if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+    const identity = await this.editableFile(file);
+    const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
+    try {
+      const info = await handle.stat();
+      if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+      if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+      await this.sameFile(file, identity);
+      const bytes = Buffer.alloc(info.size);
+      let offset = 0;
+      while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
+      if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+      await this.sameFile(file, identity);
+      await handle.writeFile(entry.before, 'utf8'); await handle.truncate(Buffer.byteLength(entry.before));
+      await this.sameFile(file, identity);
+    } finally { await handle.close(); }
+    this.written = this.written.filter(item => item.id !== id);
+    try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
+    await this.reconcile([file]);
+    const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
+    if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+    return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
+  }
+  /** Take back writes made as one, under the one lock the caller holds: every file is checked before any is written, then
+   * each goes back, newest first; no other write can come between two of them. */
+  private async undoBatch(id: string): Promise<UndoResult> {
+    const batch = this.batches.get(id)!;
+    const members = batch.members.map(member => this.written.find(entry => entry.id === member));
+    if (members.some(entry => !entry)) throw new UsageError('Part of that write is no longer in the history, so it can\'t be undone whole; edit it by hand.');
     // a file written twice in the batch holds what its newest write left
-    const newest = [...new Map(members.map(entry => [entry.path, entry])).values()];
+    const newest = [...new Map((members as Recorded[]).map(entry => [entry.path, entry])).values()];
     for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw new UsageError(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
     let last: UndoResult | undefined;
-    for (const entry of members.toReversed()) last = await this.undo(entry.id);
+    try { for (const entry of (members as Recorded[]).toReversed()) last = await this.undoOne(entry); }
+    finally {
+      // a member that could not go back (a hard link made since) keeps the rest of the batch, to be undone again
+      const left = batch.members.filter(member => this.written.some(entry => entry.id === member));
+      if (left.length) this.batches.set(id, { ...batch, members: left }); else this.batches.delete(id);
+    }
     return { ...last!, undone: id };
   }
   /** Run one write under a tag: every change it records carries the tag's group (a new one when none is given) and meta. */

@@ -1,5 +1,6 @@
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
+import { knownClassHelpers } from '../collect/class-helpers.js';
 import { defaultRootPx } from './css.js';
 import { literal, readMotionObject, readTheme, rootFontSize } from './readers.js';
 import type { ThemeIndex } from './readers.js';
@@ -98,9 +99,10 @@ export function indexProject(input: ProjectInput): ProjectIndex {
   // a class helper counts only where the file imports or declares it: a vendored example or a word in a string is not the idiom
   // a call, not the helper's own declaration
   const calls = (name: string) => new RegExp(`(?<!function\\s+)\\b${name}\\(`, 'g');
-  const helpers: [Idioms['classes'], string, RegExp][] = [['cn', 'cn', calls('cn')], ['clsx', 'clsx', calls('clsx')], ['cva', 'class-variance-authority', calls('cva')], ['twMerge', 'tailwind-merge', calls('twMerge')]];
+  // the helpers the recipes name as an idiom: the rows of the one class-helper table that say so
+  const helpers: [Idioms['classes'], RegExp][] = knownClassHelpers.filter(h => h.idiom).map(h => [h.name as Idioms['classes'], calls(h.name)]);
   const holds = (text: string, name: string) => new RegExp(`import\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from|import\\s+${name}\\s+from|(?:function|const|let|var)\\s+${name}\\b`).test(text);
-  const tally = helpers.map(([idiom, , re]) => {
+  const tally = helpers.map(([idiom, re]) => {
     const files = sources.filter(f => holds(f.text, idiom)).map(f => ({ file: f.path, count: f.text.match(re)?.length ?? 0 })).filter(f => f.count);
     return { idiom, count: files.reduce((n, f) => n + f.count, 0), top: files.sort((a, b) => b.count - a.count)[0] };
   });

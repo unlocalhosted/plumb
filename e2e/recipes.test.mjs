@@ -531,3 +531,98 @@ test('N5: a recipe’s writes are one history entry and one undo; a batch that f
   assert.equal((await api.call('history')).body.writes.length, 0);
   assert.ok((await api.call('trace')).body.changes.every(c => c.state === 'undone' || !/shadow-overlay/.test(JSON.stringify(c))), 'no live change of the failed batch');
 });
+
+// ---------------------------------------------------------------- engine review 2 (docs/research/engine-review-2.md)
+// R6: the recipe plan reads and writes classes through class-site, the resolver the cards use: a class passed in from a
+// usage is changed there, and a class in one branch of a ternary is not the element's resting class (B3).
+const passed = {
+  ...tailwind,
+  'src/App.tsx': `import { cn } from './lib/cn';
+
+function Tile({ className, children }: { className?: string; children?: unknown }) {
+  return <div id="tile" className={cn('rounded-lg p-4', className)}>{children}</div>;
+}
+export function Grid() {
+  return <Tile className="shadow-sm bg-white">t</Tile>;
+}
+export function Hover({ hover }: { hover?: boolean }) {
+  return <div id="hov" className={hover ? 'shadow-lg' : 'shadow-sm'}>h</div>;
+}
+export function Panel() {
+  return <section id="panel" className="rounded-lg p-4">Panel</section>;
+}
+`,
+};
+
+test('R6: a recipe on an element whose shadow is passed in from its usage changes it at the usage (the chain sent as for class-site)', async t => {
+  const api = await project(t, passed);
+  const tile = await api.at('src/App.tsx', '<div id="tile"'), usage = await api.at('src/App.tsx', '<Tile className');
+  const original = await api.read('src/App.tsx');
+  const pos = { ...tile, chain: JSON.stringify([usage]) };
+  const view = await api.view(pos);
+  assert.deepEqual([view.element.shadow.source, view.element.shadow.class], ['class', 'shadow-sm'], JSON.stringify(view.element));
+  const used = await api.apply({ ...tile, chain: [usage] }, { recipe: 'raised' });
+  assert.equal(used.status, 200, JSON.stringify(used.body));
+  const after = await api.read('src/App.tsx');
+  assert.ok(after.includes('<Tile className="shadow-md bg-white">'), after);
+  assert.ok(after.includes(`cn('rounded-lg p-4', className)`), after);
+  await api.undo(used.body.undo);
+  assert.equal(await api.read('src/App.tsx'), original);
+});
+
+test('B3 in the recipes: a shadow in one branch of a ternary is not the element\'s resting shadow, and nothing is added into a branch', async t => {
+  const api = await project(t, passed);
+  const hov = await api.at('src/App.tsx', '<div id="hov"');
+  const original = await api.read('src/App.tsx');
+  const view = await api.view(hov);
+  assert.notEqual(view.element.shadow.source, 'class', JSON.stringify(view.element.shadow));
+  const applied = await api.apply(hov, { recipe: 'raised' });
+  assert.equal(applied.status, 400, JSON.stringify(applied.body));
+  assert.equal(await api.read('src/App.tsx'), original);
+});
+
+// R2 + D4: the history keeps the last 20 writes, and a recipe batch is kept or dropped whole: never half of one, which
+// undo would then take back as if it were the whole batch.
+test('R2: a recipe batch pushed out of the history goes whole; its undo is refused, and nothing is half undone', async t => {
+  const api = await project(t, passed);
+  const panel = await api.at('src/App.tsx', '<section id="panel"');
+  const added = await api.apply(panel, { recipe: 'overlay' });
+  assert.equal(added.status, 200, JSON.stringify(added.body));
+  assert.equal(added.body.applied.length, 2);
+  // 19 more writes: 21 entries, so the batch's oldest member is the one pushed out
+  let hash = added.body.files['src/App.tsx'];
+  for (let n = 0; n < 19; n++) {
+    const r = await api.call('swap', { file: 'src/App.tsx', hash, ...panel, from: n % 2 ? 'p-5' : 'p-4', to: n % 2 ? 'p-4' : 'p-5' }, 'POST');
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    hash = r.body.hash;
+  }
+  const history = (await api.call('history')).body.writes;
+  assert.ok(!history.some(w => w.id === added.body.undo[0].id), JSON.stringify(history.map(w => [w.id, w.files])));
+  const css = await api.read('src/styles.css'), app = await api.read('src/App.tsx');
+  const undone = await api.call('undo', { id: added.body.undo[0].id }, 'POST');
+  assert.equal(undone.status, 400, JSON.stringify(undone.body));
+  assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [app, css]);
+});
+
+// R1: a batch is undone under one lock: a write to one of its files that arrives while it is being undone either lands
+// first (and the batch is refused whole) or after (and is refused as stale); never between two members.
+test('R1: a recipe batch is undone whole or not at all while another write to its files arrives', async t => {
+  const api = await project(t, passed);
+  const panel = await api.at('src/App.tsx', '<section id="panel"');
+  const original = { app: await api.read('src/App.tsx'), css: await api.read('src/styles.css') };
+  for (let round = 0; round < 6; round++) {
+    const added = await api.apply(panel, { recipe: 'overlay' });
+    assert.equal(added.status, 200, JSON.stringify(added.body));
+    const [undone, token] = await Promise.all([
+      api.call('undo', { id: added.body.undo[0].id }, 'POST'),
+      api.call('token', { file: 'src/styles.css', hash: added.body.files['src/styles.css'], name: `--spacing-race${round}`, value: '3px' }, 'POST'),
+    ]);
+    const app = await api.read('src/App.tsx'), css = await api.read('src/styles.css');
+    const appBack = app === original.app, cssBack = !css.includes('--shadow-overlay');
+    assert.equal(appBack, cssBack, `round ${round}: half undone (undo ${undone.status} ${JSON.stringify(undone.body).slice(0, 200)}; token ${token.status})`);
+    // put the project back for the next round
+    if (!appBack) { const again = await api.call('undo', { id: added.body.undo[0].id }, 'POST'); if (again.status !== 200 && token.body.undo) { await api.call('undo', { id: token.body.undo.id }, 'POST'); await api.call('undo', { id: added.body.undo[0].id }, 'POST'); } }
+    if (token.status === 200 && (await api.read('src/styles.css')).includes(`--spacing-race${round}`)) await api.call('undo', { id: token.body.undo.id }, 'POST');
+    assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css], `round ${round}: back as it was`);
+  }
+});

@@ -20,7 +20,8 @@ export interface RecipeContext {
   read: (path: string) => string | undefined;
   /** the recipe packs on offer; the default is the one that ships */
   packs?: Pack[];
-  element: { file: string; text: string; start: number; tag: string; line: number; column: number };
+  /** the element, and the usages above it (class-site's chain, files relative to the root) its classes may come in from */
+  element: { file: string; text: string; start: number; tag: string; line: number; column: number; chain?: { file: string; line: number; column: number }[] };
 }
 
 /** A recipe as JSON for the overlay: its model, the numbers derived from it, the CSS to show it, and whether it can be written here. */
