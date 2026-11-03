@@ -68,7 +68,7 @@
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], ['voice', 'Voice and tone'], ['tokens', 'Tokens']] },
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], ['readout', 'Readout']] },
     { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], ['marks', 'Blueprint marks']] },
-    { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
+    { label: 'Layout', items: [['card', 'Card'], ['page', 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
   ];
   const TABS = ['Overview', 'Style', 'Usage', 'Code', 'Accessibility'];
@@ -515,6 +515,34 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       ],
     }),
 
+    card: () => ({
+      title: 'Card',
+      lede: 'The one lifted thing. Everything Plumber shows sits on a card: paper, 12px corners, a hairline ring and a soft shadow. Two sizes, for two places.',
+      sections: [
+        sec('kinds', 'Two cards', `<div class="cards-two">
+          <div><div class="held" data-open-demo><div class="h-top"><span class="pl-tag">ModelRow</span><span class="n">3 off</span><span class="file">ModelRow.tsx:42</span></div><div class="h-body"><b>Padding 10px isn’t on your scale</b><p>The nearest step is s3, 12px.</p><div class="h-acts"><span class="pl-pill" data-hue="coral">p-[10px]</span><span class="arr">→</span><span class="pl-pill" data-hue="mint">p-s3</span><button type="button" class="pl-act">Use s3</button></div></div></div><span class="cap">Held: over your page</span></div>
+          <div><div class="paged"><div class="p-head"><h3>Where your text sizes land</h3><p>Each dot is a place that types a size by hand.</p></div><div class="p-body">${[['xs', 12, 11], ['sm', 14, 15], ['md', 16, 9], ['lg', 18, 6]].map(([name, n, uses]) => stepMark({ name, n, uses })).join('')}</div><div class="p-foot">${countMark(45, 'places use your scale')}<button type="button" class="pl-act">Snap to your scale</button></div></div><span class="cap">On a page: the project page</span></div>
+        </div><button type="button" class="pl-act quiet" data-open-replay>Open the held card again</button>`),
+        sec('recipe', 'The recipe', `<table class="tok"><thead><tr><th>Part</th><th>Token</th><th>Why</th></tr></thead><tbody>${[['Ground', '--pl-paper', 'Warm off-white by day, near-black at night: it separates from any page under it'], ['Corners', '--pl-radius-card', '12px: a held object; the instrument inside it stays square'], ['Edge and lift', '--pl-shadow-card', 'A 1px ring in --pl-rule, then a tight shadow and a long soft one'], ['Words', '--pl-ink', 'Set on the card, so everything inside inherits it'], ['Inside edges', 'overflow: clip', 'A head or foot rule stops at the corners']].map(([a, t, w]) => `<tr><td>${a}</td><td><code>${t}</code></td><td>${w}</td></tr>`).join('')}</tbody></table>`),
+        sec('sizes', 'Held and on a page', `<table class="tok"><thead><tr><th></th><th>Held</th><th>On a page</th></tr></thead><tbody><tr><td>Width</td><td><code>--pl-card-w</code> 360px</td><td>The column it sits in</td></tr><tr><td>Inset</td><td><code>--pl-card-pad</code> 16px</td><td>24px</td></tr><tr><td>Type</td><td>The card scale: title 14, body 13, meta 12</td><td>The page scale: title 20, small 14, figure 32</td></tr><tr><td>Regions</td><td>Head (32px, the element), body, foot</td><td>Head, body, foot with the count and the action</td></tr><tr><td>Gap to its element</td><td><code>--pl-card-gap</code> 12px</td><td>None: it is the content</td></tr></tbody></table>`),
+        sec('regions', 'Regions', `<ul class="plain"><li><b>Head</b> which thing: a tag with its name, a count, where it’s written. A hairline under it.</li><li><b>Body</b> what’s off in words, then the change as pills, coral to mint.</li><li><b>Foot</b> what you can do: one pink action, on the right. A hairline over it.</li><li>Inside, space goes by relationship: 4 within a group, 8 between parts, 12 between rows, 16 between sections.</li></ul>`),
+        sec('motion', 'Opening', `<p>A held card pins in <code>--pl-dur-card</code> (180ms) on the ease-out, from 4px above and 98.5% size, grown from the corner nearest its element. It leaves at once. Under reduced motion it just appears.</p>`),
+        sec('open', 'Open', `<ul class="plain"><li>There’s no card class yet: twelve modules each write the same paper, corners and shadow. One <code>.pl-card</code> in <code>language.js</code> would make this page the only place it’s defined.</li><li>The page card’s 24px inset isn’t a token.</li></ul>`),
+      ],
+    }),
+
+    page: () => ({
+      title: 'Page',
+      lede: 'How a full page is laid out: the project page <code>npx plumber</code> opens. One sentence leads, one drawing proves it, and nothing else competes.',
+      sections: [
+        sec('live', 'Live', `<p>The real project page, on crafting-ui’s numbers.</p><div class="frame"><iframe title="The project page" src="project.html?scheme=${host.dataset.scheme ?? 'light'}" loading="lazy"></iframe></div><p><a href="project.html" target="_blank" rel="noopener">Open it on its own</a></p>`),
+        sec('order', 'Top to bottom', `<table class="tok"><thead><tr><th>Part</th><th>Set in</th><th>Its job</th></tr></thead><tbody>${[['Bar', 'Sticky, 88% paper with a 12px blur, a hairline under it', 'Where you are: the mark, the project, how much was read, day or night'], ['Eyebrow', '--pl-page-meta, the second ink', 'What the page is about, in three words'], ['Headline', '--pl-page-display, at most 26 characters a line, balanced', 'The one finding, with its numbers coloured by verdict'], ['Lede', '--pl-page-body, at most 60 characters a line', 'Why it matters, and the way out'], ['Hero', 'A page card', 'The drawing that proves the headline']].map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table>`),
+        sec('grid', 'Measure and gutters', `<ul class="plain"><li><b>Column</b> 1120px at most, centred.</li><li><b>Gutters</b> 32px each side; 16px under 720px wide.</li><li><b>Top and bottom</b> 56px above the eyebrow, 96px under the last card; 32 and 64 on a phone.</li><li><b>Headline</b> 40/46 drops to 30/36 on a phone.</li></ul>`),
+        sec('rules', 'Rules', `<ul class="plain"><li>One headline per page, and it’s a finding, not a name.</li><li>Numbers in the headline take their verdict’s colour: coral for off, mint for on.</li><li>The page follows the OS’s day or night until you choose; the bar’s button switches the page and every card at once.</li></ul>`),
+        sec('open', 'Open', `<ul class="plain"><li>The page’s gaps, 32, 56, 64 and 96, sit above the spacing ladder and aren’t tokens yet.</li></ul>`),
+      ],
+    }),
+
     type: () => ({
       title: 'Typography',
       lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
@@ -738,6 +766,24 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     table.all td:last-child { color: var(--pl-ink-3); font: var(--pl-page-meta); }
     .same { font: var(--pl-page-meta); color: var(--pl-ink-3); }
     .bm-stage { padding: 56px 48px; }
+    .cards-two { display: grid; gap: 28px; justify-items: start; margin-bottom: 16px; } .cards-two > div:last-child { justify-self: stretch; }
+    .cards-two .cap { display: block; margin-top: 10px; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .held, .paged { background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); overflow: clip; }
+    .held { width: var(--pl-card-w); max-width: 100%; transform-origin: 24px 0; }
+    .held.opening { animation: card-pin var(--pl-dur-card) var(--pl-ease-out) both; }
+    @keyframes card-pin { from { opacity: 0; transform: translateY(-4px) scale(.985); } }
+    .h-top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-text-label); }
+    .h-top .n { color: var(--pl-coral); } .h-top .file { margin-left: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+    .h-body { padding: var(--pl-card-pad); } .h-body b { display: block; font: var(--pl-card-title); } .h-body p { margin: 4px 0 12px; font: var(--pl-card-body); color: var(--pl-ink-2); }
+    .h-acts { display: flex; align-items: center; gap: 8px; } .h-acts .arr { color: var(--pl-ink-3); } .h-acts .pl-act { margin-left: auto; }
+    .p-head { padding: 22px 24px 0; } .p-head h3 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); } .p-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .p-body { display: flex; flex-wrap: wrap; gap: 20px; padding: 28px 24px; }
+    .p-foot { display: flex; align-items: center; gap: 12px; padding: 18px 24px 22px; border-top: 1px solid var(--pl-rule); } .p-foot .sc-count { flex: 1 1 auto; }
+    .p-foot .pl-act { margin-left: auto; }
+    .frame { height: 620px; border-radius: var(--pl-radius-card); overflow: hidden; box-shadow: 0 0 0 1px var(--pl-rule); }
+    .frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+    @media (max-width: 900px) { .cards-two { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) { .held.opening { animation: none; } }
     .ro-stage { align-items: flex-start; } .ro-stage .gv-read { position: static; }
     .bp-stage { gap: 20px; padding: 32px; }
     .bp-acts { display: flex; align-items: center; gap: 12px; } .bp-acts .say { font: var(--pl-page-meta); color: var(--pl-ink-2); }
@@ -830,6 +876,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       rollCount(c, on ? 621 : 45); c.querySelector('.say').textContent = on ? 'places on your scale, if every size snapped to it' : 'places use your scale';
     });
     marksLive(id === 'marks');
+    page.querySelector('[data-open-replay]')?.addEventListener('click', () => { const c = page.querySelector('[data-open-demo]'); c.classList.remove('opening'); void c.offsetWidth; c.classList.add('opening'); });
     scrollTo(0, 0); watch();
   }
   // Blueprint marks, live: the real MarkLayer in its own overlay host over the specimen (light DOM, slotted into the
@@ -914,7 +961,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
   // one scheme for the page and its examples: the OS's at first, then the button's
   const button = root.getElementById('scheme');
-  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; if (bp) bp.host.dataset.scheme = host.dataset.scheme; button.textContent = dark ? 'Day' : 'Night'; };
+  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; if (bp) bp.host.dataset.scheme = host.dataset.scheme; root.querySelector('.frame iframe')?.contentWindow?.postMessage({ scheme: host.dataset.scheme }, location.origin); button.textContent = dark ? 'Day' : 'Night'; };
   setScheme(matchMedia('(prefers-color-scheme: dark)').matches);
   button.addEventListener('click', () => setScheme(!document.body.classList.contains('dark')));
   show();

@@ -55,7 +55,10 @@
   // one scheme for the page and the plate: the OS's at first, then the button's
   const button = root.getElementById('scheme');
   const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; button.textContent = dark ? 'Day' : 'Night'; };
-  setScheme(matchMedia('(prefers-color-scheme: dark)').matches);
+  // the OS's, unless a page holding this one says (the design system's Page, by ?scheme= and then by message)
+  const asked = new URLSearchParams(location.search).get('scheme');
+  setScheme(asked ? asked === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+  addEventListener('message', (e) => { if (e.origin === location.origin && e.data?.scheme) setScheme(e.data.scheme === 'dark'); });
   button.addEventListener('click', () => setScheme(!document.body.classList.contains('dark')));
 </script>
 </body>
