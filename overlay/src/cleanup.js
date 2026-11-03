@@ -20,7 +20,7 @@
  * Keys while it runs (from the fix panel): Enter apply · P preview · → skip the pass · Esc cancel the preview, then close;
  * held Space compares while previewing (its own listener, only then: Blueprint's keys never carry keyup)
  * ───────────────────────────────────────────────────────── */
-import { answered, post } from './api.js';
+import { answered, post, request } from './api.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
 import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
@@ -130,10 +130,28 @@ export class Cleanup {
   stop() { this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); this.#spacing.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
 
   // back after a reload its own write or undo caused: the step written (with its Undo), or the page read again
-  resume() {
-    const v = kept();
+  async resume() {
+    let v = kept();
     if (!v || this.running) return;
     const pass = v.pass ?? 0;
+    // the page went while its write was saving: the server's trace says whether the step landed (it may still be
+    // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
+    if (v.state === 'writing' && v.group) {
+      this.#page = v.page; if (pass === 1) this.#spacing.page = v.spacing; this.#done = new Map(Object.entries(v.done ?? {}));
+      this.#state = 'writing'; this.#pass = pass; this.#host.render();
+      let changes = [];
+      for (let i = 0; i < 6 && !changes.length; i++) {
+        if (i) await new Promise((r) => setTimeout(r, 1000));
+        changes = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
+      }
+      if (changes.length) {
+        const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
+        const said = v.said;
+        v = { state: 'done', pass, saved: v.saved, page: v.page, spacing: v.spacing, done };
+        keep(v);
+        this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.saved.group } }, said);
+      } else { this.#state = 'idle'; v = { ...v, state: 'read', said: W.reloaded }; }
+    }
     if (v.state === 'done') { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (pass === 1) this.#spacing.page = v.spacing; this.#state = 'done'; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
     else if (pass === 1) { this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = 1; this.#readSpacing().then(() => v.said && this.#host.announce?.(v.said)); }
     else { this.start().then(() => v.said && this.#host.announce?.(v.said)); }
@@ -319,13 +337,14 @@ export class Cleanup {
     const landed = (undo = []) => {
       this.#saved = { group, places, files };
       this.#done.set('text', 'done'); this.#state = 'done';
-      const { census: _c, roles: _r, ...page } = this.#page;
-      keep({ state: 'done', pass: 0, saved: this.#saved, page, done: Object.fromEntries(this.#done) });
+      keep({ state: 'done', pass: 0, saved: this.#saved, page: kept_, done: Object.fromEntries(this.#done) });
       this.#host.wrote?.({ undo, trace: { group } }, said);
     };
+    const { census: _c, roles: _r, ...kept_ } = this.#page;
     // the page hears the whole result before the reload the write may cause (hosts/vite.ts): kept, so it comes back done
     const heard = (e) => { const r = e.detail?.results; if (r && ![...(r.tokens ?? []), ...(r.css ?? []), ...(r.swaps ?? [])].some((x) => !x.ok || x.refused?.length)) landed(e.detail.undo); };
-    keep({ state: 'writing' });
+    // a reload before the answer (the dev server's, or the person's) comes back to this record: the trace says if it landed
+    keep({ state: 'writing', pass: 0, group, said, saved: { group, places, files }, page: kept_, done: Object.fromEntries(this.#done) });
     addEventListener('plumb:applied', heard, { once: true });
     try {
       // answered: a dev server that restarts mid-write never answers; the change log says whether it landed
@@ -357,7 +376,7 @@ export class Cleanup {
         keep({ state: 'done', pass: 1, saved: this.#saved, page: this.#page && (({ census: _c, roles: _r, ...page }) => page)(this.#page), spacing: this.#spacing.page, done: Object.fromEntries(this.#done) });
         this.#host.wrote?.({ undo, trace: { group } }, said);
       };
-      keep({ state: 'writing', pass: 1, done: Object.fromEntries(this.#done) });
+      keep({ state: 'writing', pass: 1, group, said, saved: { group, places, files, pass: 1, refused: refused.length }, page: this.#page && (({ census: _c, roles: _r, ...page }) => page)(this.#page), spacing: this.#spacing.page, done: Object.fromEntries(this.#done) });
       const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass.spacing, laws: SPACING_LAWS, group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.spacing.couldNot);
