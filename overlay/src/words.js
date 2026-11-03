@@ -222,6 +222,30 @@ export const CRAFT = {
     line: `${px(pad)} of padding looks like ${px(seen)}. The line adds its own space.`,
     reason: 'A text box carries invisible space above and below the letters.',
   }),
+  'heading-lead': ({ above, below, want }) => ({
+    label: 'Heading sits nearer what came before',
+    line: `${px(Math.round(above))} above the heading, ${px(Math.round(below))} below. It reads as the end of the last part.`,
+    reason: `A heading belongs to what it introduces: give it at least ${px(want)} above.`,
+  }),
+  'pair-spacing': ({ kind, ab, bc }) => (kind === 'order' ? {
+    label: 'Subtitle sits far from its title',
+    line: `The subtitle is ${ab.toFixed(2)}em from the title, but ${bc.toFixed(2)}em from the text below it.`,
+    reason: 'Things that belong together sit closer than things that don’t.',
+  } : {
+    label: 'Heading drifts away from its text',
+    line: `The text starts ${ab.toFixed(2)}em below its heading: further than the heading is tall.`,
+    reason: 'Past about one line of the heading, the text stops reading as the heading’s.',
+  }),
+  'relative-spacing': ({ n, cls }) => ({
+    label: 'Space doesn’t grow with the text',
+    line: `${cls} stays ${px(n)} when someone makes their text bigger.`,
+    reason: 'People raise their browser’s text size. Space in rem grows with it; space in px squeezes the bigger text.',
+  }),
+  'card-optical-padding': ({ top, left }) => ({
+    label: 'Card looks taller on top',
+    line: `The first letters sit ${px(Math.round(top))} from the top edge, ${px(left)} from the side.`,
+    reason: 'The first line carries space above its capitals, so equal padding looks bigger on top.',
+  }),
   'weight-levels': ({ w, used }) => ({
     label: 'One weight too many',
     line: `Weight ${w} appears here, but the page mostly uses ${used}. Use one of those.`,
@@ -764,6 +788,7 @@ export const CLEANUP = {
   saved: (places, files) => `${places} ${places === 1 ? 'place' : 'places'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} these styles`,
   undo: 'Undo',
   undone: 'Text changes undone.',
+  lost: 'Your dev server restarted while saving, so nothing was written. Try again.',
   close: 'Close',
   done: 'Done',
   next: 'Next pass',
@@ -778,4 +803,28 @@ export const CLEANUP = {
   copied: 'Copied',
   retry: 'Try again',
   couldNot: 'Couldn’t read this page’s text.',
+  nextSpacing: 'Next: the space between things.',
+  spacing: {
+    reading: 'Reading the space between things on this page…',
+    head: (before, after) => `This page has ${before} different spaces between things. After this, ${after}.`,
+    // what the app's own scale is, said plainly: the pass stays on it
+    scale: (s) => (s?.kind === 'linear' ? `Your spacing is a ${s.unit}px grid, so every new space is on it.`
+      : s?.kind === 'geometric' ? `Your spacing grows by ×${s.ratio} a step, so every new space is one of those steps.`
+      : s?.kind === 'hybrid' ? `Your spacing is a ${s.unit}px grid that grows by ×${s.ratio} for bigger spaces, so every new space is on it.`
+      : `Plumber can’t tell your spacing’s scale yet, so it keeps to your ${s?.unit ?? 4}px spacing unit.`),
+    law: 'Why: things that belong together sit closer than things that don’t (law of proximity).',
+    list: 'Spaces that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'spaces on this page',
+    changes: 'spaces change',
+    nothing: 'The space on this page already follows your scale.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'space' : 'spaces'} in ${files} ${files === 1 ? 'file' : 'files'} now follow${places === 1 ? 's' : ''} your scale`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Spacing changes undone.',
+    doneHead: 'Spacing is cleaned up on this page.',
+    doneSkipped: 'You skipped spacing on this page.',
+    notYet: 'Colour and icons come to Plumber next.',
+    couldNot: 'Couldn’t read this page’s spacing.',
+  },
 };

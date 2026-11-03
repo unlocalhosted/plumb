@@ -8,6 +8,7 @@ import { App as Wave4 } from './rules/wave4.jsx';
 import { App as Wave5 } from './rules/wave5.jsx';
 import { App as Wave6 } from './rules/wave6.jsx';
 import { App as Wave7 } from './rules/wave7.jsx';
+import { App as Wave8 } from './rules/wave8.jsx';
 
 const WAVES = [
   { n: '1', name: 'Corners and spacing', page: Wave1, rules: 'concentric corners, group spacing, faded text, half pixels' },
@@ -17,6 +18,7 @@ const WAVES = [
   { n: '5', name: 'Font metrics', page: Wave5, rules: 'baselines, icon on the capitals, padding the line adds' },
   { n: '6', name: 'The page’s habits', page: Wave6, rules: 'weights, greys, rhythm' },
   { n: '7', name: 'Ink and motion', page: Wave7, rules: 'optical centre, round icons, stroke weight, scroll cue, press, exit, reversal' },
+  { n: '8', name: 'Space and text', page: Wave8, rules: 'heading lead, title and subtitle, space in pixels, a card’s first line' },
 ];
 
 export function Rules() {

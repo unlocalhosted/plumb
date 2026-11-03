@@ -76,6 +76,10 @@ export const STANDARD = {
     rhythm: { sample: 6, off: 2, majority: 0.6 },
     'content-align': { min: 4, siblings: 2 },
     'trim-leading': { leading: 3, share: 0.25 },
+    'heading-lead': { lead: 1.25 },        // space above a heading ≥ this × the space below (S6)
+    'pair-spacing': { far: 1.0, order: 0.1 }, // em of the larger text: a heading further than `far` is detached (S4)
+    'relative-spacing': {},
+    'card-optical-padding': { min: 3, share: 0.15 }, // px, and share of the side padding, the top may look larger by
   },
   shape: {
     'concentric-radius': { tolerance: 1.5, minParentRadius: 4 },

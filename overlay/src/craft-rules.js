@@ -1340,6 +1340,122 @@ export const trimLeading = {
   },
 };
 
+// ── spacing against the text it separates (docs/research/video-rules.md) ─────────
+
+const HEADING_TAG = /^h[1-6]$/;
+// running text: a paragraph, list, quote or code block (or a container ending in one) more than a line tall; a row of
+// chips or a label line that wraps is not (a card's meta row above its heading)
+const PROSE = /^(p|ul|ol|dl|blockquote|pre|table)$/;
+const bodyText = (el, facts) => {
+  const block = PROSE.test(el.localName) ? el : PROSE.test(el.lastElementChild?.localName ?? '') ? el.lastElementChild : null;
+  if (!block) return false;
+  const s = facts.style(block), lh = px(s.lineHeight) || px(s.fontSize) * 1.4;
+  return facts.rect(block).height > lh * 1.8 || facts.rect(el).height > lh * 1.8;
+};
+const sizeOf = (el, facts) => px(facts.style(el).fontSize);
+
+// hierarchy S6. A heading sits nearer what it introduces than what came before it.
+export const headingLead = {
+  id: 'craft/heading-lead', family: 'craft', number: [], owns: ['margin-top'], once: 'ancestor', reads: ['style', 'kids', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!HEADING_TAG.test(el.localName) || !facts.text(el) || !el.parentElement) return [];
+    const kids = facts.kids(el.parentElement), i = kids.indexOf(el), prev = kids[i - 1], next = kids[i + 1];
+    if (!prev || !next || HEADING_TAG.test(prev.localName) || !bodyText(prev, facts)) return [];
+    const r = facts.rect(el), above = facts.rect(el).top - facts.rect(prev).bottom, below = facts.rect(next).top - r.bottom;
+    if (below <= 0.5 || above >= below * T.lead) return [];
+    const want = Math.ceil(below * T.lead);
+    return [{
+      ...say(this.id, { above, below, want }),
+      key: this.id, text: utility(el, 'mt') ?? 'margin-top', props: ['margin-top'], value: `${Math.round(above)}px`, n: above,
+      evidence: { above: Math.round(above), below: Math.round(below) }, confidence: 0.84,
+      suggest: { kind: 'advice', text: `Give the heading at least ${fmt(want)} above, or less below.` },
+    }];
+  },
+};
+
+// hierarchy S4. A pair of texts is spaced in em of the larger: a subtitle sits nearer its title than the body does
+// (order), and a heading isn't further from its own text than the text is tall (detached)
+export const pairSpacing = {
+  id: 'craft/pair-spacing', family: 'craft', number: [], owns: ['margin-top'], once: 'ancestor', reads: ['style', 'kids', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!facts.text(el) || !el.parentElement) return [];
+    const kids = facts.kids(el.parentElement), i = kids.indexOf(el), b = kids[i + 1], c = kids[i + 2];
+    if (!b || !facts.text(b)) return [];
+    const em = (x, y) => (facts.rect(y).top - facts.rect(x).bottom) / Math.max(sizeOf(x, facts), sizeOf(y, facts));
+    const ab = em(el, b);
+    // order: title, subtitle, body (sizes going down): the subtitle is the title's, so it sits nearer
+    // (a line that introduces what follows, "Run the gate:" before a code block, is not a subtitle: it belongs below)
+    // the title is a heading or clearly bigger than the body; the subtitle a short line of text (never a code block, list
+    // or table); then running text
+    const title = HEADING_TAG.test(el.localName) || sizeOf(el, facts) >= sizeOf(c ?? el, facts) * 1.15;
+    if (c && title && !/^(ul|ol|dl|blockquote|pre|table)$/.test(b.localName) && c.localName === 'p' && facts.text(c) && sizeOf(el, facts) > sizeOf(b, facts) && bodyText(c, facts) && !/:\s*$/.test(b.textContent ?? '')) {
+      const bc = em(b, c);
+      if (ab > 0 && ab >= bc + T.order) return [{
+        ...say(this.id, { kind: 'order', ab, bc }),
+        key: this.id, text: 'margin-top', props: ['margin-top'], value: `${ab.toFixed(2)}em`, n: ab,
+        evidence: { titleToSubtitle: +ab.toFixed(2), subtitleToBody: +bc.toFixed(2) }, confidence: 0.82,
+        suggest: { kind: 'advice', text: 'Bring the subtitle closer to the title than the text below it.' },
+      }];
+    }
+    // detached: a heading further from its text than one line of the heading
+    if (HEADING_TAG.test(el.localName) && bodyText(b, facts) && ab > T.far) return [{
+      ...say(this.id, { kind: 'far', ab }),
+      key: this.id, text: 'margin-top', props: ['margin-top'], value: `${ab.toFixed(2)}em`, n: ab,
+      evidence: { headingToText: +ab.toFixed(2) }, confidence: 0.8,
+      suggest: { kind: 'advice', text: `Bring the text within ${fmt(sizeOf(el, facts) * T.far)} of its heading.` },
+    }];
+    return [];
+  },
+};
+
+// Spacing in fixed pixels doesn't grow when a person raises their browser's text size; the text does
+const PX_SPACE = /^(p|px|py|pt|pr|pb|pl|ps|pe|m|mx|my|mt|mr|mb|ml|ms|me|gap|gap-x|gap-y|space-y|space-x)-\[(\d+(?:\.\d+)?)px\]$/;
+export const relativeSpacing = {
+  id: 'craft/relative-spacing', family: 'craft', number: [], owns: ['padding', 'margin', 'gap'], once: 'ancestor', reads: ['style', 'kids', 'text'],
+  check({ el, facts }, theme) {
+    if (!facts.text(el) && !facts.kids(el).some((k) => facts.text(k))) return [];
+    const cls = classesOf(el).split(/\s+/).find((c) => PX_SPACE.test(c));
+    if (!cls) return [];
+    const [, prefix, v] = PX_SPACE.exec(cls), n = Number(v), unit = theme.unit?.() ?? 4, steps = n / unit;
+    // fine detail stays in px: hairlines, a nudge that lines a label up with the text beside it (pt-[5px]), a chip's
+    // few pixels of side padding
+    if (n <= 6) return [];
+    const to = Number.isInteger(steps * 2) ? `${prefix}-${steps}` : `${prefix}-[${+(n / 16).toFixed(4)}rem]`;
+    return [{
+      ...say(this.id, { n, cls }),
+      key: this.id, text: cls, props: [prefix.startsWith('gap') ? 'gap' : prefix.startsWith('m') || prefix.startsWith('space') ? 'margin' : 'padding'], value: `${n}px`, n,
+      evidence: { class: cls }, confidence: 0.8,
+      suggest: { kind: 'class', from: cls, to, why: 'the same space, growing with the text' },
+    }];
+  },
+};
+
+// A card's top padding measured from the letters: the first line's box carries space above its capitals, so equal
+// padding looks taller on top (trim-leading, for a card with more than one line of words)
+export const cardOpticalPadding = {
+  id: 'craft/card-optical-padding', family: 'craft', number: [], owns: ['padding-top'], once: 'ancestor', reads: ['style', 'kids', 'text', 'metrics'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const kids = facts.kids(el), first = kids[0];
+    if (!first || !facts.text(first) || el.matches('input, textarea, select, button')) return [];
+    const s = facts.style(el), b = facts.box(el);
+    if (!(b.pt > 0 && b.pl > 0) || !((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || b.bt > 0)) return [];
+    if (/trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
+    const m = facts.metrics(first);
+    if (!m) return [];
+    const top = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
+    if (top - left < T.min || top - left < left * T.share) return [];
+    return [{
+      ...say(this.id, { top, left }),
+      key: this.id, text: utility(el, 'pt') ?? utility(el, 'py') ?? utility(el, 'p') ?? 'padding-top', props: ['padding-top'], value: `${b.pt}px`, n: b.pt,
+      evidence: { seenTop: Math.round(top), left }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Take about ${fmt(Math.round(top - left))} off the top padding, or trim the first line's box.` },
+    }];
+  },
+};
+
 // ── hard rules, layer 2: the page's own habits (facts.census) ─────────
 
 const WEIGHTS = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
@@ -1645,6 +1761,6 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
-  baselineAlign, iconCap, trimLeading,
+  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, relativeSpacing, cardOpticalPadding,
   weightLevels, greyLevels, rhythm,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];
