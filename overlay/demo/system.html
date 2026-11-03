@@ -17,6 +17,7 @@
      First slice (2026-11-03): the shell, Welcome, Foundations · Colour, Components · Pill. */
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
+  import { PRIMITIVES_CSS, stepper, swatches, segments, align, bind, place } from '../src/editor-primitives.js';
 
   // ---------- contrast, measured on the live tokens of each scheme ----------
   const rgb = (c) => { const h = c.trim().replace('#', ''); return h.length >= 6 ? [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) : null; };
@@ -41,7 +42,7 @@
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
-    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], [null, 'Stepper'], [null, 'Swatches'], [null, 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
+    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
     { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
@@ -64,6 +65,18 @@
   };
   const typeTable = (rows) => `<div class="ramp">${rows.map(([n, t, sample, size, weight, use]) => `<div class="tr"><div class="meta"><b>${n}</b><code>${t}</code><span>${size} · ${weight}</span></div><div class="sample" style="font:var(${t});${t === '--pl-page-display' ? 'letter-spacing:var(--pl-tracking-display);' : t === '--pl-page-title' ? 'letter-spacing:var(--pl-tracking-title);' : t === '--pl-page-figure' ? 'font-variant-numeric:tabular-nums;letter-spacing:var(--pl-tracking-display);' : ''}">${sample}</div><div class="use">${use}</div></div>`).join('')}</div>`;
 
+  // ---------- live controls (editor-primitives.js): each demo keeps its own state, keyed by its name ----------
+  const SPACING = ['s0', 's1', 's2', 's3', 's4', 's5', 's6', 's8', 's10'].map((t, i) => ({ token: t, n: [0, 4, 8, 12, 16, 20, 24, 32, 40][i], value: `${[0, 4, 8, 12, 16, 20, 24, 32, 40][i]}px` }));
+  const COLOURS = [['surface', '#ffffff'], ['ground', '#f3f4f6'], ['ink', '#1c1b19'], ['muted', '#6b7280'], ['accent', '#2c64d4'], ['ok', '#2a7d52'], ['warn', '#a8690f'], ['danger', '#c03a46']].map(([token, swatch]) => ({ token, swatch, value: swatch }));
+  const DIRS = [{ token: 'row', label: 'Row', glyph: 'row' }, { token: 'column', label: 'Column', glyph: 'column' }];
+  const WRAP = [{ token: 'nowrap', label: 'One line', glyph: 'nowrap' }, { token: 'wrap', label: 'Wrap', glyph: 'wrap' }];
+  const FIT = [{ token: 'cover', label: 'Cover', glyph: 'cover' }, { token: 'contain', label: 'Contain', glyph: 'contain' }];
+  const CELLS = ['start start', 'start center', 'start end', 'center start', 'center center', 'center end', 'end start', 'end center', 'end end'].map((token) => ({ token, label: token }));
+  const DEMOS = {};
+  const demo = (name, kind, state, caption = '') => { DEMOS[name] = { kind, s: structuredClone(state) }; return `<div class="demo" data-demo="${name}">${kind(name, DEMOS[name].s)}<span class="say">${caption}</span></div>`; };
+  const states = (kind, rows) => `<div class="stage col states-list">${rows.map(([label, name, st, note]) => `<div class="srow"><span class="lbl">${label}</span>${demo(name, kind, st, note ?? '')}</div>`).join('')}</div>`;
+  const keys = `<ul class="plain"><li>One tab stop for the whole control; ← → (and ↑ ↓) move between steps, Home and End go to the ends.</li><li>Enter or Space picks; pointing or focusing shows what a step would be.</li><li>Each control is a <code>radiogroup</code>; each step a <code>radio</code> with <code>aria-checked</code>.</li></ul>`;
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
@@ -72,6 +85,7 @@
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
           <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments documented,</b> every state live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action documented.</b> And a fix: a tag asked for sky now draws in sky.</span></li>
           <li><span class="when">Nov 3</span><span><b>Night pills in white.</b> Every pill is a deep version of its colour with white lettering; lines and marks keep the bright pastels.</span></li>
           <li><span class="when">Nov 3</span><span><b>Page type.</b> Five steps for anything bigger than a card: display, title, body, small, meta.</span></li>
@@ -140,6 +154,71 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
         ],
       };
       return { title: 'Pill', lede: 'One short value, coloured by what it means.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    stepper: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Every state, night and day'], ['Built', '<code>overlay/src/editor-primitives.js</code>, <code>stepper()</code>'], ['Used', 'Spacing and size in the element card, type in the text editor']])),
+          sec('intro', 'Introduction', `<p>A stepper picks a value on a scale: spacing, size, type. Each step is a bar as wide as its value, so you choose by shape, and only your theme’s steps can be pressed. Try it: point, press, use the arrows.</p><div class="stage">${demo('Padding', stepper, { steps: SPACING, current: 's3' })}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#swatches/overview', 'Swatches', 'The same, for colour.', '')}${card('#segments/overview', 'Segments', 'Two to four named options.', '')}</div>`),
+        ],
+        style: [
+          sec('states', 'States', `<p>Every state the stepper can be in, live.</p>${states(stepper, [
+            ['Rest', 'Rest', { steps: SPACING, current: 's3' }, 'The current step filled with the accent.'],
+            ['Picked', 'Picked', { steps: SPACING, current: 's3', picked: 's4' }, 'Chosen, not written yet: a ring and a dot; the fill stays put.'],
+            ['Drift', 'Drift', { steps: SPACING, current: null, drift: { n: 10, label: '10' } }, 'The value is off the scale: a coral bar where it falls between steps.'],
+            ['Disabled', 'Disabled', { steps: SPACING, current: 's2', disabled: true }, 'Set in code (gap={size}): nothing to press.'],
+            ['Loading', 'Loading', { steps: [], busy: true }, 'The scale isn’t read yet.'],
+            ['Refused', 'Refused', { steps: SPACING, current: 's3', picked: 's5' }, 'The write was refused; the pick stays for a retry.'],
+          ])}`),
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Steps</b> bars as wide as their value, in a window of steps around the current one.</li><li><b>‹ ›</b> move the window to smaller or larger steps.</li><li><b>Name</b> a step’s name shows only while it’s pointed at or focused.</li></ul>`),
+        ],
+        usage: [
+          sec('when', 'When to use it', `<ul class="plain"><li>A value on an ordered scale: spacing, size, type, radius.</li><li>When the shape of the value helps you choose.</li></ul>`),
+          sec('not', 'When not to', `<ul class="plain"><li>Colour: use <b>swatches</b>.</li><li>Named options with no order (row or column): use <b>segments</b>.</li></ul>`),
+        ],
+        code: [sec('use', 'Use', `<pre><code>import { stepper, bind } from './editor-primitives.js';
+host.innerHTML = stepper('Padding', { steps, current: 's3' });
+bind(host, { pick: (name, i) => …, peek: (name, i) => …, unpeek: (name) => … });</code></pre><p>The state: <code>current</code>, <code>picked</code>, <code>drift: { n, label }</code>, <code>disabled</code>, <code>busy</code>, <code>start</code> (the window).</p>`)],
+        accessibility: [sec('keys', 'Keyboard and readers', keys), sec('meaning', 'Never colour alone', `<p>Drift is coral <i>and</i> a bar at its own width between two steps, so it reads without colour.</p>`)],
+      };
+      return { title: 'Stepper', lede: 'A value on a scale, chosen by its shape.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    swatches: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Every state, night and day'], ['Built', '<code>overlay/src/editor-primitives.js</code>, <code>swatches()</code>'], ['Used', 'Fill and text colour in the element card']])),
+          sec('intro', 'Introduction', `<p>Swatches pick a colour from your theme: one chip per token. A token’s name shows while it’s pointed at or focused.</p><div class="stage">${demo('Fill', swatches, { steps: COLOURS, current: 'surface' })}</div>`),
+        ],
+        style: [sec('states', 'States', states(swatches, [
+          ['Rest', 'Fill rest', { steps: COLOURS, current: 'surface' }, 'The current colour, ringed.'],
+          ['Picked', 'Fill picked', { steps: COLOURS, current: 'surface', picked: 'accent' }, 'Chosen, not written yet.'],
+          ['Drift', 'Fill drift', { steps: COLOURS, current: null, drift: { label: '#d23a3a', swatch: '#d23a3a' } }, 'A colour typed by hand: its chip set apart, in coral’s dashed frame.'],
+          ['Disabled', 'Fill disabled', { steps: COLOURS, current: 'ink', disabled: true }, 'Set in code: nothing to press.'],
+        ]))],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>Any colour property: fill, text, border.</li><li>Order the chips as the theme does; don’t sort by hue.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>host.innerHTML = swatches('Fill', { steps: [{ token: 'surface', swatch: '#fff' }, …], current: 'surface' });
+bind(host, { pick: (name, i) => … });</code></pre>`)],
+        accessibility: [sec('keys', 'Keyboard and readers', keys), sec('names', 'Names, not just colours', `<p>Each chip is announced by its token’s name, so a colour can be chosen without seeing it.</p>`)],
+      };
+      return { title: 'Swatches', lede: 'A colour from your theme.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    segments: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/editor-primitives.js</code>, <code>segments()</code> and <code>align()</code>'], ['Used', 'Direction, wrap, fit and alignment in the layout card']])),
+          sec('intro', 'Introduction', `<p>Segments pick one of two to four named options, each with a glyph and a word. Alignment is the same idea on a 3×3 grid: the dot is where the children sit.</p><div class="stage col"><div class="srow"><span class="lbl">Direction</span>${demo('Direction', segments, { steps: DIRS, current: 'row' })}</div><div class="srow"><span class="lbl">Wrap</span>${demo('Wrap', segments, { steps: WRAP, current: 'nowrap' })}</div><div class="srow"><span class="lbl">Fit</span>${demo('Fit', segments, { steps: FIT, current: 'cover' })}</div><div class="srow"><span class="lbl">Align</span>${demo('Align', align, { steps: CELLS, current: 'center start' })}</div></div>`),
+        ],
+        style: [sec('motion', 'Motion', `<p>The current fill slides to the option you pick, on the overlay’s spring; under reduced motion it moves at once.</p>`), sec('words', 'Words', `<p>Each option is a glyph <i>and</i> a short word: <b>Row</b>, <b>One line</b>, <b>Cover</b>. Never a glyph alone.</p>`)],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>Two to four options with no order.</li><li>For more than four, or an ordered scale, use a <b>stepper</b>.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>host.innerHTML = segments('Direction', { steps: [{ token: 'row', label: 'Row', glyph: 'row' }, …], current: 'row' });
+host.innerHTML = align('Align', { steps: cells, current: 'center start' });</code></pre>`)],
+        accessibility: [sec('keys', 'Keyboard and readers', keys + `<p>Alignment moves in two dimensions: ← → across, ↑ ↓ between rows.</p>`)],
+      };
+      return { title: 'Segments', lede: 'One of a few named options.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
     type: () => ({
@@ -223,7 +302,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
 
   // ---------- the shell ----------
   const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}
     :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
     a { color: inherit; }
     code { font: 500 12.5px/1.5 var(--pl-mono); }
@@ -322,6 +401,14 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
     .states { gap: 18px; align-items: flex-end; } .states .st { display: grid; justify-items: center; gap: 8px; } .states small { font: var(--pl-page-meta); color: var(--pl-ink-3); }
     /* the hover, pressed and focus states, drawn at rest so they can be compared side by side */
     .pl-act.is-hover { filter: brightness(1.06) saturate(1.04); } .pl-act.is-press { scale: .97; } .pl-act.is-focus { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+    .states-list { gap: 0; padding: 8px 24px; }
+    /* the label lines up with the control, not with the control and its caption together */
+    .srow { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: start; gap: 16px; padding: 14px 0; box-shadow: inset 0 -1px 0 var(--pl-rule); }
+    .srow > .lbl { padding-top: 6px; }
+    .srow:last-child { box-shadow: none; }
+    .srow > .lbl { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .demo { display: grid; gap: 6px; justify-items: start; }
+    .demo .say { min-height: 18px; font: var(--pl-page-meta); color: var(--pl-ink-3); }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
@@ -362,6 +449,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
     page.innerHTML = `<h1>${p.title}</h1><p class="lede">${p.lede}</p>${p.tabs ? `<div class="tabs" role="tablist">${TABS.map((t) => `<a role="tab" href="#${id}/${t.toLowerCase()}" aria-selected="${(p.tab ?? 'overview') === t.toLowerCase()}">${t}</a>`).join('')}</div>` : ''}${p.sections.map((s) => `<section id="${s.id}"><h2>${s.title}</h2>${s.html}</section>`).join('')}`;
     rail.innerHTML = `<b>On this page</b>${p.sections.map((s) => `<a href="#${id}${tab ? `/${tab}` : ''}" data-to="${s.id}">${s.title}</a>`).join('')}`;
     page.querySelectorAll('[data-mini]').forEach((el) => mini(el, el.dataset.mini === 'day' ? 'light' : 'dark'));
+    page.querySelectorAll('[data-demo]').forEach(wire);
     scrollTo(0, 0); watch();
   }
   // the rail jumps within the page and marks the section in view
@@ -371,6 +459,23 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
     io?.disconnect();
     io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) rail.querySelectorAll('[data-to]').forEach((a) => a.setAttribute('aria-current', String(a.dataset.to === e.target.id))); }, { rootMargin: '-80px 0px -60% 0px' });
     page.querySelectorAll('section').forEach((s) => io.observe(s));
+  }
+  // a demo: a pick updates its state and slides the fill; pointing says what the step is; ‹ › move the window
+  function wire(box) {
+    const name = box.dataset.demo, d = DEMOS[name], say = box.querySelector('.say'); let base = say.textContent;
+    bind(box, {
+      pick: (n, i) => {
+        d.s.current = d.s.steps[i].token; d.s.picked = null; d.s.drift = null;
+        const g = box.querySelector('[role="radiogroup"]');
+        g.querySelectorAll('.opt[role="radio"]').forEach((o) => { o.setAttribute('aria-checked', String(+o.dataset.i === i)); o.removeAttribute('data-picked'); });
+        g.querySelector('.notch')?.remove(); place(g);
+        // what was picked stays said once the pointer leaves
+        base = say.textContent = `Picked ${d.s.steps[i].label ?? d.s.steps[i].token}`;
+      },
+      peek: (n, i) => { const st = d.s.steps[i]; say.textContent = `${st.label ?? st.token}${st.value && st.value !== st.token ? ` · ${st.value}` : ''}`; },
+      unpeek: () => { say.textContent = base; },
+      page: (n, start) => { d.s.start = start; const g = box.querySelector('[role="radiogroup"]'); g.outerHTML = d.kind(name, d.s); wire(box); },
+    });
   }
   addEventListener('hashchange', show);
   // the phone menu: opens the sidebar as a drawer; choosing a page or Esc closes it
