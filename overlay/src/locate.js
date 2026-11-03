@@ -278,8 +278,16 @@ const keyOf = (e) => `${e.file}:${e.line}:${e.column}`;
 export async function classSiteOf(element, need = []) {
   const read = await readSites(element, need);
   if (!read) return null;
-  const { answer } = read;
+  const { answer, of } = read;
   if (answer.refused && !need.length) return { refused: answer.refused, add: answer.add ?? null, addRefused: answer.addRefused };
+  // the usages above the place a write targets, as class-site was asked them: the element's own chain, or what is above
+  // the usage the classes are written at (the recipes ask with it, so they read the same strings: N7)
+  const chainAt = (e) => {
+    if (keyOf(e) === keyOf(answer.element ?? {})) return of.chain;
+    let i = of.chain.findIndex((l) => keyOf(l) === keyOf(e));
+    if (i < 0) i = of.chain.findIndex((l) => l.file === e.file && l.line === e.line);
+    return i < 0 ? [] : of.chain.slice(i + 1);
+  };
   const sites = new Map((answer.classes ?? []).map((c) => [c.class, c.sites ?? []]));
   // the element whose attribute a write targets: for `need`, the one that holds all of them; else the one most of them
   // are written at (an element passed classes from a usage reads as that usage)
@@ -303,12 +311,12 @@ export async function classSiteOf(element, need = []) {
       // nothing written yet: a class is added where the server says, or the element is locked with its reason
       const add = answer.add;
       if (!add) return { refused: answer.addRefused ?? answer.refused ?? BUILT_IN_CODE };
-      return { file: add.element.file, line: add.element.line, column: add.element.column, hash: answer.hashes?.[add.element.file], usage: add.kind === 'usage', prop: add.prop, kind: add.kind, classes: [], at: add.string?.line ?? add.element.line, sites, add, addRefused: answer.addRefused, hashes: answer.hashes ?? {} };
+      return { file: add.element.file, line: add.element.line, column: add.element.column, hash: answer.hashes?.[add.element.file], usage: add.kind === 'usage', prop: add.prop, kind: add.kind, classes: [], at: add.string?.line ?? add.element.line, sites, add, addRefused: answer.addRefused, hashes: answer.hashes ?? {}, chain: chainAt(add.element) };
     }
   }
   const el = pick.element, here = [...sites].filter(([, ss]) => ss.some((s) => keyOf(s.element) === keyOf(el))).map(([c]) => c);
   return { file: el.file, line: el.line, column: el.column, hash: answer.hashes?.[el.file], usage: pick.kind === 'usage', prop: pick.prop, kind: pick.kind, classes: here, anchor: here.at(-1) ?? null,
-    at: pick.string.line, sites, add: answer.add ?? null, addRefused: answer.addRefused, hashes: answer.hashes ?? {} };
+    at: pick.string.line, sites, add: answer.add ?? null, addRefused: answer.addRefused, hashes: answer.hashes ?? {}, chain: chainAt(el) };
 }
 // The edits that turn `from` (classes the element wears, as written) into `to`, each in the string it is written in:
 // [{ file, hash, edit: { line, column, from, to, at } }]. Classes written in two strings are changed in each; classes
@@ -321,11 +329,16 @@ export async function classEditsOf(element, from, to) {
   const { answer, of } = read, hashes = answer.hashes ?? {};
   const edit = (el, string, f, t) => ({ file: el.file, hash: hashes[el.file], edit: { line: el.line, column: el.column, from: f, to: t, ...(string ? { at: { line: string.line, column: string.column }, of } : {}) } });
   if (!out.length) {
+    // the element's classes also come in from a usage that wasn't found: the place left is the component's own string,
+    // and a class added there (beside a kin or not) lands on every copy (B2)
+    if (answer.add?.shared) throw new Error(FIX.card.addShared);
     // a class added beside the one of its family it overrides (pl-3 beside px-2.5, in the variable or the branch that
-    // writes px-2.5), so the two stay together where the element's spacing is written; else where the server says
+    // writes px-2.5), so the two stay together where the element's spacing is written; else where the server says. The
+    // server takes a write that keeps px-2.5 and adds pl-3 as an add: never into a variable other elements read (N5), so
+    // a kin written in one goes where the server says instead
     const family = /^(p|m)[xytrblse]?-|^gap(?:-[xy])?-/.exec(add[0] ?? '')?.[1] ?? (/^gap/.test(add[0] ?? '') ? 'gap' : null);
     const kin = family && (answer.classes ?? []).find((c) => c.sites?.length && !c.class.includes(':') && (family === 'gap' ? /^gap(?:-[xy])?-/ : new RegExp(`^${family}[xytrblse]?-`)).test(c.class));
-    if (kin) return kin.sites.map((s) => edit(s.element, s.string, kin.class, [kin.class, ...add].join(' ')));
+    if (kin && kin.sites.every((s) => (s.readers ?? 1) <= 1)) return kin.sites.map((s) => edit(s.element, s.string, kin.class, [kin.class, ...add].join(' ')));
     if (!answer.add) throw new Error(answer.addRefused ?? answer.refused ?? BUILT_IN_CODE);
     return [edit(answer.add.element, answer.add.string, '', add.join(' '))];
   }

@@ -346,7 +346,7 @@ export class ElementCard {
       if (!site) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
       this.#site = site;
       const here = site.refused ? at : site, pos = { file: here.file, line: here.line, column: here.column };
-      const [data, props] = await Promise.all([site.refused ? null : request('recipes', pos), request('props', pos).catch(() => null)]);
+      const [data, props] = await Promise.all([site.refused ? null : request('recipes', { ...pos, ...(site.chain?.length ? { chain: JSON.stringify(site.chain) } : {}) }), request('props', pos).catch(() => null)]);
       if (seq !== this.#seq) return;
       this.#props = props;
       if (!site.refused && !data?.element) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
@@ -372,6 +372,9 @@ export class ElementCard {
   get #locked() { return !!this.#site?.refused; }
   // a usage whose className the element was seen wearing (classSiteOf): the recipe engine may add a class there
   #forwards() { return this.#site?.usage && this.#site.prop === 'className' ? { forwards: true } : {}; }
+  // what the recipes are asked with besides the place: the usages above it, as class-site was asked (a class passed in
+  // is read, and written, there), and the hash of every file that reading saw (a write checks each one it touches)
+  #reading() { const s = this.#site; return { ...(s?.chain?.length ? { chain: s.chain } : {}), ...(s?.hashes ? { hashes: s.hashes } : {}) }; }
   // the other elements drawn from its class site
   #reach() { return this.#site?.usage ? siteMates(this.#target, this.#site) : this.#host.elsewhere?.(this.#target) ?? 0; }
   // class changes (layout, spacing: [{ el, from, to }]) written where each element's classes are written, in one go
@@ -448,7 +451,7 @@ export class ElementCard {
       const seq = ++this.#pseq, body = this.#body(), at = this.#site?.refused ? null : this.#site;
       if (!body || !at) break;
       let answer;
-      try { answer = await post('recipes/preview', { file: at.file, line: at.line, column: at.column, ...body, ...this.#forwards() }); }
+      try { answer = await post('recipes/preview', { file: at.file, line: at.line, column: at.column, ...body, ...this.#forwards(), ...this.#reading() }); }
       catch (error) { answer = { error: error?.message ?? String(error) }; }
       if (seq !== this.#pseq || !this.#target) continue;
       this.#preview = answer;
@@ -920,7 +923,7 @@ export class ElementCard {
     const text = W.used(name, o.name, files);
     this.#writing = true; this.#draw();
     try {
-      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, { ...body, ...this.#forwards() }, text, { step: this.#view === 'shadow' ? W.steps.shadow : W.steps.motion, laws: [] });
+      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, { ...body, ...this.#forwards(), ...this.#reading() }, text, { step: this.#view === 'shadow' ? W.steps.shadow : W.steps.motion, laws: [] });
       this.#writing = false;
       this.#back();
       this.#host.said?.(text, result?.undo ?? [], result?.group ?? null);

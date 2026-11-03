@@ -443,6 +443,8 @@ export const FIX = {
     // where its classes are written (locate.js classSiteOf): nowhere it can be changed, or in more than one place
     builtInCode: 'Its classes are built in code, so they can’t be changed here. Change them in your code.',
     splitClasses: 'These classes are written in different places, so they can’t be changed in one go. Change them in your code.',
+    // a class added where the element's classes come from its component's own code, when where it is used isn't known
+    addShared: 'A class added here goes inside its component, so it would change every copy. Add it where this one is used, in your code.',
     triggers: { hover: 'On hover', press: 'On press', focus: 'On focus', enter: 'Entrance', exit: 'Exit', layout: 'On layout' },
     tabs: { hover: 'Hover & press', enter: 'Entrance' },
     strip: { shadow: 'Shadows', hover: 'Hover and press', enter: 'Entrances' },

@@ -387,3 +387,78 @@ test('N-03: the card names the line its layout write lands on (a component given
   assert.match(now[usage - 1], /grid/);
   assert.deepEqual(errors, []);
 });
+
+// Re-review of engine review 2 (docs/research/engine-review-2.md, "Re-review"), the overlay's half: a class added beside
+// one of its family is never written into a variable other elements read (N5); an add into a component's own string,
+// when its classes also come in from a usage the chain did not reach, is refused in plain words (B2); and the recipes are
+// asked with the same chain class-site is, so an element's own classes take a shadow there (N7).
+const REREVIEW_APP = `const LOOK = 'flex gap-s2 p-[14px] rounded-card bg-surface';
+function QaTile({ className = '' }) {
+  return <div id="qa-tile" className={\`flex gap-s2 p-s3 rounded-card bg-surface \${className}\`}><span>tile</span><span>two</span></div>;
+}
+function Frame({ as: As }) { return <As className="text-small" />; }
+function QaBox({ className = '' }) {
+  return <div id="qa-box" className={\`flex gap-s2 p-s3 rounded-card bg-surface \${className}\`}><span>box</span><span>two</span></div>;
+}
+export function App() {
+  return (
+    <main className="mx-auto flex max-w-xl flex-col gap-s6 px-s4 py-s6">
+      <div id="v1" className={\`\${LOOK} text-small\`}><span>one</span><span>two</span></div>
+      <div id="v2" className={LOOK}><span>three</span><span>four</span></div>
+      <Frame as={QaTile} />
+      <QaBox />
+    </main>
+  );
+}
+`;
+
+test('N5: a padding added beside one of its family that sits in a variable two elements read goes where the element’s own classes always apply', { timeout: 120000 }, async (t) => {
+  const o = await open(t, { app: REREVIEW_APP, query: '' });
+  const { page, overlay, alt, read, original, errors } = o;
+  await alt('#v1');
+  await pointLeftPad(page, '#v1');
+  await page.waitForFunction(() => /padding left/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub')?.innerText ?? ''));
+  await page.mouse.wheel(0, -100);
+  await overlay.locator('.fx .said').filter({ hasText: /padding left \d+px/ }).waitFor({ timeout: 20000 });
+  const now = await read(), lines = now.split('\n'), was = original.split('\n');
+  const changed = lines.map((l, i) => (l !== was[i] ? l.trim() : null)).filter(Boolean);
+  assert.equal(lines[0], was[0], `the variable is as it was: ${lines[0]}`);
+  assert.equal(changed.length, 1, changed.join('\n'));
+  assert.match(changed[0], /id="v1" className=\{`\$\{LOOK\} text-small pl-\S+`\}/, changed[0]);
+  assert.deepEqual(errors, []);
+});
+
+test('B2: an add into a component’s own string, when its classes also come in from a usage that was not found, is refused in plain words', { timeout: 120000 }, async (t) => {
+  const o = await open(t, { app: REREVIEW_APP, query: '' });
+  const { page, card, alt, read, original, errors } = o;
+  await alt('#qa-tile');
+  await pointLeftPad(page, '#qa-tile');
+  await page.waitForFunction(() => /padding left/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.sp-bub')?.innerText ?? ''));
+  await page.mouse.wheel(0, -100);
+  await card.locator('.down').waitFor({ timeout: 20000 });
+  assert.match(await card.locator('.down').innerText(), /every copy/);
+  await page.waitForTimeout(800);
+  assert.equal(await read(), original, 'nothing written');
+  assert.deepEqual(errors, []);
+});
+
+test('N7: the recipes are asked with the chain class-site gets: a shadow on an element’s own classes is written there, with the hashes it was read at', { timeout: 150000 }, async (t) => {
+  const o = await open(t, { app: REREVIEW_APP, query: '' });
+  const { page, overlay, card, alt, read, original, posts, errors } = o;
+  const gets = []; page.on('request', (r) => { if (r.method() === 'GET' && /\/__plumb\/recipes\?/.test(r.url())) gets.push(new URL(r.url()).searchParams.get('chain')); });
+  await alt('#qa-box');
+  await card.locator('.drill[data-open="shadow"]').click();
+  await overlay.locator('.ec-strip .shot[data-key="y:rest"]').click();
+  await card.locator('.writes .edit').first().waitFor({ timeout: 20000 });
+  assert.equal(await card.locator('.use').isDisabled(), false, (await card.innerText()).replace(/\s+/g, ' '));
+  await card.locator('.use').click();
+  await overlay.locator('.fx .said').filter({ hasText: /uses .* now/ }).waitFor({ timeout: 20000 });
+  const line = (await read()).split('\n').find((l) => l.includes('id="qa-box"'));
+  assert.match(line, /flex gap-s2 p-s3 rounded-card bg-surface shadow-rest \$\{className\}/, line);
+  const preview = posts.find((p) => p.path === 'recipes/preview'), apply = posts.find((p) => p.path === 'recipes/apply');
+  assert.ok(JSON.parse(gets[0] ?? '[]').length > 0, `GET recipes chain: ${gets[0]}`);
+  assert.ok(preview?.body?.chain?.length > 0, JSON.stringify(preview?.body));
+  assert.ok(apply?.body?.chain?.length > 0 && apply.body.hashes?.['src/App.jsx'], JSON.stringify(apply?.body));
+  assert.notEqual(await read(), original);
+  assert.deepEqual(errors, []);
+});
