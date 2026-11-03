@@ -325,10 +325,12 @@ async function main(): Promise<void> {
       // Questions are asked in a terminal; without one, or with --yes, every question takes its default.
       const interactive = process.stdin.isTTY === true && !args.values.yes && !args.values.json;
       const asker = interactive ? terminalAsker(text => process.stdout.write(text)) : undefined;
+      // no terminal and no --yes: init writes its own files, never into the theme unasked (adoption/init.ts)
+      const unattended = process.stdin.isTTY !== true && !args.values.yes;
       if (interactive) preview = '';
       result = await analyzing(() => initProject(resolve(options.root ?? process.cwd()), { ...options,
         ...(args.values.force === undefined ? {} : { force: args.values.force }),
-        ...(args.values.json ? { quiet: true } : {}), ...(answers.size ? { families: answers } : {}), ...(args.values.preset === undefined ? {} : { preset: args.values.preset }), ...(asker ? { asker } : {}) },
+        ...(args.values.json ? { quiet: true } : {}), ...(answers.size ? { families: answers } : {}), ...(args.values.preset === undefined ? {} : { preset: args.values.preset }), ...(asker ? { asker } : {}), ...(unattended ? { unattended } : {}) },
         text => { if (interactive) process.stdout.write(text); else preview += text; }));
     } finally {
       if (preview) (args.values.json ? process.stderr : process.stdout).write(preview);

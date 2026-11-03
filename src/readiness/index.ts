@@ -150,7 +150,9 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   try { const ledger = await readLedger(root); baseline = ledger.exists ? 'ok' : 'missing'; ledgerText = ledger.exists ? 'Today’s problems are recorded' : 'Start from today’s problems'; } catch (error) { ledgerText = userMessage(error); }
   add('remember.baseline', 'remember', baseline, ledgerText, [{ file: relative(root, statePath(root, 'ledger.jsonl')), line: 1, text: baseline === 'ok' ? 'The record of today’s problems' : 'No record of today’s problems yet' }],
     'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.',
-    baseline === 'unknown' ? step(`Fix ${relative(root, statePath(root, 'ledger.jsonl'))}, then run plumber doctor.`, 'plumber doctor') : step('Look over today’s problems, then record them.', 'plumber baseline'));
+    baseline === 'unknown' ? step(`Fix ${relative(root, statePath(root, 'ledger.jsonl'))}, then run plumber doctor.`, 'plumber doctor') : config ? step('Look over today’s problems, then record them.', 'plumber baseline')
+      // with no config, init records them along with the config: one first step, the same everywhere
+      : step('Look over today’s problems, then set up and record them.', 'plumber init'));
   const plain = config ? await dataConfig(config) : undefined;
   let eligible = false, cacheUnknown = false;
   try { eligible = plain ? !!await CheckCache.create({ root, ...(config ? { config } : {}) }) : false; } catch { cacheUnknown = true; }
@@ -184,12 +186,15 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     if (change) sourceFix = { kind: 'diff', file: configFile, hash: hash(change.before), diff: diff({ file: config, before: change.before, after: change.after }, root), dirty: dirty(root, config) };
   } catch { /* Opaque, excluded or unowned source needs manual config review. */ }
   add('locate.source', 'locate', !loaded ? 'unknown' : unchecked.length ? 'missing' : 'ok', unchecked.length ? 'Some rendered files are outside your source list' : 'Everything rendered is in your source list',
-    unchecked.length ? unchecked.slice(0, 3).map(file => ({ file: relative(root, file).replaceAll('\\', '/'), line: 1, text: 'Rendered, but outside source' })) : configEvidence,
+    // with no config the list is the default one: say so, rather than citing the missing config as the evidence
+    unchecked.length ? unchecked.slice(0, 3).map(file => ({ file: relative(root, file).replaceAll('\\', '/'), line: 1, text: 'Rendered, but outside source' })) : config ? configEvidence : [{ ...configEvidence[0]!, text: 'The default source list (no React Plumber config yet)' }],
     'Elements from these files aren’t checked.', sourceFix);
   add('locate.plugin', 'locate', status(plugin), plugin ? 'The React Plumber plugin is in the dev config' : 'The React Plumber plugin is not in the dev config', evidence('plugin', plugin ? 'plumb() / withPlumb()' : 'No plumb() in the dev config'),
     'Clicking an element can’t find its place in your code.', await configFix('locate.plugin', step('Add React Plumber to the dev config.', 'plumber install --overlay --write')));
   add('locate.order', 'locate', status(host?.ordered), host?.ordered ? 'React Plumber runs before the JSX plugins' : host?.ordered === false ? 'Move React Plumber before the JSX plugins' : 'Plugin order needs a check', evidence('plugin', 'Plugin order against the JSX plugins'),
-    'Places in your code may point at transformed code instead of what you wrote.', await configFix('locate.order', manual('Move plumb() before the plugins that transform JSX or TSX.')));
+    'Places in your code may point at transformed code instead of what you wrote.', await configFix('locate.order', manual('Move plumb() before the plugins that transform JSX or TSX.')),
+    // with no plugin there is no order to fix: adding the plugin (locate.plugin) puts it first
+    plugin === false ? { derived: true, cause: 'locate.plugin' } : {});
   const react = facts.react.value?.installed ?? false;
   const reactDev = !react ? 'missing' : runtime ? status(runtime.development) : 'unknown';
   add('locate.react-dev', 'locate', reactDev, reactDev === 'ok' ? 'The development build of React is running' : 'Use the development build', [{ file: 'package.json', line: 1, text: react ? 'React is installed; which build runs is checked in the browser' : 'React is not installed' }],

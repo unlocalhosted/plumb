@@ -8,6 +8,7 @@ import { loadConfig } from '../config.js';
 import type { PlumbConfig, DecisionSource } from '../config.js';
 import { check } from '../index.js';
 import { UsageError } from '../errors.js';
+import { diff } from './overlay.js';
 import { count } from '../messages.js';
 import { currentDecisions, decisionEntry, findingGroups } from '../ledger/keys.js';
 import { author } from '../ledger/git.js';
@@ -53,6 +54,8 @@ export interface InitOptions {
   /** Answers given on the command line: a family to keep or skip, and shadcn as your system or not. */
   families?: ReadonlyMap<string, 'keep' | 'skip'>;
   preset?: string;
+  /** Nobody can be asked (no terminal) and nobody said --yes: questions that would write into the theme take "leave it". */
+  unattended?: boolean;
   /** Asks the questions. Without one, every question takes its default. */
   asker?: Asker;
   /** Say nothing about the questions (for --json). */
@@ -97,13 +100,15 @@ export async function initProject(root: string, options: InitOptions, print: (te
       const flag = options.preset === undefined ? undefined : options.preset !== 'none';
       useShadcn = await answer(`Treat shadcn's tokens and the ${componentList.length} ${componentList.length === 1 ? 'component' : 'components'} under ${from?.replace(/^directory:/, '') ?? 'src/components'} as your system?`, flag);
     }
-    const kept: JudgedFamily[] = [], skippedFamilies: string[] = [];
+    const kept: JudgedFamily[] = [], skippedFamilies: string[] = [], skippedIds: string[] = [];
     for (const item of proposal?.families ?? []) {
-      const flag = options.families?.get(item.family);
+      // the theme is the project's own file: with nobody to ask and no --yes, it is left as it is
+      const flag = options.families?.get(item.family) ?? (options.unattended ? 'skip' : undefined);
       const numeric = item.scales[0]?.ladder === 'tailwind-numeric';
       const yes = await answer(`${item.summary} ${numeric ? 'Make it yours?' : 'Keep these as your tokens?'}`, flag === undefined ? undefined : flag === 'keep',
         () => describeFamily(item) + '\n' + item.scales.flatMap(scale => scale.steps.map(step => `  ${step.name}  ${step.value}  ${count(step.sites, 'place')}`)).join('\n'));
       (yes ? kept : skippedFamilies).push(...(yes ? [item.family] : [labels[item.family] ?? item.family]) as never[]);
+      if (!yes) skippedIds.push(item.family);
     }
     options.asker?.close();
     let written = '';
@@ -148,8 +153,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
     }
     const destination = loaded.path ?? resolve(root, options.config ?? 'plumber.config.ts');
     const before = loaded.path ? await readFile(destination, 'utf8') : '';
-    if (loaded.path) print(`--- ${pathFrom(root, destination)}\n+++ ${pathFrom(root, destination)}\n@@ config before / after @@\n` +
-      before.trimEnd().split('\n').map(line => `-${line}`).join('\n') + '\n' + text.trimEnd().split('\n').map(line => `+${line}`).join('\n') + '\n');
+    if (loaded.path && before !== text) print(diff({ file: destination, before, after: text }, root));
     await mkdir(resolve(destination, '..'), { recursive: true });
     await writeFile(destination, text, { flag: loaded.path ? 'w' : 'wx' });
     try { await writeLedger(root, [...accepted.values()]); }
@@ -157,8 +161,10 @@ export async function initProject(root: string, options: InitOptions, print: (te
     undoTheme = undefined;
     await rm(statePath(root, '.baseline-pending'), { force: true });
     const accepts = currentDecisions(adopted).length;
-    const left = skippedFamilies.length ? `\nLeft for later: ${skippedFamilies.join(', ')}. plumber propose --family <name> shows what would be written.` : '';
-    return { message: `Wrote ${pathFrom(root, destination)} with your token sources.\n${written ? `${written}\n` : ''}Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\nBaseline: ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'location')}) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(accepts, 'token')} as inferred.${left}\nNext:\n  plumber install --overlay --write   see and fix drift on the page, in dev (Vite or Next.js)\n  plumber install --ci                fail CI only on new drift`, entries: [...accepted.values()], moves: [] };
+    const left = !skippedFamilies.length ? '' : options.unattended && !options.families?.size
+      ? `\nLeft your theme as it is (no terminal to ask): ${skippedFamilies.join(', ')}. To add them: ${skippedIds.map(id => `plumber propose --family ${id} --write`).join(' · ')}.`
+      : `\nLeft for later: ${skippedFamilies.join(', ')}. plumber propose --family <name> shows what would be written.`;
+    return { message: `Wrote ${pathFrom(root, destination)} with your token sources.\n${written ? `${written}\n` : ''}Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\nBaseline: ${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'place')} recorded as known debt in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(accepts, 'token')} as inferred.${left}\nNext:\n  plumber install --overlay --write   see and fix drift on the page, in dev (Vite or Next.js)\n  plumber install --ci                fail CI only on new drift`, entries: [...accepted.values()], moves: [] };
   } catch (error) { await undoTheme?.(); throw error; }
   finally { await rm(scratch, { recursive: true, force: true }); }
 }

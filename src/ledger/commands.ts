@@ -88,7 +88,7 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
     entries = [...entries.filter(entry => entry.kind !== 'debt'), ...debt.map(entry => ({ ...entry, ...(old.get(entry.key)?.kind === 'debt' ? old.get(entry.key)! : attribution), count: entry.count!, resolved: entry.resolved! }))];
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
-    message = `Baseline recorded ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'site')}).`;
+    message = `Baseline recorded ${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'place')} as known debt.`;
   } else if (command === 'accept-decisions') {
     entries = acceptSet(report, entries, options.why);
     message = `Accepted ${count(currentDecisions(report).length, 'current decision')}.`;

@@ -45,12 +45,12 @@ test('three-command transcript: first look, init baseline, detected agents and C
   await file(directory, '.github/CODEOWNERS', '* @general\n/.plumber/ @designer @org/design\n/.plumber/ledger.jsonl @ledger-owner\n');
   const first = run(directory).stdout;
   assert.match(first, /gap|spacing/);
-  assert.match(first, /This is your first run[\s\S]*plumber baseline[\s\S]*Alt\+B in dev/);
+  assert.match(first, /This is your first run[\s\S]*plumber init[\s\S]*Alt\+B in dev/);
   const look = JSON.parse(run(directory, ['--json']).stdout);
   assert.ok(look.findings.some(finding => finding.severity === 'error'));
   assert.ok(!look.findings.some(finding => finding.rule.startsWith('habits/')));
   const initialized = run(directory, ['init']).stdout;
-  assert.match(initialized, /Baseline: \d+ debt entries/);
+  assert.match(initialized, /Baseline: [\d,]+ places? recorded as known debt/);
   assert.match(initialized, /Accepted \d+ tokens as inferred/);
   const text = await readFile(join(directory, 'plumber.config.ts'), 'utf8');
   assert.match(text, /Components: 2 found from directory:src\/components\/ui/);
@@ -135,7 +135,15 @@ test('a family with no tokens gets a proposed theme file first; the repeated val
   const directory = await fixture(t);
   const css = '.a { gap: 12px; }\n.b { padding: 12px; }\n.c { margin: 12px; }\n.d { gap: 15px; }\n';
   await file(directory, 'src/styles.css', css);
-  const initialized = run(directory, ['init']).stdout;
+  // with no terminal to ask and no --yes, init leaves the project's theme as it is and says how to add the tokens
+  const asked = await fixture(t);
+  await file(asked, 'src/styles.css', css);
+  const unattended = run(asked, ['init']).stdout;
+  assert.match(unattended, /Left your theme as it is \(no terminal to ask\): spacing\. To add them: plumber propose --family spacing --write\./);
+  assert.equal(await readFile(join(asked, 'src/styles.css'), 'utf8'), css);
+  // the step it names writes them
+  assert.match(run(asked, ['propose', '--family', 'spacing', '--write']).stdout, /src\/theme\.css/);
+  const initialized = run(directory, ['init', '--yes']).stdout;
   assert.match(initialized, /Wrote \d+ tokens to src\/theme\.css/);
   const config = await readFile(join(directory, 'plumber.config.ts'), 'utf8');
   assert.doesNotMatch(config, /"origin": "inferred"|inferred:spacing/);
