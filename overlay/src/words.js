@@ -806,7 +806,9 @@ export const CLEANUP = {
   nextSpacing: 'Next: the space between things.',
   spacing: {
     reading: 'Reading the space between things on this page…',
-    head: (before, after) => `This page has ${before} different spaces between things. After this, ${after}.`,
+    // spaces moving onto the scale need not lower the count (7 and 34 become 8 and 32): then the moves are what's said
+    head: (before, after, n) => (after < before ? `This page has ${before} different spaces between things. After this, ${after}.`
+      : `${n} ${n === 1 ? 'space' : 'spaces'} on this page ${n === 1 ? 'is' : 'are'} off your scale.`),
     // what the app's own scale is, said plainly: the pass stays on it
     scale: (s) => (s?.kind === 'linear' ? `Your spacing is a ${s.unit}px grid, so every new space is on it.`
       : s?.kind === 'geometric' ? `Your spacing grows by ×${s.ratio} a step, so every new space is one of those steps.`
