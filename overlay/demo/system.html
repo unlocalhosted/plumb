@@ -69,7 +69,7 @@
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], ['readout', 'Readout']] },
     { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], ['marks', 'Blueprint marks']] },
     { label: 'Layout', items: [['card', 'Card'], ['page', 'Page']] },
-    { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
+    { label: 'Resources', items: [['gallery', 'Gallery'], ['briefs', 'Briefs'], ['source', 'Source']] },
   ];
   const TABS = ['Overview', 'Style', 'Usage', 'Code', 'Accessibility'];
 
@@ -540,6 +540,64 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         sec('grid', 'Measure and gutters', `<ul class="plain"><li><b>Column</b> 1120px at most, centred.</li><li><b>Gutters</b> 32px each side; 16px under 720px wide.</li><li><b>Top and bottom</b> 56px above the eyebrow, 96px under the last card; 32 and 64 on a phone.</li><li><b>Headline</b> 40/46 drops to 30/36 on a phone.</li></ul>`),
         sec('rules', 'Rules', `<ul class="plain"><li>One headline per page, and it’s a finding, not a name.</li><li>Numbers in the headline take their verdict’s colour: coral for off, mint for on.</li><li>The page follows the OS’s day or night until you choose; the bar’s button switches the page and every card at once.</li></ul>`),
         sec('open', 'Open', `<ul class="plain"><li>The page’s gaps, 32, 56, 64 and 96, sit above the spacing ladder and aren’t tokens yet.</li></ul>`),
+      ],
+    }),
+
+    gallery: () => ({
+      title: 'Gallery',
+      lede: 'The working pages behind this system: each one built to try a single part on its own, with the real modules.',
+      sections: [
+        sec('pages', 'Pages', `<div class="tiles">${[
+          ['project.html', 'The project page', 'What <code>npx plumber</code> opens: your type scale, led by Gravity.', '<b style="font:var(--pl-page-figure);color:var(--pl-coral)">576</b>'],
+          ['primitives.html', 'Editor primitives', 'Every primitive side by side, night and day: steppers, swatches, scale marks, roles.', '<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>'],
+          ['registration.html', 'Registration', 'The storyboard Blueprint marks came from: heat where the page is off.', '<span class="bp-sw heat"></span><span class="bp-sw dots"></span>'],
+          ['mark-states.html', 'Marks at rest', 'How a mark looks when nothing is pointed at.', '<span class="pl-tag">Card</span>'],
+          ['fix-flow.html', 'Fix flow', 'Picking a fix, from the mark to the write.', '<span class="pl-act" style="pointer-events:none">Use s3</span>'],
+          ['fix-states.html', 'Fix in place', 'Each state of a fix taken on the element itself.', '<span class="pl-pill" data-hue="mint">✓ Written</span>'],
+          ['index.html', 'Settings demo', 'A sample app page the overlay runs on.', '<span class="pl-rainbow" style="width:28px;height:12px;border-radius:3px"></span>'],
+        ].map(([href, t, d, art]) => `<a class="tile" href="${href}" target="_blank" rel="noopener"><span class="art">${art}</span><b>${t}</b><span>${d}</span></a>`).join('')}</div>`),
+        sec('run', 'Running them', `<pre><code>~/.claude/bin/dev-server overlay/demo npx vite --config vite.config.mjs</code></pre><p>Then open <code>http://127.0.0.1:4311/</code> and the page’s name. The overlay runs on every page, so you can try it on the gallery itself.</p>`),
+      ],
+    }),
+
+    briefs: () => ({
+      title: 'Briefs',
+      lede: 'Where the decisions are written down. When this site and a brief disagree, the brief says why; the code says what.',
+      sections: [
+        sec('list', 'The briefs', `<table class="tok"><thead><tr><th>Brief</th><th>What it decides</th></tr></thead><tbody>${[
+          ['docs/briefs/visual-language.md', 'A toy you can trust: the six hues and one meaning each, the patterns, the pill and tag, night as white on deep.'],
+          ['docs/briefs/readiness.md', 'The overlay’s first tokens (2026-10-23): one accent, colour kept to verdicts, the card as the only lifted thing.'],
+          ['docs/briefs/blueprint-v2.md', 'Blueprint: a quiet surface that owns input, findings grouped by cause.'],
+          ['docs/briefs/cleanup-show-v2.md', 'The clean-up show: a chip per role, its places marked, the page easing to it.'],
+          ['docs/design/onboarding.md', 'One command to your own page: the project page and what leads it.'],
+          ['docs/research/libraries-dev.md', 'What the primitives can take from libraries.dev; ideas only, nothing imported.'],
+        ].map(([f, d]) => `<tr><td><code>${f}</code></td><td>${d}</td></tr>`).join('')}</tbody></table>`),
+        sec('rules', 'How they’re used', `<ul class="plain"><li>A decision lands in a brief first, with the date and the owner’s words, then in code.</li><li>A brief that’s been replaced says so at the top and names what replaced it.</li></ul>`),
+      ],
+    }),
+
+    source: () => ({
+      title: 'Source',
+      lede: 'Every piece on this site is imported from the overlay’s own modules, in <code>overlay/src</code>. Here’s where each one lives.',
+      sections: [
+        sec('modules', 'Modules', `<table class="tok"><thead><tr><th>File</th><th>Gives</th><th>Documented in</th></tr></thead><tbody>${[
+          ['tokens.css', 'Every token, day and night', '#colour', 'Colour, Typography, Spacing, Tokens'],
+          ['language.js', '<code>LANGUAGE_CSS</code>: pill, tag, action, hatch, dither, checker, ants, rainbow, pop', '#pill/overview', 'Pill, Tag, Action, Texture'],
+          ['editor-primitives.js', '<code>stepper</code>, <code>swatches</code>, <code>segments</code>, <code>align</code>, <code>bind</code>', '#stepper/overview', 'Stepper, Swatches, Segments'],
+          ['scale-marks.js', '<code>step</code>, <code>place</code>, <code>places</code>, <code>count</code>, <code>rollCount</code>', '#step/overview', 'Step, Place, Count'],
+          ['show.js', '<code>chipsHtml</code>, <code>roll</code>', '#chip/overview', 'Role chip, The clean-up show'],
+          ['boxmodel.js', '<code>boxModel</code>, <code>pointAt</code>, <code>BLOCK_ICONS</code>', '#boxmodel', 'Box model, Iconography'],
+          ['glyphs.js', '<code>GLYPHS</code>, <code>glyph</code>', '#icons', 'Iconography'],
+          ['gravity.js', '<code>Gravity</code>, the readout plate', '#gravity', 'Gravity, Readout'],
+          ['blueprint-marks.js', '<code>MarkLayer</code>, <code>HEAT</code>', '#marks', 'Blueprint marks'],
+          ['words.js', 'Every string the overlay says', '#voice', 'Voice and tone'],
+        ].map(([f, g, href, docs]) => `<tr><td><code>${f}</code></td><td>${g}</td><td><a href="${href}">${docs}</a></td></tr>`).join('')}</tbody></table>`),
+        sec('import', 'Using them', `<pre><code>import tokens from './tokens.css?raw';
+import { LANGUAGE_CSS } from './language.js';
+
+const root = host.attachShadow({ mode: 'open' });
+root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
+  &lt;span class="pl-pill" data-hue="mint"&gt;s3&lt;/span&gt;\`;</code></pre><p>Everything is scoped to a shadow root (<code>:host</code>), so nothing leaks onto the page under it, or in from it. Set <code>data-scheme="dark"</code> or <code>"light"</code> on the host to override the OS.</p>`),
       ],
     }),
 
