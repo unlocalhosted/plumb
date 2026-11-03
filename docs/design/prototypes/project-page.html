@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>crafting-ui · Plumber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="page-tokens.css">
+<script src="data/crafting-ui.js"></script>
+<style>
+  /* The project page, chosen layout (docs/design/onboarding.md, "The page"): the sentence, Gravity as the hero, the
+     specimen below. Built one component at a time; this is Gravity's pass. Its states, motion and access are in the
+     comment above gravity() below. Tokens: page-tokens.css. */
+
+  .top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--s4); padding: var(--s3) var(--s6);
+    background: color-mix(in oklab, var(--paper) 86%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
+  .brand { display: flex; align-items: center; gap: var(--s2); font: 600 14px/1 var(--sans); }
+  .brand svg { width: 18px; height: 18px; }
+  .where { font: var(--t-meta); color: var(--ink-2); }
+  .where b { font: var(--t-code); color: var(--ink); }
+  .grow { flex: 1; }
+  .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-pill); color: var(--ink-2); transition: background var(--d-hover) ease, color var(--d-hover) ease; }
+  .icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+
+  main { max-width: 1240px; margin: 0 auto; padding: var(--s7) var(--s6) var(--s9); }
+  .eyebrow { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-bottom: var(--s3); }
+  h1 { font: var(--t-hero); letter-spacing: -.01em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  h1 .n { font-variant-numeric: tabular-nums; }
+  h1 em { font-style: italic; color: var(--off); }
+  h1 strong { font-weight: 400; color: var(--on); }
+  .lede { font-size: 17px; line-height: 26px; color: var(--ink-2); max-width: 62ch; margin: var(--s4) 0 var(--s5); text-wrap: pretty; }
+
+  .stage { position: relative; border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--paper); box-shadow: var(--raise); overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--s4); padding: var(--s4) var(--s5); font: var(--t-meta); color: var(--ink-2); border-bottom: 1px solid var(--rule); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--s2); }
+  .legend i { width: 9px; height: 9px; border-radius: 2px; }
+  .k-on { background: var(--on); } .k-soft { background: var(--soft); } .k-off { background: var(--off); }
+  .legend .hint { margin-left: auto; color: var(--ink-3); }
+
+  /* ---------- Gravity ---------- */
+  .grav { position: relative; }
+  .grav canvas { display: block; width: 100%; height: 340px; touch-action: manipulation; }
+  .grav canvas:focus-visible { outline: none; }
+  .grav:has(canvas:focus-visible) { box-shadow: inset 0 0 0 2px var(--sky); }
+  .grav .empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: var(--t-title); color: var(--ink-2); pointer-events: none; }
+  .grav .empty small { display: block; font: var(--t-meta); color: var(--ink-3); margin-top: 6px; }
+  .foot { display: flex; align-items: center; gap: var(--s5); padding: var(--s4) var(--s5); border-top: 1px solid var(--rule); }
+  .count { font: var(--t-count); font-variant-numeric: tabular-nums; min-width: 4ch; }
+  .count-say { font: var(--t-meta); color: var(--ink-2); max-width: 34ch; }
+  .act { font: 600 13px/1 var(--sans); padding: 12px 18px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); white-space: nowrap;
+    transition: transform var(--d-press) var(--ease-out), background var(--d-hover) ease; }
+  .act:hover { background: color-mix(in oklab, var(--ink) 84%, var(--action)); }
+  .act:active { transform: scale(.97); }
+  .act[aria-pressed="true"] { background: var(--paper-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule); }
+
+  /* the pill: one, for what is pointed at */
+  .pill { position: absolute; z-index: 6; pointer-events: none; max-width: 340px; padding: 10px 12px; border-radius: var(--r-md); background: var(--ink); color: var(--paper);
+    font: var(--t-meta); box-shadow: 0 12px 32px -12px rgb(0 0 0 / .45); opacity: 0; transform: translateY(4px) scale(.98); transform-origin: top left;
+    transition: opacity var(--d-hover) ease, transform var(--d-hover) var(--ease-out); }
+  .pill.on { opacity: 1; transform: none; }
+  .pill b { font: 600 13px/18px var(--sans); display: block; }
+  .pill code { font: var(--t-code); color: color-mix(in oklab, var(--paper) 72%, transparent); }
+  .pill .to { color: color-mix(in oklab, var(--on) 55%, var(--paper)); }
+
+  /* ---------- the specimen, below ---------- */
+  .section { margin-top: var(--s8); }
+  .section h2 { font: var(--t-title); margin: 0 0 4px; }
+  .section > p { font: var(--t-meta); color: var(--ink-2); margin: 0 0 var(--s4); }
+  .spec { padding: var(--s2) 0 var(--s3); }
+  .row { display: grid; grid-template-columns: 168px minmax(0, 1fr) 176px; align-items: baseline; gap: var(--s5); padding: 10px var(--s5);
+    transition: background var(--d-hover) ease; }
+  .row.step { border-top: 1px solid var(--rule); padding-top: var(--s4); padding-bottom: var(--s4); }
+  .row.step:first-child { border-top: 0; }
+  .row .meta { display: flex; flex-direction: column; gap: 3px; }
+  .row .name, .row .px { font: var(--t-code); }
+  .row .px { color: var(--ink-2); }
+  .row .sample { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--sans); font-weight: 450; letter-spacing: -.005em; line-height: 1.15; }
+  .row .sample span { display: inline-block; transform-origin: left 70%; transition: transform var(--d-move) var(--ease-out), color var(--d-move) ease; }
+  .row .use { display: flex; align-items: center; gap: var(--s2); font: var(--t-meta); color: var(--ink-2); justify-self: end; }
+  .meter { display: inline-block; width: 72px; height: 6px; border-radius: 3px; background: var(--paper-3); overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--on); border-radius: 3px; }
+  .row.unused .sample, .row.unused .name { color: var(--ink-3); }
+  .chip { display: inline-flex; align-self: flex-start; padding: 2px 8px; border-radius: var(--r-pill); font: var(--t-meta); font-size: 12px; background: var(--soft-soft); color: var(--soft-ink); }
+  .row.stray { padding-top: 6px; padding-bottom: 6px; }
+  .row.stray .px, .row.stray .sample span, .row.stray .use { color: var(--off); }
+  .row.stray .to { font: var(--t-code); color: var(--sky); opacity: 0; transform: translateX(-4px); transition: opacity var(--d-hover) ease, transform var(--d-hover) var(--ease-out); }
+  .row.stray:hover { background: color-mix(in oklab, var(--off) 6%, transparent); }
+  .row.stray:hover .to { opacity: 1; transform: none; }
+  .row.stray:hover .sample span { color: var(--ink); transform: scale(var(--snap)); }
+  .row.target { background: color-mix(in oklab, var(--sky) 8%, transparent); box-shadow: inset 3px 0 0 var(--sky); }
+  .row.few { padding-top: 4px; padding-bottom: 8px; }
+  .row.few .sample { font: var(--t-meta); color: var(--ink-2); }
+  .row.few .sample code { font: var(--t-code); color: var(--off); }
+
+  .note { margin-top: var(--s6); font: var(--t-meta); color: var(--ink-3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 120ms !important; }
+    .row.stray:hover .sample span { transform: none; }
+  }
+  @media (max-width: 720px) {
+    main { padding: var(--s6) var(--s4) var(--s8); }
+    .top { padding: var(--s3) var(--s4); }
+    h1 { font-size: 36px; }
+    .grav canvas { height: 340px; }
+    .foot { flex-wrap: wrap; }
+    .legend .hint { display: none; }
+    .row { grid-template-columns: 1fr; gap: 4px; }
+    .row .use { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand" aria-label="Plumber">
+    <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 1v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9 8.5c2.4 2.6 3.6 4.4 3.6 5.6a3.6 3.6 0 0 1-7.2 0c0-1.2 1.2-3 3.6-5.6Z" fill="var(--sky)"/></svg>
+    Plumber
+  </div>
+  <span class="where"><b>crafting-ui</b> · <span id="files"></span> files read</span>
+  <span class="grow"></span>
+  <button class="icon-btn" id="theme" aria-label="Switch light and dark">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12Z" fill="currentColor"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="eyebrow">Your type scale</div>
+  <h1 id="hero"></h1>
+  <p class="lede" id="lede"></p>
+
+  <section class="stage" aria-labelledby="hero">
+    <div class="legend" aria-hidden="true">
+      <span><i class="k-on"></i>Uses your scale</span>
+      <span><i class="k-soft"></i>A size your scale has, typed by hand</span>
+      <span><i class="k-off"></i>A size your scale doesn't have</span>
+      <span class="hint">Point at a size. Click one to snap it.</span>
+    </div>
+    <div class="grav" id="grav">
+      <canvas id="canvas" tabindex="0" role="img" aria-describedby="grav-table"></canvas>
+    </div>
+    <div class="foot">
+      <div class="count" id="count" aria-hidden="true">0</div>
+      <div class="count-say" id="count-say">places use your scale</div>
+      <span class="grow"></span>
+      <button class="act" id="snap" aria-pressed="false">Snap to your scale</button>
+    </div>
+    <table class="sr" id="grav-table"></table>
+    <div class="sr" aria-live="polite" id="announce"></div>
+  </section>
+
+  <section class="section">
+    <h2>Your scale, size by size</h2>
+    <p>Each size in your theme, with the sizes typed by hand between them. Point at one to see it on your scale.</p>
+    <div class="stage"><div class="spec" id="spec"></div></div>
+  </section>
+
+  <p class="note">Numbers from crafting-ui, read 2026-11-03 (plumber check --json, data/extract-system.py). A prototype: nothing here changes your code.</p>
+</main>
+
+<div class="pill" id="pill" role="status"></div>
+
+<script>
+const D = window.SYSTEM, S = D?.size ?? { steps: [], strays: [] };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, el = document) => el.querySelector(s);
+const nf = new Intl.NumberFormat('en');
+const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
+const fmt = px => `${+px.toFixed(2)}px`;
+
+const steps = S.steps.slice().sort((a, b) => a.px - b.px);
+const strays = S.strays.filter(s => s.px >= 6);
+const onScale = steps.reduce((n, s) => n + s.uses, 0);
+const byHand = strays.reduce((n, s) => n + s.places, 0);
+const copies = strays.filter(s => s.copy).reduce((n, s) => n + s.places, 0);
+const unused = steps.filter(s => !s.uses);
+const sizesInUse = new Set([...strays.map(s => s.px), ...steps.filter(s => s.uses).map(s => s.px)]).size;
+const stepOf = name => steps.find(s => s.name === name);
+const writtenAs = s => s.written.map(w => `<code>${w.text}</code> ×${w.n}`).join(' · ');
+
+$('#files').textContent = nf.format(D?.files ?? 0);
+if (!steps.length) {
+  $('#hero').textContent = 'Your theme has no text sizes yet.';
+  $('#lede').textContent = `Your code sets ${plural(byHand, 'text size', 'text sizes')} by hand. Plumber can turn the ones you use most into a scale.`;
+} else if (!byHand) {
+  $('#hero').innerHTML = `Every text size uses <strong>your scale</strong>.`;
+  $('#lede').textContent = `${plural(onScale, 'place', 'places')}, all on your ${steps.length} sizes.`;
+} else {
+  $('#hero').innerHTML = `<em class="n">${nf.format(byHand)}</em> places type a text size by hand. <strong class="n">${nf.format(onScale)}</strong> use your scale.`;
+  $('#lede').textContent = `Your theme has ${steps.length} text sizes; your code uses ${sizesInUse}. ${nf.format(copies)} of the hand-typed places pick a size your theme already has, so they're one rename away.` +
+    (unused.length ? ` ${unused.length === 1 ? 'One size' : `${unused.length} sizes`} in your theme ${unused.length === 1 ? 'is' : 'are'} never used: ${unused.map(s => s.name).join(', ')}.` : '');
+}
+
+/* ---------- the pill ---------- */
+const pill = $('#pill');
+function say(html, x, y) {
+  pill.innerHTML = html; pill.classList.add('on');
+  const w = pill.offsetWidth, h = pill.offsetHeight;
+  pill.style.left = `${Math.min(innerWidth - w - 12, Math.max(12, x + 14))}px`;
+  pill.style.top = `${Math.max(scrollY + 60, Math.min(innerHeight + scrollY - h - 12, y + 14))}px`;
+}
+const hush = () => pill.classList.remove('on');
+
+/* ---------- Gravity ----------
+   Every place that types a text size by hand is a dot near the step of your scale it's closest to.
+
+   arrival     the steps fade in left to right; then the dots fall from above and land on their homes with one small
+               bounce (they're 3px: a small thing needs a little bounce to read), once per page view
+   rest        a slow drift around home; paused when the canvas is off screen or the tab is hidden
+   point       a step: it rings in sky, its dots come forward, the rest fade back, the pill says its numbers;
+               a cluster: the pill says that size (places, as written, nearest step), a hairline runs to its step
+   click       a step snaps only its own dots in (click again to let them go)
+   snap all    dots leave nearest-first and spring into their step, no bounce; a step pulses once when its first
+               dot lands; the count climbs; when the last lands, one soft ripple from each step (once)
+   let go      they spring back home
+   keyboard    Tab to the canvas; ← → move between steps (same as pointing), Enter or Space snaps the one in focus,
+               Esc lets go; the button is aria-pressed; the new count is announced
+   reader      a table of every step's numbers stands in for the drawing
+   reduced     no drift, no rain, no ripple: dots appear at home; snapping is a 200ms crossfade
+   empty       no size typed by hand: says so, no button; no scale in the theme: says so */
+function gravity() {
+  const wrap = $('#grav'), canvas = $('#canvas'), ctx = canvas.getContext('2d');
+  if (!steps.length || !byHand) {
+    wrap.insertAdjacentHTML('beforeend', `<div class="empty">${!steps.length ? 'No scale to draw yet<small>Add text sizes to your theme, and this fills in.</small>' : 'Every text size uses your scale<small>Nothing typed by hand. Lovely.</small>'}</div>`);
+    $('#snap').hidden = true; $('#count').textContent = nf.format(onScale);
+    $('#count-say').textContent = 'places use your scale';
+  }
+  let W = 0, H = 0, dpr = 1;
+  const tokens = {};
+  const readTokens = () => { const cs = getComputedStyle(document.documentElement); for (const n of ['--ink', '--ink-2', '--ink-3', '--rule', '--on', '--on-soft', '--off', '--soft', '--sky', '--mono', '--paper']) tokens[n] = cs.getPropertyValue(n).trim(); };
+  readTokens();
+  const lo = Math.log(8), hi = Math.log(64), M = 56;
+  const X = px => M + (Math.log(Math.min(Math.max(px, 8), 64)) - lo) / (hi - lo) * (W - 2 * M);
+  const cy = () => H * 0.5;
+  const rand = (() => { let a = 11; return () => (a = (a * 16807) % 2147483647) / 2147483647; })();
+  const gauss = () => (rand() + rand() + rand() - 1.5) / 1.5;
+  const anchors = steps.map(s => ({ s, inside: 0, r: 0, pulse: 0, pulsed: false, ripple: -1, local: false }));
+  const anchorOf = name => anchors.find(a => a.s.name === name);
+  const parts = [];
+  for (const s of strays) for (let k = 0; k < s.places; k++)
+    parts.push({ s, a: anchorOf(s.near), jx: gauss() * 4, jy: gauss() * (34 + Math.sqrt(s.places) * 11), ph: rand() * 6.28, f: .4 + rand() * .6, ta: rand() * 6.28, tr: Math.sqrt(rand()),
+      hx: 0, hy: 0, x: 0, y: 0, vx: 0, vy: 0, mode: 'wait', wake: 0, bounced: false, delay: 0, fade: 1 });
+  let all = false, snapAt = 0, flipAt = 0, hover = null, focus = -1, start = performance.now(), last = start, shown = 0, said = -1, running = false, visible = true, celebrated = false;
+  const wants = p => p.a && (all || p.a.local);
+  const radius = a => 8 + Math.sqrt(a.s.uses + a.inside) * 1.65;
+
+  function size() {
+    dpr = devicePixelRatio || 1; W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const p of parts) { p.hx = X(p.s.px) + p.jx; p.hy = cy() + Math.max(-cy() + 24, Math.min(cy() - 24, p.jy)); }
+    for (const p of parts) if (p.mode === 'wait') { p.x = p.hx; p.y = reduce ? p.hy : -10 - rand() * H * .5; p.wake = reduce ? 0 : 420 + (p.hx / W) * 520 + rand() * 420; p.mode = reduce ? 'spring' : 'wait'; }
+    if (reduce) for (const p of parts) { p.x = p.hx; p.y = p.hy; }
+  }
+  function target(p, now) {
+    if (wants(p) && now - snapAt > p.delay) {
+      const r = radius(p.a) * .78 * p.tr; return [X(p.a.s.px) + Math.cos(p.ta) * r, cy() + Math.sin(p.ta) * r, true];
+    }
+    const t = now / 1000;
+    return [p.hx + (reduce ? 0 : Math.sin(t * p.f + p.ph) * 2.2), p.hy + (reduce ? 0 : Math.cos(t * p.f * .8 + p.ph) * 3), false];
+  }
+  function step(now) {
+    const dt = Math.min(32, now - last) / 16.67; last = now;
+    for (const a of anchors) a.inside = 0;
+    for (const p of parts) {
+      if (p.mode === 'wait') { if (now - start < p.wake) continue; p.mode = 'fall'; p.vy = 2 + rand() * 2; }
+      const [tx, ty, going] = target(p, now);
+      if (p.mode === 'fall') {
+        // falling: real gravity, one small bounce on landing, then the spring takes over
+        p.vy += .55 * dt; p.y += p.vy * dt; p.x += (tx - p.x) * .2;
+        if (p.y >= ty) { p.y = ty; if (!p.bounced && p.vy > 2) { p.vy = -p.vy * .22; p.bounced = true; } else { p.mode = 'spring'; p.vy = 0; } }
+        continue;
+      }
+      if (reduce) { const was = p.x; p.x = tx; p.y = ty; if (was !== tx) p.fade = 0; p.fade = Math.min(1, p.fade + dt * 16.67 / 200); }
+      else {
+        // a critically damped spring: no overshoot into the step
+        const k = .05, c = .32;
+        p.vx = (p.vx + (tx - p.x) * k * dt) * (1 - c); p.vy = (p.vy + (ty - p.y) * k * dt) * (1 - c);
+        p.x += p.vx * dt; p.y += p.vy * dt;
+      }
+      p.home = !going;
+      if (going && Math.hypot(tx - p.x, ty - p.y) < 3) { p.a.inside++; if (!p.a.pulsed) { p.a.pulsed = true; p.a.pulse = now; } }
+    }
+    for (const a of anchors) { a.r += (radius(a) - a.r) * .15; if (!parts.some(p => p.a === a && wants(p))) a.pulsed = false; }
+    // the last dot in: one ripple from each step, once per snap
+    const going = parts.filter(wants), landed = anchors.reduce((n, a) => n + a.inside, 0);
+    if (all && going.length && landed === going.length && !celebrated) { celebrated = true; anchors.forEach((a, i) => { if (a.inside || a.s.uses) a.ripple = now + i * 60; }); }
+  }
+  function draw(now) {
+    const T = tokens; ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = T['--rule']; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(24, cy()); ctx.lineTo(W - 24, cy()); ctx.stroke();
+    const intro = reduce ? 1 : Math.min(1, (now - start) / 600);
+    // three layers: the steps' fill, then the dots (so the snapped ones show inside), then the steps' outline and name
+    const geo = anchors.map((a, i) => {
+      const shown = reduce ? 1 : Math.max(0, Math.min(1, (now - start - i * 40) / 380)), e = 1 - Math.pow(1 - shown, 3);
+      const pulse = a.pulse ? Math.max(0, 1 - (now - a.pulse) / 300) : 0;
+      return { x: X(a.s.px), e, r: Math.max(1, a.r * e * (1 + Math.sin(pulse * Math.PI) * .08)), on: a.s.uses || a.inside };
+    });
+    anchors.forEach((a, i) => { const g = geo[i]; ctx.globalAlpha = g.e; ctx.beginPath(); ctx.arc(g.x, cy(), g.r, 0, 6.283); ctx.fillStyle = g.on ? T['--on-soft'] : T['--paper']; ctx.fill(); });
+    ctx.globalAlpha = 1;
+    const lit = hover?.stray ? (p => p.s === hover.stray) : hover?.a ? (p => p.a === hover.a) : focus >= 0 ? (p => p.a === anchors[focus]) : null;
+    for (const p of parts) {
+      if (p.mode === 'wait') continue;
+      ctx.globalAlpha = (lit && !lit(p) ? .12 : p.s.scaled ? .6 : .92) * (reduce ? p.fade : 1) * intro;
+      ctx.fillStyle = wants(p) && !p.home ? T['--on'] : p.s.copy ? T['--soft'] : T['--off'];
+      ctx.fillRect(p.x - 1.6, p.y - 1.6, 3.2, 3.2);
+    }
+    ctx.globalAlpha = 1;
+    anchors.forEach((a, i) => {
+      const { x, e, r, on } = geo[i], hot = hover?.a === a || focus === i;
+      ctx.globalAlpha = e;
+      // the ripple: a ring that grows and fades, once
+      if (a.ripple > 0 && now > a.ripple && !reduce) {
+        const t = (now - a.ripple) / 700; if (t < 1) { ctx.beginPath(); ctx.arc(x, cy(), a.r + t * 26, 0, 6.283); ctx.strokeStyle = T['--on']; ctx.globalAlpha = (1 - t) * .5; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = e; } else a.ripple = -1;
+      }
+      ctx.beginPath(); ctx.arc(x, cy(), r, 0, 6.283);
+      ctx.lineWidth = hot ? 2 : 1.25; ctx.strokeStyle = hot ? T['--sky'] : on ? T['--on'] : T['--ink-3'];
+      if (!on) ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = hot ? T['--sky'] : on ? T['--ink'] : T['--ink-2']; ctx.font = `500 11px ${T['--mono']}`; ctx.textAlign = 'center';
+      const ly = cy() + Math.max(a.r, 12) + 18;
+      ctx.lineJoin = 'round'; ctx.strokeStyle = T['--paper']; ctx.lineWidth = 4; ctx.strokeText(a.s.name.replace('text-', ''), x, ly);
+      ctx.fillText(a.s.name.replace('text-', ''), x, ly);
+    });
+    ctx.globalAlpha = 1;
+    // a cluster pointed at: a hairline to its step
+    if (hover?.stray && hover.a) {
+      ctx.strokeStyle = T['--off']; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(hover.stray.px), cy() - 6); ctx.quadraticCurveTo((X(hover.stray.px) + X(hover.a.s.px)) / 2, cy() - 40, X(hover.a.s.px), cy() - hover.a.r - 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = 1;
+    // the count follows the dots in
+    const count = onScale + anchors.reduce((n, a) => n + a.inside, 0);
+    shown += (count - shown) * (reduce ? 1 : .14);
+    const n = Math.abs(count - shown) < .5 ? count : Math.round(shown);
+    $('#count').textContent = nf.format(n);
+    if (n === count && count !== said && (all || anchors.some(a => a.local) || said >= 0)) { said = count; $('#announce').textContent = `${plural(count, 'place', 'places')} on your scale`; }
+  }
+  function frame(now) { if (!visible || document.hidden) { running = false; return; } step(now); draw(now); requestAnimationFrame(frame); }
+  const run = () => { if (!running && visible && !document.hidden) { running = true; last = performance.now(); requestAnimationFrame(frame); } };
+
+  // pointing
+  const screen = (x, y) => { const r = canvas.getBoundingClientRect(); return [r.left + x, r.top + scrollY + y]; };
+  function stepPill(a) {
+    const near = strays.filter(s => s.near === a.s.name), n = near.reduce((k, s) => k + s.places, 0);
+    const [sx, sy] = screen(X(a.s.px), cy() - a.r);
+    say(`<b><code style="color:inherit">${a.s.name}</code> · ${fmt(a.s.px)}</b>${a.s.uses ? plural(a.s.uses, 'place uses it', 'places use it') : 'Not used anywhere'}` +
+      (n ? `<br>${plural(n, 'place types', 'places type')} a size close to it` : '') + `<br><span class="to">${a.local || all ? 'Click to let them go' : n ? 'Click to snap them in' : ''}</span>`, sx, sy);
+  }
+  function clusterPill(s, mx, my) {
+    const near = stepOf(s.near);
+    const [sx, sy] = screen(mx, my);
+    say(`<b>${fmt(s.px)} · ${plural(s.places, 'place', 'places')}</b>${writtenAs(s)}<br>` +
+      (s.copy ? `<span class="to">Your scale has it: ${s.near}</span>` : near ? `<span class="to">Nearest on your scale: ${s.near} (${fmt(near.px)})</span>` : ''), sx, sy);
+  }
+  canvas.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const a = anchors.find(a => Math.hypot(mx - X(a.s.px), my - cy()) < Math.max(a.r, 10) + 8);
+    if (a) { hover = { a }; canvas.style.cursor = 'pointer'; stepPill(a); run(); return; }
+    // a cluster: the hand-typed size nearest the pointer, within a few pixels across and its band up and down
+    const s = Math.abs(my - cy()) < 150 && !all ? strays.slice().sort((p, q) => Math.abs(X(p.px) - mx) - Math.abs(X(q.px) - mx) || q.places - p.places)[0] : null;
+    if (s && Math.abs(X(s.px) - mx) < 7) { hover = { stray: s, a: anchorOf(s.near) }; canvas.style.cursor = ''; clusterPill(s, mx, my); run(); return; }
+    hover = null; canvas.style.cursor = ''; hush();
+  });
+  canvas.addEventListener('pointerleave', () => { hover = null; hush(); });
+  canvas.addEventListener('click', () => { if (hover?.a && !hover.stray) toggle(hover.a); });
+
+  function toggle(a) {
+    a.local = !a.local; snapAt = performance.now(); celebrated = false;
+    for (const p of parts) if (p.a === a) p.delay = reduce ? 0 : rand() * 180;
+    sayCount();
+    if (hover?.a === a) stepPill(a); else if (focus >= 0) stepPill(anchors[focus]);
+    run();
+  }
+  function snapAll(on) {
+    all = on; snapAt = performance.now(); celebrated = false;
+    if (!on) anchors.forEach(a => { a.local = false; });
+    // nearest first, so the pull reads as a wave across the scale
+    for (const p of parts) p.delay = reduce ? 0 : Math.abs(p.hx - (p.a ? X(p.a.s.px) : p.hx)) * 3 + rand() * 260;
+    const b = $('#snap'); b.setAttribute('aria-pressed', on); b.textContent = on ? 'Let go' : 'Snap to your scale';
+    sayCount();
+    run();
+  }
+  // what the count means right now: today, or a preview of some or all of it snapped
+  function sayCount() {
+    const some = anchors.filter(a => a.local).map(a => a.s.name);
+    $('#count-say').textContent = all ? 'places on your scale, if every size snapped to it'
+      : some.length ? `places on your scale, if the sizes close to ${some.length > 2 ? `${some.length} of your sizes` : some.join(' and ')} snapped to ${some.length === 1 ? 'it' : 'them'}` : 'places use your scale';
+  }
+  $('#snap').addEventListener('click', () => snapAll(!all));
+
+  // keyboard: the steps in order, like pointing
+  // keyboard focus starts on the step your code uses most
+  const firstFocus = () => { if (focus < 0) focus = anchors.reduce((b, a, i) => a.s.uses > anchors[b].s.uses ? i : b, 0); };
+  canvas.addEventListener('focus', () => { firstFocus(); stepPill(anchors[focus]); run(); });
+  canvas.addEventListener('blur', () => { focus = -1; hush(); });
+  canvas.addEventListener('keydown', e => {
+    if (focus < 0) { firstFocus(); if (e.key.startsWith('Arrow')) { e.preventDefault(); stepPill(anchors[focus]); run(); return; } }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); focus = (focus + (e.key === 'ArrowRight' ? 1 : -1) + anchors.length) % anchors.length; stepPill(anchors[focus]); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); focus = e.key === 'Home' ? 0 : anchors.length - 1; stepPill(anchors[focus]); }
+    else if ((e.key === 'Enter' || e.key === ' ') && focus >= 0) { e.preventDefault(); toggle(anchors[focus]); }
+    else if (e.key === 'Escape') { anchors.forEach(a => { a.local = false; }); if (all) snapAll(false); }
+    run();
+  });
+
+  // for a reader: the numbers the drawing shows
+  canvas.setAttribute('aria-label', `Your ${steps.length} text sizes with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`);
+  $('#grav-table').innerHTML = `<caption>Your text sizes, and the places that type a size close to each</caption><tr><th>Size</th><th>Pixels</th><th>Places that use it</th><th>Places typed by hand close to it</th></tr>` +
+    anchors.map(a => `<tr><td>${a.s.name}</td><td>${fmt(a.s.px)}</td><td>${a.s.uses}</td><td>${strays.filter(s => s.near === a.s.name).reduce((n, s) => n + s.places, 0)}</td></tr>`).join('');
+
+  new ResizeObserver(() => { size(); run(); }).observe(canvas);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(canvas);
+  document.addEventListener('visibilitychange', run);
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+  size(); run();
+}
+
+/* ---------- the specimen ---------- */
+function specimen() {
+  const sample = 'Interfaces, taken apart';
+  const desc = steps.slice().sort((a, b) => b.px - a.px), maxUses = Math.max(...steps.map(s => s.uses), 1);
+  let html = '';
+  const row = (cls, inner, extra = '') => `<div class="row ${cls}" ${extra}>${inner}</div>`;
+  const strayRow = s => row('stray', `<div class="meta"><span class="px">${fmt(s.px)}</span><span class="to">→ ${s.near}</span></div>` +
+    `<div class="sample" style="font-size:${Math.min(s.px, 72)}px"><span style="--snap:${(stepOf(s.near)?.px ?? s.px) / s.px}">${sample}</span></div>` +
+    `<div class="use">${plural(s.places, 'place', 'places')}</div>`, `data-near="${s.near}" data-written="${encodeURIComponent(writtenAs(s))}"`);
+  const few = list => {
+    const said = list.length > 4 ? `${list.length} more sizes from <code>${fmt(list.at(-1).px)}</code> to <code>${fmt(list[0].px)}</code>` : list.map(s => `<code>${fmt(s.px)}</code>`).join(' ');
+    return row('few', `<div class="meta"></div><div class="sample">and ${said}, ${plural(list.reduce((n, s) => n + s.places, 0), 'place', 'places')} in all</div><div></div>`);
+  };
+  const above = strays.filter(s => !s.copy && s.px > desc[0].px).sort((a, b) => b.px - a.px);
+  if (above.length) html += row('few', `<div class="meta"><span class="px">bigger</span></div><div class="sample">${above.map(s => `<code>${fmt(s.px)}</code>`).join(' ')}, ${plural(above.reduce((n, s) => n + s.places, 0), 'place', 'places')} bigger than your largest size</div><div></div>`);
+  desc.forEach((st, k) => {
+    const copy = strays.find(s => s.copy && s.near === st.name);
+    html += row(`step${st.uses ? '' : ' unused'}`, `<div class="meta"><span class="name">${st.name}</span><span class="px">${fmt(st.px)}</span>` +
+      (copy ? `<span class="chip">+${nf.format(copy.places)} typed as ${fmt(st.px)}</span>` : '') + `</div>` +
+      `<div class="sample" style="font-size:${st.px}px"><span>${sample}</span></div>` +
+      `<div class="use">${st.uses ? `<span class="meter"><i style="width:${Math.max(6, st.uses / maxUses * 100)}%"></i></span>${plural(st.uses, 'place', 'places')}` : 'Never used'}</div>`, `data-step="${st.name}"`);
+    const next = desc[k + 1]?.px ?? 0;
+    const between = strays.filter(s => !s.copy && s.px < st.px && s.px > next).sort((a, b) => b.px - a.px);
+    between.filter(s => s.places >= 3).forEach(s => html += strayRow(s));
+    const small = between.filter(s => s.places < 3);
+    if (small.length) html += few(small);
+  });
+  const el = $('#spec'); el.innerHTML = html;
+  el.querySelectorAll('.row.stray').forEach(r => {
+    const target = el.querySelector(`.row.step[data-step="${r.dataset.near}"]`);
+    r.addEventListener('pointerenter', () => { target?.classList.add('target'); const b = r.getBoundingClientRect(); say(`<b>Typed as</b>${decodeURIComponent(r.dataset.written)}<br><span class="to">On your scale: ${r.dataset.near}</span>`, b.right - 340, b.bottom + scrollY - 6); });
+    r.addEventListener('pointerleave', () => { target?.classList.remove('target'); hush(); });
+  });
+}
+
+$('#theme').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+});
+gravity();
+if (steps.length) specimen();
+</script>
+</body>
+</html>

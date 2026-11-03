@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your system, drawn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="data/crafting-ui.js"></script>
+<style>
+  /* The centrepiece of the project page (docs/design/onboarding.md, "The page"): your system, drawn. Three
+     directions for the type scale on crafting-ui's real numbers (data/extract-system.py over plumber check --json),
+     plus the page's primitives. The language is the overlay's (overlay/src/tokens.css): warm paper and ink, one
+     meaning per hue. mint = on your scale, butter = your scale's value typed by hand, coral = off your scale. */
+
+  /* ---------- primitives ---------- */
+  :root {
+    --paper: #fdfcf8; --paper-2: #f4f1ea; --paper-3: #ece8de; --rule: #e6e1d6;
+    --ink: #1d1b17; --ink-2: #6b665c; --ink-3: #b3ad9f;
+    --on: #1f9e64; --on-soft: #c9f2dd; --on-ink: #0b3d26;
+    --off: #e5503f; --off-soft: #ffd3cd; --off-ink: #5c160e;
+    --soft: #c48a00; --soft-soft: #ffeab0; --soft-ink: #4a3400;
+    --sky: #2a7fd0; --sky-soft: #c5e6fd;
+    --action: #e0369f; --action-ink: #ffffff;
+
+    --display: "Instrument Serif", ui-serif, Georgia, serif;
+    --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --t-hero: 400 52px/1.02 var(--display);       /* the one sentence the page leads with */
+    --t-title: 600 17px/24px var(--sans);         /* a section or a cause */
+    --t-body: 400 15px/23px var(--sans);          /* sentences */
+    --t-meta: 400 13px/18px var(--sans);          /* counts, where */
+    --t-code: 500 12.5px/17px var(--mono);        /* classes, values */
+    --t-label: 600 11px/14px var(--sans);         /* tabs, legends, buttons */
+    --tracking-label: 0.02em;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+    --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+    --raise: 0 1px 0 rgb(29 27 23 / .04), 0 10px 30px -14px rgb(29 27 23 / .22);
+
+    /* motion: entrances ease out hard; things moving on screen ease in and out; nothing linear but the ambient */
+    --ease-out: cubic-bezier(.19, 1, .22, 1);
+    --ease-in-out: cubic-bezier(.645, .045, .355, 1);
+    --d-press: 140ms; --d-hover: 180ms; --d-move: 420ms; --d-build: 700ms;
+  }
+  :root[data-theme="dark"] {
+    --paper: #141311; --paper-2: #1c1a17; --paper-3: #24221e; --rule: #2e2b26;
+    --ink: #f1efe8; --ink-2: #a3a097; --ink-3: #5b574f;
+    --on: #3cc487; --on-soft: #143826; --off: #ff6f5e; --off-soft: #47201b; --soft: #e2a827; --soft-soft: #3f3110;
+    --sky: #5aa8f0; --sky-soft: #15324d; --action: #ff5cb8;
+    --on-ink: #9ff0c6; --off-ink: #ffc2b8; --soft-ink: #ffd98a;
+    --raise: 0 1px 0 rgb(0 0 0 / .3), 0 14px 34px -14px rgb(0 0 0 / .6);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #141311; --paper-2: #1c1a17; --paper-3: #24221e; --rule: #2e2b26;
+      --ink: #f1efe8; --ink-2: #a3a097; --ink-3: #5b574f;
+      --on: #3cc487; --on-soft: #143826; --off: #ff6f5e; --off-soft: #47201b; --soft: #e2a827; --soft-soft: #3f3110;
+      --sky: #5aa8f0; --sky-soft: #15324d; --action: #ff5cb8;
+    --on-ink: #9ff0c6; --off-ink: #ffc2b8; --soft-ink: #ffd98a;
+      --raise: 0 1px 0 rgb(0 0 0 / .3), 0 14px 34px -14px rgb(0 0 0 / .6);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: var(--t-body); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; border-radius: var(--r-sm); }
+
+  /* ---------- frame ---------- */
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--s4); padding: var(--s3) var(--s6);
+    background: color-mix(in oklab, var(--paper) 86%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
+  .brand { display: flex; align-items: center; gap: var(--s2); font: 600 14px/1 var(--sans); }
+  .brand svg { width: 18px; height: 18px; }
+  .where { font: var(--t-meta); color: var(--ink-2); }
+  .where b { font: var(--t-code); color: var(--ink); }
+  .grow { flex: 1; }
+  .tabs { display: flex; padding: 3px; gap: 2px; background: var(--paper-2); border-radius: var(--r-pill); }
+  .tabs button { font: var(--t-label); letter-spacing: var(--tracking-label); padding: 7px 14px; border-radius: var(--r-pill); color: var(--ink-2);
+    transition: color var(--d-hover) ease, background var(--d-hover) ease, box-shadow var(--d-hover) ease; }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgb(29 27 23 / .1); }
+  .tabs button:active { transform: scale(.97); }
+  .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-pill); color: var(--ink-2); transition: background var(--d-hover) ease; }
+  .icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+
+  main { max-width: 1240px; margin: 0 auto; padding: var(--s8) var(--s6) var(--s9); }
+  .eyebrow { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-bottom: var(--s3); }
+  h1 { font: var(--t-hero); letter-spacing: -.01em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  h1 .n { font-variant-numeric: tabular-nums; }
+  h1 em { font-style: italic; color: var(--off); }
+  h1 strong { font-weight: 400; color: var(--on); }
+  .lede { font: var(--t-body); font-size: 17px; line-height: 26px; color: var(--ink-2); max-width: 60ch; margin: var(--s4) 0 0; text-wrap: pretty; }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--s4); margin: var(--s5) 0 var(--s6); font: var(--t-meta); color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--s2); }
+  .legend i { width: 9px; height: 9px; border-radius: 2px; }
+  .k-on { background: var(--on); } .k-soft { background: var(--soft); } .k-off { background: var(--off); }
+
+  .stage { position: relative; border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--paper); box-shadow: var(--raise); overflow: hidden; }
+  .stage-head { display: flex; align-items: center; gap: var(--s3); padding: var(--s4) var(--s5); border-bottom: 1px solid var(--rule); }
+  .stage-head h2 { font: var(--t-title); margin: 0; }
+  .stage-head p { margin: 0; font: var(--t-meta); color: var(--ink-2); }
+  .ghost { font: var(--t-label); letter-spacing: var(--tracking-label); padding: 8px 12px; border-radius: var(--r-pill); color: var(--ink-2); border: 1px solid var(--rule);
+    transition: background var(--d-hover) ease, color var(--d-hover) ease, transform var(--d-press) var(--ease-out); }
+  .ghost:hover { background: var(--paper-2); color: var(--ink); }
+  .ghost:active, .act:active { transform: scale(.97); }
+  .act { font: 600 13px/1 var(--sans); padding: 11px 16px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper);
+    transition: transform var(--d-press) var(--ease-out), background var(--d-hover) ease; }
+  .act:hover { background: color-mix(in oklab, var(--ink) 86%, var(--action)); }
+  .view { display: none; } .view.on { display: block; }
+
+  /* the pill: one, for what is pointed at */
+  .pill { position: absolute; z-index: 3; pointer-events: none; min-width: 180px; padding: 10px 12px; border-radius: var(--r-md); background: var(--ink); color: var(--paper);
+    font: var(--t-meta); box-shadow: 0 12px 32px -12px rgb(0 0 0 / .45); opacity: 0; transform: translateY(4px) scale(.98); transform-origin: top left;
+    transition: opacity var(--d-hover) ease, transform var(--d-hover) var(--ease-out); }
+  .pill.on { opacity: 1; transform: none; }
+  .pill b { font: 600 13px/18px var(--sans); display: block; }
+  .pill code { font: var(--t-code); color: color-mix(in oklab, var(--paper) 70%, transparent); }
+  .pill .to { color: var(--on-soft); }
+  :root[data-theme="dark"] .pill .to { color: var(--on); }
+
+  /* ---------- A · ruler ---------- */
+  .ruler { position: relative; padding: var(--s5) var(--s5) var(--s4); }
+  .ruler svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .ruler .tick { stroke: var(--ink-3); stroke-width: 1; }
+  .ruler .tick.unused { stroke-dasharray: 3 4; }
+  .ruler .fill { stroke: var(--on); stroke-width: 3; stroke-linecap: round; }
+  .ruler .aa { fill: var(--ink); font-family: var(--sans); font-weight: 500; text-anchor: middle; transition: fill var(--d-hover) ease, opacity var(--d-hover) ease; }
+  .ruler .unused .aa, .ruler .aa.unused { fill: var(--ink-3); }
+  .ruler .name { fill: var(--ink-2); font: var(--t-code); font-size: 11px; text-anchor: middle; }
+  .ruler .axis { stroke: var(--rule); stroke-width: 1; }
+  .ruler .sq { transition: opacity var(--d-hover) ease; }
+  .ruler .sq.on { fill: var(--on); } .ruler .sq.copy { fill: var(--soft); } .ruler .sq.off { fill: var(--off); } .ruler .sq.scaled { opacity: .55; }
+  .ruler .col { cursor: default; }
+  .ruler .step, .ruler .col { transition: opacity var(--d-hover) ease; }
+  .ruler.focus .step:not(.hot), .ruler.focus .col:not(.hot) { opacity: .22; }
+  .ruler .step.hot .aa { fill: var(--sky); }
+  .ruler .link { fill: none; stroke: var(--off); stroke-width: 1.25; stroke-dasharray: 3 3; opacity: 0; transition: opacity var(--d-hover) ease; }
+  .ruler .link.on { opacity: 1; }
+  .ruler .band { fill: var(--ink-2); font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; }
+  /* the build: ticks draw up, the letters rise, the hand-typed sizes drop into their columns */
+  .ruler.build .tick, .ruler.build .fill { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw var(--d-build) var(--ease-out) forwards; animation-delay: var(--delay); }
+  .ruler.build .tick.unused { animation-name: draw-dashed; }
+  .ruler.build .aa, .ruler.build .name { opacity: 0; animation: rise 520ms var(--ease-out) forwards; animation-delay: calc(var(--delay) + 160ms); }
+  .ruler.build .sq { opacity: 0; animation: drop 520ms var(--ease-out) forwards; animation-delay: var(--delay); }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes draw-dashed { from { opacity: 0; } to { opacity: 1; stroke-dashoffset: 0; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  .ruler .aa, .ruler .name, .ruler .sq { transform-box: fill-box; }
+
+  /* ---------- B · specimen ---------- */
+  .spec { padding: var(--s3) 0 var(--s4); }
+  .row { display: grid; grid-template-columns: 168px minmax(0, 1fr) 176px; align-items: baseline; gap: var(--s5); padding: 10px var(--s5);
+    border-top: 1px solid transparent; transition: background var(--d-hover) ease, opacity var(--d-hover) ease; }
+  .row.step { border-top-color: var(--rule); padding-top: var(--s4); padding-bottom: var(--s4); }
+  .row .meta { display: flex; flex-direction: column; gap: 3px; }
+  .row .name { font: var(--t-code); color: var(--ink); }
+  .row .px { font: var(--t-code); color: var(--ink-2); }
+  .row .sample { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--sans); font-weight: 450; letter-spacing: -.005em; line-height: 1.15; }
+  .row .sample span { display: inline-block; transform-origin: left 70%; transition: transform var(--d-move) var(--ease-out), color var(--d-move) ease; }
+  .row .use { display: flex; align-items: center; gap: var(--s2); font: var(--t-meta); color: var(--ink-2); justify-self: end; }
+  .row .use .meter { display: inline-block; width: 72px; height: 6px; border-radius: 3px; background: var(--paper-3); overflow: hidden; }
+  .row .use .meter i { display: block; height: 100%; background: var(--on); border-radius: 3px; }
+  .row.unused .sample, .row.unused .name { color: var(--ink-3); }
+  .chip { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--r-pill); font: var(--t-meta); font-size: 12px; }
+  .chip.soft { background: var(--soft-soft); color: var(--soft-ink); }
+    .row.stray { padding-top: 6px; padding-bottom: 6px; }
+  .row.stray .px, .row.stray .sample span { color: var(--off); }
+  .row.stray .use { color: var(--off); }
+  .row.stray .to { font: var(--t-code); color: var(--sky); opacity: 0; transform: translateX(-4px); transition: opacity var(--d-hover) ease, transform var(--d-hover) var(--ease-out); }
+  .row.stray:hover { background: color-mix(in oklab, var(--off) 6%, transparent); }
+  .row.stray:hover .to { opacity: 1; transform: none; }
+  .row.stray:hover .sample span { color: var(--ink); transform: scale(var(--snap)); }
+  .row.target { background: color-mix(in oklab, var(--sky) 8%, transparent); box-shadow: inset 3px 0 0 var(--sky); }
+  .row.few { padding-top: 4px; padding-bottom: 8px; }
+  .row.few .sample { font: var(--t-meta); color: var(--ink-2); }
+  .row.few .sample code { font: var(--t-code); color: var(--off); }
+  .spec.build .row { opacity: 0; animation: rise 560ms var(--ease-out) forwards; animation-delay: var(--delay); }
+
+  /* ---------- C · gravity ---------- */
+  .grav { position: relative; }
+  .grav canvas { display: block; width: 100%; height: 400px; }
+  .grav-foot { display: flex; align-items: center; gap: var(--s5); padding: var(--s4) var(--s5); border-top: 1px solid var(--rule); }
+  .count { font: 400 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .count small { font: var(--t-meta); color: var(--ink-2); display: block; margin-top: 6px; }
+
+  /* ---------- primitives sheet ---------- */
+  .prims { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s5); padding: var(--s5); }
+  .prim h3 { font: var(--t-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 var(--s3); }
+  .sw { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: var(--s3); padding: 6px 0; font: var(--t-meta); }
+  .sw i { width: 36px; height: 24px; border-radius: var(--r-sm); border: 1px solid var(--rule); }
+  .sw code { font: var(--t-code); color: var(--ink-2); }
+  .ramp div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  .ramp code { font: var(--t-code); color: var(--ink-2); white-space: nowrap; }
+  .ladder div { display: flex; align-items: center; gap: var(--s3); font: var(--t-code); color: var(--ink-2); padding: 3px 0; }
+  .ladder i { height: 10px; background: var(--sky); border-radius: 2px; }
+  .curves div { display: flex; align-items: center; gap: var(--s3); padding: 8px 0; font: var(--t-meta); }
+  .curves .track { position: relative; flex: 1; height: 10px; border-radius: 5px; background: var(--paper-2); }
+  .curves .dot { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); }
+  .curves:hover .dot { left: calc(100% - 10px); }
+
+  .note { margin-top: var(--s5); font: var(--t-meta); color: var(--ink-3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 120ms !important; }
+    .row.stray:hover .sample span { transform: none; }
+  }
+  @media (max-width: 720px) {
+    main { padding: var(--s6) var(--s4) var(--s8); }
+    .bar { padding: var(--s3) var(--s4); flex-wrap: wrap; }
+    h1 { font-size: 36px; }
+    .row { grid-template-columns: 1fr; gap: 4px; }
+    .row .use { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand" aria-label="Plumber">
+    <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 1v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9 8.5c2.4 2.6 3.6 4.4 3.6 5.6a3.6 3.6 0 0 1-7.2 0c0-1.2 1.2-3 3.6-5.6Z" fill="var(--sky)"/></svg>
+    Plumber
+  </div>
+  <span class="where"><b id="project">crafting-ui</b> · <span id="files"></span> files read</span>
+  <span class="grow"></span>
+  <nav class="tabs" role="tablist" aria-label="Directions">
+    <button role="tab" data-view="ruler" aria-selected="true">A · Ruler</button>
+    <button role="tab" data-view="spec" aria-selected="false">B · Specimen</button>
+    <button role="tab" data-view="grav" aria-selected="false">C · Gravity</button>
+    <button role="tab" data-view="prims" aria-selected="false">Primitives</button>
+  </nav>
+  <button class="icon-btn" id="theme" aria-label="Switch light and dark">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12Z" fill="currentColor"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="eyebrow">Your type scale</div>
+  <h1 id="hero"></h1>
+  <p class="lede" id="lede"></p>
+  <div class="legend" aria-hidden="true">
+    <span><i class="k-on"></i>Uses your scale</span>
+    <span><i class="k-soft"></i>A size your scale has, typed by hand</span>
+    <span><i class="k-off"></i>A size your scale doesn't have</span>
+  </div>
+
+  <section class="stage view on" id="v-ruler" role="tabpanel">
+    <div class="stage-head"><div><h2>Every text size in your code</h2><p>Your scale on top. Below it, sizes typed by hand, one square for every 4 places.</p></div><span class="grow"></span><button class="ghost" data-replay="ruler">Play again</button></div>
+    <div class="ruler" id="ruler"></div>
+  </section>
+
+  <section class="stage view" id="v-spec" role="tabpanel">
+    <div class="stage-head"><div><h2>Your scale, as a specimen</h2><p>Each size in your theme, with the sizes typed by hand between them. Point at one to see it on your scale.</p></div><span class="grow"></span><button class="ghost" data-replay="spec">Play again</button></div>
+    <div class="spec" id="spec"></div>
+  </section>
+
+  <section class="stage view" id="v-grav" role="tabpanel">
+    <div class="stage-head"><div><h2>Where your text sizes land</h2><p>Every place that types a size by hand is a dot, near the size it's closest to.</p></div></div>
+    <div class="grav" id="grav"><canvas id="canvas" aria-label="Text sizes as dots around your scale"></canvas></div>
+    <div class="grav-foot">
+      <div class="count"><span id="count">0</span><small id="count-say">places use your scale</small></div>
+      <span class="grow"></span>
+      <button class="act" id="snap">Snap to your scale</button>
+    </div>
+  </section>
+
+  <section class="stage view" id="v-prims" role="tabpanel">
+    <div class="stage-head"><div><h2>Primitives</h2><p>The page's tokens, from the overlay's language. Review these before any component.</p></div></div>
+    <div class="prims" id="prims"></div>
+  </section>
+
+  <p class="note">Numbers from crafting-ui, read 2026-11-03 (plumber check --json, data/extract-system.py). A prototype: nothing here changes your code.</p>
+</main>
+
+<div class="pill" id="pill" role="status" aria-live="polite"></div>
+
+<script>
+const D = window.SYSTEM, S = D.size;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, el = document) => el.querySelector(s);
+const nf = new Intl.NumberFormat('en');
+const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
+const fmt = px => `${+px.toFixed(2)}px`;
+
+const steps = S.steps.slice().sort((a, b) => a.px - b.px);
+const strays = S.strays.filter(s => s.px >= 6);
+const onScale = steps.reduce((n, s) => n + s.uses, 0);
+const byHand = strays.reduce((n, s) => n + s.places, 0);
+const copies = strays.filter(s => s.copy).reduce((n, s) => n + s.places, 0);
+const unused = steps.filter(s => !s.uses);
+const sizesInUse = new Set([...strays.map(s => s.px), ...steps.filter(s => s.uses).map(s => s.px)]).size;
+const stepOf = name => steps.find(s => s.name === name);
+
+$('#files').textContent = nf.format(D.files);
+$('#hero').innerHTML = `<em class="n">${nf.format(byHand)}</em> places type a text size by hand. <strong class="n">${nf.format(onScale)}</strong> use your scale.`;
+$('#lede').textContent = `Your theme has ${steps.length} text sizes; your code uses ${sizesInUse}. ${nf.format(copies)} of the hand-typed places pick a size your theme already has, so they're one rename away. ${unused.length ? `${unused.length === 1 ? 'One size' : `${unused.length} sizes`} in your theme ${unused.length === 1 ? 'is' : 'are'} never used: ${unused.map(s => s.name).join(', ')}.` : ''}`;
+
+/* ---------- the pill ---------- */
+const pill = $('#pill');
+function say(html, x, y) {
+  pill.innerHTML = html; pill.classList.add('on');
+  const w = pill.offsetWidth, h = pill.offsetHeight;
+  pill.style.left = `${Math.min(innerWidth - w - 12, Math.max(12, x + 14))}px`;
+  pill.style.top = `${Math.min(innerHeight + scrollY - h - 12, y + 14)}px`;
+}
+const hush = () => pill.classList.remove('on');
+const writtenAs = s => s.written.map(w => `<code>${w.text}</code> ×${w.n}`).join(' · ');
+function strayPill(s) {
+  const near = stepOf(s.near);
+  return `<b>${fmt(s.px)} · ${plural(s.places, 'place', 'places')}</b>${writtenAs(s)}<br>` +
+    (s.copy ? `<span class="to">Your scale has it: ${s.near}</span>` : near ? `<span class="to">Nearest on your scale: ${s.near} (${fmt(near.px)})</span>` : '');
+}
+
+/* ---------- A · ruler ---------- */
+function ruler() {
+  const W = 1180, padL = 40, padR = 40, axisY = 250, top = 34, unit = 4, sq = 6, gap = 2;
+  const lo = Math.log(8), hi = Math.log(64), span = W - padL - padR - 44;
+  const x = px => px > 64 ? W - padR - 8 : padL + (Math.log(Math.max(px, 8)) - lo) / (hi - lo) * span;
+  // columns: hand-typed sizes that land within 9px of each other on screen stack as one column
+  const cols = [];
+  for (const s of strays.slice().sort((a, b) => a.px - b.px)) {
+    const cx = x(s.px), last = cols.at(-1);
+    if (last && cx - last.x < 9 && !s.copy && !last.items.some(i => i.copy)) { last.items.push(s); last.x = (last.x * (last.items.length - 1) + cx) / last.items.length; }
+    else cols.push({ x: cx, items: [s] });
+  }
+  // as tall as the tallest column of hand-typed sizes, and no taller
+  const H = axisY + 46 + Math.max(...cols.map(c => c.items.reduce((n, s) => n + Math.max(1, Math.ceil(s.places / unit)), 0))) * (sq + gap) + 20;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Your text sizes on a ruler">`;
+  svg += `<text class="band" x="${padL}" y="${top - 10}">Your scale</text><text class="band" x="${padL}" y="${axisY + 34}">Typed by hand</text>`;
+  svg += `<line class="axis" x1="${padL}" x2="${W - padR}" y1="${axisY}" y2="${axisY}"/>`;
+  steps.forEach((s, i) => {
+    const cx = x(s.px), len = axisY - 64 - top;
+    const delay = reduce ? 0 : i * 45;
+    // its use, in the same squares as the hand-typed sizes below (one for every 4 places), stacked up from the axis
+    let used = '';
+    for (let k = 0; k < Math.ceil(s.uses / unit); k++) used += `<rect class="sq on" x="${cx - sq / 2}" y="${axisY - 10 - k * (sq + gap)}" width="${sq}" height="${sq}" rx="1.5" style="--delay:${delay + 260 + k * 30}ms"/>`;
+    svg += `<g class="step${s.uses ? '' : ' unused'}" data-step="${s.name}" style="--delay:${delay}ms">` +
+      `<line class="tick${s.uses ? '' : ' unused'}" x1="${cx}" x2="${cx}" y1="${axisY - 4}" y2="${top + 60}" style="--len:${len}"/>` + used +
+      `<text class="aa${s.uses ? '' : ' unused'}" x="${cx}" y="${top + 52}" font-size="${Math.min(s.px, 56)}">Aa</text>` +
+      `<text class="name" x="${cx}" y="${axisY + 16}">${s.name.replace('text-', '')}</text>` +
+      `<rect x="${cx - 18}" y="${top}" width="36" height="${axisY - top + 22}" fill="transparent"/></g>`;
+  });
+  cols.forEach((c, ci) => {
+    const items = c.items.slice().sort((a, b) => (b.copy - a.copy));
+    let row = 0, inner = '';
+    for (const s of items) {
+      const n = Math.max(1, Math.ceil(s.places / unit));
+      for (let k = 0; k < n; k++, row++) {
+        const y = axisY + 46 + row * (sq + gap);
+        const delay = reduce ? 0 : 520 + ci * 22 + row * 12;
+        inner += `<rect class="sq ${s.copy ? 'copy' : 'off'}${s.scaled && k < Math.ceil(s.scaled / unit) ? ' scaled' : ''}" x="${c.x - sq / 2}" y="${y}" width="${sq}" height="${sq}" rx="1.5" style="--delay:${delay}ms"/>`;
+      }
+    }
+    const h = row * (sq + gap);
+    svg += `<g class="col" data-col="${ci}">${inner}<rect x="${c.x - 8}" y="${axisY + 40}" width="16" height="${Math.max(h + 8, 18)}" fill="transparent"/></g>`;
+  });
+  svg += `<path class="link" id="link"/></svg>`;
+  const el = $('#ruler'); el.innerHTML = svg;
+  el.classList.remove('build'); void el.offsetWidth; if (!reduce) el.classList.add('build');
+  const root = el.querySelector('svg'), link = root.querySelector('#link');
+  const toScreen = (px, py) => { const r = root.getBoundingClientRect(); return [r.left + px * r.width / W, r.top + scrollY + py * r.height / H]; };
+  const clear = () => { el.classList.remove('focus'); el.querySelectorAll('.hot').forEach(n => n.classList.remove('hot')); link.classList.remove('on'); hush(); };
+  el.querySelectorAll('.col').forEach(g => {
+    const c = cols[+g.dataset.col];
+    g.addEventListener('pointerenter', () => {
+      clear(); el.classList.add('focus'); g.classList.add('hot');
+      const lead = c.items.slice().sort((a, b) => b.places - a.places)[0], near = stepOf(lead.near);
+      if (near) {
+        el.querySelector(`[data-step="${near.name}"]`).classList.add('hot');
+        const nx = x(near.px);
+        link.setAttribute('d', `M ${c.x} ${axisY + 40} C ${c.x} ${axisY + 10}, ${nx} ${axisY + 20}, ${nx} ${axisY + 4}`); link.classList.add('on');
+      }
+      const [sx, sy] = toScreen(c.x, axisY + 44);
+      say(c.items.length === 1 ? strayPill(lead) : `<b>${c.items.map(s => fmt(s.px)).join(', ')}</b>${plural(c.items.reduce((n, s) => n + s.places, 0), 'place', 'places')}, each typed by hand<br><span class="to">Nearest on your scale: ${lead.near}</span>`, sx, sy);
+    });
+    g.addEventListener('pointerleave', clear);
+  });
+  el.querySelectorAll('.step').forEach(g => {
+    const s = stepOf(g.dataset.step);
+    g.addEventListener('pointerenter', () => {
+      clear(); el.classList.add('focus'); g.classList.add('hot');
+      const mine = cols.filter(c => c.items.some(i => i.near === s.name));
+      mine.forEach(c => el.querySelector(`[data-col="${cols.indexOf(c)}"]`).classList.add('hot'));
+      const typed = strays.filter(i => i.near === s.name);
+      const copy = typed.filter(i => i.copy).reduce((n, i) => n + i.places, 0), off = typed.filter(i => !i.copy).reduce((n, i) => n + i.places, 0);
+      const [sx, sy] = toScreen(x(s.px), top + 60);
+      say(`<b><code style="color:inherit">${s.name}</code> · ${fmt(s.px)}</b>${s.uses ? plural(s.uses, 'place uses it', 'places use it') : 'Not used anywhere'}<br>` +
+        (copy ? `${plural(copy, 'place types', 'places type')} ${fmt(s.px)} by hand<br>` : '') + (off ? `${plural(off, 'place sits', 'places sit')} close to it` : ''), sx, sy);
+    });
+    g.addEventListener('pointerleave', clear);
+  });
+}
+
+/* ---------- B · specimen ---------- */
+function specimen() {
+  const sample = 'Interfaces, taken apart';
+  const desc = steps.slice().sort((a, b) => b.px - a.px), maxUses = Math.max(...steps.map(s => s.uses), 1);
+  let html = '', i = 0;
+  const row = (cls, inner, extra = '') => `<div class="row ${cls}" style="--delay:${reduce ? 0 : i++ * 38}ms" ${extra}>${inner}</div>`;
+  const strayRow = s => row('stray', `<div class="meta"><span class="px">${fmt(s.px)}</span><span class="to">→ ${s.near}</span></div>` +
+    `<div class="sample" style="font-size:${Math.min(s.px, 72)}px"><span style="--snap:${(stepOf(s.near)?.px ?? s.px) / s.px}">${sample}</span></div>` +
+    `<div class="use">${plural(s.places, 'place', 'places')}</div>`, `data-near="${s.near}" data-written="${encodeURIComponent(writtenAs(s))}"`);
+  const above = strays.filter(s => !s.copy && s.px > desc[0].px).sort((a, b) => b.px - a.px);
+  if (above.length) html += row('few', `<div class="meta"><span class="px">bigger</span></div><div class="sample">${above.map(s => `<code>${fmt(s.px)}</code>`).join(' ')} — ${plural(above.reduce((n, s) => n + s.places, 0), 'place', 'places')}, all bigger than your largest size</div><div></div>`);
+  desc.forEach((st, k) => {
+    const copy = strays.find(s => s.copy && s.near === st.name);
+    html += row(`step${st.uses ? '' : ' unused'}`, `<div class="meta"><span class="name">${st.name}</span><span class="px">${fmt(st.px)}</span>` +
+      (copy ? `<span class="chip soft">+${nf.format(copy.places)} typed as ${fmt(st.px)}</span>` : '') + `</div>` +
+      `<div class="sample" style="font-size:${st.px}px"><span>${sample}</span></div>` +
+      `<div class="use">${st.uses ? `<span class="meter"><i style="width:${Math.max(6, st.uses / maxUses * 100)}%"></i></span>${plural(st.uses, 'place', 'places')}` : 'Never used'}</div>`, `data-step="${st.name}"`);
+    const next = desc[k + 1]?.px ?? 0;
+    const between = strays.filter(s => !s.copy && s.px < st.px && s.px > next).sort((a, b) => b.px - a.px);
+    const big = between.filter(s => s.places >= 3), small = between.filter(s => s.places < 3);
+    big.forEach(s => html += strayRow(s));
+    // one-offs say themselves; a crowd of them says its range
+    const said = small.length > 4 ? `${small.length} more sizes from <code>${fmt(small.at(-1).px)}</code> to <code>${fmt(small[0].px)}</code>` : small.map(s => `<code>${fmt(s.px)}</code>`).join(' ');
+    if (small.length) html += row('few', `<div class="meta"></div><div class="sample">and ${said}, ${plural(small.reduce((n, s) => n + s.places, 0), 'place', 'places')} in all</div><div></div>`);
+  });
+  const el = $('#spec'); el.innerHTML = html;
+  el.classList.remove('build'); void el.offsetWidth; if (!reduce) el.classList.add('build');
+  el.querySelectorAll('.row.stray').forEach(r => {
+    const target = el.querySelector(`.row.step[data-step="${r.dataset.near}"]`);
+    r.addEventListener('pointerenter', e => { target?.classList.add('target'); const b = r.getBoundingClientRect(); say(`<b>Typed as</b>${decodeURIComponent(r.dataset.written)}<br><span class="to">On your scale: ${r.dataset.near}</span>`, b.right - 200, b.top + scrollY + 4); });
+    r.addEventListener('pointerleave', () => { target?.classList.remove('target'); hush(); });
+  });
+}
+
+/* ---------- C · gravity ---------- */
+function gravity() {
+  const canvas = $('#canvas'), ctx = canvas.getContext('2d');
+  let W = 0, H = 400, dpr = 1;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const lo = Math.log(8), hi = Math.log(64);
+  const X = px => 48 + (Math.log(Math.min(Math.max(px, 8), 64)) - lo) / (hi - lo) * (W - 96);
+  const cy = () => H * 0.48;
+  const anchors = steps.map(s => ({ s, absorbed: 0, r: 0 }));
+  const rand = (() => { let a = 7; return () => (a = (a * 16807) % 2147483647) / 2147483647; })();
+  const gauss = () => (rand() + rand() + rand() - 1.5) / 1.5;
+  const parts = [];
+  for (const s of strays) {
+    const a = anchors.find(a => a.s.name === s.near);
+    for (let k = 0; k < s.places; k++) parts.push({ s, a, hx: 0, hy: 0, jx: gauss() * 4, jy: gauss() * (34 + Math.sqrt(s.places) * 11), x: 0, y: 0, vx: 0, vy: 0, ph: rand() * 6.28, f: .4 + rand() * .6, tx: rand() * 6.28, tr: Math.sqrt(rand()), delay: 0 });
+  }
+  let snapped = false, snapAt = 0, hover = null, last = performance.now(), count = onScale, shown = onScale;
+  function size() {
+    dpr = devicePixelRatio || 1; W = canvas.clientWidth; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const p of parts) { p.hx = X(p.s.px) + p.jx; p.hy = cy() + p.jy; if (!p.x) { p.x = p.hx; p.y = p.hy; } }
+  }
+  const radius = a => 8 + Math.sqrt(a.s.uses + a.absorbed) * 1.65;
+  function frame(now) {
+    const dt = Math.min(32, now - last) / 16.67; last = now;
+    const ink = css('--ink'), ink3 = css('--ink-3'), on = css('--on'), onSoft = css('--on-soft'), off = css('--off'), soft = css('--soft'), sky = css('--sky');
+    ctx.clearRect(0, 0, W, H);
+    // the scale: a hairline and each step
+    ctx.strokeStyle = css('--rule'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(32, cy()); ctx.lineTo(W - 32, cy()); ctx.stroke();
+    anchors.forEach(a => { a.absorbed = 0; });
+    for (const p of parts) if (snapped && p.home === false) p.a && p.a.absorbed++;
+    // particles: a slow drift around home; snapped, a spring into their step
+    for (const p of parts) {
+      let tx, ty;
+      if (snapped && p.a && now - snapAt > p.delay) {
+        const r = radius(p.a) * .78 * p.tr;
+        tx = X(p.a.s.px) + Math.cos(p.tx) * r; ty = cy() + Math.sin(p.tx) * r; p.home = false;
+      } else {
+        const t = now / 1000;
+        tx = p.hx + (reduce ? 0 : Math.sin(t * p.f + p.ph) * 2.2); ty = p.hy + (reduce ? 0 : Math.cos(t * p.f * .8 + p.ph) * 3); p.home = true;
+      }
+      if (reduce) { p.x = tx; p.y = ty; continue; }
+      // a critically damped-ish spring: no bounce
+      const k = .045, c = .3;
+      p.vx = (p.vx + (tx - p.x) * k * dt) * (1 - c); p.vy = (p.vy + (ty - p.y) * k * dt) * (1 - c);
+      p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (const a of anchors) { const target = radius(a); a.r += (target - a.r) * .15; }
+    for (const a of anchors) {
+      const x = X(a.s.px), hot = hover === a;
+      ctx.beginPath(); ctx.arc(x, cy(), a.r, 0, Math.PI * 2);
+      ctx.fillStyle = a.s.uses || a.absorbed ? onSoft : 'transparent'; ctx.fill();
+      ctx.lineWidth = hot ? 2 : 1.25; ctx.strokeStyle = hot ? sky : a.s.uses || a.absorbed ? on : ink3;
+      if (!a.s.uses && !a.absorbed) ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = hot ? sky : ink; ctx.font = `500 11px ${css('--mono')}`; ctx.textAlign = 'center';
+      ctx.fillText(a.s.name.replace('text-', ''), x, cy() + Math.max(a.r, 12) + 18);
+    }
+    for (const p of parts) {
+      const dim = hover && p.a !== hover;
+      ctx.globalAlpha = dim ? .12 : p.s.scaled ? .6 : .92;
+      ctx.fillStyle = snapped && !p.home ? on : p.s.copy ? soft : off;
+      ctx.fillRect(p.x - 1.6, p.y - 1.6, 3.2, 3.2);
+    }
+    ctx.globalAlpha = 1;
+    // the count follows the dots home
+    const inside = snapped ? parts.filter(p => !p.home).length : 0;
+    count = onScale + inside; shown += (count - shown) * .12;
+    $('#count').textContent = nf.format(Math.round(Math.abs(count - shown) < .5 ? count : shown));
+    requestAnimationFrame(frame);
+  }
+  canvas.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    hover = anchors.find(a => Math.hypot(mx - X(a.s.px), my - cy()) < Math.max(a.r, 10) + 10) ?? null;
+    canvas.style.cursor = hover ? 'default' : '';
+    if (hover) {
+      const near = strays.filter(s => s.near === hover.s.name), n = near.reduce((k, s) => k + s.places, 0);
+      say(`<b><code style="color:inherit">${hover.s.name}</code> · ${fmt(hover.s.px)}</b>${hover.s.uses ? plural(hover.s.uses, 'place uses it', 'places use it') : 'Not used anywhere'}<br>${n ? `${plural(n, 'place types', 'places type')} a size close to it` : ''}`, e.clientX, e.clientY + scrollY);
+    } else hush();
+  });
+  canvas.addEventListener('pointerleave', () => { hover = null; hush(); });
+  $('#snap').addEventListener('click', () => {
+    snapped = !snapped; snapAt = performance.now();
+    // the dots leave nearest-first, so the pull reads as a wave across the scale
+    for (const p of parts) p.delay = reduce ? 0 : Math.abs(p.hx - (p.a ? X(p.a.s.px) : p.hx)) * 3 + rand() * 260;
+    $('#snap').textContent = snapped ? 'Let go' : 'Snap to your scale';
+    $('#count-say').textContent = snapped ? `places on your scale, if every size snapped to it` : 'places use your scale';
+  });
+  new ResizeObserver(size).observe(canvas); size(); requestAnimationFrame(frame);
+}
+
+/* ---------- primitives ---------- */
+function prims() {
+  const sw = (name, say) => `<div class="sw"><i style="background:var(${name})"></i><span>${say}</span><code>${name}</code></div>`;
+  const ramp = [['--t-hero', 'A sentence about your app', 'Instrument Serif 52/1.02'], ['--t-title', 'A cause, or a section', 'Geist 600 17/24'], ['--t-body', 'Sentences that explain.', 'Geist 400 15/23'], ['--t-meta', '65 places · src/pages', 'Geist 400 13/18'], ['--t-code', 'text-[0.9375rem]', 'Geist Mono 500 12.5/17'], ['--t-label', 'SNAP TO YOUR SCALE', 'Geist 600 11/14']];
+  $('#prims').innerHTML =
+    `<div class="prim"><h3>Ground and words</h3>${sw('--paper', 'Page')}${sw('--paper-2', 'Inset, hover')}${sw('--rule', 'Lines')}${sw('--ink', 'Titles, readings')}${sw('--ink-2', 'Supporting words')}${sw('--ink-3', 'Ticks only, never text')}</div>` +
+    `<div class="prim"><h3>One meaning per hue</h3>${sw('--on', 'Uses your scale')}${sw('--soft', 'Your value, typed by hand')}${sw('--off', 'Not on your scale')}${sw('--sky', 'Pointed at, the target')}${sw('--action', 'What you can do')}</div>` +
+    `<div class="prim"><h3>Type</h3><div class="ramp">${ramp.map(([t, s, m]) => `<div><span style="font:var(${t})${t === '--t-label' ? ';letter-spacing:.06em' : ''}">${s}</span><code>${m}</code></div>`).join('')}</div></div>` +
+    `<div class="prim"><h3>Space, 4-based</h3><div class="ladder">${[4, 8, 12, 16, 24, 32, 48, 64, 96].map(n => `<div><i style="width:${n}px"></i>${n}</div>`).join('')}</div></div>` +
+    `<div class="prim"><h3>Corners and lift</h3><div style="display:flex;gap:16px;align-items:end">${[['--r-sm', 6], ['--r-md', 10], ['--r-lg', 16]].map(([v, n]) => `<div style="text-align:center;font:var(--t-code);color:var(--ink-2)"><div style="width:64px;height:64px;border:1px solid var(--rule);border-radius:var(${v});box-shadow:var(--raise);background:var(--paper);margin-bottom:8px"></div>${n}</div>`).join('')}</div></div>` +
+    `<div class="prim curves"><h3>Motion (point here)</h3>${[['Enter, 700ms', '--ease-out', '--d-build'], ['Move, 420ms', '--ease-in-out', '--d-move'], ['Hover, 180ms', 'ease', '--d-hover']].map(([s, e, d]) => `<div><span style="width:110px">${s}</span><span class="track"><span class="dot" style="transition:left var(${d}) ${e.startsWith('--') ? `var(${e})` : e}"></span></span></div>`).join('')}</div>`;
+}
+
+/* ---------- tabs, theme ---------- */
+const built = new Set();
+function show(view) {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === `v-${view}`));
+  hush();
+  if (!built.has(view)) { built.add(view); ({ ruler, spec: specimen, grav: gravity, prims })[view](); }
+  try { localStorage.setItem('system-drawn:view', view); } catch {}
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () => ({ ruler, spec: specimen })[b.dataset.replay]()));
+$('#theme').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+  if (built.has('ruler')) ruler();
+});
+let first = 'ruler'; try { first = localStorage.getItem('system-drawn:view') || 'ruler'; } catch {}
+show(first);
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+/* The project page's primitives (docs/design/onboarding.md, "The page"). The language is the overlay's
+   (overlay/src/tokens.css): warm paper and ink, one meaning per hue.
+   mint = uses your scale · butter = a value your scale has, typed by hand · coral = off your scale ·
+   sky = pointed at, the target · pink = what you can do. Every component reads these; none sets its own. */
+
+:root {
+  --paper: #fdfcf8; --paper-2: #f4f1ea; --paper-3: #ece8de; --rule: #e6e1d6;
+  --ink: #1d1b17; --ink-2: #6b665c; --ink-3: #b3ad9f;
+  --on: #1f9e64; --on-soft: #c9f2dd; --on-ink: #0b3d26;
+  --off: #e5503f; --off-soft: #ffd3cd; --off-ink: #5c160e;
+  --soft: #c48a00; --soft-soft: #ffeab0; --soft-ink: #4a3400;
+  --sky: #2a7fd0; --sky-soft: #c5e6fd;
+  --action: #e0369f;
+
+  --display: "Instrument Serif", ui-serif, Georgia, serif;
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-hero: 400 52px/1.02 var(--display);       /* the one sentence the page leads with */
+  --t-count: 400 40px/1 var(--display);         /* a number that changes in front of you */
+  --t-title: 600 17px/24px var(--sans);         /* a section or a cause */
+  --t-body: 400 15px/23px var(--sans);          /* sentences */
+  --t-meta: 400 13px/18px var(--sans);          /* counts, where */
+  --t-code: 500 12.5px/17px var(--mono);        /* classes, values */
+  --t-label: 600 11px/14px var(--sans);         /* tabs, legends, buttons */
+  --tracking-label: 0.02em;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+  --raise: 0 1px 0 rgb(29 27 23 / .04), 0 10px 30px -14px rgb(29 27 23 / .22);
+
+  /* motion: entrances ease out hard; things moving on screen ease in and out; nothing linear but the ambient */
+  --ease-out: cubic-bezier(.19, 1, .22, 1);
+  --ease-in-out: cubic-bezier(.645, .045, .355, 1);
+  --d-press: 140ms; --d-hover: 180ms; --d-move: 420ms; --d-build: 700ms;
+}
+:root[data-theme="dark"] {
+  --paper: #141311; --paper-2: #1c1a17; --paper-3: #24221e; --rule: #2e2b26;
+  --ink: #f1efe8; --ink-2: #a3a097; --ink-3: #5b574f;
+  --on: #3cc487; --on-soft: #143826; --on-ink: #9ff0c6;
+  --off: #ff6f5e; --off-soft: #47201b; --off-ink: #ffc2b8;
+  --soft: #e2a827; --soft-soft: #3f3110; --soft-ink: #ffd98a;
+  --sky: #5aa8f0; --sky-soft: #15324d; --action: #ff5cb8;
+  --raise: 0 1px 0 rgb(0 0 0 / .3), 0 14px 34px -14px rgb(0 0 0 / .6);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141311; --paper-2: #1c1a17; --paper-3: #24221e; --rule: #2e2b26;
+    --ink: #f1efe8; --ink-2: #a3a097; --ink-3: #5b574f;
+    --on: #3cc487; --on-soft: #143826; --on-ink: #9ff0c6;
+    --off: #ff6f5e; --off-soft: #47201b; --off-ink: #ffc2b8;
+    --soft: #e2a827; --soft-soft: #3f3110; --soft-ink: #ffd98a;
+    --sky: #5aa8f0; --sky-soft: #15324d; --action: #ff5cb8;
+    --raise: 0 1px 0 rgb(0 0 0 / .3), 0 14px 34px -14px rgb(0 0 0 / .6);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font: var(--t-body); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; border-radius: var(--r-sm); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
