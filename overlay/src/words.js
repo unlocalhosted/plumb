@@ -384,6 +384,8 @@ export const FIX = {
     region: (name) => `Edit ${name}`,
     labels: { style: 'Style', 'font-size': 'Size', 'font-weight': 'Weight', 'line-height': 'Leading', 'letter-spacing': 'Tracking', 'text-transform': 'Case', color: 'Colour' },
     cases: { none: 'As written', uppercase: 'UPPER', lowercase: 'lower', capitalize: 'Title' },
+    // the same cases inside a sentence: "Changed case to title case on Link", "uppercase from the page"
+    casesSaid: { none: 'as written', uppercase: 'uppercase', lowercase: 'lowercase', capitalize: 'title case' },
     lists: (name) => `${name}, lists`,
     fromPage: (v) => `${v} from the page`,
     fromStyle: (name) => `From ${name}`,
@@ -661,6 +663,8 @@ export const DOCK = {
   idle: 'Hold Alt to inspect',
   // while Blueprint is on, the fix bar has the count: the dock only says how to leave
   blueprint: 'Alt+B to close',
+  // one element is read: Alt+B widens to the whole page, it does not close
+  blueprintScoped: 'Alt+B for the whole page',
   applyChanges: (n) => `Apply ${count(n, 'change', 'changes')}`,
   history: 'History',
   historyTitle: 'Changes you applied. Undo any of them.',
