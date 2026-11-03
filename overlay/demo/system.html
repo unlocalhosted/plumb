@@ -22,6 +22,7 @@
   import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
   import { BLOCK_ICONS } from '../src/boxmodel.js';
   import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
+  import { DOCK, TIMELINE } from '../src/words.js';
 
   // ---------- contrast, measured on the live tokens of each scheme ----------
   const rgb = (c) => { const h = c.trim().replace('#', ''); return h.length >= 6 ? [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) : null; };
@@ -45,7 +46,7 @@
   ];
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
-    { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
+    { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], ['voice', 'Voice and tone'], ['tokens', 'Tokens']] },
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], [null, 'Readout']] },
     { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
@@ -93,6 +94,12 @@
   const FAMILY_NAMES = { spacing: 'Spacing', radius: 'Radius', type: 'Type', color: 'Colour', shadow: 'Elevation', z: 'Layers', motion: 'Motion', habit: 'Habit', ownership: 'Ownership', imitation: 'Imitation', craft: 'Craft', existence: 'Existence' };
   const BLOCK_NAMES = { p: 'Padding', m: 'Margin', g: 'Gap', b: 'Border', r: 'Radius', line: 'Type', c: 'Size' };
 
+  // every --pl- token in tokens.css, read from the file itself (its first block), with the comment written beside it
+  // line by line: several tokens on one line (sky, its fill, its ink) share the comment at the line's end
+  const TOKEN_LIST = (() => { const block = tokens.slice(tokens.indexOf(':host {'), tokens.indexOf('\n}', tokens.indexOf(':host {')));
+    return block.split('\n').flatMap((line) => { const note = /\/\*\s*(.*?)\s*\*\//.exec(line)?.[1] ?? ''; return [...line.matchAll(/(--pl-[\w-]+):\s*[^;]+;/g)].map(([, name]) => ({ name, note })); }); })();
+  const isColour = (v) => /^#|^rgb|^color-mix|^oklch/.test(v);
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
@@ -101,6 +108,7 @@
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
           <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Voice and tone, and every token,</b> read from the code itself.</span></li>
           <li><span class="when">Nov 3</span><span><b>Six foundations:</b> spacing, shape, elevation, motion, texture and iconography.</span></li>
           <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count documented,</b> playing and rolling live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments documented,</b> every state live.</span></li>
@@ -379,6 +387,43 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       ],
     }),
 
+    voice: () => ({
+      title: 'Voice and tone',
+      lede: 'Plumber talks like a careful colleague: plain words a tired reader gets on the first pass, about your code, never about Plumber’s insides.',
+      sections: [
+        sec('rules', 'Rules', `<div class="rules">
+          <div><b>Say it plainly</b><p>Words a tired reader gets first time. No idioms, no jokes that don’t travel.</p></div>
+          <div><b>Talk to you</b><p>“Your theme has 10 sizes”, not “the user’s theme”. Errors don’t say “we”.</p></div>
+          <div><b>No internal names</b><p>Never a rule id, a CSS variable or a word only Plumber’s code uses. Say what it means for your page.</p></div>
+          <div><b>Buttons start with a verb</b><p>“Snap to your scale”, “Write 2”, “Undo”. Never “OK”.</p></div>
+          <div><b>Errors say how to fix</b><p>What happened, then the one thing to do, beside where it broke. No “oops”, no exclamation marks.</p></div>
+          <div><b>Whole sentences</b><p>Built whole, with plurals done properly: “1 place”, “2 places”, never “place(s)”.</p></div></div>`),
+        sec('tone', 'Tone by moment', `<table class="tok"><thead><tr><th>Moment</th><th>Tone</th><th>Plumber says</th></tr></thead><tbody>
+          <tr><td>Waiting</td><td>Neutral, short</td><td>${DOCK.starting}</td></tr>
+          <tr><td>At rest</td><td>A hint, never a nag</td><td>${DOCK.idle}</td></tr>
+          <tr><td>A mode</td><td>What the next key does</td><td>${DOCK.scoped}</td></tr>
+          <tr><td>History</td><td>What it is, what you can do</td><td>${DOCK.historyTitle}</td></tr>
+          <tr><td>Blocked</td><td>Calm: why, then what to do</td><td>${TIMELINE.changedLater}</td></tr>
+          <tr><td>Failed</td><td>Plain, with the fix</td><td>${DOCK.failed}</td></tr></tbody></table><p>Every line above is the live string from <code>overlay/src/words.js</code>, the one place the overlay’s copy lives.</p>`),
+        sec('rewrites', 'Before and after', `<p>Real rewrites from Plumber’s own copy.</p><div class="dd">
+          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><code>0 new findings</code><code>no findings</code></div><p>Two lines that contradict each other, in Plumber’s words.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Nothing new since your baseline.</span></div><p>One sentence that’s true.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><span>Changed case to As written</span></div><p>A button’s label dropped into a sentence.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>Changed case to as written</span></div><p>The word as it reads inside a sentence.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Before</span><div class="ex col"><span>Alt+B to close</span></div><p>On a view where Alt+B widens, it didn’t close.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">After</span><div class="ex col"><span>${DOCK.scoped}</span></div><p>Says what the key will do here.</p></div></div>`),
+        sec('home', 'Where copy lives', `<p>All of the overlay’s words are in <code>overlay/src/words.js</code>, never written inline in a component. A change of wording is one change, everywhere.</p>`),
+      ],
+    }),
+
+    tokens: () => ({
+      title: 'Tokens',
+      lede: `Every token Plumber’s own UI uses: ${TOKEN_LIST.length} of them, read straight from tokens.css, so this page can’t drift from it.`,
+      sections: [
+        sec('all', 'All tokens', `<input class="filter" type="search" placeholder="sky, radius, dur" aria-label="Filter tokens"><table class="tok all"><thead><tr><th>Token</th><th>Day</th><th>Night</th><th>Use</th></tr></thead><tbody>${TOKEN_LIST.map(({ name, note }) => { const d = tok.day(name), n = tok.night(name); const cell = (v) => `${isColour(v) ? `<span class="dot" style="background:${v}"></span>` : ''}<code title="${v.replace(/"/g, '&quot;')}">${v.length > 28 ? v.slice(0, 26) + '…' : v}</code>`; return `<tr data-name="${name}"><td><code>${name}</code></td><td>${cell(d)}</td><td>${d === n ? '<span class="same">same</span>' : cell(n)}</td><td>${note}</td></tr>`; }).join('')}</tbody></table>`),
+      ],
+    }),
+
     type: () => ({
       title: 'Typography',
       lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
@@ -577,7 +622,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     .lr .bar { height: 12px; border-radius: 3px; background: var(--pl-sky); } .lr .bar.time { background: var(--pl-lilac); }
     .gapdemo { display: inline-flex; } .gapdemo i { width: 34px; height: 20px; border-radius: 7px; background: var(--pl-sky-soft); }
     .radii, .icons, .tex { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-    .rc, .ic, .tx { display: grid; gap: 4px; padding: 16px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .rc, .ic, .tx { display: grid; align-content: start; gap: 4px; padding: 16px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); font: var(--pl-page-meta); color: var(--pl-ink-2); }
     .rc b, .ic b, .tx b { font: 600 14px/20px var(--pl-sans); color: var(--pl-ink); } .rc code, .ic code, .tx code { font-size: 11.5px; color: var(--pl-ink-3); }
     .rc .sq { width: 56px; height: 56px; margin-bottom: 8px; background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1px var(--pl-sky); }
     .nest { width: 220px; padding: 4px; border-radius: 12px; background: var(--pl-paper); box-shadow: inset 0 0 0 1px var(--pl-rule); } .nest-in { height: 56px; border-radius: 8px; background: var(--pl-sky-soft); }
@@ -597,6 +642,10 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     .ic .ki, .ic .gl { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 8px; border-radius: 10px; color: var(--pl-sky); background: color-mix(in oklab, var(--pl-sky) 14%, transparent); }
     .ic .ki svg { width: 20px; height: 20px; } .ic .ki.off { color: var(--pl-coral); background: color-mix(in oklab, var(--pl-coral) 14%, transparent); }
     .ic .gl { color: var(--pl-lilac); background: color-mix(in oklab, var(--pl-lilac) 14%, transparent); } .ic .gl svg { width: 24px; height: 24px; }
+    .filter { width: 100%; max-width: 320px; height: 36px; margin-bottom: 12px; padding: 0 12px; border: 0; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); color: var(--pl-ink); font: var(--pl-page-small); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .filter:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
+    table.all td:last-child { color: var(--pl-ink-3); font: var(--pl-page-meta); }
+    .same { font: var(--pl-page-meta); color: var(--pl-ink-3); }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
@@ -648,6 +697,8 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       for (const [i, c] of chips.entries()) { c.setAttribute('data-on', ''); roll(c, to[i]); await new Promise((r) => setTimeout(r, 700)); c.removeAttribute('data-on'); c.setAttribute('data-done', ''); }
       e.target.disabled = false;
     });
+    const filter = page.querySelector('.filter');
+    filter?.addEventListener('input', () => { const q = filter.value.trim().toLowerCase(); page.querySelectorAll('tr[data-name]').forEach((tr) => { tr.hidden = !!q && !tr.textContent.toLowerCase().includes(q); }); });
     page.querySelectorAll('[data-curve]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('go')));
     page.querySelector('[data-replay]')?.addEventListener('click', () => page.querySelectorAll('[data-pop]').forEach((t) => { t.classList.remove('pl-pop'); void t.offsetWidth; t.classList.add('pl-pop'); }));
     page.querySelector('[data-roll]')?.addEventListener('click', (e) => {
