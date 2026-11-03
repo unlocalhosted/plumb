@@ -28,7 +28,7 @@ import { request, post, forgetResolved } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
-import { CARD_CSS } from './language.js';
+import { CARD_CSS, LANGUAGE_CSS } from './language.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
@@ -86,6 +86,15 @@ const css = `
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
   :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .hp, .tip, .wt, .hl) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   :host([data-side="center"]) .dock { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
+  /* tools stay out of sight until asked for (docs/design/one-bar.md): at rest the dock is its mark alone, and its tools
+     slide out while it is pointed at or focused, or while one of them is open; in Blueprint the bar carries them */
+  /* folded, not removed: a folded tool keeps its place in the tab order (focus comes back to History when it closes), and
+     a focused one unfolds the dock */
+  :host(:not([data-blueprint])) .dock:not(:hover):not(:focus-within):not(:has(button[aria-pressed="true"])) > button {
+    max-width: 0; min-width: 0; padding-inline: 0; margin-inline-start: calc(-1 * var(--pl-space-3)); border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+  .dock > button { transition: opacity 160ms var(--pl-ease-out); }
+  :host([data-blueprint]) .dock { display: none; }
+  @media (prefers-reduced-motion: reduce) { .dock > button { transition: none; } }
   /* one owner of the screen (F3-05, timeline 10): the setup callout steps aside for Blueprint (a callout that arrives
      after Blueprint is on too), and while a card is open no tip shows: the card is what to work in */
   :host([data-blueprint]) .rd-callout, :host([data-card]) .tip { visibility: hidden; }
@@ -320,7 +329,7 @@ class PlumbOverlay extends HTMLElement {
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${CARD_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${LANGUAGE_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -344,7 +353,7 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
-    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.(), ...(this.#history?.occluders() ?? [])].filter(Boolean), quiet: () => this.hasAttribute('data-card') });
+    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.(), ...(this.#history?.occluders() ?? [])].filter(Boolean), quiet: () => this.hasAttribute('data-card') || this.hasAttribute('data-blueprint') }); // no tip over Blueprint's bar: Alt+B holds Alt, and the bar shows its own keys
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
     this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
@@ -591,6 +600,11 @@ class PlumbOverlay extends HTMLElement {
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
   // Remembered before it is written (no undo given: pending) and again once it is (its undo handles).
+  // the Blueprint bar's tools are the dock's (the dock steps aside while Blueprint is on): pressed through it, so each keeps
+  // its one behaviour; and the setup steps left, with the card that fixes them
+  tool(name) { this.#$(`.dock .${name}`)?.click(); }
+  setupLeft() { return this.#ready?.left ?? 0; }
+  openSetup() { this.#ready?.toggle(true); }
   remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
@@ -602,7 +616,7 @@ class PlumbOverlay extends HTMLElement {
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
     // is what to work in)
     if (state === 'entering') this.#ready?.dismiss();
-    if (state === 'on' && !this.#blueprint?.cardOpen) this.#help?.hint('blueprint');
+    // no first-use hint in Blueprint: the bar shows each key on the action it presses (docs/design/one-bar.md)
     const on = state === 'entering' || state === 'on';
     if (this.hasAttribute('data-blueprint') !== on) this.toggleAttribute('data-blueprint', on);
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));

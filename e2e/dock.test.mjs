@@ -60,10 +60,12 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   assert.ok(s.right >= 12 && s.right <= 20 && s.bottom >= 12 && s.bottom <= 20, `bottom right with a 16px inset: ${s.right}, ${s.bottom}`);
   assert.equal(await dock.locator('[role="status"]').getAttribute('aria-live'), 'polite');
 
-  // After four seconds the line folds away; the mark and Select stay.
+  // After four seconds the line folds away and the mark is alone; pointed at, its tools come out (docs/design/one-bar.md)
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').hasAttribute('data-fold'), null, { timeout: 8000 });
   assert.equal(await dock.locator('.say').isVisible(), false);
-  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), true);
+  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), false, 'at rest the dock is its mark alone');
+  await dock.hover();
+  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), true, 'pointed at, Select comes out');
 
   // Select arms the reticle and stays on when Alt is let go; the page is not clickable while it is on.
   await dock.getByRole('button', { name: 'Select an element' }).click();
@@ -93,6 +95,7 @@ test('the dock says React Plumber is ready, folds away, and Select picks an elem
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await reading.waitFor({ state: 'hidden', timeout: 10000 });
+  await dock.hover();
   await dock.getByRole('button', { name: 'Select an element' }).click();
   assert.equal((await read(page)).state, 'select');
   await page.keyboard.press('Escape');
@@ -194,6 +197,7 @@ test('every gesture is one ? away, and each mode says what to do the first time 
   for (const gesture of [/Alt \+ double-click/, /←\s+→/, /Space/, /Alt \+ B/, /Keep as is/]) assert.match(text, gesture);
   await page.keyboard.press('Escape');
   await sheet.waitFor({ state: 'hidden' });
+  await overlay.locator('.dock').hover();
   await overlay.getByRole('button', { name: 'Keyboard shortcuts' }).click();
   await sheet.waitFor();
   await overlay.getByRole('button', { name: 'Keyboard shortcuts' }).click();
@@ -204,11 +208,11 @@ test('every gesture is one ? away, and each mode says what to do the first time 
   await hint.filter({ hasText: /double-click text to edit it/ }).waitFor();
   await page.mouse.click(600, 300); // any click takes it away
   await hint.waitFor({ state: 'hidden' });
-  // blueprint's first time says how to move between causes and Space
+  // Blueprint says no tip: its bar shows each key on the action it presses (docs/design/one-bar.md)
   await page.keyboard.press('Alt+B');
-  await hint.filter({ hasText: /← → next fix/ }).waitFor({ timeout: 20000 });
-  await page.keyboard.press('j'); // the next key takes the tip away, and still does its own work
-  await hint.waitFor({ state: 'hidden' });
+  await overlay.locator('.fx .bar').waitFor({ timeout: 20000 });
+  await page.waitForTimeout(400);
+  assert.equal(await hint.count(), 0, 'no tip over Blueprint');
   await page.keyboard.press('Escape');
   // once said, never again on this browser: a reload and another Alt say nothing
   await page.reload();

@@ -55,7 +55,7 @@ async function drifted(t, { scheme = 'light' } = {}) {
   // Blueprint on, C, the text pass skipped: the spacing pass, ready
   const begin = async () => {
     await page.keyboard.press('Alt+B');
-    await until(/Clean up this page/);
+    await until(/Clean up/);
     await page.keyboard.press('c');
     await until(/Apply to this page|already uses your/);
     await page.keyboard.press('ArrowRight');

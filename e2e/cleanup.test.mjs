@@ -59,7 +59,7 @@ async function standards(t, { nav = false } = {}) {
   // Blueprint on, the fixes read, then C: the text pass, ready to apply
   const begin = async () => {
     await page.keyboard.press('Alt+B');
-    await until(/Clean up this page/);
+    await until(/Clean up/);
     await page.keyboard.press('c');
     await until(/Apply to this page/);
   };
@@ -88,7 +88,7 @@ test('held Space shows the page as it was, and letting go brings the preview bac
   // Esc put the page back (it glides there)
   await s.page.waitForFunction(`${s.sizes} === ${JSON.stringify(before)}`, null, { timeout: 5000 });
   await s.page.keyboard.press('Escape');
-  await s.until(/Clean up this page/);
+  await s.until(/Clean up/);
   assert.doesNotMatch(await s.panel(), /Apply to this page/);
   assert.deepEqual(s.errors, []);
 });

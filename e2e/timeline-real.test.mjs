@@ -44,7 +44,7 @@ async function standards(t) {
     return call('swaps', { file: FILE, hash, edits: [{ line, column, from, to }], ...(trace ? { trace } : {}) }, 'POST');
   };
   const open = async (n) => {
-    await page.locator('plumb-overlay').locator('.dock .history').click();
+    await page.locator('plumb-overlay').locator('.dock').hover(); await page.locator('plumb-overlay').locator('.dock .history').click();
     await page.waitForFunction((k) => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === k, n, { timeout: 20000 });
   };
   const marks = () => page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt-marks:not([hidden]) .tt-mark')].map((m) => { const r = m.getBoundingClientRect(); return [r.left + 4, r.top + 4, r.width - 8, r.height - 8].map(Math.round); }));

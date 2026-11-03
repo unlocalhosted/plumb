@@ -91,6 +91,8 @@ export class Blueprint {
     this.#fix = new FixPanel(root, {
       hold: (g, lead) => { const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => this.#selection.clear(),
+      // the bar's tools and setup notice are the widget's (docs/design/one-bar.md)
+      tool: (name) => this.#host.tool?.(name), setupLeft: () => this.#host.setupLeft?.() ?? 0, openSetup: () => this.#host.openSetup?.(),
       // the last write, still undoable when Blueprint closes: History's toast keeps its Undo once the bar is gone
       handOff: (result, text) => this.#host.wrote?.(result, text),
       view: () => this.#selection.view,

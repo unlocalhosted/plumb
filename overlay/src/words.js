@@ -383,6 +383,9 @@ const FAMILY = { spacing: 'Spacing', radius: 'Corner', color: 'Colour', elevatio
 export const FIX = {
   // rest
   problems: (n) => count(n, 'problem', 'problems'),
+  // the Blueprint bar (docs/design/one-bar.md)
+  bar: { more: 'More tools', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), review: 'Review',
+    tools: { history: 'History', help: 'Help', pick: 'Inspect an element' } },
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),
   // places are spots in your code; one drawn many times on the page says both
@@ -765,6 +768,8 @@ export const TIMELINE = {
 // Clean up this page (cleanup.js): the page in passes, each applied as one step
 export const CLEANUP = {
   start: 'Clean up this page',
+  // the bar's action: the short label, and the word that follows it where there is room
+  bar: 'Clean up', barLong: 'page',
   passes: 'Passes',
   pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons' },
   reading: 'Reading the text on this page…',

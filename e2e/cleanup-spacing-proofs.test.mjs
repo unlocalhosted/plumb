@@ -124,7 +124,7 @@ async function site(t, { app = STANDARDS_ONLY, files = {}, drift = false, scheme
     // Blueprint on, C, the text pass skipped (its own button), then the spacing pass read: with moves, or with nothing to do
     const begin = async () => {
       await page.keyboard.press('Alt+B');
-      await until(/Clean up this page/);
+      await until(/Clean up/);
       await page.keyboard.press('c');
       await until(/Apply to this page|already uses your/);
       await page.locator('plumb-overlay').locator('.fx [data-cu="skip"]').click();
@@ -249,7 +249,12 @@ test('Apply is one step in the history, named Spacing with the law of proximity,
   // the write's reload may still be arriving: the history is opened on the page that stays
   await sleep(1500);
   await v.page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
-  await v.page.locator('plumb-overlay').locator('.dock .history').click();
+  // in Blueprint the dock's tools are in the bar, behind ··· (docs/design/one-bar.md)
+  // the clean-up's done card is in front: Esc puts it down, back to the bar
+  await v.page.keyboard.press('Escape');
+  await v.page.locator('plumb-overlay').locator('.fx .bar .more').waitFor({ timeout: 30000 });
+  await v.page.locator('plumb-overlay').locator('.fx .bar .more').click();
+  await v.page.locator('plumb-overlay').locator('.fx .bar .tool[data-tool="history"]').click();
   await v.page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length > 0, null, { timeout: 30000 });
   const read = await v.page.evaluate(() => {
     const root = document.querySelector('plumb-overlay').shadowRoot;

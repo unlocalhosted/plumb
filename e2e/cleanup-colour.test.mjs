@@ -85,7 +85,7 @@ async function dashboard(t) {
   // Blueprint on, C, then on past text and spacing to the colour pass
   const begin = async () => {
     await page.keyboard.press('Alt+B');
-    await until(/Clean up this page/);
+    await until(/Clean up/);
     await page.keyboard.press('c');
     await until(/Apply to this page|already|Next/);
     for (let i = 0; i < 3 && !/different colours|colours on this page are already/.test(await panel()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(1500); }
