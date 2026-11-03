@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { BusyError, UsageError } from '../errors.js';
 import type { Session as Engine, SessionOptions } from './engine.js';
+import type { Cause as CauseModel } from '../causes.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TextRun, TextResult, SourceResolution } from './engine.js';
 
 type Method = 'report' | 'resolveSource' | 'site' | 'edits' | 'text' | 'textAt' | 'classes' | 'apply' | 'applyText' | 'applyTextAt' | 'undo' | 'history' | 'props' | 'set' | 'swap' | 'swaps' | 'accept' | 'applyAll' | 'page' | 'places' | 'system' | 'propEdit' | 'structure' | 'decisions' | 'spec' | 'token' | 'why' | 'try' | 'refresh' | 'many' | 'recipes' | 'recipesPreview' | 'recipesApply';
@@ -84,6 +85,8 @@ export class Session extends EventEmitter {
   }
   private optionsBudget: number | undefined;
   report(...args: Parameters<Engine['report']>) { return this.call('report', args); }
+  /** The project's findings grouped by what the author meant: the model `plumber check --json` prints as `causes`. */
+  async causes(): Promise<CauseModel[]> { return (await this.report()).causes ?? []; }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   many(...args: Parameters<Engine['many']>) { return this.call('many', args); }

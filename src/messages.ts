@@ -139,7 +139,8 @@ export function classEdit(d: Pick<Declaration, 'origin' | 'prop' | 'site'> & Par
     return beside ? { to: beside, beside: true } : undefined;
   }
   const at = utilityValue(text), own = utilityValue(use.class)?.utility;
-  if (at && own && at.utility !== own && /^[a-z][a-z-]*$/.test(at.value)) {
+  // `bg-on-accent` reads as utility `bg-on`, value `accent`; it is still a `bg` class for a `bg-white`
+  if (at && own && at.utility !== own && !use.class.startsWith(`${at.utility}-`) && /^[a-z][a-z-]*$/.test(at.value)) {
     return at.utility === 'transition' && ['duration', 'delay', 'ease'].includes(own) ? { to: `${at.before}${use.class}${at.after}`, beside: true } : undefined;
   }
   // Retain variants, sign and importance, but never guess at arbitrary selectors or modifiers.

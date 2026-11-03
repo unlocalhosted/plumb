@@ -233,7 +233,8 @@ function suggestColour(report: Report, cause: Cause, entries: Raw[]): void {
       const named = namedColour(p.text)!;
       p.to = `${named.head}${named.utility}-${name}${named.alpha === 100 ? '' : `/${named.alpha}`}`;
       fixes.set(`${p.rule}\0${p.text}`, { rule: p.rule, text: p.text, choice: p.to });
-    } else if (!alpha && entry.token === chosen.name) {
+    } else if (!alpha && entry.token === chosen.name && !/\s/.test(p.text)) {
+      // a class: an inline style's `background: '#FFFFFF'` is edited as a property, not swapped as a class, so no request is made for it
       const to = /^[^[]*\[[^\]]*\]/.test(p.text) ? p.text.replace(/\[[^\]]*\](?:\/\d+)?$/, name) : undefined;
       if (to) p.to = to;
       fixes.set(`${p.rule}\0${p.text}`, { rule: p.rule, text: p.text, choice: chosen.name });
