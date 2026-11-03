@@ -6,10 +6,26 @@
 <style>
   body { margin: 0; background: #fdfcf8; }
   body.dark { background: #1c1c1e; }
+  /* Blueprint marks' specimen: a page of someone else's, so it lives outside the docs' shadow root, where the marks
+     layer can find it on the page, and keeps its own plain colours */
+  .bp-spec { display: flex; flex-wrap: wrap; gap: 16px; font: 14px/20px system-ui, sans-serif; color: #1c1b19; }
+  .bp-card { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px #e6e1d6; }
+  .bp-card.ok { padding: 16px; }
+  .bp-t { font-size: 19px; line-height: 26px; font-weight: 600; }
+  .bp-card.ok .bp-t { font-size: 20px; line-height: 28px; }
+  .bp-row { display: flex; gap: 3px; }
+  .bp-card.ok .bp-row { gap: 8px; }
+  .bp-row span { padding: 4px 10px; border-radius: 7px; background: #f4f1ea; font-size: 13px; }
+  body.dark .bp-spec { color: #f4f3ef; }
+  body.dark .bp-card { background: #26262a; box-shadow: 0 0 0 1px #3a3a3f; }
+  body.dark .bp-row span { background: #323236; }
 </style>
 </head>
 <body>
-<div id="system"></div>
+<div id="system"><div slot="bp-spec" class="bp-spec">
+  <div class="bp-card" data-m="c1"><b class="bp-t" data-m="t1">Reasoned for 6.2s</b><div class="bp-row" data-m="r1"><span>Search</span><span>Read</span><span>Edit</span></div></div>
+  <div class="bp-card" data-m="c2" style="gap:8px"><b class="bp-t" style="font-size:20px;line-height:28px">Plan ready</b><div class="bp-row" style="gap:8px"><span>Open</span><span>Run</span></div></div>
+</div></div>
 <script type="module">
   /* Plumber's design system, documented (structure after mews.design: a sidebar tree, an on-this-page rail, overview
      cards, and the same tabs on every component; the look is ours). Built from the overlay's own modules, so every
@@ -22,6 +38,7 @@
   import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
   import { BLOCK_ICONS, BOXMODEL_CSS, boxModel, pointAt } from '../src/boxmodel.js';
   import { GRAVITY_CSS, Gravity } from '../src/gravity.js';
+  import { MARKS_CSS, MarkLayer, HEAT } from '../src/blueprint-marks.js';
   import CRAFTING from '../../docs/design/prototypes/data/crafting-ui.json';
   import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
   import { DOCK, TIMELINE } from '../src/words.js';
@@ -49,8 +66,8 @@
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['texture', 'Texture'], ['icons', 'Iconography'], ['voice', 'Voice and tone'], ['tokens', 'Tokens']] },
-    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], [null, 'Readout']] },
-    { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], [null, 'Blueprint marks']] },
+    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], ['readout', 'Readout']] },
+    { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], ['marks', 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
   ];
@@ -334,6 +351,30 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       return { title: 'Count', lede: 'A number that matters, and what it counts.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
+    readout: (tab = 'overview') => {
+      const cluster = `<div class="gv-read"><b>13px · 41 places</b><code>text-[13px] ×38 · text-[0.8125rem] ×3</code><span class="to">Nearest on your scale: sm (14px)</span></div>`;
+      const stepRead = `<div class="gv-read"><b>sm · 14px</b>15 places use it<br>87 places type a size close to it<br><span class="to">Click to pull them in</span></div>`;
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/gravity.js</code>, the <code>.gv-read</code> plate'], ['Used', 'Gravity, for the step or cluster you point at']])),
+          sec('intro', 'Introduction', `<p>A readout says what you’re pointing at, in words: what it is, how it’s written in your code, and what to do with it. Only one shows at a time, beside the pointer, and it goes when you move away.</p><div class="stage ro-stage">${cluster}${stepRead}</div>`),
+        ],
+        style: [
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Title</b> 600 14/20 in the ink: the thing and how much of it (“13px · 41 places”).</li><li><b>Code</b> <code>--pl-card-code</code> in the second ink: how it’s written, most common first.</li><li><b>Outcome</b> in the ink: where it would go, or what a click does.</li><li><b>Plate</b> <code>--pl-paper-2</code>, a hairline ring in <code>--pl-rule</code> and a soft drop shadow, so it lifts off the drawing under it.</li></ul>`),
+          sec('place', 'Placement', `<p>14px right of and below the pointer; a step’s readout sits under its mark. It’s kept inside the plot, so it never spills off the card.</p>`),
+          sec('open', 'Open', `<ul class="plain"><li>The plate’s 10px corners sit between two tokens (<code>--pl-radius-row</code> 8, <code>--pl-radius-card</code> 12) and should move onto one.</li></ul>`),
+        ],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>For the one thing pointed at. Never for something at rest: at rest a drawing shows only names.</li><li>Lead with the number, then the code as written, then the way out. Three lines at most.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>&lt;div class="gv-read"&gt;
+  &lt;b&gt;13px · 41 places&lt;/b&gt;
+  &lt;code&gt;text-[13px] ×38&lt;/code&gt;
+  &lt;span class="to"&gt;Nearest on your scale: sm (14px)&lt;/span&gt;
+&lt;/div&gt;</code></pre><p>Part of <code>GRAVITY_CSS</code>; Gravity places it and fills it as you point.</p>`)],
+        accessibility: [sec('read', 'Readers', `<p>The plate ignores the pointer, so it never gets in the way of what’s under it. Readers don’t get the plate: Gravity says the same thing in its polite live region when a step is focused from the keyboard.</p>`)],
+      };
+      return { title: 'Readout', lede: 'What you’re pointing at, said in words.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
     spacing: () => ({
       title: 'Spacing',
       lede: 'One ladder, 2 to 24px, mostly 4 apart, for everything inside a card. The gaps between sections of a page sit above it.',
@@ -458,6 +499,19 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         sec('live', 'Live', `<p>Press Play: each role lights in turn, and its places on the card are marked in the role’s colour and pattern.</p><div class="stage col show-stage"><div class="chips-demo">${chipsHtml(ROLES.slice(0, 3))}</div><div class="show-card"><div class="row1"><span class="mk-pad" data-role="0"></span><span class="t">Reasoned for 6.2s</span></div><div class="row2"><span class="pill-a">Search</span><span class="mk-gap" data-role="1"></span><span class="pill-a">Read</span></div><span class="mk-mar" data-role="2"></span></div><button type="button" class="pl-act quiet" data-show>Play the show</button></div>`),
         sec('beat', 'One beat per role', `<table class="tok"><thead><tr><th>Beat</th><th>Time</th><th>What happens</th></tr></thead><tbody><tr><td>In</td><td>240ms</td><td>The marks sweep onto the places</td></tr><tr><td>Move</td><td>520ms</td><td>The value rolls; the places ease to it</td></tr><tr><td>Hold</td><td>200ms</td><td>A breath</td></tr><tr><td>Out</td><td>160ms</td><td>The marks lift</td></tr></tbody></table><p>Eight roles play in about five seconds. Esc, Space or Apply stops it, and every role left is set at once.</p>`),
         sec('built', 'Built from', `<div class="tiles">${card('#chip/overview', 'Role chip', 'The decision, lit in its colour.', chipsHtml(ROLES.slice(0, 1)))}${card('#texture', 'Texture', 'The pattern of what it changes.', '<span class="pl-hatch hatch"></span>')}${card('#motion', 'Motion', 'The beat and the spring.', '')}</div>`),
+      ],
+    }),
+
+    marks: () => ({
+      title: 'Blueprint marks',
+      lede: 'How Blueprint shows what’s off on your page. At rest your page is left alone; point at it and what’s off glows, as much as it’s off.',
+      sections: [
+        sec('live', 'Live', `<p>The real marks layer, over two cards. The first has too much padding, a gap that’s too small and a title one size off; the second has the same padding. Point at the padding: both cards light, because it’s one cause. Tab walks the marks, worst first.</p><div class="stage col bp-stage"><slot name="bp-spec"></slot><div class="bp-acts"><button type="button" class="pl-act quiet" data-bp-all aria-pressed="false">Light every mark</button><span class="say" data-bp-say>Nothing picked</span></div></div>`),
+        sec('drawn', 'What’s drawn', `<table class="tok"><thead><tr><th>Drawing</th><th>Means</th><th>Where</th></tr></thead><tbody><tr><td><span class="bp-sw heat"></span>Magenta glow</td><td>Too much: space past what your scale has, or a size or weight that’s off</td><td>The extra band of padding, margin or gap; the words themselves</td></tr><tr><td><span class="bp-sw dots"></span>Cyan dots</td><td>Space that’s missing</td><td>Where the space should be</td></tr><tr><td><span class="bp-sw edge"></span>Edge glow</td><td>Off, with nowhere of its own to show: a colour, a radius, a shadow</td><td>Along the element’s edge</td></tr></tbody></table>`),
+        sec('heat', 'How hot', `<p>Heat says how far off it is, against the step: <code>${HEAT.min} + ${HEAT.gain} × |is − should| / should</code>, up to 1. So a 1px slip still shows, 18 against 16 is a haze, and 28 against 16 glows. Hotter is brighter and spreads further: the blur runs ${HEAT.blur[0]} to ${HEAT.blur[1]}px. A framework default rests at the minimum.</p>`),
+        sec('states', 'States', `<ul class="plain"><li><b>Rest</b> nothing is drawn: your page is clean until you point.</li><li><b>Point</b> the mark breathes, everything with the same cause lights, and one pill by the pointer says the class and what it becomes, ×n when it’s in more places.</li><li><b>Fix in hand</b> its marks light and the one it’s on pulses twice; everything else goes quiet.</li><li><b>All clear</b> the last one fixed: four registration marks spring onto the corners of the screen, hold, and go.</li><li><b>Covered</b> a mark is cut to what you can see of its element; nothing under a drawer is drawn or clickable.</li></ul>`),
+        sec('keys', 'Keyboard', `<ul class="plain"><li><b>Tab</b> walks the marks, worst first. Each says its class and fix to readers.</li><li><b>Enter</b> picks the element, as a click does.</li></ul>`),
+        sec('open', 'Open', `<ul class="plain"><li>Magenta and cyan are the only colours here outside the six hues. They’re set in <code>blueprint-marks.js</code>, not tokens, and follow the OS’s scheme rather than the page’s.</li></ul>`),
       ],
     }),
 
@@ -684,6 +738,13 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
     table.all td:last-child { color: var(--pl-ink-3); font: var(--pl-page-meta); }
     .same { font: var(--pl-page-meta); color: var(--pl-ink-3); }
     .bm-stage { padding: 56px 48px; }
+    .ro-stage { align-items: flex-start; } .ro-stage .gv-read { position: static; }
+    .bp-stage { gap: 20px; padding: 32px; }
+    .bp-acts { display: flex; align-items: center; gap: 12px; } .bp-acts .say { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .bp-sw { display: inline-block; width: 22px; height: 12px; margin-right: 8px; vertical-align: -1px; border-radius: 3px; }
+    .bp-sw.heat { background: #ff1f8f; filter: blur(1.2px); }
+    .bp-sw.dots { background: radial-gradient(#00a3ff .9px, transparent 1.1px) 0 0 / 3.5px 3.5px; }
+    .bp-sw.edge { box-shadow: inset 0 0 0 2px #ff1f8f; filter: blur(.6px); }
     .bm-spec { display: flex; align-items: center; gap: 8px; margin: 16px; padding: 20px 24px 20px 10px; min-width: 300px; border: 1px solid var(--pl-rule); border-radius: 10px; background: var(--pl-paper); font: 600 15px var(--pl-sans); color: var(--pl-ink); }
     .bm-spec .b { font: 600 12px var(--pl-mono); color: var(--pl-mint-ink); background: var(--pl-mint-soft); padding: 3px 8px; border-radius: 7px; }
     .inline-ic { display: inline-grid; width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; color: var(--pl-sky); } .inline-ic svg { width: 14px; height: 14px; }
@@ -768,7 +829,44 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       e.target.setAttribute('aria-pressed', String(on)); e.target.textContent = on ? 'Let go' : 'Snap to your scale';
       rollCount(c, on ? 621 : 45); c.querySelector('.say').textContent = on ? 'places on your scale, if every size snapped to it' : 'places use your scale';
     });
+    marksLive(id === 'marks');
     scrollTo(0, 0); watch();
+  }
+  // Blueprint marks, live: the real MarkLayer in its own overlay host over the specimen (light DOM, slotted into the
+  // page, so the layer finds it on the page as it finds yours). Mounted on that page only.
+  let bp = null;
+  function marksLive(on) {
+    if (!on) { if (bp) { bp.layer.clear(); bp.host.remove(); removeEventListener('scroll', bp.redraw); removeEventListener('resize', bp.redraw); bp = null; } return; }
+    if (!bp) {
+      const host = Object.assign(document.createElement('div'), { className: 'bp-host' }); host.dataset.plumbLayer = '';
+      // under the docs' header: marks scrolled beneath it are clipped away, hits included
+      host.style.cssText = 'position:fixed;inset:0;z-index:5;pointer-events:none;clip-path:inset(56px 0 0 0)';
+      const sh = host.attachShadow({ mode: 'open' });
+      sh.innerHTML = `<style>${tokens}${MARKS_CSS}</style><div class="bp"></div>`;
+      document.body.append(host);
+      const say = () => page.querySelector('[data-bp-say]');
+      const layer = new MarkLayer(sh.querySelector('.bp'), {
+        onPick: (el, mark) => { const s = say(); if (s) s.textContent = `Picked ${mark.text} → ${mark.craft.suggest.to}`; },
+        occluders: () => [root.querySelector('header.top').getBoundingClientRect()],
+        state: () => null, onOrder: () => {},
+      });
+      const spec = document.querySelector('.bp-spec'), at = (m) => spec.querySelector(`[data-m="${m}"]`);
+      const mark = (key, props, from, to, sets, title) => ({ key, rule: 'spacing/off-scale', ledger: 'new', props, text: from, title, craft: { suggest: { kind: 'class', from, to, sets } } });
+      const pad = () => mark('pad', ['padding'], 'p-[22px]', 'p-4', { padding: '16px' }, 'Padding 22px isn’t on your scale. Use p-4, 16px.');
+      layer.set([
+        { id: 'c1', el: at('c1'), marks: [pad()] },
+        { id: 't1', el: at('t1'), marks: [{ ...mark('size', ['font-size'], 'text-[19px]', 'text-xl', { fontSize: '20px' }, 'Text 19px isn’t on your scale. Use text-xl, 20px.'), rule: 'type/off-scale' }] },
+        { id: 'r1', el: at('r1'), marks: [mark('gap', ['gap'], 'gap-[3px]', 'gap-2', { gap: '8px' }, 'A 3px gap isn’t on your scale. Use gap-2, 8px.')] },
+        { id: 'c2', el: at('c2'), marks: [pad()] },
+      ]);
+      const redraw = () => layer.invalidate();
+      addEventListener('scroll', redraw, { passive: true }); addEventListener('resize', redraw);
+      bp = { host, layer, redraw };
+    }
+    bp.host.dataset.scheme = host.dataset.scheme;
+    bp.redraw();
+    const all = page.querySelector('[data-bp-all]');
+    all?.addEventListener('click', () => { const on = all.getAttribute('aria-pressed') !== 'true'; all.setAttribute('aria-pressed', String(on)); all.textContent = on ? 'Let go' : 'Light every mark'; bp.layer.spotlight(on ? bp.layer.order().map((o) => o.id) : []); });
   }
   // the rail jumps within the page and marks the section in view
   rail.addEventListener('click', (e) => { const a = e.target.closest('[data-to]'); if (!a) return; e.preventDefault(); root.getElementById(a.dataset.to)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
@@ -816,7 +914,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
 
   // one scheme for the page and its examples: the OS's at first, then the button's
   const button = root.getElementById('scheme');
-  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; button.textContent = dark ? 'Day' : 'Night'; };
+  const setScheme = (dark) => { document.body.classList.toggle('dark', dark); host.dataset.scheme = dark ? 'dark' : 'light'; if (bp) bp.host.dataset.scheme = host.dataset.scheme; button.textContent = dark ? 'Day' : 'Night'; };
   setScheme(matchMedia('(prefers-color-scheme: dark)').matches);
   button.addEventListener('click', () => setScheme(!document.body.classList.contains('dark')));
   show();

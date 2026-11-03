@@ -135,7 +135,8 @@ function visibleBox(el, r, view, memo) {
   for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.2], [0.85, 0.2], [0.15, 0.8], [0.85, 0.8]]) {
     if (b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
     const px = b.left + (b.right - b.left) * fx, py = b.top + (b.bottom - b.top) * fy;
-    const hit = document.elementsFromPoint(px, py).find((e) => !e.closest('plumb-overlay'));
+    // the overlay's own drawings are never what covers an element (a layer hosted elsewhere, like the docs', says so with data-plumb-layer)
+    const hit = document.elementsFromPoint(px, py).find((e) => !e.closest('plumb-overlay, [data-plumb-layer]'));
     if (!hit || el.contains(hit) || hit.contains(el)) { seen = true; continue; }
     let cover = hit;
     while (cover.parentElement && !cover.parentElement.contains(el)) cover = cover.parentElement;
