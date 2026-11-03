@@ -22,7 +22,9 @@ export interface CensusRoute { route: string; elements: number }
 /** each entry says the route it was measured on, so one page's places can be read out of the project's */
 /** One distance between two children of a stack (overlay/src/stacks.js), row level only: section breaks are left out. */
 export interface CensusGap { stamp: string; d: number; em?: number | null; route?: string }
-export interface ProjectCensus { schemaVersion: 1; at: string; url: string; viewport: { width: number; height: number }; routes: CensusRoute[]; entries: (CensusEntry & { route?: string })[]; gaps?: CensusGap[]; /** routes found but not read: the cap was reached */ left: number }
+/** One place's colour on one route (overlay/src/colours.js): the property, the colour composited over its ground in oklab, the class that sets it */
+export interface CensusColour { stamp: string; prop: 'text' | 'bg' | 'border'; oklab: [number, number, number]; cls: string | null; data?: boolean; route?: string }
+export interface ProjectCensus { schemaVersion: 1; at: string; url: string; viewport: { width: number; height: number }; routes: CensusRoute[]; entries: (CensusEntry & { route?: string })[]; gaps?: CensusGap[]; colours?: CensusColour[]; /** routes found but not read: the cap was reached */ left: number }
 export interface CensusOptions { url: string; root: string; routes?: string[]; max?: number; timeout?: number }
 
 export const censusPath = (root: string) => resolve(cacheDirectory(root), 'census.json');
@@ -39,6 +41,8 @@ function readPage() {
 }
 // In the page: the spacing pass's own reader, loaded from the dev server (one reader for the page and the census)
 const readGaps = `(async () => { try { const m = await import('/__plumb/src/stacks.js'); return m.readStacks().flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => ({ stamp: s.stamp, d: g.d, em: g.em }))); } catch { return []; } })()`;
+// In the page: the colour pass's own reader (overlay/src/colours.js), the same one the panel uses
+const readColourRows = `(async () => { try { const m = await import('/__plumb/src/colours.js'); await m.loadPalette(); return m.colourRows(m.readColours()); } catch { return []; } })()`;
 
 /** Read the routes, two pages at a time, keep the census under the cache, and say what was read and what was left. */
 export async function takeCensus(options: CensusOptions): Promise<ProjectCensus> {
@@ -46,7 +50,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
   const { launchChromium, reachable } = await import('./craft-run.js'), { desktop, settle } = await import('./craft-page.js');
   const base = await reachable(options.url), origin = new URL(base).origin, max = options.max ?? 120, timeout = options.timeout ?? 30000;
   const given = (options.routes ?? []).filter(Boolean), queue = given.length ? [...given] : ['/'], seen = new Set(queue.map(r => new URL(r, base).pathname));
-  const browser = await launchChromium(), routes: CensusRoute[] = [], entries: ProjectCensus['entries'] = [], gaps: CensusGap[] = [];
+  const browser = await launchChromium(), routes: CensusRoute[] = [], entries: ProjectCensus['entries'] = [], gaps: CensusGap[] = [], colours: CensusColour[] = [];
   let taken = 0;
   const reader = async () => {
     const page = await browser.newPage({ viewport: desktop, reducedMotion: 'reduce' });
@@ -63,6 +67,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         routes.push({ route, elements: census.length });
         entries.push(...census.map(entry => ({ ...entry, route })));
         gaps.push(...(await page.evaluate(readGaps) as CensusGap[]).map(gap => ({ ...gap, route })));
+        colours.push(...(await page.evaluate(readColourRows) as CensusColour[]).map(row => ({ ...row, route })));
         // only when no routes were given: the site's own links, one path each, no fragments, queries or files
         if (!given.length) for (const link of links) {
           let at: URL; try { at = new URL(link); } catch { continue; }
@@ -73,14 +78,14 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
     } finally { await page.close(); }
   };
   try { await Promise.all([reader(), reader()]); } finally { await browser.close(); }
-  const census: ProjectCensus = { schemaVersion: 1, at: new Date().toISOString(), url: base, viewport: desktop, routes: routes.filter(r => r.elements > 0 || given.includes(r.route)), entries, gaps, left: queue.length };
+  const census: ProjectCensus = { schemaVersion: 1, at: new Date().toISOString(), url: base, viewport: desktop, routes: routes.filter(r => r.elements > 0 || given.includes(r.route)), entries, gaps, colours, left: queue.length };
   ignoreCache(options.root);
   await atomicWrite(censusPath(options.root), JSON.stringify(census));
   return census;
 }
 
 /** The kept census, less the entries whose file has changed since it was read. Null when there is none. */
-export async function projectCensus(root: string): Promise<{ census: ProjectCensus; entries: CensusEntry[]; gaps: CensusGap[]; stale: number } | null> {
+export async function projectCensus(root: string): Promise<{ census: ProjectCensus; entries: CensusEntry[]; gaps: CensusGap[]; colours: CensusColour[] | null; stale: number } | null> {
   let census: ProjectCensus;
   try { census = JSON.parse(await readFile(censusPath(root), 'utf8')) as ProjectCensus; } catch { return null; }
   if (census?.schemaVersion !== 1 || !Array.isArray(census.entries)) return null;
@@ -98,5 +103,8 @@ export async function projectCensus(root: string): Promise<{ census: ProjectCens
   let stale = 0;
   for (const entry of census.entries) if (await fresh(entry.stamp)) entries.push(entry); else stale++;
   for (const gap of census.gaps ?? []) if (await fresh(gap.stamp)) gaps.push(gap);
-  return { census, entries, gaps, stale };
+  // a census taken before the colour pass has no colours: null says so, [] says there were none
+  const colours: CensusColour[] | null = census.colours ? [] : null;
+  for (const row of census.colours ?? []) if (await fresh(row.stamp)) colours!.push(row);
+  return { census, entries, gaps, colours, stale };
 }

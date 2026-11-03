@@ -246,6 +246,9 @@ test('Apply is one step in the history, named Spacing with the law of proximity,
   await v.page.keyboard.press('Enter');
   await v.wrote();
   assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), all[FILE], 'the write landed');
+  // the write's reload may still be arriving: the history is opened on the page that stays
+  await sleep(1500);
+  await v.page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
   await v.page.locator('plumb-overlay').locator('.dock .history').click();
   await v.page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length > 0, null, { timeout: 30000 });
   const read = await v.page.evaluate(() => {

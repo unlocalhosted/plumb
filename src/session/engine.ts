@@ -1704,6 +1704,14 @@ export class Session extends EventEmitter {
     if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
     return { distances: kept.gaps.map(gap => gap.d), gaps: kept.gaps.map(gap => ({ d: gap.d, em: gap.em ?? null })), routes: kept.census.routes.length };
   }
+  /** The site's colours as the census read them: every place's text, background and border colour (composited over its
+   * ground, in oklab) with the class that sets it and the route, on every route (overlay/src/colours.js reads them). */
+  async palette(): Promise<{ colours: { prop: 'text' | 'bg' | 'border'; oklab: [number, number, number]; cls: string | null; data?: boolean; route: string }[]; routes: number }> {
+    const kept = await projectCensus(this.root);
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+    if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>');
+    return { colours: kept.colours.map(row => ({ prop: row.prop, oklab: row.oklab, cls: row.cls, ...(row.data ? { data: true } : {}), route: row.route ?? '' })), routes: kept.census.routes.length };
+  }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
   async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
     if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');

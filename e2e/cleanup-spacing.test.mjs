@@ -50,7 +50,7 @@ async function drifted(t, { scheme = 'light' } = {}) {
   const panel = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText.replace(/\s+/g, ' ') ?? '');
   const until = (re, timeout = 60000) => page.waitForFunction((s) => new RegExp(s).test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx:not([hidden])')?.innerText ?? ''), re.source, { timeout });
   // the two drifted spaces as drawn: summary below its title, rule below its standard's title (the first one)
-  const spaces = `(() => { const gap = (cls) => { const el = document.querySelector('[class*="' + cls + '"]'); return Math.round(el.getBoundingClientRect().top - el.previousElementSibling.getBoundingClientRect().bottom); }; return [gap(${JSON.stringify(SUMMARY)}), gap(${JSON.stringify(RULE)})].join(); })()`;
+  const spaces = `(() => { const gap = (cls) => { const el = document.querySelector('[class*="' + cls + '"]'); if (!el?.previousElementSibling) return NaN; return Math.round(el.getBoundingClientRect().top - el.previousElementSibling.getBoundingClientRect().bottom); }; return [gap(${JSON.stringify(SUMMARY)}), gap(${JSON.stringify(RULE)})].join(); })()`;
   const at = (want, timeout = 5000) => page.waitForFunction(`${spaces} === ${JSON.stringify(want)}`, null, { timeout });
   // Blueprint on, C, the text pass skipped: the spacing pass, ready
   const begin = async () => {
