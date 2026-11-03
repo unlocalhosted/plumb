@@ -174,9 +174,9 @@ test('install --hooks merges settings, preserves existing hooks and stays idempo
   const merged = JSON.parse(await readFile(claudeFile, 'utf8')), mergedCursor = JSON.parse(await readFile(cursorFile, 'utf8'));
   assert.deepEqual(merged.permissions, original.permissions); assert.deepEqual(merged.env, original.env); assert.deepEqual(merged.hooks.Stop, original.hooks.Stop);
   assert.deepEqual(merged.hooks.PostToolUse[0], original.hooks.PostToolUse[0]);
-  assert.equal(merged.hooks.PostToolUse[1].hooks[0].command, 'plumber check --changed --agent --strict-ledger');
+  assert.equal(merged.hooks.PostToolUse[1].hooks[0].command, 'npx --no-install plumber check --changed --agent --strict-ledger');
   assert.deepEqual(mergedCursor.hooks.beforeShellExecution, cursor.hooks.beforeShellExecution); assert.equal(mergedCursor.team, 'kept'); assert.equal(mergedCursor.hooks.afterFileEdit.length, 2);
-  const before = await readFile(claudeFile, 'utf8'); assert.match(run(directory, ['install', '--hooks']).stdout, /unchanged/); assert.equal(await readFile(claudeFile, 'utf8'), before);
+  const before = await readFile(claudeFile, 'utf8'); assert.match(run(directory, ['install', '--hooks']).stdout, /Kept \.claude\/settings\.json\./); assert.equal(await readFile(claudeFile, 'utf8'), before);
   await writeFile(cursorFile, '{bad'); assert.match(run(directory, ['install', '--hooks'], 2).stderr, /Invalid JSON/); assert.equal(await readFile(claudeFile, 'utf8'), before);
 });
 

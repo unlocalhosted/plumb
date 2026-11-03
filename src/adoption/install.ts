@@ -95,10 +95,11 @@ async function workflow(root: string): Promise<{ file: string; text: string; not
 
 /** Print host wiring by default; source edits require explicit --write. */
 export async function installOverlay(root: string, write = false): Promise<string> {
-  return overlaySetupNotice(root) + await overlayWiring(root, write);
+  return overlaySetupNotice(root) + await overlayWiring(root, write, !write);
 }
 
-async function overlayWiring(root: string, write = false): Promise<string> {
+// `offer`: the preview ends by saying --write makes these edits (never after a refused write, which asks for them by hand)
+async function overlayWiring(root: string, write = false, offer = false): Promise<string> {
   const host = (await projectFacts(root)).host.value?.id;
   const dependencies = { next: host === 'next', vite: host === 'vite' };
   if (write) {
@@ -125,6 +126,7 @@ async function overlayWiring(root: string, write = false): Promise<string> {
     '// Inside <body>:',
     '<PlumbOverlay />',
     '',
+    ...(offer ? ['Or let plumber make these edits: plumber install --overlay --write', ''] : []),
   ].join('\n');
   if (dependencies.vite) return [
     'Add to vite.config.ts:',
@@ -132,6 +134,7 @@ async function overlayWiring(root: string, write = false): Promise<string> {
     '// Put first in your existing plugins array, before react():',
     'plumb()',
     '',
+    ...(offer ? ['Or let plumber make this edit: plumber install --overlay --write', ''] : []),
   ].join('\n');
   const info = await readDiscovery(root);
   const ready = info?.overlay === true && info.root === resolve(root) && Number.isSafeInteger(info.port) && info.port > 0 && info.port <= 65535 && /^[a-f\d]{64}$/.test(info.token);
@@ -196,7 +199,7 @@ export async function installProject(root: string, options: InstallOptions = {})
     output.push(...[...plans, ...hooks].map(plan => (plan.before === plan.after ? 'Kept ' : 'Would write ') + name(plan.file) + '.'));
     return output.join('\n') + '\n';
   }
-  const hookOutput = await writeHooks(hooks);
+  const hookOutput = await writeHooks(hooks, false, root);
   if (hookOutput) output.push(hookOutput.trimEnd());
   for (const plan of plans) {
     if (plan.before === plan.after) { output.push('Kept ' + name(plan.file) + '.'); continue; }

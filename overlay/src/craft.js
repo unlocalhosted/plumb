@@ -376,7 +376,8 @@ function important(suggest) {
 // A finding, as a mark the overlay draws and groups like any other.
 function markOf(f) {
   const suggest = f.suggest ?? null;
-  const action = suggest?.kind === 'class' ? `Change \`${suggest.from}\` to \`${suggest.to}\`${suggest.why ? `: ${suggest.why}` : ''}.` : suggest?.text ?? '';
+  // a class suggestion that takes nothing out adds one: never "Change `` to …"
+  const action = suggest?.kind === 'class' ? `${suggest.from ? `Change \`${suggest.from}\` to` : 'Add'} \`${suggest.to}\`${suggest.why ? `: ${suggest.why}` : ''}.` : suggest?.text ?? '';
   return {
     key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
     ...(f.tier !== undefined ? { tier: f.tier } : {}),

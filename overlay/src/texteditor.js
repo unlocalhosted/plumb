@@ -237,7 +237,7 @@ function numOf(key, v, el, size = parseFloat(getComputedStyle(el).fontSize) || 1
 const said = (key, v, el) => {
   if (key === 'font-size') { const px = Number.isFinite(+v) ? +v : pxOf(v, el ?? document.documentElement); return Number.isFinite(px) ? `${pxRound(px)}px` : String(v); }
   if (key === 'color') return plainColor(v);
-  if (key === 'text-transform') return W.cases[v] ?? String(v);
+  if (key === 'text-transform') return W.casesSaid[v] ?? String(v);
   if (key === 'letter-spacing' && v === 'normal') return '0em';
   return String(v);
 };

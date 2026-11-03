@@ -582,6 +582,14 @@ export const measure = {
 };
 
 // #14. Line height shrinks as size grows: body about 1.5, headings 1.1–1.25.
+/** The design size of text whose size class multiplies a fixed px by a variable (calc(var(--z)*15px) or calc(15px*var(--z))), else null. */
+function scaledSize(el) {
+  for (const c of el.classList ?? []) {
+    const m = /^(?:[\w-]+:)*text-\[(?:length:)?calc\((?:var\(--[\w-]+\)\s*\*\s*([\d.]+)px|([\d.]+)px\s*\*\s*var\(--[\w-]+\))\)\]$/.exec(c);
+    if (m) return Number(m[1] ?? m[2]);
+  }
+  return null;
+}
 export const leading = {
   id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
@@ -590,7 +598,10 @@ export const leading = {
     const s = facts.style(el), fs = px(s.fontSize), lh = px(s.lineHeight);
     if (!lh || !fs) return [];
     const ratio = lh / fs, lines = lineCount(el);
-    const big = fs >= T.large && ratio > T.loose && lines >= 1;
+    // a size written as a zoom of a design size (`text-[length:calc(var(--z)*15px)]`, a scaled mockup) is that design
+    // size: 15px body text drawn at 2.4×, not 36px display text
+    const designed = scaledSize(el) ?? fs;
+    const big = designed >= T.large && ratio > T.loose && lines >= 1;
     const cramped = fs <= T.small && ratio < T.tight && lines >= 3;
     if (!big && !cramped) return [];
     const cls = utility(el, 'leading');

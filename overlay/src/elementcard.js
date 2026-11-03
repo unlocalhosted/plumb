@@ -340,14 +340,22 @@ export class ElementCard {
       if (seq !== this.#seq) return;
       if (!at?.file) { const why = await this.#host.why?.(el).catch(() => null); if (seq !== this.#seq) return; this.#state = 'error'; this.#error = why ?? FIX.text.unreachable; return this.#draw(); }
       this.#at = at;
-      // where its classes are written: read and written there (a file's hash changes with every write: read each time)
-      const site = await classSiteOf(el);
-      if (seq !== this.#seq) return;
+      // where its classes are written: read and written there (a file's hash changes with every write: read each time).
+      // Right after a write the dev server is still taking the file in, and a read can come back empty: tried again
+      // a few times before the card says it can't place the element
+      let site = null, data = null, props = null;
+      for (const wait of [0, 250, 500, 1000]) {
+        if (wait) { await new Promise((r) => setTimeout(r, wait)); if (seq !== this.#seq) return; }
+        site = await classSiteOf(el);
+        if (seq !== this.#seq) return;
+        if (!site) continue;
+        const here = site.refused ? at : site, pos = { file: here.file, line: here.line, column: here.column };
+        [data, props] = await Promise.all([site.refused ? null : request('recipes', { ...pos, ...(site.chain?.length ? { chain: JSON.stringify(site.chain) } : {}) }).catch(() => null), request('props', pos).catch(() => null)]);
+        if (seq !== this.#seq) return;
+        if (site.refused || data?.element) break;
+      }
       if (!site) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
       this.#site = site;
-      const here = site.refused ? at : site, pos = { file: here.file, line: here.line, column: here.column };
-      const [data, props] = await Promise.all([site.refused ? null : request('recipes', { ...pos, ...(site.chain?.length ? { chain: JSON.stringify(site.chain) } : {}) }), request('props', pos).catch(() => null)]);
-      if (seq !== this.#seq) return;
       this.#props = props;
       if (!site.refused && !data?.element) { this.#state = 'error'; this.#error = FIX.text.unreachable; return this.#draw(); }
       this.#data = data; this.#state = 'ready'; this.#error = null;

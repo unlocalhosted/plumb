@@ -38,7 +38,7 @@ test('init --yes on a project with no system: propose, write the theme, then bas
   assert.match(result.stdout, /^No system yet:/);
   assert.match(result.stdout, /\n1\/5 {2}Spacing: 11 values in use snap to 5 steps \(xs…xl\)\. Keep these as your tokens\? {2}yes\n/);
   assert.match(result.stdout, /Wrote 27 tokens to src\/theme\.css \(:root\): 5 spacing, 12 colour, 2 radius, 6 type, 2 motion\. Imported it from src\/styles\.css\./);
-  assert.match(result.stdout, /Baseline: \d+ debt entries/);
+  assert.match(result.stdout, /Baseline: [\d,]+ places? recorded as known debt/);
   assert.match(result.stdout, /Accepted 27 tokens as inferred\./);
   if (process.env.UPDATE_EXPECTATIONS) await writeFile(expectedTheme, await readFile(join(dir, 'src/theme.css'), 'utf8'));
   assert.equal(await readFile(join(dir, 'src/theme.css'), 'utf8'), await readFile(expectedTheme, 'utf8'));

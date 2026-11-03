@@ -38,9 +38,9 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   };
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
   line('Node', major > 22 || major === 22 && minor >= 18, process.versions.node, major > 22 || major === 22 && minor >= 18 ? 'No change needed.' : 'Use Node 22.18 or later.');
-  let config: PlumbConfig = {}, valid = true;
+  let config: PlumbConfig = {}, valid = true, configured = false;
   try {
-    const loaded = await loadConfig(root, configPath); config = loaded.value;
+    const loaded = await loadConfig(root, configPath); config = loaded.value; configured = loaded.path !== null;
     line('Config', loaded.path !== null, loaded.path ? `${relative(root, loaded.path)} is valid` : 'no config', loaded.path ? 'No change needed.' : 'Run plumber init.', loaded.path !== null);
   } catch (error) {
     valid = false;
@@ -58,7 +58,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
   }
   try {
     const ledger = await readLedger(root);
-    if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', 'Run plumber init.', false);
+    if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', configured ? 'Run plumber baseline.' : 'Run plumber init.', false);
     else if (!valid) line('Ledger', false, `${count(ledger.entries.length, 'entry', 'entries')} parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
     else {
       const report = await check({ root, ...(configPath === undefined ? {} : { config: configPath }) });

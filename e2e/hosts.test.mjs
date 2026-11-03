@@ -87,7 +87,7 @@ test('Vite injects and serves the client, shares edits/apply and excludes React 
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ root: plumbRoot, watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-  assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"><\/script>/);
+  assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"\s*><\/script>/);
   await ready(url);
   const health = await connectClient(url + '/__plumb/client.js'); assert.equal(health.root, plumbRoot);
   assert.equal(health.pid, process.pid, 'adapter must stay in the host process');

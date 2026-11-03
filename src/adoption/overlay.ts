@@ -230,29 +230,42 @@ function nextLayout(file: string, source: string): string {
   parse(file, result, true);
   return result;
 }
-/** A unified diff of one edit: a line diff (longest common subsequence), each change with three lines around it, so
- * two edits far apart are two hunks, not one block of everything between them. */
+/** A unified diff of one edit: only the lines that changed, each hunk with three lines of context around it. The lines
+ * between the first and last change are matched (LCS), so an import added at the top and a plugin added further down
+ * read as two small changes, never as the whole block rewritten. */
 function diff(edit: Edit, root: string): string {
   const lines = (source: string | undefined) => source ? source.replace(/\n$/, '').split('\n') : [];
-  const file = relative(root, edit.file), a = lines(edit.before), b = lines(edit.after), context = 3;
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
-  for (let x = a.length - 1; x >= 0; x--) for (let y = b.length - 1; y >= 0; y--) dp[x]![y] = a[x] === b[y] ? dp[x + 1]![y + 1]! + 1 : Math.max(dp[x + 1]![y]!, dp[x]![y + 1]!);
-  const ops: { t: ' ' | '-' | '+'; line: string; x: number; y: number }[] = [];
-  for (let x = 0, y = 0; x < a.length || y < b.length;) {
-    if (x < a.length && y < b.length && a[x] === b[y]) ops.push({ t: ' ', line: a[x]!, x: x++, y: y++ });
-    else if (x < a.length && (y === b.length || dp[x + 1]![y]! >= dp[x]![y + 1]!)) ops.push({ t: '-', line: a[x]!, x: x++, y });
-    else ops.push({ t: '+', line: b[y]!, x, y: y++ });
+  const file = relative(root, edit.file), before = lines(edit.before), after = lines(edit.after);
+  let head = 0, tail = 0;
+  while (head < before.length && head < after.length && before[head] === after[head]) head++;
+  while (tail < before.length - head && tail < after.length - head && before[before.length - tail - 1] === after[after.length - tail - 1]) tail++;
+  const a = before.slice(head, before.length - tail), b = after.slice(head, after.length - tail);
+  const lcs: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let x = a.length - 1; x >= 0; x--) for (let y = b.length - 1; y >= 0; y--) lcs[x]![y] = a[x] === b[y] ? lcs[x + 1]![y + 1]! + 1 : Math.max(lcs[x + 1]![y]!, lcs[x]![y + 1]!);
+  // every line of both files as an operation, with its line number on each side
+  type Op = { t: ' ' | '-' | '+'; line: string; old: number; new: number };
+  const ops: Op[] = before.slice(0, head).map((line, i) => ({ t: ' ', line, old: i, new: i }));
+  let x = 0, y = 0;
+  while (x < a.length || y < b.length) {
+    if (x < a.length && y < b.length && a[x] === b[y]) { ops.push({ t: ' ', line: a[x]!, old: head + x, new: head + y }); x++; y++; }
+    else if (x < a.length && (y === b.length || lcs[x + 1]![y]! >= lcs[x]![y + 1]!)) { ops.push({ t: '-', line: a[x]!, old: head + x, new: head + y }); x++; }
+    else { ops.push({ t: '+', line: b[y]!, old: head + x, new: head + y }); y++; }
   }
-  const noNewline = (o: (typeof ops)[number]) => (o.t !== '+' && o.x === a.length - 1 && edit.before !== undefined && !edit.before.endsWith('\n')) || (o.t !== '-' && o.y === b.length - 1 && !edit.after.endsWith('\n'));
-  const changed = ops.map((o, k) => (o.t === ' ' ? -1 : k)).filter(k => k >= 0);
-  const hunks: [number, number][] = [];
-  for (const k of changed) { const from = Math.max(0, k - context), to = Math.min(ops.length - 1, k + context); const last = hunks[hunks.length - 1]; if (last && from <= last[1] + 1) last[1] = to; else hunks.push([from, to]); }
+  for (let i = 0; i < tail; i++) ops.push({ t: ' ', line: before[before.length - tail + i]!, old: before.length - tail + i, new: after.length - tail + i });
+  const context = 3, changed = ops.flatMap((op, i) => op.t === ' ' ? [] : [i]);
+  const noNewline = (op: Op) => op.t === '-' ? op.old === before.length - 1 && edit.before !== undefined && !edit.before.endsWith('\n')
+    : op.t === '+' ? op.new === after.length - 1 && !edit.after.endsWith('\n') : false;
   let out = `--- ${edit.before === undefined ? '/dev/null' : file}\n+++ ${file}\n`;
-  for (const [from, to] of hunks) {
-    const part = ops.slice(from, to + 1), first = part[0]!;
-    const olds = part.filter(o => o.t !== '+').length, news = part.filter(o => o.t !== '-').length;
-    out += `@@ -${olds ? first.x + 1 : first.x},${olds} +${news ? first.y + 1 : first.y},${news} @@\n`;
-    for (const o of part) out += `${o.t === ' ' ? ' ' : o.t}${o.line}\n${noNewline(o) ? '\\ No newline at end of file\n' : ''}`;
+  for (let k = 0; k < changed.length;) {
+    // a hunk: changes closer than twice the context run together
+    let last = k;
+    while (last + 1 < changed.length && changed[last + 1]! - changed[last]! <= context * 2) last++;
+    const from = Math.max(0, changed[k]! - context), to = Math.min(ops.length - 1, changed[last]! + context), hunk = ops.slice(from, to + 1);
+    const olds = hunk.filter(op => op.t !== '+'), news = hunk.filter(op => op.t !== '-');
+    const start = (list: Op[], side: 'old' | 'new') => list.length ? list[0]![side] + 1 : hunk[0]![side];
+    out += `@@ -${start(olds, 'old')},${olds.length} +${start(news, 'new')},${news.length} @@\n`
+      + hunk.flatMap(op => [op.t + op.line, ...(noNewline(op) ? ['\\ No newline at end of file'] : [])]).join('\n') + '\n';
+    k = last + 1;
   }
   return out;
 }

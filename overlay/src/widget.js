@@ -634,7 +634,7 @@ class PlumbOverlay extends HTMLElement {
   }
   #reason = '';
   // the fix bar has the count while Blueprint is on: one number, one place
-  #blueprintSays() { return DOCK.blueprint; }
+  #blueprintSays() { return this.#blueprint?.scope ? DOCK.blueprintScoped : DOCK.blueprint; }
   #dock() {
     const dock = this.#$('.dock'); if (!dock) return;
     // how many problems the view holds once it is read: not said (the fix bar has the count), but kept on the dock for

@@ -137,19 +137,24 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
   if (!off.length && fix.length) lines.push('', 'Fix first', ...fixTable(fix));
   if (!report.ledger?.exists) {
     lines.push('', 'This is your first run, so all of this counts as new.',
-      '  plumber baseline      record today\'s drift as debt; from then on only new drift fails',
+      report.config.path ? '  plumber baseline      record today\'s drift as debt; from then on only new drift fails'
+        : '  plumber init          set up, and record today\'s drift as debt; then only new drift fails',
       '  Alt+B in dev          see every drift on the page and fix it there');
   } else {
     const newFindings = select(report, { new: true });
     const groups = findingLines(newFindings), shownGroups = groups.slice(0, 20);
     const shown = [...new Set(shownGroups.flatMap(group => group.findings.map(finding => ({ ...finding, sites: group.sites.filter(site => finding.sites.includes(site)) }))))];
     const path = (file: string) => relative(report.root, file) || '.';
-    lines.push('', `${count(groups.length, 'new finding')}`, groups.length ? renderFindingLines(shownGroups, path, verbose) : 'no findings');
+    // with a baseline, an empty list means nothing new, never "no findings": the debt above is still there
+    if (groups.length) lines.push('', `${count(groups.length, 'new finding')}`, renderFindingLines(shownGroups, path, verbose));
+    else lines.push('', 'Nothing new since your baseline.');
     const context = findingContext(shown, path, verbose, false);
     if (context) lines.push('', context);
     if (groups.length > shownGroups.length) lines.push(`+${groups.length - shownGroups.length} more: plumber check --new`);
-    const debt = select(report, { debt: true }).length;
-    lines.push('', `Known debt: ${count(debt, 'finding')}, unchanged (plumber check --debt)`);
+    // counted as the ledger counts it, in places, so it matches what init and baseline recorded (one place can be in
+    // several findings, so summing the findings' sites counts some twice)
+    const debt = report.ledger.debt;
+    lines.push('', `Known debt: ${count(debt, 'place')}, unchanged (plumber check --debt)`);
     const example = acceptExample(report, shown);
     if (example) lines.push(example);
   }
