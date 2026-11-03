@@ -51,6 +51,9 @@ import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encodi
 import type { TextResult } from './text.js';
 import { tracedWrites } from './methods.js';
 import { projectCensus } from '../census.js';
+import type { CensusIcon } from '../census.js';
+import { installedIconSets } from './icon-sets.js';
+import type { InstalledIconSet } from './icon-sets.js';
 import { indexProject } from '../recipes/project.js';
 import type { ProjectIndex } from '../recipes/project.js';
 import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js';
@@ -1711,6 +1714,14 @@ export class Session extends EventEmitter {
     if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
     if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>');
     return { colours: kept.colours.map(row => ({ prop: row.prop, oklab: row.oklab, cls: row.cls, ...(row.data ? { data: true } : {}), route: row.route ?? '' })), routes: kept.census.routes.length };
+  }
+  /** The site's icons as the census read them: every icon place (an svg's origin, size, stroke, gap, the class that sizes it; an emoji
+   * standing in for one) on every route, and the icon sets the project has installed (overlay/src/icons.js reads them). */
+  async icons(): Promise<{ icons: (CensusIcon & { route: string })[]; routes: number; installed: InstalledIconSet[] }> {
+    const kept = await projectCensus(this.root);
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+    if (!kept.icons) throw new UsageError('The census was taken before icons were read.\n  → plumber census --url <your dev server>');
+    return { icons: kept.icons.map(row => ({ ...row, route: row.route ?? '' })), routes: kept.census.routes.length, installed: await installedIconSets(this.root) };
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
   async trace(group?: string): Promise<{ changes: TraceEntry[] }> {

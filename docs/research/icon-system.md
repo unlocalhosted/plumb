@@ -311,3 +311,6 @@ Reference video: emoji turn into line icons behind a light sweep. Spec:
    category; the pass's stroke threshold is 0.25px while craft/stroke-weight keeps 0.4.
 4. Claims marked [K] (Lucide, Material 3, Apple HIG numbers) are checked against the installed packages or primary
    pages before they reach code.
+5. **I3 narrowed** (owner, 2026-11-03): an icon sized to large text (a heading's icon) keeps a stroke that follows the
+   text's weight; the thin-stroke rule for big icons applies only to icons not sized to text (crafting-ui's hero pair,
+   34px at 3.38px beside its headline, stays).

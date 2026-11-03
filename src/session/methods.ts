@@ -59,6 +59,7 @@ export const methods = [
   { http: 'trace', engine: 'trace' },
   { http: 'rhythm', engine: 'rhythm' },
   { http: 'palette', engine: 'palette' },
+  { http: 'icons', engine: 'icons' },
   { http: 'try', engine: 'try', post: true },
   { http: 'refresh', engine: 'refresh', patient: true },
   { engine: 'traced', patient: true },
