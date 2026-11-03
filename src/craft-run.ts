@@ -112,7 +112,7 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
 
 // A dev server bound to one address family answers on `localhost` but not on `127.0.0.1` (Vite on ::1), or the
 // reverse: the first loopback name that answers is the one the run opens. Any other host is used as given.
-async function reachable(base: string): Promise<string> {
+export async function reachable(base: string): Promise<string> {
   const loopback = ['127.0.0.1', 'localhost', '[::1]'], given = new URL(base);
   if (!loopback.includes(given.hostname)) return base;
   for (const host of [given.hostname, ...loopback.filter(name => name !== given.hostname)]) {
@@ -122,16 +122,20 @@ async function reachable(base: string): Promise<string> {
   return base;
 }
 
-/** Open every route in headless Chromium and run the craft engine over the whole page. */
-export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
+/** Headless Chromium for a run that reads pages (craft, census): Playwright's, or the Chrome PLUMBER_CHROMIUM names. */
+export async function launchChromium(): Promise<Browser> {
   const { chromium } = await playwright();
   const executablePath = process.env.PLUMBER_CHROMIUM || process.env.PLUMB_CHROMIUM || undefined;
-  let browser;
-  try { browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) }); }
+  try { return await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) }); }
   catch (error) {
     if (/Executable doesn't exist|Failed to launch/.test((error as Error).message)) throw new UsageError(`Chromium is not installed.\n  → npx playwright install chromium\n  Set PLUMBER_CHROMIUM to use an installed Chrome or Chromium instead.`);
     throw error;
   }
+}
+
+/** Open every route in headless Chromium and run the craft engine over the whole page. */
+export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
+  const browser = await launchChromium();
   try {
     const pages: CraftPage[] = [], base = await reachable(options.url);
     for (const route of options.routes) {

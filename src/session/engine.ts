@@ -47,6 +47,7 @@ import { forgetProjectFacts } from '../project-facts/index.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
 import { tracedWrites } from './methods.js';
+import { projectCensus } from '../census.js';
 import { indexProject } from '../recipes/project.js';
 import type { ProjectIndex } from '../recipes/project.js';
 import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js';
@@ -93,7 +94,7 @@ export interface PageEntry {
 export interface PageResult { revision: number; items: PageEntry[] }
 /** One measured text element of a page: its stamp and tag, whether it sits in a list, and its computed type values. */
 export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
-export interface SystemOptions { files?: string[]; census?: CensusEntry[]; exclude?: string[]; /** the owner's decisions per role, as config.system.type.roles, for a dry run */ roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> }
+export interface SystemOptions { files?: string[]; census?: CensusEntry[]; /** "project": the ladder from every route's text (src/census.ts), the page's own census read over it */ scope?: 'page' | 'project'; /** the page's route, whose kept entries its own census replaces */ route?: string; exclude?: string[]; /** the owner's decisions per role, as config.system.type.roles, for a dry run */ roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> }
 export type SystemWrite = { tokens: (TypeProposal['write']['tokens'][number] & { file: string; hash: string })[]; css: { file: string; hash: string; css: string }[]; swaps: (TypeProposal['write']['swaps'][number] & { hash: string })[] };
 export interface SystemResult { revision: number; proposal: Omit<TypeProposal, 'write'> & { write: SystemWrite } }
 export interface CssOptions { file: string; hash: string; css: string }
@@ -1042,7 +1043,17 @@ export class Session extends EventEmitter {
    * that makes it the system, from the report's places and, when a page was measured, the census that confirms them.
    */
   async system(options: SystemOptions = {}): Promise<SystemResult> {
-    const { files, census, exclude, roles } = options ?? {};
+    const { files, exclude, roles, scope, route } = options ?? {};
+    let { census } = options ?? {};
+    if (scope !== undefined && scope !== 'page' && scope !== 'project') throw new UsageError('scope is "page" or "project".');
+    if (scope === 'project') {
+      // one ladder for the project: every route's text as last measured, the page's own (fresher) entries over it
+      const kept = await projectCensus(this.root);
+      if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+      // the page's own census replaces what was kept for its route, nothing else: a header drawn on forty routes keeps
+      // its other thirty-nine readings, so the ladder is the same whichever page asks
+      census = [...kept.entries.filter(e => !route || (e as { route?: string }).route !== route), ...(Array.isArray(census) && route ? census : [])];
+    }
     if (census !== undefined && (!Array.isArray(census) || census.length > 20000)) throw new UsageError('A census is a list of at most twenty thousand elements.');
     const config = await loadConfig(this.root, this.options.config).catch(() => undefined);
     const excluded = [...(config?.value.system?.exclude ?? []), ...(Array.isArray(exclude) ? exclude.filter((p): p is string => typeof p === 'string') : [])];

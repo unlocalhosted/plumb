@@ -61,6 +61,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber show <key|rule> | why <file:line>
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
        plumber check [--sarif | --agent | --format github]
+       plumber census --url <dev server> [--routes / /settings] [--max <n>] [--json]
        plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--judge]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
@@ -96,7 +97,7 @@ async function main(): Promise<void> {
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
-          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' },
+          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, max: { type: 'string' },
           overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
@@ -141,7 +142,7 @@ async function main(): Promise<void> {
   if (args.values.decline?.length && command !== 'propose') throw new UsageError('--decline requires plumber propose.\n  → plumber propose --decline spacing=13px');
   if (args.values.decline?.length && args.values.write) throw new UsageError('Choose --decline or --write.\n  → plumber propose --write');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
-  if (command === 'craft' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
+  if (command === 'craft' || command === 'census' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
@@ -167,7 +168,7 @@ async function main(): Promise<void> {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
   // craft reads a running page, not the project: no workspace to choose, the root only shortens paths
-  const project = command === 'craft' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
+  const project = command === 'craft' || command === 'census' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
   if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.
@@ -255,6 +256,29 @@ async function main(): Promise<void> {
     const spec = pages.find(page => page.spec)?.spec ?? null;
     process.stdout.write(args.values.json ? `${JSON.stringify({ schemaVersion: 1, tool, root: options.root, spec, routes: pages.map(({ spec: _s, ...page }) => page), findings }, null, 2)}\n` : formatCraft(pages, findings, options.root));
     process.exitCode = findings.some((finding) => finding.severity === 'error') ? 1 : 0;
+    return;
+  }
+  if (command === 'census') {
+    // The project's text on every route, measured once and kept (src/census.ts): the type ladder is the project's
+    if (!args.values.url?.trim()) throw new UsageError('Provide the dev server address for plumber census.\n  → plumber census --url http://localhost:5173/');
+    try { new URL(args.values.url); } catch { throw new UsageError(`--url ${args.values.url}: not an address.\n  → plumber census --url http://localhost:5173/`); }
+    const max = args.values.max === undefined ? 120 : Number(args.values.max);
+    if (!Number.isInteger(max) || max < 1) throw new UsageError('--max is how many routes to read at most, at least 1.\n  → plumber census --url <address> --max 120');
+    const timeout = args.values.timeout === undefined ? 30000 : Number(args.values.timeout);
+    if (!Number.isInteger(timeout) || timeout < 1000) throw new UsageError('--timeout is milliseconds, at least 1000.\n  → plumber census --url <address> --timeout 30000');
+    const routes = [...(args.values.routes ?? []), ...args.positionals.slice(1)].flatMap(route => route.split(',')).filter(Boolean);
+    const { takeCensus } = await import('./census.js');
+    const census = await takeCensus({ url: args.values.url, root: options.root, routes, max, timeout });
+    // the ladder that census gives the project, as the overlay will be told it
+    const { createSession } = await import('./session/index.js');
+    const session = await createSession({ root: options.root, watch: false, ...(options.config ? { config: options.config } : {}) });
+    let proposal;
+    try { proposal = (await session.system({ scope: 'project' })).proposal; } finally { await session.close(); }
+    const ladder = proposal.roles.map(role => { const step = proposal.ladder.find(l => l.role === role.name); return { role: role.name, size: step?.sizeText ?? (step?.size ?? role.bundle.size) + 'px', places: role.members.length }; });
+    if (args.values.json) process.stdout.write(`${JSON.stringify({ schemaVersion: 1, tool, root: options.root, routes: census.routes, left: census.left, elements: census.entries.length, ladder, cost: proposal.cost }, null, 2)}\n`);
+    else process.stdout.write([`React Plumber census: ${census.routes.length} ${census.routes.length === 1 ? 'route' : 'routes'}, ${census.entries.length} text elements`,
+      ...census.routes.map(r => `  ${r.route}  ${r.elements}`), ...(census.left ? [`  … ${census.left} more ${census.left === 1 ? 'route' : 'routes'} found and not read (--max ${max})`] : []), '', `The project's text styles (${proposal.cost.sizesBefore} sizes now, ${proposal.cost.sizesAfter} after):`,
+      ...ladder.map(l => `  ${l.role.padEnd(16)} ${String(l.size).padStart(6)}  ${l.places} ${l.places === 1 ? 'place' : 'places'}`)].join('\n') + '\n');
     return;
   }
   if (command === 'install' && args.values.overlay) {
