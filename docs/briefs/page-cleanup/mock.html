@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clean up mock</title>
+<style>
+/* the fix panel's look as it ships (overlay/src/fixpanel.js), light */
+:root {
+  --ink: #1c1b19; --ink-2: #6b665c; --ink-3: #b3ad9f; --paper: #fff; --paper-2: #f4f3ef; --rule: #ecebe6;
+  --action: #1c1b19; --on-action: #fff; --sky: #2a7fd0; --mint: #1f9e64; --pink: #ff1f8f; --lilac: #7a5cf0; --butter: #c48a00;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --shadow: 0 0 0 1px rgb(28 27 25 / .06), 0 2px 4px rgb(28 27 25 / .04), 0 18px 40px -16px rgb(28 27 25 / .28);
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e9e7e2; font: 13px/1.4 var(--sans); color: var(--ink); }
+.frames { display: grid; gap: 28px; padding: 28px 16px 56px; max-width: 980px; margin: 0 auto; }
+.name { font: 600 11px/14px var(--sans); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); margin: 0 0 8px; }
+.note { font: 400 12px/17px var(--sans); color: var(--ink-2); margin: 8px 0 0; max-width: 72ch; }
+.stage { position: relative; min-height: 220px; border-radius: 10px; background: #f6f6f4; box-shadow: 0 0 0 1px #d9d6cf; padding: 24px 24px 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; overflow: hidden; }
+.page-hint { position: absolute; inset: 20px 24px auto; font: 500 22px/1.2 var(--sans); color: #c9c6be; }
+
+.fx { position: relative; z-index: 1; width: min(520px, 100%); background: var(--paper); border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+.fx .line { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; }
+.fx .line b { font-weight: 600; }
+.fx .line .dim { color: var(--ink-2); }
+.fx .grow { flex: 1; }
+.btn { all: unset; cursor: pointer; font: 600 13px/18px var(--sans); padding: 7px 12px; border-radius: 9px; color: var(--ink); white-space: nowrap; }
+.btn:hover { background: var(--paper-2); }
+.btn kbd { font: 500 10px/1 var(--mono); color: var(--ink-3); margin-left: 6px; }
+.btn.primary { background: var(--action); color: var(--on-action); }
+.btn.primary kbd { color: #9d9a92; }
+.btn.quiet { font-weight: 500; color: var(--ink-2); }
+
+/* the runner: the layers as a stepper along the top of the panel */
+.layers { display: flex; gap: 2px; padding: 10px 10px 0; }
+.layer { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--sans); color: var(--ink-3); }
+.layer i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; display: grid; place-items: center; font-style: normal; font-size: 9px; }
+.layer.now { color: var(--ink); background: var(--paper-2); }
+.layer.now i { box-shadow: inset 0 0 0 1.5px var(--ink); background: radial-gradient(circle, var(--ink) 0 3px, transparent 3.5px); }
+.layer.done { color: var(--mint); }
+.layer.done i { background: var(--mint); box-shadow: none; color: #fff; }
+.layer.skipped { color: var(--ink-3); text-decoration: line-through; }
+.layer .n { margin-left: auto; font-weight: 500; color: var(--ink-3); }
+
+.body { padding: 12px 16px 4px; }
+.head { display: flex; align-items: baseline; gap: 8px; }
+.head b { font-weight: 600; font-size: 14px; }
+.head span { color: var(--ink-2); }
+.law { color: var(--lilac); font-size: 12px; margin-top: 4px; }
+.why { color: var(--ink-2); font-size: 12px; margin-top: 2px; }
+.ladder { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 1px; }
+.ladder li { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; min-height: 34px; padding: 2px 8px 2px 4px; border-radius: 9px; }
+.ladder li.moves { background: rgb(255 31 143 / .05); }
+.ladder .ag { text-align: center; line-height: 1; }
+.ladder .nm { font-weight: 550; } .ladder .nm small { display: block; color: var(--ink-2); font-weight: 400; font-size: 12px; }
+.ladder .here { font-size: 12px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+.ladder .here b { color: var(--pink); font-weight: 600; }
+.cost { margin: 10px 0 0; color: var(--ink-2); }
+.measure { display: flex; gap: 18px; margin: 12px 0 2px; }
+.measure div { font-variant-numeric: tabular-nums; }
+.measure b { font-size: 18px; font-weight: 600; }
+.measure .arrow { color: var(--ink-3); margin: 0 4px; }
+.measure small { display: block; color: var(--ink-2); font-size: 11px; }
+.said { display: flex; align-items: center; gap: 8px; padding: 8px 10px 0 16px; color: var(--ink-2); font-size: 12px; }
+.said b { color: var(--mint); font-weight: 600; }
+.actions { display: flex; align-items: center; gap: 4px; padding: 10px 10px 10px; border-top: 1px solid var(--rule); margin-top: 12px; }
+.previewing { box-shadow: var(--shadow), 0 0 0 2px color-mix(in oklab, var(--sky) 55%, transparent); }
+.fx .line .msg { font-weight: 600; white-space: nowrap; }
+.fx.bar { width: min(600px, 100%); }
+.fx .line .hint { flex: none; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+.fx .line .hint kbd { font: 500 11px/1 var(--mono); padding: 2px 5px; border-radius: 5px; background: var(--paper-2); color: var(--ink); }
+.fx .line .btn { flex: none; }
+.live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 0 color-mix(in oklab, var(--sky) 40%, transparent); animation: live 1.6s ease-out infinite; }
+@keyframes live { 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .live { animation: none; } }
+@media (max-width: 520px) { .fx .line .hint { display: none; } }
+.tag { font: 600 10px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--sky); }
+.place { position: absolute; border-radius: 4px; box-shadow: 0 0 0 1.5px var(--pink); }
+</style>
+</head>
+<body>
+<div class="frames">
+
+  <section>
+    <p class="name">1 · In Blueprint: a new button next to Fix</p>
+    <div class="stage">
+      <div class="page-hint">Drafting standards.</div>
+      <div class="fx"><div class="line"><b>12 problems</b><span class="dim">· 9 fixes</span><span class="grow"></span><button class="btn quiet">Clean up this page<kbd>C</kbd></button><button class="btn primary">Fix<kbd>↵</kbd></button></div></div>
+    </div>
+    <p class="note">Fix works through problems one at a time. Clean up this page works through the whole page in four passes: text, spacing, colour, icons.</p>
+  </section>
+
+  <section>
+    <p class="name">2 · First pass, text: one set of text styles for the whole site</p>
+    <div class="stage" style="min-height: 560px">
+      <div class="page-hint">Drafting standards.</div>
+      <div class="fx">
+        <div class="layers"><span class="layer now"><i></i>Text<span class="n">10</span></span><span class="layer"><i></i>Spacing<span class="n">14</span></span><span class="layer"><i></i>Colour<span class="n">3</span></span><span class="layer"><i></i>Icons<span class="n">2</span></span></div>
+        <div class="body">
+          <div class="head"><b>Your site uses 34 text sizes. These 8 styles cover them.</b></div>
+          <div class="why">Worked out from all 54 pages, so every page ends up with the same styles.</div>
+          <div class="law">Why: text that does the same job should look the same everywhere (law of similarity).</div>
+          <ol class="ladder">
+            <li><span class="ag" style="font-size:26px">Ag</span><span class="nm">Display<small>2–3rem, fluid</small></span><span class="here">1 on this page</span></li>
+            <li class="moves"><span class="ag" style="font-size:21px">Ag</span><span class="nm">Headline<small>22px</small></span><span class="here">2 on this page · <b>24px → 22px</b></span></li>
+            <li><span class="ag" style="font-size:18px">Ag</span><span class="nm">Title<small>19px</small></span><span class="here">2 on this page</span></li>
+            <li class="moves"><span class="ag" style="font-size:16px">Ag</span><span class="nm">Title small<small>17px · weight 600</small></span><span class="here">1 on this page · <b>18px → 17px</b></span></li>
+            <li class="moves"><span class="ag" style="font-size:15px">Ag</span><span class="nm">Body<small>16px · 1.6 line height</small></span><span class="here">3 on this page · <b>15px → 16px</b></span></li>
+            <li class="moves"><span class="ag" style="font-size:13px">Ag</span><span class="nm">Body small<small>14px</small></span><span class="here">6 on this page · <b>13px → 14px</b></span></li>
+            <li><span class="ag" style="font-size:12px">AG</span><span class="nm">Label<small>12px</small></span><span class="here">15 on this page</span></li>
+            <li><span class="ag" style="font-size:11px">AG</span><span class="nm">Label small<small>11px</small></span><span class="here">9 on this page</span></li>
+          </ol>
+          <div class="measure"><div><b>11</b><span class="arrow">→</span><b>8</b><small>text sizes on this page</small></div><div><b>34</b><span class="arrow">→</span><b>8</b><small>text sizes on the site</small></div><div><b>10</b><small>bits of text change size</small></div></div>
+        </div>
+        <div class="actions"><button class="btn primary">Apply to this page<kbd>↵</kbd></button><button class="btn">Preview<kbd>P</kbd></button><span class="grow"></span><button class="btn quiet">Skip text<kbd>→</kbd></button></div>
+      </div>
+    </div>
+    <p class="note">Each row is one text style. "On this page" counts the text on this page that uses it; pink rows are the ones that change, with the size before and after. A pass that would add a new size is never offered.</p>
+  </section>
+
+  <section>
+    <p class="name">3 · Preview: the page shown with the changes, nothing saved yet</p>
+    <div class="stage" style="min-height: 200px">
+      <div class="page-hint" style="color:#8e8b84">Drafting standards.</div>
+      <span class="place" style="left:22px; top:16px; width:252px; height:34px"></span>
+      <div class="fx bar">
+        <div class="line"><span class="live" aria-hidden="true"></span><span class="msg">Previewing 10 changes</span><span class="hint">Hold <kbd>Space</kbd> to compare</span><span class="grow"></span><button class="btn quiet">Cancel<kbd>esc</kbd></button><button class="btn primary">Apply to this page<kbd>↵</kbd></button></div>
+      </div>
+    </div>
+    <p class="note">The panel shrinks to one line so you can see the page. Text that changes gets a pink outline. Hold Space to see the page as it was; Esc cancels and puts it back.</p>
+  </section>
+
+  <section>
+    <p class="name">4 · Applied: saved as one step you can undo, then the next pass</p>
+    <div class="stage" style="min-height: 300px">
+      <div class="page-hint">Drafting standards.</div>
+      <div class="fx">
+        <div class="layers"><span class="layer done"><i>✓</i>Text<span class="n">10</span></span><span class="layer now"><i></i>Spacing<span class="n">14</span></span><span class="layer"><i></i>Colour<span class="n">3</span></span><span class="layer"><i></i>Icons<span class="n">2</span></span></div>
+        <div class="said"><b>Text</b> 10 changes saved in 3 files<span class="grow"></span><button class="btn quiet" style="font-size:12px;padding:4px 8px">Undo</button></div>
+        <div class="body">
+          <div class="head"><b>14 gaps don't match your spacing scale.</b></div>
+          <div class="cost">Gaps inside each card become smaller than the gaps between cards, and padding snaps to the nearest step on your scale.</div>
+          <div class="law">Why: things that belong together should sit closer than things that don't (law of proximity).</div>
+        </div>
+        <div class="actions"><button class="btn primary">Apply to this page<kbd>↵</kbd></button><button class="btn">Preview<kbd>P</kbd></button><span class="grow"></span><button class="btn quiet">Skip spacing<kbd>→</kbd></button></div>
+      </div>
+    </div>
+    <p class="note">The text pass is saved as one step in History, so Undo takes back exactly that pass. The spacing pass looks at the page as it is now.</p>
+  </section>
+
+  <section>
+    <p class="name">5 · Done: what changed, measured</p>
+    <div class="stage" style="min-height: 220px">
+      <div class="page-hint">Drafting standards.</div>
+      <div class="fx">
+        <div class="layers"><span class="layer done"><i>✓</i>Text</span><span class="layer done"><i>✓</i>Spacing</span><span class="layer skipped"><i></i>Colour</span><span class="layer done"><i>✓</i>Icons</span></div>
+        <div class="body">
+          <div class="head"><b>This page is cleaned up.</b><span>26 changes saved in 3 steps</span></div>
+          <div class="measure"><div><b>11</b><span class="arrow">→</span><b>8</b><small>text sizes</small></div><div><b>9</b><span class="arrow">→</span><b>6</b><small>gap sizes</small></div><div><b>2</b><span class="arrow">→</span><b>1</b><small>icon styles</small></div></div>
+        </div>
+        <div class="actions"><button class="btn primary">Review in History<kbd>H</kbd></button><span class="grow"></span><button class="btn quiet">Done<kbd>esc</kbd></button></div>
+      </div>
+    </div>
+    <p class="note">The numbers count distinct sizes before and after, measured on the page. Review in History opens these three steps, where any change can be undone on its own.</p>
+  </section>
+</div>
+</body>
+</html>
