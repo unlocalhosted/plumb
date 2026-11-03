@@ -1,0 +1,157 @@
+/* The homepage's theme: Tailwind utilities named for the overlay's primitives (tokens.css, generated from
+ * overlay/src/tokens.css). The page uses only these; Tailwind's defaults are wiped.
+ *
+ * Everything marked NEW is not in the overlay: the overlay is an instrument at 11–14px, and a homepage needs
+ * page-scale type and space. These are proposals, under review with the owner (docs/homepage-skill/plumber/hero-brief.md).
+ */
+@import "tailwindcss";
+@import "./tokens.css";
+
+@custom-variant dark (&:where([data-scheme="dark"], [data-scheme="dark"] *));
+
+@theme inline {
+  --*: initial;
+  --spacing: 1px;
+
+  /* ── colour: the overlay's roles ── */
+  /* why: the ground everything sits on, warm off-white */
+  --color-paper: var(--pl-paper);
+  /* why: an inset strip, a hover, the page held under the instrument */
+  --color-paper-2: var(--pl-paper-2);
+  /* why: outlines, dividers, a card's edge */
+  --color-rule: var(--pl-rule);
+  /* why: titles and readings */
+  --color-ink: var(--pl-ink);
+  /* why: words that support: meta, labels, leads */
+  --color-ink-2: var(--pl-ink-2);
+  /* why: ticks and dividers only, never text */
+  --color-ink-3: var(--pl-ink-3);
+  /* why: selected, measured, focused: the instrument */
+  --color-sky: var(--pl-sky);
+  --color-sky-soft: var(--pl-sky-soft);
+  --color-sky-ink: var(--pl-sky-ink);
+  /* why: off the system */
+  --color-coral: var(--pl-coral);
+  --color-coral-soft: var(--pl-coral-soft);
+  --color-coral-ink: var(--pl-coral-ink);
+  /* why: on the system, written */
+  --color-mint: var(--pl-mint);
+  --color-mint-soft: var(--pl-mint-soft);
+  --color-mint-ink: var(--pl-mint-ink);
+  /* why: what you can do */
+  --color-pink: var(--pl-pink);
+  --color-pink-soft: var(--pl-pink-soft);
+  --color-pink-ink: var(--pl-pink-ink);
+  /* why: names: a component, an element */
+  --color-lilac-soft: var(--pl-lilac-soft);
+  --color-lilac-ink: var(--pl-lilac-ink);
+
+  /* ── type: the overlay's faces ── */
+  --font-sans: var(--pl-sans);
+  --font-mono: var(--pl-mono);
+  /* why: labels, tags, buttons (the overlay's label) */
+  --text-label: 11px;
+  --text-label--line-height: 14px;
+  /* why: meta, counts, code (the overlay's meta and code) */
+  --text-meta: 12px;
+  --text-meta--line-height: 17px;
+  /* why: body inside a card (the overlay's body) */
+  --text-card: 13px;
+  --text-card--line-height: 19px;
+  /* why: NEW · reading text on the page */
+  --text-body: 16px;
+  --text-body--line-height: 26px;
+  /* why: NEW · the product's name at the top of the page */
+  --text-heading: 20px;
+  --text-heading--line-height: 28px;
+  --text-heading--letter-spacing: -0.01em;
+  /* why: NEW · section titles */
+  --text-title: 36px;
+  --text-title--line-height: 40px;
+  --text-title--letter-spacing: -0.025em;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-strong: 600;
+
+  /* ── space: the overlay's ladder, then NEW page steps ── */
+  /* why: inside a pill */
+  --spacing-1: var(--pl-space-1);
+  /* why: a glyph and its words */
+  --spacing-2: var(--pl-space-2);
+  /* why: parts of a tag */
+  --spacing-3: var(--pl-space-3);
+  /* why: related parts */
+  --spacing-4: var(--pl-space-4);
+  /* why: a row's parts, a control's padding */
+  --spacing-5: var(--pl-space-5);
+  /* why: a card's inset and the gap between its sections */
+  --spacing-6: var(--pl-space-6);
+  /* why: between groups in a card */
+  --spacing-7: var(--pl-space-7);
+  /* why: between cards */
+  --spacing-8: var(--pl-space-8);
+  /* why: NEW · demo screens: a photo's height */
+  --spacing-media: 112px;
+  /* why: NEW · demo screens: a video's height */
+  --spacing-video: 136px;
+  /* why: NEW · demo screens: a person's avatar */
+  --spacing-avatar: 32px;
+  /* why: NEW · between blocks in a section */
+  --spacing-page-2: 48px;
+  /* why: NEW · the page's side margin on wide screens */
+  --spacing-page-3: 64px;
+  /* why: NEW · between sections */
+  --spacing-page-4: 96px;
+  /* why: NEW · the page's one column of words, as a document reads */
+  --container-column: 40rem;
+  /* why: NEW · demo screens: an app's sidebar */
+  --container-sidebar: 12rem;
+  /* why: NEW · demo screens: a side column */
+  --container-rail: 14rem;
+  /* why: NEW · demo screens: an attached photo */
+  --container-thumb: 10rem;
+  /* why: NEW · demo screens: a chat bubble's widest line */
+  --container-thread: 26rem;
+
+  /* ── breakpoints: NEW · phone ── */
+  --breakpoint-sm: 40rem;
+
+  /* ── layers: NEW ── */
+  /* why: the screen in the middle of the carousel sits over the ones beside it */
+  --z-raised: 1;
+  /* why: development-only controls stay over the page */
+  --z-chrome: 50;
+
+  /* ── corners and depth: the overlay's ── */
+  --radius-mark: var(--pl-radius-mark);
+  --radius-tag: var(--pl-radius-tag);
+  --radius-pill: var(--pl-radius-pill);
+  --radius-row: var(--pl-radius-row);
+  --radius-card: var(--pl-radius-card);
+  --radius-full: 9999px;
+  --shadow-card: var(--pl-shadow-card);
+  --shadow-tag: var(--pl-shadow-tag);
+
+  /* ── motion: the overlay's ── */
+  --ease-out: var(--pl-ease-out);
+  --ease-spring: var(--pl-spring);
+  --ease-pop: var(--pl-spring-pop);
+  --duration-feedback: var(--pl-dur-feedback);
+  --duration-card: var(--pl-dur-card);
+  --duration-travel: var(--pl-dur-travel);
+}
+
+@layer base {
+  html { background: var(--pl-paper); color: var(--pl-ink); font-family: var(--pl-sans); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; }
+  :focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  ::selection { background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
+}
+
+/* The overlay's marks, as on every surface of the product (overlay/src/language.js). */
+@utility hatch {
+  background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--hatch, var(--pl-sky)) 55%, transparent) 0 1px, transparent 1px 6px);
+}
+@keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
+@utility pop { animation: pl-pop 260ms var(--pl-spring-pop) both; }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } }

@@ -1,0 +1,9 @@
+{
+  "name": "plumber-homepage",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tokens": "node scripts/sync-tokens.mjs",
+    "dev": "node scripts/sync-tokens.mjs && vite"
+  }
+}

@@ -1,0 +1,170 @@
+/* Generated from overlay/src/tokens.css by scripts/sync-tokens.mjs. Do not edit: change the overlay's tokens. */
+
+/* React Plumber overlay primitives. The overlay is an instrument held over someone else's page: a neutral card,
+   one accent for actions and the instrument lines, and colour otherwise kept to verdicts. Every value the components
+   use comes from here (approved 2026-10-23, docs/briefs/readiness.md). Scoped to :root so nothing leaks either way. */
+
+:root {
+  /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
+     with the one accent. Every surface and every word comes from these. */
+  --pl-paper: #fdfcf8;          /* card ground: warm off-white */
+  --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
+  --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
+  --pl-ink: #1d1b17;            /* titles, readings */
+  --pl-ink-2: #6b665c;          /* body that supports, meta, labels */
+  --pl-ink-3: #b3ad9f;          /* ticks and dividers only, never text */
+
+  /* the language's hues (docs/briefs/visual-language.md): one meaning each. A line colour, a pastel fill, and the
+     deep ink that letters the fill */
+  --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measure, focus */
+  --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* off the system */
+  --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on the system, written */
+  --pl-butter: #c48a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* softer trouble */
+  --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
+  --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
+
+  /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
+  --pl-instrument: var(--pl-sky);    /* selection, measurement, focus; on any host it rides on a halo */
+  --pl-accent: var(--pl-instrument);
+  --pl-on-accent: #ffffff;           /* text on a filled accent */
+  --pl-action: var(--pl-pink);       /* what you can do: Write, Fix all */
+  --pl-action-soft: var(--pl-pink-soft);
+  --pl-on-action: var(--pl-pink-ink);
+  --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
+
+  /* verdicts: the only other colour, always paired with a mark shape or a word; each has a tinted ground so a
+     state reads at a glance */
+  --pl-on: var(--pl-mint);      /* uses a token */
+  --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
+  --pl-soft: var(--pl-butter);  /* Tailwind default, wrong tier, setup that limits a capability */
+  --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
+  --pl-on-bg: color-mix(in oklab, var(--pl-on) 12%, var(--pl-paper));
+  --pl-off-bg: color-mix(in oklab, var(--pl-off) 10%, var(--pl-paper));
+  --pl-soft-bg: color-mix(in oklab, var(--pl-soft) 12%, var(--pl-paper));
+
+  /* type: system faces only, the overlay never fetches a font. Five steps; mono only for code (classes, values,
+     diffs, commands, file:line), never for prose */
+  --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --pl-card-title: 600 14px/20px var(--pl-sans);        /* title: what is off, in words */
+  --pl-card-body: 400 13px/19px var(--pl-sans);         /* body: reasons and guidance */
+  --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, where */
+  --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, the change itself */
+  --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
+  --pl-tracking-label: 0.02em;
+  --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
+  /* older role names, each now one of the five */
+  --pl-text-title: 600 13px/18px var(--pl-sans);
+  --pl-text-row: 400 13px/18px var(--pl-sans);
+  --pl-text-reading: var(--pl-card-code);
+
+  /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */
+  --pl-space-1: 2px;
+  --pl-space-2: 4px;
+  --pl-space-3: 6px;
+  --pl-space-4: 8px;
+  --pl-space-5: 12px;
+  --pl-space-6: 16px;
+  --pl-space-7: 20px;
+  --pl-space-8: 24px;
+
+  /* instrument geometry */
+  --pl-line: 1px;               /* every instrument line, snapped to device pixels in code */
+  --pl-tick: 8px;               /* reticle corner arm */
+  --pl-drop: 16px;              /* plumb line from box edge to tag */
+  --pl-tag-h: 22px;
+  --pl-row-h: 40px;             /* two lines: property and amount, then the reading */
+  --pl-card-w: 360px;
+  --pl-card-pad: 16px;          /* card inset and the gap between its sections */
+  --pl-choice-h: 48px;          /* a choice row: specimen, token, reason */
+  --pl-card-gap: 12px;          /* card to element */
+
+  /* corners: the instrument is square, the card is a held object */
+  --pl-radius-mark: 2px;
+  --pl-radius-tag: 6px;
+  --pl-radius-pill: 7px;
+  --pl-radius-row: 8px;
+  --pl-radius-card: 12px;
+
+  /* depth: the card is the only lifted thing */
+  --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
+  --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(28 27 25 / 0.24);
+
+  /* motion: one authored moment, the reticle travelling and the plumb line dropping */
+  --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
+  --pl-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1); /* settles with under 2% overshoot */
+  --pl-spring-pop: linear(0, 0.25 7%, 0.68 17%, 0.96 28%, 1.04 40%, 1.03 52%, 1.005 68%, 1); /* things appearing: ~4% overshoot */
+  --pl-dur-travel: 220ms;       /* reticle moves to the next element */
+  --pl-dur-drop: 140ms;         /* plumb line extends to the tag */
+  --pl-dur-card: 180ms;         /* card pins */
+  --pl-dur-feedback: 120ms;     /* copy confirmation, row press */
+
+  /* blueprint: the page held under the instrument. One dim over any page, light or dark, which gives its colour up
+     so colour means drift; drifted elements are cut out of it (docs/briefs/blueprint-v2.md, layer 2) */
+  --pl-scrim: rgb(20 20 22 / 0.46);
+  --pl-dim-filter: grayscale(1);
+  --pl-dur-dim: 160ms;          /* the dim fades in; leaving is quicker */
+  --pl-dur-undim: 120ms;
+
+  /* stacking: above everything on any page */
+  --pl-z: 2147483647;
+
+  color-scheme: light;
+}
+
+/* Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
+   pastels; a pill is a deep, saturated version of its hue lettered in white (4.5:1 or more), never dark lettering on a
+   bright block. Butter can only carry white as an ochre. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme="light"]) {
+    --pl-paper: #1c1c1e;
+    --pl-paper-2: #26262a;
+    --pl-rule: #323236;
+    --pl-ink: #f4f3ef;
+    --pl-ink-2: #a8a6a0;
+    --pl-ink-3: #5f5d58;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-on-accent: #08263d;
+    --pl-halo: rgb(10 10 12 / 0.85);
+    --pl-unknown: #8f8d86;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+/* An explicit scheme wins over the OS, both ways. */
+:root[data-scheme="dark"] {
+    --pl-paper: #1c1c1e;
+    --pl-paper-2: #26262a;
+    --pl-rule: #323236;
+    --pl-ink: #f4f3ef;
+    --pl-ink-2: #a8a6a0;
+    --pl-ink-3: #5f5d58;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-on-accent: #08263d;
+    --pl-halo: rgb(10 10 12 / 0.85);
+    --pl-unknown: #8f8d86;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pl-dur-travel: 0ms;
+    --pl-dur-drop: 0ms;
+    --pl-dur-card: 0ms;
+    --pl-dur-feedback: 0ms;
+  }
+}
