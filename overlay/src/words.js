@@ -838,7 +838,8 @@ export const CLEANUP = {
     head: (before, after, n) => (after < before ? `This page uses ${before} different colours. After this, ${after}.`
       : `This page uses ${before} colours. ${n} ${n === 1 ? 'place uses a near-copy' : 'places use near-copies'} of yours.`),
     // keep: every new colour is one the app already has as a token
-    sub: () => 'Each one moves to the closest of your own colours, so nothing new is added.',
+    // role first (docs/research/colour-system.md §9.1): what the colour does decides which of yours it becomes
+    sub: () => 'Each one is read by the job it does (text, surface, line, accent) and moves to your colour for that job, so nothing new is added.',
     law: 'Why: things that do the same job should be the same colour (law of similarity).',
     list: 'Colours that change',
     row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
