@@ -33,19 +33,20 @@ export class StylePreview {
   #had = new Map(); // el → [[prop, value, priority]]
   get on() { return this.#had.size > 0; }
   show(proposal, glide) {
-    if (this.on) return;
-    for (const role of proposal.roles) {
-      const b = role.bundle;
-      for (const m of role.members ?? []) {
-        if (!m.stamp) continue;
-        const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : b.lineHeight;
-        const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
-        for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)) {
-          if (this.#had.has(el)) continue;
-          this.#had.set(el, Object.keys(sets).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]));
-          const set = () => { for (const [p, v] of Object.entries(sets)) el.style.setProperty(p, v, 'important'); };
-          if (inView(el)) glide(el, set); else set();
-        }
+    for (const role of proposal.roles) this.setRole(role, glide);
+  }
+  // one style's places take it (the show sets the roles one at a time); `move(el, set)` animates it, or null for at once
+  setRole(role, move) {
+    const b = role.bundle;
+    for (const m of role.members ?? []) {
+      if (!m.stamp) continue;
+      const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : b.lineHeight;
+      const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
+      for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)) {
+        if (this.#had.has(el)) continue;
+        this.#had.set(el, Object.keys(sets).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]));
+        const set = () => { for (const [p, v] of Object.entries(sets)) el.style.setProperty(p, v, 'important'); };
+        if (move && inView(el)) move(el, set); else set();
       }
     }
   }

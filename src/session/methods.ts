@@ -57,6 +57,7 @@ export const methods = [
   { http: 'props', engine: 'props' },
   { http: 'history', engine: 'history' },
   { http: 'trace', engine: 'trace' },
+  { http: 'rhythm', engine: 'rhythm' },
   { http: 'try', engine: 'try', post: true },
   { http: 'refresh', engine: 'refresh', patient: true },
   { engine: 'traced', patient: true },

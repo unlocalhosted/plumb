@@ -1697,6 +1697,13 @@ export class Session extends EventEmitter {
     // the answer names the step its changes went into, so the caller can take back exactly that step (the write toast's Undo)
     try { const result = await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result; } finally { this.tag = previous; }
   }
+  /** The site's spacing as the census read it: every row-level distance between a stack's children, on every route
+   * (the page works out its rhythm with overlay/src/stacks.js rhythmOf, the same reader that measured them). */
+  async rhythm(): Promise<{ distances: number[]; gaps: { d: number; em: number | null }[]; routes: number }> {
+    const kept = await projectCensus(this.root);
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+    return { distances: kept.gaps.map(gap => gap.d), gaps: kept.gaps.map(gap => ({ d: gap.d, em: gap.em ?? null })), routes: kept.census.routes.length };
+  }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
   async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
     if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');

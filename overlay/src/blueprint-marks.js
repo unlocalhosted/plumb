@@ -299,7 +299,7 @@ function heatMarkup(zone, level) {
 }
 
 export class MarkLayer {
-  #heat; #hand = null; #cause = null; #arrive = 0; #pulsed = new Set();
+  #heat; #hand = null; #cause = null;
   #dim; #dimPath = ''; #svg; #anchor; #outlines; #outlineMarkup = ''; #labels; #labelMarkup = ''; #hint; #hinted = null; #light; #lit = []; #lead = null; #lightMarkup = ''; #nodes = new Map(); #items = []; #pointed = null; #focused = null; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
   // onPick(element, mark, id) opens the chooser; occluders() → rects that marks must not sit under;
@@ -380,11 +380,9 @@ export class MarkLayer {
   }
 
   // The dim goes on (shown, then faded in with on) and off with the mode.
-  // registration: the page is never dimmed; turning on starts the arrival (each zone pulses in, worst first)
-  dim(state) {
+  // registration: the page is never dimmed, and at rest nothing is drawn on it
+  dim() {
     this.#dim.hidden = true;
-    if (state === 'on' || state === 'entering') { if (!this.#arrive) (this.#arrive = performance.now()), (this.#pulsed = new Set()); }
-    else this.#arrive = 0;
   }
 
   #open(id, e) {
@@ -596,7 +594,6 @@ export class MarkLayer {
     // Tab walks the hottest first: hit boxes go in by heat, the drawn order (the panel's) stays the page's
     const byHeat = [...plan].filter((p) => p.zone).sort((a, b) => b.heat - a.heat);
     const rank = new Map(byHeat.map((p, i) => [p.id, i]));
-    const now = performance.now(), arriving = this.#arrive && now - this.#arrive < 2600;
     let after = null;
     const order = [];
     for (const { id, item, mark, zone, er, heat } of plan) {
@@ -627,7 +624,8 @@ export class MarkLayer {
       // how warm it rests, brighter when its cause is pointed, quiet when another cause is
       // the place the fix in hand is on: the strongest of all
       const stage = id === this.#lead && lit.size ? 'lead' : this.#hinted === id ? 'pointed' : lighting ? (isLit(id, mark) ? 'lit' : 'quiet') : 'resting';
-      const rest = heat * HEAT.rest, o = stage === 'lead' ? 1 : stage === 'quiet' ? rest * HEAT.quiet : stage === 'resting' ? rest : Math.min(1, rest + HEAT.lit);
+      // at rest the page is clean (owner, 2026-11-03: the heat map read as noise): a zone shows only for the fix in hand or the pointer
+      const rest = heat * HEAT.rest, o = stage === 'lead' ? 1 : stage === 'quiet' || stage === 'resting' ? 0 : Math.min(1, rest + HEAT.lit);
       if (node.g.dataset.stage !== stage || node.g.style.opacity !== String(o)) { node.g.dataset.stage = stage; node.g.style.opacity = String(o); }
       if (node.g.parentNode !== this.#heat) this.#heat.appendChild(node.g);
       // the pointed zone breathes; on arrival every zone pulses twice, worst first
@@ -638,10 +636,6 @@ export class MarkLayer {
         // reached: the place in hand pulses twice, so the eye finds it among its cause's other places
         if (stage === 'lead' && node.led !== this.#lead) { node.led = this.#lead; node.g.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: HEAT.pulse, iterations: 2, easing: 'ease-in-out' }); }
         if (stage !== 'lead') node.led = null;
-        if (arriving && !this.#pulsed.has(id)) {
-          this.#pulsed.add(id);
-          node.g.animate([{ opacity: 0 }, { opacity: Math.min(1, o + 0.4) }, { opacity: o }], { duration: HEAT.pulse, delay: rank.get(id) * HEAT.stagger, iterations: HEAT.arrival, easing: 'ease-in-out', fill: 'backwards' });
-        }
       }
       // what a screen reader hears: the class, as the panel names its fix, then the panel's line and what is picked
       const said = `${mark.text && mark.family !== 'craft' ? `${mark.text}. ` : ''}${FIX.line(mark)}`.replace(/`/g, '').replace(/\.?$/, '.');

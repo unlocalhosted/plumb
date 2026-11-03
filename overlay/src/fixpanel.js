@@ -294,7 +294,8 @@ export class FixPanel {
     });
     // the clean-up: while it runs, the panel's body, clicks and keys are its own (cleanup.js)
     this.#cleanup = new Cleanup({
-      render: () => { this.#html = ''; this.render(); },
+      // while it runs, the problems' heat steps back (nothing lit): the page shows the clean-up's marks, not the fixes'
+      render: () => { const on = this.#cleanup.running; if (on !== this.#quiet) { this.#quiet = on; this.#host.spotlight(on ? ['cleanup'] : []); } this.#html = ''; this.render(); },
       announce: (t) => this.#host.announce?.(t),
       wrote: (r, text) => { this.#last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; },
       // the one write of text styles (blueprint.js): remembered across the reload it may cause, its files read again
@@ -332,7 +333,7 @@ export class FixPanel {
     });
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor; #card; #cleanup;
+  #editor; #card; #cleanup; #quiet = false;
   // Alt+click on words opens their editor; a cause in hand is put down first
   edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
   // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open

@@ -62,7 +62,8 @@ test('held Space shows the page as it was, and letting go brings the preview bac
   const before = await s.h1();
   await s.page.keyboard.press('p');
   await s.until(/Hold Space to compare/);
-  // the preview glides in: read it once it has settled
+  // the preview plays role by role (each role's marks sweep in before its text moves): read it once every role is set
+  await s.page.waitForFunction(() => { const chips = [...(document.querySelector('plumb-overlay')?.shadowRoot.querySelectorAll('.sh-chip') ?? [])]; return chips.length && chips.every((c) => c.hasAttribute('data-done')); }, null, { timeout: 30000 });
   let previewed = await s.h1();
   for (let last = ''; last !== previewed; ) { last = previewed; await s.page.waitForTimeout(300); previewed = await s.h1(); }
   assert.notEqual(previewed, before, 'the preview draws the page in its styles');

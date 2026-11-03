@@ -95,3 +95,33 @@ export async function post(method, body) {
   if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
   return result;
 }
+
+// A write always ends in an answer on screen. A write can take seconds, so there is no deadline; but while it is out,
+// the session is watched: when the dev server restarts (a config change does that) the server that took the write is
+// gone and will never answer. Then the change log says what happened: the write's group recorded → it landed;
+// nothing recorded → it did not, and the caller says so. Resolves to the write's own answer, or { landed, lost: true }.
+export async function answered(write, group, { every = 2000 } = {}) {
+  const pidNow = async () => { try { return (await request('health', {}))?.pid ?? null; } catch { return null; } };
+  const start = await pidNow();
+  let stop = false;
+  const watch = (async () => {
+    let misses = 0;
+    while (!stop) {
+      await new Promise((r) => setTimeout(r, every));
+      if (stop) return null;
+      const pid = await pidNow();
+      misses = pid == null ? misses + 1 : 0;
+      if ((pid != null && start != null && pid !== start) || misses >= 3) {
+        // the session that took the write is gone: ask the one there now what it recorded
+        for (let i = 0; i < 10 && !stop; i++) {
+          try { const t = await request('trace', {}); if (t) return { lost: true, landed: (t.changes ?? []).some((c) => c.group === group && c.state !== 'undone') }; } catch {}
+          await new Promise((r) => setTimeout(r, every));
+        }
+        return { lost: true, landed: false };
+      }
+    }
+    return null;
+  })();
+  try { return await Promise.race([write, watch.then((r) => r ?? new Promise(() => {}))]); }
+  finally { stop = true; }
+}

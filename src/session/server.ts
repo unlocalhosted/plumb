@@ -195,6 +195,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'undo') return session.undo(text(params, 'id')!);
   if (method === 'history') return session.history();
   if (method === 'trace') return session.trace(text(params, 'group', true));
+  if (method === 'rhythm') return session.rhythm();
   if (method === 'undo-change') return session.undoChange(text(params, 'id')!);
   if (method === 'undo-group') return session.undoGroup(text(params, 'group')!);
   if (method === 'undo-changes') {

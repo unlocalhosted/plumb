@@ -61,7 +61,14 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
     if (!hotServer || !current.files.size) return;
     for (const file of current.files) released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 });
     if (current.full || !current.modules.size) hotServer.ws.send({ type: 'full-reload', path: '*' });
-    else for (const module of current.modules.values()) void hotServer.reloadModule(module);
+    else for (const module of current.modules.values()) {
+      // hotUpdate (Vite 6+) holds an environment's module: it reloads through that environment (server.reloadModule
+      // takes only the old mixed module and throws on it). Anything that still fails reloads the page instead
+      const environment = (module as { environment?: string }).environment, server = hotServer;
+      const own = environment ? (server as unknown as { environments?: Record<string, { reloadModule(m: unknown): Promise<void> }> }).environments?.[environment] : undefined;
+      const reload = async () => { if (environment && !own) throw new Error('no such environment'); await (own ? own.reloadModule(module) : server.reloadModule(module)); };
+      void reload().catch(() => server.ws.send({ type: 'full-reload', path: '*' }));
+    }
   };
   const echo = async (file: string): Promise<boolean> => {
     const entry = released.get(file);
