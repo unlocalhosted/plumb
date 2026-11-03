@@ -6,6 +6,7 @@
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
   --pl-paper: #fdfcf8;          /* card background: off-white */
+  --pl-desk: #ecebe7;           /* what a page of cards sits on, a step darker than a card */
   --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
   --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
   --pl-ink: #1d1b17;            /* titles and values */
@@ -137,6 +138,7 @@
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
     --pl-paper: #1c1c1e;
+    --pl-desk: #0f0f11;
     --pl-paper-2: #26262a;
     --pl-rule: #323236;
     --pl-ink: #f4f3ef;
@@ -162,6 +164,7 @@
 /* An explicit scheme wins over the OS, both ways. */
 :host([data-scheme="dark"]) {
     --pl-paper: #1c1c1e;
+    --pl-desk: #0f0f11;
     --pl-paper-2: #26262a;
     --pl-rule: #323236;
     --pl-ink: #f4f3ef;
