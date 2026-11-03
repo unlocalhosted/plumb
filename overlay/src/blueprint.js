@@ -52,8 +52,8 @@ const answeredNo = (error) => Number.isInteger(error?.status);
 // One person's action, one step of the timeline (docs/qa/timeline-crafting-ui.md, issue 3): every request a write makes
 // carries the same group, with the step's name and the laws it serves, so History names the step and its Undo takes back
 // exactly what the action wrote (POST undo-group)
-const traceOf = ({ step = FIX.card.steps.edit, laws = [] } = {}) => ({
-  group: `${String(step).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'edit'}.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+const traceOf = ({ step = FIX.card.steps.edit, laws = [], group = null } = {}) => ({
+  group: group ?? `${String(step).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'edit'}.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
   meta: { step, laws: [...new Map((laws ?? []).filter((l) => l?.id || typeof l === 'string').map((l) => (typeof l === 'string' ? [l, { id: l, name: l }] : [l.id, { id: l.id, name: l.name }]))).values()] },
 });
 
@@ -102,8 +102,7 @@ export class Blueprint {
       undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
-      system: () => this.#system(),
-      applyStyles: (write, said) => this.#applyStyles(write, said),
+      applyStyles: (write, said, meta) => this.#applyStyles(write, said, meta),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
@@ -307,20 +306,10 @@ export class Blueprint {
     }
     if (p.read === p.total) this.#lastDrift = p.drift;
   }
-  // The text styles the page's code is reaching for (POST system): the census is every stamped element with its own
-  // text, its type as drawn, and whether it sits in a list (a list's body text takes the compact leading)
-  async #system() {
-    const census = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
-      const cs = getComputedStyle(el);
-      return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
-    });
-    if (!census.length) return null;
-    return (await post('system', { census }))?.proposal ?? null;
-  }
   // The text styles written (POST apply-all with the proposal's own write: the theme's tokens, one class per style,
   // every place swapped, each file guarded by its hash). A theme write may reload the page: it comes back saying so.
-  async #applyStyles(write, said) {
-    const trace = traceOf({ step: FIX.card.steps.styles });
+  async #applyStyles(write, said, meta = { step: FIX.card.steps.styles }) {
+    const trace = traceOf(meta);
     this.#host.remember?.(said, undefined, null, trace.group);
     const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? [], null, trace.group);
     addEventListener('plumb:applied', heard, { once: true });

@@ -130,7 +130,8 @@ export class Glass {
 
   #keyUp = (e) => {
     if (this.#editing) return;
-    if (e.code === 'Space') { e.preventDefault(); e.stopImmediatePropagation(); this.#pass(false); }
+    // only the release of a pass the glass began: a Space whose press was someone else's (the clean-up's compare) is theirs to release
+    if (e.code === 'Space' && this.#passing) { e.preventDefault(); e.stopImmediatePropagation(); this.#pass(false); }
   };
 
   // Hand the wheel to whatever would have scrolled without the glass: the nearest scrollable element under the

@@ -2,6 +2,10 @@
 
 Status: design, 2026-10-31. The engine behind it is `system/type` (docs/research/type-roles.md). This doc is the view.
 
+> **Retired 2026-11-03.** The page-scoped offer below ("Your text uses N sizes · Review") is gone from the fix panel.
+> Its job is the text pass of "Clean up this page" (docs/briefs/page-cleanup.md, overlay/src/cleanup.js): one ladder
+> for the whole project from `plumber census`, so every page gets the same styles. The engine and the write are the same.
+
 ## The problem it answers
 
 Fixing value by value never makes a system. crafting-ui has 61 text sizes in 550 places, and the fix panel offered
