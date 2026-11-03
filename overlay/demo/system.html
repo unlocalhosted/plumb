@@ -40,8 +40,8 @@
   ];
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
-    { label: 'Foundations', items: [['colour', 'Colour'], [null, 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
-    { label: 'Components', items: [['pill', 'Pill'], [null, 'Tag'], [null, 'Action'], [null, 'Stepper'], [null, 'Swatches'], [null, 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
+    { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
+    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], [null, 'Stepper'], [null, 'Swatches'], [null, 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
     { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
@@ -55,6 +55,15 @@
     : `<div class="tile soon"><span class="art">${art}</span><b>${title}<span class="pl-pill coming-pill">Coming</span></b><span>${text}</span></div>`;
   const pills = (txt) => HUES.map(([h]) => `<span class="pl-pill" data-hue="${h}">${txt(h)}</span>`).join('');
 
+  const status = (rows) => `<div class="status">${rows.map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`;
+  const ICON_MODELS = '<svg viewBox="0 0 12 12"><rect x="1.5" y="2" width="9" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="7" width="5" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+  const contrastRows = (hues) => `<table class="tok"><thead><tr><th>Colour</th><th>Day</th><th>Night</th></tr></thead><tbody>${hues.map((h) => `<tr><td><span class="pl-pill" data-hue="${h}">${h}</span></td><td>${badge(tok.day(`--pl-${h}-ink`), tok.day(`--pl-${h}-soft`), 4.5)}</td><td>${badge(tok.night(`--pl-${h}-ink`), tok.night(`--pl-${h}-soft`), 4.5)}</td></tr>`).join('')}</tbody></table>`;
+  const TYPE = {
+    page: [['display', '--pl-page-display', '576 places type a size by hand.', '40 / 46', '600', 'The one sentence a page leads with'], ['title', '--pl-page-title', 'Where your text sizes land', '20 / 28', '600', 'A card or a section'], ['body', '--pl-page-body', 'Your theme has 10 text sizes; your code uses 49.', '16 / 26', '400', 'What you read: the lede, explanations'], ['small', '--pl-page-small', 'places use your scale', '14 / 22', '400', 'Supporting lines, a readout'], ['meta', '--pl-page-meta', 'On your scale · sm · 2xs', '13 / 20', '400', 'Names on a drawing, a legend, captions'], ['figure', '--pl-page-figure', '621', '32 / 36', '600', 'A number that matters, tabular']],
+    card: [['title', '--pl-card-title', 'Padding is off your scale', '14 / 20', '600', 'What is off, in words'], ['body', '--pl-card-body', 'Your scale has 8 and 12; this is 10.', '13 / 19', '400', 'Reasons and guidance'], ['meta', '--pl-card-meta', '3 places · Board.jsx', '12 / 17', '400', 'Counts, notes, where'], ['code', '--pl-card-code', 'p-[10px] → p-3', '12 / 17', '500 mono', 'Classes, values, file:line, the change'], ['label', '--pl-text-label', 'WRITE · FIX ALL', '11 / 14', '600', 'Tags, buttons, column labels']],
+  };
+  const typeTable = (rows) => `<div class="ramp">${rows.map(([n, t, sample, size, weight, use]) => `<div class="tr"><div class="meta"><b>${n}</b><code>${t}</code><span>${size} · ${weight}</span></div><div class="sample" style="font:var(${t});${t === '--pl-page-display' ? 'letter-spacing:var(--pl-tracking-display);' : t === '--pl-page-title' ? 'letter-spacing:var(--pl-tracking-title);' : t === '--pl-page-figure' ? 'font-variant-numeric:tabular-nums;letter-spacing:var(--pl-tracking-display);' : ''}">${sample}</div><div class="use">${use}</div></div>`).join('')}</div>`;
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
@@ -63,6 +72,7 @@
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
           <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action documented.</b> And a fix: a tag asked for sky now draws in sky.</span></li>
           <li><span class="when">Nov 3</span><span><b>Night pills in white.</b> Every pill is a deep version of its colour with white lettering; lines and marks keep the bright pastels.</span></li>
           <li><span class="when">Nov 3</span><span><b>Page type.</b> Five steps for anything bigger than a card: display, title, body, small, meta.</span></li>
           <li><span class="when">Nov 3</span><span><b>Scale marks.</b> Step, place and count: a scale and the places that use it.</span></li>
@@ -106,7 +116,7 @@
         overview: [
           sec('status', 'Status', `<div class="status">${[['Designed', 'In the visual language, day and night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-pill</code>'], ['Used', 'Box model values, the show’s chips, scale steps, legends']].map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`),
           sec('intro', 'Introduction', `<p>A pill holds one short value: a measurement, a count, a token, a class. Its colour says what the value means, its lettering is the value itself, set in mono with tabular figures so numbers line up.</p><div class="stage">${pills((h) => ({ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]))}</div>`),
-          sec('related', 'Related components', `<div class="tiles">${card(null, 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card(null, 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card(null, 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#tag/overview', 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card(null, 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card(null, 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
         ],
         style: [
           sec('anatomy', 'Anatomy', `<div class="stage anat"><div class="spec-pill"><span class="pl-pill xl" data-hue="mint">s3 · 12</span><span class="mk m1">1</span><span class="mk m2">2</span><span class="mk m3">3</span></div><ol><li><span class="mk">1</span><span><b>Fill</b> the colour’s soft tone, <code>--pill-soft</code></span></li><li><span class="mk">2</span><span><b>Lettering</b> the colour’s ink, mono 600 11px, tabular figures, <code>--pill-ink</code></span></li><li><span class="mk">3</span><span><b>Shape</b> 20px tall, 7px sides, 7px corners, <code>--pl-radius-pill</code></span></li></ol></div><p>Drawn here at 2.4× its size. At 1×: <span class="pl-pill" data-hue="mint">s3 · 12</span></p>`),
@@ -130,6 +140,84 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
         ],
       };
       return { title: 'Pill', lede: 'One short value, coloured by what it means.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    type: () => ({
+      title: 'Typography',
+      lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
+      sections: [
+        sec('page', 'Page scale', `<p>Five steps and a figure, each a clear jump from the next, so the eye always knows what to read first. Set in the sans; numbers use tabular figures so they line up.</p>${typeTable(TYPE.page)}`),
+        sec('card', 'Card scale', `<p>For the overlay’s cards, panels and readouts: small, because they sit over someone else’s page and must not compete with it.</p>${typeTable(TYPE.card)}`),
+        sec('faces', 'Faces', `<div class="faces"><div><span class="big" style="font-family:var(--pl-sans)">Aa</span><b>Sans</b><code>--pl-sans</code><p>Everything you read. The system’s UI face: San Francisco on a Mac, Segoe on Windows.</p></div><div><span class="big" style="font-family:var(--pl-mono)">Aa</span><b>Mono</b><code>--pl-mono</code><p>Only for real code: a class, a value, a file and line, the change itself.</p></div></div>`),
+        sec('numbers', 'Numbers', `<p>Numbers that change, or sit in a column, use tabular figures, so every digit is the same width and nothing jumps.</p><div class="stage nums"><div><span class="lbl">Tabular</span><span style="font:var(--pl-page-figure);font-variant-numeric:tabular-nums">111 · 888</span></div><div><span class="lbl">Proportional</span><span style="font:var(--pl-page-figure);font-variant-numeric:proportional-nums">111 · 888</span></div></div>`),
+        sec('rules', 'Do and don’t', `<div class="dd">
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex col"><span style="font:var(--pl-page-title)">Where your text sizes land</span><span style="font:var(--pl-page-small);color:var(--pl-ink-2)">Each dot is a place that types a size by hand.</span></div><p>Step down one clear jump at a time: title, then a smaller line.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex col"><span style="font:600 20px/28px var(--pl-mono)">Where your text sizes land</span></div><p>Set sentences in mono. Mono is for code.</p></div>
+          <div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><code>p-[10px] → p-3</code></div><p>Use mono for the class itself, so it reads as code you can find.</p></div>
+          <div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex col"><span style="font:700 40px/1 var(--pl-sans)">576</span><span style="font:400 11px var(--pl-sans);color:var(--pl-ink-3)">places</span></div><p>Jump from a display size straight to tiny text: nothing in between reads as broken.</p></div></div>`),
+        sec('tokens', 'Tokens', `<table class="tok"><thead><tr><th>Token</th><th>Size / line</th><th>Weight</th><th>Use</th></tr></thead><tbody>${[...TYPE.page, ...TYPE.card].map(([, t, , size, weight, use]) => `<tr><td><code>${t}</code></td><td>${size}</td><td>${weight}</td><td>${use}</td></tr>`).join('')}<tr><td><code>--pl-tracking-display</code></td><td colspan="2">−0.025em</td><td>Display and figures</td></tr><tr><td><code>--pl-tracking-title</code></td><td colspan="2">−0.01em</td><td>Titles</td></tr></tbody></table>`),
+      ],
+    }),
+
+    tag: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Lilac by default; sky for a measurement'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-tag</code>'], ['Used', 'Element and component names on the box model, step names, the project name']])),
+          sec('intro', 'Introduction', `<p>A tag names something: a component, an element, a step of a scale. Names are lilac, so the eye learns that lilac means “this is called…”. A tag can lead with a small icon that says what kind of thing it is.</p><div class="stage"><span class="pl-tag">${ICON_MODELS}Models</span><span class="pl-tag">ModelRow</span><span class="pl-tag">Board › Card</span><span class="pl-tag" data-hue="sky">W Fill 500px</span></div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#pill/overview', 'Pill', 'A value, not a name: mono, coloured by meaning.', '<span class="pl-pill" data-hue="mint">s3</span>')}${card(null, 'Step', 'A step of a scale, named by a tag.', '<span class="pl-tag">sm</span>')}</div>`),
+        ],
+        style: [
+          sec('anatomy', 'Anatomy', `<div class="stage anat"><div class="spec-pill"><span class="pl-tag xl">${ICON_MODELS}Models</span><span class="mk m1">1</span><span class="mk m2">2</span><span class="mk m3">3</span></div><ol><li><span class="mk">1</span><span><b>Icon</b> optional, 12px, in the lettering’s colour</span></li><li><span class="mk">2</span><span><b>Name</b> sans 600 12px, the colour’s ink</span></li><li><span class="mk">3</span><span><b>Shape</b> 22px tall, 6px corners, <code>--pl-radius-tag</code></span></li></ol></div><p>Drawn here at 2.4× its size. At 1×: <span class="pl-tag">${ICON_MODELS}Models</span></p>`),
+          sec('variants', 'Colours', `<div class="stage col"><div class="v"><span class="pl-tag">ModelRow</span><span>A name: the default</span><code>(no data-hue)</code></div><div class="v"><span class="pl-tag" data-hue="sky">W Fill 500px</span><span>A measurement on what you picked</span><code>data-hue="sky"</code></div></div>`),
+          sec('vs', 'Tag or pill', `<div class="stage col"><div class="v"><span class="pl-tag">sm</span><span>Tag: a <b>name</b>, in the sans</span><code>.pl-tag</code></div><div class="v"><span class="pl-pill">14</span><span>Pill: a <b>value</b>, in mono</span><code>.pl-pill</code></div></div>`),
+        ],
+        usage: [
+          sec('when', 'When to use it', `<ul class="plain"><li>To name what you’re looking at: the component, the element, the step.</li><li>Once per thing, at its top-left, above it.</li></ul>`),
+          sec('not', 'When not to', `<ul class="plain"><li>For a value or a count: use a <b>pill</b>.</li><li>For a verdict: names are lilac whatever their state.</li><li>Inside a page’s drawing at rest, use the quiet tag (the name as words) so the drawing stays calm.</li></ul>`),
+          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="pl-tag">Board › Card</span></div><p>Show where it sits, parent first.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="pl-tag" data-hue="coral">ModelRow</span></div><p>Colour a name by its verdict. The name stays lilac; the marks say what’s off.</p></div></div>`),
+        ],
+        code: [
+          sec('use', 'Use', `<pre><code>&lt;span class="pl-tag"&gt;ModelRow&lt;/span&gt;
+&lt;span class="pl-tag"&gt;&lt;svg viewBox="0 0 12 12"&gt;…&lt;/svg&gt;Models&lt;/span&gt;
+&lt;span class="pl-tag" data-hue="sky"&gt;W Fill 500px&lt;/span&gt;</code></pre><p>The styles come with <code>LANGUAGE_CSS</code>. On a page’s drawing, wrap steps in <code>.sc-quiet</code> and the tag becomes words on a plate.</p>`),
+        ],
+        accessibility: [
+          sec('contrast', 'Contrast', `<p>A tag letters its name in the colour’s ink on its fill: 4.5:1 or more in both schemes.</p>${contrastRows(['lilac', 'sky'])}`),
+          sec('icons', 'Icons', `<p>The icon repeats what the name says, so it’s hidden from screen readers; the name is read once.</p>`),
+        ],
+      };
+      return { title: 'Tag', lede: 'A name for what you’re looking at.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    action: (tab = 'overview') => {
+      const btn = (cls = '', label = 'Snap to your scale', extra = '') => `<button type="button" class="pl-act ${cls}" ${extra}>${label}</button>`;
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Pink; white lettering at night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-act</code>'], ['Used', 'Snap to your scale, Write, Play the chips']])),
+          sec('intro', 'Introduction', `<p>The action is the one thing you can do here. It’s pink, the colour that means “you can do this”, and it’s the only pink thing on a surface. A quiet action sits on the paper for anything secondary.</p><div class="stage">${btn()}${btn('quiet', 'Let go')}</div>`),
+        ],
+        style: [
+          sec('states', 'States', `<p>Point at them and press them: these are live.</p><div class="stage states">${[['Rest', ''], ['Hover', 'is-hover'], ['Pressed', 'is-press'], ['Focus', 'is-focus'], ['On', '', 'aria-pressed="true"'], ['Disabled', '', 'disabled']].map(([n, c, a = '']) => `<div class="st">${btn(c, n === 'On' ? 'Let go' : 'Snap to your scale', a)}<small>${n}</small></div>`).join('')}</div>`),
+          sec('quiet', 'Quiet', `<div class="stage">${btn('quiet', 'Play the chips')}${btn('quiet', 'Day')}</div><p>For a secondary action or a switch: the paper, with ink lettering.</p>`),
+          sec('size', 'Size', `<p>34px tall, 14px sides, 7px corners, sans 600 13px. On a page’s footer it grows to 40px and 14px lettering.</p>`),
+        ],
+        usage: [
+          sec('one', 'One per surface', `<p>A card or a page has one action. If two things compete, one of them is quiet.</p>`),
+          sec('words', 'Words', `<ul class="plain"><li>Start with the verb: <b>Snap to your scale</b>, <b>Write 2</b>, <b>Fix all</b>.</li><li>Say what happens, not “OK” or “Go”.</li><li>A toggle says what the next press does: <b>Snap to your scale</b> → <b>Let go</b>.</li></ul>`),
+          sec('dd', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex">${btn('', 'Write 2')}${btn('quiet', 'Cancel')}</div><p>One pink action, the rest quiet.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex">${btn('', 'Write 2')}${btn('', 'Cancel')}</div><p>Two pink buttons side by side: neither is the action any more.</p></div></div>`),
+        ],
+        code: [
+          sec('use', 'Use', `<pre><code>&lt;button type="button" class="pl-act"&gt;Snap to your scale&lt;/button&gt;
+&lt;button type="button" class="pl-act quiet"&gt;Cancel&lt;/button&gt;
+&lt;button type="button" class="pl-act" aria-pressed="true"&gt;Let go&lt;/button&gt;</code></pre><p>A toggle sets <code>aria-pressed</code>; pressed, it settles to the paper so the next press reads as undo.</p>`),
+        ],
+        accessibility: [
+          sec('contrast', 'Contrast', `<p>The lettering on the pink clears 4.5:1 in both schemes:</p>${contrastRows(['pink'])}`),
+          sec('focus', 'Focus', `<p>Tab to it and a 2px sky ring shows, offset 2px, in both schemes. Enter and Space press it.</p><div class="stage">${btn('is-focus')}</div>`),
+          sec('touch', 'Touch', `<p>It’s 34px tall. On touch screens the target should be 44px: give it room around it, or use the 40px page size. <span class="pl-pill" data-hue="butter">Known gap</span></p>`),
+        ],
+      };
+      return { title: 'Action', lede: 'The one thing you can do here.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
   };
 
@@ -222,12 +310,25 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
     .spec-pill .m1 { left: 6px; top: 6px; } .spec-pill .m2 { left: 50%; bottom: 0; translate: -50% 0; } .spec-pill .m3 { right: 8px; top: 6px; }
     .anat ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font: var(--pl-page-small); color: var(--pl-ink-2); }
     .anat li { display: flex; gap: 10px; align-items: baseline; } .anat li b { color: var(--pl-ink); }
+    .ramp { display: grid; }
+    .ramp .tr { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 20px; padding: 16px 0; box-shadow: inset 0 -1px 0 var(--pl-rule); }
+    .ramp .meta { display: grid; gap: 2px; font: var(--pl-page-meta); color: var(--pl-ink-2); } .ramp .meta b { color: var(--pl-ink); font-weight: 600; } .ramp .meta code { font-size: 11.5px; color: var(--pl-ink-3); }
+    .ramp .sample { color: var(--pl-ink); overflow-wrap: anywhere; } .ramp .use { grid-column: 2; font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .faces { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .faces > div { padding: 20px; border-radius: var(--pl-radius-card); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .faces .big { display: block; margin-bottom: 8px; font-size: 56px; line-height: 1; font-weight: 600; } .faces b { margin-right: 8px; font: 600 15px var(--pl-sans); } .faces code { color: var(--pl-ink-3); } .faces p { margin: 8px 0 0; font: var(--pl-page-small); }
+    .nums { display: grid; gap: 14px; } .nums > div { display: grid; grid-template-columns: 120px auto; align-items: baseline; } .nums .lbl { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .dd .ex.col { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 12px 14px; }
+    .pl-tag.xl { height: 53px; padding: 0 19px 0 14px; border-radius: 14px; font-size: 29px; gap: 12px; } .pl-tag.xl svg { width: 29px; height: 29px; }
+    .states { gap: 18px; align-items: flex-end; } .states .st { display: grid; justify-items: center; gap: 8px; } .states small { font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    /* the hover, pressed and focus states, drawn at rest so they can be compared side by side */
+    .pl-act.is-hover { filter: brightness(1.06) saturate(1.04); } .pl-act.is-press { scale: .97; } .pl-act.is-focus { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
     .menu { display: none; width: 34px; height: 34px; margin-left: -6px; border: 0; border-radius: 8px; background: none; color: var(--pl-ink); cursor: pointer; place-items: center; }
     .menu:hover { background: var(--pl-paper-2); }
     @media (max-width: 760px) {
+      .ramp .tr { grid-template-columns: 1fr; } .ramp .use { grid-column: 1; } .faces { grid-template-columns: 1fr; }
       .menu { display: grid; } .top { padding: 0 12px; } .top .ver { display: none; }
       .shell { grid-template-columns: 1fr; }
       nav.side { position: fixed; z-index: 4; top: 56px; left: 0; bottom: 0; width: 272px; height: auto; background: var(--pl-paper); box-shadow: 1px 0 0 var(--pl-rule), 16px 0 40px -20px rgb(0 0 0 / .5);
@@ -238,7 +339,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;…\`;</
     }
     @media (prefers-reduced-motion: reduce) { nav.side { transition: none; } }
   </style>
-  <header class="top"><button type="button" class="menu" aria-label="Open the menu" aria-expanded="false"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><span class="pl-rainbow"></span><b>Plumber design system</b><span class="ver">first slice</span><button type="button" class="pl-act quiet" id="scheme">Night</button></header>
+  <header class="top"><button type="button" class="menu" aria-label="Open the menu" aria-expanded="false"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><span class="pl-rainbow"></span><b>Plumber design system</b><button type="button" class="pl-act quiet" id="scheme">Night</button></header>
   <div class="shell"><nav class="side" aria-label="Design system"></nav><div class="content"><article class="page"></article><aside class="rail" aria-label="On this page"></aside></div></div>`;
 
   const side = root.querySelector('nav.side'), page = root.querySelector('.page'), rail = root.querySelector('.rail');

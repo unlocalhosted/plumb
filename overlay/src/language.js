@@ -23,6 +23,8 @@ export const LANGUAGE_CSS = `
   .pl-pill { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: var(--pl-radius-pill); box-sizing: border-box;
     font: 600 11px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap;
     background: var(--pill-soft, var(--pl-sky-soft)); color: var(--pill-ink, var(--pl-sky-ink)); }
+  /* a tag is lilac by default; sky has to be asked for (a measurement tag, "W Fill 500px") */
+  .pl-tag[data-hue="sky"] { --pill-soft: var(--pl-sky-soft); --pill-ink: var(--pl-sky-ink); --pill-line: var(--pl-sky); }
   .pl-pill[data-hue="coral"], .pl-tag[data-hue="coral"] { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); --pill-line: var(--pl-coral); }
   .pl-pill[data-hue="mint"], .pl-tag[data-hue="mint"] { --pill-soft: var(--pl-mint-soft); --pill-ink: var(--pl-mint-ink); --pill-line: var(--pl-mint); }
   .pl-pill[data-hue="butter"], .pl-tag[data-hue="butter"] { --pill-soft: var(--pl-butter-soft); --pill-ink: var(--pl-butter-ink); --pill-line: var(--pl-butter); }
@@ -53,8 +55,10 @@ export const LANGUAGE_CSS = `
   .pl-act:hover { filter: brightness(1.06) saturate(1.04); }
   .pl-act:active { scale: .97; }
   .pl-act:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
-  .pl-act:disabled { cursor: not-allowed; background: var(--pl-paper-2); color: var(--pl-ink-3); filter: none; }
-  .pl-act[aria-pressed="true"], .pl-act.quiet { background: var(--pl-paper-2); color: var(--pl-ink); }
+  /* quiet, pressed and disabled sit on the paper with a hairline edge, so they stay buttons on any surface */
+  .pl-act:disabled { cursor: not-allowed; background: var(--pl-paper-2); color: var(--pl-ink-3); filter: none; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .pl-act[aria-pressed="true"], .pl-act.quiet { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .pl-act[aria-pressed="true"]:hover, .pl-act.quiet:hover { background: var(--pl-paper-2); filter: none; }
 
   .pl-pop { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   @keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
