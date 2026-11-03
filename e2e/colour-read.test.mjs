@@ -7,6 +7,9 @@
 //   5 a gradient on a surface is refused, not moved
 //   6 a page already on tokens has nothing to do
 //   7 the site's palette is served over HTTP from the census
+//   8 the spec's worked example (docs/research/colour-system.md §6.2): role wins over distance. #666666 text is muted, a #f5f5f5
+//     page ground is bg and NOT sunken (it is exact to sunken), a #7c3aed button and a purple gradient card are kept and listed
+//     at keep; at refine the button becomes the accent
 // The theme is crafting-ui's own (src/index.css:19-80: `@theme inline`, so no `--color-*` variable exists on the page),
 // the pages are made of crafting-ui's classes (bg-[#ffffff], bg-[#F0F0F0], text-[#55555C], text-[#2F64F0] from
 // src/motion/examples/stage-shell.tsx and src/motion/stickers.tsx). Real Vite, React, Tailwind, the real CLI
@@ -106,6 +109,16 @@ export function Content() {
   )
 }`,
   // everything on tokens
+  // §6.2: #666666 text, a #f5f5f5 page ground, a #7c3aed button, a purple gradient card
+  '/worked': `export function Worked() {
+  return (
+    <main id="ground" className="min-h-screen bg-[#f5f5f5] p-8 text-fg">
+      <p id="text" className="text-[#666666]">Quiet words</p>
+      <button id="button" className="mt-4 bg-[#7c3aed] px-3 py-1 text-on-accent">Upgrade</button>
+      <div id="card" className="mt-4 bg-linear-to-b from-[#7c3aed] to-[#4c1d95] p-6"><p className="text-on-accent">Pro plan</p></div>
+    </main>
+  )
+}`,
   '/clean': `export function Clean() {
   return (
     <main className="min-h-screen bg-bg p-8 text-fg">
@@ -154,28 +167,28 @@ export function App() {
   t.after(() => browser.close());
   const errors = [];
   // the colour pass's answer on a route, as the overlay asks it: read the places, propose at keep
-  const visit = async (route) => {
+  const visit = async (route, scope = 'keep') => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
     t.after(() => page.close());
     page.on('pageerror', (e) => errors.push(`${route}: ${e.message}`));
     await page.goto(new URL(route.slice(1), url).href);
     await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
-    const answer = await page.evaluate(async () => {
+    const answer = await page.evaluate(async (scope) => {
       const m = await import('/__plumb/src/colours.js');
       const palette = await m.loadPalette();
       const places = m.readColours();
-      const p = m.proposeColours(places, palette, { scope: 'keep' });
+      const p = m.proposeColours(places, palette, { scope });
       const id = (el) => el.id || el.closest('[id]')?.id || el.localName;
       // a colour as painted: through a canvas pixel, so oklch and #hex compare as what is seen
       const pixel = (c) => { const x = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }); x.fillStyle = c; x.fillRect(0, 0, 1, 1); return [...x.getImageData(0, 0, 1, 1).data]; };
       return {
         tokens: palette.map((t) => `${t.short}:${t.role}`),
-        moves: p.moves.map((x) => ({ prop: x.prop, id: id(x.el), from: x.from, to: x.to, de: x.de, rule: x.rule,
-          shown: pixel(getComputedStyle(x.el)[{ text: 'color', bg: 'backgroundColor', border: 'borderTopColor' }[x.prop]]), becomes: pixel(x.to.css) })),
-        refused: p.refused.map((x) => ({ prop: x.prop, id: id(x.el), why: x.why, css: x.css })),
+        moves: p.moves.map((x) => ({ prop: x.prop, id: id(x.el), from: x.from, to: x.to, de: x.de, rule: x.rule, role: x.role, law: x.law,
+          shown: pixel(getComputedStyle(x.el)[{ text: 'color', bg: 'backgroundColor', border: 'borderTopColor' }[x.prop]]), becomes: pixel(x.to.css), role: x.role, law: x.law })),
+        refused: p.refused.map((x) => ({ prop: x.prop, id: id(x.el), why: x.why, css: x.css, rule: x.rule, law: x.law })),
         kept: p.kept, content: p.content, measure: p.measure,
       };
-    });
+    }, scope);
     return answer;
   };
   const palette = async () => {
@@ -199,7 +212,9 @@ test('colour read: the reading, the keep proposals and the site palette, through
     assert.ok(white, `bg-[#ffffff] has a move (${JSON.stringify(a.moves)})`);
     assert.equal(white.from.cls, 'bg-[#ffffff]');
     assert.equal(white.to.cls, 'bg-surface');
-    assert.equal(white.rule, 'arbitrary-fold');
+    assert.equal(white.rule, 'near-copy');
+    assert.equal(white.role, 'surface');
+    assert.equal(white.law, 'similarity');
     assert.ok(white.de < 0.001, `white to white is ΔE ${white.de}`);
     assert.deepEqual(white.shown, white.becomes, 'the token paints the colour the place shows now');
     const grey = a.moves.find((m) => m.id === 'f4');
@@ -216,7 +231,8 @@ test('colour read: the reading, the keep proposals and the site palette, through
     assert.ok(fourth, `text-[#55555C] has a move (${JSON.stringify(a.moves)} refused ${JSON.stringify(a.refused)} hues ${JSON.stringify(a.kept.hues)})`);
     assert.equal(fourth.from.cls, 'text-[#55555C]');
     assert.equal(fourth.to.cls, 'text-muted');
-    assert.equal(fourth.rule, 'grey-levels');
+    assert.equal(fourth.rule, 'extra-grey');
+    assert.equal(fourth.role, 'muted');
     const lc = (x) => {
       const y = ([r, g, b]) => { const l = (c) => Math.pow(c / 255, 2.4); const v = 0.2126729 * l(r) + 0.7151522 * l(g) + 0.072175 * l(b); return v < 0.022 ? v + Math.pow(0.022 - v, 1.414) : v; };
       const yb = y([251.7, 251.7, 251.7]), yt = y(x), c = (Math.pow(yb, 0.56) - Math.pow(yt, 0.57)) * 1.14;
@@ -276,6 +292,36 @@ test('colour read: the reading, the keep proposals and the site palette, through
     assert.equal(p.colours.some((c) => c.route === '/content' && c.cls === 'bg-[#ffffff]'), false, 'the drawing is content, not the site\'s');
     const distinct = (prop) => { const seen = []; for (const c of p.colours) if (c.prop === prop && !seen.some((s) => Math.hypot(s[0] - c.oklab[0], s[1] - c.oklab[1], s[2] - c.oklab[2]) <= 0.01)) seen.push(c.oklab); return seen.length; };
     assert.ok(distinct('text') >= 4, `distinct text colours on the site: ${distinct('text')}`);
+  });
+
+  await t.test('8 role wins over distance: the page ground is bg, not sunken; the purple button and gradient card are kept and listed', async () => {
+    const a = await s.visit('/worked');
+    const ground = a.moves.find((m) => m.id === 'ground' && m.prop === 'bg');
+    assert.ok(ground, `the #f5f5f5 page ground has a move (${JSON.stringify(a.moves)} hues ${JSON.stringify(a.kept.hues)})`);
+    assert.equal(ground.from.cls, 'bg-[#f5f5f5]');
+    assert.equal(ground.to.cls, 'bg-bg', 'the page ground is bg, not the sunken surface it matches exactly');
+    assert.equal(ground.role, 'ground');
+    assert.equal(ground.rule, 'near-copy');
+    const text = a.moves.find((m) => m.id === 'text' && m.prop === 'text');
+    assert.equal(text?.to.cls, 'text-muted', `#666666 is muted (${JSON.stringify(text)})`);
+    assert.equal(text.role, 'muted');
+    assert.ok(['near-copy', 'extra-grey'].includes(text.rule) && text.law, 'the move names its row and its law');
+    assert.equal(a.moves.some((m) => m.id === 'button' || m.id === 'card'), false, 'at keep the purple button and the gradient card do not move');
+    const button = a.kept.hues.find((h) => h.cls === 'bg-[#7c3aed]');
+    assert.ok(button, `the button is listed (${JSON.stringify(a.kept.hues)})`);
+    assert.equal(button.role, 'accent', 'a chromatic fill on a control is the accent by usage');
+    assert.equal(button.rule, 'second-accent');
+    assert.equal(button.why, 'no colour of yours is near it');
+    const card = a.refused.find((r) => r.id === 'card' && r.prop === 'bg');
+    assert.equal(card?.why, 'a gradient', 'the gradient card is listed');
+    assert.equal(card.rule, 'tinted-surface');
+    // refine: the button becomes the accent by role, whatever its distance; the gradient is a figure, not a surface, so it stays
+    const r = await s.visit('/worked', 'refine');
+    const btn = r.moves.find((m) => m.id === 'button' && m.prop === 'bg');
+    assert.equal(btn?.to.cls, 'bg-accent', `at refine the purple button becomes the accent (${JSON.stringify(r.moves)})`);
+    assert.equal(btn.rule, 'second-accent');
+    assert.equal(r.moves.find((m) => m.id === 'ground')?.to.cls, 'bg-bg');
+    assert.equal(r.moves.some((m) => m.id === 'card'), false);
   });
 
   assert.deepEqual(s.errors, [], 'no page error');

@@ -12,30 +12,58 @@
  *  palette  paletteOf() → the theme's colour tokens [{ name, short, role, css, rgb, oklab, utility: { text, bg, border } }],
  *           role by name first, value second. Read from the page; loadPalette() adds the server's decisions (an
  *           `@theme inline` theme leaves no variable per token on the page, so unused tokens are only in the decisions)
- *  propose  proposeColours(places, palette, { scope: 'keep' }) → { moves, kept, refused, content, measure }
- *    keep   a class whose composited colour is within ΔE_ok 0.03 of a token of the right role family folds into it;
- *           a fourth grey level goes to the nearest of the page's three; text faded by opacity goes to the grey that
- *           matches; pure black and white go to the off-black and off-white token. Every move passes the contrast
- *           guard (APCA, craft/contrast's floor). No new values: a hue no token is near is kept and said
- *  never    content colours, anything without a locatable class, gradients
+ *  roles    a token's `kind` is its role (docs/research/colour-system.md §2.2: ground, surface, sunken, fg, muted, faint,
+ *           on-accent, line, line-strong, accent, accent-hover, accent-soft, ink2*, success, warning, danger, info), read by name
+ *           first, value second (§4.1, §4.2). readRoles() reads each place into its role by usage: property, element, painted
+ *           area (§4.3). Role wins over distance (§9.1): a colour folds to a token of ITS role, not to the nearest value
+ *  propose  proposeColours(places, palette, { scope: 'keep' | 'refine' }) → { moves, kept, refused, content, measure }
+ *           each move: { el, prop, from, to, de, rule, law, role }, `rule` the §5 row id, `law` its law column
+ *    keep   a class within our visibility threshold (ΔE_ok 0.03) of a token of its role folds into it; a fourth grey goes to
+ *           the nearest of the three text levels; text faded by opacity goes to the level it composites to; pure black and
+ *           white go to the off-black and off-white token; status colours snap only to their own status token. Every move
+ *           passes the contrast guard (APCA, craft/contrast's floor). No new values: a hue no token is near is kept and said
+ *    refine the same rows at their wider reach (0.05, 0.18), plus the rows keep only lists: a control fill becomes the accent
+ *           (by role), a stray hue near the accent folds in, meaningless coloured text goes neutral, a control edge under
+ *           WCAG 3:1 is raised to line-strong, a gradient that is a surface becomes the surface token
+ *  never    content colours, anything without a locatable class, gradients (at keep)
  * ───────────────────────────────────────────────────────── */
 import { oklab, toRgb } from './craft-headless.js';
 import { apca, colourClass } from './craft-rules.js';
 import { SPEC, utility } from './craft-read.js';
 
-const DE_OK = 0.03;      // keep: indistinguishable in UI (pass-colour.md step 4)
+const DE_OK = 0.03;      // keep: indistinguishable in UI (pass-colour.md step 4), our visibility threshold (§1.1)
 const GREY_CLUSTER = 0.04; // two text colours this close are one grey level (craft.js census 'textColors')
-const GREY_REACH = 0.12; // a fourth grey goes to the nearest level only when one is this near
-const PURE_REACH = 0.2;  // pure black or white goes to the off-black/off-white token only when one is this near
+const PURE_REACH = 0.2;  // pure black or white goes to the off-black/off-white token only when one is this near (§5)
 const MERGE = 0.01;      // distinct colours in the measure: closer than this is one
 const CONTENT = 'plumb-overlay, svg, canvas, img, video, picture';
 const PROPS = ['text', 'bg', 'border'];
-const FOR = { text: ['text', 'accent', 'status'], bg: ['surface', 'accent', 'status'], border: ['line', 'accent', 'status'] };
-const PRIMARY = { text: 'text', bg: 'surface', border: 'line' };
 const CSS_PROP = { text: 'color', bg: 'background-color', border: 'border-color' };
+// §5: the reach of each row at each scope (keep never adds values; refine may merge toward the system)
+const REACH = {
+  keep: { fold: 0.03, grey: 0.12, status: 0.03, stray: 0 },
+  refine: { fold: 0.05, grey: 0.18, status: 0.12, stray: 40 },
+};
+const FADED = 0.03;      // §5 faded text: both scopes
+// §5 "Law" column, per row id
+const LAW = {
+  'near-copy': 'similarity',
+  'extra-grey': 'similarity, cognitive load',
+  'faded-text': 'similarity',
+  'pure-black-white': 'aesthetic-usability',
+  'stray-hue': 'Von Restorff',
+  'tinted-surface': 'Von Restorff, preattentive',
+  'second-accent': 'Von Restorff',
+  'no-meaning-text': 'cognitive load',
+  'status-hue': 'colour carries meaning',
+  'line-too-faint': 'contrast',
+};
+// §4.2 hue bands (OKLab hue, degrees) that can be a status, only when usage agrees
+const BANDS = [['danger', 20, 40], ['warning', 60, 100], ['success', 130, 165], ['info', 230, 265]];
 
 const dE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const chroma = (l) => Math.hypot(l[1], l[2]);
+const hue = (l) => (Math.atan2(l[2], l[1]) * 180 / Math.PI + 360) % 360;
+const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const over = (f, g) => [0, 1, 2].map((i) => f[i] * f[3] + g[i] * (1 - f[3]));
 const round3 = (l) => l.map((v) => Math.round(v * 1000) / 1000);
 const hex = (c) => '#' + [0, 1, 2].map((i) => Math.max(0, Math.min(255, Math.round(c[i]))).toString(16).padStart(2, '0')).join('');
@@ -54,12 +82,36 @@ export function roleOf(short, lab, alpha) {
   if (/(^|-)(line|border|divider|rule|outline|separator|hairline|stroke)(-|$)/.test(n)) return 'line';
   if (/(^|-)on(-|$)/.test(n)) return 'text'; // on-accent: the words on the accent
   if (/(^|-)(accent|primary|brand|draw|link|highlight|ink)(-|$)/.test(n)) return 'accent';
-  if (/(^|-)(bg|background|surface|sunken|canvas|paper|card|panel|page|hover|pressed|elevated|popover|overlay)(-|$)/.test(n)) return 'surface';
-  if (/(^|-)(fg|foreground|text|muted|faint|subtle|body|heading|on)(-|$)/.test(n)) return 'text';
+  if (/(^|-)(bg|background|surface|sunken|canvas|paper|card|panel|page|ground|well|inset|raised|hover|pressed|elevated|popover|overlay)(-|$)/.test(n)) return 'surface';
+  if (/(^|-)(fg|foreground|text|muted|faint|subtle|secondary|tertiary|placeholder|disabled|body|heading|on)(-|$)/.test(n)) return 'text';
   if (/(^|-)(scrim|shadow|grid|ring|focus|selection)(-|$)/.test(n)) return 'other';
   if (chroma(lab) > 0.06) return 'accent';
   if (alpha < 1 && lab[0] < 0.3) return 'line';
   return lab[0] > 0.9 ? 'surface' : 'text';
+}
+
+// the spec role of a token (§2.2): by name first (§4.1), value second (§4.2). `role` above is the coarse family
+export function kindOf(short, role) {
+  const n = short.toLowerCase(), has = (re) => re.test(n);
+  if (role === 'status') return has(/info/) ? 'info' : has(/success|positive/) ? 'success' : has(/warning|caution/) ? 'warning' : 'danger';
+  if (role === 'line') return has(/(^|-)(strong|heavy|bold)(-|$)/) ? 'line-strong' : 'line';
+  if (role === 'accent') return has(/(^|-)hover(-|$)/) ? 'accent-hover' : has(/(^|-)(soft|tint)(-|$)/) ? 'accent-soft' : 'accent';
+  if (role === 'text') return has(/(^|-)on(-|$)/) ? 'on-accent' : has(/(^|-)(muted|subtle|secondary)(-|$)/) ? 'muted' : has(/(^|-)(faint|tertiary|placeholder|disabled)(-|$)/) ? 'faint' : 'fg';
+  if (role === 'surface') return has(/(^|-)hover(-|$)/) ? 'hover' : has(/(^|-)pressed(-|$)/) ? 'pressed' : has(/(^|-)(sunken|well|inset)(-|$)/) ? 'sunken' : has(/(^|-)(bg|background|canvas|paper|page|ground)(-|$)/) ? 'ground' : 'surface';
+  return 'other';
+}
+
+// §2.3 / §9.2: one accent; a second hued family the theme names (draw beside accent) is a second ink, a role of its own
+const baseOf = (short) => short.toLowerCase().replace(/-(hover|pressed|soft|tint|subtle|strong)$/, '');
+function assignInks(tokens) {
+  const bases = [];
+  for (const t of tokens) if (t.role === 'accent' && !bases.includes(baseOf(t.short))) bases.push(baseOf(t.short));
+  const opaque = (b) => tokens.some((t) => baseOf(t.short) === b && t.role === 'accent' && t.rgb[3] >= 1 && chroma(t.oklab) > 0.06);
+  const primary = bases.find((b) => /^(accent|primary|brand)$/.test(b) && opaque(b)) ?? bases.find(opaque);
+  for (const t of tokens) {
+    if (t.role !== 'accent' || baseOf(t.short) === primary || !bases.some(opaque)) continue;
+    if (opaque(baseOf(t.short))) { t.kind = t.kind.replace('accent', 'ink2'); t.ink = 'ink2'; }
+  }
 }
 
 let decisions = null; // the server's decisions, once loadPalette has them
@@ -109,9 +161,11 @@ export function paletteOf() {
     // `color` always has a value; a variable that is not defined falls back to the inherited colour, so check the definition
     if (t.expr?.startsWith('var(') && !getComputedStyle(document.documentElement).getPropertyValue(t.name).trim() && !decisions?.some((d) => d.name === t.name)) continue;
     const lab = oklab(over(rgb, [255, 255, 255]));
-    tokens.push({ name: t.name, short, role: roleOf(short, lab, rgb[3]), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } });
+    const role = roleOf(short, lab, rgb[3]);
+    tokens.push({ name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } });
   }
   box.remove();
+  assignInks(tokens);
   return (known = tokens);
 }
 
@@ -153,6 +207,20 @@ function fullGround(el, memo) {
   return out;
 }
 
+// §4.3 usage evidence for one element: a control or link (the accent's places), a status hint (a message, a badge, an alert)
+const CONTROL = 'button, a[href], [role=button], [role=link], [role=tab], [role=menuitem], input, select, textarea, summary';
+const FIELD = 'input, select, textarea';
+const STATUS_HINT = '[role=alert], [role=status], [class*=error i], [class*=danger i], [class*=success i], [class*=warning i], [class*=alert i], [class*=toast i], [class*=badge i], [class*=banner i], [class*=notice i], [class*=invalid i]';
+function ctxOf(el) {
+  const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ');
+  return { tag: el.localName, control: !!el.closest(CONTROL), field: !!el.closest(FIELD), link: !!el.closest('a[href]'), heading: !!el.closest('h1,h2,h3,h4,h5,h6'),
+    statusHint: !!el.closest(STATUS_HINT) || /\b(error|failed|invalid|saved|success|warning|danger)\b/i.test(own.slice(0, 120)) };
+}
+// §4.3 painted area of a background, and whether it sits straight on the page (nothing painted between it and the body)
+function areaOf(el, below) {
+  const r = el.getBoundingClientRect();
+  return { area: r.width * r.height, top: !below.el || below.el === document.body || below.el === document.documentElement };
+}
 const inline = (el, re) => re.test(el.getAttribute('style') ?? '');
 const VAR = /\[[^\]]*var\(/;
 
@@ -191,7 +259,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
         const g = fullGround(el, memo), faded = !moving && op < 1 && utility(owner, 'opacity');
         const a = d.text[3] * (moving ? 1 : op || 1), cls = base ? null : colourClass(owner, 'text', theme);
         const rgb = [d.text[0], d.text[1], d.text[2], a], comp = over(rgb, g.rgb), lab = oklab(comp);
-        const e = { prop: 'text', cls, css: cs.color, rgb, alpha: d.text[3], under: g.rgb, comp, oklab: lab, groundEl: g.el, fuzzy: g.fuzzy, size: parseFloat(cs.fontSize), weight: parseInt(cs.fontWeight, 10) || 400, uses: 1, drop: faded || null,
+        const e = { prop: 'text', cls, css: cs.color, rgb, alpha: d.text[3], under: g.rgb, comp, oklab: lab, groundEl: g.el, fuzzy: g.fuzzy, size: parseFloat(cs.fontSize), weight: parseInt(cs.fontWeight, 10) || 400, uses: 1, drop: faded || null, ctx: ctxOf(el),
           level: chroma(lab) < 0.04 && chroma(oklab(g.rgb)) < 0.04 && Math.abs(oklab(g.rgb)[0] - pageL) <= 0.25 };
         if (cls && VAR.test(cls)) { e.why = 'a colour the app computes (a variable)'; e.data = true; }
         else if (!cls && inline(owner, /(^|[;\s])color\s*:/)) e.why = 'set by an inline style', e.data = true;
@@ -202,12 +270,15 @@ export function readColours(root = document.body, { exclude = [], palette = pale
       }
     }
     if (d.image) {
-      const e = { prop: 'bg', cls: colourClass(el, 'bg', theme), css: d.image.length > 60 ? d.image.slice(0, 57) + '…' : d.image, why: /gradient\(/.test(d.image) ? 'a gradient' : 'a background image' };
+      // the stops, for refine's tinted-surface row (§5): each over the ground the gradient sits on
+      const gb = el.parentElement ? fullGround(el.parentElement, memo) : { rgb: [255, 255, 255] };
+      const stops = (d.image.match(/(?:rgba?|oklab|oklch|color|hsla?|lab|lch)\([^)]*\)/g) ?? []).map((c) => toRgb(c)).filter(Boolean).map((c) => over(c, gb.rgb));
+      const e = { prop: 'bg', cls: colourClass(el, 'bg', theme), css: d.image.length > 60 ? d.image.slice(0, 57) + '…' : d.image, why: /gradient\(/.test(d.image) ? 'a gradient' : 'a background image', under: gb.rgb, stops: stops.map((c) => oklab(c)), ctx: ctxOf(el) };
       place(el).colours.bg = e;
     } else if (d.bg) {
       const below = el.parentElement ? fullGround(el.parentElement, memo) : { rgb: [255, 255, 255], fuzzy: false }, comp = over(d.bg, below.rgb);
       const cls = colourClass(el, 'bg', theme);
-      const e = { prop: 'bg', cls, css: cs.backgroundColor, rgb: d.bg, under: below.rgb, comp, oklab: oklab(comp), fuzzy: below.fuzzy };
+      const e = { prop: 'bg', cls, css: cs.backgroundColor, rgb: d.bg, under: below.rgb, comp, oklab: oklab(comp), fuzzy: below.fuzzy, ctx: ctxOf(el), ...areaOf(el, below, memo) };
       if (cls && VAR.test(cls)) { e.why = 'a colour the app computes (a variable)'; e.data = true; }
       else if (inline(el, /background(-color)?\s*:/)) { e.why = 'set by an inline style'; e.cls = null; e.data = true; }
       else if (!cls) e.why = 'set by a stylesheet, not a class here';
@@ -215,7 +286,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
     }
     if (d.border) {
       const g = fullGround(el, memo), cls = colourClass(el, 'border', theme), comp = over(d.border.rgb, g.rgb);
-      const e = { prop: 'border', cls, css: d.border.css, rgb: d.border.rgb, under: g.rgb, comp, oklab: oklab(comp), fuzzy: g.fuzzy };
+      const e = { prop: 'border', cls, css: d.border.css, rgb: d.border.rgb, under: g.rgb, comp, oklab: oklab(comp), fuzzy: g.fuzzy, ctx: ctxOf(el) };
       if (d.border.mixed) e.why = 'the sides are different colours';
       else if (cls && VAR.test(cls)) { e.why = 'a colour the app computes (a variable)'; e.data = true; }
       else if (inline(el, /border[a-z-]*\s*:/)) { e.why = 'set by an inline style'; e.cls = null; e.data = true; }
@@ -247,6 +318,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
   }
   const out = [...places.values()];
   out.content = places.content;
+  out.docArea = Math.max(1, document.documentElement.scrollWidth * document.documentElement.scrollHeight);
   return out;
 }
 
@@ -258,6 +330,55 @@ export function colourRows(places) {
     for (const [prop, c] of Object.entries(pl.colours)) if (c.oklab) rows.push({ stamp, prop, oklab: round3(c.oklab), cls: c.cls ?? null, ...(c.data ? { data: true } : {}) });
   }
   return rows;
+}
+
+// ── reading places into roles (§4.3: usage) ─────────────────
+
+const bandOf = (lab) => { const h = hue(lab); return BANDS.find(([, lo, hi]) => h >= lo && h <= hi)?.[0] ?? null; };
+const wcag = (a, b) => {
+  const y = (c) => { const l = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * l(c[0]) + 0.7152 * l(c[1]) + 0.0722 * l(c[2]); };
+  const [hi, lo] = [y(a), y(b)].sort((p, q) => q - p);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+/**
+ * Each place's colour read into its role by usage (§4.3), after the token's name and value gave the palette its roles.
+ * → Map(entry → { role, kinds, band, hued, control }): `role` the usage role, `kinds` the token kinds it may fold to.
+ */
+export function readRoles(places) {
+  const out = new Map();
+  // §4.3 first row: the largest-area neutral background that sits on the page is the ground
+  let ground = null;
+  for (const pl of places) {
+    const e = pl.colours.bg;
+    if (e?.oklab && e.top && !e.why && e.rgb[3] >= 1 && chroma(e.oklab) < 0.06 && e.area >= 0.5 * (places.docArea ?? Infinity) && (!ground || e.area > ground.area)) ground = e;
+  }
+  for (const pl of places) for (const prop of PROPS) {
+    const e = pl.colours[prop];
+    if (!e) continue;
+    const ctx = e.ctx ?? {}, lab = e.oklab, hued = !!lab && chroma(lab) > 0.06;
+    const r = { role: 'decoration', kinds: [], band: null, hued, control: !!ctx.control };
+    // §4.2: a status hue only when usage agrees; a hue is never a status by value alone
+    if (hued && ctx.statusHint && bandOf(lab)) { r.role = 'status'; r.band = bandOf(lab); r.kinds = [r.band]; }
+    else if (!lab) { r.role = prop === 'bg' ? 'decoration' : 'other'; }
+    else if (prop === 'text') {
+      if (hued) { r.role = ctx.control || ctx.link ? 'accent' : 'decoration'; r.kinds = ['accent', 'accent-hover', 'ink2', 'ink2-hover']; }
+      else { r.role = 'text'; r.kinds = ['fg', 'muted', 'faint']; if (e.under && chroma(oklab(e.under)) > 0.06) r.kinds.push('on-accent'); } // §2.2 on-accent: the words on the accent
+    } else if (prop === 'bg') {
+      if (hued) {
+        if (ctx.control) { r.role = 'accent'; r.kinds = ['accent', 'accent-hover', 'ink2', 'ink2-hover']; }  // §4.3: a chromatic fill on a control is the accent
+        else { r.role = 'decoration'; r.kinds = ['surface', 'sunken', 'accent-soft', 'ink2-soft']; }          // §4.3: chromatic on a card, no control role: decoration
+      } else if (e.rgb[3] < 1) { r.role = 'surface'; r.kinds = ['surface', 'sunken', 'hover', 'pressed']; }
+      else if (e === ground) { r.role = 'ground'; r.kinds = ['ground']; }                                    // §4.3 largest-area neutral on the page
+      else if (ctx.field || /^(pre|code)$/.test(ctx.tag)) { r.role = 'sunken'; r.kinds = ['sunken']; }       // §4.3 inset: inputs, code
+      else { const down = lab[0] < oklab(e.under)[0] - 0.004; r.role = down ? 'sunken' : 'surface'; r.kinds = [r.role]; } // §4.3 a step darker is inset, else raised
+    } else {
+      if (hued) { r.role = ctx.control ? 'accent' : 'decoration'; r.kinds = ['accent', 'ink2', 'accent-soft', 'ink2-soft', 'line']; }
+      else { r.role = ctx.field || ctx.tag === 'button' ? 'line-strong' : 'line'; r.kinds = r.role === 'line-strong' ? ['line-strong', 'line'] : ['line']; } // §4.3 control borders are line-strong
+    }
+    out.set(e, r);
+  }
+  return out;
 }
 
 // ── proposing ───────────────────────────────────────────────
@@ -279,12 +400,14 @@ function distinct(labs) {
 }
 
 export function proposeColours(places, palette = known ?? paletteOf(), { scope = 'keep' } = {}) {
+  const R = REACH[scope] ?? REACH.keep, refine = scope === 'refine';
   const moves = [], refused = [], examples = new Map(), hues = new Map();
   let onToken = 0, inherited = 0;
   const after = new Map(); // entry → oklab after
   const tokens = palette.filter((t) => t.role !== 'other');
   const named = new Map();
   for (const t of tokens) for (const p of PROPS) named.set(t.utility[p], t);
+  const roles = readRoles(places);
 
   // the grey levels: clusters of the neutral text colours the page's own surfaces carry (craft.js census 'textColors')
   const T17 = { sample: 20, minority: 0.1, ...SPEC.rule('craft/grey-levels') };
@@ -297,30 +420,34 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
   // the theme's own grey text tokens are the levels when it has them (fg, muted, faint): the clean-up knows the roles,
   // so a grey of the page's own needs no page statistics to be told from them, however few its words
   const textGreys = tokens.filter((t) => t.role === 'text' && chroma(t.oklab) < 0.03).length >= 2;
+  // §9.2 hue budget: the primary accent, and a second ink only when the theme names one
+  const accentTok = tokens.find((t) => t.kind === 'accent' && t.rgb[3] >= 1);
+  const inkUsedOnControls = places.some((p) => { const c = p.colours.bg; return c?.cls && c.ctx?.control && named.get(c.cls)?.kind === 'ink2'; });
 
   // the text that sits on each background, so a surface move is judged by the words on it
   const on = new Map();
   for (const e of places.map((p) => p.colours.text)) if (e?.groundEl) { if (!on.has(e.groundEl)) on.set(e.groundEl, []); on.get(e.groundEl).push(e); }
 
-  // the closest token of the right family to a colour over its ground
-  const nearest = (e, prop, roles = FOR[prop], { anyAlpha = false } = {}) => {
+  // §5 step 3: the closest token among those of the colour's own role (never the nearest of any role)
+  const nearest = (e, kinds, { anyAlpha = false } = {}) => {
     let best = null;
     for (const t of tokens) {
-      if (!roles.includes(t.role)) continue;
+      const idx = kinds.indexOf(t.kind);
+      if (idx < 0) continue;
       // a translucent colour shows what is behind it, and an opaque one does not: they trade places only for faded text
       if (!anyAlpha && (t.rgb[3] < 1) !== ((e.alpha ?? e.rgb?.[3] ?? 1) < 1)) continue;
       // a grey does not become a tint, nor a tint a grey, whatever the distance on this ground
       if (e.rgb && (chroma(oklab(e.rgb)) < 0.03) !== (chroma(oklab(t.rgb)) < 0.03)) continue;
-      const de = dE(e.oklab, oklab(asToken(t, e.under))), score = de + (t.role === PRIMARY[prop] ? 0 : 0.0005);
+      const de = dE(e.oklab, oklab(asToken(t, e.under))), score = de + idx * 0.0005;
       if (!best || score < best.score) best = { t, de, score };
     }
     return best;
   };
 
-  // the contrast guard: null when the move is fine, else why it is refused
+  // the contrast guard: null when the move is fine, else why it is refused (§5 Guard)
   const guard = (pl, e, prop, t, rule) => {
     const to = asToken(t, e.under);
-    if (e.fuzzy && (rule !== 'arbitrary-fold' || e.rgb[3] < 1 || t.rgb[3] < 1)) return 'it sits on a gradient or an image, so its contrast cannot be measured';
+    if (e.fuzzy && (rule !== 'near-copy' || e.rgb[3] < 1 || t.rgb[3] < 1)) return 'it sits on a gradient or an image, so its contrast cannot be measured';
     if (prop === 'text') {
       const before = lcOf(e.comp, e.under), now = lcOf(to, e.under), floor = need(e.size, e.weight);
       if (now < floor && now < before - 0.5) return `contrast would fall from Lc ${Math.round(before)} to ${Math.round(now)} (it needs ${floor})`;
@@ -336,22 +463,40 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
 
   const consider = (pl, prop, e, t, de, rule, extra = {}) => {
     const why = guard(pl, e, prop, t, rule);
-    if (why) { refused.push({ el: pl.el, prop, why, css: e.css }); return true; }
-    moves.push({ el: pl.el, prop, from: { cls: e.cls, css: e.css }, to: { token: t.short, cls: t.utility[prop], css: t.css }, de: Math.round(de * 1000) / 1000, rule, ...extra });
+    if (why) { refused.push({ el: pl.el, prop, why, css: e.css, rule, law: LAW[rule] }); return true; }
+    moves.push({ el: pl.el, prop, from: { cls: e.cls, css: e.css }, to: { token: t.short, cls: t.utility[prop], css: t.css }, de: Math.round(de * 1000) / 1000, rule, law: LAW[rule], role: t.kind, ...extra });
     after.set(e, oklab(asToken(t, e.under)));
     return true;
+  };
+
+  // what keep lists for a colour no token of its role is near: the §5 row that names it
+  const rowFor = (prop, e, use) => {
+    if (use.role === 'accent') return prop === 'bg' ? 'second-accent' : 'stray-hue';
+    if (use.hued) return prop === 'text' ? 'no-meaning-text' : prop === 'bg' ? 'tinted-surface' : 'stray-hue';
+    return 'near-copy';
   };
 
   for (const pl of places) for (const prop of PROPS) {
     const e = pl.colours[prop];
     if (!e) continue;
-    if (e.why) { refused.push({ el: pl.el, prop, why: e.why, css: e.css }); continue; }
+    const use = roles.get(e) ?? { role: 'decoration', kinds: [] };
+    if (e.why) {
+      const gradient = e.why === 'a gradient';
+      // §5 tinted or gradient surface: keep lists it; refine folds it only when both stops sit within 0.10 of one surface-role token
+      if (gradient && refine && e.stops?.length && e.under) {
+        const cand = tokens.filter((t) => ['surface', 'sunken', 'ground', 'accent-soft', 'ink2-soft'].includes(t.kind));
+        const fit = cand.map((t) => ({ t, de: Math.max(...e.stops.map((l) => dE(l, oklab(asToken(t, e.under))))) })).filter((x) => x.de <= 0.1).sort((a, b) => a.de - b.de)[0];
+        if (fit) { consider(pl, prop, { ...e, fuzzy: false }, fit.t, fit.de, 'tinted-surface', { gradient: true }); continue; }
+      }
+      refused.push({ el: pl.el, prop, why: e.why, css: e.css, ...(gradient ? { rule: 'tinted-surface', law: LAW['tinted-surface'], role: 'decoration' } : {}) });
+      continue;
+    }
     if (e.inherited) { inherited++; continue; }
-    // text faded by opacity: the grey that matches what is seen. The colour class stays, the opacity goes, so this is a
+    // text faded by opacity: the level it composites to (§5 faded text). The colour class stays, the opacity goes, so this is a
     // move the writer makes in two classes: no from.cls for a plain swap, and `set` and `drop` say the two
-    if (prop === 'text' && e.drop) {
-      const best = nearest(e, 'text', FOR.text, { anyAlpha: true });
-      if (best && best.de <= DE_OK) { consider(pl, prop, { ...e, cls: null }, best.t, best.de, 'text-opacity', { set: e.cls, drop: e.drop }); continue; }
+    if (prop === 'text' && e.drop && use.role === 'text') {
+      const best = nearest(e, use.kinds, { anyAlpha: true });
+      if (best && best.de <= FADED) { consider(pl, prop, { ...e, cls: null }, best.t, best.de, 'faded-text', { set: e.cls, drop: e.drop }); continue; }
     }
     const tok = e.cls && named.get(e.cls);
     if (tok) {
@@ -359,39 +504,80 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
       const k = `${prop}|${e.cls}`; examples.set(k, (examples.get(k) ?? 0) + 1);
       continue;
     }
-    const best = nearest(e, prop);
-    if (best && best.de <= DE_OK) { consider(pl, prop, e, best.t, best.de, 'arbitrary-fold'); continue; }
-    // pure black and white: the off-black and off-white token the theme has
-    const pure = e.rgb[3] >= 1 && ((e.rgb[0] === 0 && e.rgb[1] === 0 && e.rgb[2] === 0) || (e.rgb[0] === 255 && e.rgb[1] === 255 && e.rgb[2] === 255));
-    if (pure) {
-      let p = null;
-      for (const t of tokens) {
-        if (![...FOR[prop], 'text'].includes(t.role) || chroma(t.oklab) > 0.03 || t.rgb[3] < 1) continue;
-        const de = dE(e.oklab, oklab(asToken(t, e.under)));
-        if (de <= PURE_REACH && (!p || de < p.de)) p = { t, de };
+    // §5 status hue: never changed in hue, folded only to the status token of its own hue band, never to the accent
+    if (use.role === 'status') {
+      const best = nearest(e, use.kinds);
+      if (best && best.de <= R.status) { consider(pl, prop, e, best.t, best.de, 'status-hue'); continue; }
+    } else {
+      // §5 near-copy, step 3: among tokens of its role, one within the fold distance
+      const best = use.kinds.length ? nearest(e, use.kinds) : null;
+      if (best && best.de <= R.fold) { consider(pl, prop, e, best.t, best.de, 'near-copy'); continue; }
+      // §5 pure black or white: the off-black and off-white token the theme has
+      const pure = e.rgb[3] >= 1 && ((e.rgb[0] === 0 && e.rgb[1] === 0 && e.rgb[2] === 0) || (e.rgb[0] === 255 && e.rgb[1] === 255 && e.rgb[2] === 255));
+      if (pure) {
+        let p = null;
+        for (const t of tokens) {
+          if (!use.kinds.includes(t.kind) || chroma(t.oklab) > 0.03 || t.rgb[3] < 1) continue;
+          const de = dE(e.oklab, oklab(asToken(t, e.under)));
+          if (de <= PURE_REACH && (!p || de < p.de)) p = { t, de };
+        }
+        if (p) { consider(pl, prop, e, p.t, p.de, 'pure-black-white'); continue; }
       }
-      if (p) { consider(pl, prop, e, p.t, p.de, 'pure-black-white'); continue; }
-    }
-    // a fourth grey: the nearest of the page's three levels, as a token
-    if (prop === 'text' && textGreys && e.level && e.cls && chroma(e.oklab) < 0.03) {
-      const level = nearest(e, 'text', ['text'], { anyAlpha: true });
-      if (level && level.de <= GREY_REACH) { consider(pl, prop, e, level.t, level.de, 'grey-levels'); continue; }
-    }
-    else if (prop === 'text' && greyActive && e.level && e.cls) {
-      // within a grey level's width (the census merges text colours this close) of one of your text tokens: the same grey
-      const same = nearest(e, 'text', ['text'], { anyAlpha: true });
-      if (same && same.de <= GREY_CLUSTER) { consider(pl, prop, e, same.t, same.de, 'grey-levels'); continue; }
-      const k = levels.find((x) => x.members.includes(e));
-      if (k && !top.includes(k) && k.members.length / sampleN <= T17.minority) {
-        const level = top.slice().sort((a, b) => dE(a.lab, e.oklab) - dE(b.lab, e.oklab))[0];
-        const target = level && dE(level.lab, e.oklab) <= GREY_REACH ? nearest({ oklab: level.lab, under: e.under, alpha: 1 }, 'text', ['text'], { anyAlpha: true }) : null;
-        if (target && target.de <= DE_OK) { consider(pl, prop, e, target.t, dE(e.oklab, oklab(asToken(target.t, e.under))), 'grey-levels'); continue; }
+      // §5 extra grey level: the nearest of the three text levels, and the APCA guard keeps it in its band
+      if (prop === 'text' && use.role === 'text' && textGreys && e.level && e.cls && chroma(e.oklab) < 0.03) {
+        const level = nearest(e, ['fg', 'muted', 'faint'], { anyAlpha: true });
+        if (level && level.de <= R.grey) { consider(pl, prop, e, level.t, level.de, 'extra-grey'); continue; }
+      }
+      else if (prop === 'text' && use.role === 'text' && greyActive && e.level && e.cls) {
+        // within a grey level's width (the census merges text colours this close) of one of your text tokens: the same grey
+        const same = nearest(e, ['fg', 'muted', 'faint'], { anyAlpha: true });
+        if (same && same.de <= GREY_CLUSTER) { consider(pl, prop, e, same.t, same.de, 'extra-grey'); continue; }
+        const k = levels.find((x) => x.members.includes(e));
+        if (k && !top.includes(k) && k.members.length / sampleN <= T17.minority) {
+          const level = top.slice().sort((a, b) => dE(a.lab, e.oklab) - dE(b.lab, e.oklab))[0];
+          const target = level && dE(level.lab, e.oklab) <= R.grey ? nearest({ oklab: level.lab, under: e.under, alpha: 1 }, ['fg', 'muted', 'faint'], { anyAlpha: true }) : null;
+          if (target && target.de <= DE_OK) { consider(pl, prop, e, target.t, dE(e.oklab, oklab(asToken(target.t, e.under))), 'extra-grey'); continue; }
+        }
+      }
+      // ── refine only: the rows keep lists (§5) ──
+      if (refine && use.hued) {
+        const inks = tokens.filter((t) => ['accent', 'ink2'].includes(t.kind) && t.rgb[3] >= 1);
+        // second accent: a control fill becomes the accent by ROLE, not by distance (budget 1; the second ink only where the app already uses it on buttons)
+        if (prop === 'bg' && use.role === 'accent') {
+          const target = (inkUsedOnControls && tokens.find((t) => t.kind === 'ink2' && t.rgb[3] >= 1)) || accentTok;
+          if (target) { consider(pl, prop, e, target, dE(e.oklab, oklab(asToken(target, e.under))), 'second-accent'); continue; }
+        }
+        // stray hue: used on a control or link and within 40 degrees of an accent hue, it joins the accent
+        if (use.role === 'accent') {
+          const h = hue(e.oklab), t = inks.map((x) => ({ x, g: hueGap(h, hue(x.oklab)) })).sort((a, b) => a.g - b.g)[0];
+          if (t && t.g <= R.stray) { consider(pl, prop, e, t.x, dE(e.oklab, oklab(asToken(t.x, e.under))), 'stray-hue'); continue; }
+        }
+        // coloured text with no meaning: fg for a heading, else muted (cognitive load)
+        if (prop === 'text' && use.role === 'decoration') {
+          const t = tokens.find((x) => x.kind === (e.ctx?.heading ? 'fg' : 'muted'));
+          if (t) { consider(pl, prop, e, t, dE(e.oklab, oklab(asToken(t, e.under))), 'no-meaning-text'); continue; }
+        }
+        // no meaning on a surface or a line: the nearest neutral of its family
+        if (prop !== 'text' && use.role === 'decoration') {
+          const t = nearest({ ...e, rgb: undefined }, prop === 'bg' ? ['surface', 'sunken'] : ['line'], { anyAlpha: true });
+          if (t) { consider(pl, prop, e, t.t, t.de, 'stray-hue'); continue; }
+        }
+      }
+      // §5 line too faint: a control edge under WCAG 3:1 is raised to line-strong at refine, only reported at keep
+      if (prop === 'border' && use.role === 'line-strong' && e.comp && wcag(e.comp, e.under) < 3) {
+        const strong = refine && nearest({ ...e, rgb: undefined, oklab: e.oklab }, ['line-strong'], { anyAlpha: true });
+        if (strong) { consider(pl, prop, e, strong.t, strong.de, 'line-too-faint'); continue; }
+        refused.push({ el: pl.el, prop, why: `a control edge at ${(Math.round(wcag(e.comp, e.under) * 10) / 10).toFixed(1)}:1; WCAG 3:1 asks for 3:1`, css: e.css, rule: 'line-too-faint', law: LAW['line-too-faint'], role: 'line-strong' });
+        continue;
       }
     }
-    // no token is near: kept, and said
+    // no token of its role is near: kept, and said (keep never invents a value; §4.4)
     const key = `${prop}|${hex(e.comp)}`, h = hues.get(key);
+    const rule = use.role === 'status' ? 'status-hue' : rowFor(prop, e, use);
     if (h) h.count++;
-    else hues.set(key, { prop, css: hex(e.comp), cls: e.cls, count: 1, nearest: (() => { const n = nearest(e, prop, FOR[prop], { anyAlpha: true }); return n ? { token: n.t.short, de: Math.round(n.de * 1000) / 1000 } : null; })(), why: 'no colour of yours is near it' });
+    else hues.set(key, { prop, css: hex(e.comp), cls: e.cls, count: 1, role: use.role, rule, law: LAW[rule],
+      nearest: (() => { const n = nearest(e, use.kinds.length ? use.kinds : ['accent', 'ink2', 'fg'], { anyAlpha: true }) ?? nearest(e, tokens.map((t) => t.kind), { anyAlpha: true }); return n ? { token: n.t.short, de: Math.round(n.de * 1000) / 1000 } : null; })(),
+      why: use.role === 'status' ? 'no status token of yours matches it' : 'no colour of yours is near it' });
   }
 
   const measure = {};
