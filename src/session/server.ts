@@ -211,6 +211,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'why') return read('why', [text(params, 'file')!, position(params, 'line')!]);
   if (method === 'decisions') return read('decisions', []);
   if (method === 'spec') return read('spec', []);
+  if (method === 'causes') return session.causes();
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
   if (method === 'try') {

@@ -20,6 +20,8 @@ export const methods = [
   { http: 'readiness', rpc: false },
   { http: 'readiness/fix', post: true, rpc: false },
   { http: 'report', engine: 'report', read: true, json: true },
+  // the report's findings grouped by what the author meant; the session reads them off the report it already has
+  { http: 'causes' },
   { http: 'site', engine: 'site', read: true, json: true },
   { http: 'classes', engine: 'classes', read: true, json: true },
   // over HTTP only: it needs the root the page is served from, which a stdio line does not have

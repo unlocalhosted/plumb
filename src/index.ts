@@ -38,6 +38,7 @@ import { suggestionCache } from './rules/suggestions.js';
 import { uniqueDiagnostics } from './diagnostics.js';
 import { CheckCache } from './check-cache.js';
 import { finishMessages } from './messages.js';
+import { causesOf } from './causes.js';
 import { checkingPlainCss, looksLikeTailwind } from './setup-messages.js';
 export type { TryOptions } from './try.js';
 export type { LedgerEntry, LedgerSummary } from './ledger/types.js';
@@ -297,12 +298,14 @@ export async function check(options: CheckOptions = {}): Promise<Report> {
     const report = await cache.report();
     report.timing = { ...report.timing, totalMs: performance.now() - start, phases: Object.fromEntries(Object.keys(report.timing.phases).map(name => [name, 0])) as Report['timing']['phases'], cacheHits: report.classes.unique, cacheMisses: 0 };
     report.moduleGraph = { ...report.moduleGraph, cacheHits: report.moduleGraph.followed, cacheMisses: 0, parseMs: 0, totalMs: 0 };
+    report.causes = causesOf(report);
     return report;
   }
   const before = await cache?.snapshot();
   const { report } = await analyze(options);
   profileProgress('phase:ledger');
   const result = options.ledger === false ? report : finishMessages(await applyLedger(report, options));
+  result.causes = causesOf(result);
   if (cache && before) await cache.save(result, before);
   return result;
 }
@@ -330,6 +333,8 @@ export { formatAgent } from './surfaces/agent.js';
 export type { StructuredEdit } from './surfaces/edits.js';
 export { agentDocs } from './surfaces/docs.js';
 
+export { causesOf } from './causes.js';
+export type { Cause, CausePlace, CauseFix, CauseSuggestion } from './causes.js';
 export { Session, createSession } from './session/index.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, TextRun, TextResult } from './session/index.js';
 export { serve, serveStdio, createHandler, createWebHandler } from './session/server.js';

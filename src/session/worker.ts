@@ -7,6 +7,7 @@ import type { CheckOptions } from '../index.js';
 import type { LoadedConfig } from '../config.js';
 import type { Report } from '../report.js';
 import { finishMessages } from '../messages.js';
+import { causesOf } from '../causes.js';
 import { applyLedger } from '../ledger/check.js';
 import { inspectLedger } from '../ledger/commands.js';
 import { WarmState } from './state.js';
@@ -244,7 +245,8 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
       timing: raw.timing, queryDependencies,
       ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   }
-  if (method === 'report') return report(params as CheckOptions);
+  // A copy, so the shared report the other reads hand out never carries causes computed for another ledger view.
+  if (method === 'report') { const view = await report(params as CheckOptions); return { ...view, causes: causesOf(view) }; }
   if (method === 'classes') {
     const file = params.file as string, line = params.line as number, column = params.column as number;
     if (!state.collection.slices.has(file)) throw new UsageError('Classes requires a tracked project source file.');

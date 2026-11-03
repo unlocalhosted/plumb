@@ -35,6 +35,7 @@
       }
     },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "causes": { "type": "array", "items": { "$ref": "#/$defs/cause" } },
     "habits": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "reason", "severity", "enabled", "breaks"], "properties": {"id": {"type": "string"}, "reason": {"type": "string"}, "severity": {"enum": ["error", "warn", "info"]}, "enabled": {"type": "boolean"}, "breaks": {"type": ["integer", "null"], "minimum": 0}}}},
     "presets": {
       "type": "array", "items": {
@@ -191,6 +192,23 @@
       }
     },
     "count": { "type": "integer", "minimum": 0 },
+    "cause": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "family", "value", "label", "places", "count", "rendersNothing", "spellings", "rules", "status", "fixes"],
+      "properties": {
+        "id": { "type": "string" }, "kind": { "const": "value" }, "family": { "type": "string" }, "value": { "type": "string" }, "label": { "type": "string" },
+        "places": { "type": "array", "items": {
+          "type": "object", "additionalProperties": false, "required": ["file", "line", "column", "text", "rule", "spelling", "rendersNothing"],
+          "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 }, "column": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }, "rule": { "type": "string" }, "spelling": { "type": "string" }, "rendersNothing": { "type": "boolean" }, "to": { "type": "string" }, "ledger": { "type": "object" } }
+        } },
+        "count": { "$ref": "#/$defs/count" }, "rendersNothing": { "$ref": "#/$defs/count" },
+        "spellings": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["text", "count"], "properties": { "text": { "type": "string" }, "count": { "$ref": "#/$defs/count" } } } },
+        "rules": { "$ref": "#/$defs/strings" },
+        "status": { "type": "object", "additionalProperties": false, "required": ["new", "debt", "exception"], "properties": { "new": { "$ref": "#/$defs/count" }, "debt": { "$ref": "#/$defs/count" }, "exception": { "$ref": "#/$defs/count" } } },
+        "suggestion": { "type": "object", "additionalProperties": false, "required": ["token", "name", "exact", "alternatives"], "properties": { "token": { "type": "string" }, "name": { "type": "string" }, "exact": { "type": "boolean" }, "alternatives": { "$ref": "#/$defs/strings" } } },
+        "fixes": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["rule", "text", "choice"], "properties": { "rule": { "type": "string" }, "text": { "type": "string" }, "choice": { "type": "string" } } } }
+      }
+    },
     "reach": {
       "type": "object", "additionalProperties": false, "required": ["kind"],
       "properties": {
