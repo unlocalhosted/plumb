@@ -139,6 +139,8 @@ export interface Report {
   tailwind: { entry: string | null; version: string | null };
   files: FileCounts;
   findings: Finding[];
+  /** The findings grouped by what the author meant, across rules (src/causes.ts). Set where a report is delivered. */
+  causes?: import('./causes.js').Cause[];
   habits?: import('./habits/index.js').HabitSummary[];
   decisions: Decision[];
   /** Numeric spacing is a base, not a named token; replaced bases do not govern values. */
