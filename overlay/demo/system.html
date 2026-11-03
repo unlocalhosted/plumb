@@ -365,7 +365,6 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         style: [
           sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Title</b> 600 14/20 in the main text colour: the size and how many places use it (“13px · 41 places”).</li><li><b>Code</b> <code>--pl-card-code</code> in the secondary text colour: how it’s written, most common first.</li><li><b>Next step</b> in the main text colour: where it would move, or what clicking does.</li><li><b>Background</b> <code>--pl-paper-2</code>, a hairline ring in <code>--pl-rule</code> and a soft drop shadow, so it stands out from the drawing behind it.</li></ul>`),
           sec('place', 'Placement', `<p>14px right of and below the pointer; a step’s readout sits under its mark. It’s kept inside the plot, so it never spills off the card.</p>`),
-          sec('open', 'Open', `<ul class="plain"><li>The readout’s 10px corners sit between two tokens (<code>--pl-radius-row</code> 8, <code>--pl-radius-card</code> 12) and should move onto one.</li></ul>`),
         ],
         usage: [sec('when', 'When to use it', `<ul class="plain"><li>Only for what you’re pointing at. At rest, a drawing shows only names.</li><li>Start with the number, then the code as written, then what to do. Three lines at most.</li></ul>`)],
         code: [sec('use', 'Use', `<pre><code>&lt;div class="gv-read"&gt;
@@ -385,7 +384,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         sec('ladder', 'The ladder', `<div class="ladder">${SPACE.map(([t, n]) => `<div class="lr"><code>${t}</code><span class="bar" style="width:${n * 6}px"></span><span>${n}px</span></div>`).join('')}</div><p>Most steps are 4px apart. 2 and 6 are for small adjustments inside a control.</p>`),
         sec('card', 'Card geometry', `<table class="tok"><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>${[['--pl-card-pad', '16px', 'A card’s inset, and the gap between its sections'], ['--pl-card-w', '360px', 'The width of a card shown over your page'], ['--pl-row-h', '40px', 'A row with two lines: the property and its value, then its reading'], ['--pl-tag-h', '22px', 'A tag’s height'], ['--pl-drop', '16px', 'The line from an element’s edge to its tag'], ['--pl-tick', '8px', 'Each corner tick around the selected element']].map(([t, v, u]) => `<tr><td><code>${t}</code></td><td>${v}</td><td>${u}</td></tr>`).join('')}</tbody></table>`),
         sec('rules', 'Do and don’t', `<div class="dd"><div class="do"><span class="pl-pill" data-hue="mint">Do</span><div class="ex"><span class="gapdemo" style="gap:var(--pl-space-4)"><i></i><i></i><i></i></span></div><p>Space related things a step apart: 8px between pills in a row.</p></div><div class="dont"><span class="pl-pill" data-hue="coral">Don’t</span><div class="ex"><span class="gapdemo" style="gap:10px"><i></i><i></i><i></i></span></div><p>Use a value between steps, like 10px. Plumber flags this on your page, so it shouldn’t do it itself.</p></div></div>`),
-        sec('gap', 'Known gap', `<p>A page’s larger gaps (32, 48 and 64px between sections) are typed in place; they aren’t tokens yet. Next: a spacing scale for pages, to match the page type scale.</p>`),
+        sec('page', 'Page spacing', `<table class="tok"><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>${[['--pl-page-space-1', '32px', 'Gutters, and the gap under the intro'], ['--pl-page-space-2', '48px', 'Above the first thing on a page'], ['--pl-page-space-3', '64px', 'Between sections, and the bottom on a phone'], ['--pl-page-space-4', '96px', 'Under the last card'], ['--pl-page-inset', '24px', 'A card’s inset on a page']].map(([t, v, u]) => `<tr><td><code>${t}</code></td><td>${v}</td><td>${u}</td></tr>`).join('')}</tbody></table>`),
       ],
     }),
 
@@ -514,7 +513,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         sec('heat', 'Brightness', `<p>Brightness shows how far off a value is, compared with the step: <code>${HEAT.min} + ${HEAT.gain} × |is − should| / should</code>, up to 1. So a 1px difference still shows, 18 instead of 16 is faint, and 28 instead of 16 is bright. Brighter marks also spread further: the blur runs ${HEAT.blur[0]} to ${HEAT.blur[1]}px. A framework default rests at the minimum.</p>`),
         sec('states', 'States', `<ul class="plain"><li><b>Rest</b> nothing is drawn: your page is clean until you point.</li><li><b>Point</b> the mark pulses, everything with the same cause lights, and one pill by the pointer says the class and what it becomes, ×n when it’s in more places.</li><li><b>Fixing</b> its marks light up and the current one pulses twice; everything else fades.</li><li><b>All clear</b> when the last problem is fixed, four crosshair marks spring into the corners of the screen, then fade.</li><li><b>Covered</b> a mark is cut to what you can see of its element; nothing under a drawer is drawn or clickable.</li></ul>`),
         sec('keys', 'Keyboard', `<ul class="plain"><li><b>Tab</b> steps through the marks, worst first. Each says its class and fix to readers.</li><li><b>Enter</b> picks the element, as a click does.</li></ul>`),
-        sec('open', 'Open', `<ul class="plain"><li>Magenta and cyan are the only colours here outside the six hues. They’re set in <code>blueprint-marks.js</code>, not tokens, and follow the OS’s scheme rather than the page’s.</li></ul>`),
+        sec('colours', 'Colours', `<p>Magenta (<code>--pl-heat</code>) and cyan (<code>--pl-sys</code>) are the only colours outside the six hues. They’re drawn on your page rather than on Plumber’s cards, so they’re picked to show up on any colour underneath. Both follow the page’s day or night, like every other token.</p>`),
       ],
     }),
 
@@ -530,7 +529,7 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
         sec('sizes', 'The two sizes', `<table class="tok"><thead><tr><th></th><th>Over your page</th><th>On a page</th></tr></thead><tbody><tr><td>Width</td><td><code>--pl-card-w</code> 360px</td><td>The column it sits in</td></tr><tr><td>Inset</td><td><code>--pl-card-pad</code> 16px</td><td>24px</td></tr><tr><td>Type</td><td>The card scale: title 14, body 13, meta 12</td><td>The page scale: title 20, small 14, figure 32</td></tr><tr><td>Regions</td><td>Head (32px, the element), body, foot</td><td>Head, body, foot with the count and the action</td></tr><tr><td>Gap to its element</td><td><code>--pl-card-gap</code> 12px</td><td>None; it’s part of the page</td></tr></tbody></table>`),
         sec('regions', 'Regions', `<ul class="plain"><li><b>Head</b> which thing: a tag with its name, a count, where it’s written. A hairline under it.</li><li><b>Body</b> what’s off in words, then the change as pills, coral to mint.</li><li><b>Foot</b> what you can do: one pink action, on the right. A hairline over it.</li><li>Inside, space goes by relationship: 4 within a group, 8 between parts, 12 between rows, 16 between sections.</li></ul>`),
         sec('motion', 'Opening', `<p>A card over your page opens in <code>--pl-dur-card</code> (180ms) on the ease-out, from 4px above and 98.5% size, growing from the corner nearest its element. It leaves at once. Under reduced motion it just appears.</p>`),
-        sec('open', 'Open', `<ul class="plain"><li>There’s no card class yet: twelve modules each set the same background, corners and shadow. A single <code>.pl-card</code> class in <code>language.js</code> would define it once.</li><li>The page card’s 24px inset isn’t a token.</li></ul>`),
+        sec('use', 'Use', `<p>Add <code>pl-card</code> to the element. It’s defined once, in <code>CARD_CSS</code> in <code>language.js</code>, and every card in the overlay uses it: the element card, Blueprint’s panel, your setup, Help, the changes list, the toast and the timeline.</p><pre><code>&lt;aside class="cg pl-card"&gt;…&lt;/aside&gt;</code></pre>`),
       ],
     }),
 
@@ -540,9 +539,8 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       sections: [
         sec('live', 'Live', `<p>The real project page, on crafting-ui’s numbers.</p><div class="frame"><iframe title="The project page" src="project.html?scheme=${host.dataset.scheme ?? 'light'}" loading="lazy"></iframe></div><p><a href="project.html" target="_blank" rel="noopener">Open it on its own</a></p>`),
         sec('order', 'Top to bottom', `<table class="tok"><thead><tr><th>Part</th><th>Set in</th><th>Its job</th></tr></thead><tbody>${[['Bar', 'Sticky, 88% paper with a 12px blur, a hairline under it', 'The logo, the project name, how many files were read, and the day/night switch'], ['Eyebrow', '--pl-page-meta, in the secondary text colour', 'What the page is about, in three words'], ['Headline', '--pl-page-display, at most 26 characters a line, balanced', 'The main finding, with its numbers in coral or mint'], ['Lede', '--pl-page-body, at most 60 characters a line', 'Why it matters and how to fix it'], ['Hero', 'A page card', 'The chart that backs up the headline']].map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table>`),
-        sec('grid', 'Measure and gutters', `<ul class="plain"><li><b>Column</b> 1120px at most, centred.</li><li><b>Gutters</b> 32px each side; 16px under 720px wide.</li><li><b>Top and bottom</b> 56px above the eyebrow, 96px under the last card; 32 and 64 on a phone.</li><li><b>Headline</b> 40/46 drops to 30/36 on a phone.</li></ul>`),
+        sec('grid', 'Measure and gutters', `<ul class="plain"><li><b>Column</b> 1120px at most, centred.</li><li><b>Gutters</b> 32px each side; 16px under 720px wide.</li><li><b>Top and bottom</b> 48px above the eyebrow, 96px under the last card; 32 and 64 on a phone. All from the page spacing tokens.</li><li><b>Headline</b> 40/46 drops to 30/36 on a phone.</li></ul>`),
         sec('rules', 'Rules', `<ul class="plain"><li>One headline per page. It states a finding, not a title.</li><li>Numbers in the headline are coloured by result: coral for off your scale, mint for on it.</li><li>The page follows the OS’s day or night until you choose; the bar’s button switches the page and every card at once.</li></ul>`),
-        sec('open', 'Open', `<ul class="plain"><li>The page’s gaps, 32, 56, 64 and 96, sit above the spacing ladder and aren’t tokens yet.</li></ul>`),
       ],
     }),
 
@@ -676,7 +674,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
         accessibility: [
           sec('contrast', 'Contrast', `<p>The lettering on the pink clears 4.5:1 in both schemes:</p>${contrastRows(['pink'])}`),
           sec('focus', 'Focus', `<p>Tab to it and a 2px sky ring shows, offset 2px, in both schemes. Enter and Space press it.</p><div class="stage">${btn('is-focus')}</div>`),
-          sec('touch', 'Touch', `<p>It’s 34px tall. On touch screens the target should be 44px: give it room around it, or use the 40px page size. <span class="pl-pill" data-hue="butter">Known gap</span></p>`),
+          sec('touch', 'Touch', `<p>It’s 34px tall. On a touch screen it takes presses 5px above and below too, so the target is 44px without the button looking bigger.</p>`),
         ],
       };
       return { title: 'Action', lede: 'The main thing you can do on a card or page.', tabs: true, tab, sections: t[tab] ?? t.overview };
@@ -837,9 +835,9 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
     .h-top .n { color: var(--pl-coral); } .h-top .file { margin-left: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
     .h-body { padding: var(--pl-card-pad); } .h-body b { display: block; font: var(--pl-card-title); } .h-body p { margin: 4px 0 12px; font: var(--pl-card-body); color: var(--pl-ink-2); }
     .h-acts { display: flex; align-items: center; gap: 8px; } .h-acts .arr { color: var(--pl-ink-3); } .h-acts .pl-act { margin-left: auto; }
-    .p-head { padding: 22px 24px 0; } .p-head h3 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); } .p-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
-    .p-body { display: flex; flex-wrap: wrap; gap: 20px; padding: 28px 24px; }
-    .p-foot { display: flex; align-items: center; gap: 12px; padding: 18px 24px 22px; border-top: 1px solid var(--pl-rule); } .p-foot .sc-count { flex: 1 1 auto; }
+    .p-head { padding: var(--pl-page-inset) var(--pl-page-inset) 0; } .p-head h3 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); } .p-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .p-body { display: flex; flex-wrap: wrap; gap: 20px; padding: var(--pl-page-space-1) var(--pl-page-inset); }
+    .p-foot { display: flex; align-items: center; gap: 12px; padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); border-top: 1px solid var(--pl-rule); } .p-foot .sc-count { flex: 1 1 auto; }
     .p-foot .pl-act { margin-left: auto; }
     .frame { height: 620px; border-radius: var(--pl-radius-card); overflow: hidden; box-shadow: 0 0 0 1px var(--pl-rule); }
     .frame iframe { width: 100%; height: 100%; border: 0; display: block; }
@@ -849,9 +847,9 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
     .bp-stage { gap: 20px; padding: 32px; }
     .bp-acts { display: flex; align-items: center; gap: 12px; } .bp-acts .say { font: var(--pl-page-meta); color: var(--pl-ink-2); }
     .bp-sw { display: inline-block; width: 22px; height: 12px; margin-right: 8px; vertical-align: -1px; border-radius: 3px; }
-    .bp-sw.heat { background: #ff1f8f; filter: blur(1.2px); }
-    .bp-sw.dots { background: radial-gradient(#00a3ff .9px, transparent 1.1px) 0 0 / 3.5px 3.5px; }
-    .bp-sw.edge { box-shadow: inset 0 0 0 2px #ff1f8f; filter: blur(.6px); }
+    .bp-sw.heat { background: var(--pl-heat); filter: blur(1.2px); }
+    .bp-sw.dots { background: radial-gradient(var(--pl-sys) .9px, transparent 1.1px) 0 0 / 3.5px 3.5px; }
+    .bp-sw.edge { box-shadow: inset 0 0 0 2px var(--pl-heat); filter: blur(.6px); }
     .bm-spec { display: flex; align-items: center; gap: 8px; margin: 16px; padding: 20px 24px 20px 10px; min-width: 300px; border: 1px solid var(--pl-rule); border-radius: 10px; background: var(--pl-paper); font: 600 15px var(--pl-sans); color: var(--pl-ink); }
     .bm-spec .b { font: 600 12px var(--pl-mono); color: var(--pl-mint-ink); background: var(--pl-mint-soft); padding: 3px 8px; border-radius: 7px; }
     .inline-ic { display: inline-grid; width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; color: var(--pl-sky); } .inline-ic svg { width: 14px; height: 14px; }

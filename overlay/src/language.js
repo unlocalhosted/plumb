@@ -61,6 +61,8 @@ export const LANGUAGE_CSS = CARD_CSS + `
   .pl-act:hover { filter: brightness(1.06) saturate(1.04); }
   .pl-act:active { scale: .97; }
   .pl-act:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  /* on a touch screen the button takes a 44px-tall press without looking any bigger */
+  @media (pointer: coarse) { .pl-act { position: relative; } .pl-act::before { content: ""; position: absolute; inset: -5px 0; } }
   /* quiet, pressed and disabled sit on the paper with a hairline edge, so they stay buttons on any surface */
   .pl-act:disabled { cursor: not-allowed; background: var(--pl-paper-2); color: var(--pl-ink-3); filter: none; box-shadow: inset 0 0 0 1px var(--pl-rule); }
   .pl-act[aria-pressed="true"], .pl-act.quiet { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); }

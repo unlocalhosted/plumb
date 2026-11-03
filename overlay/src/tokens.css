@@ -21,6 +21,11 @@
   --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
+  /* Blueprint: magenta where the page has too much (space, size, weight), cyan where space is missing. Outside the six
+     hues on purpose: they sit on your page, not on Plumber's cards, and must read on any colour under them */
+  --pl-heat: #ff1f8f;
+  --pl-sys: #00a3ff;
+
   /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
   --pl-instrument: var(--pl-sky);    /* selection, measurements, focus; drawn with a halo so it shows on any page */
   --pl-accent: var(--pl-instrument);
@@ -75,6 +80,12 @@
   --pl-space-6: 16px;
   --pl-space-7: 20px;
   --pl-space-8: 24px;
+  /* a page (anything bigger than a card): four steps above the ladder, each a clear jump */
+  --pl-page-space-1: 32px;      /* gutters; the gap under the lede */
+  --pl-page-space-2: 48px;      /* above the first thing on a page */
+  --pl-page-space-3: 64px;      /* between sections; the bottom on a phone */
+  --pl-page-space-4: 96px;      /* under the last card */
+  --pl-page-inset: 24px;        /* a card's inset on a page */
 
   /* instrument geometry */
   --pl-line: 1px;               /* every line Plumber draws, snapped to screen pixels */
@@ -138,6 +149,8 @@
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
+    --pl-heat: #ff4fa7;
+    --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
@@ -161,6 +174,8 @@
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
+    --pl-heat: #ff4fa7;
+    --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);

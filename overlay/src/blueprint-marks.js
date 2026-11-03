@@ -67,13 +67,10 @@ export const MARKS_CSS = `
   .bp .bp-hint .near { color: var(--pl-ink-2); display: block; }
   .bp .bp-hint .act { color: var(--pl-accent); display: block; font: var(--pl-text-label); margin-top: var(--pl-space-1); }
   /* registration: heat where the page is off, no boxes at rest */
-  .bp { --pl-heat: #ff1f8f; --pl-sys: #00a3ff; }
-  @media (prefers-color-scheme: dark) { .bp { --pl-heat: #ff4fa7; --pl-sys: #2bb8ff; } }
   .bp .heat .warm rect { fill: var(--pl-heat); }
   .bp .heat .dots rect { fill: url(#pl-dot); }
   svg.all-clear { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2147483647; }
-  svg.all-clear .mark { stroke: #00a3ff; stroke-width: 1.5px; fill: none; transform-box: fill-box; transform-origin: center; }
-  @media (prefers-color-scheme: dark) { svg.all-clear .mark { stroke: #2bb8ff; } }
+  svg.all-clear .mark { stroke: var(--pl-sys); stroke-width: 1.5px; fill: none; transform-box: fill-box; transform-origin: center; }
   .bp .heat .warm rect.edge { fill: none; stroke: var(--pl-heat); stroke-width: 3px; }
   .bp .heat .zone { transition: opacity 220ms ease-out; }
   .bp .bp-hint.pill { max-width: none; padding: 0 var(--pl-space-3); height: 24px; display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; white-space: nowrap;
