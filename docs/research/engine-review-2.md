@@ -270,3 +270,179 @@ let `isDark` take it.
 4. B4 + B5 + D2 + D3 together (one helper table, objects only inside helpers, `path` on refs).
 5. R1 + R2 + D4 (one lock around a batch, whole-batch eviction).
 6. R6 (the plan asks class-site), then R3, R4, R5.
+
+## Re-review (3d5a28b, fc0f9a9)
+
+Read as `git show` of the two commits (the working tree's engine.ts carries another session's hunks, not reviewed). The
+three touched suites run one at a time against the current dist: `node --test e2e/class-site.test.mjs` 20/20,
+`node --test e2e/recipes.test.mjs` 14/14, `node --test e2e/props.test.mjs` 4/4. New probes are in the scratchpad,
+`/private/tmp/claude-501/-Users-vijaysingh--claude-spares-spare-vzhCpS/f8e9839e-2f17-48c8-a49a-ffeae6eeae2f/scratchpad/rereview2.test.mjs`
+(cases 1–10) and `rereview2b.test.mjs` (offsetOf), run as `node --test <file>` from that directory; the fixture files are
+quoted inline where a result depends on them.
+
+### The findings
+
+| | verdict | proof |
+|---|---|---|
+| B1 rest spread keeps className | **fixed** | `binds()` returns `except` for a rest pattern; `bindingOf` merges `except` through `const { a, ...rest } = props` chains; `follow` returns when the prop is in `except`. e2e "B1" asserts `classes: []` and `add.kind !== 'usage'` for both `Row({ className, ...rest })` and `const { className, ...rest } = props`. |
+| B2 `memo(function Inner)` | **fixed (server), partly (overlay)** | `componentOf` returns `names` (declarator first, then the inner id); e2e "B2" finds `p-4` at the `<Panel>` usage and, without the chain, `add.shared === true`. The overlay never reads `add.shared` (`grep -n shared overlay/src/locate.js` matches only the design-system path filter), so an add on a component element with no chain still goes into the component's own string silently. See N6. |
+| B3 branch read as worn | **fixed** | `elementProps` builds the value from `always` only and lists a branch class as `{ class, branch, at }`; `setProp` refuses without a pin (`oneCase`), takes the pin into the branch. e2e "B3" (class-site), props test "set writes into cn(...)" (now refuses `font-medium` under `on &&` unpinned, 200 with `at`), recipes "B3 in the recipes". |
+| B4 object keys as classes | **fixed** | `classSources` visits an `ObjectExpression` only under a helper with `objects: 'keys'`; refs carry `path`, `classSourcesAt` walks the usage value by it. e2e "B4 + D3" reads `styles={{ 'root': 'p-4 flex' }}` as `p-4 flex` at prop `styles`, writes `p-4 → p-6` there with `of`. |
+| B5 identifier keys skipped | **fixed** | identifier and shorthand keys are strings with `key: 'identifier' \| 'shorthand'`; `rewriteString` re-quotes. e2e "B5": `hidden` under `!open`, `hidden → sr-only` writes `'sr-only': !open`, `active → is-active` writes `'is-active': active`. |
+| B6 pin trusted whole | **fixed** | `Session.pinned` → `pinnedString` resolves the element (or `of`) and takes the pin only when it is a string found for the written holder; an add into a branch or a shared variable is refused there. e2e "B6": add into the else branch 400 (/condition/), pin into `href` 400, pin into `#both`'s string sent with `#tern` 400, the single `swap` the same, the right pin 200. `set` keeps its own check against the element's own strings (`NOT_ITS_STRING`), which is all `elementProps` can hand out. |
+| R1 undoBatch outside the lock | **fixed** | `undo()` enters `serialize` first, then `undoBatch` → `undoOne` per member; a member that fails leaves the rest in `batches` for a second undo. e2e "R1" races an undo against a token write six rounds and asserts both files back or neither. |
+| R2 eviction splits a batch | **fixed** | `evict()` drops a batch whole when its oldest member is the oldest entry; `undoBatch` refuses when a member is missing. e2e "R2": 19 writes after a two-file recipe, the batch id gone from history, undo 400, files unchanged. |
+| R3 add into a shared variable | **fixed (server), bypassed (overlay)** | `readers()` on the site and add; `classSites.add` skips a variable with `readers > 1` (`addRefused` names it), `pinnedString` refuses an add there. e2e "R3": `add: null`, `readers: 2`, add 400, change 200. The overlay's "kin" rule sends the add as a swap, which the server accepts into the variable: N5. |
+| R4 usage by name before import | **partly** | an imported tag must resolve to the component's file (`sameModule`); e2e "R4" proves the skipped-chain case. The fallback `component.names.includes(last)` still fires for a tag not imported in a *different* file (N2), and `sameModule` equates a scoped package with a local basename (N3). And the file check now refuses barrel imports (N1). |
+| R5 usage that spreads | **fixed** | `follow` walks `usage.spreads` with `path: [prop, ...rest]`; e2e "R5" finds `p-2` at `<Outer className>` through `<Panel {...props}>`. Nit: a spread that leads nowhere (`<Panel {...local} />`) returns without pushing to `unfollowed`, so the refusal loses its "comes in through" hint. |
+| R6 plan without class-site | **fixed (server), partly (product)** | `plan.ts` reads through `wornBy` → `classSites` and writes through `pinnedString`; `recipeContext` reads chain files fresh; e2e "R6" changes `shadow-sm` at the `<Tile>` usage. But the overlay sends no `chain` to `recipes`, `recipes/preview` or `recipes/apply` (`elementcard.js:349`, `:451`, `blueprint.js:531`), so from the product every recipe still runs chainless: N6, N7. |
+| D2 helper table | **fixed** | one `knownHelpers` table with `objects`/`idiom`; `project.ts` reads `idiom` rows; `cva`'s config is not visited. |
+| D3 `property` → `path` | **fixed** | `ClassRef.path: string[]`, `classSourcesAt`. |
+| D4 batch map | **fixed** | `Session.batches`; `history`, `evict`, `undo` read it; a member id alone is refused ("undo that one, whole"). |
+| nit ownProp on the spread ref | **fixed** | `follow({ ...ref, path: [ownProp] })`. |
+| nit depth limit | **fixed** | `seen` sets in `follow` and `bindingOf`. |
+| nit offsetOf past the line | **fixed** | `rereview2b`: `at: { line: 2, column: 200 }` → `400 That column is past the end of its line.`, file unchanged. No e2e case in the suite. |
+| nit classNameOf wording | **fixed** | "a condition between values set elsewhere". |
+| nit missing e2e cases | **fixed** | B1, B2, R3 are in `e2e/class-site.test.mjs`. |
+| D1, D5, D6 | unchanged, not claimed. | |
+
+### New findings
+
+#### N1 · class-site.ts `usesComponent`/`sameModule` a usage that imports through a barrel is not the usage — **bug (refusal, then a shared add)** *run*
+`sameModule` equates a specifier with the component's file only when it resolves to that file or its folder's index.
+An index that *re-exports* (`src/ui/index.ts: export { Card } from './card'`, the common `@/components/ui` shape) resolves
+to `src/ui`, which is not `src/ui/card`, so the usage is refused and the add falls to the component's own string:
+
+```
+src/ui/card.tsx   export function Card({ className, children }) { return <div className={`border ${className}`}>{children}</div>; }
+src/ui/index.ts   export { Card } from './card';
+src/Barrel.tsx    import { Card } from './ui';  export const B = () => <Card className="p-6">b</Card>;
+
+(1) barrel: 200 [{"class":"border",...},{"class":"p-6","sites":[],"refused":"p-6 is built in code, so it can't be changed here (it comes in through `className`)."}]
+    add: {"file":"src/ui/card.tsx","kind":"own",...,"string":{"text":"border "},"shared":true}
+```
+
+Before 3d5a28b this matched by name. The overlay ignores `shared` (B2 row), so a class added to this `<Card>` lands in
+every Card. *Fix:* the resolver takes a `resolveModule(from, specifier) → file | undefined` from the engine (it can
+`stat`); when the import lands on a file other than the component's, parse that file's `export { X } from` /
+`export * from` once and follow the one hop (barrels are one level deep in practice; a seen-set ends cycles). When the
+specifier resolves to nothing readable (a package, an alias the engine cannot map), fall back to the name, as N3 says.
+
+#### N2 · class-site.ts `usesComponent` the name fallback fires across files — **risk (wrong usage)** *run*
+A tag that is not imported matches `component.names` whatever file the usage is in. A component declared locally in the
+usage file with the same name is taken as the usage of the element's component:
+
+```
+src/Local.tsx   function Card({ children }) { return <div>{children}</div>; }  export const L = () => <Card className="p-9">l</Card>;
+(2) local same-name: 200 [{"class":"border",...},{"class":"p-9","sites":[["usage","className","src/Local.tsx","Card"]]}]
+```
+
+`p-9` is reported as written for `ui/card`'s `<div>`, and a write there changes `Local.tsx`'s `<Card>` for nothing. It
+needs the real usage to be missing from the chain (sliced at 8 links, or rendered through a render prop), so risk, not
+bug. *Fix:* the name fallback only when `usage.path === component.file`; in another file a tag must be imported.
+
+#### N3 · class-site.ts `sameModule` a scoped package with the file's basename is the file — **risk (wrong usage)** *run*
+`@scope/pkg` drops `@scope` and `pkg` matches `…/pkg`: `import { Card } from '@acme/card'` is taken as `src/ui/card.tsx`:
+
+```
+src/Scoped.tsx   import { Card } from '@acme/card';  export const S = () => <Card className="p-7">s</Card>;
+(3) scoped @acme/card: 200 [... {"class":"p-7","sites":[["usage","className","src/Scoped.tsx","Card"]]}]
+```
+
+Same precondition as N2 (the real usage not on the chain). *Fix:* treat `@x/…` as a package (an alias is `@/`, `~/`,
+`#…`: one character before the slash); a bare package name (`card`, `ui`) the same when it is not in tsconfig `paths`.
+With N1's `resolveModule`, both become "resolves to nothing readable".
+
+#### N4 · class-site.ts `componentOf` `export default memo(Card)` is not a default export — **risk (refusal)** *run*
+`isDefault` accepts `export default <Identifier>` and a function written inside the export; a wrapped name is neither:
+
+```
+src/ui/dcard.tsx   function Card({ className }) { return <div className={className}>x</div>; }  export default memo(Card);
+src/Deflt.tsx      import Card from './ui/dcard';  export const D = () => <Card className="p-5">d</Card>;
+(4) default memo(Card): 200 [{"class":"p-5","sites":[],"refused":"p-5 is built in code ... (it comes in through `className`)."}]  add: null
+```
+
+*Fix:* in the `isDefault` scan, unwrap the declaration through `CallExpression` arguments (`memo(Card)`,
+`forwardRef(Card)`, `memo(forwardRef(Card))`) and `export { Card as default }` specifiers.
+
+#### N5 · overlay/src/locate.js:325–328 the "kin" rule turns an add into a swap, past the server's add checks — **risk (write into a shared variable or a branch)** *reasoned, not run*
+`classEditsOf` with no `from`: when a class of the same family is already written (`px-2.5` for an added `pl-3`), it sends
+`from: 'px-2.5', to: 'px-2.5 pl-3'` at *every* site of that class. That is a swap to the server, so `pinnedString(…,
+adding = false)` skips both the branch and the `readers > 1` checks (class-site.ts `pinnedString`: both guards are under
+`adding`). With `const look = 'px-2.5 py-1 rounded'` read by `#v1` and `#v2`, the card's "add pl-3" on `#v1` writes `pl-3`
+into `look` and changes `#v2`, the write R3 was closed against; with `tone ? 'px-2.5' : 'grid'` it writes into the branch.
+The branch half is arguably wanted (the override stays with what it overrides); the shared-variable half is not. *Fix:*
+the kin rule skips sites with `readers > 1` (and says so), falling back to `answer.add`; or the server's swaps take an
+`adds: true` hint and apply the add checks when `to` ⊇ `from`.
+
+#### N6 · recipes/plan.ts `swap` writes into a variable other elements read, and says nothing — **risk (a write that changes other elements)** *run*
+Before 3d5a28b the plan read `className={look}` as dynamic and refused. Now class-site hands it the variable's string
+with `readers: 2`, and `swap` takes every unconditional string that holds `from` without looking at `readers`:
+
+```
+src/App.tsx   const look = 'shadow-sm rounded';
+              <div id="v1" className={look}>1</div><div id="v2" className={look}>2</div>
+(8) view shadow: {"source":"class","class":"shadow-sm",...}
+(8) apply: 200 {"applied":["element:src/App.tsx"],"notes":[]}
+(8) look now: const look = 'shadow-md rounded';
+```
+
+The class-site card would show `readers: 2`; the recipe card has no such field. Likewise the plan ignores `add.shared`:
+a recipe on a component's inner element without a chain adds into the component (case 10: `cn('rounded-lg p-4
+shadow-md', className)` for every `<Tile>`), which is what happened before too, but now the resolver says `shared` and the
+plan drops it. *Fix:* in `swap`, refuse a target site with `readers > 1` ("written in `look`, which 2 places read") and
+an `add.shared` target unless `i.forwards`; put `readers`/`shared` into `describeElement`'s answer so the card can say it.
+
+#### N7 · overlay: no `chain` on `recipes`, `recipes/preview`, `recipes/apply` — **design (R6 half done)** *reasoned*
+`elementcard.js:349` asks `recipes` with `{ file, line, column }` only, `:451` and `blueprint.js:531` the same for preview
+and apply, while `readSites` sends `chain` for class-site. So from the product every recipe is chainless: a class passed
+in from a usage reads as `source: 'none'` (case 10 above) and the add goes into the component. *Fix:* send the same
+`chain` (`at.chain.slice(1, 9)`) and the `hashes` the class-site answer carries, so `recipesApply`'s per-file hash check
+covers the usage file.
+
+#### N8 · class-site.ts `isReference` a shorthand property counts twice — **nit** *run*
+`{ look }` has a key node and a value node; `isReference` skips the key only when `!shorthand`, so both count:
+
+```
+const look = 'a b'; const o = { look };  <div id="rd" className={look}>
+(5) readers of look (expect 2): [... "readers": 3]  addRefused: "...which 3 places read..."
+```
+
+Off by one, in the safe direction. *Fix:* skip the key of a shorthand property (count the value).
+
+#### N9 · class-site.ts `bindingOf` a key taken out of a rest is still read from it — **nit** *run*
+`function Row3({ className: c, ...rest }) { const { className } = rest; <a className={className}> }`: `bound.key` is
+`className`, `outer.except` holds it, and the branch `bound.key === null ? … : { kind: 'prop', prop: bound.key }` ignores
+`except`:
+
+```
+(6) Row3: 200 [{"class":"p-8","sites":[["usage","className","src/App.tsx","Row3"]]}]
+```
+
+The code is nonsense at runtime (`className` is always undefined), so nobody writes it on purpose. *Fix:* return
+`undefined` when `outer.except?.includes(bound.key)`.
+
+### Checked and sound
+- `pinnedString` without `of` (`usageProps`): a pin from a usage into its own `className` or `gapClass` is accepted
+  (case 7: both 200, file `<Panel className="p-5 flex" gapClass="gap-3" />`); a pin into `href` is refused (e2e B6). With
+  `of`, the written element must be a holder the resolution of `of` reached, so a client cannot name a string that is not a
+  class string of an element `of` reads. No legitimate overlay write is refused: the overlay sends `of` as the element and
+  chain it read, and the server resolves the same.
+- `swaps` with several pins in one file: changes sorted by start descending and applied from the end; offsets hold.
+- `readers()`: a shadowing declaration in an inner block resolves to its own init and is not counted; a self-read
+  (`const a = cn(a)`) counts, which only makes `readers` one too high.
+- `evict`/`asOneWrite`: a batch registered after both members are recorded cannot lose a member to the per-record
+  eviction (the members are the newest entries); `historyLimit` ≥ batch size.
+- `undoBatch` mid-failure: a member that throws before its write leaves itself and the older members in `batches`
+  (the `finally`), so a second undo of the id finishes; a member that throws after its write (the `remaining` snapshot)
+  has already restored the file and dropped its entry, as `undo` did before.
+- Recipe through a chain in another file (case 9): the usage file is written and its hash returned; the component file
+  untouched.
+- `except` through `const { a, ...rest } = props; const { b, ...rest2 } = rest` chains: merged (`[...outer.except, ...bound.except]`).
+
+### Order
+1. N1 (barrel imports) — a refusal on the most common import shape, and the add it falls to is shared.
+2. N6 + N7 together (the plan honours `readers` and `shared`; the overlay sends the chain) — R6 is then true end to end.
+3. N5 (the kin rule) — closes the R3 bypass.
+4. N2, N3, N4 with N1's resolver.
+5. N8, N9.
