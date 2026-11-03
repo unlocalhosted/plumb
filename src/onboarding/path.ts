@@ -8,6 +8,12 @@ import type { Report } from '../report.js';
 import type { Cause } from '../causes.js';
 import { count } from '../messages.js';
 import { projectGates } from './gates.js';
+import { loadConfig } from '../config.js';
+import { installOverlay } from '../adoption/install.js';
+import { initProject } from '../adoption/init.js';
+import { entryCount } from '../ledger/store.js';
+import { packageManager } from '../setup-messages.js';
+import type { ReadinessReport } from '../readiness/index.js';
 import { wrap } from '../cli-table.js';
 
 /**
@@ -21,6 +27,8 @@ export interface PathContext {
   /** Checks that the project can be read at all (the same gate every analysis passes); prints its own notices. */
   prepare(): Promise<void>;
   noOpen: boolean;
+  /** `--yes`: set up here, with no page and no question. */
+  yes?: boolean;
   /** The project's report, with progress shown where it helps. */
   report(): Promise<Report>;
 }
@@ -121,10 +129,11 @@ export function openBrowser(url: string): Promise<boolean> {
  * Serve the page and open it; with no browser to open, say the same thing in the terminal.
  */
 export async function runBare(context: PathContext): Promise<void> {
-  const page = onTerminal(context.noOpen);
-  // the page offers setup, which writes into the dev config; the plain version only reads
-  await projectGates(context.root, context.config, page);
+  const page = !context.yes && onTerminal(context.noOpen);
+  // the page and --yes set up, which writes into the dev config; the plain version only reads
+  const ready = await projectGates(context.root, context.config, page || context.yes === true);
   await context.prepare();
+  if (context.yes) { process.stdout.write(await setUp(context, ready)); return; }
   if (!page) { process.stdout.write(plainVersion(await context.report())); return; }
   const started = performance.now();
   process.stdout.write('Plumber · reading your app…\n');
@@ -143,4 +152,29 @@ export async function runBare(context: PathContext): Promise<void> {
   const written = (await daemon.session.history()).writes.length;
   await daemon.close();
   process.stdout.write(written ? '\n' : '\nNo changes made.\n');
+}
+
+/**
+ * `--yes`: what the page's one button does, with no page and no question. Adds Plumber to the dev config (the changed
+ * lines only) and writes plumber.config.ts with today's state, so only new problems fail later. It never writes into
+ * the theme: theme proposals are fixes to take later. Running it again changes nothing.
+ */
+export async function setUp(context: PathContext, ready: ReadinessReport): Promise<string> {
+  const root = context.root;
+  const lines: string[] = [];
+  const inDevConfig = ready.requirements.find(item => item.id === 'locate.plugin')?.status === 'ok';
+  const configured = (await loadConfig(root, context.config)).path !== null;
+  if (!inDevConfig) {
+    // first: the dev config is the step that can be refused (an unusual config), and a refusal writes nothing
+    const wrote = [...(await installOverlay(root, true)).matchAll(/^Wrote (.+)\.$/gm)].map(match => match[1]!);
+    for (const file of wrote.length ? wrote : ['your dev config']) lines.push(`  ✓ Added Plumber to ${file}`);
+  }
+  if (!configured) {
+    const result = await initProject(root, { ...(context.config === undefined ? {} : { config: context.config }), unattended: true, quiet: true }, () => {});
+    const places = result.entries.filter(entry => entry.kind === 'debt').reduce((sum, entry) => sum + entryCount(entry), 0);
+    lines.push(`  ✓ Saved today's state${places ? ` (${count(places, 'place')})` : ''}, so only new problems fail from now on`, '  Your theme is untouched.');
+  }
+  if (!lines.length) return 'Plumber is already set up here.\n\nNext: press Alt+B on your page to fix it there.\n';
+  const manager = packageManager(root);
+  return ['Plumber · set up', ...lines, '', `Next: start your app (${manager === 'npm' ? 'npm run dev' : `${manager} dev`}) and press Alt+B on your page.`, ''].join('\n');
 }

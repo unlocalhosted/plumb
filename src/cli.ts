@@ -40,7 +40,7 @@ const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
-       plumber                          open a page about your project in the browser
+       plumber [--yes] [--no-open]       open a page about your project; --yes sets it up here instead
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
        plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
   if (args.values.version) { process.stdout.write(`${tool.version}\n`); return; }
   const command = args.positionals[0] ?? 'check';
   // Bare `plumber` (only a folder or config named) is the newcomer's path; any other flag asks for a report as before
-  const bare = args.positionals.length === 0 && Object.keys(args.values).every(flag => ['root', 'config', 'no-open'].includes(flag));
+  const bare = args.positionals.length === 0 && Object.keys(args.values).every(flag => ['root', 'config', 'no-open', 'yes'].includes(flag));
   const deciding = command === 'decisions';
   const listingHabits = command === 'habits';
   const explaining = command === 'explain';
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
   if (command === 'serve' && (args.values.json || args.values.verbose)) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.\n  → plumber serve');
-  for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag)) {
+  for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag) && !(bare && flag === 'yes')) {
     const commands = Object.keys(commandFlags).filter(name => commandFlags[name]!.includes(flag));
     throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.\n  → plumber ${commands[0]} --help`);
   }
@@ -192,7 +192,7 @@ async function main(): Promise<void> {
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
   if (bare) {
     const { runBare } = await import('./onboarding/path.js');
-    await runBare({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true, report: () => analyzing(() => check({ ...options })) });
+    await runBare({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true, yes: args.values.yes === true, report: () => analyzing(() => check({ ...options })) });
     return;
   }
   if (command === 'presets') {

@@ -3,6 +3,7 @@ import { UsageError } from '../errors.js';
 import { cliProject, shellPath } from '../cli-project.js';
 import { manifestAt, projectFacts } from '../project-facts/index.js';
 import { readiness } from '../readiness/index.js';
+import type { ReadinessReport } from '../readiness/index.js';
 import { count } from '../messages.js';
 
 /**
@@ -32,15 +33,16 @@ export async function chooseProject(argument: string | undefined): Promise<{ roo
  * The gates on a project that was chosen. `setup`: this run could write into the dev config (the page offers it, `--yes`
  * does it), so a dev config with changes that aren't committed stops it: the person would commit our lines with theirs.
  */
-export async function projectGates(root: string, config: string | undefined, setup: boolean): Promise<void> {
+export async function projectGates(root: string, config: string | undefined, setup: boolean): Promise<ReadinessReport> {
   const ready = await readiness({ root, ...(config === undefined ? {} : { config }), noReport: true });
   // neither installed nor declared: a declared react that isn't installed yet is the setup rows' to say
   const react = ready.project.react.value;
   if (react && !react.installed && !react.declared) throw noReact();
-  if (!setup) return;
+  if (!setup) return ready;
   const plugin = ready.requirements.find(item => item.id === 'locate.plugin');
   // a project outside Git has no commit to compare with; only a repo can have changes that aren't committed
   if (plugin?.fix?.kind === 'diff' && plugin.fix.dirty && ready.project.repo.value) {
     throw new UsageError(`${relative(root, resolve(root, plugin.fix.file)) || plugin.fix.file} has changes you haven't committed.\n  → Commit or stash them, then run npx plumber again.`);
   }
+  return ready;
 }
