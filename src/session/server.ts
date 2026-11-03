@@ -16,6 +16,7 @@ import { isIP } from 'node:net';
 import { overlayClient, overlayModules } from '../hosts/client.js';
 
 import { atomicWrite } from '../atomic-write.js';
+import { pageShell } from '../project-page/shell.js';
 import { readDiscovery } from './discovery.js';
 import type { ServeInfo } from './discovery.js';
 export type { ServeInfo } from './discovery.js';
@@ -212,6 +213,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (method === 'decisions') return read('decisions', []);
   if (method === 'spec') return read('spec', []);
   if (method === 'causes') return session.causes();
+  if (method === 'system-page') return session.projectSystem();
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
   if (method === 'try') {
@@ -267,7 +269,9 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
     const refuse = (status: number, error: string) => respond(status, { error });
-    const method = url.pathname.slice(prefix.length);
+    // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
+    const named = url.pathname.slice(prefix.length);
+    const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
     const client = options.client === true && overlayModules.includes(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = verbOf(method);
@@ -381,7 +385,18 @@ export function createWebHandler(session: Session | Promise<Session>, options: W
   };
 }
 
-export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string; servedRoot?: string } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
+/** Does this request come from this machine's own browser tab, typed or followed into the page, and not from another site? */
+function ownTab(request: IncomingMessage): boolean {
+  const address = (request.socket.remoteAddress ?? '').replace(/^::ffff:/i, '');
+  const loopback = address === '::1' || isIP(address) === 4 && address.startsWith('127.');
+  // the Host header is what stops a rebound DNS name from reading the page's token
+  const host = /^(?:localhost|127\.0\.0\.1|\[::1\]):[0-9]+$/i.test(request.headers.host ?? '');
+  const site = request.headers['sec-fetch-site'];
+  return loopback && host && (site === undefined || site === 'none' || site === 'same-origin') && request.headers.origin === undefined;
+}
+
+/** `page`: also answer GET / with the project page and serve the page's modules; no discovery file is written (nothing is left in the project). */
+export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string; servedRoot?: string; page?: boolean } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
   const port = options.port ?? 0;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new UsageError('Port must be an integer from 0 to 65535.');
   if (options.overlay && options.origin === undefined) throw new UsageError('Serve --overlay requires --origin <url>.');
@@ -391,7 +406,7 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
   const origin = options.origin === undefined ? undefined : trustedOrigin(options.origin);
   const root = resolve(options.root ?? process.cwd()), path = statePath(root, 'serve.json');
   // A live PID owns its discovery file. Never overwrite another daemon.
-  try {
+  if (!options.page) try {
     const old = await readDiscovery(root);
     if (old) {
       let alive = false;
@@ -400,12 +415,21 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
       await rm(path);
     }
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, ...sessionOptions } = options;
+  const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, page: _page, ...sessionOptions } = options;
   const session = await Session.create({ ...sessionOptions, root });
   const token = randomBytes(32).toString('hex');
-  const handlerOptions: HandlerOptions = { token, ...(options.servedRoot === undefined ? {} : { servedRoot: resolve(options.servedRoot) }), client: options.overlay ?? false, ...(origin === undefined ? {} : { origin }) };
+  const handlerOptions: HandlerOptions = { token, ...(options.servedRoot === undefined ? {} : { servedRoot: resolve(options.servedRoot) }), client: options.overlay || options.page || false, ...(origin === undefined ? {} : { origin }) };
   const handler = createHandler(session, handlerOptions), legacy = createHandler(session, { ...handlerOptions, client: false, prefix: '/' });
-  const server = createServer((request, response) => handler(request, response, () => legacy(request, response)));
+  const server = createServer((request, response) => {
+    if (options.page && request.url === '/' && (request.method === 'GET' || request.method === 'HEAD')) {
+      // The shell carries the session's token in its own body, so only the person's own tab may read it
+      if (!ownTab(request)) { response.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' }); response.end('Open this page from the address the command printed.'); return; }
+      void pageShell(root, token).then(html => { response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Cross-Origin-Resource-Policy': 'same-origin' }); response.end(request.method === 'HEAD' ? undefined : html); },
+        () => { response.writeHead(500); response.end(); });
+      return;
+    }
+    handler(request, response, () => legacy(request, response));
+  });
   server.requestTimeout = 10_000; server.headersTimeout = 10_000;
   try {
     await new Promise<void>((ready, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { server.off('error', reject); ready(); }); });
@@ -413,13 +437,15 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
     if (!address || typeof address === 'string') throw new Error('Server has no TCP address.');
     const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1,
       ...(options.overlay ? { overlay: true, origin: origin! } : {}) };
-    await mkdir(stateDirectory(root), { recursive: true, mode: 0o700 });
-    await atomicWrite(path, JSON.stringify(info) + '\n', { exclusive: true, mode: 0o600 });
+    if (!options.page) {
+      await mkdir(stateDirectory(root), { recursive: true, mode: 0o700 });
+      await atomicWrite(path, JSON.stringify(info) + '\n', { exclusive: true, mode: 0o600 });
+    }
     let closed = false;
     return { session, server, info, async close() {
       if (closed) return; closed = true;
       server.closeAllConnections(); await new Promise<void>(done => server.close(() => done())); await session.close();
-      try { const current = await readDiscovery(root); if (current?.token === token) await rm(path); }
+      if (!options.page) try { const current = await readDiscovery(root); if (current?.token === token) await rm(path); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
     } };
   } catch (error) { server.close(); await session.close(); throw error; }
