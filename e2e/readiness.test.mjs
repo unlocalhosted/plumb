@@ -93,7 +93,7 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       const before = await readFile(file, 'utf8');
       assert.match(run(root, ['fix', 'write.refresh']), /config change/);
       assert.equal(await readFile(file, 'utf8'), before);
-      const doctor = run(root, ['doctor']);
+      const doctor = run(root, ['doctor', '--verbose']);
       assert.ok(doctor.includes(fix.command));
       assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
       // Simulate completed install without invoking any package manager.
@@ -103,7 +103,7 @@ test('Refresh install follows lockfile; rerun offers import diff immediately aft
       assert.equal(fix.kind, 'diff', JSON.stringify(fix));
       assert.match(fix.diff, /import react from '@vitejs\/plugin-react'/);
       assert.match(fix.diff, /tailwindcss\(\), inspect\(\), react\(\)/);
-      assert.match(run(root, ['doctor']), /plumber fix write.refresh/);
+      assert.match(run(root, ['doctor', '--verbose']), /plumber fix write.refresh/);
       const applied = await request('readiness/fix', { id: 'write.refresh', hash: fix.hash, confirm: true, allowDirty: true });
       assert.equal(applied.status, 200, await applied.clone().text());
       assert.equal(item(await report(), 'write.refresh').status, 'ok');
@@ -147,7 +147,7 @@ test('HMR and polling diffs survive Vite startup for every writable server shape
       assert.match(fix.diff, /interval: 100/);
       assert.match(fix.diff, /usePolling: true/);
       assert.match(fix.diff, /awaitWriteFinish/);
-      const doctor = run(root, ['doctor']);
+      const doctor = run(root, ['doctor', '--verbose']);
       assert.match(doctor, /plumber fix write.watcher/);
       assert.doesNotMatch(doctor, /\$\{EDITOR|\$EDITOR/);
       const applied = await request('readiness/fix', { id: 'write.watcher', hash: fix.hash, confirm: true, allowDirty: true });
@@ -164,7 +164,7 @@ test('HMR and polling diffs survive Vite startup for every writable server shape
     const { report, request } = await api(t, root);
     const fix = item(await report(), 'write.hmr').fix;
     assert.equal(fix.kind, 'diff');
-    assert.match(run(root, ['doctor']), /plumber fix write.hmr/);
+    assert.match(run(root, ['doctor', '--verbose']), /plumber fix write.hmr/);
     const applied = await request('readiness/fix', { id: 'write.hmr', hash: fix.hash, confirm: true, allowDirty: true });
     assert.equal(applied.status, 200, await applied.clone().text());
     const live = await startConfig(t, root);
@@ -208,7 +208,7 @@ test('JSX order allows Tailwind first; React first offers a minimal diff that st
       let ready = await report();
       const order = item(ready, 'locate.order');
       assert.equal(order.status, expected);
-      const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
+      const doctor = run(root, ['doctor', '--verbose'], '', expected === 'ok' ? 0 : 1);
       assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok React Plumber runs before' : 'fix Move React Plumber before'} .*\\[locate.order\\]`));
       assert.doesNotMatch(doctor, /must be first/);
       if (expected === 'missing') {
@@ -292,7 +292,7 @@ test('Babel JSX plugins block order; MDX pre plugins do not', async t => {
       const root = await fixture(t, `import transform from '${module}';\n` + config.replace('inspect(), react()', "transform({ enforce: 'pre' }), inspect(), react()"));
       const { report } = await api(t, root);
       assert.equal(item(await report(), 'locate.order').status, expected);
-      const doctor = run(root, ['doctor'], '', expected === 'ok' ? 0 : 1);
+      const doctor = run(root, ['doctor', '--verbose'], '', expected === 'ok' ? 0 : 1);
       assert.match(doctor, new RegExp(`${expected === 'ok' ? 'ok React Plumber runs before' : 'fix Move React Plumber before'} .*\\[locate.order\\]`));
     });
   }
@@ -324,7 +324,7 @@ test('doctor and read-only route cover every capability and token family with ev
   assert.equal((await request('readiness', {})).status, 405);
   assert.equal((await request('readiness/fix', undefined)).status, 405);
   assert.equal((await request('readiness/anything')).status, 404);
-  const output = run(root, ['doctor']);
+  const output = run(root, ['doctor', '--verbose']);
   assert.match(output, /^Readiness: \d+ setup gaps? ·/);
   assert.ok(output.indexOf('Readiness:') < output.indexOf('Diagnostics'));
   assert.match(output, /Use the development build/);
@@ -349,7 +349,7 @@ test('numeric spacing base agrees in doctor, readiness GET and check coverage', 
   assert.equal(spacing.status, 'ok');
   assert.equal(spacing.fix, null);
   assert.deepEqual(spacing.evidence, [{ file: 'src/styles.css', line: 3, text: '--spacing' }]);
-  assert.match(run(root, ['doctor']), /ok spacing tokens are ready \[read\.tokens\.spacing\]/);
+  assert.match(run(root, ['doctor', '--verbose']), /ok spacing tokens are ready \[read\.tokens\.spacing\]/);
 });
 
 test('framework-only tokens stay missing across every judged family', async t => {
@@ -363,7 +363,7 @@ test('framework-only tokens stay missing across every judged family', async t =>
   }, ['--yes', ...['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z'].flatMap(family => ['--family', `${family}=skip`])]);
   const checked = JSON.parse(run(root, ['check', '--json']));
   const { report } = await api(t, root);
-  const ready = await report(), doctor = run(root, ['doctor']);
+  const ready = await report(), doctor = run(root, ['doctor', '--verbose']);
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) {
     assert.ok(checked.coverage[family].total > 0, family);
     assert.equal(checked.coverage[family].fromDecisions, 0, family);
@@ -391,7 +391,7 @@ test('project tokens agree across every judged family', async t => {
   });
   const checked = JSON.parse(run(root, ['check', '--json']));
   const { report } = await api(t, root);
-  const ready = await report(), doctor = run(root, ['doctor']);
+  const ready = await report(), doctor = run(root, ['doctor', '--verbose']);
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) {
     assert.ok(checked.coverage[family].total > 0, family);
     assert.equal(checked.coverage[family].fromDecisions, checked.coverage[family].total, family);
@@ -416,7 +416,7 @@ test('derived causes stay in route JSON; doctor counts causes and excludes unava
   assert.equal(ready.schemaVersion, 1);
   assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
   assert.equal(item(ready, 'system.preset').status, 'missing');
-  let doctor = run(root, ['doctor'], '', 1);
+  let doctor = run(root, ['doctor', '--verbose'], '', 1);
   assert.match(doctor, /^Readiness: 0 setup gaps · 2 other fixes · 1 check needs verification/);
   for (const id of [...derived, 'system.preset']) assert.ok(!doctor.includes(`[${id}]`), id);
   run(root, ['fix', 'locate.order', '--yes']);
@@ -427,7 +427,7 @@ test('derived causes stay in route JSON; doctor counts causes and excludes unava
     assert.ok(!Object.hasOwn(item(ready, id), 'cause'));
   }
   run(root, ['fix', 'write.hmr', '--yes']);
-  doctor = run(root, ['doctor']);
+  doctor = run(root, ['doctor', '--verbose']);
   assert.match(doctor, /^Readiness: 0 setup gaps · 1 check needs verification/);
   assert.doesNotMatch(doctor, /System panel/);
   assert.equal(item(await report(), 'system.preset').status, 'missing');
@@ -485,7 +485,7 @@ test('missing plugin and Fast Refresh get separate diffs; WSL polling fix includ
   assert.equal(item(ready, 'write.refresh').fix.kind, 'diff');
   run(root, ['fix', 'write.refresh', '--yes']);
   assert.match(await readFile(file, 'utf8'), /inspect\(\), react\(\)/);
-  const doctor = run(root, ['doctor']);
+  const doctor = run(root, ['doctor', '--verbose']);
   assert.match(doctor, /wsl needs file polling/);
   assert.match(doctor, /plumber fix write.watcher/);
   // API environment explicitly simulates WSL; no filesystem/platform assumption.
@@ -517,7 +517,7 @@ test('no baseline, no tokens, executable config, unobserved host are named witho
   assert.equal(item(ready, 'fast.config').status, 'missing');
   assert.equal(item(ready, 'locate.host').status, 'unknown');
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
-  const output = run(root, ['doctor']);
+  const output = run(root, ['doctor', '--verbose']);
   assert.match(output, /Every problem counts as new/);
   assert.match(output, /plumber baseline/);
   assert.match(output, /Add spacing to your theme/);
@@ -533,7 +533,7 @@ test('one missing token family degrades Read; the CLI cannot see runtime; plumbe
     'src/App.tsx': 'import "./styles.css"; export function App() { return <div className="box" />; }',
   }, ['--yes', '--family', 'z=skip']);
   await rm(join(root, '.plumber/ledger.jsonl'), { force: true });
-  const doctor = run(root, ['doctor']);
+  const doctor = run(root, ['doctor', '--verbose']);
   assert.match(doctor, /^Readiness: 1 setup gap · 1 other fix · /);
   assert.match(doctor, /^  degraded\s+Read$/m);
   for (const label of ['Locate', 'Preview', 'Blueprint']) assert.match(doctor, new RegExp(`^  verify in dev\\s+${label}$`, 'm'), label);
@@ -632,7 +632,7 @@ test('uninstalled React, unsupported host and unsupported Tailwind are independe
   assert.equal(item(ready, 'locate.react-dev').status, 'missing');
   assert.equal(item(ready, 'locate.host').status, 'missing');
   assert.equal(item(ready, 'blueprint.host').status, 'missing');
-  const output = run(root, ['doctor'], '', 1);
+  const output = run(root, ['doctor', '--verbose'], '', 1);
   assert.match(output, /React is not installed/);
   assert.match(output, /npm install react react-dom/);
   await writeFile(join(root, 'vite.config.mjs'), 'export default (() => ({ plugins: [] }))();');
@@ -648,7 +648,7 @@ test('uninstalled React, unsupported host and unsupported Tailwind are independe
   ready = await report();
   assert.equal(item(ready, 'read.styles').status, 'missing');
   assert.equal(item(ready, 'read.styles').fix.command, 'npx @tailwindcss/upgrade');
-  assert.match(run(root, ['doctor'], '', 1), /needs Tailwind 4; this project has 3.4.19/);
+  assert.match(run(root, ['doctor', '--verbose'], '', 1), /needs Tailwind 4; this project has 3.4.19/);
 });
 
 test('live readiness survives failed analysis startup and never widens the route allow-list', async t => {

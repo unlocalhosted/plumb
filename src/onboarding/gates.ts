@@ -22,7 +22,8 @@ export async function chooseProject(argument: string | undefined): Promise<{ roo
   // R4: a --root that names a folder with package.json is the person's choice; a workspace around it doesn't override it
   const chosen = argument !== undefined && manifestAt(resolve(argument)) !== undefined;
   if (project.apps && !chosen) {
-    if (!project.apps.length) throw noReact();
+    // a declared workspace with no React app under it: the evidence-bearing notice, never "0 apps"
+    if (!project.apps.length) { await cliProject(argument); throw noReact(); }
     const names = project.apps.map(app => app.path);
     throw new UsageError(`Found ${count(names.length, 'app')}: ${names.join(', ')}.\n  → Run npx plumber --root ${shellPath(names[0]!)}${names.length > 1 ? ' (or the one you mean)' : ''}.`);
   }

@@ -51,16 +51,16 @@ function installedMajor(root: string, name: string): string | undefined {
 }
 
 /** `Vite 8, React 19, Tailwind 4 (theme in src/index.css)`: what was found, in the person's words. */
-export async function stackLine(report: Report): Promise<string> {
-  const facts = await projectFacts(report.root, { root: report.root });
+export async function stackLine(root: string, tailwind: { version?: string | null; entry?: string | null }, withTheme = true): Promise<string> {
+  const facts = await projectFacts(root, { root });
   const host = facts.host.value?.id;
-  const part = (label: string, name: string) => { const major = installedMajor(report.root, name); return major ? `${label} ${major}` : label; };
+  const part = (label: string, name: string) => { const major = installedMajor(root, name); return major ? `${label} ${major}` : label; };
   const parts = [
     ...(host === 'vite' ? [part('Vite', 'vite')] : host === 'next' ? [part('Next.js', 'next')] : []),
     ...(facts.react.value?.installed ? [part('React', 'react')] : []),
-    ...(report.tailwind.version ? [`Tailwind ${report.tailwind.version.split('.')[0]}`] : []),
+    ...(tailwind.version ? [`Tailwind ${tailwind.version.split('.')[0]}`] : []),
   ];
-  const theme = report.tailwind.entry ? ` (theme in ${relative(report.root, report.tailwind.entry).replaceAll('\\', '/')})` : '';
+  const theme = withTheme && tailwind.entry ? ` (theme in ${relative(root, tailwind.entry).replaceAll('\\', '/')})` : '';
   return parts.length ? parts.join(', ') + theme : 'Your styles' + theme;
 }
 
@@ -140,7 +140,7 @@ export async function runBare(context: PathContext): Promise<void> {
   const daemon = await serve({ root: context.root, ...(context.config === undefined ? {} : { config: context.config }), page: true, port: 7331, portSearch: 40 });
   let report: Report;
   try { report = await daemon.session.report(); } catch (error) { await daemon.close(); throw error; }
-  process.stdout.write(`  ✓ ${await stackLine(report)}\n  ✓ ${filesCount(report)} files in ${seconds(performance.now() - started)}\n\n`);
+  process.stdout.write(`  ✓ ${await stackLine(report.root, report.tailwind)}\n  ✓ ${filesCount(report)} files in ${seconds(performance.now() - started)}\n\n`);
   const url = `http://localhost:${daemon.info.port}`;
   const opened = await openBrowser(url);
   process.stdout.write(opened ? `Opened your project in the browser: ${url}\n` : `Open your project in the browser: ${url}\n`);

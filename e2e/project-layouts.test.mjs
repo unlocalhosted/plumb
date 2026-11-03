@@ -119,7 +119,7 @@ test('two-host-configs: vite wins by registry order, next.config.js is kept as a
     'next.config.js': 'module.exports = {};\n',
   }));
   await installTailwind(project.root);
-  const doctor = await run(project, ['doctor'], 1);
+  const doctor = await run(project, ['doctor', '--verbose'], 1);
   assert.match(doctor.stdout, /ok vite config found; runtime not observed \[locate\.host\]/);
   assert.match(doctor.stdout, /vite\.config\.ts:1[^\n]*also next\.config\.js, ignored/);
   assert.doesNotMatch(doctor.stdout, /Host could not be established/);
@@ -161,7 +161,7 @@ test('facts are public: state --json, doctor and the readiness route show the sa
   assert.equal(state.facts.styling.value.systems[0].id, 'tailwind');
   assert.equal(state.facts.styling.value.systems[0].support, 'supported');
   assert.equal(state.facts.styling.value.tokens.kind, '@theme');
-  const doctor = await run(project, ['doctor'], 1);
+  const doctor = await run(project, ['doctor', '--verbose'], 1);
   const projectTable = doctor.stdout.split('\nProject\n')[1].split('\nDiagnostics\n')[0];
   assert.match(projectTable, /^Root:\s+\.\s+declared: package\.json:1/m);
   assert.match(projectTable, /^Workspace:\s+none\s+inferred: package\.json:1 no workspaces key/m);
@@ -206,7 +206,7 @@ test('workspace-nx-no-workspaces: nx.json alone declares a workspace; its apps a
   assert.match(listed.stderr, /^This is a workspace with 1 app\. Pick one:\n  npx plumber --root apps\/web\s+Vite · Tailwind 4\n$/);
   const result = await run(project, ['--root', 'apps/web', '--json'], 0);
   assert.ok(json(result));
-  const doctor = await run(project, ['doctor', '--root', 'apps/web'], 1);
+  const doctor = await run(project, ['doctor', '--verbose', '--root', 'apps/web'], 1);
   assert.match(doctor.stdout, /^Workspace:\s+none/m, 'the app itself declares none');
   const state = json(await run(project, ['state', '--json']));
   assert.equal(state.kind, 'workspace');

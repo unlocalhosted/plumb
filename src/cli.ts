@@ -30,7 +30,7 @@ import { proposalFamilies } from './onboarding/propose.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { readiness, applyReadinessFix } from './readiness/index.js';
 import { createInterface } from 'node:readline';
-import { doctor } from './adoption/doctor.js';
+import { doctor, doctorVerbose } from './adoption/doctor.js';
 import { commandFlags, unknownName } from './cli-flags.js';
 import { cliProject, prepareCliAnalysis } from './cli-project.js';
 import { withCliProgress } from './cli-progress.js';
@@ -68,7 +68,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
        plumber fix <id> [--yes] [--root <dir>] [--config <path>]
-       plumber doctor [--root <dir>] [--config <path>]
+       plumber doctor [--verbose] [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
@@ -321,7 +321,7 @@ async function main(): Promise<void> {
     process.stdout.write(`Wrote ${applied.file}. Restart the dev server if its config requires it.\n`); return;
   }
   if (command === 'doctor') {
-    const result = await analyzing(() => doctor(resolve(options.root ?? process.cwd()), options.config));
+    const result = await analyzing(() => (args.values.verbose ? doctorVerbose : doctor)(resolve(options.root ?? process.cwd()), options.config));
     process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;
   }
   if (command === 'init') {

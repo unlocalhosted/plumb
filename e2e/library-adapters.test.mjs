@@ -28,7 +28,7 @@ test('Base UI: every primitive and part is counted, with each site, across subpa
     'src/Toggle.jsx:3 Switch.Root', 'src/Toggle.jsx:3 Switch.Thumb', 'src/Toggle.jsx:3 Slider.Root',
     'src/Volume.jsx:3 Slider.Root', 'src/Volume.jsx:4 Slider.Control', 'src/Volume.jsx:4 Slider.Track', 'src/Volume.jsx:4 Slider.Thumb',
   ]);
-  const doctor = await run(project, ['doctor'], 1);
+  const doctor = await run(project, ['doctor', '--verbose'], 1);
   assert.match(doctor.stdout, /^Libraries:\s+Base UI\s+Base UI: 3 files · Slider 2, Popover 1, Switch 1/m);
   // Support says how much of the library is used and where it starts, and never cuts a path or a sentence.
   const support = doctor.stdout.split('\nSupport\n')[1].split('\n\n')[0];

@@ -264,7 +264,7 @@ test('count messages use zero, singular and plural grammar in actual CLI checks 
       assert.ok(github.includes(`${n} ${n === 1 ? 'exception.' : 'exceptions.'}`), github);
     }
     assert.doesNotMatch(text(dir, ['ledger']), /\b1 entries\b/);
-    assert.doesNotMatch(text(dir, ['doctor']), /\b1 (?:entries|issues|bytes)\b/);
+    assert.doesNotMatch(text(dir, ['doctor', '--verbose']), /\b1 (?:entries|issues|bytes)\b/);
     await writeFile(join(dir, 'export.tokens.json'), JSON.stringify({ spacing: { $type: 'dimension', ...Object.fromEntries(Array.from({ length: n }, (_, i) => [`unused-${i}`, { $value: '24px' }])) } }));
     assert.match(text(dir, ['parity', 'export.tokens.json']), new RegExp(`${n} token ${n === 1 ? 'difference' : 'differences'}\\. ${n} ${n === 1 ? 'token' : 'tokens'} compared\\.`));
   }

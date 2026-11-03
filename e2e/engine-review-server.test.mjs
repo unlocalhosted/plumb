@@ -214,7 +214,9 @@ const post = ['try', 'recipes/preview', 'recipes/apply', 'apply', 'apply-text', 
 const get = ['readiness', 'report', 'site', 'classes', 'resolve', 'edits', 'text', 'text-at', 'history', 'trace', 'props', 'recipes', 'structure', 'decisions', 'spec', 'why', 'health', 'refresh'];
 test('D6: every endpoint answers only its own verb, an unknown one is not found, and the JSON-RPC line knows all but readiness', async t => {
   const api = await project(t, tailwind('  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06);', `export function A() {\n  return <div id="a" className="shadow-sm">A</div>;\n}\n`));
-  for (const name of post) { const r = await api.raw(name, {}, 'GET'); assert.equal(r.status, 405, `${name} GET`); assert.equal(r.headers.get('allow'), 'POST', name); }
+  // system answers both: POST is the engine's proposal, GET is the project page's data (e2e/project-page-data.test.mjs)
+  for (const name of post.filter(name => name !== 'system')) { const r = await api.raw(name, {}, 'GET'); assert.equal(r.status, 405, `${name} GET`); assert.equal(r.headers.get('allow'), 'POST', name); }
+  assert.equal((await api.raw('system', {}, 'GET')).status, 200);
   for (const name of get) { const r = await api.raw(name, {}, 'POST'); assert.equal(r.status, 405, `${name} POST`); assert.equal(r.headers.get('allow'), 'GET', name); }
   assert.equal((await api.raw('nope', {}, 'GET')).status, 404);
   assert.equal((await api.raw('recipes/nope', {}, 'POST')).status, 404);

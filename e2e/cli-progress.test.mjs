@@ -260,7 +260,7 @@ test('analysis errors erase progress before the diagnostic; nested init and doct
   assert.equal(initialized.status, 0, initialized.stderr);
   assert.match(initialized.stdout, /Wrote plumber.config.ts/);
   assertBar(initialized);
-  const doctor = await run(project, ['doctor']);
+  const doctor = await run(project, ['doctor', '--verbose']);
   assertBar(doctor);
   assert.match(doctor.stdout, /Cache/);
 });
