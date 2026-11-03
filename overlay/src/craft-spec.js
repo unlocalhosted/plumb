@@ -91,6 +91,7 @@ export const STANDARD = {
   depth: {
     'layered-shadow': { blur: 16 },
     'one-light': { blur: 2 },
+    'elevation-ladder': { sample: 4, step: 1.4 },
     'tinted-shadow': { ground: 0.03, shadow: 0.01, alpha: 0.1 },
     'dark-elevation': { blur: 4, alpha: 0.05, lift: 0.03, ground: 0.3 },
   },

@@ -46,7 +46,7 @@
  * `theme.spec(this.id)` and never holds a threshold, a target or a tier of its own. Every rule says nothing when its
  * evidence is ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility, classesOf } from './craft-read.js';
+import { rgb, utility, classesOf, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { RUN_RULES } from './craft-headless.js';
@@ -1526,6 +1526,35 @@ export const rhythm = {
   },
 };
 
+// #22. An elevation ladder: each height a clear step from the next. A shadow a hair off a level the page uses more is
+// a level of its own nobody can see, and it blurs the ladder: it takes that level's shadow.
+export const elevationLadder = {
+  id: 'craft/elevation-ladder', family: 'craft', number: [22], owns: ['shadow'], once: 'ancestor', reads: ['style', 'census'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!facts.census) return [];
+    const b = elevation(facts.style(el).boxShadow);
+    if (!b) return [];
+    const c = facts.census('shadows');
+    if (c.sample < T.sample) return [];
+    const own = c.clusters.find((k) => k.members.includes(el));
+    if (!own) return [];
+    // the level it crowds: one the page uses more, closer than a step
+    const near = c.clusters.filter((k) => k !== own && k.count > own.count && Math.max(k.value, b) / Math.min(k.value, b) < T.step)
+      .sort((x, y) => Math.abs(x.value - b) - Math.abs(y.value - b))[0];
+    if (!near) return [];
+    const cls = utility(el, 'shadow');
+    const to = near.members.map((m) => utility(m, 'shadow')).find(Boolean);
+    const value = facts.style(near.members[0]).boxShadow;
+    return [{
+      ...say(this.id, { blur: b, level: near.value }),
+      key: this.id, text: cls ?? 'box-shadow', props: ['box-shadow'], value: `${b}px`, n: b,
+      evidence: { blur: b, level: near.value, uses: near.count }, confidence: 0.82,
+      suggest: cls && to ? { kind: 'class', from: cls, to, why: `the ${fmt(near.value)} level the page already uses` } : { kind: 'advice', text: `Use the page’s ${fmt(near.value)} level: box-shadow: ${value}` },
+    }];
+  },
+};
+
 // ── ink (layer 3): what an icon actually draws ──
 
 const iconOnly = (el, facts) => {
@@ -1752,5 +1781,5 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,
-  weightLevels, greyLevels, rhythm,
+  weightLevels, greyLevels, rhythm, elevationLadder,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];

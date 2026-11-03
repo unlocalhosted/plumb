@@ -21,7 +21,7 @@
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
 import { verdicts } from './verdict.js';
-import { rgb, VIRTUAL, SPEC } from './craft-read.js';
+import { rgb, VIRTUAL, SPEC, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
 import { request } from './api.js';
@@ -125,6 +125,7 @@ export class Facts {
   //   weights     the font weights of text-owning elements (to the hundred)
   //   textColors  their text colours, composited on their ground, neutral ones only (chroma < 0.04)
   //   gaps        the gaps of column stacks with three or more children
+  //   shadows     the elevations of elements that cast an outer shadow: the blur of the stack's softest layer
   // → { sample, clusters: [{ value, count, members }] (most first), share(value) }
   items = [];
   #census = new Map();
@@ -153,6 +154,9 @@ export class Facts {
       } else if (name === 'gaps' && /flex/.test(st.display) && /column/.test(st.flexDirection) && this.kids(el).length >= 3) {
         const g = px(st.rowGap === 'normal' ? 0 : st.rowGap);
         if (g >= 8) add(g, el, (a, b) => Math.abs(a - b) <= 1);
+      } else if (name === 'shadows' && st.boxShadow && st.boxShadow !== 'none') {
+        const b = elevation(st.boxShadow);
+        if (b > 0) add(b, el, (a, c) => Math.abs(a - c) < 0.5);
       }
     }
     clusters.sort((a, b) => b.count - a.count);

@@ -20,6 +20,19 @@ export function rgb(s) {
   return [parts[0], parts[1], parts[2], parts[3] ?? 1];
 }
 
+// How high a computed box-shadow lifts its element: the blur of its softest outer layer, 0 for none (a ring of
+// spread only, or an inset, lifts nothing). The census's shadow levels and the elevation ladder read it the same way.
+export function elevation(value) {
+  if (!value || value === 'none') return 0;
+  let most = 0;
+  for (const layer of value.split(/,(?![^(]*\))/)) {
+    if (/inset/.test(layer)) continue;
+    const nums = layer.replace(/rgba?\([^)]*\)|oklch\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
+    most = Math.max(most, nums[2] ?? 0);
+  }
+  return most;
+}
+
 // An element's classes as the rules read them: its own, or the ones a suggestion would give it while the arbitration
 // re-runs a rule on the page as it will be (Facts.with). Set and cleared in one synchronous call; never written.
 export const VIRTUAL = new WeakMap();

@@ -47,7 +47,7 @@ number. Tiers stay as they are in overlay/src/craft-facets.js: `access 0 · legi
 | **theme** | 2 | The project's own decisions: its tokens are the allowed answers. (The drift rules, src/rules; a craft fix must land on them.) | provenance/*, spacing, radius, color, type, elevation, z, motion; habits transition-named, no-ease-in, composited-motion, tracking-em, color-scheme, overflow-clip, overscroll-contain |
 | **rhythm & spacing** | 3 (craft) | Space says what belongs together. | inner-outer-spacing 7, button-padding 9, icon-side 10, rhythm 12, content-align 1, trim-leading 5 |
 | **shape** | 3 | Corners and edges that agree with each other. | concentric-radius 8/41, hairline 38, border-on-shadow 23, image-outline 39, content-size 33, media-size 34 |
-| **depth** | 3 | Light comes from one place; elevation reads the same in light and dark. | layered-shadow 51/53, one-light 20, tinted-shadow 21/52, dark-elevation 54 |
+| **depth** | 3 | Light comes from one place; elevation reads the same in light and dark. | layered-shadow 51/53, one-light 20, elevation-ladder 22, tinted-shadow 21/52, dark-elevation 54 |
 | **colour** | 3 | Colour is chosen, never faded into. | text-opacity 57, grey-levels 17, gradient-space 55, eased-scrim 56, pure-black-white 25 |
 | **hierarchy** | 3 | Two or three levels of anything; every extra one weakens the rest. | weight-levels 17, caps-case 46, optical-sizing 49, stroke-weight 50, hanging-quote 45 |
 | **alignment** | 3 | The eye lines up letters and weight, not boxes. | icon-cap 4, optical-centre 2, half-pixel 37, z-index-war 74 |

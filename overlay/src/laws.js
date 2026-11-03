@@ -76,6 +76,7 @@ const RULE_LAWS = {
   'craft/weight-levels': ['similarity'],
   'craft/grey-levels': ['similarity'],
   'craft/rhythm': ['similarity'],
+  'craft/elevation-ladder': ['similarity'],
   'craft/heading-lead': ['proximity', 'common-region'],
   'craft/pair-spacing': ['proximity', 'similarity'],
   'craft/card-optical-padding': [],

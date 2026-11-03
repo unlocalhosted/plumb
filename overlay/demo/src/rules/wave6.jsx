@@ -1,4 +1,5 @@
 const words = Array.from({ length: 8 }, (_, i) => 'Item ' + i);
+const Card = ({ id, shadow }) => <div id={id} className={'h-s6 rounded-card bg-white ' + shadow} />;
 const Stack = ({ id, gap }) => <div id={id} className={'flex flex-col ' + gap}>{['a', 'b', 'c'].map((n) => <span key={n} className="text-body text-ink">{n}</span>)}</div>;
 export function App() {
   return (
@@ -17,6 +18,12 @@ export function App() {
         <Stack gap="gap-s2" /><Stack gap="gap-s2" />
         <Stack id="rhythm-bad" gap="gap-[20px]" />
         <Stack id="rhythm-good" gap="gap-s4" />
+      </div>
+      <div className="grid grid-cols-4 gap-s4">
+        <Card shadow="shadow-md" /><Card shadow="shadow-md" /><Card shadow="shadow-md" />
+        <Card shadow="shadow-xl" /><Card shadow="shadow-xl" />
+        <Card id="elevation-ladder-bad" shadow="shadow-[0_4px_8px_rgb(0_0_0/0.1)]" />
+        <Card id="elevation-ladder-good" shadow="shadow-md" />
       </div>
     </main>
   );

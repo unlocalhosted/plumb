@@ -1,6 +1,6 @@
-// The hard rules' layer 2, the page's own habits (docs/craft/rules.md #17 #12; docs/briefs/craft-hard-rules.md): an
+// The hard rules' layer 2, the page's own habits (docs/craft/rules.md #17 #12 #22; docs/briefs/craft-hard-rules.md): an
 // element is judged against this page's majority, not a universal number. A page with many words and stacks, one odd
-// weight, one odd grey and one off-rhythm stack among them. Real Vite, React, Chromium.
+// weight, one odd grey and one off-rhythm stack and one shadow a hair off a level among them. Real Vite, React, Chromium.
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -62,7 +62,7 @@ const within = (page, id, m, slack = 16) => page.evaluate(([id, m, slack]) => { 
 // the page is the demo's own (open /?rules=6 in the demo app): what is proved here is what you can try there
 const PAGE = await readFile(new URL('../overlay/demo/src/rules/wave6.jsx', import.meta.url), 'utf8');
 
-const RULES = ['weight-levels', 'grey-levels', 'rhythm'];
+const RULES = ['weight-levels', 'grey-levels', 'rhythm', 'elevation-ladder'];
 
 test('Wave six: an element off the page’s own habits is marked; one on them is not', { timeout: 240000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;

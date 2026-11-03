@@ -42,6 +42,11 @@ export const CRAFT = {
     line: 'This image’s edge is the same tone as the page around it.',
     reason: 'A faint inner outline gives it an edge.',
   }),
+  'elevation-ladder': ({ blur, level }) => ({
+    label: 'Shadow a step too close',
+    line: `This shadow blurs ${px(blur)}; the page’s ${px(level)} level is too close to tell apart.`,
+    reason: 'Elevation reads in clear steps. Two heights this close look like one height done twice.',
+  }),
   'layered-shadow': ({ blur }) => ({
     label: 'Shadow is one big blur',
     line: `One ${px(blur)} blur looks like a smudge. Stack a few smaller ones.`,
