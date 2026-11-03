@@ -27,8 +27,9 @@ function acceptSet(report: Report, entries: LedgerEntry[], why?: string, inferre
   for (const decision of currentDecisions(report)) {
     const entry = decisionEntry(decision);
     const previous = accepted.get(entry.key);
-    // Preserve attribution and reasons for unchanged accepted records.
-    if (previous?.kind === 'decision' && previous.value === entry.value && previous.origin === entry.origin && previous.tier === entry.tier && JSON.stringify(previous.refs) === JSON.stringify(entry.refs) && why === undefined) continue;
+    // Preserve attribution and reasons for unchanged accepted records: --why speaks
+    // only for the decisions this acceptance adds or changes.
+    if (previous?.kind === 'decision' && previous.value === entry.value && previous.origin === entry.origin && previous.tier === entry.tier && JSON.stringify(previous.refs) === JSON.stringify(entry.refs)) continue;
     accepted.set(entry.key, { ...entry, ...attribution, why: why ?? decision.why, ...(inferred ? { inferred: true } : {}) });
   }
   return [...accepted.values()];

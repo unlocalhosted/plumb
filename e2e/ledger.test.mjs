@@ -213,6 +213,21 @@ test('theme decision outside configured ladder cannot silently pass; changed/van
   assert.ok(!run(directory).findings.some(f => f.rule.startsWith('decisions/')));
 });
 
+test('accept-decisions --why records the reason only on the decisions it adds, never on unchanged ones', async t => {
+  const directory = await copy(t);
+  run(directory, ['baseline']);
+  const before = new Map((await ledger(directory)).filter(e => e.kind === 'decision').map(e => [e.key, e]));
+  assert.ok(before.size > 1);
+  const path = join(directory, 'src/styles.css');
+  await writeFile(path, (await readFile(path, 'utf8')).replace('@theme {', '@theme {\n  --spacing-13: 13px;'));
+  run(directory, ['accept-decisions', '--why', 'new step approved']);
+  const after = (await ledger(directory)).filter(e => e.kind === 'decision');
+  const added = after.filter(e => !before.has(e.key));
+  assert.equal(added.length, 1);
+  assert.equal(added[0].why, 'new step approved');
+  for (const entry of after.filter(e => before.has(e.key))) assert.deepEqual(entry, before.get(entry.key));
+});
+
 test('authored keys survive line shifts and spacing multiplier changes', async t => {
   const directory = await copy(t);
   run(directory, ['baseline']);

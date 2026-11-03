@@ -72,6 +72,19 @@ test('named @apply decisions survive inline compiler rewriting and keep their pr
   assert.equal(run(directory, ['try', '--lang', 'css', '--json'], '.used { @apply text-ink; }').status, 0);
 });
 
+test('a text step under @theme inline keeps its own line height, tracking and weight alive', async t => {
+  const directory = await project(t);
+  const css = join(directory, 'src/styles.css');
+  await writeFile(css, (await readFile(css, 'utf8')).replace('@theme inline {', `@theme inline {
+  --text-title: 40px;
+  --text-title--line-height: 44px;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 650;`));
+  await writeFile(join(directory, 'src/App.tsx'), 'import "./styles.css";\nexport const App = () => <h2 className="gap-s3 text-ink text-title" />;');
+  const names = dead(json(run(directory, ['--json'])));
+  for (const name of ['--text-title', '--text-title--line-height', '--text-title--letter-spacing', '--text-title--font-weight']) assert.ok(!names.includes(name), `${name} reported unused: ${names}`);
+});
+
 test('usage follows nondecision aliases across source boundaries, handles cycles, and does not count outside source consumers', async t => {
   const directory = await project(t);
   await mkdir(join(directory, 'outside'));

@@ -220,7 +220,10 @@ export async function lowerTailwind(root: string, entry: string | null, version:
                 prop === 'line-height' ? '--leading-' : prop === 'letter-spacing' ? '--tracking-' :
                 /timing-function$/.test(prop) ? '--ease-' : /duration$/.test(prop) ? '--duration-' : prop === 'z-index' ? '--z-' :
                 /^(?:gap|row-gap|column-gap|padding(?:-.+)?|margin(?:-.+)?|inset(?:-.+)?|top|right|bottom|left)$/.test(prop) ? '--spacing-' : undefined;
-              const name = namespace && `${namespace}${parsed.value.value}`;
+              // A text-* utility also sets the step's own line height, tracking and weight
+              // (--text-title--line-height); under @theme inline only the name says so.
+              const companion = parsed.root === 'text' && /^(?:line-height|letter-spacing|font-weight)$/.test(prop) ? `--text-${parsed.value.value}--${prop}` : undefined;
+              const name = companion && theme!.some(item => item.name === companion) ? companion : namespace && `${namespace}${parsed.value.value}`;
               if (name && theme!.some(item => item.name === name)) declaration.decisionRefs = [name];
             }
           }
