@@ -13,11 +13,14 @@ import type { ProjectIndex } from './project.js';
 import { readRecipeRequest } from './request.js';
 import type { RecipeRequest } from './request.js';
 import { renderModel } from './render.js';
+import type { ModuleFacts } from '../session/class-site.js';
 
 export interface RecipeContext {
   index: ProjectIndex;
   /** project file text by path relative to the root, forward slashes */
   read: (path: string) => string | undefined;
+  /** how a usage's import reaches a component's file (class-site's module facts, paths relative to the root) */
+  modules: ModuleFacts;
   /** the recipe packs on offer; the default is the one that ships */
   packs?: Pack[];
   /** the element, and the usages above it (class-site's chain, files relative to the root) its classes may come in from */
@@ -42,7 +45,7 @@ export function recipesView(ctx: RecipeContext): Record<string, unknown> {
     idioms: index.idioms,
     yours: index.yours.map(r => summarize(r, index)),
     packs: packRecipes(ctx).map(recipe => { const { nearest, verdict } = map(recipe, index.yours); return { recipe: summarize(recipe, index), nearest, verdict }; }),
-    element: describeElement({ index, read: ctx.read, element: ctx.element }),
+    element: describeElement({ index, read: ctx.read, modules: ctx.modules, element: ctx.element }),
   };
 }
 
@@ -67,7 +70,7 @@ export interface PlanResult { recipe: Recipe; plan: Plan; writes: (Plan['writes'
 export function recipesPlan(ctx: RecipeContext, p: PlanParams): PlanResult {
   const recipe = resolveRecipe(ctx, p);
   if (p.choice !== undefined && p.choice !== 'use' && p.choice !== 'move' && p.choice !== 'add') throw new UsageError('choice is use, move or add.');
-  const result = plan({ recipe, choice: p.choice as Choice | undefined, name: typeof p.name === 'string' ? p.name : undefined, forwards: p.forwards === true, index: ctx.index, read: ctx.read, element: ctx.element });
+  const result = plan({ recipe, choice: p.choice as Choice | undefined, name: typeof p.name === 'string' ? p.name : undefined, forwards: p.forwards === true, index: ctx.index, read: ctx.read, modules: ctx.modules, element: ctx.element });
   const order = { theme: 0, presets: 1, rule: 2, element: 3 };
   const writes = result.writes.toSorted((a, b) => order[a.role] - order[b.role]).map(w => ({ ...w, hash: sourceHash(w.before), diff: diff(w.before, w.after) }));
   return { recipe, plan: result, writes };

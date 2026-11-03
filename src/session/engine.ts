@@ -25,8 +25,9 @@ import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
-import { classSites, pinnedString } from './class-site.js';
-import type { Located } from './class-site.js';
+import { classSites, pinWrite, pinnedString } from './class-site.js';
+import type { Located, ModuleFacts, PinWrite } from './class-site.js';
+import { projectModules } from './modules.js';
 import type { ClassString } from './props.js';
 import type { ClassSiteAnswer } from './class-site.js';
 import type { SpacingUnit } from './props.js';
@@ -826,7 +827,8 @@ export class Session extends EventEmitter {
       if (!fresh.has(rel)) fresh.set(rel, linked.text);
       links.push({ file: rel, line: linked.line, column: linked.column });
     }
-    return { index: project.index, read: p => fresh.get(p) ?? project.texts.get(p), element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column, ...(links.length ? { chain: links } : {}) } };
+    const read = (p: string) => fresh.get(p) ?? project.texts.get(p);
+    return { index: project.index, read, modules: this.modules('relative', p => read(p)), element: { file: relative_, text, start: location.start, tag: location.tag, line: location.line, column: location.column, ...(links.length ? { chain: links } : {}) } };
   }
   /** A whole file replaced with the text a plan made, under the same guards as every write: the hash it was read at, one
    * regular file, a result that still parses, one undo handle. */
@@ -1182,11 +1184,20 @@ export class Session extends EventEmitter {
     if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
-    const pinned = at ? await this.pinned(path, facts, { line, column, at, ...(of ? { of } : {}) }, !names(from).length) : undefined;
+    const pinned = at ? await this.pinned(path, facts, { line, column, at, ...(of ? { of } : {}) }, pinWrite(names(from), names(to))) : undefined;
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
+  }
+  /** How class-site reaches a component's file from a usage's import (src/session/modules.ts): the project's resolution
+   * (relative, index files, tsconfig paths, vite aliases), source files inside the root only, read as they are now. */
+  private modules(scheme: 'absolute' | 'relative' = 'absolute', known: (path: string) => string | undefined = () => undefined): ModuleFacts {
+    return projectModules(this.root, absolute => {
+      const rel = relative(this.root, absolute).replaceAll('\\', '/'), kept = known(scheme === 'relative' ? rel : absolute);
+      if (kept !== undefined) return kept;
+      try { return readFileSync(absolute, 'utf8'); } catch { return undefined; }
+    }, scheme);
   }
   /** The files class-site reads, each once: an element and the usages of its chain, as the resolver takes them. */
   private sources(texts = new Map<string, string>()) {
@@ -1203,14 +1214,14 @@ export class Session extends EventEmitter {
    * by the written element. An add must go into a string that always applies and no other place reads. Never a free
    * offset: a stale or wrong pin is refused, not written somewhere else.
    */
-  private async pinned(path: string, facts: { text: string; location: { line: number; column: number } }, edit: { line: number; column: number; at: { line: number; column: number }; of?: PinOrigin }, adding: boolean): Promise<ClassString> {
+  private async pinned(path: string, facts: { text: string; location: { line: number; column: number } }, edit: { line: number; column: number; at: { line: number; column: number }; of?: PinOrigin }, write: PinWrite): Promise<ClassString> {
     const source = this.sources(new Map([[path, facts.text]]));
     const of = edit.of;
     if (of !== undefined && (!of || typeof of !== 'object' || (of.chain !== undefined && (!Array.isArray(of.chain) || of.chain.length > 32)))) throw new UsageError('of is { file, line, column, chain }.');
     const element = of ? await source(of.file, of.line, of.column) : { file: relative(this.root, path).replaceAll('\\', '/'), path, text: facts.text, line: edit.line, column: edit.column };
     const chain: Located[] = [];
     for (const link of of?.chain ?? []) chain.push(await source(link?.file, link?.line, link?.column));
-    return pinnedString({ element, chain }, { path, line: facts.location.line, column: facts.location.column }, offsetOf(facts.text, edit.at), adding);
+    return pinnedString({ element, chain, modules: this.modules() }, { path, line: facts.location.line, column: facts.location.column }, offsetOf(facts.text, edit.at), write);
   }
   /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
   async structure(file: string, line: number, column: number): Promise<StructureResult | null> {
@@ -1255,7 +1266,7 @@ export class Session extends EventEmitter {
     const links = [];
     for (const link of chain) links.push(await source(link?.file, link?.line, link?.column));
     const names = classes?.split(/\s+/).filter(Boolean);
-    const answer = classSites({ element, chain: links, ...(names?.length ? { classes: names } : {}) });
+    const answer = classSites({ element, chain: links, modules: this.modules(), ...(names?.length ? { classes: names } : {}) });
     const hashes: Record<string, string> = {};
     for (const name of [element, ...links]) hashes[name.file] = sourceHash(name.text);
     return { revision: this.revision, file, hash: hashes[file]!, hashes, ...answer };
@@ -1361,7 +1372,7 @@ export class Session extends EventEmitter {
         const facts = await this.elementFacts(path, e.line, e.column);
         if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
-        const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, !names(e.from).length) : undefined;
+        const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, pinWrite(names(e.from), names(e.to))) : undefined;
         starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(pin ? { pin } : {}) });
       } catch (error) { refuse(e, error); }
     }

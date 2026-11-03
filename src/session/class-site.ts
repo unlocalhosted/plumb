@@ -2,7 +2,6 @@ import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
 import { lineStarts } from '../collect/source.js';
-import { posix } from 'node:path';
 import { ADD_UNDER_CONDITION, NOT_ITS_STRING, branchOf, classSources, classSourcesAt, elementSources } from './props.js';
 import type { Branch, ClassRef, ClassString, Trail } from './props.js';
 import { isComponentJSX as isComponentTag, jsxLocation } from './source-location.js';
@@ -22,10 +21,16 @@ import { isComponentJSX as isComponentTag, jsxLocation } from './source-location
 /** A source file as the caller names it (`file`, echoed back) and as the parser needs it (`path`, for the extension). */
 export interface SourceText { file: string; path: string; text: string }
 export interface Located extends SourceText { line: number; column: number }
+/** The project's modules, as the engine resolves them (src/session/modules.ts): a specifier written in the file at `from`
+ * (a path in the caller's scheme) to the project source file it names, read; null for a package or anything that resolves
+ * to no source file of the project. The resolver asks it and stays pure over the texts it is handed. */
+export type ModuleFacts = (from: string, specifier: string) => SourceText | null;
 export interface ClassSiteInput {
   element: Located;
   /** the usages above the element, nearest first: each one where a component the element sits in is used */
   chain: Located[];
+  /** how a usage's import reaches the component's file: relative paths, index files, aliases, re-exports */
+  modules: ModuleFacts;
   /** the classes asked about; every class of the strings found when absent */
   classes?: string[];
 }
@@ -126,7 +131,7 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     const component = { ...binding.component, file: holder.src.path };
     for (let i = holder.next; i < input.chain.length; i++) {
       const link = input.chain[i]!, at = locate(link);
-      if (!usesComponent(at.src, at.ref.tag, component)) continue;
+      if (!usesComponent(at.src, at.ref.tag, component, { modules: input.modules, open })) continue;
       const usage = elementSources(at.src.path, at.src.text, at.location.start);
       const next: Holder = { src: at.src, kind: 'usage', prop, element: at.ref, level: i + 1, next: i + 1 };
       const attribute = usage.attributes.get(prop);
@@ -203,13 +208,25 @@ export function classSites(input: ClassSiteInput): ClassSiteAnswer {
  * that holder. An add (nothing taken out) must go into a string that always applies and that no other place reads. The
  * reader (classSites) and every writer go through `resolve`, so the two cannot disagree.
  */
-export function pinnedString(input: ClassSiteInput, holder: { path: string; line: number; column: number }, offset: number, adding: boolean): ClassString {
+export function pinnedString(input: ClassSiteInput, holder: { path: string; line: number; column: number }, offset: number, write: PinWrite): ClassString {
   const { strings } = resolve(input, input.chain.length === 0);
   const hit = strings.find(f => f.holder.src.path === holder.path && f.holder.element.line === holder.line && f.holder.element.column === holder.column && f.string.start <= offset && offset <= f.string.end);
   if (!hit) throw new UsageError(NOT_ITS_STRING);
-  if (adding && hit.string.branch) throw new UsageError(ADD_UNDER_CONDITION);
-  if (adding && shared(hit.holder)) throw new UsageError(sharedVariable(hit.holder.variable!, hit.holder.readers!));
+  if (write === 'add' && hit.string.branch) throw new UsageError(ADD_UNDER_CONDITION);
+  if (write !== 'change' && shared(hit.holder)) throw new UsageError(sharedVariable(hit.holder.variable!, hit.holder.readers!));
   return hit.string;
+}
+/**
+ * What a write into a string does, by what it takes out and puts in: `change` takes a class out (it changes what is
+ * written there, wherever that is read); `add` takes nothing out (a new class, which goes only where a class always
+ * applies and no other element reads); `beside` keeps every class it names and adds one next to them (`px-2.5` →
+ * `px-2.5 pl-3`): an add, so never into a variable other elements read, but it stays with the class it sits beside,
+ * under that class's condition.
+ */
+export type PinWrite = 'change' | 'add' | 'beside';
+export function pinWrite(from: string[], to: string[]): PinWrite {
+  if (!from.length) return 'add';
+  return from.every(c => to.includes(c)) && to.some(c => !from.includes(c)) ? 'beside' : 'change';
 }
 
 const shared = (h: Holder) => !!h.variable && (h.readers ?? 1) > 1;
@@ -297,7 +314,9 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
         if (source.type !== 'Identifier') return undefined;
         const outer = bindingOf(program, source.start, source.name, seen);
         if (outer?.kind !== 'prop' || outer.prop !== null) return undefined;
-        return bound.key === null ? { ...outer, except: [...outer.except ?? [], ...bound.except ?? []] } : { kind: 'prop', prop: bound.key, component: outer.component };
+        if (bound.key === null) return { ...outer, except: [...outer.except ?? [], ...bound.except ?? []] };
+        // a key its rest's siblings took out (`{ className: c, ...rest }` then `const { className } = rest`): never in it
+        return outer.except?.includes(bound.key) ? undefined : { kind: 'prop', prop: bound.key, component: outer.component };
       }
     }
   }
@@ -325,7 +344,8 @@ function isReference(node: Node, parent: Node | undefined): boolean {
   if (!parent) return true;
   if (parent.type === 'VariableDeclarator' && parent.id === node) return false;
   if ((parent.type === 'MemberExpression') && parent.property === node && !parent.computed) return false;
-  if ((parent.type === 'Property' || parent.type === 'MethodDefinition' || parent.type === 'PropertyDefinition') && parent.key === node && !parent.computed && !(parent.type === 'Property' && parent.shorthand)) return false;
+  // a shorthand property (`{ look }`) reads the name once, through its value: its key is not a second read
+  if ((parent.type === 'Property' || parent.type === 'MethodDefinition' || parent.type === 'PropertyDefinition') && parent.key === node && !parent.computed && !(parent.type === 'Property' && parent.shorthand && parent.value === node)) return false;
   if (parent.type.startsWith('Import') || parent.type.startsWith('Export')) return false;
   if (isFunction(parent) || parent.type === 'ClassDeclaration' || parent.type === 'LabeledStatement') return false;
   return true;
@@ -347,35 +367,90 @@ function componentOf(path: Node[]): Component | undefined {
     break;
   }
   if (inner && !names.includes(inner)) names.push(inner);
-  if (!isDefault) isDefault = (program.type === 'Program' ? program.body as Node[] : []).some(s => s.type === 'ExportDefaultDeclaration' && s.declaration.type === 'Identifier' && names.includes(s.declaration.name));
+  // `export default Card`, `export default memo(Card)`, `memo(forwardRef(Card))`, `export { Card as default }`
+  if (!isDefault) isDefault = (program.type === 'Program' ? program.body as Node[] : []).some(s => s.type === 'ExportDefaultDeclaration' ? names.includes(wrappedName(s.declaration as Node) ?? '')
+    : s.type === 'ExportNamedDeclaration' && !s.source && (s.specifiers ?? []).some(x => keyName(x.exported as Node) === 'default' && names.includes(keyName(x.local as Node) ?? '')));
   if (!isDefault && !names.some(name => /^[A-Z]/.test(name))) return undefined;
   return { names, isDefault };
 }
-/** Whether a usage's tag names the component: through its import (`{ Panel as Box }`, a default import, `UI.Panel` from a
- * namespace), when the import's module is the component's file; by name (`Panel`) only when the tag is not imported
- * (declared in the same file). A same-named component imported from another file is not it. */
-function usesComponent(usage: Parsed, tag: string, component: Component): boolean {
-  const [head, ...rest] = tag.split('.'), last = rest.at(-1) ?? head!;
-  for (const statement of usage.program.type === 'Program' ? usage.program.body as Node[] : []) {
+/** The name a default export is written with, through the calls around it: `Card`, `memo(Card)`, `memo(forwardRef(Card))`. */
+function wrappedName(node: Node): string | undefined {
+  const n = unwrapped(node);
+  if (n.type === 'Identifier') return n.name;
+  return n.type === 'CallExpression' && n.arguments.length ? wrappedName(n.arguments[0] as Node) : undefined;
+}
+const statements = (src: Parsed): Node[] => src.program.type === 'Program' ? src.program.body as Node[] : [];
+interface Modules { modules: ModuleFacts; open: (source: SourceText) => Parsed }
+interface Reached { path: string; local: string }
+
+/** Whether a usage's tag names the component. A tag imported in the usage's file is followed through its import (the
+ * engine's module facts: relative paths, index files, the project's aliases) and every re-export on the way to the file
+ * that declares it; it is the component when that file is the component's and the name it lands on is one the component
+ * answers to (a default export: when the component is the file's default). A tag not imported names a component of its
+ * own file only: a same-named component in another file is not it, nor is one imported from a package. */
+function usesComponent(usage: Parsed, tag: string, component: Component, m: Modules): boolean {
+  const [head, ...rest] = tag.split('.');
+  for (const statement of statements(usage)) {
     if (statement.type !== 'ImportDeclaration') continue;
     for (const s of statement.specifiers ?? []) {
       if (s.local.name !== head) continue;
-      if (component.file && !sameModule(usage.path, String(statement.source.value), component.file)) return false;
-      if (rest.length) return component.names.includes(last);
-      if (s.type === 'ImportDefaultSpecifier') return component.isDefault;
-      if (s.type === 'ImportSpecifier') { const imported = keyName(s.imported as Node); return imported !== undefined && component.names.includes(imported) || (imported === 'default' && component.isDefault); }
-      return false;
+      // `UI.Card` from a namespace import is the module's export `Card`; `Card.Header` on an imported Card is a member of it
+      const namespace = s.type === 'ImportNamespaceSpecifier';
+      const name = namespace ? rest[0] : s.type === 'ImportDefaultSpecifier' ? 'default' : keyName(s.imported as Node);
+      const members = namespace ? rest.slice(1) : rest;
+      if (name === undefined) return false;
+      const reached = exported(usage, String(statement.source.value), name, m, new Set());
+      if (!reached || !component.file || reached.path !== component.file) return false;
+      if (members.length) return component.names.includes(members.at(-1)!);
+      return reached.local === 'default' ? component.isDefault : component.names.includes(reached.local);
     }
   }
-  return component.names.includes(last);
+  return usage.path === component.file && component.names.includes(rest.at(-1) ?? head!);
 }
-/** Whether an import specifier, written in `from`, names the file `target`: a relative one resolved against `from`'s
- * folder; an alias or package by its last segments (`@/ui/card` → …/ui/card). An index file is its folder. */
-function sameModule(from: string, specifier: string, target: string): boolean {
-  const bare = (p: string) => p.replaceAll('\\', '/').replace(/\.[cm]?[jt]sx?$/, '').replace(/\/index$/, '');
-  const file = bare(target);
-  if (specifier.startsWith('.')) return bare(posix.join(posix.dirname(from.replaceAll('\\', '/')), specifier)) === file;
-  const parts = bare(specifier).split('/').filter(Boolean);
-  if (/^[@~#]/.test(parts[0] ?? '')) parts.shift();
-  return parts.length > 0 && file.endsWith('/' + parts.join('/'));
+/** The file and local name an export of the module `specifier` (written in `from`) lands on, through `export … from`,
+ * `export *` and a name imported and exported again. Undefined when the module is not the project's or does not export it. */
+function exported(from: Parsed, specifier: string, name: string, m: Modules, seen: Set<string>): Reached | undefined {
+  const source = m.modules(from.path, specifier);
+  return source ? exportOf(m.open(source), name, m, seen) : undefined;
 }
+function exportOf(file: Parsed, name: string, m: Modules, seen: Set<string>): Reached | undefined {
+  const key = `${file.path}\n${name}`;
+  if (seen.has(key) || seen.size > 64) return undefined;
+  seen.add(key);
+  const stars: string[] = [];
+  for (const st of statements(file)) {
+    if (st.type === 'ExportNamedDeclaration') {
+      if (st.exportKind === 'type') continue;
+      for (const sp of st.specifiers ?? []) {
+        if (keyName(sp.exported as Node) !== name) continue;
+        const local = keyName(sp.local as Node);
+        if (local === undefined) return undefined;
+        return st.source ? exported(file, String(st.source.value), local, m, seen) : localOf(file, local, m, seen);
+      }
+      if (st.declaration && declares(st.declaration as Node, name)) return { path: file.path, local: name };
+    }
+    if (st.type === 'ExportDefaultDeclaration' && name === 'default') {
+      const d = unwrapped(st.declaration as Node);
+      return d.type === 'Identifier' ? localOf(file, d.name, m, seen) : { path: file.path, local: 'default' };
+    }
+    if (st.type === 'ExportAllDeclaration' && !st.exported && name !== 'default') stars.push(String(st.source.value));
+  }
+  for (const star of stars) { const hit = exported(file, star, name, m, seen); if (hit) return hit; }
+  return undefined;
+}
+/** A name a file exports by its local name: imported there from another module (followed), else declared there. */
+function localOf(file: Parsed, local: string, m: Modules, seen: Set<string>): Reached | undefined {
+  for (const st of statements(file)) {
+    if (st.type !== 'ImportDeclaration') continue;
+    for (const s of st.specifiers ?? []) {
+      if (s.local.name !== local) continue;
+      if (s.type === 'ImportNamespaceSpecifier') return undefined;
+      const imported = s.type === 'ImportDefaultSpecifier' ? 'default' : keyName(s.imported as Node);
+      return imported === undefined ? undefined : exported(file, String(st.source.value), imported, m, seen);
+    }
+  }
+  return { path: file.path, local };
+}
+const declares = (declaration: Node, name: string): boolean =>
+  (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') ? declaration.id?.name === name
+    : declaration.type === 'VariableDeclaration' && declaration.declarations.some(d => d.id.type === 'Identifier' && d.id.name === name);

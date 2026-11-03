@@ -4,8 +4,8 @@ import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
 import { findOpening, swapClasses } from '../session/props.js';
 import type { SourceChange } from '../session/props.js';
-import { classSites, pinnedString } from '../session/class-site.js';
-import type { ClassSiteAnswer, ClassSiteInput, ElementRef, StringRef } from '../session/class-site.js';
+import { classSites, pinWrite, pinnedString } from '../session/class-site.js';
+import type { ClassSiteAnswer, ClassSiteInput, ElementRef, ModuleFacts, StringRef } from '../session/class-site.js';
 import { isComponentJSX } from '../session/source-location.js';
 import { formatBoxShadow, formatDuration, splitVariants } from './css.js';
 import { map } from './mapping.js';
@@ -36,6 +36,8 @@ export interface PlanInput {
   index: ProjectIndex;
   /** a project file's text, by path relative to the root with forward slashes */
   read: (path: string) => string | undefined;
+  /** how a usage's import reaches a component's file (class-site's module facts, paths relative to the root) */
+  modules: ModuleFacts;
   /** the element, and the usages above it (nearest first, as class-site takes them), whose classes may be written there */
   element: { file: string; text: string; start: number; tag: string; line: number; column: number; chain?: { file: string; line: number; column: number }[] };
 }
@@ -138,12 +140,12 @@ const variantOf = (c: string) => { const { variants } = splitVariants(c); return
 /** What the element wears, read where each class is written (class-site, the resolver the cards ask): `classes` are the
  * ones that always apply (a class in one branch of a ternary is not its resting class); `site` is the answer a write goes by. */
 interface Worn { kind: 'static' | 'none' | 'dynamic'; classes: string[]; reason?: string; site?: ClassSiteAnswer; input?: ClassSiteInput }
-function siteInput(i: Pick<PlanInput, 'element' | 'read'>): ClassSiteInput {
+function siteInput(i: Pick<PlanInput, 'element' | 'read' | 'modules'>): ClassSiteInput {
   const el = i.element, text = (file: string) => file === el.file ? el.text : i.read(file);
   const link = (l: { file: string; line: number; column: number }) => { const t = text(l.file); if (t === undefined) throw new UsageError(`${l.file} is not a file of this project.`); return { file: l.file, path: l.file, text: t, line: l.line, column: l.column }; };
-  return { element: link(el), chain: (el.chain ?? []).map(link) };
+  return { element: link(el), chain: (el.chain ?? []).map(link), modules: i.modules };
 }
-function wornBy(i: Pick<PlanInput, 'element' | 'read'>): Worn {
+function wornBy(i: Pick<PlanInput, 'element' | 'read' | 'modules'>): Worn {
   try {
     const input = siteInput(i), site = classSites(input);
     if (site.classes.length) return { kind: 'static', classes: site.classes.filter(c => c.sites.some(s => !s.branch)).map(c => c.class), site, input };
@@ -161,6 +163,9 @@ function swap(edits: Edits, i: PlanInput, worn: Worn, from: string[], to: string
     const targets: { element: ElementRef; string: StringRef }[] = [];
     if (!from.length) {
       if (!site.add) return site.addRefused ?? site.refused ?? 'There is no place here a class always applies; add it by hand.';
+      // the element's classes also come in from a usage that was not sent: the place left is the component's own string,
+      // and a class added there changes every copy of it
+      if (site.add.shared) return EVERY_COPY;
       // no className at all: one is written on the element
       if (!site.add.string) { edits.set(el.file, apply(edits.text(el.file), swapClasses(el.file, edits.text(el.file), el.start, [], to)), 'element', summary); return null; }
       targets.push({ element: site.add.element, string: site.add.string });
@@ -172,29 +177,39 @@ function swap(edits: Edits, i: PlanInput, worn: Worn, from: string[], to: string
         held.set(key, { element: s.element, string: s.string, n: (held.get(key)?.n ?? 0) + 1 });
       }
       targets.push(...[...held.values()].filter(h => h.n === from.length));
+      // a variable other elements read: changing the class there changes all of them (class-site says how many)
+      const shared = targets.map(t => site.classes.flatMap(c => c.sites).find(s => s.element.file === t.element.file && s.string.start === t.string.start)).find(s => (s?.readers ?? 1) > 1);
+      if (shared) return readBy(shared.variable!, shared.readers!, from);
       if (!targets.length) return `${from.join(' ')} ${from.length > 1 ? 'are' : 'is'} not written in one string that always applies here; change ${from.length > 1 ? 'them' : 'it'} by hand.`;
     }
     // every pin is found in the texts as class-site read them, then written from the last to the first, so earlier offsets hold
     const read = new Map([worn.input.element, ...worn.input.chain].map(l => [l.file, l.text]));
     if (targets.some(t => edits.text(t.element.file) !== read.get(t.element.file))) return 'This recipe would change the file the classes are written in twice; set it by hand.';
-    const pins = targets.map(t => ({ file: t.element.file, pin: pinnedString(worn.input!, { path: t.element.file, line: t.element.line, column: t.element.column }, t.string.start, !from.length) }));
+    const pins = targets.map(t => ({ file: t.element.file, pin: pinnedString(worn.input!, { path: t.element.file, line: t.element.line, column: t.element.column }, t.string.start, pinWrite(from, to)) }));
     for (const { file, pin } of pins.toSorted((a, b) => b.pin.start - a.pin.start)) edits.set(file, apply(edits.text(file), swapClasses(file, edits.text(file), 0, from, to, pin)), 'element', summary);
     return null;
   } catch (error) { if (error instanceof UsageError) return error.message; throw error; }
 }
 const apply = (text: string, c: SourceChange) => text.slice(0, c.start) + c.replacement + text.slice(c.end);
+/** Why a recipe is not written where class-site found its class or its place (N6): said in the plan's refusal. */
+const readBy = (variable: string, readers: number, from: string[]) => `${from.join(' ')} is written in \`${variable}\`, which ${readers} places read, so changing it here would change all of them. Change it by hand.`;
+const EVERY_COPY = 'This element\'s classes also come from where its component is used, which wasn\'t found, so a class added inside the component would change every copy of it. Add it where the component is used, by hand.';
 const knownShadowSuffix = (index: ProjectIndex, suffix: string) => suffix === 'none' || suffix === 'inner' || suffix.startsWith('[') || suffix.startsWith('(') || index.yours.some(r => r.class === `shadow-${suffix}`) || tailwindDefaults().some(r => r.class === `shadow-${suffix}`);
 function shadowClassFor(token: string | undefined, id: string): string { return token && !token.startsWith('--shadow-') ? `shadow-(${token})` : `shadow-${token ? token.slice(9) : id}`; }
 
 /** What an element says it has now, for GET: its shadow and its motion, from its classes or its motion props. */
-export function describeElement(i: Pick<PlanInput, 'index' | 'read' | 'element'>): { shadow: Record<string, unknown>; motion: Record<string, unknown> } {
+export function describeElement(i: Pick<PlanInput, 'index' | 'read' | 'modules' | 'element'>): { shadow: Record<string, unknown>; motion: Record<string, unknown> } {
   const { index, element: el } = i;
   const info = wornBy(i);
   const theme = index.themes.find(t => t.shadows.length || t.motions.length) ?? null;
   const reading: ClassReading | null = info.kind === 'static' ? readClasses(info.classes, theme, index.rootPx) : null;
+  // where its shadow is written, as the card should say it: a variable other elements read (a change there changes them
+  // all), or, with nothing to change, a place to add that is the component's own string (an add changes every copy)
+  const written = reading?.shadow ? info.site?.classes.find(c => c.class === reading.shadow!.class)?.sites.find(s => !s.branch && (s.readers ?? 1) > 1) : undefined;
   const shadow = reading?.shadow
-    ? { source: 'class', class: reading.shadow.class, ...(reading.shadow.recipe.token ? { token: reading.shadow.recipe.token } : {}), value: formatBoxShadow(reading.shadow.recipe.model as ShadowModel), model: reading.shadow.recipe.model, recipe: reading.shadow.recipe.id }
-    : info.kind === 'dynamic' ? { source: 'dynamic', reason: info.reason } : { source: 'none' };
+    ? { source: 'class', class: reading.shadow.class, ...(reading.shadow.recipe.token ? { token: reading.shadow.recipe.token } : {}), value: formatBoxShadow(reading.shadow.recipe.model as ShadowModel), model: reading.shadow.recipe.model, recipe: reading.shadow.recipe.id,
+      ...(written ? { variable: written.variable, readers: written.readers } : {}) }
+    : info.kind === 'dynamic' ? { source: 'dynamic', reason: info.reason } : { source: 'none', ...(info.site?.add?.shared ? { shared: true } : {}) };
   let motion: Record<string, unknown> = { source: 'none' };
   const react = readReactMotion(el, index);
   if (react) motion = { source: 'motion-props', ...react };

@@ -486,3 +486,112 @@ test('R4: a usage named like the component but imported from another file is not
   assert.equal(skipped.status, 200, JSON.stringify(skipped.body));
   assert.deepEqual(skipped.body.classes.map((c) => c.class), ['border'], JSON.stringify(skipped.body.classes));
 });
+
+// ---------------------------------------------------------------- re-review (docs/research/engine-review-2.md, "Re-review")
+// A third project: the import shapes a usage reaches its component through. A barrel (an index that re-exports), two hops
+// with `export *` and a rename, a tsconfig `paths` entry and a vite alias that are not `@/` or `~/`, a default export
+// wrapped in memo() or written as `export { Card as default }` (N1, N4); and the shapes that must not match: a same-named
+// component declared in another file without an import (N2), a scoped package whose last segment is the file's name (N3).
+const modules = {
+  'package.json': '{ "name": "fx-rr2", "private": true, "type": "module", "dependencies": { "tailwindcss": "^4.0.0" } }\n',
+  'plumber.config.ts': `export default { css: 'src/styles.css', source: ['src/**/*.{ts,tsx,js,jsx,css}'] };\n`,
+  'tsconfig.json': '{ "compilerOptions": { "jsx": "react-jsx", "baseUrl": ".", "paths": { "ui-kit": ["./src/ui/index.ts"] } } }\n',
+  'vite.config.ts': "import { fileURLToPath, URL } from 'node:url';\nexport default { resolve: { alias: { kit: fileURLToPath(new URL('./src/ui', import.meta.url)) } } };\n",
+  'src/styles.css': '@import "tailwindcss";\n',
+  'src/ui/card.tsx': 'export function Card({ className, children }) { return <div className={`border ${className}`}>{children}</div>; }\n',
+  'src/ui/index.ts': "export { Card } from './card';\n",
+  'src/more/index.ts': "export * from './tile';\n",
+  'src/more/tile.ts': "export { Card as Tile } from '../ui';\n",
+  'src/ui/dcard.tsx': "import { memo } from 'react';\nfunction Card({ className }) { return <div className={className}>x</div>; }\nexport default memo(Card);\n",
+  'src/ui/ecard.tsx': 'function Card({ className }) { return <i className={className}>x</i>; }\nexport { Card as default };\n',
+  'src/Barrel.tsx': "import { Card } from './ui';\nexport const B = () => <Card className=\"p-6\">b</Card>;\n",
+  'src/Hops.tsx': "import { Tile } from './more';\nexport const H = () => <Tile className=\"p-3\">h</Tile>;\n",
+  'src/Paths.tsx': "import { Card } from 'ui-kit';\nexport const P = () => <Card className=\"p-2\">p</Card>;\n",
+  'src/Vite.tsx': "import { Card } from 'kit/card';\nexport const V = () => <Card className=\"p-1\">v</Card>;\n",
+  'src/Local.tsx': 'function Card({ children }) { return <div>{children}</div>; }\nexport const L = () => <Card className="p-9">l</Card>;\n',
+  'src/Scoped.tsx': "import { Card } from '@acme/card';\nexport const S = () => <Card className=\"p-7\">s</Card>;\n",
+  'src/Deflt.tsx': "import Card from './ui/dcard';\nexport const D = () => <Card className=\"p-5\">d</Card>;\n",
+  'src/Deflt2.tsx': "import Card from './ui/ecard';\nexport const E = () => <Card className=\"p-4\">e</Card>;\n",
+  'src/App.tsx': `const look = 'a b';
+const o = { look };
+function Row3({ className: c, ...rest }) { const { className } = rest; return <a className={className}>r</a>; }
+export function A() {
+  return (
+    <section>
+      <div id="rd" className={look}>x</div>
+      <Row3 id="r3" className="p-8">r</Row3>
+    </section>
+  );
+}
+`,
+};
+
+test('N1: a usage that imports its component through a barrel, two re-export hops, a tsconfig path or a vite alias is its usage', async (t) => {
+  const o = await open(t, modules);
+  const card = await o.atIn('src/ui/card.tsx', '<div className');
+  const cases = [['src/Barrel.tsx', '<Card className', 'p-6'], ['src/Hops.tsx', '<Tile className', 'p-3'], ['src/Paths.tsx', '<Card className', 'p-2'], ['src/Vite.tsx', '<Card className', 'p-1']];
+  const seen = [];
+  for (const [file, needle, cls] of cases) {
+    const usage = await o.atIn(file, needle);
+    const r = await o.get('class-site', { ...card, chain: JSON.stringify([usage]) });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const s = r.body.classes.find((c) => c.class === cls)?.sites[0];
+    seen.push([file, s?.kind, s?.element.file, r.body.add?.kind, r.body.add?.shared ?? false]);
+  }
+  assert.deepEqual(seen, cases.map(([file]) => [file, 'usage', file, 'usage', false]));
+});
+
+test('N2 + N3: a same-named component declared in another file, or imported from a scoped package, is not the usage', async (t) => {
+  const o = await open(t, modules);
+  const card = await o.atIn('src/ui/card.tsx', '<div className');
+  for (const [file, cls] of [['src/Local.tsx', 'p-9'], ['src/Scoped.tsx', 'p-7']]) {
+    const usage = await o.atIn(file, '<Card className');
+    const r = await o.get('class-site', { ...card, chain: JSON.stringify([usage]) });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.deepEqual(r.body.classes.map((c) => c.class), ['border'], `${file}: ${JSON.stringify(r.body.classes.map((c) => [c.class, c.sites.map((s) => s.element.file)]))}`);
+    assert.ok(!r.body.classes.some((c) => c.class === cls));
+  }
+});
+
+test('N4: export default memo(Card) and export { Card as default } are default exports: a default import of either is the usage', async (t) => {
+  const o = await open(t, modules);
+  for (const [own, file, needle, cls] of [['src/ui/dcard.tsx', 'src/Deflt.tsx', '<div className', 'p-5'], ['src/ui/ecard.tsx', 'src/Deflt2.tsx', '<i className', 'p-4']]) {
+    const el = await o.atIn(own, needle), usage = await o.atIn(file, '<Card className');
+    const r = await o.get('class-site', { ...el, classes: cls, chain: JSON.stringify([usage]) });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const s = r.body.classes[0].sites[0];
+    assert.deepEqual([s?.kind, s?.element.file], ['usage', file], `${file}: ${JSON.stringify(r.body.classes[0])}`);
+  }
+});
+
+test('N8: a shorthand property reads its variable once', async (t) => {
+  const o = await open(t, modules);
+  const rd = await o.site('<div id="rd"', 'a');
+  assert.equal(o.byToken(rd).a.sites[0].readers, 2, JSON.stringify(rd.classes));
+});
+
+test('N9: a key taken out of a rest is not read from it', async (t) => {
+  const o = await open(t, modules);
+  const usage = o.at('<Row3 id="r3"');
+  const r3 = await o.site('<a className={className}', '', { chain: JSON.stringify([usage]) });
+  assert.deepEqual(r3.classes.map((c) => c.class), [], JSON.stringify(r3.classes));
+});
+
+test('N5: a swap that only adds a class beside one it keeps is an add: never into a variable other elements read', async (t) => {
+  const o = await open(t, review);
+  const body = await o.site('<div id="v1"', 'px-2.5');
+  const s = o.byToken(body)['px-2.5'].sites[0];
+  assert.equal(s.readers, 2);
+  const beside = await o.post('swaps', { file: 'src/App.tsx', hash: body.hashes['src/App.tsx'], edits: [{ line: s.element.line, column: s.element.column, from: 'px-2.5', to: 'px-2.5 pl-3', at: { line: s.string.line, column: s.string.column } }] });
+  assert.equal(beside.status, 400, JSON.stringify(beside.body));
+  assert.match(message(beside), /look/);
+  assert.equal(await o.read(), o.original);
+  // beside a class in a branch it stays with the class it overrides (the branch's condition is its own)
+  const tern = await o.site('<div id="tern"', 'p-s3');
+  const b = o.byToken(tern)['p-s3'].sites[0];
+  const inBranch = await o.post('swaps', { file: 'src/App.tsx', hash: tern.hashes['src/App.tsx'], edits: [{ line: b.element.line, column: b.element.column, from: 'p-s3', to: 'p-s3 pl-s4', at: { line: b.string.line, column: b.string.column } }] });
+  assert.equal(inBranch.status, 200, JSON.stringify(inBranch.body));
+  assert.ok((await o.read()).includes(`className={tone ? 'flex gap-s2 p-s3 pl-s4' : 'grid'}`), await o.read());
+  assert.equal((await o.post('undo', { id: inBranch.body.undo.id })).status, 200);
+  assert.equal(await o.read(), o.original);
+});

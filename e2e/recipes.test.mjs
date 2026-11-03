@@ -626,3 +626,45 @@ test('R1: a recipe batch is undone whole or not at all while another write to it
     assert.deepEqual([await api.read('src/App.tsx'), await api.read('src/styles.css')], [original.app, original.css], `round ${round}: back as it was`);
   }
 });
+
+// N6 (docs/research/engine-review-2.md, "Re-review"): the plan writes only where class-site would. A class in a variable
+// other elements read is not changed through one of them; a class is not added into a component's own string when its
+// classes also come in from a usage that was not sent (the add would change every copy). The view says both.
+const sharedLook = {
+  ...tailwind,
+  'src/App.tsx': `const look = 'shadow-sm rounded';
+export function V() { return <><div id="v1" className={look}>1</div><div id="v2" className={look}>2</div></>; }
+`,
+};
+
+test('N6: a recipe never writes into a variable other elements read; the view says how many read it', async t => {
+  const api = await project(t, sharedLook);
+  const v1 = await api.at('src/App.tsx', '<div id="v1"');
+  const original = await api.read('src/App.tsx');
+  const view = await api.view(v1);
+  assert.deepEqual([view.element.shadow.class, view.element.shadow.variable, view.element.shadow.readers], ['shadow-sm', 'look', 2], JSON.stringify(view.element.shadow));
+  const preview = await api.preview(v1, { recipe: 'raised' });
+  assert.equal(preview.body.ok, false, JSON.stringify(preview.body));
+  assert.match(preview.body.refused ?? '', /look/);
+  const applied = await api.apply(v1, { recipe: 'raised' });
+  assert.equal(applied.status, 400, JSON.stringify(applied.body));
+  assert.equal(await api.read('src/App.tsx'), original);
+});
+
+test('N6: without the usage that passes its classes in, a recipe adds nothing into the component (it would change every copy)', async t => {
+  const api = await project(t, passed);
+  const tile = await api.at('src/App.tsx', '<div id="tile"');
+  const original = await api.read('src/App.tsx');
+  const view = await api.view(tile);
+  assert.equal(view.element.shadow.shared, true, JSON.stringify(view.element.shadow));
+  const applied = await api.apply(tile, { recipe: 'raised' });
+  assert.equal(applied.status, 400, JSON.stringify(applied.body));
+  assert.match(applied.body.error ?? applied.body.message ?? '', /every/);
+  assert.equal(await api.read('src/App.tsx'), original);
+  // with the usage sent, the same recipe writes there
+  const usage = await api.at('src/App.tsx', '<Tile className');
+  const used = await api.apply({ ...tile, chain: [usage] }, { recipe: 'raised' });
+  assert.equal(used.status, 200, JSON.stringify(used.body));
+  await api.undo(used.body.undo);
+  assert.equal(await api.read('src/App.tsx'), original);
+});
