@@ -237,7 +237,8 @@ export class Cleanup {
     if (s === 'done' && this.#pass === 0) {
       const p = this.#page, text = this.#done.get('text') === 'done';
       return `<div class="body"><div class="head">${esc(text ? W.doneHead : W.doneSkipped)}</div><div class="sub">${esc(W.nextSpacing)}</div>`
-        + (text ? `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(W.sizesPage)}</small></div></div>` : '') + `</div>`
+        + (text ? `<div class="measure"><div><b>${p.before}</b><span class="to">→</span><b>${p.after}</b><small>${esc(W.sizesPage)}</small></div></div>` : '')
+        + (this.#saved?.refused ? `<div class="sub">${esc(W.refused(this.#saved.refused))}</div>` : '') + `</div>`
         + acts(`<button type="button" class="cu-btn primary" data-cu="next">${esc(W.next)}<kbd>→</kbd></button><span class="grow"></span>${close}`);
     }
     if (this.#sw) return this.#swapHtml(acts, close);
@@ -345,14 +346,15 @@ export class Cleanup {
     const group = `cleanup-text-${Date.now().toString(36)}`;
     const files = new Set(swaps.map((f) => f.file)).size, places = swaps.reduce((n, f) => n + f.edits.length, 0), said = W.saved(places, files);
     const landed = (undo = []) => {
-      this.#saved = { group, places, files };
+      this.#saved = { group, places, files, refused: this.#saved?.group === group ? this.#saved.refused : 0 };
       this.#done.set('text', 'done'); this.#state = 'done';
       keep({ state: 'done', pass: 0, saved: this.#saved, page: kept_, done: Object.fromEntries(this.#done) });
       this.#host.wrote?.({ undo, trace: { group } }, said);
     };
     const { census: _c, roles: _r, ...kept_ } = this.#page;
     // the page hears the whole result before the reload the write may cause (hosts/vite.ts): kept, so it comes back done
-    const heard = (e) => { const r = e.detail?.results; if (r && ![...(r.tokens ?? []), ...(r.css ?? []), ...(r.swaps ?? [])].some((x) => !x.ok || x.refused?.length)) landed(e.detail.undo); };
+    // landed when anything was written, refusals or not (blueprint.js #applyStyles)
+    const heard = (e) => { const r = e.detail?.results; if (r && [...(r.tokens ?? []), ...(r.css ?? []), ...(r.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length))) landed(e.detail.undo); };
     // a reload before the answer (the dev server's, or the person's) comes back to this record: the trace says if it landed
     keep({ state: 'writing', pass: 0, group, said, saved: { group, places, files }, page: kept_, done: Object.fromEntries(this.#done) });
     addEventListener('plumb:applied', heard, { once: true });
@@ -361,6 +363,7 @@ export class Cleanup {
       const r = await answered(this.#host.write({ tokens: w.tokens ?? [], css: w.css ?? [], swaps }, said, { step: W.pass.text, laws: LAWS, group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.couldNot);
+      this.#saved = { group, refused: r.refused?.length ?? 0 };
       landed(r.undo);
       // the page now draws the styles from its own classes: the preview's inline values (the same) are let go
       requestAnimationFrame(() => this.#preview.clear((el, f) => f()));
@@ -392,6 +395,7 @@ export class Cleanup {
       const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? S.couldNot);
+      refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)
       landed(r.undo);
       // the page now draws the change from its own classes: the preview's inline values (the same) are let go
       requestAnimationFrame(() => sw.clear());

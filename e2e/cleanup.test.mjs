@@ -22,13 +22,23 @@ const FILE = 'src/pages/MotionStandardsPage.tsx';
 const snapshot = async (root) => Object.fromEntries(await Promise.all((await readdir(join(root, 'src'), { recursive: true, withFileTypes: true }))
   .filter((d) => d.isFile()).map(async (d) => { const f = join(d.parentPath, d.name); return [f.slice(root.length + 1), await readFile(f, 'utf8')]; })));
 
-async function standards(t) {
+// the stage page on crafting-ui (src/pages/sloppy/SloppyIssuesPage.tsx:36): a nav whose size class sits in a template
+// string beside a weight switched by an expression, so one of the text pass's swaps can't be written
+const NAV = `export function Nav() {
+  return <nav>{['Inbox', 'My issues', 'Projects'].map((n, i) => <a key={n} href="#" className={\`rounded-md px-2 py-1.5 text-[13px] \${i === 1 ? 'font-medium' : 'opacity-90'}\`}>{n}</a>)}</nav>;
+}
+`;
+
+async function standards(t, { nav = false } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.cleanup-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(root, 'src'), { recursive: true });
-  await writeFile(join(root, 'src/App.jsx'), `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
+  if (nav) await writeFile(join(root, 'src/Nav.jsx'), NAV);
+  await writeFile(join(root, 'src/App.jsx'), nav
+    ? `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nimport { Nav } from './Nav.jsx';\nexport function App() { return <><Nav /><MotionStandardsPage /></>; }\n`
+    : `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
@@ -89,8 +99,9 @@ test('the write reloads the page: the clean-up comes back done, with its Undo, a
   await s.begin();
   await s.page.keyboard.press('Enter');
   // the failure: the page reloaded mid-write and came back without Blueprint or a word about what was written
-  await s.until(/Text\s*Saved|places? in \d+ files?|Undo/, 120000);
-  const done = await s.panel();
+  // the write's own reload may come after the first page says it: the panel is read once a page has stayed
+  let done = '';
+  for (let i = 0; i < 4 && !done; i++) { try { await s.until(/Text\s*Saved|places? in \d+ files?|Undo/, 120000); await new Promise((r) => setTimeout(r, 1500)); done = await s.panel(); } catch (e) { if (!/context was destroyed|navigation/.test(e.message)) throw e; } }
   assert.match(done, /Undo/, done);
   assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), original, 'the page\'s own places were swapped');
   await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
@@ -118,6 +129,24 @@ test('a reload while the write is saving: the clean-up comes back done, with its
   assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), original, 'the write landed');
   await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
   // one undo, more than one file (the page and the theme's tokens): each lands in its own moment
+  for (let i = 0; i < 60 && JSON.stringify(await snapshot(s.root)) !== JSON.stringify(all); i++) await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(await snapshot(s.root), all, 'Undo put every file back as it was');
+  assert.deepEqual(s.errors, []);
+});
+
+test('a write that partly lands is a step all the same: back after its reload, done with its Undo, saying what was left as it is', { timeout: 300000 }, async (t) => {
+  const s = await standards(t, { nav: true });
+  const original = await readFile(join(s.root, FILE), 'utf8'), all = await snapshot(s.root);
+  await s.begin();
+  await s.page.keyboard.press('Enter');
+  // the failure, on crafting-ui: one swap of seventeen refused, the other sixteen written, and the reload came back with
+  // no Blueprint, no word and no Undo (the step was forgotten as if nothing had landed)
+  let done = '';
+  for (let i = 0; i < 4 && !done; i++) { try { await s.until(/places? in \d+ files?/, 60000); await new Promise((r) => setTimeout(r, 1500)); done = await s.panel(); } catch (e) { if (!/context was destroyed|navigation/.test(e.message)) throw e; } }
+  assert.match(done, /Undo/, done);
+  assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), original, 'the places that could be written were');
+  assert.match(await readFile(join(s.root, 'src/Nav.jsx'), 'utf8'), /text-\[13px\]/, 'the split one was left as it is');
+  await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
   for (let i = 0; i < 60 && JSON.stringify(await snapshot(s.root)) !== JSON.stringify(all); i++) await new Promise((r) => setTimeout(r, 500));
   assert.deepEqual(await snapshot(s.root), all, 'Undo put every file back as it was');
   assert.deepEqual(s.errors, []);

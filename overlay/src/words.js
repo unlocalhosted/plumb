@@ -789,6 +789,7 @@ export const CLEANUP = {
   undone: 'Text changes undone.',
   lost: 'Your dev server restarted while saving, so nothing was written. Try again.',
   reloaded: 'The page reloaded before saving finished, so nothing was written. Try again.',
+  refused: (n) => `${n} ${n === 1 ? 'place was' : 'places were'} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t change ${n === 1 ? 'its classes' : 'their classes'} safely, so ${n === 1 ? 'it needs' : 'they need'} changing by hand.`,
   close: 'Close',
   done: 'Done',
   next: 'Next pass',
