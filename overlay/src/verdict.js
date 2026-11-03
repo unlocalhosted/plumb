@@ -106,7 +106,7 @@ function setEdit(k, el, list, edit) {
   const before = words(classesOf(el));
   const from = before.filter((c) => !list.includes(c)).join(' '), to = list.filter((c) => !before.includes(c)).join(' ');
   k.craft = { ...k.craft, suggest: { ...edit, from, to } };
-  k.action = `Change \`${from}\` to \`${to}\`: ${edit.why}.`;
+  k.action = `${from ? `Change \`${from}\` to` : 'Add'} \`${to}\`: ${edit.why}.`;
 }
 
 // ── verify ─────────────────────────────────────────────────

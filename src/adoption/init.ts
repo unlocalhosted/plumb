@@ -158,7 +158,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
     await rm(statePath(root, '.baseline-pending'), { force: true });
     const accepts = currentDecisions(adopted).length;
     const left = skippedFamilies.length ? `\nLeft for later: ${skippedFamilies.join(', ')}. plumber propose --family <name> shows what would be written.` : '';
-    return { message: `Wrote ${pathFrom(root, destination)} with your token sources.\n${written ? `${written}\n` : ''}Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\nBaseline: ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'location')}) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(accepts, 'token')} as inferred.${left}\nNext steps: run plumber install --ci.`, entries: [...accepted.values()], moves: [] };
+    return { message: `Wrote ${pathFrom(root, destination)} with your token sources.\n${written ? `${written}\n` : ''}Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\nBaseline: ${count(debt.length, 'debt entry', 'debt entries')} (${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'location')}) in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(accepts, 'token')} as inferred.${left}\nNext:\n  plumber install --overlay --write   see and fix drift on the page, in dev (Vite or Next.js)\n  plumber install --ci                fail CI only on new drift`, entries: [...accepted.values()], moves: [] };
   } catch (error) { await undoTheme?.(); throw error; }
   finally { await rm(scratch, { recursive: true, force: true }); }
 }

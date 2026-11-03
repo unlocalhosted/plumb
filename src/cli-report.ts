@@ -144,7 +144,9 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     const groups = findingLines(newFindings), shownGroups = groups.slice(0, 20);
     const shown = [...new Set(shownGroups.flatMap(group => group.findings.map(finding => ({ ...finding, sites: group.sites.filter(site => finding.sites.includes(site)) }))))];
     const path = (file: string) => relative(report.root, file) || '.';
-    lines.push('', `${count(groups.length, 'new finding')}`, groups.length ? renderFindingLines(shownGroups, path, verbose) : 'no findings');
+    // with a baseline, an empty list means nothing new, never "no findings": the debt above is still there
+    if (groups.length) lines.push('', `${count(groups.length, 'new finding')}`, renderFindingLines(shownGroups, path, verbose));
+    else lines.push('', 'Nothing new since your baseline.');
     const context = findingContext(shown, path, verbose, false);
     if (context) lines.push('', context);
     if (groups.length > shownGroups.length) lines.push(`+${groups.length - shownGroups.length} more: plumber check --new`);

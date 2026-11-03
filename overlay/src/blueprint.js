@@ -91,6 +91,8 @@ export class Blueprint {
     this.#fix = new FixPanel(root, {
       hold: (g, lead) => { const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => this.#selection.clear(),
+      // the last write, still undoable when Blueprint closes: History's toast keeps its Undo once the bar is gone
+      handOff: (result, text) => this.#host.wrote?.(result, text),
       view: () => this.#selection.view,
       pick: (i) => this.#selection.pick(i),
       take: () => this.#selection.accept(),
@@ -269,6 +271,8 @@ export class Blueprint {
     const hit = this.#under(e.clientX, e.clientY);
     // one element is read: a click outside it is done with it (Alt+click reads the element clicked instead)
     if (this.#scope && !(hit && this.#scope.contains(hit))) { e.altKey && hit && hit !== document.body && hit !== document.documentElement ? this.enterAt(hit) : this.leave(); return; }
+    // Alt+click inside the element being read opens that element's card again (after Esc closed it), as it does anywhere
+    if (e.altKey && this.#scope && hit) { this.enterAt(hit, { card: true }); return; }
     if (!hit || hit === document.body || hit === document.documentElement) { this.#fix.release(); this.#selection.clear(); return; }
     let el = hit;
     while (el && el !== document.body && !this.#itemOf(el)) el = el.parentElement;

@@ -325,7 +325,9 @@ test('doctor and read-only route cover every capability and token family with ev
   assert.match(output, /^Readiness: \d+ setup gaps? ·/);
   assert.ok(output.indexOf('Readiness:') < output.indexOf('Diagnostics'));
   assert.match(output, /Use the development build/);
-  assert.match(output, /unavailable\s+System panel/);
+  // a capability the product doesn't offer has no row in the text; JSON still says it is unavailable
+  assert.doesNotMatch(output, /System panel/);
+  assert.equal(ready.capabilities.find(c => c.id === 'system')?.available, false);
   for (const requirement of ready.requirements) assert.equal(output.includes(`[${requirement.id}]`), !requirement.derived && requirement.capability !== 'system', requirement.id);
 });
 
@@ -424,7 +426,7 @@ test('derived causes stay in route JSON; doctor counts causes and excludes unava
   run(root, ['fix', 'write.hmr', '--yes']);
   doctor = run(root, ['doctor']);
   assert.match(doctor, /^Readiness: 0 setup gaps · 1 check needs verification/);
-  assert.match(doctor, /unavailable\s+System panel/);
+  assert.doesNotMatch(doctor, /System panel/);
   assert.equal(item(await report(), 'system.preset').status, 'missing');
 });
 

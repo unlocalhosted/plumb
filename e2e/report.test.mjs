@@ -108,7 +108,7 @@ test('ledger default shows only new sites, caps groups, and keeps debt available
   await appendFile(join(root, 'src/styles.css'), '\n@theme { --z-popup: 40; }\n');
   run(root, ['baseline']);
   const clean = run(root).stdout;
-  assert.match(clean, /0 new findings\nno findings/);
+  assert.match(clean, /Nothing new since your baseline\./);
   assert.doesNotMatch(clean, /first run|Intended\?/);
   await appendFile(join(root, 'src/pages/Page0.tsx'), '\nexport const Added = () => <div className="p-[13px]" />;\n');
   await appendFile(join(root, 'src/pages/Page0.tsx'), '\nexport const Runtime = ({n}) => <div style={{left:n}} />;\n');

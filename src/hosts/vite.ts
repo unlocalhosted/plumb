@@ -135,7 +135,9 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
       }
       const owned = entry, owner = Symbol(); owned.owners.add(owner);
       void owned.session.then(session => session.on('transaction', onTransaction)).catch(() => {});
-      const relinquish = async () => { owned.owners.delete(owner); releaseHeld(); await owned.session.then(session => session.off('transaction', onTransaction)).catch(() => {}); await dispose(id, owned); };
+      const relinquish = async () => { owned.owners.delete(owner); releaseHeld();
+        // never wait on a Session still starting: a restart mid-startup would hang until it is ready
+        void owned.session.then(session => session.off('transaction', onTransaction)).catch(() => {}); await dispose(id, owned); };
       void release?.();
       release = relinquish;
       // Vite 6/7 close before configuring the replacement; Vite 8 configures it first.

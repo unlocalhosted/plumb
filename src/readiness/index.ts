@@ -287,7 +287,9 @@ export function formatReadiness(report: ReadinessReport): string {
   const requirements = actionableRequirements(report);
   const missing = requirements.filter(item => item.status === 'missing' && item.id.startsWith('read.tokens.')), others = requirements.filter(item => item.status === 'missing' && !item.id.startsWith('read.tokens.')), unknown = requirements.filter(item => item.status === 'unknown');
   let output = `Readiness: ${count(missing.length, 'setup gap')}${others.length ? ` · ${count(others.length, 'other fix', 'other fixes')}` : ''} · ${count(unknown.length, 'check needs verification', 'checks need verification')}\n`;
-  output += table(report.capabilities.map(item => [item.available === false ? 'unavailable' : item.status === 'unknown' ? 'verify in dev' : item.status, item.label]), [{ width: 13 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
+  // a capability the product doesn't offer (available: false) has no row: "unavailable" with no reason and no step
+  // only puzzles a first run; JSON keeps it for tools
+  output += table(report.capabilities.filter(item => item.available !== false).map(item => [item.status === 'unknown' ? 'verify in dev' : item.status, item.label]), [{ width: 13 }, { weight: 1 }], { indent: 2 }).join('\n') + '\n';
   for (const item of requirements) {
     output += wrap(`\n  ${item.status === 'ok' ? 'ok' : item.status === 'missing' ? 'fix' : '?'} ${item.title} [${item.id}]`) + '\n';
     output += wrap(`     ${item.evidence.map(evidence => `${evidence.file}:${evidence.line} ${evidence.text}`).join(' · ')}`) + '\n';
