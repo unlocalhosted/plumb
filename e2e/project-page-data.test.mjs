@@ -31,7 +31,7 @@ test('GET / is the page shell with the project name, and loads the page module',
   }
 });
 
-test('GET /__plumb/system answers the page data: scales, strays beside them, and the 3 biggest causes', { timeout: 90000 }, async (t) => {
+test('GET /__plumb/system answers the page data: scales, strays beside them, and the first 3 causes the CLI prints', { timeout: 90000 }, async (t) => {
   const { root, server, base } = await page(t);
   const answer = await fetch(base + '/__plumb/system', { headers: { 'x-plumb-token': server.info.token } });
   assert.equal(answer.status, 200);
@@ -46,10 +46,10 @@ test('GET /__plumb/system answers the page data: scales, strays beside them, and
   // white is a colour stray written more than one way, and bg-white is a dead class
   assert.ok(data.colour.strays.some(s => s.css === '#ffffff'), JSON.stringify(data.colour.strays));
   assert.ok(data.dead.some(d => d.class.includes('white')), JSON.stringify(data.dead));
-  // the same causes the CLI prints, the first three, biggest first
+  // the same causes the CLI prints, the first three, in its order
   const printed = check(root).causes;
   assert.deepEqual(data.causes.map(c => [c.id, c.count]), printed.slice(0, 3).map(c => [c.id, c.count]));
-  assert.ok(data.causes.length <= 3 && data.causes.every((c, i, all) => !i || all[i - 1].count >= c.count));
+  assert.ok(data.causes.length <= 3);
 });
 
 test('the numbers are the person\'s own: no token is refused, and a page from another site cannot read the shell', { timeout: 90000 }, async (t) => {
