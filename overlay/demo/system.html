@@ -18,6 +18,9 @@
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
   import { PRIMITIVES_CSS, stepper, swatches, segments, align, bind, place } from '../src/editor-primitives.js';
+  import { SCALE_CSS, step as stepMark, place as placeMark, places as placeMarks, count as countMark, rollCount } from '../src/scale-marks.js';
+  import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
+  import { BLOCK_ICONS } from '../src/boxmodel.js';
 
   // ---------- contrast, measured on the live tokens of each scheme ----------
   const rgb = (c) => { const h = c.trim().replace('#', ''); return h.length >= 6 ? [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) : null; };
@@ -42,7 +45,7 @@
   const NAV = [
     { id: 'welcome', label: 'Welcome' },
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], [null, 'Spacing'], [null, 'Shape'], [null, 'Elevation'], [null, 'Motion'], [null, 'Texture'], [null, 'Iconography'], [null, 'Voice and tone'], [null, 'Tokens']] },
-    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], [null, 'Role chip'], [null, 'Step'], [null, 'Place'], [null, 'Count'], [null, 'Readout']] },
+    { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], [null, 'Readout']] },
     { label: 'Patterns', items: [[null, 'Box model'], [null, 'Gravity'], [null, 'The clean-up show'], [null, 'Blueprint marks']] },
     { label: 'Layout', items: [[null, 'Card'], [null, 'Page']] },
     { label: 'Resources', items: [[null, 'Gallery'], [null, 'Briefs'], [null, 'Source']] },
@@ -77,6 +80,10 @@
   const states = (kind, rows) => `<div class="stage col states-list">${rows.map(([label, name, st, note]) => `<div class="srow"><span class="lbl">${label}</span>${demo(name, kind, st, note ?? '')}</div>`).join('')}</div>`;
   const keys = `<ul class="plain"><li>One tab stop for the whole control; ← → (and ↑ ↓) move between steps, Home and End go to the ends.</li><li>Enter or Space picks; pointing or focusing shows what a step would be.</li><li>Each control is a <code>radiogroup</code>; each step a <code>radio</code> with <code>aria-checked</code>.</li></ul>`;
 
+  // ---------- the scale marks and the show's chips ----------
+  const ROLES = [['p', 12], ['g', 8], ['m', 24], ['r', 10], ['line', 14]].map(([k, v]) => ({ label: { p: 'padding', g: 'gap', m: 'margin', r: 'radius', line: 'type' }[k], icon: BLOCK_ICONS[k], from: v }));
+  const STEP_STATES = [['rest', 'sm', 14, 15, 'In use: a sky ring, filled by how much it’s used.'], ['unused', '2xl', 28, 0, 'In your theme, nowhere in your code: dashed.'], ['pointed', 'md', 16, 8, 'Pointed at: the sky hatch, its value in a pill.'], ['pulled', 'xs', 12, 11, 'Places pulled in: mint, with what it took.'], ['off', '15px', 15, 0, 'A size your scale doesn’t have: coral, no name.']];
+
   const pages = {
     welcome: () => ({
       title: 'Plumber design system',
@@ -85,6 +92,7 @@
         sec('start', 'Start here', `<p>Everything on these pages is drawn by the same code the overlay uses, so what you see here is what ships. Night and day are both first-class: switch at the top right and every example follows.</p>
           <div class="tiles">${card('#colour', 'Foundations', 'Colour, type, spacing, shape, motion: the rules everything else follows.', `<span class="hues">${HUES.map(([h]) => `<i style="background:var(--pl-${h})"></i>`).join('')}</span>`)}${card('#pill/overview', 'Components', 'The pieces you build with, each with its states, usage and code.', `<span class="pl-pill" data-hue="mint">s3</span><span class="pl-pill" data-hue="coral">p-[10px]</span>`)}${card(null, 'Patterns', 'How the pieces work together: the box model, Gravity, the clean-up show.', '<span class="pl-hatch hatch"></span>')}</div>`),
         sec('latest', 'Latest changes', `<ul class="log">
+          <li><span class="when">Nov 3</span><span><b>Role chip, Step, Place and Count documented,</b> playing and rolling live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Stepper, Swatches and Segments documented,</b> every state live.</span></li>
           <li><span class="when">Nov 3</span><span><b>Typography, Tag and Action documented.</b> And a fix: a tag asked for sky now draws in sky.</span></li>
           <li><span class="when">Nov 3</span><span><b>Night pills in white.</b> Every pill is a deep version of its colour with white lettering; lines and marks keep the bright pastels.</span></li>
@@ -130,11 +138,11 @@
         overview: [
           sec('status', 'Status', `<div class="status">${[['Designed', 'In the visual language, day and night'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-pill</code>'], ['Used', 'Box model values, the show’s chips, scale steps, legends']].map(([a, b]) => `<div><span class="pl-pill" data-hue="mint">✓ ${a}</span><span>${b}</span></div>`).join('')}</div>`),
           sec('intro', 'Introduction', `<p>A pill holds one short value: a measurement, a count, a token, a class. Its colour says what the value means, its lettering is the value itself, set in mono with tabular figures so numbers line up.</p><div class="stage">${pills((h) => ({ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]))}</div>`),
-          sec('related', 'Related components', `<div class="tiles">${card('#tag/overview', 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card(null, 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card(null, 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#tag/overview', 'Tag', 'A name, with an optional icon; lilac by default.', '<span class="pl-tag">Models</span>')}${card('#step/overview', 'Step', 'A step of a scale, its value in a pill while pointed at.', '<span class="pl-pill">14</span>')}${card('#chip/overview', 'Role chip', 'A pill with an icon that lights in its role’s colour.', '<span class="pl-pill">12</span>')}</div>`),
         ],
         style: [
           sec('anatomy', 'Anatomy', `<div class="stage anat"><div class="spec-pill"><span class="pl-pill xl" data-hue="mint">s3 · 12</span><span class="mk m1">1</span><span class="mk m2">2</span><span class="mk m3">3</span></div><ol><li><span class="mk">1</span><span><b>Fill</b> the colour’s soft tone, <code>--pill-soft</code></span></li><li><span class="mk">2</span><span><b>Lettering</b> the colour’s ink, mono 600 11px, tabular figures, <code>--pill-ink</code></span></li><li><span class="mk">3</span><span><b>Shape</b> 20px tall, 7px sides, 7px corners, <code>--pl-radius-pill</code></span></li></ol></div><p>Drawn here at 2.4× its size. At 1×: <span class="pl-pill" data-hue="mint">s3 · 12</span></p>`),
-          sec('variants', 'Colours', `<div class="stage col">${HUES.map(([h, name]) => `<div class="v"><span class="pl-pill" data-hue="${h}">${{ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]}</span><span>${name}</span><code>data-hue="${h}"</code></div>`).join('')}</div>`),
+          sec('variants', 'Colours', `<div class="stage col">${HUES.map(([h, name]) => `<div class="vrow"><span class="pl-pill" data-hue="${h}">${{ sky: '12', coral: 'p-[10px]', mint: 's3', butter: 'text-white', pink: 'Write 2', lilac: 'Models' }[h]}</span><span>${name}</span><code>data-hue="${h}"</code></div>`).join('')}</div>`),
           sec('content', 'Content', `<div class="stage">${['12', 's3 · 12', '+87', 'p-[10px]', 'W Fill 500px'].map((v) => `<span class="pl-pill">${v}</span>`).join('')}</div><p>One value, or a token and its number joined by a middle dot. Never a sentence.</p>`),
         ],
         usage: [
@@ -221,6 +229,86 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
       return { title: 'Segments', lede: 'One of a few named options.', tabs: true, tab, sections: t[tab] ?? t.overview };
     },
 
+    chip: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/show.js</code>, <code>chipsHtml()</code> and <code>roll()</code>'], ['Used', 'The clean-up show: one chip per role while the page is cleaned up']])),
+          sec('intro', 'Introduction', `<p>A role chip is one decision in a clean-up: an icon for the property and its value. While the show plays that role, the chip lights in the role’s colour and its value rolls to where the role sets it, digit by digit. Press Play.</p><div class="stage col"><div class="chips-demo">${chipsHtml(ROLES)}</div><button type="button" class="pl-act quiet" data-play>Play the chips</button></div>`),
+        ],
+        style: [
+          sec('states', 'States', `<div class="stage col states-list"><div class="srow"><span class="lbl">Rest</span><div>${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Playing</span><div class="force-on">${chipsHtml(ROLES.slice(0, 3))}</div></div><div class="srow"><span class="lbl">Done</span><div class="force-done">${chipsHtml(ROLES.slice(0, 3))}</div></div></div><p>At rest the chip is neutral and its icon quiet. Playing, a ring and a tint in the role’s colour, and the icon lights. Done, the icon keeps its colour.</p>`),
+          sec('hues', 'Colours', `<p>Roles take sky, lilac, mint, butter and pink in turn. Never coral: coral only ever means off your system.</p>`),
+        ],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show the decisions a clean-up makes, one at a time, while it makes them.</li><li>Not as buttons: a chip says what’s happening; it doesn’t do anything.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>import { SHOW_CSS, chipsHtml, roll } from './show.js';
+host.innerHTML = chipsHtml([{ label: 'padding', icon: BLOCK_ICONS.p, from: 12 }, …]);
+chip.setAttribute('data-on', ''); roll(chip, 16);   // light it, roll its value</code></pre>`)],
+        accessibility: [sec('read', 'Readers and motion', `<p>The chips are a list; each is labelled by its role. Under reduced motion the value changes at once instead of rolling.</p>`)],
+      };
+      return { title: 'Role chip', lede: 'One decision in a clean-up, playing.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    step: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Every state, night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>step()</code>'], ['Used', 'Gravity, on the project page']])),
+          sec('intro', 'Introduction', `<p>A step is one size of your scale: a ring that grows with the places that use it, named underneath. It’s how Gravity draws your scale.</p><div class="stage">${stepMark({ name: 'xs', n: 12, uses: 11 })}${stepMark({ name: 'sm', n: 14, uses: 15 })}${stepMark({ name: 'md', n: 16, uses: 8 })}${stepMark({ name: '2xl', n: 28, uses: 0 })}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#place/overview', 'Place', 'The places around a step.', placeMarks(6, 'off') + placeMarks(4, 'typed'))}${card('#tag/overview', 'Tag', 'Names the step.', '<span class="pl-tag">sm</span>')}</div>`),
+        ],
+        style: [
+          sec('states', 'States', `<div class="stage col states-list">${STEP_STATES.map(([st, name, n, uses, note]) => `<div class="srow"><span class="lbl">${st}</span><div class="demo">${stepMark({ name, n, uses, took: st === 'pulled' ? 87 : 0, state: st })}<span class="say">${note}</span></div></div>`).join('')}</div>`),
+          sec('quiet', 'Quiet', `<p>On a page’s drawing, wrap steps in <code>.sc-quiet</code>: the name becomes lilac words on a plate, and the pill appears only while the step is pointed at.</p><div class="stage sc-quiet">${STEP_STATES.slice(0, 4).map(([st, name, n, uses]) => stepMark({ name, n, uses, took: st === 'pulled' ? 87 : 0, state: st })).join('')}</div>`),
+          sec('size', 'Size', `<p>The ring’s radius is 9px plus 1.7× the square root of the places it holds, so a step with four times the places is twice as wide.</p>`),
+        ],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To draw a scale and how it’s used.</li><li>One step per token of your theme; a value off the scale is drawn <b>off</b>, never as a step.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>import { SCALE_CSS, step } from './scale-marks.js';
+host.innerHTML = step({ name: 'sm', n: 14, uses: 15 });               // rest
+host.innerHTML = step({ name: 'xs', n: 12, uses: 11, took: 87, state: 'pulled' });
+mark.dataset.state = 'pointed';   // a step changes state in place; its pill follows</code></pre>`)],
+        accessibility: [sec('read', 'Readers', `<p>A drawing of steps is a picture: give its container <code>role="img"</code> and a table of the numbers for readers, as Gravity does.</p>`)],
+      };
+      return { title: 'Step', lede: 'One size of your scale.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    place: (tab = 'overview') => {
+      const tones = [['off', 'Not on your scale', 'coral'], ['typed', 'Your size, typed by hand', 'butter'], ['on', 'On your scale', 'mint']];
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>place()</code> and <code>places()</code>'], ['Used', 'Gravity draws hundreds of them on a canvas, in the same colours']])),
+          sec('intro', 'Introduction', `<p>A place is one spot in your code, as a 4px square in its verdict’s colour. On their own they’re tiny; together they show where your code really is.</p><div class="stage">${placeMarks(9, 'off')}${placeMarks(14, 'typed')}${stepMark({ name: 'xs', n: 12, uses: 11 })}${placeMarks(6, 'off')}${placeMarks(11, 'off')}${stepMark({ name: 'sm', n: 14, uses: 15 })}${placeMarks(4, 'typed')}</div>`),
+        ],
+        style: [
+          sec('tones', 'Colours', `<div class="stage col states-list">${tones.map(([tone, name, h]) => `<div class="srow"><span class="lbl">${h}</span><div class="demo"><span class="trio">${placeMark(tone)}</span><span class="say">${name}</span></div></div>`).join('')}</div>`),
+          sec('show', 'How it shows', `<div class="stage col states-list">${[['rest', 'At rest'], ['dim', 'Another step is pointed at: it steps back'], ['lit', 'Its step is pointed at: it grows and rings'], ['arrive', 'Arriving: it pops in']].map(([sh, note]) => `<div class="srow"><span class="lbl">${sh}</span><div class="demo"><span class="trio">${tones.map(([tone]) => placeMark(tone, sh)).join('')}</span><span class="say">${note}</span></div></div>`).join('')}</div>`),
+        ],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>To show where many things are at once. One place is one spot in code; never a count.</li><li>With a legend: the colour says the verdict, the legend says it once in words.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>import { place, places } from './scale-marks.js';
+host.innerHTML = place('typed');          // one
+host.innerHTML = places(14, 'off');      // a column of 14</code></pre><p>For hundreds, draw them on a canvas in <code>--pl-coral</code>, <code>--pl-butter</code> and <code>--pl-mint</code>, read from the tokens, as Gravity does.</p>`)],
+        accessibility: [sec('read', 'Readers', `<p>Places are decoration on their own; the numbers they add up to belong in text: a count, a table.</p>`)],
+      };
+      return { title: 'Place', lede: 'One spot in your code.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
+    count: (tab = 'overview') => {
+      const t = {
+        overview: [
+          sec('status', 'Status', status([['Designed', 'Night and day'], ['Built', '<code>overlay/src/scale-marks.js</code>, <code>count()</code> and <code>rollCount()</code>'], ['Used', 'Gravity’s footer']])),
+          sec('intro', 'Introduction', `<p>A count is a number that matters, with the sentence that says what it counts. When it changes it rolls to its new value digit by digit, so you see it climb. Press Snap.</p><div class="stage">${countMark(45, 'places use your scale')}<button type="button" class="pl-act" data-roll style="margin-left:auto">Snap to your scale</button></div>`),
+        ],
+        style: [
+          sec('anatomy', 'Anatomy', `<ul class="plain"><li><b>Figure</b> <code>--pl-page-figure</code>, 32/36 600, tabular figures, tracking −0.025em.</li><li><b>Sentence</b> <code>--pl-page-small</code> in the second ink, right under it: one block, the figure first.</li></ul>`),
+          sec('motion', 'Motion', `<p>Each digit is a column of 0–9 that slides to its digit on the overlay’s spring, in 520ms. A change in length draws the new number as zeroes first, then rolls.</p>`),
+        ],
+        usage: [sec('when', 'When to use it', `<ul class="plain"><li>For the one number a surface is about.</li><li>Say what changed in the sentence: “places use your scale” becomes “places on your scale, if every size snapped to it”.</li></ul>`)],
+        code: [sec('use', 'Use', `<pre><code>import { count, rollCount } from './scale-marks.js';
+host.innerHTML = count(45, 'places use your scale');
+rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
+        accessibility: [sec('read', 'Readers and motion', `<p>The rolling digits are hidden from readers; announce the settled number in a polite live region, as Gravity does. Under reduced motion the number changes at once.</p>`)],
+      };
+      return { title: 'Count', lede: 'A number that matters, and what it counts.', tabs: true, tab, sections: t[tab] ?? t.overview };
+    },
+
     type: () => ({
       title: 'Typography',
       lede: 'Two scales: a small one for cards held over your page, and a page scale for anything bigger. The system’s own faces only, so nothing is ever downloaded.',
@@ -243,12 +331,12 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
         overview: [
           sec('status', 'Status', status([['Designed', 'Lilac by default; sky for a measurement'], ['Built', '<code>overlay/src/language.js</code>, <code>.pl-tag</code>'], ['Used', 'Element and component names on the box model, step names, the project name']])),
           sec('intro', 'Introduction', `<p>A tag names something: a component, an element, a step of a scale. Names are lilac, so the eye learns that lilac means “this is called…”. A tag can lead with a small icon that says what kind of thing it is.</p><div class="stage"><span class="pl-tag">${ICON_MODELS}Models</span><span class="pl-tag">ModelRow</span><span class="pl-tag">Board › Card</span><span class="pl-tag" data-hue="sky">W Fill 500px</span></div>`),
-          sec('related', 'Related components', `<div class="tiles">${card('#pill/overview', 'Pill', 'A value, not a name: mono, coloured by meaning.', '<span class="pl-pill" data-hue="mint">s3</span>')}${card(null, 'Step', 'A step of a scale, named by a tag.', '<span class="pl-tag">sm</span>')}</div>`),
+          sec('related', 'Related components', `<div class="tiles">${card('#pill/overview', 'Pill', 'A value, not a name: mono, coloured by meaning.', '<span class="pl-pill" data-hue="mint">s3</span>')}${card('#step/overview', 'Step', 'A step of a scale, named by a tag.', '<span class="pl-tag">sm</span>')}</div>`),
         ],
         style: [
           sec('anatomy', 'Anatomy', `<div class="stage anat"><div class="spec-pill"><span class="pl-tag xl">${ICON_MODELS}Models</span><span class="mk m1">1</span><span class="mk m2">2</span><span class="mk m3">3</span></div><ol><li><span class="mk">1</span><span><b>Icon</b> optional, 12px, in the lettering’s colour</span></li><li><span class="mk">2</span><span><b>Name</b> sans 600 12px, the colour’s ink</span></li><li><span class="mk">3</span><span><b>Shape</b> 22px tall, 6px corners, <code>--pl-radius-tag</code></span></li></ol></div><p>Drawn here at 2.4× its size. At 1×: <span class="pl-tag">${ICON_MODELS}Models</span></p>`),
-          sec('variants', 'Colours', `<div class="stage col"><div class="v"><span class="pl-tag">ModelRow</span><span>A name: the default</span><code>(no data-hue)</code></div><div class="v"><span class="pl-tag" data-hue="sky">W Fill 500px</span><span>A measurement on what you picked</span><code>data-hue="sky"</code></div></div>`),
-          sec('vs', 'Tag or pill', `<div class="stage col"><div class="v"><span class="pl-tag">sm</span><span>Tag: a <b>name</b>, in the sans</span><code>.pl-tag</code></div><div class="v"><span class="pl-pill">14</span><span>Pill: a <b>value</b>, in mono</span><code>.pl-pill</code></div></div>`),
+          sec('variants', 'Colours', `<div class="stage col"><div class="vrow"><span class="pl-tag">ModelRow</span><span>A name: the default</span><code>(no data-hue)</code></div><div class="vrow"><span class="pl-tag" data-hue="sky">W Fill 500px</span><span>A measurement on what you picked</span><code>data-hue="sky"</code></div></div>`),
+          sec('vs', 'Tag or pill', `<div class="stage col"><div class="vrow"><span class="pl-tag">sm</span><span>Tag: a <b>name</b>, in the sans</span><code>.pl-tag</code></div><div class="vrow"><span class="pl-pill">14</span><span>Pill: a <b>value</b>, in mono</span><code>.pl-pill</code></div></div>`),
         ],
         usage: [
           sec('when', 'When to use it', `<ul class="plain"><li>To name what you’re looking at: the component, the element, the step.</li><li>Once per thing, at its top-left, above it.</li></ul>`),
@@ -302,7 +390,7 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
 
   // ---------- the shell ----------
   const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}
     :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
     a { color: inherit; }
     code { font: 500 12.5px/1.5 var(--pl-mono); }
@@ -378,8 +466,8 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
     .bad { display: inline-flex; height: 20px; align-items: center; padding: 0 7px; border-radius: 7px; background: #ff7a6b; color: #3a0b06; font: 600 11px var(--pl-mono); }
     .status { display: grid; gap: 10px; } .status > div { display: flex; align-items: center; gap: 12px; font: var(--pl-page-small); color: var(--pl-ink-2); }
     .stage { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 28px; border-radius: var(--pl-radius-card); background: var(--pl-paper-2); margin: 4px 0 16px; }
-    .stage.col { display: grid; gap: 10px; } .stage .v { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; gap: 12px; font: var(--pl-page-small); color: var(--pl-ink-2); }
-    .stage .v > .pl-pill { justify-self: start; }
+    .stage.col { display: grid; gap: 10px; } .stage .vrow { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; gap: 12px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .stage .vrow > .pl-pill { justify-self: start; }
     .anat { gap: 40px; padding: 40px 32px; }
     .spec-pill { position: relative; padding: 18px 26px 26px 18px; }
     /* the pill at 2.4x, drawn at that size (not scaled), so it stays crisp */
@@ -409,6 +497,10 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
     .srow > .lbl { font: var(--pl-page-meta); color: var(--pl-ink-2); }
     .demo { display: grid; gap: 6px; justify-items: start; }
     .demo .say { min-height: 18px; font: var(--pl-page-meta); color: var(--pl-ink-3); }
+    .trio { display: inline-flex; gap: 12px; padding: 8px 12px; border-radius: 8px; background: var(--pl-paper); }
+    .stage .sc-step { margin: 0 6px; }
+    .stage.col > .pl-act { justify-self: start; }
+    .tile .art .sc-places { margin: 0 2px; }
     ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--pl-ink-2); } ul.plain li { margin: 6px 0; }
     pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 10px; background: var(--pl-paper-2); overflow: auto; } pre code { color: var(--pl-ink); }
     @media (max-width: 1100px) { .content { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } }
@@ -450,6 +542,20 @@ host.innerHTML = align('Align', { steps: cells, current: 'center start' });</cod
     rail.innerHTML = `<b>On this page</b>${p.sections.map((s) => `<a href="#${id}${tab ? `/${tab}` : ''}" data-to="${s.id}">${s.title}</a>`).join('')}`;
     page.querySelectorAll('[data-mini]').forEach((el) => mini(el, el.dataset.mini === 'day' ? 'light' : 'dark'));
     page.querySelectorAll('[data-demo]').forEach(wire);
+    page.querySelectorAll('.force-on .sh-chip').forEach((c) => c.setAttribute('data-on', ''));
+    page.querySelectorAll('.force-done .sh-chip').forEach((c) => c.setAttribute('data-done', ''));
+    page.querySelector('[data-play]')?.addEventListener('click', async (e) => {
+      const chips = [...page.querySelectorAll('.chips-demo .sh-chip')], to = [16, 12, 24, 12, 16];
+      e.target.disabled = true;
+      chips.forEach((c, i) => { c.removeAttribute('data-on'); c.removeAttribute('data-done'); roll(c, ROLES[i].from); });
+      for (const [i, c] of chips.entries()) { c.setAttribute('data-on', ''); roll(c, to[i]); await new Promise((r) => setTimeout(r, 700)); c.removeAttribute('data-on'); c.setAttribute('data-done', ''); }
+      e.target.disabled = false;
+    });
+    page.querySelector('[data-roll]')?.addEventListener('click', (e) => {
+      const on = e.target.getAttribute('aria-pressed') !== 'true', c = page.querySelector('.sc-count');
+      e.target.setAttribute('aria-pressed', String(on)); e.target.textContent = on ? 'Let go' : 'Snap to your scale';
+      rollCount(c, on ? 621 : 45); c.querySelector('.say').textContent = on ? 'places on your scale, if every size snapped to it' : 'places use your scale';
+    });
     scrollTo(0, 0); watch();
   }
   // the rail jumps within the page and marks the section in view
