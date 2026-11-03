@@ -48,7 +48,7 @@ It compiles classes, stylesheets, `@apply` and inline styles with the project's 
 
 ```sh
 npm install -D @unlocalhosted/react-plumber
-npx plumber                 # report drift; exits 0 with no config
+npx plumber                 # open a page about your project in the browser (npx plumber check prints the report)
 npx plumber state           # where the project starts: bare, half a system, a system
 npx plumber propose         # tokens drafted from the values the code already uses
 npx plumber init            # ask, write the theme, write plumber.config.ts, baseline today's findings

@@ -396,7 +396,7 @@ function ownTab(request: IncomingMessage): boolean {
 }
 
 /** `page`: also answer GET / with the project page and serve the page's modules; no discovery file is written (nothing is left in the project). */
-export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string; servedRoot?: string; page?: boolean } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
+export async function serve(options: SessionOptions & { port?: number; overlay?: boolean; origin?: string; servedRoot?: string; page?: boolean; portSearch?: number } = {}): Promise<{ session: Session; server: Server; info: ServeInfo; close(): Promise<void> }> {
   const port = options.port ?? 0;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new UsageError('Port must be an integer from 0 to 65535.');
   if (options.overlay && options.origin === undefined) throw new UsageError('Serve --overlay requires --origin <url>.');
@@ -415,7 +415,7 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
       await rm(path);
     }
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, page: _page, ...sessionOptions } = options;
+  const { port: _port, overlay: _overlay, origin: _origin, servedRoot: _servedRoot, page: _page, portSearch: _search, ...sessionOptions } = options;
   const session = await Session.create({ ...sessionOptions, root });
   const token = randomBytes(32).toString('hex');
   const handlerOptions: HandlerOptions = { token, ...(options.servedRoot === undefined ? {} : { servedRoot: resolve(options.servedRoot) }), client: options.overlay || options.page || false, ...(origin === undefined ? {} : { origin }) };
@@ -432,7 +432,11 @@ export async function serve(options: SessionOptions & { port?: number; overlay?:
   });
   server.requestTimeout = 10_000; server.headersTimeout = 10_000;
   try {
-    await new Promise<void>((ready, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { server.off('error', reject); ready(); }); });
+    // `portSearch`: the page asks for 7331 and takes the next free port when it's busy
+    for (let at = port, last = port + (options.portSearch ?? 0); ; at++) {
+      try { await new Promise<void>((ready, reject) => { server.once('error', reject); server.listen(at, '127.0.0.1', () => { server.off('error', reject); ready(); }); }); break; }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE' || at >= last) throw error; }
+    }
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('Server has no TCP address.');
     const info: ServeInfo = { port: address.port, pid: process.pid, token, root, config: options.config === undefined ? null : resolve(root, options.config), protocol: 1,

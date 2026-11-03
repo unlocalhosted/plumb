@@ -40,6 +40,7 @@ const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
+       plumber                          open a page about your project in the browser
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
        plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
@@ -98,7 +99,7 @@ async function main(): Promise<void> {
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, max: { type: 'string' },
-          overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -122,6 +123,8 @@ async function main(): Promise<void> {
   if (args.values.help) { process.stdout.write(help); return; }
   if (args.values.version) { process.stdout.write(`${tool.version}\n`); return; }
   const command = args.positionals[0] ?? 'check';
+  // Bare `plumber` (only a folder or config named) is the newcomer's path; any other flag asks for a report as before
+  const bare = args.positionals.length === 0 && Object.keys(args.values).every(flag => ['root', 'config', 'no-open'].includes(flag));
   const deciding = command === 'decisions';
   const listingHabits = command === 'habits';
   const explaining = command === 'explain';
@@ -187,6 +190,10 @@ async function main(): Promise<void> {
   const analyzing = <T>(run: () => Promise<T>) => withCliProgress(options.root,
     !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), async () => { await prepare(); return run(); });
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
+  if (bare) {
+    const { runPage } = await import('./onboarding/path.js');
+    if (await runPage({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true })) return;
+  }
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
     process.stdout.write(args.values.json ? `${JSON.stringify(loaded.presets ?? [], null, 2)}\n` :
