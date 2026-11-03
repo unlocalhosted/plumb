@@ -44,7 +44,7 @@ export const HISTORY_CSS = `
   .wt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4));
     display: flex; align-items: center; gap: var(--pl-space-4); max-width: min(440px, calc(100vw - 2 * var(--pl-space-6))); box-sizing: border-box;
     padding: var(--pl-space-3) var(--pl-space-3) var(--pl-space-3) var(--pl-space-5); pointer-events: auto;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-card-meta); color: var(--pl-ink);
+    font: var(--pl-card-meta);
     opacity: 0; translate: 0 4px; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
   .wt[data-on] { opacity: 1; translate: 0 0; }
   .wt .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -59,8 +59,7 @@ export const HISTORY_CSS = `
   /* the timeline: the dock grown into a strip, same corner */
   .tt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); box-sizing: border-box; pointer-events: auto;
     width: min(760px, calc(100vw - 2 * var(--pl-space-6))); display: flex; align-items: flex-end; gap: var(--pl-space-5);
-    padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); color: var(--pl-ink);
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
+    padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); }
   .tt[hidden] { display: none; }
   /* the strip settles where the dock is: the start corner, or the middle when both corners are taken */
   :host([data-side="start"]) .tt { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
@@ -233,9 +232,9 @@ export class History {
   constructor(root, { button, host }) {
     this.#button = button;
     this.#host = host;
-    this.#toast = Object.assign(document.createElement('div'), { className: 'wt', hidden: true });
+    this.#toast = Object.assign(document.createElement('div'), { className: 'wt pl-card', hidden: true });
     this.#toast.setAttribute('role', 'status');
-    this.#strip = Object.assign(document.createElement('section'), { className: 'tt', hidden: true });
+    this.#strip = Object.assign(document.createElement('section'), { className: 'tt pl-card', hidden: true });
     this.#strip.setAttribute('role', 'dialog');
     this.#strip.setAttribute('aria-label', T.title);
     this.#marks = Object.assign(document.createElement('div'), { className: 'tt-marks', hidden: true });

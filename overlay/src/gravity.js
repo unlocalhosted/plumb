@@ -31,7 +31,7 @@ const fmt = (px) => `${+(+px).toFixed(2)}px`;
 const SETTLE = { k: 300, c: 30 }, DETENT = { k: 600, c: 35 };
 
 export const GRAVITY_CSS = `
-  .gv { position: relative; border-radius: var(--pl-radius-card); background: var(--pl-paper); box-shadow: var(--pl-shadow-card); color: var(--pl-ink); overflow: hidden; }
+  .gv { position: relative; overflow: hidden; }
   .gv-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 24px; padding: 22px 24px 0; }
   .gv-head h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
   .gv-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
@@ -78,7 +78,7 @@ export class Gravity {
   render() {
     const { steps, strays, onScale, byHand } = this;
     const empty = !steps.length ? ['No scale to draw yet', 'Add text sizes to your theme, and this fills in.'] : !byHand ? ['Every text size uses your scale', 'Nothing typed by hand.'] : null;
-    this.el.innerHTML = `<div class="gv sc-quiet">
+    this.el.innerHTML = `<div class="gv pl-card sc-quiet">
       <div class="gv-head"><div><h2>Where your text sizes land</h2><p>Each dot is a place in your code that types a size by hand, next to the size it's closest to.</p></div>
         <div class="gv-key" aria-hidden="true"><span><i style="background:var(--pl-mint)"></i>On your scale</span><span><i style="background:var(--pl-butter)"></i>Your size, typed by hand</span><span><i style="background:var(--pl-coral)"></i>Not on your scale</span></div></div>
       <div class="gv-plot">${empty ? `<div class="gv-empty"><span>${esc(empty[0])}<small>${esc(empty[1])}</small></span></div>` : `<canvas tabindex="0" role="img" aria-describedby="gv-table" aria-label="${esc(`Your ${steps.length} text sizes with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`)}"></canvas><div class="gv-steps"></div>`}</div>

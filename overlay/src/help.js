@@ -48,7 +48,7 @@ const HOLD = 6000;
 export const HELP_CSS = `
   .hp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); width: 340px;
     max-width: calc(100vw - 2 * var(--pl-space-6)); max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - var(--pl-space-4)); overflow-y: auto; overscroll-behavior: contain;
-    pointer-events: auto; background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
+    pointer-events: auto;
     padding: var(--pl-space-5) var(--pl-space-5) var(--pl-space-4); box-sizing: border-box; opacity: 0; translate: 0 4px;
     transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
   .hp[data-on] { opacity: 1; translate: 0 0; }
@@ -59,7 +59,7 @@ export const HELP_CSS = `
   .hp dd { margin: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .tip { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); max-width: min(440px, calc(100vw - 2 * var(--pl-space-6)));
     display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-3) var(--pl-space-3) var(--pl-space-3) var(--pl-space-5); box-sizing: border-box; pointer-events: auto;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-card-meta); color: var(--pl-ink);
+    font: var(--pl-card-meta);
     opacity: 0; translate: 0 4px; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), translate var(--pl-dur-feedback) var(--pl-ease-out); }
   .tip[data-on] { opacity: 1; translate: 0 0; }
   .tip button { all: unset; cursor: pointer; padding: 3px var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); color: var(--pl-ink-2); }
@@ -81,12 +81,12 @@ export class Help {
   // grows after the hint is said moves it up); quiet() → true while something else owns the screen (a card): the tip goes
   constructor(root, { button, avoid, quiet }) {
     this.#button = button; this.#avoid = avoid; this.#quiet = quiet;
-    this.#sheet = Object.assign(document.createElement('section'), { className: 'hp', hidden: true });
+    this.#sheet = Object.assign(document.createElement('section'), { className: 'hp pl-card', hidden: true });
     this.#sheet.setAttribute('role', 'dialog');
     this.#sheet.setAttribute('aria-label', 'Keyboard shortcuts');
     this.#sheet.tabIndex = -1;
     this.#sheet.innerHTML = `<div class="title">Keyboard shortcuts</div>${KEYS.map(([head, rows]) => `<h3>${esc(head)}</h3><dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`).join('')}`;
-    this.#hint = Object.assign(document.createElement('div'), { className: 'tip', hidden: true });
+    this.#hint = Object.assign(document.createElement('div'), { className: 'tip pl-card', hidden: true });
     this.#hint.setAttribute('role', 'status');
     root.append(this.#sheet, this.#hint);
     button.addEventListener('click', () => this.toggle());

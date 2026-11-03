@@ -15,11 +15,17 @@
  *  rainbow   pink, mint, butter, sky as one striped band: the dock's mark, used nowhere else
  *  act       the action: a pink pill button (white lettering at night); .quiet or aria-pressed sits on the paper
  *  pop       anything that appears (a pill, a tag, a card) pops from 0.92 on a spring that overshoots ~4%
+ *  card      the only lifted thing: paper, card corners, the card shadow, ink. CARD_CSS on its own, for a root that
+ *            doesn't load the rest (the overlay's)
  *
  * Reduced motion: the ants stand still, nothing pops, the rainbow does not shimmer.
  * ───────────────────────────────────────────────────────── */
 
-export const LANGUAGE_CSS = `
+export const CARD_CSS = `
+  .pl-card { background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); }
+`;
+
+export const LANGUAGE_CSS = CARD_CSS + `
   .pl-pill { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: var(--pl-radius-pill); box-sizing: border-box;
     font: 600 11px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap;
     background: var(--pill-soft, var(--pl-sky-soft)); color: var(--pill-ink, var(--pl-sky-ink)); }

@@ -34,7 +34,6 @@ import { esc } from './choices.js';
 export const PANEL_CSS = `
   .bpp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px);
     width: 300px; max-width: calc(100vw - 2 * var(--pl-space-6)); display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     opacity: 0; translate: 8px 0; transition: opacity var(--pl-dur-undim) var(--pl-ease-out), translate var(--pl-dur-undim) var(--pl-ease-out); }
   .bpp[hidden] { display: none; }
   .bpp[data-side="start"] { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
@@ -139,7 +138,7 @@ export class Panel {
   constructor(root, { host, marks }) {
     this.#host = host;
     this.#marks = marks;
-    this.#el = Object.assign(document.createElement('aside'), { className: 'bpp', hidden: true });
+    this.#el = Object.assign(document.createElement('aside'), { className: 'bpp pl-card', hidden: true });
     this.#el.setAttribute('aria-label', 'What’s off on this page');
     this.#el.innerHTML = '<button class="head" type="button" aria-expanded="false"><span class="title">What’s off</span><span class="meta" role="status"></span><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><ul class="rows" role="list"></ul><div class="foot"><span class="code" hidden></span><span class="keys" aria-hidden="true"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>↵</kbd> fix · <kbd>N</kbd> next place</span></div>';
     root.append(this.#el);

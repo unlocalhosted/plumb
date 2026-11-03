@@ -225,7 +225,7 @@ export class Fixer {
     // focus stays with the chooser across its renders: on the card while reading, then on a step
     const held = state || el.contains(this.#root.activeElement) || !this.#root.activeElement;
     const tone = m ? (this.#byEl.get(o.el)?.get(o.key) ? 'ok' : m.ledger !== 'new' ? 'quiet' : m.soft ? 'soft' : '') : '';
-    el.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="${esc(title.replace(/`/g, ''))}">
+    el.innerHTML = `<div class="card pl-card" tabindex="-1" role="dialog" aria-label="${esc(title.replace(/`/g, ''))}">
       <div class="top">${glyph((m ?? o.mark).glyph, tone || 'off')}<span class="title">${code(title)}</span>
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
@@ -699,7 +699,7 @@ export class Fixer {
         : o.mark.choices.length ? `<span class="arrow" aria-hidden="true">→</span><span class="ask">pick</span>` : `<span class="ask none">no token</span>`;
       return `<button class="row" role="option" data-id="${esc(o.id)}" tabindex="-1" aria-selected="${!!fix}" aria-current="${current}" aria-label="${esc(o.mark.title.replace(/`/g, ''))}${fix?.to ? `, picked ${esc(fix.to)}` : ''}">${glyph(o.mark.glyph, tone)}<code>${esc(o.mark.text)}</code>${to}<span class="el">${esc(o.el.localName)}</span></button>`;
     };
-    list.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="Drift in view">
+    list.innerHTML = `<div class="card pl-card" tabindex="-1" role="dialog" aria-label="Drift in view">
       <div class="top"><span class="title">In view · <b>${off} off</b>${picked ? ` · <b>${picked} picked</b>` : ''}</span><button class="close" aria-label="Close the list">${ICON.close}</button></div>
       ${order.length ? `<div class="rows" role="listbox" aria-label="Drift in view">${[...byFile].map(([file, rows]) => `<div class="file">${esc(file.split('/').pop() || 'unplaced')}</div>${rows.map(row).join('')}`).join('')}</div>`
         : `<p class="empty">${this.#status ? esc(this.#status.text) : 'Nothing is off in view.'}</p>`}

@@ -28,6 +28,7 @@ import { request, post, forgetResolved } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
+import { CARD_CSS } from './language.js';
 import { Blueprint, BLUEPRINT_CSS } from './blueprint.js';
 import { Readiness, READY_CSS } from './readiness.js';
 import { TextEditor, TEXT_EDIT_CSS } from './text-edit.js';
@@ -156,7 +157,7 @@ const css = `
      (read), what happens next (status + foot). Blue is for actions; red, amber and green are verdicts, always with
      words. Spacing by relationship: 4 inside a group, 8 between parts, 12 between rows, 16 between sections. */
   .w { position: fixed; left: 0; top: 0; pointer-events: auto; }
-  .card { background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); overflow: clip;
+  .card { overflow: clip;
           transform-origin: 24px 0; transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .w[data-state="opening"] .card { opacity: 0; transform: translateY(-4px) scale(.985); }
   .card:focus { outline: none; } /* the dialog takes focus so keys reach it; its controls show focus, the card does not */
@@ -319,7 +320,7 @@ class PlumbOverlay extends HTMLElement {
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
     this.#root = this.attachShadow({ mode: 'open' });
-    this.#root.innerHTML = `<style>${tokensCss}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
+    this.#root.innerHTML = `<style>${tokensCss}${CARD_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
       <i class="lit"></i>
@@ -1117,7 +1118,7 @@ class PlumbOverlay extends HTMLElement {
     p.regions = ready ? s.marks.map(m => regionFor(p.element, m.props)) : [];
     w.hidden = false;
     w.style.width = width + 'px';
-    w.innerHTML = `<div class="card" tabindex="-1" role="dialog" aria-label="React Plumber reading for ${esc(label)}">
+    w.innerHTML = `<div class="card pl-card" tabindex="-1" role="dialog" aria-label="React Plumber reading for ${esc(label)}">
       <div class="top">${this.#label(p.element, s)}
         ${ready ? `<button class="file" title="${esc(s.file)}:${s.line}:${s.column}">${esc(s.file.split('/').pop())}:${s.line}</button>` : ''}
         ${ready ? `<span class="zoom" role="group" aria-label="Drawing scale">${[1, 2, 4].map(z => `<button class="z" data-z="${z}" aria-pressed="${z === p.zoom}">${z}×</button>`).join('')}</span>` : ''}

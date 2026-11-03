@@ -22,7 +22,6 @@ const said = (prop) => { const [k, side] = prop.split('-'); return side && !/gap
 export const CHANGES_CSS = `
   .cg { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); width: 300px; max-width: calc(100vw - 2 * var(--pl-space-6));
     max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px); display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .cg[hidden] { display: none; }
   /* the element being changed sits on the right: the sidebar opens on the left, so it never covers it */
@@ -74,7 +73,7 @@ export class Changes {
     this.#onDiscard = onDiscard;
     this.#onAccept = onAccept;
     this.#onSelect = onSelect;
-    this.#el = Object.assign(document.createElement('aside'), { className: 'cg', hidden: true });
+    this.#el = Object.assign(document.createElement('aside'), { className: 'cg pl-card', hidden: true });
     this.#el.setAttribute('aria-label', 'Changes on this page');
     root.append(this.#el);
     this.#el.addEventListener('click', (e) => {

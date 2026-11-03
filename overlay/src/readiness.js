@@ -48,7 +48,6 @@ export const READY_CSS = `
 
   .rd { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); width: 380px; max-width: calc(100vw - 2 * var(--pl-space-6)); pointer-events: auto; }
   .rd .card { display: flex; flex-direction: column; max-height: min(72vh, 600px); padding: 0; overflow: hidden; transform-origin: 100% 100%;
-    background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); color: var(--pl-ink);
     transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .rd[data-enter] .card { opacity: 0; transform: translateY(6px) scale(.985); }
   .rd .top { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-6) var(--pl-space-6) var(--pl-space-2); border: 0; background: none; }
@@ -100,7 +99,6 @@ export const READY_CSS = `
   .rd .foot .count[data-tone="on"] { color: var(--pl-on); }
   .rd-callout { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); max-width: min(380px, calc(100vw - 2 * var(--pl-space-6)));
     display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); pointer-events: auto;
-    background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
     opacity: 0; transform: translateY(4px); transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .rd-callout[data-in] { opacity: 1; transform: none; }
   /* a write's toast (history.js) sits where the callout sits: the callout steps up above it while it shows */
@@ -177,7 +175,7 @@ export class Readiness {
     const missing = this.#missing();
     if (!missing.length || !this.#note) return;
     this.#callout = document.createElement('div');
-    this.#callout.className = 'rd-callout';
+    this.#callout.className = 'rd-callout pl-card';
     this.#callout.setAttribute('role', 'status');
     const n = missing.length;
     this.#callout.innerHTML = `<span class="text" title="${esc(DOCK.setupTitle(SETUP.step(missing[0]).loses.replace(/\.?$/, '.')))}"><b>${esc(DOCK.setup(n))}</b> · ${esc(SETUP.step(missing[0]).loses)}</span>
@@ -273,7 +271,7 @@ export class Readiness {
       this.#root.append(this.#panel);
     }
     const n = missing.length, scroll = this.#panel.querySelector('.body')?.scrollTop ?? 0, focus = this.#focusKey();
-    this.#panel.innerHTML = `<div class="card" role="dialog" aria-label="${SETUP.title}">
+    this.#panel.innerHTML = `<div class="card pl-card" role="dialog" aria-label="${SETUP.title}">
       <div class="top"><span class="title">${SETUP.title}</span><button class="close" type="button" aria-label="Close">${CLOSE}</button></div>
       <p class="lead">${esc(SETUP.lead(n))}</p>
       <div class="body">${causes.map((q) => this.#reqHtml(q)).join('')}</div>
