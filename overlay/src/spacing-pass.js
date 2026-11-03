@@ -1,11 +1,12 @@
 /* ─────────────────────────────────────────────────────────
  * SPACING PASS · React Plumber overlay (docs/briefs/pass-spacing.md)
  *
- * The clean-up's second pass: the space between things in this page's stacks, refined inside the app's own scale
- * (stacks.js refine, scale.js). Read from this page and the site's census, shown as the clean-up's show, written as
+ * The clean-up's second pass: the space between things in this page's stacks put back on the app's own scale
+ * (stacks.js keep, scale.js). Read from this page and the site's census, shown as the clean-up's show, written as
  * class swaps where the class that makes the space is.
  *
- *  read     the site's gaps (GET rhythm), this page's stacks, refine's moves; only a move whose class sets one side
+ *  read     the site's gaps (GET rhythm), this page's stacks, keep's moves (off the scale, or uneven among siblings);
+ *           a class that also makes spaces that stay is left as is; only a move whose class sets one side
  *           (gap, gap-y, mt, mb) is kept: my-2 or m-2 would move the other side too
  *  writes   one per class (a component's mt-4 drawn twelve times is one write, as refine decided): its element, its
  *           class now and the class for the new size (a step of --spacing, or [Npx] when it isn't one)
@@ -37,7 +38,9 @@ export class SpacingPass {
   async read() {
     const site = await request('rhythm', {});
     const stacks = readStacks(), rhythm = rhythmOf(site.distances ?? []);
-    const p = proposeSpacing(stacks, rhythm, { scope: 'refine', site: site.gaps });
+    // keep: only what is off the app's scale, or the odd one out among its siblings (refine evens out the whole page:
+    // an opt-in, never the clean-up's default)
+    const p = proposeSpacing(stacks, rhythm, { scope: 'keep', site: site.gaps });
     const step = unit(), writes = new Map();
     for (const m of p.moves) {
       const g = m.gap, prefix = prefixOf(g.cls ?? '');
@@ -47,6 +50,11 @@ export class SpacingPass {
       const w = writes.get(key);
       w.gaps.push(g); w.els.add(g.el);
     }
+    // one class, one write: a class that also makes spaces that stay (the same mt-4 elsewhere on this page) is left as is,
+    // or the write would move those too
+    const all = new Map();
+    for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
+    for (const [k, w] of writes) if ((all.get(k) ?? 0) > w.gaps.length || new Set(w.gaps.map((g) => p.moves.find((m) => m.gap === g)?.to)).size > 1) writes.delete(k);
     this.#writes = [...writes.values()];
     // distinct spaces among this page's rows, before and after (the same rows: section breaks and refusals stay)
     const rows = stacks.flatMap((s) => s.gaps).filter((g) => g.d > 0.5 && !g.section), moved = new Map(this.#writes.flatMap((w) => w.gaps.map((g) => [g, w.to])));

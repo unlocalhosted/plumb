@@ -10,8 +10,9 @@
  *           null with `why` (a refusal: margins on both sides, space-y, inline style, arbitrary/cqw/var values)
  *  rhythm   rhythmOf(distances) → the steps that together cover most of the distances (craft/rhythm's method)
  *  propose  proposeSpacing(stacks, rhythm, { scope }) → { moves, grouped, kept, refused }
- *    keep   a stack whose distances form two levels (the larger between runs of ≥ 2 children) is grouped and kept; a
- *           distance off the rhythm goes to a step near it; in an uneven stack the few go to the most common value
+ *    keep   (the default) a stack whose distances form two levels (the larger between runs of ≥ 2 children) is grouped
+ *           and kept; a distance off the app's scale (scale.js) goes to the nearest common value on it; in an uneven
+ *           stack the few go to the most common value. Nothing on the scale moves
  *    refine the page's relations made fewer and kept in order (docs/research/video-rules.md): each gap measured in em
  *           of the larger text beside it; the page's ratios clustered into levels; levels closer than FLOOR merged
  *           into the one with more places (S5); each gap set to its level's ratio × its own text, nudged by density,
@@ -68,6 +69,7 @@ function setter(el, prefix, value, step) {
   const cls = prefix === 'gap' ? (utility(el, 'gap-y') ?? utility(el, 'gap', { not: /^x(?:-|$)/ })) : (utility(el, prefix) ?? utility(el, 'my') ?? utility(el, 'm', { not: /^[xytrblse](?:-|$)/ }));
   if (!cls) return { why: value ? 'set by a stylesheet, not a class here' : null };
   if (/\[(?:[^\]]*(?:cqw|cqh|vw|vh|var\(|calc\(|clamp\())/.test(cls)) return { cls, why: 'a size that follows the screen or a variable' };
+  if (/\[[\d.]+(?:em|%|lh|ch|ex)\]$/.test(cls)) return { cls, why: 'a size that follows its text' };
   if (/^-/.test(cls)) return { cls, why: 'a negative margin' };
   const want = expected(cls, step);
   if (want != null && Math.abs(want - value) > 1) return { cls, why: 'drawn at another scale than its class (a zoomed drawing)' };
@@ -99,6 +101,8 @@ export function readStacks(root = document.body) {
       else if (!gap && mb && !mt) { by = 'mb'; at = kids[i - 1]; set = setter(kids[i - 1], 'mb', mb, step); }
       else if (!gap && !mt && !mb) why = d > 0.5 ? 'made by padding or line height, not a gap' : null;
       else why = 'made by more than one margin or gap';
+      // the class must make the whole distance: a grid's content-between, or a margin that collapses, draws more
+      if (set && !set.why && Math.abs(d - (by === 'gap' ? gap : by === 'mt' ? mt : mb)) > 1) set.why = 'made by more than its class (the layout spreads it)';
       if (set) { why = set.why ?? null; if (why) by = null; }
       // section level: between landmarks, or the page's own main column. Deliberate breaks, moved only at scope
       // refine/new (pass-spacing.md), never evened out with the rows inside them
@@ -144,29 +148,39 @@ function grouped(gaps) {
 export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, site = null } = {}) {
   if (scope === 'refine') return refine(stacks, rhythm, density, site);
   const moves = [], kept = [], refused = [], groupedStacks = [];
-  const nearest = (d) => rhythm.reduce((a, b) => (Math.abs(b - d) < Math.abs(a - d) ? b : a), rhythm[0]);
-  const on = (d) => rhythm.some((r) => Math.abs(r - d) <= NEAR);
+  // the app's scale, from the site's gaps (this page's without a census): a space off it goes to the nearest value on it
+  const scale = scaleFrom(site?.length ? site.map((x) => x.d) : stacks.flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
+  const on = (d) => Math.abs(d - Math.round(d)) <= NEAR && (scale.positions.includes(Math.round(d)) || scale.halves.includes(Math.round(d)));
+  const nearest = (d) => scale.near(d);
   for (const s of stacks) {
     const live = s.gaps.filter((g) => g.d > 0.5 && !g.section);
     for (const g of s.gaps) if (g.section && g.d > 0.5) kept.push({ stack: s, gap: g, section: true });
     for (const g of live) if (!g.by && g.why) refused.push({ stack: s, gap: g });
     if (grouped(live)) { groupedStacks.push(s); continue; }
-    // uneven: siblings the same kind of distance apart, most at one value, a few not: the few go to it
+    // uneven: siblings of one kind (rows of a list, cards: one tag) the same distance apart, most at one value, a few
+    // not: the few go to it. A stack of different things (an eyebrow, a title, its rule, a figure) is a hierarchy, not a
+    // row: its distances differ on purpose (S2 is similarity, and they aren't similar)
     const to = new Map(), counts = new Map();
+    const alike = new Set(live.flatMap((g) => [g.above?.localName, g.below?.localName])).size === 1;
     for (const g of live) { const k = [...counts.keys()].find((v) => Math.abs(v - g.d) <= TOL) ?? g.d; counts.set(k, (counts.get(k) ?? 0) + 1); }
     const mode = [...counts].sort((a, b) => b[1] - a[1])[0];
-    if (live.length >= 3 && mode && mode[1] > live.length / 2) for (const g of live) if (Math.abs(g.d - mode[0]) > TOL) to.set(g, { d: mode[0], rule: 'hierarchy/S2' });
+    if (alike && live.length >= 3 && mode && mode[1] > live.length / 2) for (const g of live) if (Math.abs(g.d - mode[0]) > TOL) to.set(g, { d: mode[0], rule: 'hierarchy/S2' });
     for (const g of live) {
       if (!g.by) continue;
-      // off the rhythm: only to a step close to it. A distance with no step within a quarter of it (a section's 64 when
-      // the rhythm stops at 32) is a level of its own: snapping it would flatten the page's hierarchy
-      const near = rhythm.length && !on(g.d) ? nearest(g.d) : null;
+      // off the scale: only to a value close to it. A distance with none within a quarter of it is a level of its own:
+      // snapping it would flatten the page's hierarchy
+      const near = !on(g.d) ? nearest(g.d) : null;
       const want = to.get(g) ?? (near != null && Math.abs(near - g.d) <= g.d * NEAR_SHARE ? { d: near, rule: 'craft/rhythm' } : null);
       if (want && Math.abs(want.d - g.d) > NEAR) moves.push({ stack: s, gap: g, from: g.d, to: want.d, rule: want.rule });
       else kept.push({ stack: s, gap: g });
     }
   }
-  return { moves, grouped: groupedStacks, kept, refused };
+  return { moves, grouped: groupedStacks, kept, refused, scale: { kind: scale.kind, score: scale.score, unit: scale.unit, ratio: scale.ratio, positions: scale.positions, halves: scale.halves } };
+}
+// the scale a list of distances follows (scale.js), counted by whole pixel
+function scaleFrom(distances) {
+  const uses = new Map(); for (const d of distances) if (Math.abs(d - Math.round(d)) < 0.1) uses.set(Math.round(d), (uses.get(Math.round(d)) ?? 0) + 1);
+  return scaleOf([...uses].map(([v, n]) => ({ v, n })), { grid: unit() });
 }
 
 // Refine (see the header): the page's own relations, fewer and in order. density −1 airy … +1 compact scales them
@@ -185,8 +199,7 @@ function refine(stacks, rhythm, density = 0, site = null) {
   // RATIO merge into the larger crowd
   const levels = [], basis = site?.length ? site.filter((x) => x.em && x.d > 0.5).map((x) => ({ d: x.d, r: x.d / x.em })) : rows.map((x) => ({ d: x.g.d, r: x.r }));
   // the scale the app's gaps follow: every target lands on one of its positions
-  const uses = new Map(); for (const x of basis) if (Math.abs(x.d - Math.round(x.d)) < 0.1) uses.set(Math.round(x.d), (uses.get(Math.round(x.d)) ?? 0) + 1);
-  const scale = scaleOf([...uses].map(([v, n]) => ({ v, n })), { grid: unit() }), snap = (v, from) => scale.near(v, from);
+  const scale = scaleFrom(basis.map((x) => x.d)), snap = (v, from) => scale.near(v, from);
   for (const row of [...basis].sort((a, b) => a.r - b.r)) {
     const last = levels[levels.length - 1];
     if (last && row.r <= last.from * 1.15) last.rows.push(row); else levels.push({ from: row.r, rows: [row] });

@@ -139,7 +139,9 @@ export function scaleOf(items, { grid = 4 } = {}) {
   positions = [...new Set(positions)].filter((v) => v > 0).sort((a, b) => a - b);
   const inUse = new Set(used(() => true)), nearest = (v, set) => set.reduce((a, b) => (Math.abs(Math.log(b / v)) < Math.abs(Math.log(a / v)) ? b : a), set[0]);
   const near = (v, from) => {
-    const known = [...positions.filter((p) => inUse.has(p)), ...(halves.includes(from) ? [from] : [])], k = known.length ? nearest(v, known) : null;
+    // the common values, and where the gap is now when that is a position or a half step: a rare 64 on the grid may stay
+    // 64, but a rare 28 is never where another gap goes
+    const known = [...positions.filter((p) => inUse.has(p)), ...(halves.includes(from) || positions.includes(from) ? [from] : [])], k = known.length ? nearest(v, known) : null;
     return k != null && Math.abs(k - v) <= v * NEAR_SHARE ? k : nearest(v, positions);
   };
   const atLeast = (v) => positions.find((p) => p >= v - 0.5) ?? Math.ceil(v);
