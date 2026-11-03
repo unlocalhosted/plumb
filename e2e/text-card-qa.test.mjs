@@ -21,6 +21,9 @@ const EXTRA = `
         <p id="qa-dyn" className={'text-body font-semibold ' + tone}>Words built in code</p>
         <Box id="qa-box" className="text-[9px] text-ink-muted">box words</Box>
         <p id="qa-styled" className="type-body-medium" style={{ fontSize: 14 }}>Styled words</p>
+        <p id="qa-semi" className="text-title font-semibold">Semibold words</p>
+        <div style={{ color: 'oklab(0.5 0.1 0.05 / 0.5)' }}><p id="qa-oklab" className="text-body">Words in a mixed colour</p></div>
+        <div style={{ color: 'color-mix(in oklab, #15181b, #15181b)' }}><p id="qa-inkmix" className="text-body">Words in ink, mixed</p></div>
       </section>
 `;
 const HEAD = `const tone = 'text-ink';
@@ -245,8 +248,128 @@ test('words whose classes come from a usage are written at that usage; Undo rest
   assert.match(now, /<Box id="qa-box" className="text-small text-ink-muted">/);
   assert.match(now, /<p id=\{id\} className=\{className\}>/, 'the component’s own line is untouched');
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
   assert.equal(await readFile(app, 'utf8'), original);
+  assert.deepEqual(errors, []);
+});
+
+// ── round 2 (docs/briefs/qa-fixes-2.md, the text card) ──
+
+// F5-01: the weight reads whole: its number and its name, never cut off
+test('F5-01: the weight field reads 600 Semibold, nothing truncated', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#qa-semi'); if (!o) return;
+  const { card, errors } = o;
+  const weight = card.locator('.fld[data-key="font-weight"]');
+  assert.equal(await text(weight), '600 Semibold');
+  const cut = await weight.evaluate((f) => [...f.querySelectorAll('.val, .u')].map((s) => [s.className, s.scrollWidth, s.clientWidth]).filter(([, sw, cw]) => sw > cw));
+  assert.deepEqual(cut, [], 'no part of the weight is cut off');
+  assert.deepEqual(errors, []);
+});
+
+// F5-03: a colour is said as the project's token when it is one, else as a plain hex or rgb; never oklab
+test('F5-03: colours read as a token or hex/rgb, never oklab', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#qa-oklab'); if (!o) return;
+  const color = o.card.locator('.fld[data-menu="color"]');
+  const said = await text(color);
+  assert.doesNotMatch(said, /oklab|oklch|color-mix/, `plain: ${said}`);
+  assert.match(said, /^(#[0-9a-f]{6}|rgb\(\d+ \d+ \d+ \/ 0?\.\d+\))/, `hex or rgb: ${said}`);
+  assert.deepEqual(o.errors, []);
+  const ink = await open(t, '#qa-inkmix');
+  assert.match(await text(ink.card.locator('.fld[data-menu="color"]')), /^ink\b/, 'the token it equals');
+  assert.deepEqual(ink.errors, []);
+});
+
+// F6-01: the colour list is a grid every swatch of which can be pointed at (none under another part of the card)
+test('F6-01: every swatch in the colour list is reachable, laid out as a grid', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#prose'); if (!o) return;
+  const { card, errors } = o;
+  await card.locator('.fld[data-menu="color"]').click();
+  const swatches = card.locator('.menu .ch[data-key="color"]');
+  await swatches.first().waitFor();
+  const seen = await swatches.evaluateAll((els) => els.map((b) => { const r = b.getBoundingClientRect(), hit = b.getRootNode().elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { top: Math.round(r.top), w: r.width, h: r.height, hit: hit === b }; }));
+  assert.ok(seen.length > 3, `${seen.length} swatches`);
+  const grid = await card.locator('.menu').evaluate((m) => { const sw = m.querySelector('.tc-swatches'), s = getComputedStyle(sw); return `menu ${m.offsetHeight}px, grid ${s.display} ${s.gridTemplateColumns} ${sw.offsetWidth}×${sw.offsetHeight}`; });
+  assert.deepEqual(seen.filter((s) => !s.hit), [], `each swatch is what is under the pointer at its middle (${grid})`);
+  assert.ok(new Set(seen.map((s) => s.top)).size < seen.length, 'several to a row (a grid, not a column)');
+  for (const s of seen) assert.ok(s.w >= 20 && s.h >= 20, `a swatch is ${s.w}×${s.h}`);
+  assert.deepEqual(errors, []);
+});
+
+// F6-05: digits typed say the step Enter will use when they aren't one, and that step is what the words show
+test('F6-05: typing a size that is not a step previews the nearest and says it', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#prose'); if (!o) return;
+  const { page, card, el, app, errors } = o;
+  const file = await readFile(app, 'utf8');
+  while ((await card.locator('.fld[data-at]').getAttribute('data-key')) !== 'font-size') await page.keyboard.press('ArrowDown');
+  await page.keyboard.type('11');
+  assert.equal(await css(el, 'font-size'), '12px', '11 previews 12, the nearest step');
+  const field = card.locator('.fld[data-key="font-size"]');
+  assert.match(await text(field), /^11 → 12$/, `the field says where it lands: ${await text(field)}`);
+  assert.equal(await card.locator('.rail .tk[data-at]').getAttribute('data-i') !== null, true);
+  assert.match(await text(card.locator('.rail .tk[data-at]')), /^12$/);
+  await page.keyboard.press('Backspace'); await page.keyboard.press('Backspace');
+  await page.keyboard.type('20');
+  assert.equal(await css(el, 'font-size'), '16px', '20 previews 16, the nearest step');
+  assert.match(await text(field), /^20 → 16$/);
+  assert.match(await text(card.locator('.rail .hint')), /20px isn’t a step\. Enter uses 16px, the nearest\./);
+  await page.keyboard.press('Backspace'); await page.keyboard.press('Backspace');
+  await page.keyboard.type('14.4');
+  assert.equal(await css(el, 'font-size'), '14px', '14.4 previews 14');
+  assert.match(await text(field), /^14\.4 → 14$/);
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  assert.equal(await readFile(app, 'utf8'), file, '14 is what it is already: nothing written');
+  assert.deepEqual(errors, []);
+});
+
+// N-06: a fluid size (clamp) is locked and said at rest; keys preview nothing and Enter writes nothing, nor does a style
+test('N-06: a clamp() size is locked and said; → and Enter change nothing', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#qa-clamp'); if (!o) return;
+  const { page, card, el, app, errors } = o;
+  const file = await readFile(app, 'utf8');
+  const size = card.locator('.fld[data-key="font-size"]');
+  assert.equal(await size.getAttribute('aria-disabled'), 'true', 'the size is locked');
+  assert.match(await text(card.locator('[role="note"]')), /Fluid: clamp\(1rem, 2vw, 1\.25rem\)/, 'said at rest');
+  const style = card.locator('.fld[data-menu="style"]');
+  if (await style.count()) assert.equal(await style.getAttribute('aria-disabled'), 'true', 'a style would write a fixed size over it');
+  const before = await css(el, 'font-size');
+  await size.focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await css(el, 'font-size'), before, 'nothing previewed');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  assert.equal(await readFile(app, 'utf8'), file, 'nothing written');
+  assert.deepEqual(errors, []);
+});
+
+// N-10: a size between whole pixels reads rounded; a colour the theme doesn't name still reads a colour
+test('N-10: a fluid size reads whole pixels; a colour field is never blank', { timeout: 120000 }, async (t) => {
+  // 955px wide: 2vw is 19.1px
+  const o = await open(t, '#qa-clamp', { viewport: { width: 955, height: 900 } }); if (!o) return;
+  assert.equal(await css(o.el, 'font-size'), '19.1px');
+  assert.equal(await text(o.card.locator('.fld[data-key="font-size"]')), '19 px');
+  assert.deepEqual(o.errors, []);
+  const semi = await open(t, '#qa-semi');
+  const color = await text(semi.card.locator('.fld[data-menu="color"]'));
+  assert.match(color, /^(ink|#[0-9a-f]{6})/, `a colour: "${color}"`);
+  assert.deepEqual(semi.errors, []);
+});
+
+// N-09: the levels in the header start at the words' own box, so the nearest level and ⌥↑ go to the same place
+test('N-09: ⌥↑ and the nearest level both open the words’ own box; the next level is its parent', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#tiny'); if (!o) return;
+  const { page, overlay, card, app, errors } = o;
+  const lines = (await readFile(app, 'utf8')).split('\n'), own = lines.findIndex((l) => l.includes('id="tiny"')) + 1;
+  const first = card.locator('.hd .ups .up').last();
+  assert.equal(await first.getAttribute('data-up'), '0', 'the nearest level is its own box');
+  assert.equal(await text(first), 'span');
+  await page.keyboard.press('Alt+ArrowUp');
+  await overlay.locator('.ec .hd .at').filter({ hasText: new RegExp(`App\\.jsx:${own}$`) }).waitFor({ timeout: 20000 });
+  await page.keyboard.press('Alt+ArrowDown');
+  await overlay.locator('.tc .fld[data-key="font-size"]').waitFor({ timeout: 20000 });
+  await card.locator('.hd .ups .up[data-up="0"]').click();
+  await overlay.locator('.ec .hd .at').filter({ hasText: new RegExp(`App\\.jsx:${own}$`) }).waitFor({ timeout: 20000 });
+  assert.equal(await overlay.locator('.tc').isVisible(), false);
   assert.deepEqual(errors, []);
 });
 

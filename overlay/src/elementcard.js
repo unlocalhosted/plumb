@@ -29,11 +29,12 @@
  *            positions only, no loops, no plays
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
-import { locate, componentOf, classSiteOf, siteMates, BUILT_IN_CODE } from './locate.js';
+import { locate, componentOf, classSiteOf, classEditsOf, siteMates } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layoutcard.js';
+import { lawsOf } from './laws.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 
 const W = FIX.card;
@@ -182,6 +183,8 @@ export const ELEMENT_CARD_CSS = `
   .ec .tidy-row small { grid-column: 1 / -1; color: var(--ink-3); font-size: 11px; }
   .ec .lab .was { font-weight: 600; color: #b23a1e; }
   @media (prefers-reduced-motion: reduce) { .ec, .ec .body[data-in], .ec-strip { animation: none; } }
+  /* one owner of the screen: while a card is open, Blueprint's pointing pills don't show over it or its bubble (N-11) */
+  :host([data-card]) .bp .bp-hint { visibility: hidden; }
 ` + LAYOUT_CSS;
 
 // one play of a motion: an entrance comes in; hover and press go to their state and back (a cursor arrives on a copy)
@@ -234,7 +237,8 @@ export class ElementCard {
     this.#spacing = new Spacing(root, {
       target: () => this.#target, name: (el) => el === this.#target ? this.name : componentOf(el) ?? el.localName,
       scale: () => this.#scale(), held: () => !!this.#hand, ours,
-      write: (edits, said) => this.#classWrite(edits, said),
+      // a spacing change is a step of its own; it serves proximity (inside < between ≤ around)
+      write: (edits, said) => this.#classWrite(edits, said, { step: W.steps.spacing, laws: lawsOf('hierarchy/S1') ?? [] }),
       locked: (el) => (el === this.#target ? this.#site?.refused ?? null : null),
       mates: (el) => (el === this.#target && this.#site && !this.#site.refused ? this.#reach() : null),
       refused: (text) => { if (text === this.#site?.refused) return; this.#wrong = text; this.#draw(); },
@@ -373,45 +377,18 @@ export class ElementCard {
   // class changes (layout, spacing: [{ el, from, to }]) written where each element's classes are written, in one go
   // with one Undo, said in the fix panel: a swap on its own line, or the usage's className string rewritten (the classes
   // replaced where the first of them was). A change written nowhere is refused before anything is written.
-  async #classWrite(edits, said) {
+  async #classWrite(edits, said, meta) {
     this.#wrong = null;
-    const names = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
-    const places = new Map(); // a class site → { site, edits }
-    for (const e of edits) {
-      const site = await classSiteOf(e.el, names(e.from));
-      if (!site) throw new Error(FIX.text.unreachable);
-      if (site.refused) throw new Error(site.refused);
-      const key = `${site.file}:${site.line}:${site.column}`;
-      if (!places.has(key)) places.set(key, { site, edits: [] });
-      const p = places.get(key);
-      if (!p.edits.some((x) => x.from === e.from && x.to === e.to)) p.edits.push(e);
+    // each change in the string its classes are written in (locate.js classEditsOf, the server's class site): a class
+    // in a ternary's branch is changed in that branch, a class from a variable in the variable, an added class where the
+    // server says; a change written nowhere is refused before anything is written
+    const steps = [], seen = new Set();
+    for (const e of edits) for (const { file, hash, edit } of await classEditsOf(e.el, e.from, e.to)) {
+      const k = JSON.stringify([file, edit]); if (seen.has(k)) continue; seen.add(k);
+      steps.push({ kind: 'swap', file, hash, ...edit });
     }
-    const steps = [];
-    for (const [key, { site, edits: here }] of places) {
-      const at = { key, file: site.file, hash: site.hash, line: site.line, column: site.column };
-      // a usage's other prop (gapClass="gap-6"): its string, rewritten with the classes replaced where the first of them was
-      if (site.usage && site.prop !== 'className') {
-        let now = site.classes;
-        for (const e of here) {
-          const from = names(e.from), first = from.length ? now.indexOf(from[0]) : now.length;
-          const kept = now.filter((c) => !from.includes(c)), cut = now.slice(0, Math.max(0, first)).filter((c) => !from.includes(c)).length;
-          now = [...new Set([...kept.slice(0, cut), ...names(e.to), ...kept.slice(cut)])];
-        }
-        steps.push({ kind: 'prop', ...at, name: site.prop, value: now.join(' ') });
-        continue;
-      }
-      // a className: swaps on the classes as written. At a usage (a component's tag, where nothing can be added blind) an
-      // added class goes in after one of its classes, in the same swap
-      const adds = here.filter((e) => !names(e.from).length), swaps = here.filter((e) => names(e.from).length);
-      for (const e of swaps) steps.push({ kind: 'swap', ...at, from: e.from, to: e.to });
-      if (!adds.length) continue;
-      const anchor = site.usage ? [site.anchor, ...(site.classes ?? [])].find((c) => c && !swaps.some((e) => names(e.from).includes(c))) : null;
-      if (site.usage && !anchor) throw new Error(BUILT_IN_CODE);
-      if (anchor) steps.push({ kind: 'swap', ...at, from: anchor, to: [anchor, ...adds.flatMap((e) => names(e.to))].join(' ') });
-      else for (const e of adds) steps.push({ kind: 'swap', ...at, from: '', to: e.to });
-    }
-    const result = await this.#host.batch(steps, said);
-    this.#host.said?.(said, result?.undo ?? []);
+    const result = await this.#host.batch(steps, said, meta);
+    this.#host.said?.(said, result?.undo ?? [], result?.group ?? null);
     return result;
   }
 
@@ -568,7 +545,8 @@ export class ElementCard {
   #draw() {
     if (!this.#target || this.#hand) return;
     const el = this.#target, name = this.name, where = !this.#site ? null : this.#site.refused ? this.#at : this.#site;
-    const at = where ? `${where.file.split('/').pop()}:${where.line}` : '';
+    // the line said is the line written: the string its classes are in (N-03)
+    const at = where ? `${where.file.split('/').pop()}:${where.at ?? where.line}` : '';
     const dark = this.#host.dark?.() ? 'dark' : 'light';
     this.#el.dataset.scheme = dark; this.#caret.dataset.scheme = dark;
     this.#el.setAttribute('aria-label', W.region(name));
@@ -641,10 +619,11 @@ export class ElementCard {
     const said = W.tidy.tidied(this.name, this.#tidy.changes.length);
     this.#writing = true; this.#wrong = null; this.#draw();
     try {
-      const result = await this.#host.batch(p.steps, said);
+      // one step, with the laws its changes serve (hierarchy.js gives each change its rule's laws)
+      const result = await this.#host.batch(p.steps, said, { step: W.steps.tidy, laws: this.#tidy.changes.flatMap((c) => c.laws ?? []) });
       this.#writing = false;
       this.#back();
-      this.#host.said?.(said, result?.undo ?? []);
+      this.#host.said?.(said, result?.undo ?? [], result?.group ?? null);
     } catch (error) {
       this.#writing = false;
       this.#wrong = error?.message ?? String(error);
@@ -941,10 +920,10 @@ export class ElementCard {
     const text = W.used(name, o.name, files);
     this.#writing = true; this.#draw();
     try {
-      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, { ...body, ...this.#forwards() }, text);
+      const s = this.#site, result = await this.#host.apply({ file: s.file, line: s.line, column: s.column, hash: this.#data.hash }, { ...body, ...this.#forwards() }, text, { step: this.#view === 'shadow' ? W.steps.shadow : W.steps.motion, laws: [] });
       this.#writing = false;
       this.#back();
-      this.#host.said?.(text, result?.undo ?? []);
+      this.#host.said?.(text, result?.undo ?? [], result?.group ?? null);
     } catch (error) {
       this.#writing = false;
       this.#wrong = error?.message ?? String(error);
@@ -958,7 +937,7 @@ export class ElementCard {
     this.#writing = true; this.#wrong = null; this.#draw();
     try {
       const edits = this.#layout.writes();
-      await this.#classWrite(edits, said);
+      await this.#classWrite(edits, said, { step: W.steps.layout, laws: [] });
       this.#writing = false;
       this.#back();
     } catch (error) {

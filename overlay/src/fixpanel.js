@@ -208,7 +208,7 @@ const WRITTEN = 'plumb:written', WRITTEN_FOR = 120000;
 const written_ = () => { try { const now = Date.now(); return (JSON.parse(sessionStorage.getItem(WRITTEN) ?? '[]') ?? []).filter((w) => now - w.at < WRITTEN_FOR); } catch { return []; } };
 const saveWritten = (list) => { try { sessionStorage.setItem(WRITTEN, JSON.stringify(list)); } catch {} };
 const UNDOING = 'plumb:undoing';
-const saveUndoing = (rest) => { try { if (rest?.undo?.length) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
+const saveUndoing = (rest) => { try { if (rest?.undo?.length || rest?.group) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
 const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOING) ?? 'null'); return u && Date.now() - u.at < 30000 ? u : null; } catch { return null; } };
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
 const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
@@ -217,14 +217,19 @@ const drawn = (g) => g.members.some((m) => m.el);
 const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
 // an Alt+click reads one element (scope): a fix changes its line of code, so the places outside it that the same line
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
-const elsewhere = (g, scope) => {
-  if (!scope) return 0;
-  const stamps = new Set();
-  for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); }
-  let n = 0;
-  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) if (!scope.contains(el)) n++;
-  return n;
+// One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
+// ("here") and outside it; a cause whose classes come from a caller (no stamp of its own line) counts its own elements
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); } return stamps; };
+const drawnOf = (g, scope) => {
+  const stamps = stampsOf(g), own = elsOf(g);
+  if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };
+  const drawn = new Set(own);
+  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) drawn.add(el);
+  let here = 0, elsewhere = 0;
+  for (const el of drawn) if (scope.contains(el)) here++; else elsewhere++;
+  return { here, elsewhere };
 };
+const elsewhere = (g, scope) => (scope ? drawnOf(g, scope).elsewhere : 0);
 const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
 const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
 
@@ -239,7 +244,7 @@ export class FixPanel {
   #names = new Map(); // cause key → the new token's name as typed
   #fromCode = new Map(); // cause key → { reading } | { plan, writes, at } | { none }: a cause no element renders, its options read from the code
   #swaps = new Map();    // cause key → { writes }: taken from the code alone
-  #last = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
+  #last = null; #textGroup = null; #afterCard = false;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
   #undoing = false;
   #writingText = null;   // what is being written, when it isn't a single fix
   #system = null;        // the text styles proposal for this page: { path, state: 'loading'|'ready'|'none', proposal, open, at, dismissed }
@@ -257,12 +262,14 @@ export class FixPanel {
     this.#light = new StyleLight(root);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
     this.#editor = new TextEditor(root, {
-      write: (at, key, token, said) => this.#host.set(at, key, token, said),
-      said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
-      problems: () => this.#live().filter((x) => !noteOf(x)).length,
+      // the text card's write is one step: its group comes back with the answer, and its Undo is that step's
+      write: async (at, key, token, said) => { const r = await this.#host.set(at, key, token, said); this.#textGroup = r?.group ?? null; return r; },
+      said: (text, undo, group = this.#textGroup) => { this.#textGroup = null; this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      problems: () => this.#problemsIn(this.#editor.target),
       // the problems inside are the fix panel's: the card steps aside for them
       show: () => this.#handOver(this.#editor),
-      closed: () => { this.#html = ''; this.render(); },
+      // a card closed lets go of its element too: the next Esc leaves Blueprint (F3-06), never a silent deselect
+      closed: () => { this.#host.release?.(); this.#afterCard = true; this.#html = ''; this.render(); },
       elsewhere: (el) => stampMates(el),
       dark: () => darkGround(),
       why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
@@ -272,14 +279,15 @@ export class FixPanel {
     });
     // Alt+click on anything else: its own card, Shadow › and Motion › on the recipe engine (elementcard.js)
     this.#card = new ElementCard(root, {
-      apply: (at, body, said) => this.#host.recipe(at, body, said),
-      swaps: (writes, said) => this.#host.swaps(writes, said),
-      batch: (steps, said) => this.#host.batch(steps, said),
+      apply: (at, body, said, meta) => this.#host.recipe(at, body, said, meta),
+      swaps: (writes, said, meta) => this.#host.swaps(writes, said, meta),
+      batch: (steps, said, meta) => this.#host.batch(steps, said, meta),
       bar: () => this.rect,
-      said: (text, undo) => { this.#last = { text, undo, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
-      problems: () => this.#live().filter((x) => !noteOf(x)).length,
+      said: (text, undo, group = null) => { this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      problems: () => this.#problemsIn(this.#card.target),
       show: () => this.#handOver(this.#card),
-      closed: () => { this.#html = ''; this.render(); },
+      // a card closed lets go of its element too: the next Esc leaves Blueprint (F3-06), never a silent deselect
+      closed: () => { this.#host.release?.(); this.#afterCard = true; this.#html = ''; this.render(); },
       elsewhere: (el) => stampMates(el),
       dark: () => darkGround(),
       why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
@@ -362,6 +370,14 @@ export class FixPanel {
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
   #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
+  // "N problems here" on a card (N-08): the bar's unit (a problem is a place in the code), counted for what is drawn on
+  // the card's element or inside it, the same in Blueprint over the whole page as over the element alone
+  #problemsIn(el) {
+    if (!el) return 0;
+    let n = 0;
+    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+    return n;
+  }
   #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
   // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
   // previewed), so the cause is kept as it was read; its place in the list follows it
@@ -525,7 +541,7 @@ export class FixPanel {
     let r = { ok: false };
     try { r = (await this.#host.applyStyles(p.write, said)) ?? r; } catch (error) { r = { ok: false, why: error?.message }; }
     this.#writing = false; this.#writingText = null; s.open = false;
-    if (r.ok) { this.#last = { text: said, undo: r.undo ?? [], key: null }; s.state = 'stale'; s.dismissed = true; this.#error = null; }
+    if (r.ok) { this.#last = { text: said, undo: r.undo ?? [], group: r.group ?? null, key: null }; s.state = 'stale'; s.dismissed = true; this.#error = null; }
     else this.#error = r.why ?? FIX.couldNot;
     this.#host.spotlight([]);
     this.#host.announce?.(r.ok ? said : this.#error);
@@ -624,14 +640,16 @@ export class FixPanel {
     this.#writing = true; this.#holding = false; this.#host.release(); this.#host.spotlight([]);
     this.#html = ''; this.render();
     let left = { count: 0 };
-    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key })) ?? left; }
+    // the fix is one step of the timeline: named after its cause, with the laws its rule serves
+    const meta = { step: g ? nameOf(g) : FIX.card.steps.fix, laws: g ? g.members.flatMap((m) => m.mark?.laws ?? []) : [] };
+    try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key, meta })) ?? left; }
     catch (error) { left = { count: 1, why: error?.message }; }
     this.#writing = false;
     const ok = !left.count;
     if (ok && this.#steady && g) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - placesOf(g)), causes: Math.max(0, this.#steady.causes - 1) };
     // one fix at a time: written or not, nothing is left waiting
     if (!ok) this.#taken.delete(key);
-    else { this.#last = { text: said, undo: left.undo ?? [], key }; saveWritten([...written_().filter((w) => w.key !== key), { key, at: Date.now() }]); }
+    else { this.#last = { text: said, undo: left.undo ?? [], group: left.group ?? null, key }; saveWritten([...written_().filter((w) => w.key !== key), { key, at: Date.now() }]); }
     this.#tokens.clear(); this.#keeps.clear(); this.#swaps.clear(); this.#fromCode.clear();
     this.#host.announce?.(ok ? said : left.why ?? FIX.couldNot);
     // the page as read while the fix was written: the list the panel moves on in
@@ -644,16 +662,29 @@ export class FixPanel {
   // Undo: the last fix's writes taken back, newest first; the page is read again and the fix comes back
   async #undo(rest = null) {
     const last = rest ?? this.#last;
-    if (!last?.undo?.length || this.#undoing || this.#writing) return;
+    if ((rest ? !last?.undo?.length && !last?.group : !last?.undo?.length) || this.#undoing || this.#writing) return;
     this.#undoing = true; this.#html = ''; this.render();
     let why = null;
     // newest first; what is left is kept in the tab before each one, so an undo that reloads the page (a source file
     // the dev server can't hot-swap) goes on with the rest when the page is back
-    const handles = rest ? last.undo : [...last.undo].reverse();
+    // write handles only (a step rebuilt from the trace after a reload lists its changes, which undo-group takes back)
+    const handles = (rest ? last.undo ?? [] : [...last.undo ?? []].reverse()).filter((h) => h?.id);
     let leaving = false;
     const leave = () => { leaving = true; };
     addEventListener('pagehide', leave, { once: true });
-    for (let i = 0; i < handles.length && !leaving; i++) {
+    // a step the timeline knows (a card's or the panel's write): the step taken back, change by change where each is
+    // now (POST undo-group), and said by History. Carried on after a reload, a step already taken back is passed over
+    let byGroup = !!last.group;
+    if (byGroup) {
+      saveUndoing({ group: last.group, undo: [], key: last.key ?? null });
+      try { await this.#host.undoGroup(last.group); }
+      catch (error) {
+        // a write the trace missed (it never fails the write) has only its handles: taken back as before
+        if (!rest && /Nothing in that group/i.test(error?.message ?? '') && handles.length) byGroup = false;
+        else if (!rest) why = error?.message ?? '';
+      }
+    }
+    if (!byGroup) for (let i = 0; i < handles.length && !leaving; i++) {
       saveUndoing({ undo: handles.slice(i + 1), key: last.key ?? null });
       // carried on after a reload, a handle the page before already took back is passed over, not a failure
       try { await this.#host.undo(handles[i]); } catch (error) { if (!rest) { why = error?.message ?? ''; break; } }
@@ -662,15 +693,19 @@ export class FixPanel {
     if (leaving) return; // the page is going: the reloaded one goes on with what's left
     saveUndoing(null);
     this.#undoing = false;
-    this.#last = { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
-    this.#host.announce?.(this.#last.text);
+    // a step undone by its group is said by History's toast, which carries the Undo: the panel says nothing more
+    this.#last = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
+    if (this.#last) this.#host.announce?.(this.#last.text);
     // the fix undone is offered again (the others written stay written)
     if (why === null && last.key) { this.#taken.delete(last.key); saveWritten(written_().filter((w) => w.key !== last.key)); }
     this.#html = ''; this.render();
   }
 
   key(k) {
-    this.#resumeAt = null;
+    // Enter before the page is read again (a write reloaded it) is "start": the wait to hold the next fix goes on, and
+    // holds it when the reading lands; any other key is the person's own move and ends the wait
+    if (!(k === 'Enter' && !this.#live().length)) this.#resumeAt = null;
+    const afterCard = this.#afterCard; this.#afterCard = false;
     if (!this.#on || this.#writing) return false;
     // Enter on something with focus is that thing's: a button here is pressed (a specimen is already picked, so Enter
     // takes it, as anywhere); a glow on the page, with nothing in hand, holds its own cause (with a cause in hand, the
@@ -698,7 +733,8 @@ export class FixPanel {
     }
     if (!this.#holding) {
       if (k === 'Enter' && this.#offersStyles()) { this.#openStyles(); return true; }
-      if (k === 'Escape' && this.#offersStyles()) { this.#closeStyles(); return true; } // not now: the fixes come next
+      // not now: the fixes come next. Right after a card closed, Esc is the way out of Blueprint (F3-06): the offer stays
+      if (k === 'Escape' && this.#offersStyles() && !afterCard) { this.#closeStyles(); return true; }
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
     }
@@ -731,7 +767,10 @@ export class FixPanel {
     this.#tokenPreview.clear();
   }
 
+  // a card open owns the screen: the host says so, and Blueprint's pills step aside under it (N-11)
+  #cardFlag() { const h = this.#el.getRootNode()?.host, on = !!(this.#editor?.open || this.#card?.open); if (h && h.hasAttribute('data-card') !== on) h.toggleAttribute('data-card', on); }
   render(slide = false) {
+    this.#cardFlag();
     if (!this.#on) return;
     const live = this.#live(), taken = this.#taken.size, g = this.#cause(), v = this.#viewOf(g);
     // nothing is said to match until every element on the page has been read
@@ -764,7 +803,7 @@ export class FixPanel {
         : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span></div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), elsOf(g).length, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
@@ -812,7 +851,7 @@ export class FixPanel {
       html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${reach}${middle}${acts}</div>`;
     }
     // the last fix written stays said above, with its Undo, until the next one is written
-    if (this.#last && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
+    if (this.#last && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo?.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
@@ -834,7 +873,7 @@ export class FixPanel {
   // a line said for a moment at rest: why the element pointed at has nothing in hand
   notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
   // after a reload: what the write before it applied, said as if it had just landed
-  resumed(text, undo = [], place = null) { this.#last = { text, undo, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) setTimeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
+  resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) setTimeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
   celebrate() {
     clearTimeout(this.#foldTimer);
     this.#done = true; this.#html = ''; this.render();

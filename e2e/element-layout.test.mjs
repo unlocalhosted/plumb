@@ -64,7 +64,8 @@ async function open(t, id, at) {
   const undo = async () => {
     await marked();
     await overlay.locator('.fx .said .undo').click();
-    await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+    // History's toast may still say the last undo: the file itself says when this one has landed
+    for (let i = 0; i < 300 && (await read()) !== original; i++) await page.waitForTimeout(100);
     assert.equal(await read(), original, 'Undo restores the file exactly');
     await settle();
   };

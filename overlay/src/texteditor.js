@@ -60,6 +60,27 @@ const SPILL = 22;                 // px the value pill may reach past the track'
 // a value the page works out (clamp, var, calc, min, max): fluid, read as what the page shows now
 const fluid = (v) => /\(/.test(String(v ?? ''));
 const isColor = (v) => { try { return CSS.supports('color', String(v ?? '')); } catch { return false; } };
+// a colour as sRGB channels (0–255, alpha 0–1), whatever it is written in (oklab, oklch, color-mix…): drawn once on a
+// pixel and read back
+let ink = null;
+function rgbaOf(v) {
+  if (!isColor(v) || /var\(/.test(String(v))) return null; // a var() is a colour only where it is used
+  try {
+    ink ??= Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+    ink.clearRect(0, 0, 1, 1); ink.fillStyle = '#000'; ink.fillStyle = String(v); ink.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = ink.getImageData(0, 0, 1, 1).data;
+    return { r, g, b, a: a / 255 };
+  } catch { return null; }
+}
+// a colour in plain words: hex when solid, rgb with its alpha when not
+function plainColor(v) {
+  const c = rgbaOf(v); if (!c) return String(v ?? '');
+  if (c.a >= 0.995) return `#${[c.r, c.g, c.b].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+  return `rgb(${c.r} ${c.g} ${c.b} / ${String(Math.round(c.a * 100) / 100).replace(/^0\./, '.')})`;
+}
+const sameColor = (a, b) => { const x = rgbaOf(a), y = rgbaOf(b); return !!x && !!y && Math.abs(x.r - y.r) <= 1 && Math.abs(x.g - y.g) <= 1 && Math.abs(x.b - y.b) <= 1 && Math.abs(x.a - y.a) <= 0.01; };
+// a size as it reads: whole pixels, or a half (13.5); never 27.06
+const pxRound = (n) => Math.round(n * 2) / 2;
 
 // an element whose own words are on the page: a text node with letters among its children
 export const hasText = (el) => !!el && el.nodeType === 1 && [...el.childNodes].some((n) => n.nodeType === 3 && /\S/.test(n.textContent));
@@ -68,10 +89,10 @@ export const hasText = (el) => !!el && el.nodeType === 1 && [...el.childNodes].s
 const posOf = (ns, n) => { const i = ns.findIndex((x) => x >= n - 1e-9); if (i < 0) return 100; if (i === 0 || Math.abs(ns[i] - n) < 1e-9) return ns.length > 1 ? (i / (ns.length - 1)) * 100 : 50; return ((i - 1 + (n - ns[i - 1]) / (ns[i] - ns[i - 1])) / (ns.length - 1)) * 100; };
 const round = (n) => Math.round(n * 1000) / 1000;
 // a value as a field reads it: size and tracking as numbers (the unit beside them), weight with its name
-const fmtOf = (key, n) => !Number.isFinite(n) ? '–' : String(round(n));
+const fmtOf = (key, n) => !Number.isFinite(n) ? '–' : String(key === 'font-size' ? pxRound(n) : round(n));
 // what a field reads beside its number: the unit, or a weight's name
 const unitOf = (key, n) => key === 'font-weight' ? WEIGHTS[n] ?? '' : UNIT[key];
-const shortOf = (key, n) => key === 'letter-spacing' ? String(round(n)).replace(/^(-?)0\./, '$1.') : String(round(n));
+const shortOf = (key, n) => key === 'letter-spacing' ? String(round(n)).replace(/^(-?)0\./, '$1.') : fmtOf(key, n);
 // roll a number in from the side it came from (up for larger, down for smaller)
 function roll(el, text, dir) {
   if (!el || el.textContent === text) return;
@@ -108,7 +129,7 @@ export const TEXT_EDITOR_CSS = `
   .tc .down { padding: 4px 14px 14px; color: #c2304f; }
   .tc .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
   /* a value field: at rest its value; hover lifts; focused or open it is ringed; a drag's handle is the whole field */
-  .tc .fld { position: relative; display: flex; align-items: center; gap: 7px; min-width: 0; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--wash); outline: none; user-select: none;
+  .tc .fld { position: relative; display: flex; align-items: center; gap: 6px; min-width: 0; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--wash); outline: none; user-select: none;
     transition: background 120ms ease-out, box-shadow 120ms ease-out, scale 140ms cubic-bezier(.25, .46, .45, .94); }
   .tc .fld[data-key] { cursor: ew-resize; }
   @media (hover: hover) and (pointer: fine) { .tc .fld:hover { background: rgb(0 0 0 / .065); } }
@@ -116,8 +137,12 @@ export const TEXT_EDITOR_CSS = `
   .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing], .tc .seg[data-at] { background: #fff; box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
   .tc .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--ink-3); flex: none; font: 600 12px/1 var(--pl-sans, system-ui); }
   .tc .fld .ic svg { width: 14px; height: 14px; }
-  .tc .fld .val { display: inline-block; font: 500 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tc .fld .u { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); }
+  .tc .fld .val { display: inline-block; font: 500 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; flex: none; white-space: nowrap; }
+  .tc .fld.pick .val { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld .u { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld[data-key="font-weight"] .u { font: 500 11px/1 var(--pl-sans, system-ui), sans-serif; margin-left: -2px; }
+  /* digits typed that aren't a step: the step Enter uses, beside them */
+  .tc .fld .to { font: 500 12px/1 ui-monospace, monospace; color: var(--sky); white-space: nowrap; }
   .tc .fld .was { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); text-decoration: line-through; margin-left: auto; }
   .tc .fld[data-off] .val { color: #d2462c; }
   .tc .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--coral); }
@@ -170,10 +195,10 @@ export const TEXT_EDITOR_CSS = `
   .tc .menu .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
   .tc .menu .ag { width: 30px; line-height: 1; }
   .tc .menu .nb { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--ink-3); }
-  .tc .menu .sw { display: grid; grid-template-columns: repeat(auto-fill, minmax(24px, 1fr)); gap: 4px; padding: 4px; }
-  .tc .menu .sw .ch { display: block; width: auto; min-width: 24px; height: auto; min-height: 24px; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
-  .tc .menu .sw .ch[aria-checked="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sky); }
-  .tc .menu .sw .ch[data-peek] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(47 107 255 / .5); }
+  .tc .menu .tc-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(24px, 1fr)); gap: 4px; padding: 4px; }
+  .tc .menu .tc-swatches .ch { display: block; width: auto; min-width: 24px; height: auto; min-height: 24px; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .tc .menu .tc-swatches .ch[aria-checked="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sky); }
+  .tc .menu .tc-swatches .ch[data-peek] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(47 107 255 / .5); }
   .tc .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: #55544f; font-size: 12.5px; }
   .tc .more .show { margin-left: auto; height: 26px; padding: 0 9px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
   .tc .more .show:hover { background: var(--wash); }
@@ -210,7 +235,8 @@ function numOf(key, v, el, size = parseFloat(getComputedStyle(el).fontSize) || 1
 }
 // a value in the words people read: sizes in px, the case by its name, normal tracking as 0
 const said = (key, v, el) => {
-  if (key === 'font-size') { const px = Number.isFinite(+v) ? +v : pxOf(v, el ?? document.documentElement); return Number.isFinite(px) ? `${Math.round(px * 100) / 100}px` : String(v); }
+  if (key === 'font-size') { const px = Number.isFinite(+v) ? +v : pxOf(v, el ?? document.documentElement); return Number.isFinite(px) ? `${pxRound(px)}px` : String(v); }
+  if (key === 'color') return plainColor(v);
   if (key === 'text-transform') return W.cases[v] ?? String(v);
   if (key === 'letter-spacing' && v === 'normal') return '0em';
   return String(v);
@@ -361,6 +387,7 @@ export class TextEditor {
     // a size written as text-[clamp(…)] reads to the server as a colour: it is the size (fluid), and only the code can
     // change it (a step written beside it would fight it)
     const c = byKey.get('color'), misread = c?.source === 'class' && c.value && !isColor(c.value) && c.class ? c : null;
+    const fs = byKey.get('font-size'), fluidSize = (fs?.source === 'class' && !fs.token && fluid(fs.value)) || (!!misread && fluid(misread.value) && fs?.source === 'none');
     for (const key of ORDER) {
       let p = byKey.get(key);
       if (!p) continue;
@@ -384,8 +411,9 @@ export class TextEditor {
         // a value the page works out (clamp, var): what it shows now, and the value, said plainly
         const shows = this.#read0?.values[key], n = this.#num(key, shows);
         r.drift = { n, label: said(key, shows, el), fluid: true }; r.kind = 'fluid';
-        if (p.misread) r.disabled = true;
-        if (!this.#locked && !p.dynamic) r.note = esc(W.fluid(String(p.value).replace(/,\s*/g, ', '), key === 'font-size' ? said(key, shows, el) : fmtOf(key, n)) + (p.misread ? ` ${W.inCode}` : ''));
+        // what the page works out can only be changed in the code: a step written over it would replace it
+        r.disabled = true;
+        if (!this.#locked && !p.dynamic) { r.fluidNote = W.fluid(String(p.value).replace(/,\s*/g, ', '), key === 'font-size' ? said(key, shows, el) : fmtOf(key, n)) + ` ${W.inCode}`; r.note = esc(r.fluidNote); }
       } else if (same) {
         // the right value, typed by hand: shown as that step, and picking it names it
         r.current = same.token; r.byHand = true;
@@ -395,6 +423,8 @@ export class TextEditor {
         r.drift = { n, label: said(key, p.value, el) };
         const below = [...steps].reverse().find((s) => s.n < n), above = steps.find((s) => s.n > n);
         r.note = esc(W.offScale(said(key, p.value, el), below?.label, above?.label)); r.kind = 'off';
+      } else if (key === 'style' && fluidSize && !this.#locked) {
+        r.disabled = true; r.note = esc(W.styleFluid);
       } else if (key === 'style' && !p.token) {
         const closest = this.#closestStyle(steps);
         if (closest) r.note = esc(W.closest(closest.label));
@@ -412,19 +442,21 @@ export class TextEditor {
   #num(key, v) { return numOf(key, v, this.#target, this.#read0?.size); }
   // its classes are written nowhere the card can change them: every value locked, the reason said at rest
   get #locked() { return !!this.#site?.refused; }
-  // the levels above the words, nearest last (up to three, never <body>), each a way up; ⌥↑ goes to the words' own box
+  // the words' own box, then the levels above it, nearest last (up to three, never <body>), each a way up: the nearest is
+  // where ⌥↑ goes, so the buttons and the key agree
   #upsHtml() {
     const ups = [];
-    for (let p = this.#target?.parentElement, i = 1; p && p !== document.body && p !== document.documentElement && i <= 3; p = p.parentElement, i++) ups.unshift([i, p]);
+    for (let p = this.#target, i = 0; p && p !== document.body && p !== document.documentElement && i <= 3; p = p.parentElement, i++) ups.unshift([i, p]);
     if (!ups.length) return '';
-    return `<div class="ups" role="group" aria-label="${esc(WC.levels)}">${ups.map(([i, p]) => `<button type="button" class="up" data-up="${i}" title="${esc(WC.upTo(p.localName))}">${esc(componentOf(p) ?? p.localName)}</button><i aria-hidden="true">›</i>`).join('')}<kbd title="${esc(W.upBox)}">⌥↑</kbd></div>`;
+    return `<div class="ups" role="group" aria-label="${esc(WC.levels)}">${ups.map(([i, p]) => `<button type="button" class="up" data-up="${i}" title="${esc(i ? WC.upTo(p.localName) : W.ownBox)}">${esc(i ? componentOf(p) ?? p.localName : p.localName)}</button>${i ? '<i aria-hidden="true">›</i>' : ''}`).join('')}<kbd title="${esc(W.upBox)}">⌥↑</kbd></div>`;
   }
   // up to the level named: through the host when it climbs (its way back kept), else as ⌥↑ would, once for the words'
   // own box and once per level
   #climb(n) {
     let up = this.#target; for (let i = 0; i < n && up; i++) up = up.parentElement;
     if (!up) return;
-    if (this.#host.climb) return this.#host.climb(up);
+    // a level above: through the host, which keeps the way back; the words' own box is ⌥↑'s first stop
+    if (this.#host.climb && n > 0) return this.#host.climb(up);
     for (let i = 0; i <= n; i++) dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', altKey: true, bubbles: true, cancelable: true }));
   }
   // the project's text styles in plain words (Body, Title small); a compact variant is the same style for lists
@@ -465,8 +497,9 @@ export class TextEditor {
     const tip = r.note.replace(/<[^>]+>/g, '').replace(/&#39;|&rsquo;/g, '’').replace(/&amp;/g, '&');
     const attrs = `${r.drift && !r.drift.fluid ? ' data-off' : ''}${r.drift?.fluid ? ' data-fluid' : ''}${!r.drift && !r.current ? ' data-unset' : ''}${ed ? ' data-editing' : ''}${changed ? ' data-changed' : ''}${at ? ' data-at' : ''}${r.disabled ? ' aria-disabled="true"' : ''}`;
     const valueNow = Number.isFinite(shownN) ? ` aria-valuenow="${round(shownN)}"` : '';
+    const to = ed?.typed && Number.isFinite(Number(ed.typed)) && r.steps[ed.at] && Math.abs(r.steps[ed.at].n - Number(ed.typed)) > 1e-6 ? r.steps[ed.at] : null;
     return `<div class="fld" role="spinbutton" tabindex="0" data-key="${r.key}" aria-label="${esc(r.label)}"${valueNow} aria-valuetext="${esc(fmtOf(r.key, shownN))}${UNIT[r.key]}" title="${esc(tip || `Drag to change ${r.label.toLowerCase()}`)}"${attrs}>`
-      + `<span class="ic">${r.disabled ? ICON.lock : ICON[r.key]}</span><span class="val">${esc(text)}</span>${unitOf(r.key, shownN) && !ed?.typed && Number.isFinite(shownN) ? `<span class="u">${unitOf(r.key, shownN)}</span>` : ''}${changed ? `<span class="was">${esc(fmtOf(r.key, now))}</span>` : ''}</div>`;
+      + `<span class="ic">${r.disabled ? ICON.lock : ICON[r.key]}</span><span class="val">${esc(text)}</span>${unitOf(r.key, shownN) && !ed?.typed && Number.isFinite(shownN) ? `<span class="u">${unitOf(r.key, shownN)}</span>` : ''}${to ? `<span class="to" title="${esc(W.typedNearest(`${ed.typed}${UNIT[r.key]}`, to.label))}">→ ${esc(shortOf(r.key, to.n))}</span>` : ''}${changed ? `<span class="was">${esc(fmtOf(r.key, now))}</span>` : ''}</div>`;
   }
   // the scale, under the fields while a value changes: steps evenly spaced, the off-scale value where it falls
   #rail(r) {
@@ -484,7 +517,8 @@ export class TextEditor {
     const fitting = fit ? (ns.some((n) => near(n, fit.step)) ? [fit.step] : keeps.filter((n) => near(Math.abs(n - fit.step), best))) : [];
     const ticks = marks.map((m) => { const fits = !m.off && fitting.some((n) => near(n, m.n)), breaks = !m.off && fit && !fits && fit.breaks.some((b) => near(b, m.n)); /* the step that fits is never also dimmed */ return `<span class="tk"${m.off ? ' data-off' : ` data-i="${m.i}"`} style="left:${posOf(ns, m.n)}%"${!m.off && m.i === at ? ' data-at' : ''}${fits ? ' data-fit' : ''}${breaks ? ' data-breaks' : ''} title="${esc(fmtOf(r.key, m.n))}${UNIT[r.key]}${fits ? ` · ${esc(W.fitsHere)}` : breaks ? ` · ${esc(W.breaksHere)}` : ''}"><i></i><b>${m.off ? '' : esc(shortOf(r.key, m.n))}</b></span>`; }).join('');
     const why = fit ? this.#fitWords(r.key) : '';
-    const note = this.#rowError?.key === r.key ? `<span class="err">${r.note}</span>` : r.drift && !ed.moved ? `<span class="off">${r.note}</span>` : '';
+    const typedN = ed.typed ? Number(ed.typed) : NaN, nearest = Number.isFinite(typedN) && r.steps[ed.at] && Math.abs(r.steps[ed.at].n - typedN) > 1e-6 ? r.steps[ed.at] : null;
+    const note = this.#rowError?.key === r.key ? `<span class="err">${r.note}</span>` : nearest ? `<span>${esc(W.typedNearest(`${ed.typed}${UNIT[r.key]}`, nearest.label))}</span>` : r.drift && !ed.moved ? `<span class="off">${r.note}</span>` : '';
     const keys = this.#drag ? `<span>${esc(W.letGo)}</span><span><kbd>esc</kbd> ${esc(W.cancel)}</span>` : `<span>${esc(W.dragOr)} <kbd>←</kbd> <kbd>→</kbd></span><span><kbd>↵</kbd> ${esc(W.use)}</span><span><kbd>esc</kbd> ${esc(W.back)}</span>`;
     void now;
     return `<div class="rail" aria-hidden="true"${fresh ? ' data-new' : ''}${this.#drag ? ' data-dragging' : ''}><div class="ticks">${ticks}${this.#drag ? '<span class="thumb"><span class="knob"></span><span class="bub"><span></span></span></span>' : ''}</div>${why ? `<div class="fit">${esc(why)}</div>` : ''}<div class="hint">${note}${keys}</div></div>`;
@@ -513,8 +547,8 @@ export class TextEditor {
         const closest = !cur ? style.note.replace(/^Closest: /, '') : '';
         // a style worn whose size the words don't have (a size set over it, or a rule elsewhere): said, never hidden
         const here = this.#read0?.size, stylePx = cur ? pxOf(cur.size, el) : NaN, differs = cur && Number.isFinite(stylePx) && Number.isFinite(here) && Math.abs(stylePx - here) > 0.5;
-        const sub = differs ? `<span class="sub">${esc(W.styleHere(`${Math.round(here * 100) / 100}px`))}</span>` : !cur && closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : '';
-        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}${differs ? ` data-off title="${esc(W.styleDiffers(cur.label, `${Math.round(stylePx)}px`, `${Math.round(here * 100) / 100}px`))}"` : ''}${style.disabled ? ' aria-disabled="true"' : ''}><span class="ic">Ag</span><span class="val" style="font-family:inherit">${esc(cur ? cur.label : W.noStyle)}</span>${sub}<span class="chev">▾</span></button></div>`;
+        const sub = differs ? `<span class="sub">${esc(W.styleHere(`${pxRound(here)}px`))}</span>` : !cur && closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : '';
+        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}${differs ? ` data-off title="${esc(W.styleDiffers(cur.label, `${Math.round(stylePx)}px`, `${pxRound(here)}px`))}"` : ''}${style.disabled ? ' aria-disabled="true"' : ''}><span class="ic">Ag</span><span class="val" style="font-family:inherit">${esc(cur ? cur.label : W.noStyle)}</span>${sub}<span class="chev">▾</span></button></div>`;
         if (this.#menu === 'style') body += `<div class="menu" role="listbox" aria-label="${esc(style.label)}">${style.steps.map((s, k) => { const px = pxOf(s.size, el); return this.#ch(style, k, `<span class="ag" style="font-family:${family};font-size:${Math.min(20, px + 2)}px;font-weight:${s.weight ?? 400}">${s.transform === 'uppercase' ? 'AG' : 'Ag'}</span><span>${esc(s.label)}</span><span class="nb">${Math.round(px)} / ${s.lineHeight ?? '–'}</span>`, s.label); }).join('')}</div>`;
       }
       const values = VALUES.map((k) => by.get(k)).filter(Boolean);
@@ -527,10 +561,13 @@ export class TextEditor {
       if (kc?.steps.length) body += `<div class="seg" role="radiogroup" aria-label="${esc(kc.label)}"${inHand === 'text-transform' ? ' data-at' : ''}>${kc.steps.map((s, k) => this.#ch(kc, k, CASE_GLYPH[s.token] ?? esc(s.label), s.label)).join('')}</div>`;
       const color = by.get('color');
       if (color) {
-        const cur = color.steps.find((s) => s.token === color.current);
-        const swatch = cur?.value ?? color.p.value ?? color.p.default ?? 'transparent';
-        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="color" aria-haspopup="listbox" aria-expanded="${this.#menu === 'color'}"${inHand === 'color' ? ' data-at' : ''}${color.disabled ? ' aria-disabled="true"' : ''}><span class="chip" style="background:${esc(swatch)}"></span><span class="val"${cur ? '' : ' style="color:var(--ink-3)"'}>${esc(cur?.token ?? said('color', color.p.value ?? color.p.default ?? '', el))}</span><span class="chev">▾</span></button></div>`;
-        if (this.#menu === 'color') body += `<div class="menu" role="listbox" aria-label="${esc(color.label)}"><div class="sw">${color.steps.map((s, k) => this.#ch(color, k, '', s.token, ` style="background:${esc(s.value)}" title="${esc(s.token)}"`)).join('')}</div></div>`;
+        const shows = this.#read0?.values.color;
+        const value = [color.p.value, color.p.default, shows].find((v) => isColor(v));
+        // the colour is one of the theme's even when it isn't named here (inherited, or mixed to the same value)
+        const cur = color.steps.find((s) => s.token === color.current) ?? (value ? color.steps.find((s) => sameColor(s.value, value)) : null);
+        const swatch = cur?.value ?? value ?? 'transparent';
+        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="color" aria-haspopup="listbox" aria-expanded="${this.#menu === 'color'}"${inHand === 'color' ? ' data-at' : ''}${color.disabled ? ' aria-disabled="true"' : ''}><span class="chip" style="background:${esc(swatch)}"></span><span class="val"${cur ? '' : ' style="color:var(--ink-3)"'}>${esc(cur?.token ?? said('color', value ?? shows ?? '', el))}</span><span class="chev">▾</span></button></div>`;
+        if (this.#menu === 'color') body += `<div class="menu" role="listbox" aria-label="${esc(color.label)}"><div class="tc-swatches">${color.steps.map((s, k) => this.#ch(color, k, '', s.token, ` style="background:${esc(s.value)}" title="${esc(s.token)}"`)).join('')}</div></div>`;
       }
     }
     // a write that was refused says why, under the values (the value stays as it was, to try again)
@@ -540,7 +577,10 @@ export class TextEditor {
     const dark = this.#host.dark?.() ? 'dark' : 'light';
     this.#el.dataset.scheme = dark; this.#caret.dataset.scheme = dark;
     this.#el.setAttribute('aria-label', W.region(name));
-    const lock = this.#state === 'ready' && this.#locked ? `<div class="lock" role="note">${ICON.lock}<span>${esc(this.#site.refused)}</span></div>` : '';
+    // what can't be changed here, said at rest: the classes written nowhere it can reach, else each fluid value
+    const fluids = this.#state === 'ready' && !this.#locked ? this.#rows().filter((r) => r.fluidNote).map((r) => r.fluidNote) : [];
+    const lock = this.#state === 'ready' && this.#locked ? `<div class="lock" role="note">${ICON.lock}<span>${esc(this.#site.refused)}</span></div>`
+      : fluids.length ? `<div class="lock" role="note">${ICON.lock}<span>${fluids.map(esc).join('<br>')}</span></div>` : '';
     const root = this.#el.getRootNode(), focused = this.#focus || this.#el.contains(root.activeElement);
     this.#el.innerHTML = `<div class="hd">${this.#upsHtml()}<span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
       + (reach && !this.#locked ? `<div class="reach">${esc(W.reach(reach))}</div>` : '') + lock + body
@@ -701,7 +741,8 @@ export class TextEditor {
   #commit() {
     const ed = this.#editing, r = this.#rows().find((x) => x.key === ed.key);
     if (ed.typed) { const n = Number(ed.typed); let at = 0; r.steps.forEach((s, i) => { if (Math.abs(s.n - n) < Math.abs(r.steps[at].n - n)) at = i; }); ed.at = at; ed.moved = true; ed.typed = ''; }
-    if (!ed.moved) return this.#close();
+    // the step it already uses: nothing to write, the scale folds back
+    if (!ed.moved || (r.steps[ed.at]?.token === r.current && !r.byHand)) return this.#close();
     this.#editing = null;
     this.#write(r.key, ed.at);
   }

@@ -172,7 +172,7 @@ test('A write the page reloads for twice still comes back said, with its Undo; U
   await overlay.locator('.fx .said .undo').waitFor({ timeout: 20000 });
   assert.match(await overlay.locator('.fx .said').innerText(), /padding left \d+px/);
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.equal(await read(), original);
   // settled, the record is gone: a reload after it comes back to the page as it is
   await page.waitForFunction(() => sessionStorage.getItem('plumb:resume') === null, null, { timeout: 15000 });

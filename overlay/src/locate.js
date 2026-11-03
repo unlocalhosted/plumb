@@ -253,82 +253,88 @@ export async function locate(element, options = {}) {
   return { ...at, tag: element.localName, via: 'stamp', chain, index: 0 };
 }
 
-// Where an element's class list is written: its class site (docs/briefs/qa-fixes.md, cause 1). The server attributes
-// every class the element wears to the string it is written in (GET classes): the element's own line, or a usage up the
-// chain that passes classes in as a prop (a Link used in a list, a Box given its className, a card given gapClass).
-// The site is the JSX at that place: for `need` (the classes a change replaces) the one place that writes all of them;
-// with none, the place that writes most of the element's classes. Answers { file, line, column, hash, usage, prop,
-// classes (that prop's string as a list, or null when it is built in code), anchor (a class of it, for an added one) },
-// { refused } with a sentence, or null when the element can't be placed at all.
+// Where an element's class list is written: its class site (docs/research/engine-review.md item 1), one resolver for
+// every card and Tidy: the server's GET class-site, asked with the element's line and the usages above it (nearest
+// first). Each class comes back with the plain strings it is written in: the element's own className (a literal, a
+// template's fixed part, a ternary's branch), a variable it reads, or a usage up the chain that passes it in. A writer
+// changes a class in the string it is written in (`at`), never adds it into a branch, and adds a new class where the
+// server says (`add`).
+// Answers { file, line, column, hash (the element a write targets: the usage when the classes are passed in), usage,
+// prop, kind, classes (the classes written there), at (the string's line, the line said in the header), sites (class →
+// [ClassSite]), add, addRefused, hashes } — { refused } with a sentence — or null when the element can't be placed.
+// `need`: the classes a change replaces; their site, or refused when no plain string, or more than one element, holds them.
 export const BUILT_IN_CODE = FIX.card.builtInCode, SPLIT = FIX.card.splitClasses;
-const sameFile = (a, b) => a === b || a.endsWith('/' + b) || b.endsWith('/' + a);
-export async function classSiteOf(element, need = []) {
+const readSites = async (element, need) => {
   const at = await locate(element, { chain: true });
   if (!at?.file) return null;
-  const links = [at, ...(at.chain ?? []).slice(1, 6)].filter((l) => l?.file);
-  // the classes React gave it (a fix tried on the page swaps the element's own class list for a moment)
-  const given = hostOf(element)?.memoizedProps?.className;
-  const wears = typeof given === 'string' ? given.split(/\s+/).filter(Boolean) : [...element.classList];
-  const asked = new Map(), structure = (l) => { if (!asked.has(l)) asked.set(l, request('structure', { file: l.file, line: l.line, column: l.column }).catch(() => null)); return asked.get(l); };
-  // nothing worn yet: a className is added on its own line, when it has none (not one built in code or spread in)
-  if (!wears.length) {
-    const s = await structure(at);
-    return s && !need.length && s.props?.className === undefined ? { file: s.file, line: s.line, column: s.column, hash: s.hash, usage: false, prop: 'className', classes: [], anchor: null } : { refused: BUILT_IN_CODE };
-  }
-  const read = await request('classes', { file: at.file, line: at.line, column: at.column, classes: wears.join(' ') }).catch(() => null);
-  // each class to the JSX it is written in: a link with one of its strings on the link's own line; else (one string, a
-  // tag whose props run over a few lines) the nearest link just above it. A class the server can't narrow (props spread
-  // into the element) lists every string it may come from: only those on the chain count
-  const linkOf = new Map();
-  for (const c of read?.classes ?? []) {
-    const sites = c.sites ?? [];
-    const on = [...new Set(sites.flatMap((s) => links.filter((x) => sameFile(x.file, s.file) && x.line === s.line)))];
-    const near = !c.ambiguous && sites.length === 1 ? links.filter((x) => sameFile(x.file, sites[0].file) && x.line <= sites[0].line && sites[0].line - x.line <= 6).sort((a, b) => b.line - a.line)[0] : null;
-    const l = on.length === 1 ? on[0] : !on.length ? near : null;
-    if (l) linkOf.set(c.token, l);
-  }
-  // classes the server didn't attribute (it can't follow a Link used on another page; and it may answer nothing at all):
-  // its own className when that is a plain string holding them; else up the chain, a usage's string prop whose classes it
-  // wears is where they are written; a usage that builds its className in code puts the rest together
-  for (const l of links) {
-    if (wears.every((c) => linkOf.has(c))) break;
-    const s = await structure(l);
-    for (const v of Object.values(l === at ? { className: s?.props?.className } : s?.props ?? {})) {
-      const list = typeof v === 'string' ? v.split(/\s+/).filter(Boolean) : [];
-      if (list.length && list.every((c) => wears.includes(c))) for (const c of list) if (!linkOf.has(c)) linkOf.set(c, l);
-    }
-    if (l !== at && s?.props?.className === null) { for (const c of wears) if (!linkOf.has(c)) linkOf.set(c, l); break; }
-  }
-  let link = null, here = [];
+  const chain = (at.chain ?? []).slice(1, 9).filter((l) => l?.file).map(({ file, line, column }) => ({ file, line, column }));
+  const params = { file: at.file, line: at.line, column: at.column, ...(chain.length ? { chain: JSON.stringify(chain) } : {}), ...(need?.length ? { classes: need.join(' ') } : {}) };
+  const answer = await request('class-site', params).catch(() => null);
+  return answer ? { at, answer } : null;
+};
+const keyOf = (e) => `${e.file}:${e.line}:${e.column}`;
+export async function classSiteOf(element, need = []) {
+  const read = await readSites(element, need);
+  if (!read) return null;
+  const { answer } = read;
+  if (answer.refused && !need.length) return { refused: answer.refused, add: answer.add ?? null, addRefused: answer.addRefused };
+  const sites = new Map((answer.classes ?? []).map((c) => [c.class, c.sites ?? []]));
+  // the element whose attribute a write targets: for `need`, the one that holds all of them; else the one most of them
+  // are written at (an element passed classes from a usage reads as that usage)
+  let pick;
   if (need.length) {
-    const ls = need.map((c) => linkOf.get(c));
-    if (ls.some((l) => !l)) return { refused: BUILT_IN_CODE };
-    if (new Set(ls).size > 1) return { refused: SPLIT };
-    link = ls[0]; here = need;
+    const entries = need.map((c) => answer.classes?.find((x) => x.class === c));
+    if (entries.some((x) => !x?.sites?.length)) return { refused: entries.find((x) => x?.refused)?.refused ?? answer.refused ?? BUILT_IN_CODE };
+    const holders = new Set(entries.flatMap((x) => x.sites.map((s) => keyOf(s.element))));
+    const common = [...holders].filter((k) => entries.every((x) => x.sites.some((s) => keyOf(s.element) === k)));
+    if (!common.length) return { refused: SPLIT };
+    pick = entries[0].sites.find((s) => keyOf(s.element) === common[0]);
   } else {
     const count = new Map();
-    for (const l of linkOf.values()) count.set(l, (count.get(l) ?? 0) + 1);
-    link = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-    if (!link) return { refused: BUILT_IN_CODE };
-    here = [...linkOf].filter(([, l]) => l === link).map(([c]) => c);
+    for (const c of answer.classes ?? []) for (const k of new Set((c.sites ?? []).map((s) => keyOf(s.element)))) count.set(k, (count.get(k) ?? 0) + 1);
+    // the usage first: the classes given there are this one's own (the component's are every copy's), and what the
+    // card writes for this element goes there (F1-02, N-03); else where most of its classes are written
+    const usage = (answer.classes ?? []).flatMap((c) => c.sites ?? []).find((x) => x.kind === 'usage');
+    const best = usage ? keyOf(usage.element) : [...count].sort((a, b) => b[1] - a[1])[0]?.[0];
+    pick = best ? (answer.classes ?? []).flatMap((c) => c.sites ?? []).find((s) => keyOf(s.element) === best) : null;
+    if (!pick) {
+      // nothing written yet: a class is added where the server says, or the element is locked with its reason
+      const add = answer.add;
+      if (!add) return { refused: answer.addRefused ?? answer.refused ?? BUILT_IN_CODE };
+      return { file: add.element.file, line: add.element.line, column: add.element.column, hash: answer.hashes?.[add.element.file], usage: add.kind === 'usage', prop: add.prop, kind: add.kind, classes: [], at: add.string?.line ?? add.element.line, sites, add, addRefused: answer.addRefused, hashes: answer.hashes ?? {} };
+    }
   }
-  const usage = link !== at, s = await structure(link);
-  if (!s) return { refused: BUILT_IN_CODE };
-  const site = { file: s.file, line: s.line, column: s.column, hash: s.hash, usage };
-  if (!usage) {
-    // its own className: written when the server can read it as written (a string, a template, cn()), not built in code
-    const p = await request('props', { file: s.file, line: s.line, column: s.column }).catch(() => null);
-    const dynamic = p?.props?.find((x) => x.source !== 'inline' && x.dynamic)?.dynamic;
-    if (dynamic) return { refused: BUILT_IN_CODE };
-    const cls = typeof s.props?.className === 'string' ? s.props.className.split(/\s+/).filter(Boolean) : null;
-    return { ...site, prop: 'className', classes: cls, anchor: here.at(-1) ?? null };
+  const el = pick.element, here = [...sites].filter(([, ss]) => ss.some((s) => keyOf(s.element) === keyOf(el))).map(([c]) => c);
+  return { file: el.file, line: el.line, column: el.column, hash: answer.hashes?.[el.file], usage: pick.kind === 'usage', prop: pick.prop, kind: pick.kind, classes: here, anchor: here.at(-1) ?? null,
+    at: pick.string.line, sites, add: answer.add ?? null, addRefused: answer.addRefused, hashes: answer.hashes ?? {} };
+}
+// The edits that turn `from` (classes the element wears, as written) into `to`, each in the string it is written in:
+// [{ file, hash, edit: { line, column, from, to, at } }]. Classes written in two strings are changed in each; classes
+// split across strings, or a class added where nothing can be added, refuse with the reason (throws).
+export async function classEditsOf(element, from, to) {
+  const names = (v) => String(v ?? '').split(/\s+/).filter(Boolean);
+  const out = names(from), add = names(to);
+  const read = await readSites(element, out);
+  if (!read) throw new Error(FIX.text.unreachable);
+  const { answer } = read, hashes = answer.hashes ?? {};
+  const edit = (el, string, f, t) => ({ file: el.file, hash: hashes[el.file], edit: { line: el.line, column: el.column, from: f, to: t, ...(string ? { at: { line: string.line, column: string.column } } : {}) } });
+  if (!out.length) {
+    // a class added beside the one of its family it overrides (pl-3 beside px-2.5, in the variable or the branch that
+    // writes px-2.5), so the two stay together where the element's spacing is written; else where the server says
+    const family = /^(p|m)[xytrblse]?-|^gap(?:-[xy])?-/.exec(add[0] ?? '')?.[1] ?? (/^gap/.test(add[0] ?? '') ? 'gap' : null);
+    const kin = family && (answer.classes ?? []).find((c) => c.sites?.length && !c.class.includes(':') && (family === 'gap' ? /^gap(?:-[xy])?-/ : new RegExp(`^${family}[xytrblse]?-`)).test(c.class));
+    if (kin) return kin.sites.map((s) => edit(s.element, s.string, kin.class, [kin.class, ...add].join(' ')));
+    if (!answer.add) throw new Error(answer.addRefused ?? answer.refused ?? BUILT_IN_CODE);
+    return [edit(answer.add.element, answer.add.string, '', add.join(' '))];
   }
-  // a usage: the prop whose string holds those classes; a className built in code there is still the className
-  const strings = Object.entries(s.props ?? {}).filter(([, v]) => typeof v === 'string').map(([k, v]) => [k, v.split(/\s+/).filter(Boolean)]);
-  const held = strings.filter(([, v]) => here.every((c) => v.includes(c))).sort((a, b) => (b[0] === 'className') - (a[0] === 'className'))[0];
-  if (held) return { ...site, prop: held[0], classes: held[1], anchor: held[1].at(-1) ?? null };
-  if (s.props?.className === null) return { ...site, prop: 'className', classes: null, anchor: here.at(-1) ?? null };
-  return { refused: BUILT_IN_CODE };
+  const entries = out.map((c) => answer.classes?.find((x) => x.class === c));
+  if (entries.some((x) => !x?.sites?.length)) throw new Error(entries.find((x) => x?.refused)?.refused ?? answer.refused ?? BUILT_IN_CODE);
+  // the strings that hold the classes: every class of `from` in each one, else the change is split
+  const strings = new Map();
+  for (const x of entries) for (const s of x.sites) { const k = `${keyOf(s.element)}@${s.string.start}`; if (!strings.has(k)) strings.set(k, { s, n: 0 }); strings.get(k).n++; }
+  const whole = [...strings.values()].filter((v) => v.n === out.length);
+  if (!whole.length) throw new Error(SPLIT);
+  return whole.map(({ s }) => edit(s.element, s.string, out.join(' '), add.join(' ')));
 }
 // The other elements on the page drawn from an element's class site, outside it: the elements with its own stamp, and
 // when the site is a usage, only those whose component was used at that line (the rows of one list, not every Link).

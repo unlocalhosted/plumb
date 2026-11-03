@@ -67,7 +67,7 @@ test('Alt+click reads only that element and what is inside it; the fix says wher
   assert.equal(one.total, inside, `read ${one.total} elements, the row holds ${inside}: ${JSON.stringify(one)}`);
   assert.equal(one.unrendered, 0, 'no place the page does not render is counted');
   const held = await fx(page);
-  assert.match(held, /The same code draws 3 other places on this page\. The fix changes them too\./, held);
+  assert.match(held, /The same code draws 3 more outside it on this page\. The fix changes them too\./, held);
   assert.doesNotMatch(held, /styles would cover it|Name them\?/, 'the text styles are a whole-page proposal');
   // the cause in hand is the row's own
   assert.ok(rowClasses.includes((await overlay.locator('.fx .cause .cls').innerText()).trim()), held);

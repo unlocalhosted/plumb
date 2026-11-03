@@ -59,6 +59,12 @@ const mode = (values) => { const counts = new Map(); for (const v of values) cou
 const nearest = (steps, value) => steps.reduce((best, s) => (Math.abs(s - value) < Math.abs(best - value) ? s : best), steps[0]);
 const stepBelow = (steps, value) => [...steps].filter((s) => s < value).at(-1) ?? null;
 const stepAbove = (steps, value) => steps.find((s) => s > value) ?? null;
+// a container whose children are spaced by its gap (flex, grid): a `gap` written there moves them; on a block the space
+// between children is their margins, and a gap written there changes nothing on the page
+const gapped = (el) => /^(?:flex|inline-flex|grid|inline-grid)$/.test(getComputedStyle(el).display);
+// gaps that read as one group: the law of proximity says a gap well above the others (8, 8, then 20) sets a group
+// apart on purpose, so evening it out would join what the page separates
+const oneGroup = (gaps) => { const lo = Math.min(...gaps), hi = Math.max(...gaps); return !(hi >= lo * 1.5 && hi - lo >= 6); };
 
 /** The levels of a container: its text elements grouped by bundle, ordered title first (T1), named by position (T2). */
 export function levelsOf(container) {
@@ -176,17 +182,25 @@ export function tidy(scope, scale) {
       }
     }
   }
-  // S2: even gaps inside; S1/S3: the levels of space, the smaller change wins
+  // S2: even gaps inside (only gaps that read as one group); S1/S3: the levels of space, the smaller change wins
   const space = spaceOf(container), kids = [...container.children].filter((k) => !k.closest('plumb-overlay') && k.getBoundingClientRect().height > 0);
-  if (space.inside.length >= 2 && new Set(space.inside).size > 1) {
+  // the space between children set to one value, written where it comes from: the container's gap when it lays out
+  // with one, else each child's top margin (only when every gap is that margin alone); else nothing is proposed
+  const spaceTo = (to, rule, reason, from) => {
+    if (gapped(container)) return add(container, 'gap', from, to, rule, reason);
+    const vertical = kids.slice(1).map((k, i) => ({ k, prev: kids[i], top: px(getComputedStyle(k).marginTop), bottom: px(getComputedStyle(kids[i]).marginBottom), gap: space.inside[i] }));
+    if (vertical.length !== space.inside.length || vertical.some((v) => v.bottom !== 0 || Math.abs(v.top - v.gap) > 0.5 || getComputedStyle(v.k).display.startsWith('inline'))) return;
+    for (const v of vertical) if (Math.abs(v.top - to) >= 0.5 && !runtime(v.k)) add(v.k, 'margin-top', v.top, to, rule, reason);
+  };
+  if (space.inside.length >= 2 && new Set(space.inside).size > 1 && oneGroup(space.inside)) {
     const even = nearest(s.spacing, mode(space.inside));
-    add(container, 'gap', space.gap ?? space.inside.join('/'), even, 'S2', `${space.inside.length} gaps of ${[...new Set(space.inside)].join(', ')}px; most ${even}px`);
+    spaceTo(even, 'S2', `${space.inside.length} gaps of ${[...new Set(space.inside)].join(', ')}px; most ${even}px`, space.gap ?? space.inside.join('/'));
   }
   if (space.inside.length && space.between.length) {
     const inside = nearest(s.spacing, mode(space.inside)), between = nearest(s.spacing, mode(space.between));
     if (inside >= between) {
       const lowerInside = stepBelow(s.spacing, between), raisePadding = stepAbove(s.spacing, inside);
-      const viaGap = lowerInside !== null ? inside - lowerInside : Infinity, viaPadding = raisePadding !== null ? raisePadding - space.around : Infinity;
+      const viaGap = lowerInside !== null && gapped(container) ? inside - lowerInside : Infinity, viaPadding = raisePadding !== null ? raisePadding - space.around : Infinity;
       if (viaGap <= viaPadding && lowerInside !== null) add(container, 'gap', inside, lowerInside, 'S1', `inside ${inside}px is not below the ${between}px between ${container.localName}s`);
       else if (raisePadding !== null) add(container, 'padding', space.around, raisePadding, 'S1', `around ${space.around}px is not above the ${inside}px inside`, { sides: raise(raisePadding) });
     } else if (space.around < between && space.around > 0) { const to = nearest(s.spacing, between); add(container, 'padding', space.around, to, 'S3', `around ${space.around}px is below the ${between}px between ${container.localName}s`, { sides: raise(to) }); }

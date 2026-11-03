@@ -414,6 +414,11 @@ export const FIX = {
     // a value the page works out (clamp, var, calc): what it shows now, and the value as written
     fluid: (v, now) => `Fluid: ${v}. ${now} at this width.`,
     inCode: 'Change it in your code.',
+    // a style sets a fixed size, which would replace the fluid one
+    styleFluid: 'The size is fluid, and a style would fix it. Change it in your code.',
+    // digits typed that aren't a step: the step Enter uses
+    typedNearest: (typed, step) => `${typed} isn’t a step. Enter uses ${step}, the nearest.`,
+    ownBox: 'Its own box (⌥↑): padding, shadow, motion. ⌥↓ comes back.',
     // a text style worn, but not measured: the size the words have here
     styleHere: (px) => `${px} here`,
     styleDiffers: (name, step, here) => `${name} is ${step}, but these words measure ${here}: something else sets their size.`,
@@ -507,6 +512,11 @@ export const FIX = {
     fitInside: (between) => `Inside: at most the gap between (${between}).`,
     spaced: (name, what, px, mates) => `${name}: ${what} ${px}px${mates ? ` · ${mates + 1} places, one line of code` : ''}`,
     // tidy this card (tidycard.js): the rules as sentences, never their ids
+    // the step a write is in History's timeline: what the person did, in a word (history.js names the tick after it)
+    steps: {
+      edit: 'Edit', shadow: 'Shadow', motion: 'Motion', layout: 'Layout', spacing: 'Spacing', tidy: 'Tidy', fix: 'Fix', styles: 'Text styles',
+      text: (key) => ({ 'font-size': 'Size', 'line-height': 'Leading', 'letter-spacing': 'Tracking', 'font-weight': 'Weight', 'text-transform': 'Case', color: 'Colour', 'font-family': 'Font' }[key] ?? 'Text'),
+    },
     tidy: {
       button: 'Tidy this card',
       title: 'Tidy',
@@ -516,7 +526,9 @@ export const FIX = {
       asItWas: 'As it was',
       theCard: 'the card',
       of: (who) => `of ${who}`,
-      props: { 'font-size': 'Size', 'font-weight': 'Weight', gap: 'Space inside', padding: 'Padding', radius: 'Corner' },
+      props: { 'font-size': 'Size', 'font-weight': 'Weight', gap: 'Space inside', padding: 'Padding', radius: 'Corner', 'margin-top': 'Space above' },
+      // one change to every copy the code draws of the same thing
+      like: (n) => `${n} like it.`,
       value: (prop, v) => prop === 'font-weight' ? ({ 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' }[v] ?? String(v)) : `${v}px`,
       rules: {
         T3: 'Like the same line in the cards beside it.',
@@ -531,7 +543,9 @@ export const FIX = {
     },
   },
   // an Alt+click reads one element; its fix changes a line of code that also draws other places on the page
-  elsewhere: (n) => n === 1 ? 'The same code draws 1 other place on this page. The fix changes it too.' : `The same code draws ${n} other places on this page. The fix changes them too.`,
+  // drawn copies are counted as copies, never as places (a place is a spot in the code): "here" inside the element read,
+  // "more outside it" past it, one unit for both
+  elsewhere: (n) => n === 1 ? 'The same code draws 1 more outside it on this page. The fix changes it too.' : `The same code draws ${n} more outside it on this page. The fix changes them too.`,
   // the text styles the code is reaching for (typesystem.js): said in plain words, never "roles" or "tokens"
   styles: {
     line: (sizes, n, places) => (sizes > n ? `Your text uses ${count(sizes, 'size', 'sizes')}. ${n} styles would cover it.` : `Your text has ${n} styles, typed by hand at ${count(places, 'place', 'places')}. Name them?`),

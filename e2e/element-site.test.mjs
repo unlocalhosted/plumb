@@ -101,7 +101,8 @@ async function open(t) {
   const undo = async () => {
     await marked();
     await overlay.locator('.fx .said .undo').click();
-    await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+    // History's toast may still say the last undo: the file itself says when this one has landed
+    for (let i = 0; i < 300 && (await read()) !== original; i++) await page.waitForTimeout(100);
     assert.equal(await read(), original, 'Undo restores the file exactly');
     await settle();
   };
@@ -128,7 +129,8 @@ test('A component that forwards className: the card names the usage, spacing wri
   await said(/padding left 16px/);
   await settle();
   const now = await read();
-  assert.ok(now.split('\n')[at - 1].includes('<Box className="flex flex-col gap-[10px] p-[14px] rounded-card bg-surface shadow-rest pl-s4">'), now.split('\n')[at - 1]);
+  // the new side goes beside the padding it overrides, in the usage's string (N-02's rule)
+  assert.ok(now.split('\n')[at - 1].includes('<Box className="flex flex-col gap-[10px] p-[14px] pl-s4 rounded-card bg-surface shadow-rest">'), now.split('\n')[at - 1]);
   assert.equal(await card.locator('.down').count(), 0, 'nothing refused');
   await undo();
 

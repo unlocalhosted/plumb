@@ -11,8 +11,7 @@
  * the element's own line when its className is a plain string (a class swap), else at the place that passes the class
  * in (a component's usage: that prop's string, edited). A change with no such place is listed as left alone, and why.
  * ───────────────────────────────────────────────────────── */
-import { request } from './api.js';
-import { locate } from './locate.js';
+import { classEditsOf } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { tidy, levelsOf } from './hierarchy.js';
@@ -27,10 +26,16 @@ const FAMILY = {
   'font-weight': (c) => /^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/.test(c),
   gap: (c) => /^gap-(?!x-|y-)/.test(c),
   padding: (c) => /^p[xytrblse]?-/.test(c),
+  // a child's top margin (S2 on a block, where the space between children is their margins)
+  'margin-top': (c) => /^mt-/.test(c),
   radius: (c) => /^rounded(?:-(?!(?:[trblse]|tl|tr|bl|br|ss|se|es|ee)(?:-|$))[\w[\].]+)?$/.test(c),
 };
 const PREVIEW = { 'font-size': (v) => ({ 'font-size': `${v}px` }), 'font-weight': (v) => ({ 'font-weight': String(v) }), gap: (v) => ({ gap: `${v}px` }),
-  padding: (v, c) => (c?.sides ? Object.fromEntries(Object.entries(c.sides).map(([k, n]) => [`padding-${k}`, `${n}px`])) : { padding: `${v}px` }), radius: (v) => ({ 'border-radius': `${v}px` }) };
+  padding: (v, c) => (c?.sides ? Object.fromEntries(Object.entries(c.sides).map(([k, n]) => [`padding-${k}`, `${n}px`])) : { padding: `${v}px` }), radius: (v) => ({ 'border-radius': `${v}px` }), 'margin-top': (v) => ({ 'margin-top': `${v}px` }) };
+// what the page computes for a change's property now: a change to what it already is changes nothing, and isn't listed
+const NOW = { 'font-size': (cs) => parseFloat(cs.fontSize), 'font-weight': (cs) => parseInt(cs.fontWeight, 10), gap: (cs) => parseFloat(cs.rowGap === 'normal' ? cs.columnGap : cs.rowGap), radius: (cs) => parseFloat(cs.borderTopLeftRadius), 'margin-top': (cs) => parseFloat(cs.marginTop) };
+// the code that draws an element (its stamp): copies drawn by one line are one change in the code
+const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
 // the sides a padding class sets (ps/pe as left/right: the pages read here run left to right)
 const SIDES = { p: ['top', 'right', 'bottom', 'left'], px: ['left', 'right'], py: ['top', 'bottom'], pt: ['top'], pr: ['right'], pb: ['bottom'], pl: ['left'], ps: ['left'], pe: ['right'] };
 const sidesOf = (c) => SIDES[/^(p[xytrblse]?)-/.exec(c)?.[1]] ?? [];
@@ -63,7 +68,7 @@ export class Tidy {
     if (prop === 'font-weight') return WEIGHT[v] ? `font-${WEIGHT[v]}` : `font-[${v}]`;
     if (prop === 'font-size') { const t = step(sc.sizes); return t ? `text-${t}` : `text-[${v}px]`; }
     if (prop === 'radius') { const t = step(sc.radii); return t ? `rounded-${t}` : v === 0 ? 'rounded-none' : `rounded-[${v}px]`; }
-    const pre = prop === 'gap' ? 'gap' : prop === 'padding' ? 'p' : prop, t = step(sc.spacing);
+    const pre = prop === 'gap' ? 'gap' : prop === 'padding' ? 'p' : prop === 'margin-top' ? 'mt' : prop, t = step(sc.spacing);
     if (t) return `${pre}-${t}`;
     const base = pxOf(getComputedStyle(document.documentElement).getPropertyValue('--spacing').trim());
     return base > 0 && Number.isInteger(Math.round((v / base) * 100) / 100 * 4) ? `${pre}-${Math.round((v / base) * 100) / 100}` : `${pre}-[${v}px]`;
@@ -72,13 +77,24 @@ export class Tidy {
   open() {
     const t = this.#host.target(), sc = this.#scale();
     const raw = tidy(t, { sizes: sc.sizes.map((s) => s.px), weights: sc.weights.map((s) => s.px), spacing: sc.spacing.length ? [0, ...sc.spacing.map((s) => s.px)] : undefined, radii: sc.radii.length ? [0, ...sc.radii.map((s) => s.px)] : undefined });
-    this.#changes = raw.filter((c) => PREVIEW[c.prop] && Number.isFinite(+c.to) && t.contains(c.el)).map((c) => {
-      const classes = [...c.el.classList].filter((x) => !x.includes(':'));
-      const from = classes.filter((x) => FAMILY[c.prop](x, sc.sizes));
-      const to = this.#classFor(c.prop, +c.to, sc);
-      if (c.prop === 'padding' && c.sides) return { ...c, ...this.#padding(c, from, sc), step: to };
-      return { ...c, fromClass: from.join(' '), toClass: to, step: to };
-    }).filter((c) => c.fromClass !== c.toClass && stepped(c.step));
+    const mapped = raw.filter((c) => PREVIEW[c.prop] && Number.isFinite(+c.to) && t.contains(c.el))
+      // already what it would become (a class that computes the value the change names): nothing to change
+      .filter((c) => { const now = NOW[c.prop]?.(getComputedStyle(c.el)); return !(Number.isFinite(now) && near(now, +c.to)); })
+      .map((c) => {
+        const classes = [...c.el.classList].filter((x) => !x.includes(':'));
+        const from = classes.filter((x) => FAMILY[c.prop](x, sc.sizes));
+        const to = this.#classFor(c.prop, +c.to, sc);
+        if (c.prop === 'padding' && c.sides) return { ...c, ...this.#padding(c, from, sc), step: to };
+        return { ...c, fromClass: from.join(' '), toClass: to, step: to };
+      }).filter((c) => c.fromClass !== c.toClass && stepped(c.step));
+    // the same change to the same thing is one row: the copies a list draws (one line of code, or two lines that draw
+    // the same words with the same classes) are listed once, previewed on every copy, and written once per line
+    const one = new Map();
+    for (const c of mapped) {
+      const key = stampOf(c.el) || named(c.el) ? `${named(c.el) ?? stampOf(c.el)}|${c.el.localName}|${c.prop}|${c.from}|${c.to}|${c.fromClass}|${c.toClass}` : c;
+      if (one.has(key)) one.get(key).els.push(c.el); else one.set(key, { ...c, els: [c.el] });
+    }
+    this.#changes = [...one.values()];
     this.#before = false;
     this.#show();
     return this.#changes;
@@ -106,8 +122,8 @@ export class Tidy {
   #show() {
     this.#unshow();
     if (this.#before) return;
-    for (const c of this.#changes) for (const [p, v] of Object.entries(PREVIEW[c.prop](+c.to, c))) {
-      const k = c.el; let m = this.#shown.get(k); if (!m) this.#shown.set(k, (m = new Map()));
+    for (const c of this.#changes) for (const k of c.els ?? [c.el]) for (const [p, v] of Object.entries(PREVIEW[c.prop](+c.to, c))) {
+      let m = this.#shown.get(k); if (!m) this.#shown.set(k, (m = new Map()));
       if (!m.has(p)) m.set(p, [k.style.getPropertyValue(p), k.style.getPropertyPriority(p)]);
       k.style.setProperty(p, v, 'important');
     }
@@ -124,43 +140,27 @@ export class Tidy {
     const t = this.#host.target();
     const rows = this.#changes.map((c) => {
       const who = c.el === t ? W.theCard : named(c.el) ?? this.#host.name(c.el);
-      return `<li class="tidy-row"><span class="what"><b>${esc(W.props[c.prop])}</b> ${esc(W.of(who))}</span><span class="ft">${esc(W.value(c.prop, c.from))} <i>→</i> ${esc(W.value(c.prop, c.to))}</span><small>${esc(W.rules[c.rule] ?? '')}</small></li>`;
+      const like = (c.els?.length ?? 1) > 1 ? ` ${W.like(c.els.length)}` : '';
+      return `<li class="tidy-row"><span class="what"><b>${esc(W.props[c.prop])}</b> ${esc(W.of(who))}</span><span class="ft">${esc(W.value(c.prop, c.from))} <i>→</i> ${esc(W.value(c.prop, c.to))}</span><small>${esc(`${W.rules[c.rule] ?? ''}${like}`)}</small></li>`;
     }).join('');
     return `<div class="sec"><div class="lab">${esc(W.count(this.#changes.length))}<span>${this.#before ? `<b class="was">${esc(W.asItWas)}</b>` : esc(W.holdSpace)}</span></div><ul class="tidy-list">${rows}</ul></div>`;
   }
 
-  // where each change is written: the element's own line when its className is a plain string with the class in it,
-  // else the nearest place up the component chain that passes the class in as a prop's string
+  // where each change is written: the string its classes are written in (locate.js classEditsOf, the server's class
+  // site, the one resolver the cards use): the element's own className, a variable, or the usage that passes them in;
+  // an added class where the server says. A change with no such place is left alone, and said
   async writes() {
-    const steps = [], left = [];
-    const at = new Map(); // a usage's prop value as it is being edited (two changes in one prop)
-    for (const c of this.#changes) {
-      const loc = await locate(c.el, { chain: true });
-      if (!loc?.file) { left.push(W.noPlace(W.props[c.prop])); continue; }
-      const own = await request('structure', { file: loc.file, line: loc.line, column: loc.column }).catch(() => null);
-      const cls = own?.props?.className;
-      const fromOne = c.fromClass.split(' ').filter(Boolean);
-      if (typeof cls === 'string' && fromOne.every((x) => cls.split(/\s+/).includes(x))) {
-        steps.push({ kind: 'swap', file: own.file, hash: own.hash, line: own.line, column: own.column, from: c.fromClass, to: c.toClass });
-        continue;
+    const steps = [], left = [], seen = new Set();
+    // every line of code the change's copies come from, once (a copy without a stamp is its own line)
+    const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = stampOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
+    for (const c of this.#changes.flatMap(lines)) {
+      let edits;
+      try { edits = await classEditsOf(c.el, c.fromClass, c.toClass); } catch { left.push(W.noPlace(W.props[c.prop])); continue; }
+      for (const { file, hash, edit } of edits) {
+        const k = JSON.stringify([file, edit]); if (seen.has(k)) continue; seen.add(k);
+        steps.push({ kind: 'swap', file, hash, ...edit });
       }
-      let done = false;
-      for (const up of (loc.chain ?? []).slice(1, 6)) {
-        if (!up?.file) continue;
-        const s = await request('structure', { file: up.file, line: up.line, column: up.column }).catch(() => null);
-        for (const [name, value] of Object.entries(s?.props ?? {})) {
-          const key = `${s.file}:${s.line}:${s.column}:${name}`, now = at.get(key) ?? value;
-          if (typeof now !== 'string' || !fromOne.length || !fromOne.every((x) => now.split(/\s+/).includes(x))) continue;
-          const next = now.split(/\s+/).filter((x) => !fromOne.includes(x)).concat(c.toClass).join(' ');
-          at.set(key, next);
-          const prior = steps.find((p) => p.kind === 'prop' && p.key === key);
-          if (prior) prior.value = next; else steps.push({ kind: 'prop', key, file: s.file, hash: s.hash, line: s.line, column: s.column, name, value: next });
-          done = true; break;
-        }
-        if (done) break;
-      }
-      if (!done) left.push(W.noPlace(W.props[c.prop]));
     }
-    return { steps, left };
+    return { steps, left: [...new Set(left)] };
   }
 }

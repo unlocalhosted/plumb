@@ -133,7 +133,7 @@ test('Shadow ›: the strip tries each shadow on the element, a pick shows the e
   // Undo: every file back exactly
   await overlay.locator('.fx .said .undo').click();
   // undoing the theme reloads the page again: Blueprint comes back saying it was undone, and every file is back exactly
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.deepEqual(await read(), original);
   assert.deepEqual(errors, []);
 });
@@ -191,7 +191,7 @@ test('Motion ›: hover and press options play on copies, a pick shows its edit,
   await overlay.locator('.fx .said').filter({ hasText: /uses .* now/ }).waitFor({ timeout: 20000 });
   assert.notEqual((await read()).app, original.app, `${picked} was written`);
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
   assert.deepEqual(await read(), original);
 
   // Esc closes the card

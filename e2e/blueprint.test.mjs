@@ -456,7 +456,7 @@ test('Undo takes the fix just written back: the file is as it was and the fix is
   for (let i = 0; i < 60 && (await readFile(file, 'utf8')) === was; i++) await page.waitForTimeout(100);
   assert.notEqual(await readFile(file, 'utf8'), was, 'written at once');
   await panel(overlay).locator('.said .undo').click();
-  await said(overlay).filter({ hasText: 'Undone' }).waitFor({ timeout: 15000 });
+  await overlay.locator('.wt:not([hidden]), .fx .said .t').filter({ hasText: 'Undone' }).first().waitFor({ timeout: 15000 });
   for (let i = 0; i < 60 && (await readFile(file, 'utf8')) !== was; i++) await page.waitForTimeout(100);
   assert.equal(await readFile(file, 'utf8'), was, 'the file is back as it was');
   // the fix is offered again

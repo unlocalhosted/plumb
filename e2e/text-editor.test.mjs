@@ -91,7 +91,7 @@ test('Alt+click on words opens their values; an off-scale size opens its scale, 
 
   // Undo restores the file exactly, and the card reads the element again
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
   assert.equal(await written(root), original);
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .fld[data-key="font-size"]')?.hasAttribute('data-off'), null, { timeout: 20000 });
 

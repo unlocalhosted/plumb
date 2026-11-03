@@ -80,7 +80,7 @@ test('Card B: Tidy lists the subtitle’s weight and the inside gap, previews bo
 
   // one Undo takes both back
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.equal(await read(), original);
   assert.deepEqual(errors, []);
 });

@@ -49,6 +49,13 @@ const LAYER_CSS = `
 `;
 // the server answered no (post() gives it a status); anything else is a request the page cut off (a reload it caused)
 const answeredNo = (error) => Number.isInteger(error?.status);
+// One person's action, one step of the timeline (docs/qa/timeline-crafting-ui.md, issue 3): every request a write makes
+// carries the same group, with the step's name and the laws it serves, so History names the step and its Undo takes back
+// exactly what the action wrote (POST undo-group)
+const traceOf = ({ step = FIX.card.steps.edit, laws = [] } = {}) => ({
+  group: `${String(step).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'edit'}.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  meta: { step, laws: [...new Map((laws ?? []).filter((l) => l?.id || typeof l === 'string').map((l) => (typeof l === 'string' ? [l, { id: l, name: l }] : [l.id, { id: l.id, name: l.name }]))).values()] },
+});
 
 export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS + FIX_CSS;
 
@@ -99,9 +106,10 @@ export class Blueprint {
       applyStyles: (write, said) => this.#applyStyles(write, said),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
-      recipe: (at, body, said) => this.#applyRecipe(at, body, said),
-      swaps: (writes, said) => this.#swapsWrite(writes, said),
-      batch: (steps, said) => this.#batchWrite(steps, said),
+      recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
+      swaps: (writes, said, meta) => this.#swapsWrite(writes, said, meta),
+      batch: (steps, said, meta) => this.#batchWrite(steps, said, meta),
+      undoGroup: async (group) => { this.#host.remember?.(FIX.undone); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
       unwant: () => { this.#want = null; },
       climb: (el) => this.climbTo(el),
       // why an element can't be placed in the source, as the panel says it
@@ -286,7 +294,7 @@ export class Blueprint {
   // The all-clear: problems were left before a write, and once the page is read again none are. The count before the
   // write is kept in the session, so a write that reloads the page still ends in its all-clear.
   #fix;
-  #undos = []; #saying = null; #at = null; // the write in progress: its undo handles, and what it changed in words
+  #undos = []; #saying = null; #at = null; #trace = null; // the write in progress: its undo handles, and what it changed in words
   #lastDrift = 0;
   #clearAfterWrite(p) {
     if (p.read === p.total) {
@@ -312,17 +320,18 @@ export class Blueprint {
   // The text styles written (POST apply-all with the proposal's own write: the theme's tokens, one class per style,
   // every place swapped, each file guarded by its hash). A theme write may reload the page: it comes back saying so.
   async #applyStyles(write, said) {
-    this.#host.remember?.(said);
-    const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? []);
+    const trace = traceOf({ step: FIX.card.steps.styles });
+    this.#host.remember?.(said, undefined, null, trace.group);
+    const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? [], null, trace.group);
     addEventListener('plumb:applied', heard, { once: true });
     try {
-      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: write.swaps ?? [] });
+      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: write.swaps ?? [], trace });
       const results = answer?.results ?? {}, undo = answer?.undo ?? [];
       const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
       for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
-      if (failed.length) { this.#host.forgetResume?.(); return { ok: false, undo, why: /changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot }; }
-      this.#host.remember?.(said, undo);
-      return { ok: true, undo };
+      if (failed.length) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why: /changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot }; }
+      this.#host.remember?.(said, undo, null, trace.group);
+      return { ok: true, undo, group: trace.group };
     } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
   }
@@ -344,8 +353,10 @@ export class Blueprint {
   // `at`: the fix's place in the panel's list, so a reload the write causes comes back on the fix after it
   async #applyAll(tokens, keeps = [], total = tokens.length + keeps.length, swaps = [], said = FIX.applied(total), at = null) {
     const undo = (this.#undos = []);
+    // one fix, one step: the panel's swaps, the edits by id and the theme's write all carry its group
+    const trace = this.#trace = traceOf(at?.meta ?? { step: FIX.card.steps.fix });
     this.#saying = said; this.#at = at;
-    this.#host.remember?.(said, undefined, at); // pending: a reload before the answer finds its undo in the server's history
+    this.#host.remember?.(said, undefined, at, trace.group); // pending: a reload before the answer finds its undo in the server's history
     // the panel's swaps first (Changes: source files, which hot-update without a reload)
     if (this.#changes.count) await this.#changes.accept();
     // then the causes taken from the code alone: their edits by id, per file (POST apply: the server derives each edit
@@ -360,7 +371,7 @@ export class Blueprint {
     }
     for (const [file, f] of byFile) {
       try {
-        const result = await post('apply', { file, hash: f.hash, edits: f.edits });
+        const result = await post('apply', { file, hash: f.hash, edits: f.edits, trace });
         if (result?.undo) undo.push(result.undo);
         this.invalidate({ file });
       } catch (error) {
@@ -402,12 +413,13 @@ export class Blueprint {
       // Vite tells the page the whole result before the reload that would cut the response short: the bar says
       // after it what did not land, not a count that was only hoped for
       // (with every undo handle, so Undo still works after it)
-      const heard = (e) => { const o = e.detail?.results && outcome(e.detail.results); this.#host.remember?.(o?.refused.length ? FIX.appliedSome(total - o.refused.length, total, o.said) : said, [...undo, ...(e.detail?.undo ?? [])], at); };
+      const heard = (e) => { const o = e.detail?.results && outcome(e.detail.results); this.#host.remember?.(o?.refused.length ? FIX.appliedSome(total - o.refused.length, total, o.said) : said, [...undo, ...(e.detail?.undo ?? [])], at, trace.group); };
       addEventListener('plumb:applied', heard, { once: true });
       try {
         const { results, undo: handles } = await post('apply-all', {
           tokens: tokens.map((t) => ({ file: t.suggest.file, hash: t.suggest.hash, name: t.suggest.name, value: t.suggest.value, ...(t.suggest.why ? { why: t.suggest.why } : {}), ...(then.has(t) ? { then: then.get(t) } : {}) })),
           accepts: keeps.map((k) => ({ rule: k.rule, sites: k.sites, why: k.why })),
+          trace,
         });
         const o = outcome(results);
         undo.push(...(handles ?? []));
@@ -420,11 +432,13 @@ export class Blueprint {
     // is written at a time, so a class change that didn't land is put back on the page, never left waiting
     const left = this.#changes.count, leftWhy = this.#changes.why;
     if (left) this.#changes.discardAll();
-    this.#saying = null;
-    if (!left && !refused.length && undo.length) this.#host.remember?.(said, undo, at);
-    return { count: left + refused.length, why: leftWhy ?? why, refused, undo };
+    this.#saying = null; this.#trace = null;
+    if (!left && !refused.length && undo.length) this.#host.remember?.(said, undo, at, trace.group);
+    return { count: left + refused.length, why: leftWhy ?? why, refused, undo, group: trace.group };
   }
   async #apply(batch) {
+    // Changes accepted as part of a fix are that fix's step; accepted on their own, one step of their own
+    const trace = this.#trace ?? traceOf({ step: FIX.card.steps.fix });
     try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}
     const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
     for (const b of batch) {
@@ -440,8 +454,8 @@ export class Blueprint {
     for (const [file, f] of files) {
       try {
         // the write reloads the page when the dev server can't hot-swap it: blueprint comes back on after it
-        this.#host.remember?.(this.#saying ?? `Applied ${f.edits.length === 1 ? f.edits[0].to : `${f.edits.length} changes`} in ${file.split('/').pop()}`, [], this.#at);
-        const result = await post('swaps', { file, hash: f.hash, edits: f.edits });
+        this.#host.remember?.(this.#saying ?? `Applied ${f.edits.length === 1 ? f.edits[0].to : `${f.edits.length} changes`} in ${file.split('/').pop()}`, [], this.#at, trace.group);
+        const result = await post('swaps', { file, hash: f.hash, edits: f.edits, trace });
         // the fix panel says what was written, with Undo (not a second toast)
         if (result?.undo) this.#undos.push(result.undo);
         this.invalidate({ file });
@@ -467,7 +481,7 @@ export class Blueprint {
   // hands on the items of the same wave, so the items decide, with the progress they came with.
   #want = null;
   // the page came back after a write reloaded it: the fix bar says what was applied
-  resumed(text, undo, at) { this.#fix.resumed(text, undo, at); }
+  resumed(text, undo, at, group = null) { this.#fix.resumed(text, undo, at, group); }
   // Alt+click: that element and what's inside it are read, never the whole page (Alt+B is the whole page). Another
   // element outside the one being read is read in its place.
   // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it. The card
@@ -507,73 +521,87 @@ export class Blueprint {
     this.enterAt(el, { card: true, box: true, trail: true });
   }
   // One value of one element, set on its line of code (the text editor's pick): remembered first, as every write is,
-  // so a page the write reloads comes back to the same element with the write said and its Undo
-  async #setProp(at, key, token, said) {
-    this.#host.remember?.(said);
+  // so a page the write reloads comes back to the same element with the write said and its Undo. Every write below is
+  // one step (traceOf): its requests share a group, and the answer carries it for the panel's Undo (POST undo-group)
+  async #setProp(at, key, token, said, meta = { step: FIX.card.steps.text(key) }) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
     let result;
-    try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token }); }
+    try { result = await post('set', { file: at.file, hash: at.hash, line: at.line, column: at.column, key, token, trace }); }
     catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; }
-    this.#host.remember?.(said, result?.undo ? [result.undo] : []);
+    this.#host.remember?.(said, result?.undo ? [result.undo] : [], null, trace.group);
     this.invalidate({ file: at.file });
-    return result;
+    return { ...result, group: trace.group };
   }
   // A recipe (a shadow, a motion) written for one element through the recipe engine: remembered first, as every write is;
   // every file it wrote is read again
-  async #applyRecipe(at, body, said) {
-    this.#host.remember?.(said);
+  async #applyRecipe(at, body, said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
     let result;
-    try { result = await post('recipes/apply', { file: at.file, hash: at.hash, line: at.line, column: at.column, ...body }); }
+    try { result = await post('recipes/apply', { file: at.file, hash: at.hash, line: at.line, column: at.column, ...body, trace }); }
     catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; }
-    this.#host.remember?.(said, result?.undo ?? []);
+    this.#host.remember?.(said, result?.undo ?? [], null, trace.group);
     const files = new Set([at.file, ...(result?.undo ?? []).map((h) => h.file).filter(Boolean)]);
     for (const file of files) this.invalidate({ file });
-    return result;
+    return { ...result, group: trace.group };
   }
-  // A batch of class edits in several places (the element card's Tidy): swaps on a line and string props at a usage,
-  // each file's hash carried from one write to the next; all or nothing (what was written is taken back if one fails);
-  // one said line with every undo handle
-  async #batchWrite(steps, said) {
-    this.#host.remember?.(said);
+  // A batch of class edits in several places (the element card's Tidy, layout and spacing): swaps on a line and string
+  // props at a usage, each file's hash carried from one write to the next; all or nothing (what was written is taken
+  // back if one fails); one said line, one step (every request in one group)
+  async #batchWrite(steps, said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
     const undo = [], hash = new Map(), files = new Set();
     const swaps = new Map(); // file → one swaps call for all of its lines
-    for (const st of steps) if (st.kind === 'swap') { if (!swaps.has(st.file)) swaps.set(st.file, []); swaps.get(st.file).push({ line: st.line, column: st.column, from: st.from, to: st.to }); }
+    for (const st of steps) if (st.kind === 'swap') { if (!swaps.has(st.file)) swaps.set(st.file, []); swaps.get(st.file).push({ line: st.line, column: st.column, from: st.from, to: st.to, ...(st.at ? { at: st.at } : {}) }); }
     try {
       const done = new Set();
       for (const st of steps) {
         const h = hash.get(st.file) ?? st.hash;
         let r;
-        if (st.kind === 'swap') { if (done.has(st.file)) continue; done.add(st.file); r = await post('swaps', { file: st.file, hash: h, edits: swaps.get(st.file) }); if (r?.refused?.length) throw Object.assign(new Error(r.refused.map((x) => x.reason).join(' ')), { status: 400, partial: r }); }
-        else r = await post('prop', { file: st.file, hash: h, line: st.line, column: st.column, name: st.name, value: st.value });
+        if (st.kind === 'swap') { if (done.has(st.file)) continue; done.add(st.file); r = await post('swaps', { file: st.file, hash: h, edits: swaps.get(st.file), trace }); if (r?.refused?.length) throw Object.assign(new Error(r.refused.map((x) => x.reason).join(' ')), { status: 400, partial: r }); }
+        else r = await post('prop', { file: st.file, hash: h, line: st.line, column: st.column, name: st.name, value: st.value, trace });
         if (r?.undo) undo.push(r.undo);
         if (r?.hash) hash.set(st.file, r.hash);
         files.add(st.file);
       }
     } catch (error) {
       if (error?.partial?.undo) undo.push(error.partial.undo);
-      for (const h of [...undo].reverse()) await post('undo', { id: h.id }).catch(() => {});
+      // the step is taken back whole: what it wrote before the refusal, never a file's other changes
+      if (undo.length) await post('undo-group', { group: trace.group }).catch(async () => { for (const h of [...undo].reverse()) await post('undo', { id: h.id }).catch(() => {}); });
       if (answeredNo(error)) this.#host.forgetResume?.();
       for (const f of files) this.invalidate({ file: f });
       throw error;
     }
-    this.#host.remember?.(said, undo);
+    this.#host.remember?.(said, undo, null, trace.group);
     for (const f of files) this.invalidate({ file: f });
-    return { undo };
+    return { undo, group: trace.group };
   }
-  // Class swaps on one or more lines (the element card's layout and spacing): one POST swaps per file, remembered first as
-  // every write is; each file's undo handle goes with the said line. A place the server refuses is said in its words.
-  async #swapsWrite(writes, said) {
-    this.#host.remember?.(said);
+  // Class swaps on one or more lines: one POST swaps per file, remembered first as every write is; each file's undo
+  // handle goes with the said line. A place the server refuses is said in its words.
+  async #swapsWrite(writes, said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
     const undo = [], refused = [];
     try {
       for (const w of writes) {
-        const r = await post('swaps', { file: w.file, hash: w.hash, edits: w.edits });
+        const r = await post('swaps', { file: w.file, hash: w.hash, edits: w.edits, trace });
         if (r?.undo) undo.push(r.undo);
         refused.push(...(r?.refused ?? []).map((x) => x.reason));
       }
-    } catch (error) { if (answeredNo(error)) { if (undo.length) this.#host.remember?.(said, undo); else this.#host.forgetResume?.(); } if (!undo.length) throw error; refused.push(error?.message ?? String(error)); }
-    this.#host.remember?.(said, undo);
+    } catch (error) { if (answeredNo(error)) { if (undo.length) this.#host.remember?.(said, undo, null, trace.group); else this.#host.forgetResume?.(); } if (!undo.length) throw error; refused.push(error?.message ?? String(error)); }
+    this.#host.remember?.(said, undo, null, trace.group);
     for (const w of writes) this.invalidate({ file: w.file });
-    return { undo, refused };
+    return { undo, refused, group: trace.group };
+  }
+  // The panel's Undo for a step: every change the step wrote, taken back where each is now (POST undo-group), never a
+  // whole file put back; the answer goes to History, which says it with its own Undo (a step back again)
+  async #undoGroup(group, said = FIX.undone) {
+    const result = await post('undo-group', { group });
+    for (const file of Object.keys(result?.files ?? {})) this.invalidate({ file });
+    this.#host.wrote?.(result, said);
+    return result;
   }
   // an element card is open (it comes back open after a reload a write causes)
   get carding() { return this.#fix.carding; }

@@ -85,6 +85,9 @@ const css = `
      that rises from it (the punch list, the setup callout and card), moves to the other bottom corner (#side) */
   :host([data-side="start"]) :is(.dock, .pl, .rd, .rd-callout, .hp, .tip, .wt, .hl) { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   :host([data-side="center"]) .dock { inset-inline-end: auto; inset-inline-start: 50%; translate: -50% 0; }
+  /* one owner of the screen (F3-05, timeline 10): the setup callout steps aside for Blueprint (a callout that arrives
+     after Blueprint is on too), and while a card is open no tip shows: the card is what to work in */
+  :host([data-blueprint]) .rd-callout, :host([data-card]) .tip { visibility: hidden; }
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
@@ -340,7 +343,7 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
-    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.()].filter(Boolean) });
+    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.(), ...(this.#history?.occluders() ?? [])].filter(Boolean), quiet: () => this.hasAttribute('data-card') });
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
     this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
@@ -371,7 +374,7 @@ class PlumbOverlay extends HTMLElement {
   async #resume() {
     // an undo the page went away in the middle of (a write the dev server reloads for, sometimes twice): Blueprint comes
     // back, and the fix panel goes on with what's left (fixpanel.js)
-    try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if (u?.undo?.length && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
+    try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if ((u?.undo?.length || u?.group) && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) { this.forgetResume(); return; }
@@ -383,12 +386,20 @@ class PlumbOverlay extends HTMLElement {
     if (saved.blueprint) this.#blueprint?.enter({ instant: true, scope: scopeOf(saved.scope), card: !!saved.card });
     // the page went before the write's answer came back (the dev server reloaded for it first): its undo handles are the
     // server's writes since it was remembered
+    // a traced write knows its own step: what it wrote is that group's changes in the trace, never the writes that
+    // happened to land near the same time (a theme write's reload can arrive after the next action is remembered)
+    if (saved.fix && !saved.undo?.length && saved.group) {
+      const t = await request('trace', { group: saved.group }).catch(() => null);
+      saved.undo = (t?.changes ?? []).filter((c) => c.state === 'live').map(({ id, file, label }) => ({ change: id, file, label }));
+      saved.pending = false;
+      try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {}
+    }
     if (saved.fix && saved.pending && !saved.undo?.length) {
       const since = saved.at - 250, h = await request('history', {}).catch(() => null);
       const writes = (h?.writes ?? []).filter((w) => Date.parse(w.at) >= since && !w.stale).reverse().map(({ id, file, label }) => ({ id, file, label }));
       if (writes.length) { saved.undo = writes; saved.pending = false; try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {} }
     }
-    if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null);
+    if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 
@@ -579,7 +590,7 @@ class PlumbOverlay extends HTMLElement {
   announce(text) { this.#announce(text); }
   // A write can make the dev server reload the whole page: blueprint comes back on, with the write reported.
   // Remembered before it is written (no undo given: pending) and again once it is (its undo handles).
-  remember(text, undo, place = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
+  remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
 
   #blueprintState(state) {
@@ -592,6 +603,7 @@ class PlumbOverlay extends HTMLElement {
     if (state === 'entering') this.#ready?.dismiss();
     if (state === 'on' && !this.#blueprint?.cardOpen) this.#help?.hint('blueprint');
     const on = state === 'entering' || state === 'on';
+    if (this.hasAttribute('data-blueprint') !== on) this.toggleAttribute('data-blueprint', on);
     this.#$('.bp-toggle').setAttribute('aria-pressed', String(on));
     // the dock line stays quiet while readings arrive; the mode is announced once, and so is the count when it's in
     this.#$('.say').setAttribute('aria-live', on ? 'off' : 'polite');

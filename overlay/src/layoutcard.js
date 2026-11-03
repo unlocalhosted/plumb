@@ -213,7 +213,9 @@ export class Spacing {
     if (!this.#on || this.#act?.drag) return;
     const changed = this.#modsOf(e);
     this.#at = [e.clientX, e.clientY];
-    const b = this.#host.held?.() || this.#host.ours?.(e) || this.#onSurface(e.clientX, e.clientY) ? null : this.#find(e.clientX, e.clientY);
+    let b = this.#host.held?.() || this.#host.ours?.(e) || this.#onSurface(e.clientX, e.clientY) ? null : this.#find(e.clientX, e.clientY);
+    // an element whose classes can't be written (the card says why, once) has no bands: nothing offered, nothing taken
+    if (b && this.#host.locked?.(b.el)) b = null;
     if (!this.#act && (changed || !same(b, this.#hover))) {
       // pointing at the element's spacing is working in the card: a cause the fix panel holds (and previews) is put down
       if (b && !this.#hover) this.#host.release?.();
@@ -226,10 +228,10 @@ export class Spacing {
     // Alt+scroll walks the tree (widget.js), never a spacing step
     if (!this.#on || e.altKey) return;
     const b = this.#act?.band ?? this.#hover;
-    if (!b || this.#host.ours?.(e)) return;
+    // a locked element takes no wheel: the page scrolls as it would
+    if (!b || this.#host.ours?.(e) || (!this.#act && this.#host.locked?.(b.el))) return;
     e.preventDefault(); e.stopPropagation();
     this.#modsOf(e);
-    if (!this.#act && this.#lockedSay(b)) return;
     if (!this.#act) this.#start(b);
     const a = this.#act, d = e.deltaY || e.deltaX, notch = e.deltaMode === 1 || Math.abs(d) >= 50;
     a.acc += notch ? Math.sign(d) * NOTCH : d;
