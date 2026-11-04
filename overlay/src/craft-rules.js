@@ -1324,7 +1324,8 @@ export const iconCap = {
       ...say(this.id, { off }),
       key: this.id, text: 'svg', props: ['align-items'], value: `${Math.round(off * 10) / 10}px`, n: off,
       evidence: { off: Math.round(off * 10) / 10, cap: m.capHeight }, confidence: 0.82,
-      suggest: { kind: 'advice', text: `Nudge it ${whole > 0 ? 'up' : 'down'} by ${fmt(Math.abs(whole))} (translate-y-[${-whole}px]), or size it to the capitals.` },
+      suggest: { kind: 'class', from: '', to: `[&>svg]:translate-y-[${-whole}px]`, target: ':scope > svg', why: 'on the capitals’ middle', sets: { translate: `0 ${-whole}px` },
+        text: `Nudge it ${whole > 0 ? 'up' : 'down'} by ${fmt(Math.abs(whole))} (translate-y-[${-whole}px]), or size it to the capitals.` },
     }];
   },
 };
@@ -1348,7 +1349,7 @@ export const trimLeading = {
       ...say(this.id, { pad: pt, seen: pt + unseen }),
       key: this.id, text: 'padding-top', props: ['padding-top'], value: `${pt}px`, n: pt,
       evidence: { padding: pt, unseen: Math.round(unseen * 10) / 10 }, confidence: 0.82,
-      suggest: trim ? { kind: 'class', from: '', to: '[text-box:trim-both_cap_alphabetic]', why: 'the padding measured from the letters', sets: { textBoxTrim: 'trim-both' } }
+      suggest: trim ? { kind: 'class', from: '', to: '[text-box:trim-both_cap_alphabetic]', why: 'the padding measured from the letters', sets: { textBoxTrim: 'trim-both', textBoxEdge: 'cap alphabetic' } }
         : { kind: 'advice', text: `Take about ${fmt(Math.round(unseen))} off the top and bottom padding, or trim the text box.` },
     }];
   },
@@ -1595,7 +1596,9 @@ export const opticalCentre = {
       key: this.id, text: 'svg', props: ['translate'], value: `${Math.round(by * 10) / 10}px`, n: by,
       // a nudge of 1 to 1.4px is the grey band: whether the eye sees it depends on the shape (the judge looks)
       evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: Math.abs(by) < T.sure ? GREY : 0.84,
-      suggest: { kind: 'advice', text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
+      // the nudge belongs to the icon, so the class that carries it sits on the control and reaches its svg
+      suggest: { kind: 'class', from: '', to: `[&>svg]:${cls}`, target: ':scope > svg', why: 'centred by its weight', sets: { translate: axis === 'x' ? `${whole}px 0` : `0 ${whole}px` },
+        text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
     }];
   },
 };
@@ -1623,7 +1626,12 @@ export const overshoot = {
       key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
       // as big as the squares but not over them is the grey band: stroke icons' ink is a soft measure
       evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd >= sq ? GREY : 0.8,
-      suggest: { kind: 'advice', text: 'Draw the round icon about 6% bigger (scale-[1.06]) so it reads the same size.' },
+      // the scale that brings the smallest round one to the squares' size and the overshoot past it
+      suggest: ((at, k) => (at.length && at.every((i) => i > 0)
+        ? { kind: 'class', from: '', to: `[&>svg:is(${at.map((i) => `:nth-child(${i})`).join(',')})]:scale-[${k}]`, target: at.map((i) => `:scope > svg:nth-child(${i})`).join(', '), why: 'round drawn a touch larger', sets: { scale: String(k) },
+          text: `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.` }
+        : { kind: 'advice', text: `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.` }))(
+        svgs.filter((g, i) => round.includes(inks[i])).map((g) => (g.parentElement === el ? [...el.children].indexOf(g) + 1 : 0)), Math.ceil((sq * T.over / rd) * 100) / 100),
     }];
   },
 };
