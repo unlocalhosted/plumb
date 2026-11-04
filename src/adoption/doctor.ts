@@ -1,4 +1,6 @@
 import { readiness, formatReadiness, blocking } from '../readiness/index.js';
+import type { Requirement } from '../readiness/index.js';
+import { stackLine } from '../onboarding/path.js';
 import type { Report } from '../report.js';
 import { cacheDirectory } from '../paths.js';
 import { existsSync } from 'node:fs';
@@ -28,7 +30,8 @@ async function size(path: string): Promise<number> {
 }
 const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim();
 
-export async function doctor(root: string, configPath?: string): Promise<{ text: string; ok: boolean }> {
+/** Everything doctor knows: the old default output, now `plumber doctor --verbose`. */
+export async function doctorVerbose(root: string, configPath?: string): Promise<{ text: string; ok: boolean }> {
   const rows: Cell[][] = [];
   let ok = true;
   let checked: Report | undefined;
@@ -89,4 +92,42 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     { text: oneLine(item.support === 'supported' ? (item.judged ?? 'judged') : item.support === 'partial' ? `${item.judged ?? ''}; ${item.skipped ?? ''}` : `not judged yet: ${item.skipped ?? ''}. ${item.next ?? ''}`), ink: 'dim' as const }]);
   const supportTable = support.length ? '\nSupport\n' + table(support, [{ width: 11 }, { width: 18 }, { weight: 2, wrap: true }, { weight: 3, wrap: true }], { indent: 0, gap: 1 }).join('\n') + '\n' : '';
   return { text: formatReadiness(ready) + '\nProject\n' + table(project, [{ width: 16 }, { weight: 1, wrap: true }, { weight: 3, wrap: true }], { indent: 0, gap: 1 }).join('\n') + '\n' + supportTable + '\nDiagnostics\n' + table(rows, [{ width: 3 }, { width: 10 }, { weight: 1 }, { width: 48 }], { indent: 0, gap: 1 }).join('\n') + '\n', ok };
+}
+
+const oneCommand = (item: { fix: Requirement['fix'] }): string =>
+  item.fix?.kind === 'diff' ? 'plumber install --overlay --write' : !item.fix || item.fix.command === 'plumber doctor' ? 'plumber doctor --verbose' : item.fix.command;
+const plain = (text: string) => text.replaceAll('React Plumber', 'Plumber');
+
+/**
+ * Three lines, in the person's words: can it read your code, does it show on your page, does it guard new code
+ * (docs/design/onboarding.md, section 6). Each is ✓, ✗ with the one command that fixes it, or – when it's optional or
+ * can't be told from here. Exit 1 only when one of the first two is ✗. The rows are readiness's, not a second copy.
+ */
+export async function doctor(root: string, configPath?: string): Promise<{ text: string; ok: boolean }> {
+  const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), noReport: true });
+  const row = (mark: '✓' | '✗' | '–', label: string, detail: string) => `  ${mark} ${label.padEnd(22)}${detail}\n`;
+  const find = (id: string) => ready.requirements.find(item => item.id === id);
+  let ok = true, text = 'Plumber\n';
+
+  const reads = find('read.styles');
+  if (reads?.status === 'ok') {
+    let tailwind: { version?: string | null; entry?: string | null } = {};
+    try { const project = await discoverProject(root, (await loadConfig(root, configPath)).value); tailwind = { version: project.tailwind.version, entry: project.tailwind.entry }; } catch { /* the stack line leaves it out */ }
+    text += row('✓', 'Reads your code', await stackLine(root, tailwind, false));
+  } else { ok = false; text += row('✗', 'Reads your code', `${plain(reads?.title ?? 'Styles couldn’t be checked')} → ${reads ? oneCommand(reads) : 'plumber doctor --verbose'}`); }
+
+  const hostRows = ['locate.host', 'locate.plugin', 'locate.order'].map(find).filter((item): item is Requirement => item !== undefined);
+  const broken = hostRows.find(item => item.status === 'missing' || item.id === 'locate.host' && item.status === 'unknown'), unsure = hostRows.find(item => item.status === 'unknown');
+  const where = find('locate.plugin')?.evidence[0]?.file ?? 'your dev config';
+  if (broken) {
+    ok = false;
+    const detail = broken.id === 'locate.plugin' ? `Plumber isn't in ${where}` : plain(broken.title);
+    text += row('✗', 'Shows on your page', `${detail} → ${oneCommand(broken)}`);
+  } else if (unsure) text += row('–', 'Shows on your page', `can't tell from ${where} → plumber doctor --verbose`);
+  else text += row('✓', 'Shows on your page', `Plumber is in ${where}`);
+
+  // the facts name paths relative to the project
+  const ci = join(resolve(root, ready.project.repo.value ?? '.'), '.github', 'workflows', 'plumb.yml');
+  text += existsSync(ci) ? row('✓', 'Guards new code', 'pull requests are checked') : row('–', 'Guards new code', 'not set up → plumber install --ci');
+  return { text, ok };
 }

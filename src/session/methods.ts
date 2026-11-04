@@ -22,6 +22,8 @@ export const methods = [
   { http: 'report', engine: 'report', read: true, json: true },
   // the report's findings grouped by what the author meant; the session reads them off the report it already has
   { http: 'causes' },
+  // what the project page draws (GET /__plumb/system answers it; the POST of that name is the engine's proposal)
+  { http: 'system-page' },
   { http: 'site', engine: 'site', read: true, json: true },
   { http: 'classes', engine: 'classes', read: true, json: true },
   // over HTTP only: it needs the root the page is served from, which a stdio line does not have

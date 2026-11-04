@@ -141,7 +141,7 @@ test('mixed app: Tailwind is judged and styled-components is named once, with ev
     const result = await run(project, args, 0);
     assert.equal(result.stderr, line);
   }
-  const doctor = await run(project, ['doctor'], 1);
+  const doctor = await run(project, ['doctor', '--verbose'], 1);
   const support = doctor.stdout.split('\nSupport\n')[1].split('\nDiagnostics\n')[0];
   assert.match(support, /^supported\s+Tailwind 4:\s+package\.json:\d+/m);
   assert.match(support.replace(/\n {20,}/g, ' '), /^unsupported\s+styled-components:\s+src\/Button\.jsx:2\s+not judged yet: styled`` and css`` templates\./m);
@@ -176,7 +176,7 @@ test('an unknown library is ignored silently; a partial system says what is and 
   assert.ok(!list.some(item => /unknown|left-pad/.test(item.id)));
   const result = await run(project, [], 0);
   assert.equal(result.stderr, '! Partly judged: CSS Modules (src/Card.jsx:1): declarations in *.module.css, as stylesheets; class names applied through the styles object are not traced to elements\n');
-  const doctor = await run(project, ['doctor'], 1);
+  const doctor = await run(project, ['doctor', '--verbose'], 1);
   assert.match(doctor.stdout, /^partial\s+CSS Modules:\s+src\/Card\.jsx:1/m);
   assert.match(doctor.stdout, /ok Partly judged: CSS Modules \(src\/Card\.jsx:1\)[\s\S]{0,200}\[read\.styling\.css-modules\]/);
 });

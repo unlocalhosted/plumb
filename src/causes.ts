@@ -209,7 +209,10 @@ export function causesOf(report: Report): Cause[] {
     else suggestNearest(cause, entries);
     causes.push(cause);
   }
-  return causes.sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
+  // what a reviewer would stop first: places that render nothing, then values your theme has a step for (a rename
+  // away), then the rest, like a framework's own weight used as is; the biggest first within each
+  const urgency = (c: Cause) => c.rendersNothing ? 0 : c.suggestion ? 1 : 2;
+  return causes.sort((a, b) => urgency(a) - urgency(b) || b.count - a.count || a.id.localeCompare(b.id));
 }
 
 /** A colour has a right answer when the theme already names it: the variable the by-value findings point at, else the first that matches. */

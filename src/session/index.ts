@@ -8,6 +8,7 @@ import { patientMethods } from './methods.js';
 import type { EngineMethod, ReadMethod } from './methods.js';
 export type { SessionOptions, SiteResult, EditsResult, ClassesResult, ApplyOptions, ApplyTextOptions, ApplyResult, RefusedSwap, AcceptOptions, AcceptResult, ApplyAllOptions, ApplyAllResult, Cause, CauseSwap, TokenThen, CensusEntry, SystemOptions, SystemResult, SystemWrite, CssOptions, PageItem, PageEntry, PageResult, PlacesResult, PropsResult, SetOptions, SwapOptions, PropEditOptions, StructureResult, ClassSiteResult, TokenOptions, TokenResult, UndoHandle, UndoResult, HistoryEntry, TraceTag, UndoChangesResult, TextRun, TextResult, SourceResolution } from './engine.js';
 import type { Cause as CauseModel } from '../causes.js';
+import { systemOf } from '../project-page/system.js';
 
 type Method = EngineMethod;
 export type { ReadMethod };
@@ -89,6 +90,8 @@ export class Session extends EventEmitter {
   report(...args: Parameters<Engine['report']>) { return this.call('report', args); }
   /** The project's findings grouped by what the author meant: the model `plumber check --json` prints as `causes`. */
   async causes(): Promise<CauseModel[]> { return (await this.report()).causes ?? []; }
+  /** What the project page draws: the scales, the strays beside them, and the 3 biggest causes (src/project-page/system.ts). */
+  async projectSystem(): Promise<import('../project-page/system.js').SystemData> { return systemOf(await this.report()); }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   many(...args: Parameters<Engine['many']>) { return this.call('many', args); }

@@ -64,10 +64,10 @@ test('one size written two ways is one cause: 15px and 0.9375rem, with the neare
   assert.deepEqual(fifteen.fixes, []);
 });
 
-test('the biggest cause comes first, and every place in a cause is a place a finding reported', { timeout: 90000 }, async (t) => {
+test('what renders nothing comes first, then what your theme has a step for, the biggest first; every place is a reported place', { timeout: 90000 }, async (t) => {
   const report = check(await project(t));
-  const counts = report.causes.map(c => c.count);
-  assert.deepEqual(counts, [...counts].sort((a, b) => b - a));
+  const order = report.causes.map(c => [c.rendersNothing ? 0 : c.suggestion ? 1 : 2, -c.count]);
+  assert.deepEqual(order, [...order].sort((a, b) => a[0] - b[0] || a[1] - b[1]));
   const reported = new Set(report.findings.flatMap(f => f.sites.map(s => `${s.file}:${s.line}:${s.column}`)));
   for (const cause of report.causes) for (const p of cause.places) assert.ok(reported.has(`${p.file}:${p.line}:${p.column}`), `${cause.id} ${p.text}`);
 });

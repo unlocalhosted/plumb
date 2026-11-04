@@ -5,7 +5,7 @@ const text = [...common, 'verbose'];
 const report = [...text, 'json'];
 
 export const commandFlags: Record<string, readonly string[]> = {
-  check: [...report, 'base', 'changed', 'agent', 'sarif', 'format', 'strict-ledger', 'watch', 'all', 'broken', 'family', 'file', 'rule', 'new', 'debt'],
+  check: [...report, 'base', 'changed', 'agent', 'sarif', 'format', 'strict-ledger', 'watch', 'all', 'broken', 'family', 'file', 'rule', 'new', 'debt', 'no-open'],
   presets: report,
   state: report,
   propose: [...report, 'family', 'write', 'yes', 'decline'],

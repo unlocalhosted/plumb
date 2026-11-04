@@ -49,6 +49,11 @@ try:
             else:
                 del streams[fd]
         match = options.get('interruptOn')
+        # `interruptOnStdout`: a command that runs until Ctrl+C (the page) says when it is ready
+        on_out = options.get('interruptOnStdout')
+        if on_out and not interrupted and on_out.encode() in stdout:
+            os.killpg(child.pid, signal.SIGINT)
+            interrupted = True
         if match and not interrupted and match.encode() in stderr:
             os.killpg(child.pid, signal.SIGINT)
             interrupted = True

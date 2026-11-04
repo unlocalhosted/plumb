@@ -30,7 +30,9 @@ async function snapshot(root) {
 }
 async function run(project, args, stderr, status = 2, cwd = project.root) {
   const before = await snapshot(project.root);
-  const result = spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', timeout: 20000,
+  // a bare plumber is the newcomer's path now (e2e/bare-gates.test.mjs); these tests read what `plumber check` says
+  const named = args.some((arg, i) => !arg.startsWith('-') && !['--root', '--config'].includes(args[i - 1]));
+  const result = spawnSync(process.execPath, [cli, ...(named ? [] : ['check']), ...args], { cwd, encoding: 'utf8', timeout: 20000,
     env: { ...process.env, NO_COLOR: '1', PLUMBER_CACHE_DIR: project.cache } });
   assert.ifError(result.error);
   assert.equal(result.status, status, result.stderr || result.stdout);
@@ -51,7 +53,7 @@ test('setup: no project here (also stops at home)', async t => {
   // A synthetic HOME is only a discovery boundary; parent package must not leak in.
   await put(project.root, { 'package.json': {} });
   const home = join(project.root, 'home'); await mkdir(home);
-  const result = spawnSync(process.execPath, [cli], { cwd: home, encoding: 'utf8', env: { ...process.env, HOME: home, USERPROFILE: home } });
+  const result = spawnSync(process.execPath, [cli, 'check'], { cwd: home, encoding: 'utf8', env: { ...process.env, HOME: home, USERPROFILE: home } });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /^✗ No project here\./);
 });
@@ -80,7 +82,7 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
   await run(project, [], 'This is a workspace with 3 apps. Pick one:\n' + workspaceRow('apps/docs', 'Vite · Tailwind 4') + workspaceRow('apps/web', 'Next.js · Tailwind 4') + workspaceRow('packages/ui', 'library · Tailwind 4'));
   for (const columns of [80, 140]) {
     const result = spawnSync('python3', [fileURLToPath(new URL('./helpers/cli-pty.py', import.meta.url))], {
-      encoding: 'utf8', input: JSON.stringify({ command: [process.execPath, cli], cwd: project.root, columns,
+      encoding: 'utf8', input: JSON.stringify({ command: [process.execPath, cli, 'check'], cwd: project.root, columns,
         env: { ...process.env, NO_COLOR: '1', PLUMBER_CACHE_DIR: project.cache } }),
     });
     assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
@@ -141,7 +143,7 @@ test('setup: Tailwind-looking classes advise once; plain CSS still checks broken
     'src/App.jsx': `import './styles.css'; export const App = () => <div className="${classes.join(' ')}"/>;`,
     'src/styles.css': '.card { color: var(--missing); }' });
   const advisory = '! These classes look like Tailwind, but Tailwind isn\'t set up: p-[13px], flex, gap-4 (+41 more).\n  → npm install tailwindcss @tailwindcss/vite, then @import "tailwindcss"; in your CSS entry\n  Checking plain CSS only for now.\n';
-  for (const args of [[], ['--broken'], ['--json'], ['--agent']]) {
+  for (const args of [['check'], ['--broken'], ['--json'], ['--agent']]) {
     const result = await run(project, args, advisory, 0);
     assert.doesNotMatch(result.stdout, /does nothing|Tailwind never generates/);
     if (args.includes('--json')) assert.ok(JSON.parse(result.stdout).findings.some(f => f.rule === 'existence/dead-var'));

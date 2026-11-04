@@ -15,7 +15,7 @@ function pty(root, args, columns, cache, noColor = false) {
   delete env.NO_COLOR;
   if (noColor) env.NO_COLOR = '1';
   const result = spawnSync('python3', [join(repo, 'e2e/helpers/cli-pty.py')], { encoding: 'utf8', timeout: 60000,
-    input: JSON.stringify({ command: [process.execPath, cli, '--root', root, ...args], cwd: repo, env, columns, stdoutTTY: true, timeout: 55 }) });
+    input: JSON.stringify({ command: [process.execPath, cli, ...(args.length ? [] : ['check']), '--root', root, ...args], cwd: repo, env, columns, stdoutTTY: true, timeout: 55 }) });
   assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
   const output = JSON.parse(result.stdout);
   assert.ok([0, 1].includes(output.status), output.stderr);
@@ -219,7 +219,7 @@ test('command tables share terminal budgets: decisions, habits, ledger moves and
     assert.match(habits, /hover-gate/); assert.match(habits, /focus-outline/);
     const habitRows = habits.split('\n').filter(line => /^\S/.test(line));
     assert.equal(new Set(habitRows.map(line => line.search(/\b(?:warn|error|info)\b/))).size, 1);
-    const doctor = bounded(pty(root, ['doctor'], columns, cache, true), columns).split('Diagnostics\n')[1];
+    const doctor = bounded(pty(root, ['doctor', '--verbose'], columns, cache, true), columns).split('Diagnostics\n')[1];
     assert.equal(doctor.trimEnd().split('\n').length, 6);
     assert.ok(doctor.trimEnd().split('\n').every(line => line.indexOf(':') < 15));
     const next = `RenamedPage${columns}`;

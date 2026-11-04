@@ -239,7 +239,7 @@ body { background: var(--color-ground); color: var(--color-ink); font-family: sy
   const packed = JSON.parse(command(repo, 'npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', root]))[0];
   command(root, 'npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(root, packed.filename)], 0, 180000);
   const plumb = (...args) => command(root, 'npx', ['--no-install', 'plumber', ...args]);
-  assert.match(plumb(), /gap-\[10px\]/);
+  assert.match(plumb('check'), /gap-\[10px\]/);
   const first = JSON.parse(plumb('--json'));
   const gapFinding = first.findings.find(finding => finding.sites.some(site => site.text.includes('gap-[10px]')));
   assert.ok(gapFinding, 'first config-free check reports this drift site');

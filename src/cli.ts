@@ -30,7 +30,7 @@ import { proposalFamilies } from './onboarding/propose.js';
 import { installOverlay, installProject, validateAgents } from './adoption/install.js';
 import { readiness, applyReadinessFix } from './readiness/index.js';
 import { createInterface } from 'node:readline';
-import { doctor } from './adoption/doctor.js';
+import { doctor, doctorVerbose } from './adoption/doctor.js';
 import { commandFlags, unknownName } from './cli-flags.js';
 import { cliProject, prepareCliAnalysis } from './cli-project.js';
 import { withCliProgress } from './cli-progress.js';
@@ -40,6 +40,7 @@ const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
+       plumber [--yes] [--no-open]       open a page about your project; --yes sets it up here instead
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
        plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
@@ -67,7 +68,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
        plumber fix <id> [--yes] [--root <dir>] [--config <path>]
-       plumber doctor [--root <dir>] [--config <path>]
+       plumber doctor [--verbose] [--root <dir>] [--config <path>]
 
   --json           Print the JSON report
   --verbose        Include internal notes in text output
@@ -98,7 +99,7 @@ async function main(): Promise<void> {
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, max: { type: 'string' },
-          overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -122,6 +123,8 @@ async function main(): Promise<void> {
   if (args.values.help) { process.stdout.write(help); return; }
   if (args.values.version) { process.stdout.write(`${tool.version}\n`); return; }
   const command = args.positionals[0] ?? 'check';
+  // Bare `plumber` (only a folder or config named) is the newcomer's path; any other flag asks for a report as before
+  const bare = args.positionals.length === 0 && Object.keys(args.values).every(flag => ['root', 'config', 'no-open', 'yes'].includes(flag));
   const deciding = command === 'decisions';
   const listingHabits = command === 'habits';
   const explaining = command === 'explain';
@@ -147,7 +150,7 @@ async function main(): Promise<void> {
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
   if (command === 'serve' && (args.values.json || args.values.verbose)) throw new UsageError('Serve uses JSON responses. Omit --json and --verbose.\n  → plumber serve');
-  for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag)) {
+  for (const flag of Object.keys(args.values)) if (!commandFlags[command]!.includes(flag) && !(bare && flag === 'yes')) {
     const commands = Object.keys(commandFlags).filter(name => commandFlags[name]!.includes(flag));
     throw new UsageError(`--${flag} requires plumber ${commands.join(' or ')}.\n  → plumber ${commands[0]} --help`);
   }
@@ -168,7 +171,7 @@ async function main(): Promise<void> {
     if (args.values[name]?.trim() === '') throw new UsageError(`Provide a non-empty path for --${name}.\n  → plumber --help`);
   }
   // craft reads a running page, not the project: no workspace to choose, the root only shortens paths
-  const project = command === 'craft' || command === 'census' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
+  const project = bare ? await (await import('./onboarding/gates.js')).chooseProject(args.values.root) : command === 'craft' || command === 'census' ? { root: resolve(args.values.root ?? process.cwd()), notice: '' } : await cliProject(args.values.root, command === 'state');
   if (project.notice) process.stderr.write(project.notice);
   const options = {
     // Agent edits need a single matching value, not a family's token inventory.
@@ -187,6 +190,11 @@ async function main(): Promise<void> {
   const analyzing = <T>(run: () => Promise<T>) => withCliProgress(options.root,
     !!(args.values.json || args.values.agent || args.values.sarif || args.values.format === 'github' || args.values.watch || command === 'serve'), async () => { await prepare(); return run(); });
   migrationNotice(resolve(options.root ?? process.cwd()), options.config);
+  if (bare) {
+    const { runBare } = await import('./onboarding/path.js');
+    await runBare({ root: options.root, ...(options.config ? { config: options.config } : {}), prepare, noOpen: args.values['no-open'] === true, yes: args.values.yes === true, report: () => analyzing(() => check({ ...options })) });
+    return;
+  }
   if (command === 'presets') {
     const loaded = await loadConfig(resolve(options.root ?? process.cwd()), options.config);
     process.stdout.write(args.values.json ? `${JSON.stringify(loaded.presets ?? [], null, 2)}\n` :
@@ -313,7 +321,7 @@ async function main(): Promise<void> {
     process.stdout.write(`Wrote ${applied.file}. Restart the dev server if its config requires it.\n`); return;
   }
   if (command === 'doctor') {
-    const result = await analyzing(() => doctor(resolve(options.root ?? process.cwd()), options.config));
+    const result = await analyzing(() => (args.values.verbose ? doctorVerbose : doctor)(resolve(options.root ?? process.cwd()), options.config));
     process.stdout.write(result.text); process.exitCode = result.ok ? 0 : 1; return;
   }
   if (command === 'init') {

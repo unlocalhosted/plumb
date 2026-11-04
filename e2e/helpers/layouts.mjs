@@ -38,7 +38,9 @@ export async function snapshot(root) {
 /** Runs the built CLI; asserts the exit code and that nothing in the project changed. */
 export async function run(project, args, status = 0, cwd = project.root) {
   const before = await snapshot(project.root);
-  const result = spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', timeout: 30000,
+  // a bare plumber is the newcomer's path now (e2e/bare-gates.test.mjs); these tests read what `plumber check` says
+  const named = args.some((arg, i) => !arg.startsWith('-') && !['--root', '--config'].includes(args[i - 1]));
+  const result = spawnSync(process.execPath, [cli, ...(named ? [] : ['check']), ...args], { cwd, encoding: 'utf8', timeout: 30000,
     env: { ...process.env, NO_COLOR: '1', PLUMBER_CACHE_DIR: project.cache } });
   assert.ifError(result.error);
   assert.equal(result.status, status, result.stderr || result.stdout);

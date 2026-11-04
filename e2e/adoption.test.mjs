@@ -10,7 +10,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
 const defaults = ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'];
 function run(directory, args = [], status = 0, executable = cli) {
-  const result = spawnSync(process.execPath, [executable, ...args], { cwd: directory, encoding: 'utf8', timeout: 20_000,
+  const result = spawnSync(process.execPath, [executable, ...(args.length ? args : ['check'])], { cwd: directory, encoding: 'utf8', timeout: 20_000,
     // Git never looks above the temporary directory the fixtures live in, so install --ci writes the workflow into the fixture even when the
     // temporary directory sits inside another repository (React Plumber's own, under a TMPDIR set to fixtures/).
     env: { ...process.env, PLUMB_CACHE_DIR: join(directory, '.cache'), GIT_CEILING_DIRECTORIES: tmpdir() } });
@@ -98,7 +98,7 @@ test('three-command transcript: first look, init baseline, detected agents and C
   const contents = await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8')));
   assert.match(run(directory, ['install', '--ci']).stdout, /Kept .claude\/skills\/plumber\/SKILL.md/);
   assert.deepEqual(await Promise.all(targets.map(path => readFile(join(directory, path), 'utf8'))), contents);
-  const healthy = run(directory, ['doctor'], 1).stdout.split('Diagnostics\n')[1];
+  const healthy = run(directory, ['doctor', '--verbose'], 1).stdout.split('Diagnostics\n')[1];
   assert.equal(healthy.trim().split('\n').length, 6);
   assert.ok(healthy.trim().split('\n').every(line => /^ok  /.test(line)));
   t.diagnostic('First run: exit 0; init: inferred config, four habits, baseline; install --ci: preserved agents, hooks, docs, pinned action; check: 0 new.');
@@ -200,13 +200,13 @@ test('nested install puts workflow at git root, scopes approval to ledger owners
 
 test('doctor reports missing setup and broken config/ledger in independent check lines', async t => {
   const directory = await fixture(t);
-  let output = run(directory, ['doctor'], 1).stdout;
+  let output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.match(output, /fix Config:\s+no config\s+Run plumber init/);
   assert.match(output, /fix Ledger:\s+no .plumber\/ledger.jsonl\s+Run plumber init/);
   run(directory, ['init']);
   await file(directory, '.plumber/ledger.jsonl', '{broken\n');
   await file(directory, 'plumber.config.ts', 'export default { unknown: true };\n');
-  output = run(directory, ['doctor'], 1).stdout;
+  output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.equal(output.split('Diagnostics\n')[1].trim().split('\n').length, 6);
   assert.match(output, /fix Config:.*Fix the config/);
   assert.match(output, /fix Ledger:.*Repair .plumber/);
@@ -218,12 +218,12 @@ test('doctor detects accepted token changes and exception reasons needing repair
   run(directory, ['init']);
   const css = await readFile(join(directory, 'src/styles.css'), 'utf8');
   await file(directory, 'src/styles.css', css.replace('8px', '9px'));
-  let output = run(directory, ['doctor'], 1).stdout;
+  let output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.match(output, /fix Ledger:.*plumber accept-decisions/);
   const ledger = await entries(directory);
   ledger.push({ key: 'handwritten', kind: 'exception' });
   await file(directory, '.plumber/ledger.jsonl', ledger.map(JSON.stringify).join('\n') + '\n');
-  output = run(directory, ['doctor'], 1).stdout;
+  output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.match(output, /plumber accept <key> --why/);
 });
 
@@ -231,12 +231,12 @@ test('doctor reports unsupported Tailwind, missing CSS entry and unusable cache 
   const directory = await fixture(t);
   await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
   await file(directory, 'node_modules/tailwindcss/package.json', '{"name":"tailwindcss","version":"3.4.0"}\n');
-  let output = run(directory, ['doctor'], 1).stdout;
+  let output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.match(output, /fix Tailwind:\s+3.4.0\s+→ upgrade: npx @tailwindcss\/upgrade/);
   await file(directory, 'plumber.config.ts', 'export default { css: "missing.css" };\n');
   await rm(join(directory, '.cache'), { recursive: true, force: true });
   await file(directory, '.cache', 'not a directory');
-  output = run(directory, ['doctor'], 1).stdout;
+  output = run(directory, ['doctor', '--verbose'], 1).stdout;
   assert.match(output, /fix CSS entry:.*missing.css/);
   assert.match(output, /fix Cache:.*PLUMBER_CACHE_DIR/);
   assert.equal(output.split('Diagnostics\n')[1].trim().split('\n').length, 6);
@@ -247,7 +247,7 @@ for (const version of [null, '3.4.19']) {
     const directory = await fixture(t);
     await file(directory, 'src/styles.css', '@import "tailwindcss";\n');
     if (version) await file(directory, 'node_modules/tailwindcss/package.json', JSON.stringify({ name: 'tailwindcss', version }));
-    const doctor = run(directory, ['doctor'], 1).stdout;
+    const doctor = run(directory, ['doctor', '--verbose'], 1).stdout;
     assert.match(doctor, version ? /npx @tailwindcss\/upgrade/ : /npm install/);
     for (const args of [[], ['check'], ['check', '--json']]) {
       const result = run(directory, args, 2);
