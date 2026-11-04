@@ -911,5 +911,125 @@ BoardingPass.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass };
+// #55 gradients mix in OKLCH. A weather app's 10-day forecast: each day's temperature bar runs from a cold blue to a
+// warm orange, written as a plain CSS gradient (as design tools export it). Mixed in sRGB, a blue and an orange pass
+// through grey on the way, so every bar sags into a dull middle. plumber mixes them in OKLCH.
+const DAYS = [
+  { day: 'Today', low: 9, high: 19, from: 0.18, to: 0.72 }, { day: 'Thu', low: 11, high: 21, from: 0.27, to: 0.82 },
+  { day: 'Fri', low: 8, high: 16, from: 0.14, to: 0.58 }, { day: 'Sat', low: 7, high: 15, from: 0.09, to: 0.52 },
+  { day: 'Sun', low: 10, high: 22, from: 0.23, to: 0.88 },
+];
+const COLD = '#2f6fe4', WARM = '#f5a524';
+function Forecast() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[26rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-4 pb-2">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Lisbon</span>
+        <span className="text-[13px] text-ink-muted">5-day forecast</span>
+      </header>
+      <ul className="px-5 pb-4">
+        {DAYS.map((d) => (
+          <li key={d.day} className="grid grid-cols-[3.5rem_2rem_1fr_2rem] items-center gap-3 border-b-hairline border-line py-2.5 text-sm last:border-0">
+            <span className="font-medium">{d.day}</span>
+            <span className="text-right text-ink-muted tabular-nums">{d.low}°</span>
+            <span className="relative h-1.5 rounded-full bg-sunken">
+              {/* the gradient as a design tool exports it, pasted into a class */}
+              <span data-range className="absolute inset-y-0 rounded-full bg-[linear-gradient(90deg,#2f6fe4,#f5a524)]" style={{ left: `${d.from * 100}%`, right: `${(1 - d.to) * 100}%` }} />
+            </span>
+            <span className="tabular-nums">{d.high}°</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+Forecast.stage = true;
+Forecast.names = ['sRGB', 'OKLCH'];
+Forecast.lesson = {
+  why: 'sRGB mixes the red, green and blue channels separately, so the path from a blue to an orange runs straight through grey. OKLCH mixes lightness, chroma and hue the way the eye sees them, so the colour stays vivid all the way across.',
+  habit: 'Mix gradients in OKLCH (or OKLab): linear-gradient(in oklch, …), or Tailwind’s /oklch.',
+};
+// What the eye sees on the first bar: how colourful it is along its length, sampled the way the browser mixes it. The
+// hatch is where it drops below half the colour of its ends; the pill is the most colour it loses, in percent.
+const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const toLab = (c) => {
+  const [r, g, b] = c.map(lin), l = Math.cbrt(0.4122 * r + 0.5363 * g + 0.0514 * b), m = Math.cbrt(0.2119 * r + 0.6807 * g + 0.1074 * b), s2 = Math.cbrt(0.0883 * r + 0.2817 * g + 0.6299 * b);
+  return [0.2105 * l + 0.7936 * m - 0.0041 * s2, 1.978 * l - 2.4286 * m + 0.4506 * s2, 0.0259 * l + 0.7828 * m - 0.8087 * s2];
+};
+const chromaOf = (lab) => Math.hypot(lab[1], lab[2]);
+Forecast.measure = (root) => {
+  const bar = root?.querySelector('[data-range]');
+  if (!bar) return null;
+  const r = bar.getBoundingClientRect(), k = r.width / bar.offsetWidth || 1, oklch = /in oklch/.test(getComputedStyle(bar).backgroundImage);
+  const [a, b] = [hex2rgb(COLD), hex2rgb(WARM)], [A, B] = [toLab(a), toLab(b)], ends = Math.min(chromaOf(A), chromaOf(B));
+  const at = (t) => {
+    if (!oklch) return chromaOf(toLab(a.map((x, i) => x + (b[i] - x) * t)));
+    const [ca, cb] = [chromaOf(A), chromaOf(B)];
+    return ca + (cb - ca) * t; // OKLCH keeps chroma on a straight line between the ends
+  };
+  let low = Infinity, dull = null;
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40, c = at(t);
+    low = Math.min(low, c);
+    if (c < ends * 0.5) dull = dull ? { from: dull.from, to: t } : { from: t, to: t };
+  }
+  const loss = Math.max(0, 1 - low / ends), x = (t) => r.left + r.width * t;
+  return {
+    lines: [], off: loss > 0.3,
+    bands: [{ key: 'dull', left: x(dull?.from ?? 0.5), right: x(dull?.to ?? 0.5), top: r.top - 6 * k, bottom: r.bottom + 6 * k, pattern: 'hatch' }],
+    pills: [{ key: 'loss', x: x(0.5), y: r.top - 16 * k, text: String(Math.round(loss * 100) * k), ok: loss <= 0.3 }],
+    cut: { left: r.left - 4 * k, right: r.right + 4 * k, top: r.top - 4 * k, bottom: r.bottom + 4 * k, r: 4 * k },
+    subject: { left: r.left - 30 * k, right: r.right + 30 * k, top: r.top - 60 * k, bottom: r.bottom + 50 * k },
+  };
+};
+
+// #56 eased gradients for scrims. A travel app's destination card: the title sits on the photo over a fade from black
+// to clear, drawn as a straight two-stop gradient. A linear fade stops abruptly, so its top edge shows as a line across
+// the photo. plumber eases it: most of the darkness at the bottom, a long soft tail.
+function Destination() {
+  // Slate's primitives, with dithered icons and a real photo
+  return (
+    <article className="w-full max-w-[24rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <div className="relative aspect-[4/5]">
+        <img src={paperCities} alt="" width="384" height="480" className="absolute inset-0 size-full object-cover" />
+        <div data-scrim className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-5 text-white">
+          <span className="case-forms text-xs font-medium tracking-caps uppercase">Los Angeles · 4 nights</span>
+          <span className="text-[26px] leading-8 font-semibold tracking-[-0.02em] text-balance">Light and stone at the Getty</span>
+          <span className="flex items-center gap-1.5 text-sm"><HeartIcon size={14} texture="dither" />Saved by 1,312 travellers</span>
+        </div>
+      </div>
+    </article>
+  );
+}
+Destination.stage = true;
+Destination.names = ['Linear', 'Eased'];
+Destination.lesson = {
+  why: 'A two-stop fade changes darkness at a constant rate, then stops dead where it ends. The eye catches that sudden stop as an edge, so the photo looks cut by a horizontal line well above the words.',
+  habit: 'Ease a scrim: several stops on a curve, dark near the words and a long soft tail, so its end has no edge.',
+};
+// What the eye sees: where the fade ends (the hatch is its last tenth, where a linear fade still darkens as much as
+// anywhere). The pill is how much darkness that last tenth holds, in hundredths.
+Destination.measure = (root) => {
+  const el = root?.querySelector('[data-scrim]');
+  if (!el) return null;
+  const r = el.getBoundingClientRect(), k = r.width / el.offsetWidth || 1, bg = getComputedStyle(el).backgroundImage;
+  const alphas = [...bg.matchAll(/rgba?\(([^)]+)\)\s*([\d.]+%)?/g)].map((m) => ({ a: parseFloat(m[1].split(/[ ,/]+/).filter(Boolean)[3] ?? 1), at: m[2] ? parseFloat(m[2]) / 100 : null }));
+  alphas.forEach((s, i) => { s.at ??= i / Math.max(1, alphas.length - 1); });
+  const alphaAt = (t) => { for (let i = 1; i < alphas.length; i++) if (t <= alphas[i].at) { const p = alphas[i - 1], q = alphas[i]; return p.a + (q.a - p.a) * ((t - p.at) / (q.at - p.at || 1)); } return alphas.at(-1)?.a ?? 0; };
+  const tail = alphaAt(0.9) - alphaAt(1); // to top: t runs from the bottom (0) to the top (1)
+  const y = (t) => r.bottom - r.height * t;
+  return {
+    lines: [], off: tail > 0.04,
+    rules: [{ key: 'end', y: y(1), left: r.left, right: r.right }],
+    bands: [{ key: 'tail', left: r.left, right: r.right, top: y(1), bottom: y(0.9), pattern: 'hatch' }],
+    pills: [{ key: 'tail', x: r.right - 30 * k, y: y(1) - 12 * k, text: String(Math.round(tail * 100) * k), ok: tail <= 0.04 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    subject: { left: r.left - 10 * k, right: r.right + 10 * k, top: y(1) - 50 * k, bottom: r.bottom },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 55: Forecast, 56: Destination };
 

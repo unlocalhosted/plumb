@@ -345,7 +345,8 @@ export const layeredShadow = {
       ...say(this.id, { blur: b }),
       key: this.id, text, props: ['box-shadow'], value: s.boxShadow, n: b,
       evidence: { blur: b, x: l.x, y: l.y }, confidence: 0.84,
-      suggest: { kind: 'advice', text: `Try: box-shadow: ${stack}` },
+      // four layers whose blur and offset double from one to the next: a contact shadow and a soft, wide one
+      suggest: { kind: 'class', from: cls ?? '', to: arbitrary('shadow', stack), why: 'layered like real light', sets: { boxShadow: stack } },
     }];
   },
 };
@@ -480,6 +481,10 @@ function textNodes(el) {
   for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeType === 3) out.push(n);
   return out;
 }
+// the eased scrim's darkness at thirteen even stops, from the dark end (1) to clear (0)
+const EASED = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 0.008, 0.002, 0];
+// a CSS value as a Tailwind arbitrary class: shadow-[0_1px_2px_rgb(0_0_0/0.1)]
+const arbitrary = (prefix, value) => `${prefix}-[${value.trim().replace(/\s*,\s*/g, ',').replace(/\s+/g, '_')}]`;
 let textCtx;
 const words = (el) => textNodes(el).map((n) => n.nodeValue).join('').replace(/\s+/g, ' ').trim();
 const alpha = (c) => c?.[3] ?? 0;
@@ -797,7 +802,21 @@ export const contrast = {
     const T = theme.spec(this.id);
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
-    for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const ns = facts.style(n); if (ns.backgroundImage !== 'none') return []; if (alpha(rgb(ns.backgroundColor)) > 0.5) break; }
+    // words on a picture: a background image on the way up, or a photo laid under them (an <img> the words sit over, as
+    // on a card with a scrim). What the eye reads them against isn't a colour plumber knows, so it says nothing. A picture
+    // counts when it is drawn, visible, and covers most of the words' box
+    const box = el.getBoundingClientRect(), under = (m) => {
+      const q = m.getBoundingClientRect(), ms = getComputedStyle(m);
+      if (q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none') return false;
+      const w = Math.min(q.right, box.right) - Math.max(q.left, box.left), h = Math.min(q.bottom, box.bottom) - Math.max(q.top, box.top);
+      return w > 0 && h > 0 && w * h >= box.width * box.height * 0.5;
+    };
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const ns = facts.style(n);
+      if (ns.backgroundImage !== 'none') return [];
+      if (n !== el && [...n.querySelectorAll('img, video, picture, canvas')].some((m) => !el.contains(m) && under(m))) return [];
+      if (alpha(rgb(ns.backgroundColor)) > 0.5) break;
+    }
     const ground = facts.ground(el), c = rgb(s.color);
     if (!c) return [];
     // the text as it shows: its own alpha and every fade on the way up
@@ -1017,6 +1036,9 @@ export const capsCase = {
   },
 };
 
+// a computed linear or radial gradient, mixed in OKLCH: "linear-gradient(90deg, …)" becomes "linear-gradient(90deg in oklch, …)"
+const inOklch = (bg) => bg.replace(/(linear|radial|conic)-gradient\(([^,(]*(?:\([^)]*\))?[^,]*?),/, (m, kind, first) =>
+  /^\s*(?:to\s|-?[\d.]+(?:deg|turn|rad)|circle|ellipse|at\s)/.test(first) ? `${kind}-gradient(${first} in oklch,` : `${kind}-gradient(in oklch, ${first},`);
 // The colour stops of a computed gradient, as rgb arrays.
 const stops = (bg) => [...bg.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0])).filter(Boolean);
 function hsl([r, g, b]) {
@@ -1030,7 +1052,9 @@ function hsl([r, g, b]) {
 
 // #55. Interpolate gradients in OKLCH/OKLab: sRGB goes grey between saturated colours.
 export const gradientSpace = {
-  id: 'craft/gradient-space', family: 'craft', number: [55], owns: ['background'], once: 'ancestor', reads: ['style'],
+  // owns how a gradient mixes, not which colours it uses: a token (the theme's answer to "which colours") never settles
+  // it, so it stands beside a drift mark on the same background instead of folding under it
+  id: 'craft/gradient-space', family: 'craft', number: [55], owns: ['interpolation'], once: 'ancestor', reads: ['style'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const bg = facts.style(el).backgroundImage;
@@ -1047,7 +1071,9 @@ export const gradientSpace = {
       ...say(this.id, {}),
       key: this.id, text: cls ?? 'background-image', props: ['background-image'], value: 'srgb', n: dh,
       evidence: { from: hex(stops(bg)[0]), to: hex(stops(bg).at(-1)), hue: Math.round(dh) }, confidence: 0.84,
-      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'mixed in OKLCH' } : { kind: 'advice', text: 'Mix it in OKLCH: linear-gradient(in oklch to right, …).' },
+      // the same gradient, mixed in OKLCH: a Tailwind gradient class takes /oklch; a written one gets the words added
+      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'mixed in OKLCH', sets: { backgroundImage: inOklch(bg) } }
+        : { kind: 'class', from: '', to: arbitrary('bg', inOklch(bg)), why: 'mixed in OKLCH', sets: { backgroundImage: inOklch(bg) } },
     }];
   },
 };
@@ -1243,14 +1269,17 @@ export const tintedShadow = {
       ...say(this.id, { ground: hex(ground) }),
       key: this.id, text: utility(el, 'shadow') ?? 'box-shadow', props: ['box-shadow'], value: s.boxShadow, n: a,
       evidence: { ground: hex(ground), hue: h }, confidence: grey ? GREY : 0.82,
-      suggest: { kind: 'advice', text: `Tint the shadow: oklch(0.3 0.05 ${h} / ${a.toFixed(2)}) in place of its grey.` },
+      // the same shadow, its grey swapped for a dark tint of the ground's own hue
+      suggest: ((v) => ({ kind: 'class', from: utility(el, 'shadow') ?? '', to: arbitrary('shadow', v), why: 'tinted with what it falls on', sets: { boxShadow: v } }))(
+        s.boxShadow.replace(new RegExp(COLOUR.source, 'g'), (c) => { const x = rgb(c); return x && x[3] > 0 && chroma(x) < T.shadow ? `oklch(0.3 0.05 ${h} / ${x[3].toFixed(2)})` : c; })),
     }];
   },
 };
 
 // #56. A two-stop scrim over an image: ease it.
 export const easedScrim = {
-  id: 'craft/eased-scrim', family: 'craft', number: [56], owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  // owns the curve of the fade, not its colour (see gradient-space): it stands beside a drift mark on the same background
+  id: 'craft/eased-scrim', family: 'craft', number: [56], owns: ['interpolation'], once: 'ancestor', reads: ['style', 'rect'],
   judge: true,
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
@@ -1270,12 +1299,15 @@ export const easedScrim = {
       return w * h >= r.width * r.height * 0.5;
     });
     if (!media) return [];
-    const c = `rgb(${dark.slice(0, 3).join('_')}`;
+    const c = `rgb(${dark.slice(0, 3).join(' ')}`; // real CSS: arbitrary() turns it into a class
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'background-image', props: ['background-image'], value: 'linear', n: 2,
       evidence: { dark: hex(dark) }, confidence: grey ? GREY : 0.83,
-      suggest: { kind: 'advice', text: `Ease it: bg-[linear-gradient(to_top,${c}/${dark[3]})_0%,${c}/${(dark[3] * 0.6).toFixed(2)})_30%,${c}/${(dark[3] * 0.25).toFixed(2)})_60%,transparent_100%)].` },
+      // the same fade on an eased curve (the scrim gradient: thirteen stops whose darkness drops fast, then flattens to
+      // nothing), so its end has no edge for the eye to catch
+      suggest: ((v) => ({ kind: 'class', from: '', to: arbitrary('bg', v), why: 'an eased fade, no edge', sets: { backgroundImage: v } }))(
+        `linear-gradient(to top, ${EASED.map((k, i) => `${c} / ${(dark[3] * k).toFixed(3)}) ${Math.round((i / (EASED.length - 1)) * 1000) / 10}%`).join(', ')})`),
     }];
   },
 };
