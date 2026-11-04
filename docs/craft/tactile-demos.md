@@ -206,13 +206,17 @@ The owner asked for the next four as real rule screens, not sketches. They're co
 `overlay/showcase/src/principles/hands-on.jsx` (`HANDS_ON`). Each takes `side` ('broken' | 'fixed', as the probe
 stage's examples do), draws plumber's marks live in a shadow root with plumber's tokens (plumber's scan of
 `[data-example]` never reads them), and says what just happened through `onStatus`. `/hands-on/:n` shows one alone with
-its switch; wiring them into `/rule/:n` is the probe stage's to do.
+its switch. They're wired into `/rule/:n` now (Principle.jsx picks `HANDS_ON[n]` over a staged example), and the builder
+route is gone.
 
 | № | Screen | Switch | Marks (only the number the rule measures) | plumber's proof |
 | --- | --- | --- | --- | --- |
 | 42 | A project's tabs, Spring launch | Bold on hover / Darker on hover | resting edges, the hatch the tabs slid across, the tab that grew, "+1.8px · 3 slid" | in-page scan: exactly `craft/bold-hover` on broken, nothing on fixed |
 | 61 | A shared folder's View menu | Opens on click / Opens on press | where you pressed; the ruler from press to open ("13ms · on release" / "0ms · on the press"); a missed release's dashed ghost | probe only (`menuDown`); its drag-release half isn't probed, so it gets words, no mark |
 | 77 | Quarry's activity feed, Refresh | A generic skeleton / The rows' own shape | the skeleton's box (read while the reply is held), the growth hatched, "+72px · 3 → 3 rows", the link's old place with your pointer | held-reply pair only (`skeletonMatch`) |
+| 60 | A writing app's formatting toolbar | At once / Warm-up | the wait filling under the button, a dashed ghost where a tooltip only flashed (under 250ms), one tag with the last wait ("1ms · no warm-up" / "2ms · warm ✓") | probe only (`tooltips`) |
+| 64 | A shared folder's Details panel | Keyframes / Transition | the edge where you changed your mind, the hatched snap, the openness over time as a trace (a snap is a cliff), "jumped 46% → 100%" / "turned back at 46% ✓"; ¼ speed by default | probe only (`toggle`) |
+| 65 | A maps app's place sheet | Clamped / Rubber-band | the limit, where you pressed, a coral wall where the hand went and the sheet didn't, or a mint bracket for what it gave ("gave 39 of 90px") | probe only (`drag`, opt-in) |
 | 66 | A bank feed's Sync now | Spinner at once / After 200ms, for 500ms | the reply and the spinner on two lanes of the ruler, the rule's 200ms line, "flashed 129ms" / "no spinner · 124ms ✓" | probe and held pair only (`spinnerTiming`) |
 
 Real requests only: #77 and #66 call the showcase's own `/api`; a held reply is held on the client and says so ("reply
