@@ -1,0 +1,127 @@
+/* Section 2's three comps, in the signed-off foundations (foundations.css). Only the foundations' tokens: grounds,
+ * inks, one accent, three signals, the type scale, the surface. */
+body { margin: 0; }
+.bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 14px 32px;
+  background: color-mix(in oklab, var(--g0) 80%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); font: var(--t-label); color: var(--ink-2); }
+.bar button { padding: 6px 10px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--g2); color: var(--ink-1); font: var(--t-label); cursor: pointer; }
+.comp-name { max-width: 72rem; margin: var(--s-9) auto 0; padding: 0 var(--s-6) var(--s-4); font: var(--t-label); color: var(--ink-3); border-bottom: 1px dashed var(--line-2); }
+.comp-name b { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 10px; border-radius: var(--r-xs); background: var(--g2); color: var(--ink-1); }
+.comp { max-width: 72rem; margin: 0 auto; padding: var(--s-9) var(--s-6) var(--s-8); }
+
+/* the section's head */
+.sec-head { max-width: 38rem; }
+.sec-head .eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
+.sec-head .title { margin-bottom: var(--s-4); }
+.sec-head-center { margin: 0 auto; text-align: center; }
+.sec-head-center .lead { margin: 0 auto; }
+
+/* ── the real app: a team's Members settings ── */
+.win { min-width: 0; border-right: 1px solid var(--line); }
+.win-bar { position: relative; display: flex; gap: 6px; align-items: center; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--line); }
+.win-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--g3); }
+.win-bar span { position: absolute; left: 50%; translate: -50% 0; padding: 4px 10px; border-radius: var(--r-xs); background: var(--g2); font: 400 12px/1 var(--mono); color: var(--ink-3); }
+.win-body { display: grid; grid-template-columns: 11rem 1fr; min-height: 420px; }
+.side { display: grid; align-content: start; gap: 2px; padding: 16px 10px; border-right: 1px solid var(--line); }
+.side small { padding: 0 10px 8px; font: var(--t-label); color: var(--ink-3); }
+.side a { padding: 7px 10px; border-radius: var(--r-xs); font: var(--t-small); font-size: 13px; color: var(--ink-2); }
+.side a.on { background: var(--g2); color: var(--ink-1); }
+.page { padding: 36px 40px; background: var(--g0); }
+
+.card { border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); padding: 16px; }
+.card-head { margin-bottom: 16px; }
+.card-head h3 { margin: 0; font: 590 16px/22px var(--font); letter-spacing: -0.012em; }
+.card-head p { margin: 2px 0 0; font: 400 13px/18px var(--font); color: var(--ink-2); }
+.invite { display: flex; gap: 8px; margin-bottom: 24px; }
+.field { flex: 1; display: flex; align-items: center; height: 34px; padding: 0 12px; border-radius: var(--r-sm); background: var(--g2); box-shadow: inset 0 0 0 1px var(--line); font: 400 13px/1 var(--font); color: var(--ink-3); }
+.btn-sm { height: 34px; font-size: 13px; }
+.people { margin: 0; padding: 0; list-style: none; }
+.people li { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.av { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; font: 590 12px/1 var(--font); font-style: normal;
+  color: oklch(0.86 0.06 var(--h)); background: oklch(0.36 0.07 var(--h)); }
+:root[data-scheme='light'] .av { color: oklch(0.42 0.1 var(--h)); background: oklch(0.92 0.04 var(--h)); }
+.who { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.who b { font: 510 13px/16px var(--font); }
+.who small { font: 400 12px/14px var(--font); color: var(--ink-3); }
+.role { padding: 4px 8px; border-radius: var(--r-xs); background: var(--g2); font: 400 12px/1 var(--font); color: var(--ink-2); }
+.seen { width: 4.5rem; text-align: right; font: 400 12px/1 var(--font); color: var(--ink-3); }
+
+/* marks drawn from the layout (connect.js) */
+[data-connect] { position: relative; }
+svg.marks { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.band { fill: rgb(from var(--ink-3) r g b / 0.16); }
+.band-on { fill: rgb(from var(--on) r g b / 0.1); }
+.band-edge { fill: none; stroke: rgb(from var(--on) r g b / 0.55); stroke-width: 1; stroke-dasharray: 2 3; }
+.ghost { fill: none; stroke: var(--off); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.7; }
+.tag-on text { font: 500 12px/1 var(--mono); fill: var(--on); }
+.link { fill: none; stroke: var(--ink-3); stroke-width: 1; opacity: 0.6; }
+.link.link-on { stroke: var(--on); opacity: 1; }
+.link-dot { fill: var(--g0); stroke: var(--ink-3); stroke-width: 1; }
+.link-dot.link-on { stroke: var(--on); fill: var(--on); }
+
+/* ── A · in place ── */
+.a-frame { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; margin-top: var(--s-8); overflow: visible; }
+.a-frame .win { border-radius: var(--r-lg) 0 0 var(--r-lg); overflow: hidden; }
+.a-side { display: grid; align-content: start; }
+.a-side .code { border-bottom: 1px solid var(--line); }
+.a-side .code li { grid-template-columns: 36px 16px 1fr; }
+.why { padding: 18px 16px; }
+.why dl { display: grid; gap: 10px; margin: 14px 0 0; }
+.why dl div { display: flex; justify-content: space-between; font: var(--t-small); font-size: 13px; }
+.why dt { color: var(--ink-3); }
+.why dd { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+.why dd s { color: var(--ink-3); text-decoration-color: var(--off); }
+.why dd.on { color: var(--on); }
+.a-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); margin: var(--s-7) 0 0; padding: 0; list-style: none; }
+.a-points li { display: grid; gap: 6px; padding-top: var(--s-4); border-top: 1px solid var(--line); }
+.a-points svg { width: 20px; height: 20px; margin-bottom: 6px; fill: none; stroke: var(--ink-2); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.a-points b { font: var(--t-label); font-size: 14px; color: var(--ink-1); }
+.a-points span { font: var(--t-small); color: var(--ink-2); }
+
+/* ── B · mapped ── */
+.b-board { display: grid; grid-template-columns: 28rem minmax(0, 30rem); justify-content: space-between; align-items: center; margin-top: var(--s-8); padding: var(--s-6) 0; }
+.b-theme { position: relative; z-index: 1; }
+.b-theme li[data-from] { transition: background-color 200ms var(--ease); }
+.b-card { position: relative; z-index: 1; padding: 16px; }
+.b-body { display: grid; gap: 24px; }
+.b-body .invite { margin-bottom: 0; }
+.b-foot { display: flex; gap: 12px; align-items: center; justify-content: center; margin: var(--s-6) 0 0; }
+
+/* ── C · its job ── */
+.c-grid { display: grid; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); gap: var(--s-8); align-items: center; }
+.c-code { margin-top: var(--s-6); }
+.c-code li { grid-template-columns: 36px 16px 1fr; }
+.c-art { margin: 0; padding: var(--s-5) var(--s-5) var(--s-4); }
+.c-scale { display: block; width: 100%; height: auto; overflow: visible; }
+.c-axis { stroke: var(--line-2); stroke-width: 1; }
+.c-step line { stroke: var(--ink-3); stroke-width: 1.5; stroke-linecap: round; }
+.c-step text { font: 500 12px/1 var(--mono); fill: var(--ink-2); text-anchor: middle; }
+.c-step .c-name { font: 510 12px/1 var(--font); fill: var(--ink-3); }
+.c-why { font: 400 11px/1 var(--font); fill: var(--ink-3); text-anchor: middle; }
+.c-step-on line { stroke: var(--on); stroke-width: 2; }
+.c-step-on text, .c-step-on .c-name { fill: var(--on); }
+.c-step-near text { fill: var(--ink-3); }
+.c-step-near line { stroke-dasharray: 2 3; }
+.c-written circle { fill: var(--off); stroke: var(--g1); stroke-width: 3; }
+.c-written text { font: 500 13px/1 var(--mono); fill: var(--off); text-anchor: middle; }
+.c-written .c-why { font: 400 11px/1 var(--font); fill: var(--ink-3); }
+.c-near { fill: none; stroke: var(--ink-3); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.c-take { fill: none; stroke: var(--on); stroke-width: 1.6; }
+.c-tag { font: 510 11px/1 var(--font); text-anchor: middle; letter-spacing: 0.02em; }
+.c-tag-near { fill: var(--ink-3); text-decoration: line-through; }
+.c-tag-on { fill: var(--on); }
+.c-art figcaption { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: var(--s-4); border-top: 1px solid var(--line); }
+.c-arrow { width: 16px; height: 16px; fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.c-art figcaption .small { margin-left: auto; font-size: 13px; }
+
+@media (max-width: 64rem) {
+  .a-frame, .b-board, .c-grid { grid-template-columns: 1fr; }
+  .a-frame .win { border-radius: var(--r-lg) var(--r-lg) 0 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .b-board { gap: var(--s-7); }
+  .a-points { grid-template-columns: 1fr; }
+}
+@media (max-width: 40rem) {
+  .win-body { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .page { padding: 20px 16px; }
+  .seen { display: none; }
+}

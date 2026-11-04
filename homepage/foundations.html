@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Homepage foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<style>
+body { margin: 0; }
+main { max-width: 72rem; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-10); }
+/* the sheet's own chrome */
+.bar { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: color-mix(in oklab, var(--g0) 80%, transparent);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); font: var(--t-label); color: var(--ink-2); }
+.bar button { padding: 6px 10px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--g2); color: var(--ink-1); font: var(--t-label); cursor: pointer; }
+.part { padding-top: var(--s-9); }
+.part > header { display: grid; grid-template-columns: 10rem 1fr; gap: var(--s-6); margin-bottom: var(--s-7); padding-bottom: var(--s-5); border-bottom: 1px solid var(--line); }
+.part > header span { font: var(--t-label); color: var(--ink-3); font-family: var(--mono); }
+.part > header p { margin: 0; max-width: 40rem; font: var(--t-small); color: var(--ink-2); }
+.part > header b { color: var(--ink-1); font-weight: 510; }
+.scale { display: grid; gap: var(--s-6); }
+.scale > div { display: grid; grid-template-columns: 10rem 1fr; gap: var(--s-6); align-items: baseline; }
+.scale code { font: 400 12px/1.5 var(--mono); color: var(--ink-3); }
+.scale code b { display: block; color: var(--ink-2); font-weight: 500; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: var(--s-4); }
+.sw { border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); overflow: hidden; }
+.sw i { display: block; height: 72px; border-bottom: 1px solid var(--line); }
+.sw div { padding: 10px 12px 12px; }
+.sw b { display: block; font: var(--t-label); }
+.sw small { font: 400 12px/1.4 var(--mono); color: var(--ink-3); }
+.sw p { margin: 4px 0 0; font: 400 12px/1.4 var(--font); color: var(--ink-2); }
+.group-name { margin: var(--s-6) 0 var(--s-3); font: var(--t-label); color: var(--ink-3); }
+/* surfaces */
+.surfaces { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); }
+.surfaces .surface { padding: var(--s-5); min-height: 160px; display: grid; align-content: end; gap: 4px; }
+.surfaces .surface:nth-child(2) { background: var(--g2); border-radius: var(--r-md); }
+.surfaces .surface:nth-child(3) { background: var(--g0); box-shadow: none; border-style: dashed; }
+/* all together: one section, set in these foundations */
+.together { display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--s-8); align-items: center; }
+.together .eyebrow { display: inline-flex; gap: 8px; align-items: center; font: var(--t-label); color: var(--accent-ink); margin-bottom: var(--s-4); }
+.together .title { margin-bottom: var(--s-4); }
+.together .surface { overflow: hidden; }
+@media (max-width: 52rem) {
+  .surfaces, .together { grid-template-columns: 1fr; }
+  .part > header, .scale > div { grid-template-columns: 1fr; gap: var(--s-2); }
+}
+</style>
+</head>
+<body>
+<div class="bar"><span>React Plumber · homepage foundations · proposal</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'">Light / dark</button></div>
+<main>
+
+  <section class="part" style="padding-top:0">
+    <h1 class="display">Click a pixel.<br />Plumber edits the file.</h1>
+    <p class="lead" style="margin-top:24px">It reads your Tailwind theme, marks what’s off on the running page, and writes the fix into your JSX.</p>
+    <p style="display:flex;gap:10px;margin-top:32px"><button class="btn btn-primary" type="button">Install</button><button class="btn btn-ghost" type="button">Read the docs</button></p>
+  </section>
+
+  <section class="part">
+    <header><span>01 · type</span><p><b>Inter, one family, optical sizes.</b> Display sizes are set tight, and the tracking tightens as the size grows. Weight carries hierarchy only at 400, 510 and 590. The display line fades slightly toward its bottom, the way light falls on a printed title. Code is <b>Geist Mono</b>.</p></header>
+    <div class="scale">
+      <div><code><b>display</b>72 / 1.02 · 590 · −4%</code><p class="display" style="font-size:56px">Fixes in your words.</p></div>
+      <div><code><b>title</b>48 / 1.06 · 590 · −3.2%</code><p class="title">Every fix uses your theme.</p></div>
+      <div><code><b>heading</b>24 / 1.25 · 590 · −1.8%</code><p class="heading">Spacing, picked by what it does</p></div>
+      <div><code><b>lead</b>20 / 1.5 · 400 · −1.1%</code><p class="lead">Plumber reads the steps your theme names and why each exists. <b>Each space gets the step its job calls for.</b></p></div>
+      <div><code><b>body</b>16 / 1.6 · 400</code><p style="margin:0;max-width:36rem">Card padding written as 21px is nearer to 24 than to 16. Plumber still picks 16, because the theme says card padding is 16.</p></div>
+      <div><code><b>small</b>14 / 1.5 · 400</code><p class="small">Works with Tailwind 3 and 4, Vite and Next.js.</p></div>
+      <div><code><b>label</b>13 / 1.3 · 510</code><span class="label">Members.jsx · 5 changes</span></div>
+      <div><code><b>code</b>Geist Mono 13 / 20</code><span class="code">&lt;section className="p-card"&gt;</span></div>
+    </div>
+  </section>
+
+  <section class="part">
+    <header><span>02 · colour</span><p><b>Neutrals do almost all the work.</b> Four ground levels and three ink levels. <b>One accent</b>, only for what you can do. <b>Three signals</b> that are the product’s meaning: off, on and measured. They’re used small and never as decoration.</p></header>
+    <p class="group-name">Ground</p>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--g0)"></i><div><b>ground 0</b><small>page</small><p>The page itself.</p></div></div>
+      <div class="sw"><i style="background:var(--g1)"></i><div><b>ground 1</b><small>surface</small><p>Cards and product frames.</p></div></div>
+      <div class="sw"><i style="background:var(--g2)"></i><div><b>ground 2</b><small>raised</small><p>Inside a surface: a row, a field.</p></div></div>
+      <div class="sw"><i style="background:var(--g3)"></i><div><b>ground 3</b><small>hover</small><p>Hover and pressed.</p></div></div>
+    </div>
+    <p class="group-name">Ink</p>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--ink-1)"></i><div><b>ink 1</b><small>primary</small><p>Titles, readings.</p></div></div>
+      <div class="sw"><i style="background:var(--ink-2)"></i><div><b>ink 2</b><small>secondary</small><p>Leads, descriptions.</p></div></div>
+      <div class="sw"><i style="background:var(--ink-3)"></i><div><b>ink 3</b><small>tertiary</small><p>Meta, line numbers.</p></div></div>
+      <div class="sw"><i style="background:var(--line-2)"></i><div><b>line</b><small>7% · 12%</small><p>Borders, dividers.</p></div></div>
+    </div>
+    <p class="group-name">Accent and signals</p>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--accent)"></i><div><b>accent · iris</b><small>action</small><p>What you can do. Nothing else.</p></div></div>
+      <div class="sw"><i style="background:var(--off)"></i><div><b>off</b><small>signal</small><p>Not on your system.</p></div></div>
+      <div class="sw"><i style="background:var(--on)"></i><div><b>on</b><small>signal</small><p>On your system, written.</p></div></div>
+      <div class="sw"><i style="background:var(--measured)"></i><div><b>measured</b><small>signal</small><p>Selected, measured.</p></div></div>
+    </div>
+    <p style="display:flex;flex-wrap:wrap;gap:8px;margin-top:24px"><span class="chip chip-off"><i></i>p-[21px]</span><span class="chip chip-on"><i></i>p-card</span><span class="chip chip-m"><i></i>16 × 40</span><button class="btn btn-accent" type="button" style="height:24px;font-size:12px;padding:0 10px">Apply</button></p>
+  </section>
+
+  <section class="part">
+    <header><span>03 · surface</span><p><b>Depth from light, not outlines.</b> A 1px border at 7%, a lip of light along the top edge and a soft drop far below. Radius grows with size: 6, 8, 12, 16, 24. No ink outlines and no offset shadows.</p></header>
+    <div class="surfaces">
+      <div class="surface"><b class="label" style="color:var(--ink-1)">Surface</b><span class="small">ground 1 · radius 16 · lip + drop</span></div>
+      <div class="surface"><b class="label" style="color:var(--ink-1)">Raised</b><span class="small">ground 2 · radius 12</span></div>
+      <div class="surface"><b class="label" style="color:var(--ink-1)">Well</b><span class="small">ground 0 · dashed · an empty place</span></div>
+    </div>
+  </section>
+
+  <section class="part">
+    <header><span>04 · code</span><p><b>Code reads as texture until a line lights up.</b> Tokens use muted hues at one lightness, so no single one shouts. A diff line gets a faint wash in its signal, and only the changed value is marked.</p></header>
+    <div class="surface code">
+      <header><span>Members.jsx</span><span>2 changes</span></header>
+      <ol>
+        <li><span class="sign"> </span><span><span class="p">&lt;</span><span class="t">section</span> <span class="a">aria-label</span><span class="p">=</span><span class="s">"Members"</span></span></li>
+        <li data-d="-"><span class="sign">−</span><span>  <span class="a">className</span><span class="p">=</span><span class="s">"rounded-2xl bg-surface <mark>p-[21px]</mark>"</span><span class="p">&gt;</span></span></li>
+        <li data-d="+"><span class="sign">+</span><span>  <span class="a">className</span><span class="p">=</span><span class="s">"rounded-2xl bg-surface <mark>p-card</mark>"</span><span class="p">&gt;</span></span></li>
+        <li><span class="sign"> </span><span>  <span class="p">&lt;</span><span class="t">Header</span> <span class="a">title</span><span class="p">=</span><span class="s">"Members"</span> <span class="p">/&gt;</span></span></li>
+        <li data-d="-"><span class="sign">−</span><span>  <span class="p">&lt;</span><span class="t">div</span> <span class="a">className</span><span class="p">=</span><span class="s">"grid <mark>gap-[13px]</mark>"</span><span class="p">&gt;</span></span></li>
+        <li data-d="+"><span class="sign">+</span><span>  <span class="p">&lt;</span><span class="t">div</span> <span class="a">className</span><span class="p">=</span><span class="s">"grid <mark>gap-stack</mark>"</span><span class="p">&gt;</span></span></li>
+        <li><span class="sign"> </span><span>    <span class="p">&lt;</span><span class="t">InviteForm</span> <span class="p">/&gt;</span></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="part">
+    <header><span>05 · together</span><p><b>One section header and one product frame in these foundations</b>, only so the parts can be judged together. This is not a comp for section 2. The comps come after this sheet is signed off.</p></header>
+    <div class="together">
+      <div>
+        <span class="eyebrow">Theme-aware</span>
+        <h2 class="title">Every fix uses your theme.</h2>
+        <p class="lead">Plumber reads the steps your Tailwind theme names. <b>Each space gets the one its job calls for</b>, never a new number.</p>
+      </div>
+      <div class="surface code">
+        <header><span>app.css</span><span>@theme</span></header>
+        <ol style="counter-reset: ln 3">
+          <li><span class="sign"> </span><span>  <span class="a">--spacing-tight</span><span class="p">:</span> <span class="s">4px</span><span class="p">;</span>    <span class="p">/* inside a group */</span></span></li>
+          <li><span class="sign"> </span><span>  <span class="a">--spacing-related</span><span class="p">:</span> <span class="s">8px</span><span class="p">;</span>  <span class="p">/* related parts */</span></span></li>
+          <li><span class="sign"> </span><span>  <span class="a">--spacing-control</span><span class="p">:</span> <span class="s">12px</span><span class="p">;</span> <span class="p">/* a control’s padding */</span></span></li>
+          <li data-d="+"><span class="sign">›</span><span>  <span class="a">--spacing-card</span><span class="p">:</span> <span class="s"><mark>16px</mark></span><span class="p">;</span>    <span class="p">/* card padding */</span></span></li>
+          <li><span class="sign"> </span><span>  <span class="a">--spacing-stack</span><span class="p">:</span> <span class="s">24px</span><span class="p">;</span>   <span class="p">/* between groups */</span></span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
