@@ -1,6 +1,6 @@
 // Icon side (#10) where the showcase's music shelf (#8) found it overreaching: a media tile, a button whose cover art
 // sits above its title, is not an icon beside words, so its even padding is not marked. A small icon beside the words
-// of an evenly padded button still is. Real CLI, real Vite, real Chromium.
+// of an evenly padded button that hugs them still is (a stretched row is not: craft-menu-shadow). Real CLI, real Vite, real Chromium.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { at, built, fixture, hasLine, lineOf, plumber } from './helpers/craft-headless.mjs';
@@ -12,7 +12,7 @@ const APP = `export function App() {
         <svg viewBox="0 0 120 120" className="block aspect-square w-full" aria-hidden="true"><rect width="120" height="120" fill="currentColor" /></svg>
         <span>Low Tide</span>
       </button>
-      <button id="icon-row" type="button" className="flex items-center gap-s2 rounded-control bg-ground px-s3 py-s2">
+      <button id="icon-row" type="button" className="flex items-center gap-s2 self-start rounded-control bg-ground px-s3 py-s2">
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" /></svg>
         <span>New playlist</span>
       </button>

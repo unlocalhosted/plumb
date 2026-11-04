@@ -46,7 +46,8 @@
   --color-ink: #12233d;
   --color-ink-muted: #5a6779;
   --color-ink-subtle: #6f7c90;   /* the third grey: still 4.5:1 on a surface */
-  --color-line: rgb(18 35 61 / 0.11);   /* Slate's hairline, translucent so it blends with any surface it sits on */
+  --color-line: rgb(18 35 61 / 0.11);
+  --color-divider: #e2e7ee;      /* opaque, for dividers on flat surfaces (like shadcn's --border); never on raised ones */   /* Slate's hairline, translucent so it blends with any surface it sits on */
   --color-accent: #5550d8;       /* the one brand colour: actions, the running thing, a client's mark */
   --color-accent-ink: #ffffff;   /* words on the brand */
   --color-accent-deep: #3631a6;  /* the brand as words and marks on its soft tint */
@@ -84,6 +85,7 @@
   --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
   /* a window resting on the board: the top of the ladder, softest and widest */
   --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
+  --shadow-dialog: 0 25px 50px -12px rgb(18 35 61 / 0.25);   /* one blur, the way most themes write it */
   --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14);
 
   /* motion: one ease out, to arrive and (quicker) to leave */

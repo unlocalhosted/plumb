@@ -3,10 +3,13 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
 import afterglow from '../media/afterglow.jpg';
+import lake from '../media/lake.jpg';
+import valley from '../media/valley.jpg';
+import peak from '../media/peak.jpg';
 
 // one canvas for reading font metrics, shared by the measures below
 let ctx;
@@ -1031,5 +1034,108 @@ Destination.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 55: Forecast, 56: Destination };
+// A photo library's grid, shared by the depth screens: real photos, a day's heading, a selection count
+const LIBRARY = [lowTide, lake, paperCities, valley, afterglow, peak];
+function PhotoGrid({ selected = [] }) {
+  return (
+    <div className="grid grid-cols-3 gap-1 p-1">
+      {LIBRARY.map((src, i) => (
+        <span key={src} className="relative aspect-square overflow-hidden">
+          <img src={src} alt="" width="160" height="160" className="size-full object-cover" />
+          {selected.includes(i) ? <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-accent text-[11px] text-accent-ink ring-2 ring-white">✓</span> : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// #23 translucent borders on elevated surfaces. A photo library's Share menu, open over the grid, built the usual way:
+// a 1px gray-200 border and a large shadow. Over dark photos, an opaque light-grey line glows like a frame around the
+// menu. A 10% black border takes on whatever is behind it, and sinks into the shadow. plumber makes it see-through.
+function ShareMenu() {
+  // Slate's primitives, with dithered icons and real photos
+  const items = [[CopyIcon, 'Copy link'], [DownloadIcon, 'Download 3 photos'], [FolderIcon, 'Add to album'], [ExternalLinkIcon, 'Open in editor']];
+  return (
+    <article className="relative w-full max-w-[26rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-4 pt-3 pb-2">
+        <span className="text-[15px] font-medium">Sunday, 2 November</span>
+        <span className="text-[13px] text-ink-muted">3 selected</span>
+      </header>
+      <PhotoGrid selected={[0, 2, 4]} />
+      <div data-menu role="menu" className="absolute top-24 right-6 flex w-52 flex-col rounded-control border border-divider bg-white p-1 shadow-lg">
+        {items.map(([Icon, label]) => (
+          <button key={label} type="button" role="menuitem" className="flex h-9 items-center gap-2.5 rounded-chip px-2.5 text-left text-sm hover:bg-sunken"><Icon size={16} texture="dither" className="text-ink-muted" />{label}</button>
+        ))}
+      </div>
+    </article>
+  );
+}
+ShareMenu.stage = true;
+ShareMenu.names = ['Solid border', 'See-through border'];
+ShareMenu.lesson = {
+  why: 'A solid light-grey border is one fixed colour. Over a white page it’s a quiet edge; over dark photos it’s brighter than everything around it, so the menu wears a glowing frame. A see-through border darkens with whatever is behind it and sinks into the shadow.',
+  habit: 'Elevated surfaces (menus, popovers, dialogs) get a border of black or white at about 10%, never an opaque grey.',
+};
+// What the eye sees: the menu's edge against the photo behind it, traced along all four sides. The pill is the
+// border's opacity, in percent.
+ShareMenu.measure = (root) => {
+  const m = root?.querySelector('[data-menu]');
+  if (!m) return null;
+  const r = m.getBoundingClientRect(), k = r.width / m.offsetWidth || 1, a = (getComputedStyle(m).borderTopColor.match(/[\d.]+(?=\)$)/) && /rgba|\//.test(getComputedStyle(m).borderTopColor)) ? parseFloat(getComputedStyle(m).borderTopColor.match(/[\d.]+(?=\)$)/)[0]) : 1;
+  return {
+    lines: [{ key: 'l', x: r.left, top: r.top, bottom: r.bottom }, { key: 'r', x: r.right, top: r.top, bottom: r.bottom }],
+    rules: [{ key: 't', y: r.top, left: r.left, right: r.right }, { key: 'b', y: r.bottom, left: r.left, right: r.right }],
+    bands: [], off: a > 0.3,
+    pills: [{ key: 'a', x: r.left - 22 * k, y: r.top + 16 * k, text: String(Math.round(a * 100) * k), ok: a <= 0.3 }],
+    cut: { left: r.left - 30 * k, right: r.right + 30 * k, top: r.top - 30 * k, bottom: r.bottom + 30 * k, r: 8 * k },
+    subject: { left: r.left - 70 * k, right: r.right + 30 * k, top: r.top - 40 * k, bottom: r.top + 120 * k },
+  };
+};
+
+// #51 layered shadows. The same library's Delete dialog, lifted with Tailwind's shadow-2xl: one large soft layer. Real
+// light gives a tight, dark shadow where a thing nearly touches and a wide, faint one around it; one big blur gives
+// neither, so the dialog floats in a fog with nothing under its edge. plumber stacks four layers.
+function DeleteDialog() {
+  // Slate's primitives, with dithered icons and real photos
+  return (
+    <article className="relative w-full max-w-[26rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <PhotoGrid selected={[1, 3, 5]} />
+      <div className="absolute inset-0 bg-ink/35" />
+      <div data-dialog role="alertdialog" aria-label="Delete 3 photos?" className="absolute inset-x-8 top-1/2 flex -translate-y-1/2 flex-col gap-3 rounded-sheet bg-surface p-5 shadow-dialog">
+        <span className="grid size-9 place-items-center rounded-full bg-negative-soft text-negative"><TrashIcon size={18} texture="dither" /></span>
+        <span className="flex flex-col gap-1">
+          <span className="text-[15px] font-medium">Delete 3 photos?</span>
+          <span className="text-[13px] text-ink-muted text-pretty">They’ll stay in Recently deleted for 30 days, then go for good.</span>
+        </span>
+        <span className="flex justify-end gap-2 pt-1">
+          <button type="button" className="h-9 rounded-control px-3.5 text-sm font-medium ring-1 ring-line ring-inset hover:bg-sunken">Cancel</button>
+          <button type="button" className="h-9 rounded-control bg-negative px-3.5 text-sm font-medium text-white hover:bg-negative/90">Delete</button>
+        </span>
+      </div>
+    </article>
+  );
+}
+DeleteDialog.stage = true;
+DeleteDialog.names = ['One blur', 'Layered'];
+DeleteDialog.lesson = {
+  why: 'A single shadow can be soft or tight, not both. A dialog’s usual shadow is one 50px blur pushed 25px down, so right under the dialog’s edge there’s almost nothing: no contact, and the dialog reads as hovering in a haze rather than resting above the page.',
+  habit: 'Build shadows from layers: a small, dark one for contact and wider, fainter ones for distance, each doubling the last.',
+};
+// What the eye sees: the band just under the dialog's bottom edge, where contact should darken. The pill counts the
+// shadow's layers.
+DeleteDialog.measure = (root) => {
+  const d = root?.querySelector('[data-dialog]');
+  if (!d) return null;
+  const r = d.getBoundingClientRect(), k = r.width / d.offsetWidth || 1, layers = getComputedStyle(d).boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l) && !/rgba\(0, 0, 0, 0\)|transparent/.test(l)).length;
+  return {
+    lines: [], off: layers < 2,
+    rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
+    bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
+    pills: [{ key: 'layers', x: r.right + 20 * k, y: r.bottom, text: String(layers), ok: layers >= 2 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom + 14 * k, r: 14 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 40 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

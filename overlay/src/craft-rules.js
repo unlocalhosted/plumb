@@ -334,13 +334,16 @@ export const layeredShadow = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const s = facts.style(el);
-    const layers = shadows(s.boxShadow).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
+    const raw = s.boxShadow.split(/,(?![^(]*\))/);
+    const layers = shadows(s.boxShadow).map((l, i) => ({ ...l, colour: rgb(raw[i].match(COLOUR)?.[0]) })).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
     if (layers.length !== 1 || layers[0].blur < T.blur) return [];
     const l = layers[0];
+    // the layers keep the shadow's own colour (a tinted shadow stays tinted); only its alpha is spread across them
+    const [r, g, bl] = l.colour ?? [0, 0, 0];
     const cls = utility(el, 'shadow');
     const text = cls ?? 'box-shadow';
     const b = l.blur, y = Math.max(1, Math.round(l.y || b / 4));
-    const stack = [[0.5, 1], [1, 2], [2, 4], [4, 8]].map(([k, m]) => `0 ${Math.round(y * k / 4 * 10) / 10}px ${Math.round(b * m / 8)}px rgb(0 0 0 / ${(0.04 * (5 - m / 2)).toFixed(2)})`).join(', ');
+    const stack = [[0.5, 1], [1, 2], [2, 4], [4, 8]].map(([k, m]) => `0 ${Math.round(y * k / 4 * 10) / 10}px ${Math.round(b * m / 8)}px rgb(${Math.round(r)} ${Math.round(g)} ${Math.round(bl)} / ${(0.04 * (5 - m / 2)).toFixed(2)})`).join(', ');
     return [{
       ...say(this.id, { blur: b }),
       key: this.id, text, props: ['box-shadow'], value: s.boxShadow, n: b,
@@ -583,6 +586,12 @@ export const iconSide = {
     // an icon beside the words, in a row: a cover or a picture above them (a media tile) is not an icon side
     const es = facts.style(el), mark = facts.rect(lead ? kids[0] : kids.at(-1));
     if ((/flex/.test(es.display) && /column/.test(es.flexDirection)) || mark.height > 32 || mark.width > 32) return [];
+    // a full-width row (a menu item, a list row) whose content sits at its start isn't a centred button: its sides
+    // aren't seen against each other
+    // (the content's span, bare words included)
+    const span = document.createRange(); span.selectNodeContents(el);
+    const b0 = facts.box(el);
+    if (!/center/.test(es.justifyContent) && facts.rect(el).width - b0.pl - b0.pr > span.getBoundingClientRect().width + 24) return [];
     const b = facts.box(el);
     if (b.pl < T.min || Math.abs(b.pl - b.pr) > 0.5) return [];
     const side = lead ? 'l' : 'r', other = lead ? 'r' : 'l';
