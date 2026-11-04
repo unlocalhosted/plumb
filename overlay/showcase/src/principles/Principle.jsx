@@ -282,7 +282,7 @@ export function Principle({ n }) {
           <p className="text-sm text-ink-muted text-balance">{p.why}</p>
         </div>
         <div className="flex w-full max-w-5xl flex-col items-center gap-6 md:flex-row md:items-start md:justify-center md:gap-10">
-          <div ref={stage} className="relative w-full max-w-lg">
+          <div ref={stage} className={'relative w-full ' + (Example?.wide ? 'max-w-2xl' : 'max-w-lg')}>
             {/* the window plumber reads */}
             <section data-example aria-label="Example" className="flex w-full min-w-0 justify-center rounded-sheet corner-squircle border border-line bg-surface px-4 pt-4 pb-5 shadow-window sm:px-6 sm:pt-5 sm:pb-6">
               {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}

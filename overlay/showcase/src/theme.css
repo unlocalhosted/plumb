@@ -121,3 +121,4 @@ body { background: var(--color-canvas); color: var(--color-ink); font-family: va
 
 /* the board's dot grid (an example's stage) */
 @utility board { background-color: var(--color-board); background-image: radial-gradient(var(--color-board-dot) 1px, transparent 1px); background-size: 16px 16px; }
+@utility divide-x-hairline { & > :not(:last-child) { border-right-width: 0.5px; border-right-style: solid; } }

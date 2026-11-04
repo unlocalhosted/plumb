@@ -59,6 +59,14 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
   back and red turns blue with a check.
 - **Rich, soothing, tasteful.** The example and the page around it get the same care: real content, calm colour,
   soft depth, generous space, the type hierarchy a good product has.
+- **A product screen, not a component.** A lone list or callout in an empty window never sells the illusion. Put
+  the principle inside believable software: the shared app frame (app bar, product mark, search, the user), the
+  page it lives on, its neighbours, people and avatars, states, metadata, density. The principle is one detail of a
+  screen someone would use.
+- **Restraint over boxes.** One surface divided by hairlines beats several bordered cards; mark the current or chosen
+  thing quietly (a small badge), keep one solid action, and keep copy short enough that no line wraps unless meant to.
+- **Fit every width the window has.** Lay out against the window (container queries), not the screen: three
+  columns only where the window holds them.
 
 ## 4. plumber's fix is one you can take
 
@@ -119,3 +127,6 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · "the fixes are just the final CSS, they aren't teaching anything". → §5.
 - 2026-11-04 · "5 and 6 are totally broken, do a post-review step before coming to me". → §6.
 - 2026-11-04 · "I don't see any difference between broken and fixed" (a 1.5px nudge). → §3 (loupe), §6.
+- 2026-11-04 · "this example doesn't look classy and tasteful" (three bordered pricing boxes). → §3½ restraint, width.
+- 2026-11-04 · "neither 5, 4, 3 … being rich and real is what sells the illusion": components alone in a window. → §3½
+  product screen.

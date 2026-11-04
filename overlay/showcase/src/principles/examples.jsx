@@ -303,26 +303,50 @@ Chips.measure = (root) => {
 };
 
 // #6 a price and its unit, two sizes side by side, share a baseline
-const PLANS = [['Starter', '0', 'For one person'], ['Studio', '24', 'For small teams'], ['Agency', '64', 'For many clients']];
+const PLANS = [
+  { name: 'Starter', price: '0', who: 'Just you, starting out', perks: ['5 clients', 'Invoices and quotes', 'Card payments'] },
+  { name: 'Studio', price: '24', who: 'A small team, billing weekly', perks: ['Unlimited clients', 'Automatic reminders', 'Team seats'], current: true },
+  { name: 'Agency', price: '64', who: 'Many clients and projects', perks: ['Everything in Studio', 'Client portal', 'Priority support'] },
+];
+const Check = () => <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-positive"><path d="m3.5 8.5 3 3 6-7" /></svg>;
 function Price({ broken }) {
   return (
-    <div className="grid w-full max-w-lg gap-3 sm:grid-cols-3">
-      {PLANS.map(([name, price, who]) => (
-        <div key={name} className={'flex flex-col gap-3 rounded-control border px-3 pt-3 pb-4 ' + (name === 'Studio' ? 'border-accent bg-accent-soft' : 'border-line')}>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{name}</span>
-            <span className="text-xs text-ink-muted">{who}</span>
-          </div>
-          <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
-            <span className="text-3xl font-semibold tracking-tight tabular-nums">${price}</span>
-            <span className="text-sm whitespace-nowrap text-ink-muted">/mo</span>
-          </div>
-          <button type="button" className={'rounded-control px-3 py-1.5 text-sm font-medium ' + (name === 'Studio' ? 'bg-accent text-accent-ink active:bg-ink' : 'border border-line bg-surface active:bg-sunken')}>{name === 'Studio' ? 'Current plan' : 'Choose'}</button>
+    <div className="@container flex w-full flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-base font-semibold">Plans</h3>
+          <span className="text-sm text-ink-muted">Billed monthly, per seat. Change any time.</span>
         </div>
-      ))}
+        <div role="group" aria-label="Billing period" className="flex shrink-0 rounded-full bg-sunken p-0.5 text-xs whitespace-nowrap">
+          <span className="rounded-full bg-surface px-3 py-1 font-medium shadow-raised">Monthly</span>
+          <span className="px-3 py-1 text-ink-muted">Yearly −20%</span>
+        </div>
+      </div>
+      {/* three columns only when the window can hold them; below that the plans stack, one per row */}
+      <div className="grid gap-6 divide-y-hairline divide-line @xl:grid-cols-3 @xl:gap-0 @xl:divide-x-hairline @xl:divide-y-0">
+        {PLANS.map((p) => (
+          <div key={p.name} className="flex flex-col gap-4 pb-6 last:pb-0 @xl:px-5 @xl:pb-0 @xl:first:pl-0 @xl:last:pr-0">
+            <div className="flex flex-col gap-1">
+              <span className="flex items-center gap-2 text-sm font-medium">{p.name}{p.current ? <span className="rounded-full bg-accent-soft px-1.5 text-xs font-medium text-accent">Current</span> : null}</span>
+              <span className="text-xs text-ink-muted">{p.who}</span>
+            </div>
+            <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
+              <span className="text-3xl font-semibold tracking-tight tabular-nums">${p.price}</span>
+              <span className="text-sm whitespace-nowrap text-ink-muted">/mo</span>
+            </div>
+            <ul className="flex flex-col gap-2 text-sm text-ink-muted">
+              {p.perks.map((k) => <li key={k} className="flex items-center gap-2"><Check />{k}</li>)}
+            </ul>
+            <button type="button" className={'mt-auto rounded-control px-3 py-1.5 text-sm font-medium ' + (p.current ? 'border border-line text-ink-muted active:bg-sunken' : p.name === 'Agency' ? 'bg-ink text-accent-ink active:bg-ink-muted' : 'border border-line active:bg-sunken')}>
+              {p.current ? 'Your plan' : p.name === 'Agency' ? 'Upgrade' : 'Switch'}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+Price.wide = true;
 Price.measure = (root) => {
   const row = root.querySelector('[data-price]'), [a, b] = [...row.children].map(lineOf);
   const d = b.baseline - a.baseline;
