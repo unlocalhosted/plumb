@@ -46,7 +46,7 @@
  * `theme.spec(this.id)` and never holds a threshold, a target or a tier of its own. Every rule says nothing when its
  * evidence is ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility, classesOf, elevation } from './craft-read.js';
+import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { RUN_RULES } from './craft-headless.js';
@@ -304,7 +304,7 @@ export const imageOutline = {
 function shadows(value) {
   if (!value || value === 'none') return [];
   return value.split(/,(?![^(]*\))/).map((layer) => {
-    const nums = layer.replace(/rgba?\([^)]*\)|oklch\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
+    const nums = layer.replace(COLOUR, '').replace(/#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
     return { x: nums[0] ?? 0, y: nums[1] ?? 0, blur: nums[2] ?? 0, spread: nums[3] ?? 0, inset: /inset/.test(layer) };
   });
 }
@@ -967,6 +967,8 @@ export const gradientSpace = {
     const T = theme.spec(this.id);
     const bg = facts.style(el).backgroundImage;
     if (!/gradient\(/.test(bg) || /\bin (?:oklab|oklch|lab|lch|hsl|display-p3)/.test(bg)) return [];
+    // a stop written in a modern space (oklch, oklab, color()) already mixes in Oklab by default: only legacy stops go grey
+    if (/\b(?:oklch|oklab|color)\(/.test(bg)) return [];
     const c = stops(bg).filter((x) => alpha(x) > 0.5).map(hsl);
     if (c.length < 2) return [];
     const [a, b] = [c[0], c.at(-1)];
@@ -1160,7 +1162,8 @@ export const tintedShadow = {
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
     const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
-    const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > T.alpha);
+    // Tailwind's shadow-sm…xl are exactly 10% black: at the line counts
+    const colours = layers.map((l) => rgb(l.match(COLOUR)?.[0])).filter((c) => c && c[3] >= T.alpha);
     if (!colours.length) return [];
     const ground = facts.ground(el.parentElement);
     // a barely coloured ground (two thirds of the way to the line) is the grey band: is the grey shadow dirty there?
@@ -1184,7 +1187,7 @@ export const easedScrim = {
     const T = theme.spec(this.id);
     const s = facts.style(el);
     if (!/^linear-gradient\(/.test(s.backgroundImage) || /,\s*linear-gradient/.test(s.backgroundImage) || s.position !== 'absolute') return [];
-    const stops = [...s.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0]));
+    const stops = [...s.backgroundImage.matchAll(COLOUR)].map((m) => rgb(m[0])).filter(Boolean);
     if (stops.length !== 2) return [];
     const clear = stops.find((c) => c[3] === 0), dark = stops.find((c) => c[3] >= 0.5 && oklab(c)[0] < 0.2);
     if (!clear || !dark) return [];
