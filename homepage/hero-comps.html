@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hero · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/hero-comps/hero.css" />
+</head>
+<body>
+<!--
+  The hero, per page-plan.html: medium "the page changing"; a centred headline, then one full-width app screen that a
+  clean-up settles. Three static comps in the signed-off foundations, all on the same screen (a team's Projects
+  dashboard, src/hero-comps/screen.js), drawn as written and as settled. The before → after counts are measured from
+  the two rendered screens, never typed.
+    A  the wipe        the screen half as written, half settled, split by a line you could drag
+    B  the marks       the screen as written, with Plumber's marks on every text size and space, and the clean-up bar
+    C  one pixel       the page dimmed except the one element you clicked, its fix on it
+-->
+<div class="bar"><span>Hero · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'; window.dispatchEvent(new Event('resize'))">Light / dark</button></div>
+
+<template id="head">
+  <nav class="h-nav"><span class="h-brand"><i></i>React Plumber</span><span class="h-links"><a>Docs</a><a>GitHub</a><span class="btn btn-primary btn-xs">Install</span></span></nav>
+  <header class="h-head">
+    <h1 class="display">Click a pixel.<br />Plumber edits the file.</h1>
+    <p class="lead">It reads your Tailwind theme, marks what’s off on the running page, and writes the fix into your JSX. <b>Keeps agent-written UI on your system</b>, without a prompt.</p>
+    <p class="h-cta"><span class="h-install"><code>npm install -D @unlocalhosted/react-plumber</code><span class="btn btn-accent btn-xs">Copy</span></span><span class="btn btn-ghost">Read the docs</span></p>
+  </header>
+</template>
+
+<p class="comp-name"><b>A</b> The wipe: the screen half as written, half settled</p>
+<section class="comp h-comp" data-comp="a">
+  <div data-head></div>
+  <div class="h-frame surface h-wipe">
+    <div class="h-layer" data-screen="messy" data-marks="coral"></div>
+    <div class="h-layer h-layer-clean" data-screen="clean" data-marks="mint"></div>
+    <span class="h-split" aria-hidden="true"><i></i></span>
+    <span class="h-side-label h-side-l">as written</span><span class="h-side-label h-side-r">after Plumber</span>
+  </div>
+  <p class="h-counts"><span class="chip chip-off"><i></i><b data-count="text-before"></b>&nbsp;text sizes</span><span class="h-to">→</span><span class="chip chip-on"><i></i><b data-count="text-after"></b>&nbsp;styles</span>
+    <span class="h-gap"></span><span class="chip chip-off"><i></i><b data-count="space-before"></b>&nbsp;spaces</span><span class="h-to">→</span><span class="chip chip-on"><i></i><b data-count="space-after"></b>&nbsp;steps</span></p>
+</section>
+
+<p class="comp-name"><b>B</b> The marks: every text size and space marked on the page, and the clean-up bar</p>
+<section class="comp h-comp" data-comp="b">
+  <div data-head></div>
+  <div class="h-frame surface">
+    <div class="h-layer" data-screen="messy" data-marks="coral"></div>
+    <div class="h-cleanup surface">
+      <span class="h-pass"><svg viewBox="0 0 16 16"><path d="M2 3h12M2 13h12M5 6v4M11 6v4M5 8h6" /></svg>Spacing</span>
+      <p>This page has <b data-count="space-before"></b> different spaces between things. After this, <b data-count="space-after"></b>.</p>
+      <span class="btn btn-primary btn-xs">Clean up</span>
+    </div>
+  </div>
+</section>
+
+<p class="comp-name"><b>C</b> One pixel: the page dimmed except the element you clicked, its fix on it</p>
+<section class="comp h-comp" data-comp="c">
+  <div data-head></div>
+  <div class="h-frame surface h-one">
+    <div class="h-layer" data-screen="messy"></div>
+    <div class="h-spot" aria-hidden="true"><span class="h-fix"><code><s>p-[18px]</s></code><span>→</span><code class="on">p-card</code><small>16px · card padding</small></span></div>
+    <svg class="h-cursor" viewBox="0 0 16 22" aria-hidden="true"><path d="M1 1v17l4.5-4.2 3 7 2.6-1.1-3-6.8H14z" /></svg>
+  </div>
+  <p class="h-counts h-caption"><code>&lt;StatCard&gt;</code> · Projects.jsx:42 · one click, one class, one line</p>
+</section>
+
+<script type="module" src="/src/hero-comps/main.js"></script>
+</body>
+</html>
