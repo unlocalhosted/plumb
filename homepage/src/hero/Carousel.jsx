@@ -34,6 +34,8 @@ const PASS = {
 };
 // ms each stage starts: each pass is marked, then applied; then the marks lift; the last moves to the next piece
 const TIMING = [0, 700, 1700, 2800, 3800, 4900, 5900, 7000, 8000, 9100, 11000];
+// One fix from each pass, as the sticker that slaps on when it's applied.
+const FIXED = { text: 'text-[13.5px] → text-card', spacing: 'gap-[7px] → gap-4', colour: '#3b78d8 → accent', icons: '15px → 16px' };
 const STYLE_NAME = { 11: 'label', 12: 'meta', 13: 'card', 16: 'body', 20: 'heading' };
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -64,11 +66,15 @@ export function Carousel() {
   const stageRef = useRef(null);
   const fit = useFit(stageRef);
   const item = ITEMS[index];
+  const shown = pass ?? [...PASSES].reverse().find(q => clean[q]) ?? 'text'; // the pass in hand, or the last one applied
   const c = counts[item.id];
 
   return (
     <section className="carousel mt-page-2" aria-roledescription="carousel" aria-label="Plumber cleaning up UI, a piece at a time">
-      <div ref={stageRef} className="stage" style={{ '--fit': fit, height: fit < 1 ? 600 * fit : undefined }}>
+      <div ref={stageRef} className="stage" id="demo" style={{ '--fit': fit, height: fit < 1 ? 600 * fit : undefined }}>
+        {/* the toy's table: the product's own patterns lying around, and the fix just made, as a sticker */}
+        <span className="toy-deco toy-hatch" aria-hidden="true" /><span className="toy-deco toy-dither" aria-hidden="true" /><span className="toy-deco toy-checker" aria-hidden="true" />
+        {clean[shown] && <span key={`${index}-${shown}`} className="toy-float toy-float-fix" aria-hidden="true">{FIXED[shown]}</span>}
         {ITEMS.map((it, i) => {
           const at = ((i - index + ITEMS.length + 1) % ITEMS.length) - 1; // -1 left, 0 middle, 1 right
           const done = at === -1 ? { text: true, spacing: true } : at === 1 ? { text: false, spacing: false } : clean;
@@ -82,49 +88,17 @@ export function Carousel() {
       </div>
 
       <div className="cleanup" role="group" aria-label="Clean up this piece">
-        <div className="cleanup-steps">
-          <span className="cleanup-title">Clean up</span>
-          {PASSES.map(p => (
-            <button key={p} type="button" className="cleanup-step" data-now={pass === p} data-done={clean[p]} aria-pressed={clean[p]} onClick={() => toggle(p)}>
-              <Glyph name={PASS[p].glyph} />
-              {PASS[p].name}
-              {clean[p] && <span className="cleanup-check" aria-hidden="true">✓</span>}
-              {c && <span className="cleanup-count tabular">{c[p].before.length} → {c[p].after.length}</span>}
-            </button>
-          ))}
+        {/* one thing at a time: only the pass in hand is named, with the product's glyph for it */}
+        <div className="cleanup-now">
+          <span key={shown} className="cleanup-pass"><Glyph name={PASS[shown].glyph} />{PASS[shown].name}</span>
+          <button type="button" className="cleanup-play" onClick={() => { setManual(null); setPlaying(p => !p); }} aria-label={playing ? 'Pause' : 'Play'}>
+            <svg viewBox="0 0 16 16" aria-hidden="true">{playing ? <path d="M5 3.5v9M11 3.5v9" /> : <path d="M5 3.5v9l7-4.5z" />}</svg>
+          </button>
         </div>
         <Said pass={pass} clean={clean} c={c} />
-        <Timeline index={index} stage={stage} playing={playing} go={go}
-          toggle={() => { setManual(null); setPlaying(p => !p); }} />
       </div>
 
     </section>
-  );
-}
-
-/* The timeline: one segment per screen. The one playing fills as its loop runs, with a notch where each pass starts;
- * the ones already cleaned are mint; the rest are empty. A segment is a button: it moves to that screen. */
-function Timeline({ index, stage, playing, go, toggle }) {
-  const total = TIMING.at(-1);
-  const notches = PASSES.map((_, i) => `${(TIMING[2 * i + 1] / total) * 100}%`); // where each pass starts
-  return (
-    <div className="timeline" role="group" aria-label="Screens">
-      <button type="button" className="timeline-play" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>
-        <svg viewBox="0 0 16 16" aria-hidden="true">{playing ? <path d="M5 3.5v9M11 3.5v9" /> : <path d="M5 3.5v9l7-4.5z" />}</svg>
-      </button>
-      {ITEMS.map((it, i) => (
-        <button key={it.id} type="button" className="segment" data-state={i < index ? 'done' : i === index ? 'now' : 'next'}
-          aria-current={i === index} onClick={() => go(i)}>
-          <span className="segment-name">{it.name}</span>
-          <span className="segment-track">
-            {i === index && (playing
-              ? <span key={`${index}-play`} className="segment-fill segment-run" style={{ animationDuration: `${total}ms` }} />
-              : <span className="segment-fill" style={{ width: `${(TIMING[stage] / total) * 100}%` }} />)}
-            {i === index && notches.map(left => <i key={left} className="segment-notch" style={{ left }} />)}
-          </span>
-        </button>
-      ))}
-    </div>
   );
 }
 

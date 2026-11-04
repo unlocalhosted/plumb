@@ -7,30 +7,35 @@
 :root {
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
-  --pl-paper: #fdfcf8;          /* card ground: warm off-white */
+  --pl-paper: #fdfcf8;          /* card background: off-white */
   --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
   --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
-  --pl-ink: #1d1b17;            /* titles, readings */
-  --pl-ink-2: #6b665c;          /* body that supports, meta, labels */
+  --pl-ink: #1d1b17;            /* titles and values */
+  --pl-ink-2: #6b665c;          /* secondary text, meta, labels */
   --pl-ink-3: #b3ad9f;          /* ticks and dividers only, never text */
 
   /* the language's hues (docs/briefs/visual-language.md): one meaning each. A line colour, a pastel fill, and the
      deep ink that letters the fill */
-  --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measure, focus */
-  --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* off the system */
-  --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on the system, written */
-  --pl-butter: #c48a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* softer trouble */
+  --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measurements, focus */
+  --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* not on your scale */
+  --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on your scale, or saved */
+  --pl-butter: #bd8500; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* minor problems (as a mark, 3.1:1 on the background) */
   --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
+  /* Blueprint: magenta where the page has too much (space, size, weight), cyan where space is missing. Outside the six
+     hues on purpose: they sit on your page, not on Plumber's cards, and must read on any colour under them */
+  --pl-heat: #ff1f8f;
+  --pl-sys: #00a3ff;
+
   /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
-  --pl-instrument: var(--pl-sky);    /* selection, measurement, focus; on any host it rides on a halo */
+  --pl-instrument: var(--pl-sky);    /* selection, measurements, focus; drawn with a halo so it shows on any page */
   --pl-accent: var(--pl-instrument);
   --pl-on-accent: #ffffff;           /* text on a filled accent */
   --pl-action: var(--pl-pink);       /* what you can do: Write, Fix all */
   --pl-action-soft: var(--pl-pink-soft);
   --pl-on-action: var(--pl-pink-ink);
-  --pl-halo: rgb(255 255 255 / 0.9); /* 1px knockout around every instrument line so it reads on any page */
+  --pl-halo: rgb(255 255 255 / 0.9); /* 1px outline around every line Plumber draws, so it shows on any page */
 
   /* verdicts: the only other colour, always paired with a mark shape or a word; each has a tinted ground so a
      state reads at a glance */
@@ -46,11 +51,21 @@
      diffs, commands, file:line), never for prose */
   --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --pl-card-title: 600 14px/20px var(--pl-sans);        /* title: what is off, in words */
+  --pl-card-title: 600 14px/20px var(--pl-sans);        /* title: what's off, in a sentence */
   --pl-card-body: 400 13px/19px var(--pl-sans);         /* body: reasons and guidance */
-  --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, where */
-  --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, the change itself */
+  --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, file names */
+  --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, a change */
   --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
+  /* a page (the project page, anything bigger than a card): five steps, calm editorial. All sans; numbers set tabular;
+     mono only for real code. Each step a clear jump from the next, so the eye always knows what to read first */
+  --pl-page-display: 600 40px/46px var(--pl-sans);      /* a page's headline */
+  --pl-page-title: 600 20px/28px var(--pl-sans);        /* a card or a section */
+  --pl-page-body: 400 16px/26px var(--pl-sans);         /* body text: the intro and explanations */
+  --pl-page-small: 400 14px/22px var(--pl-sans);        /* supporting lines, a readout */
+  --pl-page-meta: 400 13px/20px var(--pl-sans);         /* names on a drawing, a legend, captions */
+  --pl-page-figure: 600 32px/36px var(--pl-sans);       /* a key number, tabular */
+  --pl-tracking-display: -0.025em;
+  --pl-tracking-title: -0.01em;
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
   /* older role names, each now one of the five */
@@ -67,17 +82,23 @@
   --pl-space-6: 16px;
   --pl-space-7: 20px;
   --pl-space-8: 24px;
+  /* a page (anything bigger than a card): four steps above the ladder, each a clear jump */
+  --pl-page-space-1: 32px;      /* gutters; the gap under the lede */
+  --pl-page-space-2: 48px;      /* above the first thing on a page */
+  --pl-page-space-3: 64px;      /* between sections; the bottom on a phone */
+  --pl-page-space-4: 96px;      /* under the last card */
+  --pl-page-inset: 24px;        /* a card's inset on a page */
 
   /* instrument geometry */
-  --pl-line: 1px;               /* every instrument line, snapped to device pixels in code */
-  --pl-tick: 8px;               /* reticle corner arm */
-  --pl-drop: 16px;              /* plumb line from box edge to tag */
+  --pl-line: 1px;               /* every line Plumber draws, snapped to screen pixels */
+  --pl-tick: 8px;               /* corner tick around the selected element */
+  --pl-drop: 16px;              /* line from an element's edge to its tag */
   --pl-tag-h: 22px;
-  --pl-row-h: 40px;             /* two lines: property and amount, then the reading */
+  --pl-row-h: 40px;             /* two lines: property and value, then the reading */
   --pl-card-w: 360px;
   --pl-card-pad: 16px;          /* card inset and the gap between its sections */
   --pl-choice-h: 48px;          /* a choice row: specimen, token, reason */
-  --pl-card-gap: 12px;          /* card to element */
+  --pl-card-gap: 12px;          /* gap between a card and its element */
 
   /* corners: the instrument is square, the card is a held object */
   --pl-radius-mark: 2px;
@@ -94,16 +115,16 @@
   --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
   --pl-spring: linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1); /* settles with under 2% overshoot */
   --pl-spring-pop: linear(0, 0.25 7%, 0.68 17%, 0.96 28%, 1.04 40%, 1.03 52%, 1.005 68%, 1); /* things appearing: ~4% overshoot */
-  --pl-dur-travel: 220ms;       /* reticle moves to the next element */
-  --pl-dur-drop: 140ms;         /* plumb line extends to the tag */
-  --pl-dur-card: 180ms;         /* card pins */
+  --pl-dur-travel: 220ms;       /* selection moves to the next element */
+  --pl-dur-drop: 140ms;         /* line grows to its tag */
+  --pl-dur-card: 180ms;         /* card opens */
   --pl-dur-feedback: 120ms;     /* copy confirmation, row press */
 
   /* blueprint: the page held under the instrument. One dim over any page, light or dark, which gives its colour up
      so colour means drift; drifted elements are cut out of it (docs/briefs/blueprint-v2.md, layer 2) */
   --pl-scrim: rgb(20 20 22 / 0.46);
   --pl-dim-filter: grayscale(1);
-  --pl-dur-dim: 160ms;          /* the dim fades in; leaving is quicker */
+  --pl-dur-dim: 160ms;          /* Blueprint's dimming fades in; fading out is quicker */
   --pl-dur-undim: 120ms;
 
   /* stacking: above everything on any page */
@@ -130,6 +151,8 @@
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
+    --pl-heat: #ff4fa7;
+    --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
@@ -153,6 +176,8 @@
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
+    --pl-heat: #ff4fa7;
+    --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);

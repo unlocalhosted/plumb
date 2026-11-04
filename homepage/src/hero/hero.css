@@ -33,22 +33,10 @@
 /* ── the clean-up bar, in the overlay's clean-up language ── */
 .cleanup { display: grid; gap: var(--pl-space-5); margin-top: var(--pl-space-6); padding: var(--pl-space-6); border-radius: var(--pl-radius-card);
   background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
-.cleanup-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-3); }
-.cleanup-title { margin-right: var(--pl-space-4); font: var(--pl-card-title); }
-.cleanup-step { display: inline-flex; align-items: center; gap: var(--pl-space-3); height: 28px; padding: 0 var(--pl-space-5) 0 var(--pl-space-4); border: 0;
-  border-radius: var(--pl-radius-row); background: var(--pl-paper-2); color: var(--pl-ink-2); font: var(--pl-text-label); cursor: pointer;
-  transition: background-color var(--pl-dur-feedback) var(--pl-ease-out), color var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
-button.cleanup-step:active { scale: 0.97; }
-.cleanup-step[data-now='true'] { background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
-.cleanup-step[data-done='true']:not([data-now='true']) { color: var(--pl-ink); }
-.cleanup-step[data-next='true'] { cursor: default; background: transparent; box-shadow: inset 0 0 0 1px var(--pl-rule); }
-.cleanup-step small { font: var(--pl-card-meta); color: var(--pl-ink-3); }
 .glyph { width: 16px; height: 16px; flex: none; overflow: visible; }
 .glyph path, .glyph rect, .glyph circle { fill: none; stroke: currentColor; stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .glyph .fill { fill: currentColor; stroke: none; }
 .glyph .soft { fill-opacity: .4; }
-.cleanup-check { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--pl-mint); color: var(--pl-paper); font-size: 9px; }
-.cleanup-count { font: 500 11px/1 var(--pl-mono); opacity: 0.8; }
 .cleanup-said { display: grid; gap: var(--pl-space-4); min-height: 56px; font: var(--pl-card-body); }
 /* colour: swatches at their own places, gliding onto the token they become; the tokens wait as rings below */
 .swatches { position: relative; height: 52px; margin: var(--pl-space-6) var(--pl-space-6) 0; }
@@ -67,26 +55,17 @@ button.cleanup-step:active { scale: 0.97; }
   box-shadow: 0 0 0 2px var(--pl-paper); transition: left 520ms var(--pl-spring), top 520ms var(--pl-spring), background-color 300ms var(--pl-ease-out); }
 .ruler-dot[data-on='true'] { background: var(--pl-mint); }
 
-/* ── the timeline: one segment per screen, inside the clean-up card ── */
-.timeline { display: flex; align-items: flex-end; gap: var(--pl-space-5); padding-top: var(--pl-space-6); border-top: 1px solid var(--pl-rule); }
-.timeline-play { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border: 0; border-radius: 50%; cursor: pointer;
-  background: var(--pl-paper-2); color: var(--pl-ink); transition: scale var(--pl-dur-feedback) var(--pl-ease-out), background-color var(--pl-dur-feedback) var(--pl-ease-out); }
-.timeline-play svg { width: 12px; height: 12px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.timeline-play:active { scale: 0.94; }
-@media (hover: hover) { .timeline-play:hover { background: var(--pl-rule); } }
-.segment { flex: 1; display: grid; gap: var(--pl-space-3); min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
-.segment-name { font: var(--pl-text-label); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
-.segment[data-state='now'] .segment-name { color: var(--pl-ink); }
-@media (hover: hover) { .segment:hover .segment-name { color: var(--pl-ink); } }
-.segment-track { position: relative; display: block; height: 4px; border-radius: var(--pl-radius-mark); background: var(--pl-paper-2);
-  box-shadow: inset 0 0 0 1px var(--pl-rule); overflow: hidden; }
-.segment[data-state='done'] .segment-track { background: var(--pl-mint-soft); box-shadow: none; }
-.segment-fill { position: absolute; inset: 0 auto 0 0; width: 100%; background: var(--pl-instrument); }
-.segment-run { transform-origin: left; animation: run linear both; }
-@keyframes run { from { transform: scaleX(0); } }
-.segment-notch { position: absolute; top: 0; bottom: 0; width: 2px; translate: -1px 0; background: var(--pl-paper); }
-.segment:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 4px; border-radius: var(--pl-radius-mark); }
+/* ── the pass in hand: one name, one glyph, and play / pause ── */
+.cleanup-now { display: flex; align-items: center; justify-content: space-between; }
+.cleanup-pass { display: inline-flex; align-items: center; gap: var(--pl-space-3); font: var(--pl-card-title); color: var(--pl-ink);
+  animation: pass-in var(--pl-dur-card) var(--pl-ease-out); }
+.cleanup-pass .glyph { width: 18px; height: 18px; color: var(--pl-instrument); }
+@keyframes pass-in { from { opacity: 0; translate: 0 4px; } }
+.cleanup-play { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; cursor: pointer; background: var(--pl-paper-2); color: var(--pl-ink);
+  transition: scale var(--pl-dur-feedback) var(--pl-ease-out), background-color var(--pl-dur-feedback) var(--pl-ease-out); }
+.cleanup-play svg { width: 12px; height: 12px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.cleanup-play:active { scale: 0.94; }
+@media (hover: hover) { .cleanup-play:hover { background: var(--pl-rule); } }
 
 /* the overlay's pop */
 @keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
@@ -102,8 +81,8 @@ button.cleanup-step:active { scale: 0.97; }
   .slot[data-at='-1'], .slot[data-at='1'] { --o: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pop, .segment-run { animation: none; }
-  .slot, .piece *, .cleanup-step, .copy-button, .ruler-dot, .swatch { transition: none; }
+  .pop, .cleanup-pass { animation: none; }
+  .slot, .piece *, .copy-button, .ruler-dot, .swatch { transition: none; }
 }
 
 /* dev-only picker: chrome, not a contestant */

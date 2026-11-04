@@ -1,0 +1,90 @@
+/* "A toy you can trust": the homepage's soul (the owner's pick, A + D). Built on the overlay's tokens, with the layer
+ * the instrument doesn't have: chunky type, ink outlines with offset shadows, the rainbow mark, stickers, marching ants,
+ * and the product's patterns as objects. Motion: transform and opacity, custom curves, reduced motion shows the end. */
+
+.toy-home { --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1); --ease-snap: cubic-bezier(0.32, 0.72, 0, 1); overflow-x: clip; } /* the screens waiting either side never widen the page */
+
+/* ── nav ── */
+.toy-nav { display: flex; justify-content: space-between; align-items: center; max-width: 72rem; margin: 0 auto; padding: 22px 32px; }
+.toy-brand { display: inline-flex; align-items: center; gap: 10px; font: 750 17px/1 var(--pl-sans); letter-spacing: -0.01em; color: var(--pl-ink); text-decoration: none; }
+.toy-rainbow { width: 28px; height: 12px; border-radius: 4px; box-shadow: 0 0 0 2px var(--pl-ink);
+  background: linear-gradient(90deg, var(--pl-pink) 0 25%, var(--pl-mint) 0 50%, var(--pl-butter) 0 75%, var(--pl-sky) 0); }
+.toy-links { display: flex; align-items: center; gap: 4px; font: 500 14px/1 var(--pl-sans); }
+.toy-links a { padding: 9px 12px; border-radius: 10px; color: var(--pl-ink-2); text-decoration: none; transition: color 150ms ease, background-color 150ms ease; }
+@media (hover: hover) and (pointer: fine) { .toy-links a:hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+.toy-links .toy-cta { background: var(--pl-pink-soft); color: var(--pl-pink-ink); font-weight: 650; box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--pl-pink) 35%, transparent); }
+@media (max-width: 47.99rem) { .toy-links a:not(.toy-cta) { display: none; } }
+
+/* ── the headline that fixes itself ── */
+.combo-hero { max-width: 64rem; margin: 0 auto; padding: 44px 24px 0; text-align: center; }
+.combo-hero h1 { margin: 0; font: 820 clamp(44px, 9vw, 96px)/1.02 var(--pl-sans); letter-spacing: -0.05em; color: var(--pl-ink); }
+.word { position: relative; display: inline-block; margin: 0 0.12em;
+  transition: font-size 700ms var(--ease-snap), margin 700ms var(--ease-snap), translate 700ms var(--ease-snap), rotate 700ms var(--ease-snap), letter-spacing 700ms ease, color 400ms ease; }
+.combo-hero h1[data-stage='0'] .word, .combo-hero h1[data-stage='1'] .word { color: color-mix(in oklab, var(--pl-ink) 86%, var(--pl-coral)); }
+.combo-hero h1[data-stage='1'] .word { outline: 2px dashed color-mix(in oklab, var(--pl-coral) 60%, transparent); outline-offset: 4px; border-radius: 6px; }
+.word-pill { position: absolute; left: 50%; top: -22px; translate: -50% 0; padding: 4px 8px; border-radius: 7px; background: var(--pl-coral-soft); color: var(--pl-coral-ink);
+  font: 700 13px/1 var(--pl-mono); font-style: normal; letter-spacing: 0; white-space: nowrap; animation: pill-in 260ms var(--pl-spring-pop) both; }
+@keyframes pill-in { from { opacity: 0; scale: 0.92; } }
+.toy-ants { padding: 0 0.1em; border-radius: 4px;
+  background-image: linear-gradient(90deg, var(--pl-sky) 50%, transparent 0), linear-gradient(90deg, var(--pl-sky) 50%, transparent 0),
+    linear-gradient(0deg, var(--pl-sky) 50%, transparent 0), linear-gradient(0deg, var(--pl-sky) 50%, transparent 0);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y; background-size: 12px 2px, 12px 2px, 2px 12px, 2px 12px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0; animation: ants 700ms linear infinite; }
+@keyframes ants { to { background-position: 12px 0, -12px 100%, 0 -12px, 100% 12px; } }
+.combo-file { padding: 0 0.06em; border-radius: 14px; transition: background-size 600ms var(--ease-reveal);
+  background: linear-gradient(var(--pl-mint-soft), var(--pl-mint-soft)) no-repeat 0 88% / 0% 40%; }
+.combo-hero h1[data-stage='3'] .combo-file { background-size: 100% 40%; }
+.toy-sticker { position: absolute; padding: 8px 11px; border-radius: 10px; font: 700 15px/1 var(--pl-mono); font-style: normal; letter-spacing: 0; white-space: nowrap;
+  box-shadow: 0 0 0 3px var(--pl-paper), 0 10px 22px -10px rgb(28 27 25 / 0.5); }
+.toy-sticker-off { right: -0.5em; top: -0.3em; rotate: 8deg; background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+.toy-sticker-on { right: -0.62em; bottom: -0.1em; rotate: -6deg; background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
+.combo-sticker { animation: slap 420ms var(--ease-reveal) both; }
+.combo-sticker.toy-sticker-off { animation: slap 420ms var(--ease-reveal) both, wobble 3s ease-in-out 600ms infinite; }
+@keyframes slap { 0% { opacity: 0; scale: 1.5; } 60% { opacity: 1; scale: 0.94; } 100% { scale: 1; } }
+@keyframes wobble { 50% { rotate: 3deg; translate: 0 -3px; } }
+.words-caption { margin: 22px 0 0; font: 600 15px/1 var(--pl-mono); color: var(--pl-coral); transition: color 400ms ease; }
+.words-caption[data-stage='2'] { color: var(--pl-mint); }
+.combo-lead { max-width: 34rem; margin: 18px auto 0; font: 400 20px/30px var(--pl-sans); color: var(--pl-ink-2); }
+.words-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 26px; }
+.words-replay { padding: 12px 14px; border: 0; border-radius: 12px; cursor: pointer; background: var(--pl-paper-2); color: var(--pl-ink); font: 650 14px/1 var(--pl-sans);
+  transition: scale 120ms ease; }
+.words-replay:active { scale: 0.97; }
+
+/* ── the install: a keycap ── */
+.toy-install { display: inline-flex; align-items: center; gap: 14px; max-width: 100%; padding: 6px 6px 6px 18px; border-radius: 14px; background: var(--pl-paper);
+  box-shadow: 0 0 0 1.5px var(--pl-ink), 0 4px 0 var(--pl-ink); font: 500 14px/1 var(--pl-mono); color: var(--pl-ink); }
+.toy-install code { min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.toy-install button { flex: none; padding: 11px 16px; border: 0; border-radius: 9px; cursor: pointer; background: var(--pl-pink); color: #fff; font: 700 14px/1 var(--pl-sans);
+  box-shadow: 0 3px 0 var(--pl-pink-ink); transition: transform 120ms ease, box-shadow 120ms ease, background-color 200ms ease; }
+.toy-install button:active { transform: translateY(3px); box-shadow: none; }
+.toy-install button[data-state='copied'] { background: var(--pl-mint); box-shadow: 0 3px 0 var(--pl-mint-ink); }
+
+/* ── the demo on the toy's table ── */
+.toy-home .carousel { margin: 48px auto 0; left: auto; translate: none; } /* the hero is full width: centre it plainly */
+.toy-home .stage { overflow: visible; -webkit-mask: none; mask: none; border-radius: 36px; background: var(--pl-sky-soft); box-shadow: none; }
+.toy-home .slot[data-at='0'] { rotate: -1deg; }
+.toy-home .slot[data-at='0'] .piece { filter: drop-shadow(0 18px 30px rgb(28 27 25 / 0.18)); }
+.toy-home .slot[data-at='-1'], .toy-home .slot[data-at='1'] { --o: 0; }
+.toy-deco { position: absolute; z-index: 2; border-radius: 18px; pointer-events: none; }
+.toy-hatch { left: -26px; top: 70px; width: 110px; height: 110px; rotate: -8deg; background-color: var(--pl-paper);
+  background-image: repeating-linear-gradient(45deg, var(--pl-mint) 0 2px, transparent 2px 9px); box-shadow: 0 0 0 2px var(--pl-ink); }
+.toy-dither { right: -22px; top: 30px; width: 96px; height: 96px; border-radius: 50%; background-color: var(--pl-butter-soft);
+  background-image: radial-gradient(var(--pl-butter) 1.5px, transparent 1.7px); background-size: 7px 7px; box-shadow: 0 0 0 2px var(--pl-ink); }
+.toy-checker { right: 70px; bottom: -22px; width: 64px; height: 64px; rotate: 10deg; box-shadow: 0 0 0 2px var(--pl-ink);
+  background: conic-gradient(var(--pl-lilac-soft) 25%, var(--pl-paper) 0 50%, var(--pl-lilac-soft) 0 75%, var(--pl-paper) 0) 0 0 / 16px 16px; }
+.toy-float { position: absolute; z-index: 3; padding: 10px 14px; border-radius: 12px; font: 700 14px/1 var(--pl-mono); pointer-events: none;
+  box-shadow: 0 0 0 3px var(--pl-paper), 0 12px 24px -12px rgb(28 27 25 / 0.5); }
+.toy-float-fix { left: 36px; bottom: 54px; rotate: -6deg; background: var(--pl-mint-soft); color: var(--pl-mint-ink); animation: slap 420ms var(--ease-reveal) both; }
+.toy-home .cleanup { margin-top: 28px; border-radius: 18px; box-shadow: 0 0 0 2px var(--pl-ink), 6px 6px 0 var(--pl-ink); }
+@media (max-width: 47.99rem) {
+  .toy-deco { display: none; }
+  .toy-float-fix { left: 12px; bottom: 12px; font-size: 12px; }
+  .toy-sticker { padding: 5px 7px; font-size: 11px; border-radius: 7px; }
+  .toy-sticker-off { top: -1.05em; right: -0.3em; }
+  .toy-sticker-on { bottom: -0.95em; right: -0.4em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word, .combo-file, .toy-install button { transition: none; }
+  .toy-ants, .combo-sticker, .word-pill, .toy-float-fix { animation: none; }
+}
