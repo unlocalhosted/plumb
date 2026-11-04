@@ -132,8 +132,9 @@ sheet.addEventListener('pointerdown', (e) => {
   g = { contact: p, t0: performance.now(), samples: [p], pull: 0, gave: 0, peak: { pull: 0, gave: 0, hand: p }, hit: null, up: null, settled: null, live: true };
   draw();
 });
-sheet.addEventListener('pointermove', (e) => {
+window.addEventListener('pointermove', (e) => {
   if (!g?.live) return;
+  if (e.pointerType === 'mouse' && e.buttons === 0) { release(); return; } // the button came up where we didn't hear it
   const p = at(e), now = performance.now() - g.t0, dy = p.y - g.contact.y;
   offset = follow(dy); place();
   const last = g.samples.at(-1);
@@ -149,8 +150,13 @@ const release = () => {
   if (offset !== 0) { spring = { v: 0 }; } else g.settled = g.up;
   draw();
 };
+// let go however the press ends: released on the sheet, outside it, outside the window (capture can be lost there and
+// no pointerup arrives), a cancelled touch, or the window losing focus
 sheet.addEventListener('pointerup', release);
 sheet.addEventListener('pointercancel', release);
+sheet.addEventListener('lostpointercapture', release);
+window.addEventListener('pointerup', release);
+window.addEventListener('blur', release);
 
 // the spring back: stiffness 400, damping 32 (critically damped near enough), per frame
 let last = performance.now();
