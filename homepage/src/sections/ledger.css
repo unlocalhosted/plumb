@@ -1,0 +1,96 @@
+/* "Start on the repo you have", in the toy soul: chunky title, the play on its own painted field (surfaces.css),
+ * ink outlines with offset shadows, stickers. Overlay tokens only: grey for problems kept as they were, coral for the
+ * one that's new, mint once it's on the theme or fixed.
+ * Motion: transform and opacity only; custom curves; reduced motion shows the end. */
+
+.ledger {
+  --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);   /* strong ease-out: things appearing */
+  --ease-snap: cubic-bezier(0.32, 0.72, 0, 1);     /* steep start, long settle: a card sliding in */
+  max-width: 72rem; margin: var(--spacing-page-4) auto 0; padding: 0 var(--pl-space-8); overflow-x: clip;
+}
+.ledger-head { max-width: 40rem; }
+.ledger-head h2 { font: 820 clamp(40px, 5vw, 64px)/1 var(--pl-sans); letter-spacing: -0.05em; text-wrap: balance; }
+.ledger-head p { margin: var(--pl-space-5) 0 0; font-size: 21px; line-height: 32px; color: var(--pl-ink-2); text-wrap: pretty; }
+
+/* ── the field ── */
+.ledger-field { position: relative; margin-top: var(--spacing-page-2); padding: 44px; border-radius: 36px;
+  box-shadow: 0 0 0 2px var(--pl-ink), 8px 8px 0 var(--pl-ink);
+  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'jar pr' 'term term'; gap: 32px 44px; align-items: center; }
+
+/* the jar: day one's problems, kept */
+.ledger-jar { grid-area: jar; margin: 0; padding: 18px; border-radius: 22px; background: color-mix(in oklab, var(--pl-paper) 72%, transparent);
+  box-shadow: 0 0 0 2px var(--pl-ink), 4px 4px 0 var(--pl-ink); }
+.ledger-jar figcaption { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.ledger-tag { padding: 4px 8px; border-radius: 7px; background: var(--pl-paper-2); box-shadow: 0 0 0 1.5px var(--pl-ink); font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+.ledger-jar figcaption b { font: 820 40px/1 var(--pl-sans); letter-spacing: -0.04em; animation: count-flip 420ms var(--ease-reveal); }
+@keyframes count-flip { from { opacity: 0; translate: 0 10px; } }
+.ledger-dots { display: grid; grid-template-columns: repeat(10, 12px); gap: 6px; }
+.ledger-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--pl-ink-3); box-shadow: inset 0 0 0 1.5px var(--pl-ink);
+  transition: translate 900ms var(--ease-snap), opacity 600ms ease 300ms, background-color 200ms ease; }
+.ledger-field[data-run='0'] .ledger-dots i { opacity: 0; scale: 0.6; }
+.ledger-field:not([data-run='0']) .ledger-dots i { animation: dot-in 360ms var(--ease-reveal) both; animation-delay: calc(var(--i) * 9ms); }
+@keyframes dot-in { from { opacity: 0; scale: 0.6; } }
+.ledger-dots i[data-out='true'] { background: var(--pl-mint); translate: 120px -60px; opacity: 0; }
+
+/* the pull request */
+.ledger-pr { grid-area: pr; position: relative; border-radius: 16px; background: var(--pl-paper); box-shadow: 0 0 0 2px var(--pl-ink), 6px 6px 0 var(--pl-ink);
+  transition: opacity 500ms ease, translate 700ms var(--ease-snap); }
+.ledger-pr[data-shown='false'] { opacity: 0; translate: 40px 0; }
+.ledger-pr header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 2px solid var(--pl-ink);
+  font: 600 13px/1 var(--pl-mono); }
+.ledger-branch { padding: 5px 9px; border-radius: 7px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
+.ledger-pr header > :last-child { color: var(--pl-mint); }
+.ledger-pr ol { list-style: none; margin: 0; padding: 10px 0 14px; }
+.ledger-pr li { position: relative; display: flex; align-items: baseline; gap: 12px; padding: 8px 18px; font: 500 14px/20px var(--pl-mono);
+  transition: opacity 400ms ease, translate 500ms var(--ease-reveal), background-color 300ms ease; transition-delay: calc(var(--i) * 260ms); }
+.ledger-pr[data-shown='false'] li { opacity: 0; translate: 0 8px; }
+.ledger-sign { color: var(--pl-mint); font-weight: 700; }
+.ledger-pr code { font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ledger-pr mark { padding: 1px 4px; border-radius: 5px; background: none; color: inherit; transition: background-color 300ms ease; }
+.ledger-pr li[data-off='true'] { background: var(--pl-coral-soft); transition-delay: 0ms; animation: shake 420ms var(--ease-reveal); }
+.ledger-pr li[data-off='true'] mark { background: var(--pl-coral); color: white; }
+.ledger-pr li[data-done='true'] mark { background: var(--pl-mint-soft); color: var(--pl-mint-ink); box-shadow: 0 0 0 1.5px var(--pl-ink); animation: pill-in 360ms var(--ease-reveal); }
+@keyframes shake { 20% { translate: -4px 0; } 45% { translate: 4px 0; } 70% { translate: -2px 0; } }
+@keyframes pill-in { from { opacity: 0; scale: 0.92; } }
+.ledger-flag { position: absolute; right: 14px; top: -16px; padding: 5px 8px; border-radius: 7px; background: var(--pl-coral-soft); color: var(--pl-coral-ink);
+  box-shadow: 0 0 0 1.5px var(--pl-ink); font: 600 11px/1 var(--pl-mono); font-style: normal; rotate: 3deg; white-space: nowrap; animation: pill-in 300ms var(--ease-reveal); }
+
+/* the verdict: a stamp slapped on the pull request */
+.ledger-stamp { position: absolute; right: -18px; bottom: -22px; padding: 10px 16px; border-radius: 14px; font: 820 24px/1 var(--pl-sans); letter-spacing: -0.02em;
+  box-shadow: 0 0 0 2px var(--pl-ink), 4px 4px 0 var(--pl-ink); animation: slap 420ms var(--ease-reveal) both; }
+.ledger-stamp[data-pass='true'] { background: var(--pl-mint-soft); color: var(--pl-mint-ink); rotate: -5deg; }
+.ledger-stamp[data-pass='false'] { background: var(--pl-coral-soft); color: var(--pl-coral-ink); rotate: 6deg; }
+@keyframes slap { 0% { opacity: 0; scale: 1.5; } 60% { opacity: 1; scale: 0.94; } 100% { scale: 1; } }
+
+/* the check, in its own words */
+.ledger-term { grid-area: term; display: grid; gap: 6px; margin: 0; padding: 16px 20px; border-radius: 14px; background: var(--pl-ink); color: var(--pl-paper);
+  font: 500 13px/18px var(--pl-mono); overflow-x: auto; }
+.ledger-term > :first-child { color: color-mix(in oklab, var(--pl-paper) 60%, transparent); }
+.ledger-term-off { color: var(--pl-coral-soft); font-weight: 700; }
+
+/* under the field */
+.ledger-foot { display: flex; align-items: baseline; justify-content: space-between; gap: var(--pl-space-6); margin-top: var(--pl-space-8); }
+.ledger-caption { margin: 0; font-size: 21px; line-height: 32px; min-height: 64px; color: var(--pl-ink-2); }
+.ledger-caption b { color: var(--pl-ink); font-weight: 650; }
+.ledger-again { flex: none; padding: 9px 14px; border: 0; border-radius: 10px; cursor: pointer; background: var(--pl-paper-2); color: var(--pl-ink);
+  font: 600 14px/1 var(--pl-sans); box-shadow: 0 0 0 1.5px var(--pl-ink), 3px 3px 0 var(--pl-ink); transition: translate 150ms ease, box-shadow 150ms ease; }
+.ledger-again:active { translate: 2px 2px; box-shadow: 0 0 0 1.5px var(--pl-ink), 1px 1px 0 var(--pl-ink); }
+.ledger-again:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 3px; }
+.ledger-again:disabled { display: none; }
+
+@media (max-width: 47.99rem) {
+  .ledger { padding: 0 var(--pl-space-6); }
+  .ledger-head p, .ledger-caption { font-size: 16px; line-height: 24px; }
+  .ledger-field { padding: 20px 16px 28px; border-radius: 24px; box-shadow: 0 0 0 2px var(--pl-ink), 5px 5px 0 var(--pl-ink);
+    grid-template-columns: minmax(0, 1fr); grid-template-areas: 'jar' 'pr' 'term'; gap: 24px; }
+  .ledger-jar { justify-self: start; }
+  .ledger-dots { grid-template-columns: repeat(16, 9px); gap: 5px; }
+  .ledger-dots i { width: 9px; height: 9px; }
+  .ledger-pr li { font-size: 12px; padding: 7px 12px; gap: 8px; }
+  .ledger-stamp { font-size: 18px; right: -6px; bottom: -18px; }
+  .ledger-term { font-size: 11px; line-height: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ledger-dots i, .ledger-pr, .ledger-pr li { transition: none; animation: none; }
+  .ledger-stamp, .ledger-flag, .ledger-jar figcaption b { animation: none; }
+}

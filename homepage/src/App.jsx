@@ -1,9 +1,10 @@
 // The new homepage, one part at a time (docs/homepage-skill/02-prototype-loop.md). Part 1: the hero. Part 2: it
-// reads your theme.
+// reads your theme. Part 3: start on the repo you have.
 // In development a switch flips light and dark, to review both.
 import { useEffect, useState } from 'react';
 import { Hero } from './hero/Hero.jsx';
 import { Settle } from './sections/Settle.jsx';
+import { Ledger } from './sections/Ledger.jsx';
 import './surfaces.css';
 
 export function App() {
@@ -14,6 +15,7 @@ export function App() {
       <main className="pb-page-4">
         <Hero />
         <Settle />
+        <Ledger />
       </main>
       {import.meta.env.DEV && (
         <aside aria-label="Light or dark" className="picker">
