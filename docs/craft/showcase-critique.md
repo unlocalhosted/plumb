@@ -4,8 +4,8 @@ Screens built but below the bar, found in the post-build review. Fix these after
 
 | № | Screen | What's weak | What it needs |
 | --- | --- | --- | --- |
-| 15 | Issue table, small-caps labels | The gaps between capitals open by under a pixel; the moment barely shows anything happen | Zoom tighter on one label, and draw each letter's box so the crowding and the opening read at a glance |
-| 46 | Boarding pass, case forms | The pill is on/off (1 → 0), not a measurement; the colon and dash rising is too small to see | Measure the punctuation's real height against the capitals (render it with and without `case`) and show both lines |
+| 15 | Issue table, small-caps labels | Fixed (2026-11-04): one label at 5×, the hatch between each capital's ink and the next (canvas measureText at the letters' DOM positions), the pill the tightest ink gap in px | (done) |
+| 46 | Boarding pass, case forms | Fixed (2026-11-04): the colon's and dash's real sag below the figures' middle (1.5px), hatched, closing on the case forms; 5× on the time. Canvas can't draw the case alternates, so the fixed side shows the glyphs, not a measured 0 | (done) |
 | 23 | Share menu, translucent border | The camera crops the menu's last row; the border swap is faint at that zoom | Frame the whole menu; zoom on one corner where border meets photo so the grey line against the picture reads |
 | 51 | Delete dialog, layered shadows | The contact band under the dialog sits near the card's edge and is partly cut; the pill counts layers rather than measuring the contact | Leave room below the dialog; measure the darkness right under the edge before and after |
 | 57 | Inbox, opacity on muted text | The camera frames the line's start and crops the rest; the fade on @you is visible but small | Frame the mention with the preview's grey either side; a side-by-side swatch of the mention's colour, faded and full |
@@ -25,5 +25,5 @@ Screens built but below the bar, found in the post-build review. Fix these after
 | 50 | Empty search, icon stroke | After the fix the big icon's stroke is 2px, still heavier than the field's 1.3px; the habit names absoluteStrokeWidth, which gives the same 2px | Decide which stroke the set means (2px at any size) and show the two icons together |
 | 63 | Insert menu, scale from 0 | The moment never plays the entrance: the hatch says how far it grows, not what it looks like | Play the entrance slowed, from 0 and from 95%, from the + |
 | 70 | Inputs at 16px (not built) | The harm is iOS zooming in on focus, which can't be seen on the desktop showcase honestly | Build it when the stage can show a phone, or as advice only |
-| 49 | Optical sizing (not built yet) | Needs a font with an opsz axis loaded in the showcase (Inter 4 has one) | Load Inter variable with opsz, then build |
+| 49 | Optical sizing (not built) | The common mistake is loading a font without its opsz axis (Inter from Google Fonts as wght only); plumber's rule only sees optical sizing turned off on a font that has the axis, so the natural case is invisible to it | Teach the rule to read the @font-face / font file's axes against the family's known ones, then build |
 | 59 | Layer menu, safe triangle (probe stage) | Real frames and marks work; plumber's probe is faster than a hand (11 moves, a snapshot after each), so the ruler's milliseconds are the probe's, not a person's. The Radix side's menu opens at rest without its submenu (Radix closes it on focus) | A human-paced probe for recording, or say on the ruler that it's the probe's pace; open the Radix submenu at rest |

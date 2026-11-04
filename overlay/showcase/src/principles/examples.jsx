@@ -738,23 +738,40 @@ IssueTable.lesson = {
 };
 // What the eye sees in "Assignee": the space between each pair of capitals, hatched. The pill is the letter spacing,
 // in hundredths of an em.
+// one 11px label needs a closer look than the stage's usual 2.4×
+IssueTable.maxZoom = 5;
+// What the eye sees on one label: the space between one capital's ink and the next (the hatch), nothing drawn over the
+// letters themselves. Placed
+// at the letters' real positions (the DOM's) with each glyph's own ink bounds (canvas measureText). The pill is the
+// tightest of those gaps, in px: where two capitals all but touch.
 IssueTable.measure = (root) => {
   const th = [...(root?.querySelectorAll('[data-label]') ?? [])][1];
   if (!th) return null;
-  const t = th.firstChild, k = th.getBoundingClientRect().width / th.offsetWidth || 1, range = document.createRange(), boxes = [];
-  for (let i = 0; i < t.length; i++) { range.setStart(t, i); range.setEnd(t, i + 1); boxes.push(range.getBoundingClientRect()); }
+  const t = th.firstChild, k = th.getBoundingClientRect().width / th.offsetWidth || 1, range = document.createRange();
+  const s = getComputedStyle(th), ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const ink = [];
+  for (let i = 0; i < t.length; i++) {
+    range.setStart(t, i); range.setEnd(t, i + 1);
+    const b = range.getBoundingClientRect(), ch = s.textTransform === 'uppercase' ? t.data[i].toUpperCase() : t.data[i];
+    if (!ch.trim()) continue;
+    const m = ctx.measureText(ch);
+    ink.push({ left: b.left + -m.actualBoundingBoxLeft * k, right: b.left + m.actualBoundingBoxRight * k, top: b.top, bottom: b.bottom, h: b.height });
+  }
   const bands = [], lines = [];
-  boxes.forEach((b, i) => {
-    lines.push({ key: `l${i}`, x: b.left, top: b.top + b.height * 0.2, bottom: b.bottom - b.height * 0.2 });
-    if (boxes[i + 1]) bands.push({ key: `g${i}`, left: b.right - 0.5 * k, right: boxes[i + 1].left + 0.5 * k, top: b.top + b.height * 0.25, bottom: b.bottom - b.height * 0.25, pattern: 'hatch' });
+  let tight = Infinity;
+  ink.forEach((g, i) => {
+    const n = ink[i + 1];
+    if (!n) return;
+    tight = Math.min(tight, (n.left - g.right) / k);
+    bands.push({ key: `g${i}`, left: g.right, right: Math.max(g.right + 0.5 * k, n.left), top: g.top + g.h * 0.3, bottom: g.bottom - g.h * 0.3, pattern: 'hatch' });
   });
-  const s = getComputedStyle(th), em = (s.letterSpacing === 'normal' ? 0 : parseFloat(s.letterSpacing)) / parseFloat(s.fontSize);
-  const first = boxes[0], last = boxes.at(-1);
+  const first = ink[0], last = ink.at(-1), ok = tight >= 1;
   return {
-    lines, bands, off: em < 0.04,
-    pills: [{ key: 'em', x: (first.left + last.right) / 2, y: first.top - 12 * k, text: (em * 100 * k).toFixed(0), ok: em >= 0.04 }],
+    lines, bands, off: !ok,
+    pills: [{ key: 'gap', x: (first.left + last.right) / 2, y: first.top - 10 * k, text: (Math.max(tight, 0.05) * k).toFixed(1), ok }],
     cut: { left: first.left - 4 * k, right: last.right + 4 * k, top: first.top - 2 * k, bottom: first.bottom + 2 * k },
-    subject: { left: first.left - 40 * k, right: last.right + 60 * k, top: first.top - 40 * k, bottom: first.bottom + 50 * k },
+    subject: { left: first.left - 12 * k, right: last.right + 12 * k, top: first.top - 22 * k, bottom: first.bottom + 14 * k },
   };
 };
 
@@ -893,8 +910,12 @@ BoardingPass.lesson = {
   why: 'Hyphens, dashes, colons and brackets are drawn to sit at the middle of lowercase letters. Between capitals that middle is too low, so in “07:55–12:30” the colon and dash sag below the figures around them.',
   habit: 'Text set in capitals turns on the font’s case-sensitive forms (font-feature-settings: "case"), so punctuation rises to the capitals.',
 };
-// What the eye sees in the time: the middle of its capitals (figures), carried across. The pill is 1 while the
-// punctuation sits on lowercase forms, and turns to ✓ once the case feature is on.
+// the time is 13px: the stage goes in closer than usual so a 1px rise can be seen
+BoardingPass.maxZoom = 5;
+// What the eye sees in the time: the middle of its capitals (figures), carried across, and where the colon's and the
+// dash's ink actually sit, measured from the default glyphs (canvas measureText). The hatch is the sag between; the
+// pill is the colon's sag in px. With the case forms on, the alternates rise to the middle (the browser draws them;
+// canvas can't, so the fixed side shows the middle and the glyphs themselves, zoomed).
 BoardingPass.measure = (root) => {
   const el = [...(root?.querySelectorAll('[data-caps]') ?? [])].find((e) => /\d:\d\d–/.test(e.textContent));
   if (!el) return null;
@@ -905,14 +926,19 @@ BoardingPass.measure = (root) => {
   const box = q.getClientRects()[0], base = box.top + ((box.height / k - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent) * k;
   const mid = base - (m.actualBoundingBoxAscent / 2) * k, on = /case/.test(s.fontFeatureSettings);
   const at = (i) => { const c = document.createRange(); c.setStart(el.firstChild, i); c.setEnd(el.firstChild, i + 1); return c.getBoundingClientRect(); };
-  const colon = at(2), dash = at(5);
+  // the ink centre of a default glyph, in the page's pixels
+  const centre = (ch) => { const g = ctx.measureText(ch); return base - ((g.actualBoundingBoxAscent - g.actualBoundingBoxDescent) / 2) * k; };
+  const colon = at(2), dash = at(5), cy = centre(':'), dy = centre('–'), sag = Math.max(0, (cy - mid) / k);
   return {
-    lines: [{ key: 'colon', x: (colon.left + colon.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }, { key: 'dash', x: (dash.left + dash.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }],
-    rules: [{ key: 'mid', y: mid, left: r.left - 8 * k, right: r.right + 8 * k }],
-    bands: [], off: !on,
-    pills: [{ key: 'case', x: r.right + 18 * k, y: mid, text: on ? '0' : String(k), ok: on }],
+    lines: [],
+    rules: [{ key: 'mid', y: mid, left: r.left - 8 * k, right: r.right + 8 * k },
+      // with the case forms on, the sag closes: the glyphs' marks land on the middle (they glide there)
+      { key: 'colon', y: on ? mid : cy, left: colon.left - 2 * k, right: colon.right + 2 * k }, { key: 'dash', y: on ? mid : dy, left: dash.left - 1 * k, right: dash.right + 1 * k }],
+    bands: [{ key: 'csag', left: colon.left - 2 * k, right: colon.right + 2 * k, top: mid, bottom: on ? mid : cy, pattern: 'hatch' }, { key: 'dsag', left: dash.left - 1 * k, right: dash.right + 1 * k, top: mid, bottom: on ? mid : Math.max(mid, dy), pattern: 'hatch' }],
+    off: !on,
+    pills: [{ key: 'sag', x: r.right + 22 * k, y: mid, text: on ? '0' : (Math.max(sag, 0.05) * k).toFixed(1), ok: on }],
     cut: { left: r.left - 3 * k, right: r.right + 3 * k, top: r.top, bottom: r.bottom },
-    subject: { left: r.left - 50 * k, right: r.right + 70 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+    subject: { left: r.left - 14 * k, right: r.right + 40 * k, top: r.top - 16 * k, bottom: r.bottom + 12 * k },
   };
 };
 
