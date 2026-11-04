@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gallery · the card</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/gallery/card.css" />
+</head>
+<body>
+<!--
+  The gallery's one primitive, for review before any gallery is built (owner, 2026-11-04: libraries.dev is the gold
+  standard; add a gallery of live demos, with its card craft and its polish). Measured from libraries.dev's card: an
+  outer frame (#181818, radius 24, a 1px top highlight at 4% white, a faint drop), an inner stage inset 12px (#131313,
+  radius 14) holding the live demo, then a 32px icon tile, a 14/500 name and one quiet line. Rebuilt in our
+  foundations, not copied: our grounds, our type, our signals.
+  States: rest (the demo loops), hover (the frame lifts a step of light), focus (the
+  accent ring; the card is a link to its docs), pressed (scale 0.99), reduced motion (the demo shows its end, still).
+-->
+<div class="bar"><span>Gallery · the card primitive, with one live demo</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'">Light / dark</button></div>
+
+<main class="g-review">
+  <section class="g-one">
+    <a class="g-card" href="#spacing" aria-label="Spacing on your scale: try a step live, keep the one you like">
+      <div class="g-stage">
+        <div class="demo-spacing" data-demo="spacing" aria-hidden="true">
+          <div class="ds-card">
+            <b>Members</b>
+            <ul>
+              <li><i style="--h:330">M</i><span>Maya Okafor</span><small>Owner</small></li>
+              <li><i style="--h:230">D</i><span>Daniel Reyes</span><small>Admin</small></li>
+              <li><i style="--h:80">P</i><span>Priya Nair</span><small>Member</small></li>
+            </ul>
+          </div>
+          <div class="ds-pill"><code class="ds-from">gap-[13px]</code><span class="ds-arrow">→</span><code class="ds-to">gap-related</code></div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 3v14M16 3v14M7 10h6" /><path d="M9 8l-2 2 2 2M11 8l2 2-2 2" /></svg></span>
+        <span class="g-text"><b>Spacing on your scale</b><span>Try a step live, keep the one you like</span></span>
+      </div>
+    </a>
+    <aside class="g-notes">
+      <p class="label">The card, rebuilt from libraries.dev’s measurements</p>
+      <dl>
+        <div><dt>Frame</dt><dd>ground 1 · radius 24 · 1px top highlight · faint drop</dd></div>
+        <div><dt>Stage</dt><dd>inset 12px · ground 0 · radius 14 · the live demo</dd></div>
+        <div><dt>Foot</dt><dd>32px icon tile · name 14/510 · one quiet line</dd></div>
+        <div><dt>Hover</dt><dd>the frame lifts a step of light</dd></div>
+        <div><dt>Focus</dt><dd>accent ring outside the frame; Enter opens its docs</dd></div>
+        <div><dt>Pressed</dt><dd>scale 0.99, 120ms</dd></div>
+        <div><dt>Reduced motion</dt><dd>the demo’s end, still</dd></div>
+      </dl>
+      <p class="g-try">Hover it, Tab to it, press it.</p>
+    </aside>
+  </section>
+
+  <section class="g-list">
+    <p class="label">Proposed cards: each a real feature, each one live demo. Cut or add.</p>
+    <ol>
+      <li><b>Spacing on your scale</b><span>a gap tried at 8 and 12, kept at 8 (above)</span></li>
+      <li><b>Text styles</b><span>ten hurried sizes settle onto four styles</span></li>
+      <li><b>Hold Alt to inspect</b><span>the element under the pointer outlined, its component and what’s off</span></li>
+      <li><b>Edit words in place</b><span>a heading retyped, Enter writes the string</span></li>
+      <li><b>Blueprint</b><span>the page dims, heat glows only where it’s off</span></li>
+      <li><b>Colour near-copies</b><span>#3b78d8 found to be your accent, a few percent off</span></li>
+      <li><b>Agent guardrails</b><span>an agent’s edit checked, 4 new, fixed, 0 new</span></li>
+      <li><b>Only new problems fail</b><span>94 known places stay quiet; the one new one fails the check</span></li>
+      <li><b>Guarded writes</b><span>“This file changed after we checked it”: refused, never overwritten</span></li>
+    </ol>
+    <p class="label g-proof">Proof, honestly: npm shows 261 downloads last month and GitHub 0 stars, too early to show. Instead: “This page is checked by Plumber”, with this homepage’s own real check result.</p>
+  </section>
+</main>
+<script type="module" src="/src/gallery/spacing-demo.js"></script>
+</body>
+</html>
