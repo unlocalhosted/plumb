@@ -77,6 +77,10 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   side by side with the benchmark, never from stills (a hidden pane freezes transitions). The world freezes for the
   moment: settle, camera in, marks, hold, fix (pills count to zero, red → blue), hold, marks out, camera out, then
   life resumes.
+- **Quarry has designed primitives, and examples use only them.** Palette, surfaces, card, type ramp, status language,
+  client marks and notes come from the chosen direction (/primitives, overlay/showcase/src/primitives), never from
+  a colour picked inside one example (a violet initials tile, a butter note, saturated pills read cheap). The bar is
+  Mercury / Stripe: calm finance software, one brand colour, soft status, a client shown by its own mark.
 - **#16 is the bar** (Quarry's running timer, commit ce37e8a): every screen is held to it.
 - **plumber's read is drawn with plumber's own primitives,** imported from overlay/src/tokens.css and the blueprint
   marks, never invented: coral (`--pl-off`) for off, mint (`--pl-on`) once fixed, 1px lines with the white halo, the
@@ -172,3 +176,5 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · "the first example is meaningless, why would any UI have extra padding, you don't have to make an
   animated card all the time but something real": the brief's "flaw happens live" forced motion onto #1. → §3½ motion
   is earned; #1 is sections down a page lined up by their boxes (the owner's own definition).
+- 2026-11-04 · "the card and the colors you chose look cheap and not up to the taste bar": every example picked its
+  own colours, card and type inside the example. → §3½ Quarry primitives first, picked by the owner on /primitives.
