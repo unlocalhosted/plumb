@@ -1543,8 +1543,10 @@ export const elevationLadder = {
     const near = c.clusters.filter((k) => k !== own && k.count > own.count && Math.max(k.value, b) / Math.min(k.value, b) < T.step)
       .sort((x, y) => Math.abs(x.value - b) - Math.abs(y.value - b))[0];
     if (!near) return [];
-    const cls = utility(el, 'shadow');
-    const to = near.members.map((m) => utility(m, 'shadow')).find(Boolean);
+    // the class that sets the level, never the one that colours it (shadow-black/5 beside shadow-md)
+    const level = (x) => utility(x, 'shadow', { not: { test: (rest) => isColour(rest, theme) } });
+    const cls = level(el);
+    const to = near.members.map(level).find(Boolean);
     const value = facts.style(near.members[0]).boxShadow;
     return [{
       ...say(this.id, { blur: b, level: near.value }),

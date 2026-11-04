@@ -63,6 +63,8 @@ const within = (page, id, m, slack = 16) => page.evaluate(([id, m, slack]) => { 
 const PAGE = await readFile(new URL('../overlay/demo/src/rules/wave6.jsx', import.meta.url), 'utf8');
 
 const RULES = ['weight-levels', 'grey-levels', 'rhythm', 'elevation-ladder'];
+// rules whose every mark must be the bad one: the levels of the ladder themselves (the shadow-xl cards) are never marked
+const ONLY = new Set(['elevation-ladder']);
 
 test('Wave six: an element off the page’s own habits is marked; one on them is not', { timeout: 240000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
@@ -75,6 +77,7 @@ test('Wave six: an element off the page’s own habits is marked; one on them is
     for (const m of marks) { if (await within(page, `${rule}-bad`, m, 6)) bad.push(m); if (await within(page, `${rule}-good`, m, 6)) good.push(m); }
     if (!bad.length) failed.push(`${rule}: no mark on the bad one (${marks.length} marks: ${marks.map((m) => m.label).join(' | ')})`);
     if (good.length) failed.push(`${rule}: marked the good one: ${good.map((m) => m.label).join(' | ')}`);
+    if (ONLY.has(rule) && marks.length !== bad.length) failed.push(`${rule}: ${marks.length - bad.length} marks off the bad one: ${marks.map((m) => m.label).join(' | ')}`);
   }
   assert.deepEqual(failed, []);
   assert.deepEqual(errors, []);

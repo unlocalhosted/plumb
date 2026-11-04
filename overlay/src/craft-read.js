@@ -21,12 +21,13 @@ export function rgb(s) {
 }
 
 // How high a computed box-shadow lifts its element: the blur of its softest outer layer, 0 for none (a ring of
-// spread only, or an inset, lifts nothing). The census's shadow levels and the elevation ladder read it the same way.
+// spread only, an inset, or a see-through layer lifts nothing). The census's shadow levels and the elevation ladder
+// read it the same way.
 export function elevation(value) {
   if (!value || value === 'none') return 0;
   let most = 0;
   for (const layer of value.split(/,(?![^(]*\))/)) {
-    if (/inset/.test(layer)) continue;
+    if (/inset/.test(layer) || /rgba\([^)]*,\s*0\)/.test(layer)) continue;
     const nums = layer.replace(/rgba?\([^)]*\)|oklch\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
     most = Math.max(most, nums[2] ?? 0);
   }
