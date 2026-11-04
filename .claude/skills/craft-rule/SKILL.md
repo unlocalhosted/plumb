@@ -84,6 +84,13 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
 - Size the fix from what was measured (overshoot's scale is computed, not a fixed 6%). A fix that doesn't satisfy
   its own rule when applied is a bug.
 - `why` reads as the fix in words ("pull the panel out by its 16px padding"); the showcase leads with it.
+- **The fix expresses the principle, not the threshold.** A fix that only lands on the line the check draws teaches
+  the wrong thing: inner-outer once fixed 12px-inside-8px-between to 8px and 8px, which passes the rule and leaves
+  each label floating halfway between two inputs. Aim where the principle points (inside clearly tighter: half the
+  outer gap), and keep the ceiling just under the line.
+- **Its words never do false arithmetic.** When the nearest step differs from the exact answer, say so ("4px, your
+  nearest step to 12px minus 9px (3px)"), not "4px: 12px minus 9px". And the example's lesson counts what the rule
+  counts (the 1px border is part of the distance between the curves).
 
 ## 5. Teach, don't just diff
 
@@ -134,3 +141,5 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · "neither 5, 4, 3 … being rich and real is what sells the illusion": components alone in a window. → §3½
   product screen.
 - 2026-11-04 · (own review) at a 1024px pane the window and the card overflowed sideways. → §3½ fit every width.
+- 2026-11-04 · (own review) #7's fix equalised inner and outer; #8's card said "4px: 12px minus 9px" and its lesson
+  said 8px where plumber measured 9px. → §4 the fix expresses the principle; no false arithmetic.

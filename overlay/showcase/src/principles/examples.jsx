@@ -4,6 +4,7 @@
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { Bell, Play } from '../icons.jsx';
 import site from '../site.png';
+import receipt from '../receipt.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
 let ctx;
@@ -475,5 +476,158 @@ Notice.lesson = { why: 'items-center centres the line box, and the line box keep
 Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
 Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
 Amounts.lesson = { why: "Proportional digits are as wide as their shapes: a 1 is narrow, an 8 wide. Down a column, each amount's digits land in different places.", habit: 'Numbers that line up or change use tabular figures: every digit the same width.' };
-export const EXAMPLES = { 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
+
+// ── Spacing and rhythm ─────────────────────────────────────
+
+// #7 the space inside a group is tighter than the space between groups: here a shared Field puts 12px between a label
+// and its input, inside a form that sets its fields only 8px apart, so each label reads as belonging to the input above it
+const FIELDS = [['Name', 'Halden & Co.'], ['Email', 'billing@halden.example'], ['Company number', 'SC 412 908'], ['Payment terms', 'Net 14']];
+function Grouping({ broken }) {
+  return (
+    <AppFrame crumb="Clients / New client">
+      <div className="flex flex-col gap-5 px-5 pt-4 pb-6">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-base font-semibold">New client</h3>
+          <span className="text-sm text-ink-muted">Who you bill, and how they pay.</span>
+        </div>
+        <div data-form className="flex max-w-sm flex-col gap-2">
+          {FIELDS.map(([label, value]) => (
+            <div key={label} data-field className="flex flex-col gap-3">
+              <span className="text-xs font-medium text-ink-muted">{label}</span>
+              <span className="flex h-9 items-center rounded-control border border-line px-3 text-sm">{value}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Create client</button>
+          <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Cancel</button>
+        </div>
+      </div>
+    </AppFrame>
+  );
+}
+Grouping.framed = true;
+Grouping.measure = (root) => {
+  const [a, b] = [...root.querySelectorAll('[data-field]')], la = a.children[0].getBoundingClientRect(), ia = a.children[1].getBoundingClientRect(), lb = b.children[0].getBoundingClientRect();
+  const inside = la.bottom < ia.top ? ia.top - la.bottom : 0, between = lb.top - ia.bottom;
+  return { around: a, focus: { x: ia.left + 30, y: (ia.bottom + lb.top) / 2 }, ticks: [{ y: la.bottom, left: la.left, right: la.left + 60 }, { y: ia.top, left: la.left, right: la.left + 60 }, { y: ia.bottom, left: la.left, right: la.left + 60 }, { y: lb.top, left: la.left, right: la.left + 60 }],
+    broken: `${px(inside)} inside · ${px(between)} between`, fixed: 'tighter inside ✓', off: inside > between };
+};
+Grouping.lesson = { why: 'Each field puts 12px between its label and its input, but the form sets fields only 8px apart, so every label sits closer to the input above it than to its own.', habit: 'Space inside a group is always tighter than space between groups: proximity is how people read what belongs together.' };
+
+// #8 nested corners are concentric: inner radius = outer radius − the padding between them
+const TEMPLATES = [['Classic', 'Serif heading, ruled lines'], ['Studio', 'Your logo, a calm grid'], ['Minimal', 'Just the numbers']];
+function Templates({ broken }) {
+  return (
+    <AppFrame crumb="Settings / Invoice templates">
+      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-base font-semibold">Invoice templates</h3>
+            <span className="text-sm text-ink-muted">What clients see when they open an invoice.</span>
+          </div>
+          <span className="text-sm text-accent">Upload your own</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {TEMPLATES.map(([name, what], i) => (
+            <div key={name} data-tpl className={'flex flex-col gap-2 rounded-card border bg-surface p-2 ' + (i === 1 ? 'border-accent' : 'border-line')}>
+              <img src={receipt} alt="" width="240" height="320" className="aspect-[4/3] w-full rounded-card bg-sunken object-cover object-top outline outline-1 -outline-offset-1 outline-line" />
+              <div className="flex flex-col gap-0.5 px-1 pb-1">
+                <span className="flex items-center gap-1.5 text-sm font-medium">{name}{i === 1 ? <span className="rounded-full bg-accent-soft px-1.5 text-xs text-accent">In use</span> : null}</span>
+                <span className="truncate text-xs text-ink-muted" title={what}>{what}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppFrame>
+  );
+}
+Templates.framed = true;
+Templates.measure = (root) => {
+  const card = root.querySelector('[data-tpl]'), img = card.querySelector('img'), c = card.getBoundingClientRect(), r = img.getBoundingClientRect();
+  const R = parseFloat(getComputedStyle(card).borderTopLeftRadius), ir = parseFloat(getComputedStyle(img).borderTopLeftRadius), inset = r.left - c.left;
+  return { around: card, focus: { x: r.left + 4, y: r.top + 4 }, ticks: [{ x: c.left, top: c.top, bottom: c.top + 24 }, { x: r.left, top: r.top, bottom: r.top + 24 }, { y: c.top, left: c.left, right: c.left + 24 }, { y: r.top, left: r.left, right: r.left + 24 }],
+    broken: `${px(ir)} inside ${px(R)} · ${px(inset)} apart`, fixed: 'concentric ✓', off: Math.abs(ir - Math.max(0, R - inset)) > 1 };
+};
+Templates.lesson = { why: 'The preview keeps the card’s 12px corner but sits 9px inside it (8px of padding and the 1px border), so the two curves run side by side at different rates: the gap between them pinches at every corner.', habit: 'Inner radius = outer radius − everything between them, padding and border, at every level of nesting.' };
+
+// #9 a text button takes about twice as much padding across as up and down (broken: p-2, copied from the icon
+// buttons beside it)
+const Ico = ({ d }) => <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+const ROWS = [['INV-2041', 'Halden & Co.', 'Sent', '4,820.00'], ['INV-2040', 'Northfield Dental', 'Paid', '1,240.50'], ['INV-2039', 'Okafor Landscape', 'Overdue', '12,000.00']];
+const TONES = { Sent: 'bg-accent-soft text-accent', Paid: 'bg-positive-soft text-positive', Overdue: 'bg-negative-soft text-negative' };
+function Toolbar({ broken }) {
+  return (
+    <AppFrame crumb="Invoices">
+      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold">Invoices</h3>
+          <div className="flex items-center gap-1.5">
+            <button type="button" aria-label="Filter" className="grid size-8 place-items-center rounded-control border border-line text-ink-muted active:bg-sunken"><Ico d="M2.5 4h11M4.5 8h7M6.5 12h3" /></button>
+            <button type="button" aria-label="Sort" className="grid size-8 place-items-center rounded-control border border-line text-ink-muted active:bg-sunken"><Ico d="M5 3v10m0 0-2-2m2 2 2-2M11 13V3m0 0-2 2m2-2 2 2" /></button>
+            <button type="button" data-export className="rounded-control border border-line p-2 text-sm leading-4 font-medium active:bg-sunken">Export</button>
+            <button type="button" className="rounded-control bg-accent px-3 py-2 text-sm leading-4 font-medium text-accent-ink active:bg-ink">New invoice</button>
+          </div>
+        </div>
+        <table className="w-full text-left text-sm">
+          <tbody>
+            {ROWS.map(([id, client, st, amt]) => (
+              <tr key={id} className="border-t-hairline border-line">
+                <td className="case-forms py-2.5 pr-3 text-ink-muted">{id}</td>
+                <td className="py-2.5 pr-3 font-medium">{client}</td>
+                <td className="py-2.5 pr-3"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + TONES[st]}>{st}</span></td>
+                <td className="py-2.5 text-right font-medium tabular-nums">${amt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </AppFrame>
+  );
+}
+Toolbar.framed = true;
+Toolbar.measure = (root) => {
+  const b = root.querySelector('[data-export]'), r = b.getBoundingClientRect(), s = getComputedStyle(b), pl = parseFloat(s.paddingLeft), pt = parseFloat(s.paddingTop);
+  return { around: b, focus: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, ticks: [{ x: r.left + pl, top: r.top, bottom: r.bottom }, { x: r.right - parseFloat(s.paddingRight), top: r.top, bottom: r.bottom }],
+    broken: `${px(pl)} across · ${px(pt)} up`, fixed: `${px(pl)} across ✓`, off: pl < pt * 1.6 };
+};
+Toolbar.lesson = { why: 'Words are wide and short. With the same padding on every side, the label looks squeezed from the sides and the button looks taller than it is wide.', habit: 'Text buttons take about twice as much padding across as up and down; only icon buttons are square.' };
+
+// #10 the icon side of a button takes less padding: an icon carries its own whitespace inside its glyph box
+const PEOPLE = [['Halden & Co.', 'billing@halden.example', 'HC', 'bg-accent-soft text-accent'], ['Northfield Dental', 'accounts@northfield.example', 'ND', 'bg-positive-soft text-positive'], ['Okafor Landscape', 'pay@okafor.example', 'OL', 'bg-sunken text-ink']];
+function NewClient({ broken }) {
+  return (
+    <AppFrame crumb="Clients">
+      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-base font-semibold">Clients</h3>
+            <span className="text-sm text-ink-muted">38 active · 4 with invoices due</span>
+          </div>
+          <button type="button" data-new className="flex items-center gap-1.5 rounded-control bg-ink px-4 py-2 text-sm font-medium text-accent-ink active:bg-ink-muted"><Ico d="M8 3v10M3 8h10" />New client</button>
+        </div>
+        <ul className="flex flex-col">
+          {PEOPLE.map(([name, email, ini, tint]) => (
+            <li key={name} className="flex items-center gap-3 border-t-hairline border-line py-2.5">
+              <span className={'grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + tint}>{ini}</span>
+              <span className="flex min-w-0 flex-col"><span className="text-sm font-medium">{name}</span><span className="truncate text-xs text-ink-muted">{email}</span></span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </AppFrame>
+  );
+}
+NewClient.framed = true;
+NewClient.measure = (root) => {
+  const b = root.querySelector('[data-new]'), r = b.getBoundingClientRect(), g = b.querySelector('svg').getBoundingClientRect();
+  const t = document.createRange(); t.selectNodeContents(b.lastChild); const tr = t.getBoundingClientRect();
+  const left = g.left - r.left, right = r.right - tr.right;
+  return { around: b, focus: { x: g.left, y: r.top + r.height / 2 }, ticks: [{ x: r.left, top: r.top, bottom: r.bottom }, { x: g.left, top: r.top, bottom: r.bottom }, { x: tr.right, top: r.top, bottom: r.bottom }, { x: r.right, top: r.top, bottom: r.bottom }],
+    broken: `${px(left)} by the icon · ${px(right)} by the text`, fixed: 'icon side lighter ✓', off: left >= right - 1 };
+};
+NewClient.lesson = { why: 'An icon’s glyph box carries its own space around the drawing. With the same padding on both sides, the icon side looks looser than the text side and the label reads off-centre.', habit: 'On the side with the icon, take 2–4px of padding off.' };
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
 

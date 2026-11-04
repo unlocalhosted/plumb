@@ -116,7 +116,9 @@ export const concentricRadius = {
     const rec = wanted <= tolerance && !theme.nearest('radius', wanted, tolerance) ? { kind: 'class', from: cls ?? '', to: 'rounded-none', why: `0px: ${fmt(drawnR)} minus ${fmt(p)}` }
       : recommend({ family: 'radius', prefix: 'rounded', job: 'nested', want: { min: wanted - tolerance, max: wanted + tolerance, target: wanted }, exact: tolerance, from: cls ?? '', sets: RADII, theme,
         label: 'this corner wants', advice: () => `None of your radius steps is near ${fmt(wanted)}. Add one, or change the padding.` });
-    if (rec.kind === 'class') rec.why = `${fmt(theme.scale('radius').find((s) => `rounded-${s.short}` === rec.to)?.px ?? wanted)}: ${fmt(drawnR)} minus ${fmt(p)}`;
+    // the step taken can differ from the exact answer by the tolerance; say so instead of writing false arithmetic
+    const taken = theme.scale('radius').find((s) => `rounded-${s.short}` === rec.to)?.px ?? wanted;
+    if (rec.kind === 'class') rec.why = Math.abs(taken - wanted) < 0.5 ? `${fmt(taken)}: ${fmt(drawnR)} minus ${fmt(p)}` : `${fmt(taken)}, your nearest step to ${fmt(drawnR)} minus ${fmt(p)} (${fmt(wanted)})`;
     const suggest = cls ? rec : asAdvice(rec, (r) => `Use ${fmt(wanted)} (${r.to}).`);
     return [{
       ...say(this.id, { r: drawnr, p, R: drawnR, wanted }),
@@ -156,7 +158,10 @@ export const innerOuterSpacing = {
     if (g <= G + T.min) return [];
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
     const text = cls ?? 'gap';
-    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'inner', want: { min: 0, max: G, target: G }, round: 'down', from: cls ?? '', token: false, theme,
+    // tighter than the gap between groups, not equal to it: equal leaves a label exactly between its input and the one
+    // above, which is the confusion itself; aim at half the outer gap
+    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'inner', want: { min: 0, max: G - 1, target: G / 2 }, round: 'down', from: cls ?? '', token: false, theme,
+      sets: (v) => ({ rowGap: v, columnGap: v }),
       advice: () => `Make the gap smaller than ${fmt(G)}.` });
     if (rec.kind === 'class') rec.why = `${rec.why.split(' (')[0]}, tighter than the ${fmt(G)} between groups`;
     const suggest = cls ? rec : asAdvice(rec, (r) => `Make the gap ${r.why.split(',')[0]} (${r.to}) or less.`);
