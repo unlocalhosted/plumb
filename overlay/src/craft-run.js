@@ -37,7 +37,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function operate(options) {
   const { op } = options;
   const rec = window.__plumbRec;
-  if (op === 'candidates') { resetKeys(); return candidates(); }
+  if (op === 'candidates') { resetKeys(); return candidates(options.scope); }
   if (op === 'frame') {
     const el = fromKey(options.key);
     if (!el) return null;
@@ -67,9 +67,10 @@ async function operate(options) {
     const sub = [...document.querySelectorAll('[role="menu"] [aria-haspopup]:not([aria-haspopup="false"])')].find((e) => e.getClientRects().length);
     if (!sub) return null;
     const menu = sub.closest('[role="menu"]');
-    const rects = (nodes) => [...nodes].filter((n) => n !== sub && n.getClientRects().length).map((n) => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+    const label = (n) => (n.innerText ?? n.textContent ?? '').trim().split('\n')[0].trim();
+    const rects = (nodes) => [...nodes].filter((n) => n !== sub && n.getClientRects().length).map((n) => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, label: label(n) }; });
     const r = sub.getBoundingClientRect(), m = menu.getBoundingClientRect();
-    return { key: pathKey(sub), cx: r.x + r.width / 2, cy: r.y + r.height / 2, h: r.height, menu: { x: m.x, y: m.y, w: m.width, h: m.height }, siblings: rects(menu.querySelectorAll('[role^="menuitem"]')) };
+    return { key: pathKey(sub), label: label(sub), cx: r.x + r.width / 2, cy: r.y + r.height / 2, h: r.height, menu: { x: m.x, y: m.y, w: m.width, h: m.height }, siblings: rects(menu.querySelectorAll('[role^="menuitem"]')) };
   }
   if (op === 'submenu') {
     const sub = fromKey(options.key);
@@ -150,7 +151,7 @@ async function greyPass() {
 }
 
 export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, scope = null, hidden = false, ...rest } = {}) {
-  if (op) return operate({ op, ...rest });
+  if (op) return operate({ op, scope, ...rest });
   resetKeys();
   await prepareSources();
   const blueprint = overlay?.blueprintReader;

@@ -17,3 +17,5 @@ dist/
 # React Plumber generated caches
 **/.plumber/cache/
 **/.plumb/cache/
+
+/overlay/showcase/.probe-cache/

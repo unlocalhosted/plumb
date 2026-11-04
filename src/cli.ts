@@ -63,7 +63,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
        plumber check [--sarif | --agent | --format github]
        plumber census --url <dev server> [--routes / /settings] [--max <n>] [--json]
-       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--scope <selector>] [--judge]
+       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--scope <selector>] [--record-probe <dir>] [--judge]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
@@ -98,7 +98,7 @@ async function main(): Promise<void> {
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
-          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, scope: { type: 'string' }, max: { type: 'string' },
+          url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, scope: { type: 'string' }, 'record-probe': { type: 'string' }, max: { type: 'string' },
           'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
@@ -254,7 +254,7 @@ async function main(): Promise<void> {
     if (asked.some(name => name !== 'drag')) throw new UsageError('--probe takes drag, the one gesture that is not tried unless asked (a drag can move things).\n  → plumber craft --url <address> --probe drag');
     const budget = args.values['probe-budget'] === undefined ? 24 : Number(args.values['probe-budget']);
     if (!Number.isInteger(budget) || budget < 1) throw new UsageError('--probe-budget is how many elements to try per kind of gesture, at least 1.\n  → plumber craft --url <address> --probe-budget 24');
-    const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout, pairs: !args.values['no-pairs'], probe: !args.values['no-probe'], probeBudget: budget, probeDrag: (args.values.probe ?? []).includes('drag'), judge: !!args.values.judge, ...(args.values.scope ? { scope: args.values.scope } : {}) });
+    const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout, pairs: !args.values['no-pairs'], probe: !args.values['no-probe'], probeBudget: budget, probeDrag: (args.values.probe ?? []).includes('drag'), judge: !!args.values.judge, ...(args.values.scope ? { scope: args.values.scope } : {}), ...(args.values['record-probe'] ? { recordProbe: resolve(args.values['record-probe']) } : {}) });
     const findings = craftFindings(pages, options.root);
     if (typeof sarifFile === 'string') {
       const { atomicWrite } = await import('./atomic-write.js');

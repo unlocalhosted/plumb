@@ -18,7 +18,7 @@ export interface CraftRecord {
   evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
-export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string }
+export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string }
 
 const missing = `The headless run needs Playwright, an optional dependency.
   → npm i -D playwright && npx playwright install chromium
@@ -146,7 +146,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         await open(page, url, options.timeout, true);
         if (options.pairs !== false) await takePairs(browser, url, page, options.timeout);
         if (options.probe !== false) {
-          const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true }).catch(quiet('probes'));
+          const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true, ...(options.scope ? { scope: options.scope } : {}), ...(options.recordProbe ? { record: options.recordProbe } : {}) }).catch(quiet('probes'));
           if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probes ${JSON.stringify(list)?.slice(0, 1500)}\n`);
           if (list?.length) await ask(page, { op: 'probes', list });
         }
